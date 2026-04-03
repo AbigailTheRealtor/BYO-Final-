@@ -1,0 +1,185 @@
+Now continue and COMPLETE all remaining fixes from my original request. This is not an audit. This is full implementation.
+
+You already fixed some Buyer issues, but many items are still not fixed. I need everything below implemented fully across Tenant, Seller, Buyer, and Landlord where applicable.
+
+DO NOT skip items. DO NOT stop early.
+
+-------------------------------------
+SCOPE OF WORK (ALL MUST BE FIXED)
+-------------------------------------
+
+1. Match Score UI Consistency
+- Match Score must look EXACTLY like Tenant bid card for:
+  - Seller
+  - Buyer
+  - Landlord
+- This includes:
+  - layout
+  - labels
+  - structure
+  - mismatch indicators
+  - services + terms display
+- Tenant is the source of truth
+
+2. Buyer Bid Card Missing / Broken
+- Buyer bid card must render fully
+- Fix:
+  - services calculation (currently 0/0)
+  - terms calculation (currently incorrect or missing)
+  - extra services incorrectly showing
+- Must match Tenant behavior exactly
+
+3. Landlord Terms Count Incorrect
+- Landlord total terms should be 17 (not 14)
+- Add missing field:
+  Tenant's Broker Commission Fee:
+  → must appear directly after:
+  Tenant's Broker Commission Structure:
+- Ensure all 17 terms are included in match calculation
+
+4. Terms Calculation Rules (ALL ROLES)
+- Total terms must be correct per role:
+  - Buyer = 15 terms
+  - Landlord = 17 terms
+  - Others per structure
+- If terms show 0/0 → FIX
+- Terms must compare correctly using real baseline data (meta, not accessor bug)
+
+5. “Additional Details” Separation
+- “Additional Details” must NOT be counted in Terms Matched
+- Must be visually separate from:
+  Broker Compensation & Agency Agreement Terms
+- Do not include in match scoring
+
+6. Offered Services Calculation (CRITICAL FIX)
+Fix for ALL roles, using Tenant as correct reference:
+
+Rules:
+- Each checked service = 1 service
+- Sub-options under a selected service ALSO count:
+  Example:
+  Provide Digital Photo Enhancements:
+    - Basic edits
+    - Twilight conversion
+    - Object removal
+    - Virtual twilight
+    - Color correction
+    - Other
+  → each = 1 service
+
+- “Other – Specify additional services as needed”
+  - Each custom entry = 1 service
+
+Fix issues:
+- Landlord currently showing wrong match % (e.g., 50/50 incorrectly)
+- Buyer showing 0/0 and “33 extra services” incorrectly
+- Ensure counts match actual selected services:
+  Example:
+  - Residential Buyer total ≈ 38–39 services depending on “Other”
+
+IMPORTANT:
+- Service totals vary by property type:
+  Residential, Commercial, Income, Business, Vacant Land
+- Must calculate dynamically and correctly per type
+
+7. Extra Services Logic
+- “Extra Value Added” must only show TRUE extras
+- Do NOT mark matching services as extra
+- Fix incorrect flags
+
+8. Editing a Bid (Buyer & Seller)
+- Editing a bid must NOT create a new bid
+- Must update existing bid record
+- Preserve history correctly
+
+9. Agent Presentation & Materials Not Loading
+Fix for ALL roles (especially Buyer):
+- Business card must display
+- Uploaded materials must load correctly
+- Ensure:
+  - storage path correct
+  - retrieval correct
+  - blade rendering correct
+
+10. Buyer Accept / Counter / Reject Buttons
+- Must match Tenant EXACTLY:
+  - same buttons
+  - same colors
+  - same placement
+  - same behavior
+- Must appear in:
+  - bid card / modal
+  - counter flows
+
+11. Seller Label Change
+On Seller bid card:
+
+Change:
+"Broker Compensation & Agency Agreement Terms"
+
+TO:
+"Broker Compensation:"
+
+Do not change structure — only label
+
+-------------------------------------
+IMPLEMENTATION RULES
+-------------------------------------
+
+- Tenant = MASTER reference (DO NOT change Tenant logic)
+- Replicate Tenant logic into:
+  - Buyer
+  - Seller
+  - Landlord
+
+-------------------------------------
+SAFEGUARDS (CRITICAL)
+-------------------------------------
+
+- DO NOT rename database columns
+- DO NOT break existing working Tenant flow
+- DO NOT modify unrelated features
+- DO NOT change labels/tooltips/options unless specified
+- DO NOT refactor entire system
+- KEEP changes surgical and scoped
+
+- If unsure:
+  → inspect Tenant implementation
+  → mirror it exactly
+
+-------------------------------------
+REQUIRED PROCESS
+-------------------------------------
+
+1. Create a checklist of ALL items above
+2. Fix ONE item at a time
+3. After each fix:
+   - verify visually
+   - verify calculations
+4. Continue until ALL items are complete
+
+-------------------------------------
+FINAL OUTPUT REQUIRED
+-------------------------------------
+
+When complete, return:
+
+1. Full checklist:
+   - each item marked FIXED
+
+2. For EACH item:
+   - files modified
+   - what was changed
+   - what was broken before
+   - what now works
+
+3. Confirmation:
+   - Buyer, Seller, Landlord now match Tenant format exactly
+   - Service counts verified per property type
+   - Terms counts verified per role
+
+-------------------------------------
+
+Do NOT stop early.
+Do NOT return partial work.
+Complete EVERYTHING above.

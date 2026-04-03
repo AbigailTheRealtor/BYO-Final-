@@ -2816,8 +2816,8 @@
             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
         </h6>
 
-        <!-- 1. Buyer's Broker Compensation -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600;">Buyer's Broker Compensation:</h6>
+        <!-- A) Buyer's Broker Compensation -->
+        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">A) Buyer's Broker Compensation</h6>
         
         @if (data_get($bid, 'get.commission_structure'))
         <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
@@ -2855,8 +2855,8 @@
 
         <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- 2. Buyer's Broker Lease Fee -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600;">Buyer's Broker Lease Fee:</h6>
+        <!-- B) Buyer's Broker Lease Fee -->
+        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">B) Buyer's Broker Lease Fee</h6>
 
         @if (data_get($bid, 'get.interested_lease_option'))
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -2901,8 +2901,8 @@
 
         <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- 3. Lease-Option Details -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600;">Lease-Option Details:</h6>
+        <!-- C) Lease-Option Details -->
+        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
 
         @if (data_get($bid, 'get.interested_lease_option_agreement'))
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -2940,8 +2940,8 @@
 
         <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- 4. Legal Terms -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600;">Legal Terms:</h6>
+        <!-- D) Legal Terms -->
+        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
 
         @if (data_get($bid, 'get.protection_period'))
         <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
@@ -2988,8 +2988,8 @@
 
         <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- 5. Brokerage Relationship -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600;">Brokerage Relationship:</h6>
+        <!-- E) Brokerage Relationship -->
+        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
 
         @if (data_get($bid, 'get.brokerage_relationship'))
         <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
@@ -3001,8 +3001,8 @@
 
         <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
 
-        <!-- 6. Additional Terms -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600;">Additional Terms:</h6>
+        <!-- F) Additional Terms -->
+        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
 
         @if (data_get($bid, 'get.additional_details_broker'))
         <div class="col-md-12 col-12 pt-2 fw-bold">
@@ -3012,41 +3012,16 @@
         @endif
     </div>
 @endif
-                                                                        <!-- 3. Additional Terms & Details -->
-                                                                        @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
+                                                                        <!-- 3. Additional Details -->
+                                                                        @if (data_get($bid, 'get.additional_details'))
                                                                             <div class="mb-5">
                                                                                 <h6 class="mb-3"
                                                                                     style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                                    <i
-                                                                                        class="fa fa-file-contract me-2"></i>Additional
-                                                                                    Terms & Details
+                                                                                    <i class="fa fa-info-circle me-2"></i>Additional Details
                                                                                 </h6>
-
-                                                                                <!-- Additional Terms -->
-                                                                                @if (data_get($bid, 'get.additional_details_broker'))
-                                                                                    <div class="mb-3">
-                                                                                        <div class="fw-semibold"
-                                                                                            style="color: #049399;">
-                                                                                            Additional Terms</div>
-                                                                                        <div class="text-muted"
-                                                                                            style="font-style: italic;">
-                                                                                            {{ data_get($bid, 'get.additional_details_broker') }}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                @endif
-
-                                                                                <!-- Additional Details -->
-                                                                                @if (data_get($bid, 'get.additional_details'))
-                                                                                    <div class="mb-3">
-                                                                                        <div class="fw-semibold"
-                                                                                            style="color: #049399;">
-                                                                                            Additional Details</div>
-                                                                                        <div class="text-muted"
-                                                                                            style="font-style: italic;">
-                                                                                            {{ data_get($bid, 'get.additional_details') }}
-                                                                                        </div>
-                                                                                    </div>
-                                                                                @endif
+                                                                                <div class="text-muted" style="font-style: italic;">
+                                                                                    {{ data_get($bid, 'get.additional_details') }}
+                                                                                </div>
                                                                             </div>
                                                                         @endif
 
@@ -3239,14 +3214,33 @@
 
                                                                                 <!-- Marketing Materials Section -->
                                                                                 @if (data_get($bid, 'get.promoMaterials'))
+                                                                                @php
+                                                                                    $hasAnyMaterials = false;
+                                                                                    $promoMaterialsRaw = data_get($bid, 'get.promoMaterials', []);
+                                                                                    $promoMaterialsNormalized = [];
+                                                                                    if (is_array($promoMaterialsRaw) || is_object($promoMaterialsRaw)) {
+                                                                                        foreach ($promoMaterialsRaw as $m) {
+                                                                                            $mArr = is_object($m) ? (array) $m : (is_array($m) ? $m : []);
+                                                                                            $promoMaterialsNormalized[] = $mArr;
+                                                                                            if (!empty($mArr['type']) || !empty($mArr['link']) || !empty($mArr['files'])) {
+                                                                                                $hasAnyMaterials = true;
+                                                                                            }
+                                                                                        }
+                                                                                    }
+                                                                                @endphp
                                                                                     <div>
                                                                                         <div class="fw-semibold mb-2"
                                                                                             style="color: #049399;">
                                                                                             Marketing Materials</div>
 
-                                                                                        @foreach (data_get($bid, 'get.promoMaterials') as $index => $material)
-                                                                                            @php $material = is_object($material) ? (array) $material : $material; @endphp
-                                                                                            @if (!empty($material['type']) || !empty($material['link']) || !empty($material['files']))
+                                                                                        @foreach ($promoMaterialsNormalized as $index => $material)
+                                                                                            @php
+                                                                                                $matFiles = data_get($material, 'files', []);
+                                                                                                if (is_object($matFiles)) { $matFiles = (array) $matFiles; }
+                                                                                                elseif (is_string($matFiles)) { $matFiles = $matFiles !== '' ? [$matFiles] : []; }
+                                                                                                elseif (!is_array($matFiles)) { $matFiles = []; }
+                                                                                            @endphp
+                                                                                            @if (!empty($material['type']) || !empty($material['link']) || !empty($matFiles))
                                                                                                 <div
                                                                                                     class="mb-3 p-3 border rounded">
                                                                                                     @if (!empty($material['type']))
@@ -3299,7 +3293,7 @@
                                                                                                         </div>
                                                                                                     @endif
 
-                                                                                                    @if (!empty($material['files']))
+                                                                                                    @if (!empty($matFiles))
                                                                                                         <div
                                                                                                             class="mb-2">
                                                                                                             <div class="fw-medium mb-1"
@@ -3308,7 +3302,7 @@
                                                                                                                 Files:</div>
                                                                                                             <div
                                                                                                                 class="row">
-                                                                                                                @foreach ($material['files'] as $fileIndex => $filePath)
+                                                                                                                @foreach ($matFiles as $fileIndex => $filePath)
                                                                                                                     @if (is_string($filePath))
                                                                                                                         @php
                                                                                                                             $fileExtension = pathinfo(
@@ -3519,7 +3513,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-accept" style="background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                    <button type="submit" class="btn btn-success" style="background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
                                                                                         <i class="fa fa-check me-1"></i> Accept Bid
                                                                                     </button>
                                                                                 </form>
@@ -3554,14 +3548,25 @@
                                                                             <a href="{{ route('accepted-bid-summary.view', $buyerAcceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
                                                                                 <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
                                                                             </a>
-                                                                            <a href="{{ route('accepted-bid-summary.sign', $buyerAcceptedBidSummary->id) }}" class="btn btn-outline-success btn-sm">
-                                                                                <i class="fa fa-signature me-1"></i> E-Sign Summary
+                                                                            @if(!$buyerAcceptedBidSummary->isTenantSigned())
+                                                                            <a href="{{ route('accepted-bid-summary.sign-form', $buyerAcceptedBidSummary->id) }}" class="btn btn-primary btn-sm">
+                                                                                <i class="fa fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
                                                                             </a>
+                                                                            @endif
+                                                                            @if($buyerAcceptedBidSummary->isFullySigned())
+                                                                            <a href="{{ route('accepted-bid-summary.download-pdf', $buyerAcceptedBidSummary->id) }}" class="btn btn-success btn-sm">
+                                                                                <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                                            </a>
+                                                                            @endif
                                                                         </div>
                                                                         @endif
                                                                         @elseif ($isListingOwner && $bidAccepted === 'rejected')
                                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
                                                                             <i class="fa fa-times-circle me-1"></i> This bid has been rejected
+                                                                        </div>
+                                                                        @elseif ($isListingOwner && $isExpired)
+                                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+                                                                            <i class="fa fa-clock me-1"></i> Auction has expired - no further actions available
                                                                         </div>
                                                                         @endif
 

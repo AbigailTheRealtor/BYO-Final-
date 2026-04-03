@@ -36,7 +36,7 @@
                                     View Summary
                                 </a>
                             @elseif($bidStatus === 'Countered')
-                                <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', $bid->id) }}" class="btn btn-sm btn-warning text-dark">
+                                <a href="{{ route('hire.agent.auction.bid.view-counter', $bid->id) }}" class="btn btn-sm btn-warning text-dark">
                                     View Counter
                                 </a>
                             @elseif($bidStatus === 'Rejected')
@@ -50,7 +50,7 @@
                                         <span class="countdown-timer fw-bold" data-end="{{ $biddingEndTime }}">--:--:--</span>
                                     </span>
                                 @endif
-                                <a href="{{ route('agent.landlord.agent.auction.bid', $auction->id) }}?edit={{ $bid->id }}" class="btn btn-sm btn-primary me-2">
+                                <a href="{{ route('agent.landlord.auction.bid', $auction->id) }}?edit={{ $bid->id }}" class="btn btn-sm btn-primary me-2">
                                     <i class="fas fa-edit me-1"></i>View/Edit Bid
                                 </a>
                                 <a href="{{ route('landlord.agent.auction.view', $auction->id) }}" class="btn btn-sm btn-outline-secondary">
