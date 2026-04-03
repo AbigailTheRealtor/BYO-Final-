@@ -24,7 +24,35 @@ class LandlordAgentAuctionBid extends Model
 
     public function auction()
     {
-        return $this->belongsTo(LandlordAgentAuction::class, 'landlord_agent_auction_id', 'id');
+        return $this->belongsTo(LandlordAgentAuction::class, 'landlord_agent_auction_id', 'id')->withDefault();
+    }
+
+    public function counterTerms()
+    {
+        return $this->hasMany(LandlordCounterBidding::class, 'landlord_agent_auction_bid_id');
+    }
+
+    public function acceptedBidSummary()
+    {
+        return $this->hasOne(AcceptedBidSummary::class, 'accepted_bid_id');
+    }
+
+    public function getBidStatusAttribute(): string
+    {
+        if ($this->acceptedBidSummary()->exists()) {
+            return 'Accepted';
+        }
+
+        $latestCounter = $this->counterTerms()->latest()->first();
+        if ($latestCounter) {
+            return 'Countered';
+        }
+
+        if ($this->accepted === 'rejected') {
+            return 'Rejected';
+        }
+
+        return 'Active';
     }
 
     public function counterTerms()

@@ -33,6 +33,7 @@
                             <h6 style="color: #049399; font-weight: 600;">Listing Information</h6>
                             <p><strong>Title:</strong> {{ $auction->title ?? 'Hire a Landlord Agent' }}</p>
                             <p><strong>Address:</strong> {{ $auction->get->address ?? 'N/A' }}</p>
+                            <p><strong>Listing ID:</strong> {{ $auction->listing_id ?? 'LAA-'.$auction->id }}</p>
                             <p><strong>Listing Owner:</strong> {{ $auction->user->name ?? 'N/A' }}</p>
                         </div>
                         <div class="col-md-6">
@@ -807,8 +808,8 @@
                         No counter terms have been submitted by the agent yet.
                         @endif
                     </div>
-                    <a href="{{ route('landlord.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #049399; color: white; padding: 10px 20px; font-weight: 600;">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Listing
+                    <a href="{{ $viewerRole === 'agent' ? route('myBids', 'landlord-agent') : route('landlord.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #049399; color: white; padding: 10px 20px; font-weight: 600;">
+                        <i class="fas fa-arrow-left me-2"></i>Back
                     </a>
                     @endif
                 </div>
