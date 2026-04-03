@@ -18,12 +18,42 @@ class SellerAgentAuctionBid extends Model
 
     public function auction()
     {
-        return $this->belongsTo(SellerAgentAuction::class, 'seller_agent_auction_id', 'id');
+        return $this->belongsTo(SellerAgentAuction::class, 'seller_agent_auction_id', 'id')->withDefault();
     }
 
     public function meta()
     {
         return $this->hasMany(SellerAgentAuctionBidMeta::class);
+    }
+
+    public function counterTerms()
+    {
+        return $this->hasMany(SellerCounterTerm::class, 'seller_agent_auction_bid_id');
+    }
+
+    public function acceptedBidSummary()
+    {
+        return $this->hasOne(AcceptedBidSummary::class, 'accepted_bid_id');
+    }
+
+    public function getBidStatusAttribute(): string
+    {
+        // Terminal states take priority
+        if ($this->accepted === 'rejected') {
+            return 'Rejected';
+        }
+
+        if ($this->accepted === 'accepted' || $this->acceptedBidSummary()->exists()) {
+            return 'Accepted';
+        }
+
+        // Non-terminal: countered if an *active* (status=1) SellerCounterTerm exists
+        // Rejected counter terms (status=0) leave the bid negotiable/active.
+        if ($this->counterTerms()->where('status', 1)->exists()) {
+            return 'Countered';
+        }
+
+        return 'Active';
     }
 
     public function saveMeta($key, $val)

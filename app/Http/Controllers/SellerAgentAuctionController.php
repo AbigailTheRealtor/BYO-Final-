@@ -822,6 +822,232 @@ class SellerAgentAuctionController extends Controller
         return redirect()->back()->with('error', 'Error rejecting bid.');
     }
 
+    public function view_counter_terms($bid_id)
+    {
+        $bid = SellerAgentAuctionBid::with(['meta', 'auction', 'auction.user', 'user'])->find($bid_id);
+
+        if (!$bid) {
+            return redirect()->back()->with('error', 'Bid not found.');
+        }
+
+        $auction = SellerAgentAuction::with(['user', 'meta'])->find($bid->seller_agent_auction_id);
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        $userId  = Auth::id();
+        $isAgent = ($bid->user_id === $userId);
+        $isSeller = ($auction->user_id === $userId);
+
+        if (!$isAgent && !$isSeller) {
+            abort(403, 'You do not have permission to view these counter terms.');
+        }
+
+        // Load ALL counter terms for this bid (ordered oldest→newest by updated_at for chain display)
+        $allCounters = \App\Models\SellerCounterTerm::with('meta')
+            ->where('seller_agent_auction_bid_id', $bid_id)
+            ->orderBy('updated_at', 'asc')
+            ->get();
+
+        // Seller's latest *active* (status=1) original counter (parent_counter_id = null)
+        // Rejected counters (status=0) do not advance the stage; only active ones matter.
+        $sellerCounter = $allCounters
+            ->filter(fn($c) => $c->user_id === $auction->user_id && is_null($c->parent_counter_id) && (int)$c->status === 1)
+            ->last();
+
+        // Agent's latest *active* counter-back (parent_counter_id set, user = agent)
+        $agentCounterBack = $allCounters
+            ->filter(fn($c) => $c->user_id === $bid->user_id && !is_null($c->parent_counter_id) && (int)$c->status === 1)
+            ->last();
+
+        // Determine active stage using updated_at so edits by either party advance the turn.
+        // Stage: 'seller_needs_response' (agent counter-backed most recently)
+        //        'agent_needs_response'  (seller countered or re-countered most recently)
+        //        'no_counter'            (no counters yet)
+        $activeStage = 'no_counter';
+        if ($sellerCounter && $agentCounterBack) {
+            // Whichever was updated most recently determines whose turn it is
+            $activeStage = $sellerCounter->updated_at >= $agentCounterBack->updated_at
+                ? 'agent_needs_response'
+                : 'seller_needs_response';
+        } elseif ($sellerCounter) {
+            $activeStage = 'agent_needs_response';
+        } elseif ($agentCounterBack) {
+            $activeStage = 'seller_needs_response';
+        }
+
+        $viewerRole = $isAgent ? 'agent' : 'seller';
+
+        return view('hire_seller_agent.view_counter_terms', [
+            'bid'             => $bid,
+            'auction'         => $auction,
+            'sellerCounter'   => $sellerCounter,
+            'agentCounterBack'=> $agentCounterBack,
+            'allCounters'     => $allCounters,
+            'activeStage'     => $activeStage,
+            'viewerRole'      => $viewerRole,
+            'isAgent'         => $isAgent,
+            'isSeller'        => $isSeller,
+        ]);
+    }
+
+    /**
+     * Agent accepts the seller's counter terms.
+     * Mirrors TenantAgentAuctionBidController::accept_counter_bid.
+     */
+    public function accept_seller_counter(Request $request)
+    {
+        $counterTerm = \App\Models\SellerCounterTerm::find($request->counter_term_id);
+        if (!$counterTerm) {
+            return redirect()->back()->with('error', 'Counter term not found.');
+        }
+
+        $bid = SellerAgentAuctionBid::find($counterTerm->seller_agent_auction_bid_id);
+        if (!$bid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
+        }
+
+        $auction = SellerAgentAuction::find($bid->seller_agent_auction_id);
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        // The opposite party of whoever created the counter term may accept it:
+        // - If seller created it (parent_counter_id = null): agent accepts
+        // - If agent created it (parent_counter_id set): seller accepts
+        $isSellerCreated = is_null($counterTerm->parent_counter_id) && ($counterTerm->user_id === $auction->user_id);
+        $isAgentCreated  = !is_null($counterTerm->parent_counter_id) && ($counterTerm->user_id === $bid->user_id);
+
+        $currentUser = Auth::id();
+        $agentIsActing  = ($currentUser === $bid->user_id);
+        $sellerIsActing = ($currentUser === $auction->user_id);
+
+        $authorized = ($isSellerCreated && $agentIsActing) || ($isAgentCreated && $sellerIsActing);
+        if (!$authorized) {
+            abort(403, 'You are not authorized to accept this counter offer.');
+        }
+
+        // Guard: cannot accept an already-rejected counter term
+        if ((int)$counterTerm->status === 0) {
+            return redirect()->back()->with('error', 'This counter offer has already been rejected.');
+        }
+
+        if (in_array($bid->accepted, ['accepted', 'rejected'], true)) {
+            return redirect()->back()->with('error', 'This bid has already been ' . $bid->accepted . '.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $bid->accepted      = 'accepted';
+            $bid->accepted_date = date('Y-m-d H:i:s');
+            $bid->save();
+
+            $auction->is_sold  = true;
+            $auction->sold_date = date('Y-m-d H:i:s');
+            $auction->save();
+            $auction->saveMeta('listing_status', 'Hired Agent');
+
+            SellerAgentAuctionBid::where('seller_agent_auction_id', $auction->id)
+                ->where('id', '!=', $bid->id)
+                ->where('accepted', '!=', 'accepted')
+                ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
+
+            // UserAgent relationship — seller hired this agent
+            $ua = new UserAgent();
+            $ua->user_id  = $auction->user_id;
+            $ua->agent_id = $bid->user_id;
+            $ua->type     = 'seller';
+            $ua->save();
+
+            DB::commit();
+
+            $summaryId = null;
+            try {
+                $summaryService = new AcceptedBidSummaryService();
+                $summary = $summaryService->generateSummary($bid, $counterTerm);
+                if ($summary) {
+                    $summaryId = $summary->id;
+                }
+            } catch (\Exception $e) {
+                Log::error('[SellerCounter] Failed to generate accepted bid summary', [
+                    'bid_id'       => $bid->id,
+                    'counter_id'   => $counterTerm->id,
+                    'error'        => $e->getMessage(),
+                ]);
+            }
+
+            try {
+                $agent = User::find($bid->user_id);
+                if ($agent) {
+                    $agent->notify(new BidAcceptedNotification($bid, $auction, $summaryId, 'seller_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('[SellerCounter] Failed to send counter accepted notification to agent', ['error' => $e->getMessage()]);
+            }
+
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Counter offer accepted! Your Accepted Bid Summary is ready.');
+            }
+            return redirect()->route('seller.agent.auction.detail', $auction->id)
+                ->with('success', 'Counter offer accepted!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Error accepting counter offer: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Agent rejects the seller's counter terms.
+     * Mirrors TenantAgentAuctionBidController::reject_counter_bid.
+     */
+    public function reject_seller_counter(Request $request)
+    {
+        $counterTerm = \App\Models\SellerCounterTerm::find($request->counter_term_id);
+        if (!$counterTerm) {
+            return redirect()->back()->with('error', 'Counter term not found.');
+        }
+
+        $bid = SellerAgentAuctionBid::find($counterTerm->seller_agent_auction_bid_id);
+        if (!$bid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
+        }
+
+        $auction = SellerAgentAuction::find($bid->seller_agent_auction_id);
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Auction not found.');
+        }
+
+        // The opposite party of whoever created the counter term may reject it
+        $isSellerCreated = is_null($counterTerm->parent_counter_id) && ($counterTerm->user_id === $auction->user_id);
+        $isAgentCreated  = !is_null($counterTerm->parent_counter_id) && ($counterTerm->user_id === $bid->user_id);
+
+        $currentUser = Auth::id();
+        $agentIsActing  = ($currentUser === $bid->user_id);
+        $sellerIsActing = ($currentUser === $auction->user_id);
+
+        $authorized = ($isSellerCreated && $agentIsActing) || ($isAgentCreated && $sellerIsActing);
+        if (!$authorized) {
+            abort(403, 'You are not authorized to reject this counter offer.');
+        }
+
+        // Guard: do not allow rejecting a counter that is already resolved
+        if ((int)$counterTerm->status === 0) {
+            return redirect()->back()->with('error', 'This counter offer has already been rejected.');
+        }
+
+        // Reject the counter term record (not the bid) — mirrors Tenant reject_counter_bid behavior.
+        // status=0 means rejected; the parent bid remains active/negotiable.
+        $counterTerm->status = 0;
+        if ($counterTerm->save()) {
+            return redirect()->route('seller.agent.auction.detail', $auction->id)
+                ->with('success', 'Counter offer rejected. The bid remains active.');
+        }
+        return redirect()->back()->with('error', 'Error rejecting counter offer.');
+    }
+
     public function myAgents()
     {
         $page_data['mySellerAgents'] = 'My Agents';

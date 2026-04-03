@@ -60,6 +60,9 @@ class NotificationController extends Controller
                             return route('landlord.agent.auction.view', $auctionId) . '?view=counter&bid_id=' . $bidId;
                         }
                     }
+                    if ($auctionType === 'seller_agent') {
+                        return route('hire.seller.agent.auction.bid.view-counter', $bidId);
+                    }
                     if ($user->user_type === 'agent') {
                         return route('tenant.hire.agent.auction.bid.view-counter', $bidId);
                     } else {
@@ -75,18 +78,27 @@ class NotificationController extends Controller
                     if ($auctionType === 'landlord_agent') {
                         return route('landlord.agent.auction.view', $auctionId) . '?view=bids';
                     }
+                    if ($auctionType === 'seller_agent') {
+                        return route('seller.agent.auction.detail', $auctionId) . '?view=bids';
+                    }
                     return route('tenant.agent.auction.view', $auctionId) . '?view=bids';
                 }
                 return route('dashboard');
                 
             case 'bid_rejected':
                 if ($auctionId) {
+                    if ($auctionType === 'seller_agent') {
+                        return route('seller.agent.auction.detail', $auctionId);
+                    }
                     return route('tenant.agent.auction.view', $auctionId);
                 }
                 return route('dashboard');
                 
             default:
                 if ($auctionId) {
+                    if ($auctionType === 'seller_agent') {
+                        return route('seller.agent.auction.detail', $auctionId);
+                    }
                     return route('tenant.agent.auction.view', $auctionId);
                 }
                 return route('dashboard');

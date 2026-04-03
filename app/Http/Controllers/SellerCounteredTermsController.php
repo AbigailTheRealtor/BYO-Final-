@@ -24,6 +24,32 @@ class SellerCounteredTermsController extends Controller
     public function add(Request $request, $id)
     {
         $pab = SellerAgentAuctionBid::with('meta', 'auction')->findOrFail($id);
+
+        $auction = $pab->auction ?? \App\Models\SellerAgentAuction::find($pab->seller_agent_auction_id);
+        if (!$auction) {
+            abort(404, 'Auction not found.');
+        }
+
+        $isSeller = ($auction->user_id === Auth::id());
+        $isAgent  = ($pab->user_id === Auth::id());
+
+        // Only the listing owner (seller) may create original counter terms.
+        // The bidding agent may create a counter-back (response to seller's counter).
+        if (!$isSeller && !$isAgent) {
+            abort(403, 'You are not authorized to submit counter terms for this bid.');
+        }
+
+        // Agent can only counter-back when a seller counter already exists
+        if ($isAgent) {
+            $sellerCounter = \App\Models\SellerCounterTerm::where('seller_agent_auction_bid_id', $pab->id)
+                ->where('user_id', $auction->user_id)
+                ->latest('updated_at')
+                ->first();
+            if (!$sellerCounter) {
+                return redirect()->back()->with('error', 'You can only submit a counter-back after the seller has submitted counter terms.');
+            }
+        }
+
         $bid_id = $id;
         return view('seller_counter_terms.add', compact('pab', 'bid_id'));
     }
@@ -43,9 +69,9 @@ class SellerCounteredTermsController extends Controller
     }
     public function edit(Request $request, $id)
     {
-
-        $counter = SellerCounterTerm::where('seller_auction_id', $id)->first();
-        return view('seller_counter_terms/edit', compact('counter'));
+        // Legacy static edit form deprecated — counter terms are now managed via
+        // the SellerAgentAuctionCounterTerm Livewire component (seller.counter-terms route).
+        return redirect()->route('dashboard')->with('error', 'This page is no longer available. Please use the counter terms form from your listing.');
     }
     public function update(Request $request, $id)
     {

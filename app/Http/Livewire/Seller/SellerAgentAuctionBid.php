@@ -25,6 +25,9 @@ class SellerAgentAuctionBid extends Component
     public bool $defaultProfileExists = false;
     public bool $defaultProfileLoaded = false;
 
+    public $editBidId = null;
+    public bool $isEditMode = false;
+
     // Agent Information
     public $first_name;
     public $last_name;
@@ -174,8 +177,27 @@ class SellerAgentAuctionBid extends Component
         $rawPropType = $auction->get->property_type ?? '';
         $this->property_type = $this->normalizePropType($rawPropType);
 
-        // Services start empty — agent selects only what they will offer
-        // (do not pre-fill from listing to avoid inflating the services count)
+        // Autopopulate services from auction listing (filtered to Seller catalog for this property type)
+        $listingServices = $auction->get->services ?? [];
+        if (is_string($listingServices)) {
+            $listingServices = json_decode($listingServices, true) ?? [];
+        }
+        if (is_array($listingServices)) {
+            $catalog = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($rawPropType ?: 'Residential Property');
+            $listingServices = array_values(array_filter($listingServices, function($s) use ($catalog) {
+                return in_array(\App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s), $catalog, true);
+            }));
+            $this->services = $listingServices;
+        }
+
+        $listingOtherServices = $auction->get->other_services ?? [];
+        if (is_string($listingOtherServices)) {
+            $listingOtherServices = json_decode($listingOtherServices, true) ?? [];
+        }
+        if (is_array($listingOtherServices) && !empty(array_filter($listingOtherServices))) {
+            $this->other_services = array_values(array_filter($listingOtherServices));
+            $this->other_services_enabled = true;
+        }
 
         // Prefill compensation from listing
         $l = $auction->get;
@@ -282,6 +304,94 @@ class SellerAgentAuctionBid extends Component
                 if (!empty($dp['business_card_stored_path'])) $this->business_card_stored_path  = $dp['business_card_stored_path'];
                 if (!empty($dp['promoMaterials']))             $this->promoMaterials             = $dp['promoMaterials'];
                 $this->defaultProfileLoaded = true;
+            }
+        }
+
+        // Edit mode: load existing bid data if ?edit=bidId is in the URL
+        $editBidId = request()->query('edit');
+        if ($editBidId) {
+            $existingBid = \App\Models\SellerAgentAuctionBid::with('meta')
+                ->where('id', $editBidId)
+                ->where('seller_agent_auction_id', $this->auctionId)
+                ->where('user_id', Auth::id())
+                ->first();
+
+            if ($existingBid) {
+                $this->editBidId   = $existingBid->id;
+                $this->isEditMode  = true;
+                $m = (array) $existingBid->get;
+
+                $strFields = [
+                    'bio', 'why_hire_you', 'what_sets_you_apart', 'marketing_plan',
+                    'year_licensed', 'additional_details',
+                    'purchase_fee_type', 'purchase_fee_flat', 'purchase_fee_percentage',
+                    'purchase_fee_percentage_combo', 'purchase_fee_flat_combo', 'purchase_fee_other',
+                    'nominal', 'commission_structure', 'commission_structure_type',
+                    'commission_structure_type_fee_flat', 'commission_structure_type_fee_flat_combo',
+                    'commission_structure_type_fee_percentage', 'commission_structure_type_fee_percentage_combo',
+                    'commission_structure_type_fee_other',
+                    'interested_purchase_fee_type', 'seller_leasing_fee_type',
+                    'seller_leasing_gross', 'seller_leasing_each_rental', 'seller_leasing_gross_rental',
+                    'seller_leasing_gross_month_rent', 'seller_leasing_gross_no_of_months',
+                    'seller_leasing_gross_percentage', 'seller_leasing_gross_flat_combo',
+                    'seller_leasing_gross_percentage_combo', 'seller_leasing_gross_flat_net_combo',
+                    'seller_leasing_gross_percentage_net_combo', 'sales_tax_option_gross',
+                    'seller_leasing_gross_sales_tax_first_month', 'seller_leasing_gross_sales_tax_option_gross',
+                    'seller_leasing_gross_sales_tax_flat_free_gross', 'seller_leasing_gross_purchase_fee_flat_amount',
+                    'seller_leasing_gross_purchase_fee_other', 'seller_leasing_gross_other',
+                    'interested_lease_option_agreement', 'lease_type', 'lease_value',
+                    'purchase_type', 'purchase_value', 'protection_period',
+                    'early_termination_fee_option', 'early_termination_fee_amount',
+                    'retainer_fee_option', 'retainer_fee_amount', 'retainer_fee_application',
+                    'retained_deposits', 'agency_agreement_timeframe', 'agency_agreement_custom',
+                    'brokerage_relationship', 'additional_details_broker',
+                    'first_name', 'last_name', 'phone', 'email', 'brokerage', 'license_no', 'nar_id',
+                    'presentation_link', 'business_card_link', 'business_card_stored_path',
+                    'custom_enhancement',
+                ];
+                foreach ($strFields as $field) {
+                    if (array_key_exists($field, $m) && !is_null($m[$field])) {
+                        $this->$field = is_object($m[$field]) ? (string)$m[$field] : $m[$field];
+                    }
+                }
+
+                // Services (catalog-filtered to prevent cross-role contamination)
+                $editSvcs = $m['services'] ?? [];
+                if (is_string($editSvcs)) { $editSvcs = json_decode($editSvcs, true) ?? []; }
+                if (is_array($editSvcs)) {
+                    $editCatalog = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($rawPropType ?? 'Residential Property');
+                    $editSvcs = array_values(array_filter($editSvcs, function($s) use ($editCatalog) {
+                        return in_array(\App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s), $editCatalog, true);
+                    }));
+                    $this->services = $editSvcs;
+                }
+
+                $editOtherSvcs = $m['other_services'] ?? [];
+                if (is_string($editOtherSvcs)) { $editOtherSvcs = json_decode($editOtherSvcs, true) ?? []; }
+                if (is_array($editOtherSvcs)) {
+                    $this->other_services = array_values(array_filter($editOtherSvcs));
+                    $this->other_services_enabled = !empty($this->other_services);
+                }
+
+                $editPhotoEnh = $m['photo_enhancements'] ?? [];
+                if (is_string($editPhotoEnh)) { $editPhotoEnh = json_decode($editPhotoEnh, true) ?? []; }
+                if (is_array($editPhotoEnh)) { $this->photo_enhancements = $editPhotoEnh; }
+
+                // Array fields
+                foreach (['reviews_links', 'social_media', 'website_link'] as $arrField) {
+                    if (!empty($m[$arrField])) {
+                        $val = $m[$arrField];
+                        if (is_string($val)) { $val = json_decode($val, true) ?? $val; }
+                        $this->$arrField = is_array($val) ? $val : [$val];
+                    }
+                }
+
+                // Promo materials
+                $editPromo = $m['promo_materials'] ?? [];
+                if (is_string($editPromo)) { $editPromo = json_decode($editPromo, true) ?? []; }
+                if (is_array($editPromo) && !empty($editPromo)) {
+                    $this->promoMaterials = $editPromo;
+                }
             }
         }
     }
@@ -600,10 +710,17 @@ class SellerAgentAuctionBid extends Component
         try {
             $this->validate();
 
-            $bid = new SellerAgentAuctionBidData();
-            $bid->user_id = Auth::id();
-            $bid->seller_agent_auction_id = $this->auctionId;
-            $bid->save();
+            if ($this->isEditMode && $this->editBidId) {
+                $bid = SellerAgentAuctionBidData::where('id', $this->editBidId)
+                    ->where('user_id', Auth::id())
+                    ->where('seller_agent_auction_id', $this->auctionId)
+                    ->firstOrFail();
+            } else {
+                $bid = new SellerAgentAuctionBidData();
+                $bid->user_id = Auth::id();
+                $bid->seller_agent_auction_id = $this->auctionId;
+                $bid->save();
+            }
 
             // Agent Overview
             $bid->saveMeta('bio',                $this->bio);
@@ -720,7 +837,8 @@ class SellerAgentAuctionBid extends Component
             $bid->saveMeta('promo_materials', json_encode($savedMaterials));
 
             DB::commit();
-            session()->flash('success', 'Your bid has been submitted successfully!');
+            $msg = $this->isEditMode ? 'Your bid has been updated successfully!' : 'Your bid has been submitted successfully!';
+            session()->flash('success', $msg);
             return redirect()->route('seller.agent.auction.detail', $this->auctionId);
 
         } catch (\Illuminate\Validation\ValidationException $e) {

@@ -135,6 +135,13 @@ Route::get('/test-notification', function () {
 
 // web.php
 
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Seller Agent Auction — Counter Terms (accessible by both seller and agent)
+    Route::get('hire/seller/agent/auction/bid/{bid_id}/view-counter', [SellerAgentAuctionController::class, 'view_counter_terms'])->name('hire.seller.agent.auction.bid.view-counter');
+    Route::post('hire/seller/agent/auction/counter/accept', [SellerAgentAuctionController::class, 'accept_seller_counter'])->name('hire.seller.agent.auction.counter.accept');
+    Route::post('hire/seller/agent/auction/counter/reject', [SellerAgentAuctionController::class, 'reject_seller_counter'])->name('hire.seller.agent.auction.counter.reject');
+});
+
 Route::middleware('auth')->group(function () {
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
@@ -659,6 +666,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/auction/edit/{id}', [BuyerCriteriaAuctionController::class, 'edit'])->name('auction.edit');
             Route::post('/auction/update', [BuyerCriteriaAuctionController::class, 'updateAuction'])->name('auction.update');
         });
+
     });
 
 

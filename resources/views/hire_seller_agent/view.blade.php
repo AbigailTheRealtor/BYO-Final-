@@ -2780,13 +2780,17 @@
                         @php
                             $agentNumber   = $agentNumberMap[$bid->id] ?? $loop->iteration;
                             $bidState      = data_get($bid, 'accepted', 'active');
-                            $bidStatusLabel = match((string)$bidState) {
+                            // Check if a Seller counter term exists for this bid (never overrides terminal accepted/rejected states)
+                            $hasSellerCounter = \App\Models\SellerCounterTerm::where('seller_agent_auction_bid_id', data_get($bid, 'id'))->where('status', 1)->exists();
+                            $isTerminalState  = in_array((string)$bidState, ['accepted', 'rejected'], true);
+                            $effectiveBidState = (!$isTerminalState && $hasSellerCounter) ? 'countered' : (string)$bidState;
+                            $bidStatusLabel = match($effectiveBidState) {
                                 'accepted'  => 'Accepted',
                                 'rejected'  => 'Rejected',
                                 'countered' => 'Countered',
                                 default     => 'Active',
                             };
-                            $bidStatusColor = match((string)$bidState) {
+                            $bidStatusColor = match($effectiveBidState) {
                                 'accepted'  => '#28a745',
                                 'rejected'  => '#dc3545',
                                 'countered' => '#ffc107',
@@ -2830,119 +2834,34 @@
                                 $sellerPurchaseFeeDisplay = $sellerPurchaseFeeOther;
                             }
 
-                            // === MATCH SCORE CALCULATION (for bid card and modal) ===
-                            $currentBidData = (array) data_get($bid, 'get', []);
+                            // === MATCH SCORE CALCULATION via SellerBidMatchScoreHelper ===
+                            // Use latest active counter terms as baseline when present (same as Tenant flow)
+                            $latestCounter   = \App\Models\SellerCounterTerm::with('meta')
+                                ->where('seller_agent_auction_bid_id', $bid->id)
+                                ->where('status', 1)
+                                ->latest('updated_at')
+                                ->first();
+                            $propertyType    = data_get($auction, 'get.property_type', '');
+                            $bidDataArr      = (array) data_get($bid, 'get', []);
+                            $auctionDataArr  = (array) data_get($auction, 'get', []);
 
-                            // Build Seller baseline from original auction listing meta
-                            $baselineData = [
-                                'commission_structure'        => data_get($auction, 'get.commission_structure'),
-                                'purchase_fee_type'           => data_get($auction, 'get.purchase_fee_type'),
-                                'commission_structure_type'   => data_get($auction, 'get.commission_structure_type'),
-                                'interested_purchase_fee_type'=> data_get($auction, 'get.interested_purchase_fee_type'),
-                                'protection_period'           => data_get($auction, 'get.protection_period'),
-                                'retainer_fee_option'         => data_get($auction, 'get.retainer_fee_option'),
-                                'retainer_fee_amount'         => data_get($auction, 'get.retainer_fee_amount'),
-                                'retainer_fee_application'    => data_get($auction, 'get.retainer_fee_application'),
-                                'agency_agreement_timeframe'  => data_get($auction, 'get.agency_agreement_timeframe'),
-                                'brokerage_relationship'      => data_get($auction, 'get.brokerage_relationship'),
-                                'purchase_fee_flat'           => data_get($auction, 'get.purchase_fee_flat'),
-                                'purchase_fee_percentage'     => data_get($auction, 'get.purchase_fee_percentage'),
-                                'purchase_fee_flat_combo'     => data_get($auction, 'get.purchase_fee_flat_combo'),
-                                'purchase_fee_percentage_combo'=> data_get($auction, 'get.purchase_fee_percentage_combo'),
-                                'purchase_fee_other'          => data_get($auction, 'get.purchase_fee_other'),
-                                'services'                    => data_get($auction, 'get.services'),
-                                'other_services'              => data_get($auction, 'get.other_services'),
-                            ];
-                            $baselineLabel = $isListingOwner ? 'Your Original Terms' : "Seller's Original Terms";
-
-                            // Broker Compensation fields to compare
-                            $brokerFields = [
-                                'commission_structure', 'purchase_fee_type', 'commission_structure_type',
-                                'interested_purchase_fee_type', 'protection_period', 'retainer_fee_option',
-                                'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe',
-                                'brokerage_relationship', 'purchase_fee_flat', 'purchase_fee_percentage',
-                                'purchase_fee_flat_combo', 'purchase_fee_percentage_combo', 'purchase_fee_other',
-                            ];
-
-                            // Normalize function for comparison
-                            $normalizeForMatch = function($v) {
-                                if (is_null($v) || $v === '') return '';
-                                if (is_array($v) || is_object($v)) return json_encode($v);
-                                $v = trim((string) $v);
-                                return preg_replace('/[\s$,%]/', '', strtolower($v));
-                            };
-
-                            // Calculate Broker Compensation Match
-                            $brokerMatched = 0;
-                            $brokerTotal   = 0;
-                            $brokerMismatches = [];
-                            foreach ($brokerFields as $field) {
-                                $currentVal  = $currentBidData[$field] ?? null;
-                                $baselineVal = $baselineData[$field] ?? null;
-                                if (!empty($currentVal) || !empty($baselineVal)) {
-                                    $brokerTotal++;
-                                    if ($normalizeForMatch($currentVal) === $normalizeForMatch($baselineVal)) {
-                                        $brokerMatched++;
-                                    } else {
-                                        $brokerMismatches[$field] = true;
-                                    }
-                                }
-                            }
-                            $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
-
-                            // === OFFERED SERVICES COMPARISON ===
-                            $curSvcs = $currentBidData['services'] ?? [];
-                            if (is_string($curSvcs)) { $curSvcs = json_decode($curSvcs, true) ?? []; }
-                            $curSvcs = is_array($curSvcs) ? array_values(array_filter($curSvcs)) : [];
-                            $curOther = $currentBidData['other_services'] ?? [];
-                            if (is_string($curOther)) { $curOther = json_decode($curOther, true) ?? []; }
-                            $curOther = is_array($curOther) ? array_values(array_filter($curOther, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                            $curSvcs = array_merge($curSvcs, $curOther);
-
-                            $baseSvcs = $baselineData['services'] ?? [];
-                            if (is_string($baseSvcs)) { $baseSvcs = json_decode($baseSvcs, true) ?? []; }
-                            $baseSvcs = is_array($baseSvcs) ? array_values(array_filter($baseSvcs)) : [];
-                            $baseOther = $baselineData['other_services'] ?? [];
-                            if (is_string($baseOther)) { $baseOther = json_decode($baseOther, true) ?? []; }
-                            $baseOther = is_array($baseOther) ? array_values(array_filter($baseOther, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                            $baseSvcs = array_merge($baseSvcs, $baseOther);
-
-                            $normSvc = function($s) {
-                                $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
-                                $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
-                                return strtolower(trim($s));
-                            };
-                            $curNorm  = array_map($normSvc, $curSvcs);
-                            $baseNorm = array_map($normSvc, $baseSvcs);
-                            $allSvcs  = array_unique(array_merge($curNorm, $baseNorm));
-                            $servicesTotal   = count($allSvcs);
-                            $servicesMatched = 0;
-                            foreach ($allSvcs as $svc) {
-                                if (in_array($svc, $curNorm) === in_array($svc, $baseNorm)) {
-                                    $servicesMatched++;
-                                }
-                            }
-                            $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
-
-                            // === TOTAL MATCH SCORE ===
-                            $hasBroker   = $brokerTotal > 0;
-                            $hasServices = $servicesTotal > 0;
-                            if ($hasBroker && $hasServices) {
-                                $totalScore = round(($brokerScore + $servicesScore) / 2);
-                            } elseif ($hasBroker) {
-                                $totalScore = $brokerScore;
-                            } elseif ($hasServices) {
-                                $totalScore = $servicesScore;
+                            if ($latestCounter && $latestCounter->meta->count()) {
+                                $baselineData  = $latestCounter->meta->pluck('meta_value', 'meta_key')->toArray();
+                                $baselineLabel = $isListingOwner ? 'Your Counter Terms' : "Seller's Counter Terms";
                             } else {
-                                $totalScore = 100;
+                                $baselineData  = $auctionDataArr;
+                                $baselineLabel = $isListingOwner ? 'Your Original Terms' : "Seller's Original Terms";
                             }
 
-                            $getScoreColor = function($score) {
-                                if ($score >= 80) return '#28a745';
-                                if ($score >= 50) return '#ffc107';
-                                return '#dc3545';
-                            };
-                            $totalScoreColor = $getScoreColor($totalScore);
+                            $scoreResult     = \App\Helpers\SellerBidMatchScoreHelper::calculate($baselineData, $bidDataArr, null, $propertyType);
+                            $totalScore      = $scoreResult['overall_percent'] ?? 100;
+                            $brokerScore     = $scoreResult['broker_comp_percent'] ?? 100;
+                            $servicesScore   = $scoreResult['services_percent'] ?? 100;
+                            $brokerTotal     = $scoreResult['broker_comp_total'] ?? 0;
+                            $brokerMatched   = $scoreResult['broker_comp_matched'] ?? 0;
+                            $servicesTotal   = $scoreResult['services_total'] ?? 0;
+                            $servicesMatched = $scoreResult['services_matched'] ?? 0;
+                            $totalScoreColor = \App\Helpers\SellerBidMatchScoreHelper::scoreColor($totalScore);
                         @endphp
 
                         <!-- Bid Card - Collapsible Accordion Design (matches Tenant) -->
@@ -3094,7 +3013,8 @@
                         {{-- Private Data Modal - visible to listing owner OR bid owner (agent) --}}
                         @php
                             $rawState   = data_get($bid, 'accepted');
-                            $state      = (!$rawState || $rawState === '0') ? '0' : (string) $rawState;
+                            $_isTerminal = in_array((string)$rawState, ['accepted', 'rejected'], true);
+                            $state      = (!$_isTerminal && $hasSellerCounter) ? 'countered' : ((!$rawState || $rawState === '0') ? '0' : (string) $rawState);
                             $isOwnerRow = ($auth_id == data_get($auction, 'user_id'));
                             $ownerFirst = data_get($auction, 'user.first_name', '');
                             $ownerLast  = data_get($auction, 'user.last_name', '');
@@ -4288,6 +4208,27 @@
                                             @endif
                                         </div>
 
+                                        {{-- ── Countered state ── --}}
+                                        @elseif ($state === 'countered')
+                                        <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                            <i class="fa fa-exchange-alt me-1"></i>
+                                            @if (Auth::id() == $ownerId)
+                                                You have submitted a counter offer for this bid.
+                                            @else
+                                                {{ trim($ownerFirst . ' ' . $ownerLast) }} has submitted a counter offer.
+                                            @endif
+                                        </div>
+                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                            <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                            </a>
+                                            @if (Auth::id() == $ownerId)
+                                            <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                            </a>
+                                            @endif
+                                        </div>
+
                                         {{-- ── Pending state: agent viewing their own bid ── --}}
                                         @elseif ($state === '0' && !$isOwnerRow && data_get($bid, 'user_id') == Auth::id())
                                         <div class="alert alert-secondary w-100 mb-0 py-1 small text-center">
@@ -4327,7 +4268,7 @@
                 <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
                     <div class="qr-code" style="width: 100%; height:200px;">
-                        {{ qr_code(route('tenant.agent.view.auction.view', @$auction->id), 200) }}
+                        {{ qr_code(route('seller.agent.auction.detail', @$auction->id), 200) }}
                     </div>
                     <div class="card-social">
                         <ul class="icons">

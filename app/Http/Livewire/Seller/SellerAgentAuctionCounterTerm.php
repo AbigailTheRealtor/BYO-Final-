@@ -7,6 +7,7 @@ use App\Models\SellerCounterTerm;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\User;
+use App\Notifications\CounterBidSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,6 +20,10 @@ class SellerAgentAuctionCounterTerm extends Component
     public $auctionId;
     public $property_type = '';
     public $activeTab = 0;
+
+    // 'seller' = listing owner creating original counter; 'agent' = bidder creating counter-back
+    public $counterRole = 'seller';
+    public $parentCounterId = null;
 
     // Broker Compensation
     public $commission_structure = '';
@@ -167,7 +172,29 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->auctionId     = $pab->seller_agent_auction_id ?? null;
         }
 
-        // Check for existing Seller counter to determine if this is EDIT mode
+        // Determine role: seller = listing owner, agent = bidder responding to seller counter
+        $isSeller = $auction && ($auction->user_id === Auth::id());
+        $isAgent  = ($pab->user_id === Auth::id());
+        if (!$isSeller && !$isAgent) {
+            abort(403, 'You are not authorized to submit counter terms for this bid.');
+        }
+        $this->counterRole = $isSeller ? 'seller' : 'agent';
+
+        // For agent counter-back: require a seller counter to exist before agent can submit
+        if ($isAgent) {
+            $latestSellerCounter = SellerCounterTerm::where('seller_agent_auction_bid_id', $pab->id)
+                ->where('user_id', $auction?->user_id ?? 0)
+                ->latest('updated_at')
+                ->first();
+
+            if (!$latestSellerCounter) {
+                session()->flash('error', 'You can only submit a counter-back after the seller has submitted counter terms.');
+                abort(403, 'No seller counter terms exist to counter-back against.');
+            }
+            $this->parentCounterId = $latestSellerCounter->id;
+        }
+
+        // Check for existing counter by current user to determine EDIT mode
         $existing = SellerCounterTerm::with('meta')
             ->where('seller_agent_auction_bid_id', $this->pab->id)
             ->where('user_id', Auth::id())
@@ -178,8 +205,13 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->counterTermId = $existing->id;
             $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
         } else {
-            // Pre-fill from the agent's bid so the listing owner sees current terms and can edit
-            $this->prefillFromAgentBid($pab);
+            // Pre-fill from the agent's bid (or seller's counter for agent counter-back)
+            if ($isAgent && isset($latestSellerCounter)) {
+                // Agent counter-back: pre-fill from seller's counter terms
+                $this->hydrateFromMetaMap($latestSellerCounter->meta->pluck('meta_value', 'meta_key')->toArray());
+            } else {
+                $this->prefillFromAgentBid($pab);
+            }
         }
     }
 
@@ -265,10 +297,18 @@ class SellerAgentAuctionCounterTerm extends Component
             $s = $m['services'];
             if (is_string($s)) {
                 $decoded = json_decode($s, true);
-                $this->services = is_array($decoded) ? $decoded : [];
-            } elseif (is_array($s)) {
-                $this->services = $s;
+                $s = is_array($decoded) ? $decoded : [];
             }
+            if (is_array($s) && !empty($this->property_type)) {
+                $catalog = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($this->property_type);
+                $s = array_values(array_filter($s, function($svc) use ($catalog) {
+                    return in_array(
+                        \App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$svc),
+                        $catalog, true
+                    );
+                }));
+            }
+            $this->services = is_array($s) ? array_values(array_filter($s)) : [];
         }
 
         if (isset($m['photo_enhancements'])) {
@@ -309,14 +349,25 @@ class SellerAgentAuctionCounterTerm extends Component
 
     public function submit()
     {
+        $auction = $this->pab->auction ?? SellerAgentAuction::find($this->pab->seller_agent_auction_id ?? null);
+        $isSeller = $auction && ($auction->user_id === Auth::id());
+        $isAgent  = ($this->pab->user_id === Auth::id());
+        if (!$isSeller && !$isAgent) {
+            abort(403, 'You are not authorized to submit counter terms for this bid.');
+        }
+
         try {
             DB::beginTransaction();
+
+            $isEditing = (bool) $this->counterTermId;
 
             if ($this->counterTermId) {
                 $counterTerm = SellerCounterTerm::findOrFail($this->counterTermId);
                 $counterTerm->update([
-                    'property_type'    => $this->property_type,
-                    'parent_counter_id' => null,
+                    'property_type'     => $this->property_type,
+                    'parent_counter_id' => $isAgent ? $this->parentCounterId : null,
+                    'status'            => 1,
+                    'updated_at'        => now(),
                 ]);
             } else {
                 $counterTerm = SellerCounterTerm::create([
@@ -324,7 +375,8 @@ class SellerAgentAuctionCounterTerm extends Component
                     'seller_agent_auction_bid_id' => $this->pab->id,
                     'seller_agent_auction_id'     => $this->auctionId,
                     'property_type'               => $this->property_type,
-                    'status'                      => 'pending',
+                    'parent_counter_id'           => $isAgent ? $this->parentCounterId : null,
+                    'status'                      => 1,
                 ]);
                 $this->counterTermId = $counterTerm->id;
             }
@@ -333,7 +385,33 @@ class SellerAgentAuctionCounterTerm extends Component
 
             DB::commit();
 
-            session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
+            // Send notification to the other party
+            try {
+                $sender    = Auth::user();
+                $bid       = $this->pab;
+                if ($isSeller) {
+                    // Notify the agent that the seller submitted counter terms
+                    $agent = User::find($bid->user_id);
+                    if ($agent) {
+                        $agent->notify(new CounterBidSubmittedNotification(
+                            $bid, $auction, $sender, $agent->id, 'seller_agent'
+                        ));
+                    }
+                } else {
+                    // Notify the seller that the agent submitted a counter-back
+                    $seller = User::find($auction->user_id);
+                    if ($seller) {
+                        $seller->notify(new CounterBidSubmittedNotification(
+                            $bid, $auction, $sender, $seller->id, 'seller_agent'
+                        ));
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('[SellerCounterTerm] Notification failed', ['error' => $e->getMessage()]);
+            }
+
+            $msg = $isEditing ? 'Counter terms updated!' : 'Counter terms submitted!';
+            session()->flash('success', $msg);
             return redirect()->route('seller.agent.auction.detail', ['id' => $this->auctionId]);
 
         } catch (\Exception $e) {
