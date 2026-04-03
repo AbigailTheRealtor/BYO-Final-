@@ -1,0 +1,191 @@
+STANDARDIZE ALL BID CARDS TO MATCH TENANT FORMAT
+
+Goal:
+Make ALL agent bid cards across all listing types use the Tenant bid card as the universal template.
+
+Applies to:
+- Hire a Tenant's Agent
+- Hire a Landlord's Agent
+- Hire a Buyer's Agent
+- Hire a Seller's Agent
+
+Tenant is the source of truth.
+All others must match it exactly in structure, layout, and logic.
+
+==================================================
+1. MASTER TEMPLATE = TENANT BID CARD
+==================================================
+
+Use the Tenant bid card as the exact structural template.
+
+This includes:
+
+✔ Offered Services line:
+   "Offered Services: X/Y matched • X extra • X missing"
+
+✔ Extra Value Added line
+
+✔ Match Summary block:
+   - Original Match
+   - Counter Match
+   - Services %
+   - Terms %
+   - Context labels
+
+✔ Broker Compensation Summary
+
+✔ View Full Bid
+
+✔ Edit Bid (when applicable)
+
+==================================================
+2. REQUIRED MATCH SUMMARY STRUCTURE (ALL ROLES)
+==================================================
+
+Match Summary
+
+LEFT:
+Original Match
+vs. [Role]'s Original Request
+
+RIGHT:
+Counter Match
+vs. Your Latest Counter
+
+Below:
+- Services %
+- Terms %
+
+==================================================
+ROLE LABELS
+==================================================
+
+Tenant:
+vs. Tenant's Original Request
+
+Landlord:
+vs. Landlord's Original Request
+
+Buyer:
+vs. Buyer's Original Request
+
+Seller:
+vs. Seller's Original Request
+
+==================================================
+3. REMOVE ALL LEGACY / SIMPLIFIED VERSIONS
+==================================================
+
+REMOVE:
+
+❌ Single "Match Score" box only
+❌ Missing Terms score
+❌ Missing Match Summary
+❌ "54 services" style with no breakdown
+❌ Different layouts per role
+
+Replace ALL with Tenant structure.
+
+==================================================
+4. SERVICES LINE MUST MATCH TENANT
+==================================================
+
+ALL roles must show:
+
+Offered Services: 48/50 matched • 6 extra • 2 missing
+
+Do NOT allow:
+❌ "54 Services"
+❌ Missing breakdown
+❌ Different formatting
+
+==================================================
+5. TERMS + SERVICES SCORING (CONSISTENCY)
+==================================================
+
+ALL roles must include:
+
+- Services %
+- Terms %
+
+AND:
+- use same calculation logic as Tenant
+- use same denominator logic
+- use same mismatch rules
+
+==================================================
+6. IMPLEMENTATION STRATEGY
+==================================================
+
+Step 1:
+Locate Tenant bid card blade/component (SOURCE OF TRUTH)
+
+Step 2:
+Extract reusable partial/component:
+- match summary
+- services summary line
+- score block
+
+Step 3:
+Refactor:
+- Buyer bid card → use Tenant structure
+- Seller bid card → use Tenant structure
+- Landlord bid card → use Tenant structure
+
+Step 4:
+Inject role-specific labels dynamically:
+- tenant / landlord / buyer / seller
+
+==================================================
+7. GUARDRAILS
+==================================================
+
+Do NOT:
+- change Tenant layout
+- redesign UI
+- simplify Buyer/Seller/Landlord
+- remove match breakdown
+- rename DB columns
+- break counter logic
+- duplicate logic across roles
+
+ONLY standardize to Tenant.
+
+==================================================
+8. TEST CASES
+==================================================
+
+Tenant:
+- unchanged
+
+Landlord:
+- now shows full Match Summary
+- shows Original vs Counter
+- shows Services + Terms %
+
+Buyer:
+- now shows full Match Summary
+- no longer missing scores
+- matches Tenant layout
+
+Seller:
+- now shows full Match Summary
+- no longer simplified
+- matches Tenant layout
+
+==================================================
+EXPECTED RESULT
+==================================================
+
+All 4 bid cards are visually identical.
+
+Only differences:
+- role labels
+- compensation fields
+- services data
+
+Everything else:
+✔ same structure
+✔ same UX
+✔ same logic
+✔ same scoring system

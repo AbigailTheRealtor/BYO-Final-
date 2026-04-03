@@ -2496,7 +2496,7 @@
                                                             </div>
                                                             <div style="font-size: 0.75rem; color: #6c757d;">vs. Buyer's Original Request</div>
                                                             <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardOriginalScore['services_match_percent']) }};">Svcs {{ $cardOriginalScore['services_match_percent'] }}%</div>
+                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardOriginalScore['services_match_percent']) }};">Services {{ $cardOriginalScore['services_match_percent'] }}%</div>
                                                                 <div class="col-6" style="color: {{ $cardGetScoreColor($cardOriginalScore['terms_match_percent']) }};">Terms {{ $cardOriginalScore['terms_match_percent'] }}%</div>
                                                             </div>
                                                         </div>
@@ -2510,7 +2510,7 @@
                                                             </div>
                                                             <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
                                                             <div class="row g-0 mt-1" style="font-size: 0.75rem;">
-                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['services_match_percent']) }};">Svcs {{ $cardLatestCounterScore['services_match_percent'] }}%</div>
+                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['services_match_percent']) }};">Services {{ $cardLatestCounterScore['services_match_percent'] }}%</div>
                                                                 <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['terms_match_percent']) }};">Terms {{ $cardLatestCounterScore['terms_match_percent'] }}%</div>
                                                             </div>
                                                         </div>
