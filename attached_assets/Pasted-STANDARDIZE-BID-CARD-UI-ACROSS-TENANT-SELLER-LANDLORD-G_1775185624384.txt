@@ -1,0 +1,242 @@
+STANDARDIZE BID CARD UI ACROSS TENANT, SELLER, LANDLORD
+
+Goal:
+Use the Tenant bid card as the universal UI template.
+Update all roles so they match Tenant exactly in layout, terminology, and match summary structure.
+
+This includes:
+1. Rename "Svcs" → "Services"
+2. Add full "Match Summary" block to Seller and Landlord bid cards
+3. Ensure identical structure across Tenant, Seller, and Landlord
+
+Tenant is the source of truth.
+Do not redesign. Clone and apply.
+
+==================================================
+1. REPLACE "SVCS" WITH "SERVICES"
+==================================================
+
+Problem:
+UI currently shows "Svcs" (abbreviation)
+
+Fix:
+Replace ALL instances of:
+- "Svcs"
+- "svcs"
+
+With:
+- "Services"
+
+Applies to:
+- Match Summary section
+- Any score breakdown
+- Any tooltip or label
+- Any compact display
+
+Example:
+
+❌ Svcs 94%
+✅ Services 94%
+
+Do not abbreviate anywhere in UI.
+
+==================================================
+2. STANDARDIZE MATCH SUMMARY BLOCK
+==================================================
+
+Tenant has correct structure:
+
+Match Summary
+
+Original Match
+vs. Tenant's Original Request
+
+Counter Match
+vs. Your Latest Counter
+
+This must be EXACTLY replicated for:
+- Seller bid cards
+- Landlord bid cards
+
+==================================================
+REQUIRED STRUCTURE (DO NOT CHANGE)
+==================================================
+
+Match Summary
+
+LEFT SIDE:
+Original Match
+vs. [Role]'s Original Request
+
+RIGHT SIDE:
+Counter Match
+vs. Your Latest Counter
+
+Below each:
+- Services %
+- Terms %
+
+==================================================
+ROLE-SPECIFIC TEXT
+==================================================
+
+Tenant:
+vs. Tenant's Original Request
+
+Seller:
+vs. Seller's Original Request
+
+Landlord:
+vs. Landlord's Original Request
+
+DO NOT leave Tenant wording in Seller/Landlord.
+
+==================================================
+3. APPLY TO SELLER BID CARDS
+==================================================
+
+Seller bid cards must include:
+
+✔ Offered Services summary line (same as Tenant)
+✔ Extra Value Added line
+✔ Full Match Summary block (same layout)
+✔ Broker Compensation Summary
+✔ View Full Bid link
+
+REMOVE:
+❌ Old compact or simplified score-only display
+❌ Any version that only shows a single % without breakdown
+
+Seller must match Tenant structure exactly.
+
+==================================================
+4. APPLY TO LANDLORD BID CARDS
+==================================================
+
+Landlord bid cards must include:
+
+✔ Offered Services summary line (matched / extra / missing)
+✔ Extra Value Added
+✔ Full Match Summary block
+✔ Broker Compensation Summary
+✔ View Full Bid
+
+CRITICAL:
+Landlord MUST show:
+
+Original Match
+vs. Landlord's Original Request
+
+AND
+
+Counter Match
+vs. Your Latest Counter
+
+Currently missing → must be added.
+
+==================================================
+5. OFFERED SERVICES LINE (CONSISTENCY)
+==================================================
+
+All roles must match Tenant format:
+
+Example:
+
+Offered Services: 31/33 matched • 3 extra • 2 missing
+
+Do NOT use:
+- "54 Services" only
+- no breakdown
+- inconsistent formatting
+
+Must include:
+- matched
+- extra
+- missing
+
+==================================================
+6. MATCH SCORE HEADER CONSISTENCY
+==================================================
+
+Use Tenant format:
+
+✔ Match Summary (not just "Match Score")
+✔ Two-box layout (Original vs Counter)
+✔ Percent badges styled the same
+✔ Services + Terms breakdown underneath
+
+Remove any:
+❌ single-box match score
+❌ landlord/seller-only custom layouts
+
+==================================================
+7. IMPLEMENTATION STRATEGY
+==================================================
+
+Step 1:
+Locate Tenant bid card blade/component (source of truth)
+
+Step 2:
+Identify reusable partial/component for:
+- Match Summary
+- Offered Services line
+- Score breakdown
+
+Step 3:
+Refactor Seller and Landlord bid cards to reuse same structure
+
+Step 4:
+Inject role-specific labels dynamically:
+- Tenant / Seller / Landlord
+
+==================================================
+8. GUARDRAILS
+==================================================
+
+Do NOT:
+- modify Tenant layout
+- create new layout for Seller/Landlord
+- abbreviate labels
+- remove match breakdown
+- change scoring logic
+- break counter logic
+
+Only standardize UI.
+
+==================================================
+9. TEST CASES
+==================================================
+
+Tenant:
+- unchanged (baseline)
+
+Seller:
+- now shows Match Summary with Original vs Counter
+- uses "Services" not "Svcs"
+- Offered Services line matches Tenant
+
+Landlord:
+- now shows Match Summary with Original vs Counter
+- uses "Services"
+- matches Tenant layout exactly
+
+Cross-check:
+- multiple bids
+- counter vs non-counter
+- different match percentages
+
+==================================================
+EXPECTED RESULT
+==================================================
+
+All bid cards (Tenant, Seller, Landlord) now look identical in structure.
+
+Only differences:
+- role labels
+- compensation fields
+- service data
+
+Everything else:
+✔ same layout
+✔ same terminology
+✔ same UX

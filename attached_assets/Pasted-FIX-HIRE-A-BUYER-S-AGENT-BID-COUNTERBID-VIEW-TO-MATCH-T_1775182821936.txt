@@ -1,0 +1,233 @@
+FIX HIRE A BUYER’S AGENT BID + COUNTERBID VIEW TO MATCH TENANT EXACTLY
+
+Goal:
+Make Buyer bid cards and Buyer counterbid views on listing pages match the working Tenant listing bid/counterbid UI exactly.
+
+Tenant is the source of truth.
+Do not invent a separate Buyer bid display.
+Reuse the exact Tenant bid/card/history structure and swap only Buyer-specific labels, services, compensation fields, and routes/data.
+
+==================================================
+PROBLEM TO FIX
+==================================================
+
+Current Buyer bid and counterbid display on listings does NOT match Tenant.
+
+From the screenshots, Buyer is still using a different/legacy format:
+- expanded old-style service layout
+- different top card structure
+- different compensation display
+- different counter history presentation
+- different service rendering style
+- different overall bid card UX
+
+This must be replaced so Buyer listing bid views and Buyer counterbid views match Tenant exactly.
+
+==================================================
+REQUIRED END RESULT
+==================================================
+
+On a Buyer listing page, incoming agent bids and counterbids must match Tenant exactly in:
+
+1. bid card structure
+2. compact summary layout
+3. status placement
+4. match percentage placement
+5. offered services summary line
+6. extra value added line
+7. Match Summary box
+8. Broker Compensation Summary block
+9. View Full Bid link/button behavior
+10. Counter Bidding History section
+11. changed-term highlighting
+12. offered services / added services / removed services rendering
+13. waiting-for-response footer/status box
+14. overall spacing, borders, card hierarchy, and typography
+
+Only Buyer-specific content should differ:
+- Buyer wording instead of Tenant wording
+- Buyer broker compensation fields instead of Tenant fields
+- Buyer requested services instead of Tenant requested services
+- Buyer routes/controllers/models instead of Tenant ones
+
+==================================================
+TOP-LEVEL RULE
+==================================================
+
+Buyer listing bid view must feel exactly like Tenant listing bid view.
+
+Meaning:
+- same layout
+- same structure
+- same visual rhythm
+- same logic
+- same expand/collapse behavior
+- same counter history structure
+
+Only the role-specific data changes.
+
+Do NOT keep the current Buyer long-form legacy bid display.
+
+==================================================
+AREAS THAT MUST MATCH TENANT
+==================================================
+
+A. MAIN BID CARD ON LISTING PAGE
+Buyer bid card must match Tenant in:
+- bidder header row
+- status badge placement
+- match badge placement
+- services matched summary line
+- extra value added line
+- Match Summary card
+- Broker Compensation Summary section
+- View Full Bid link placement
+- card width/padding/border structure
+
+B. COUNTER BIDDING HISTORY
+Buyer counter history must match Tenant in:
+- section heading style
+- counter offer card layout
+- changed-field highlighting
+- grouped compensation/agency sections
+- offered services section styling
+- added services section styling
+- removed services section styling
+- bottom waiting/status box
+- same structure and sequence of sections
+
+C. FULL BID / EXPANDED VIEW
+When buyer opens full bid or expanded bid details, it must follow the same Tenant structure:
+- same grouping
+- same summary-first approach
+- same compact vs detailed flow
+- same relationship between summary card and full bid details
+
+==================================================
+BUYER DATA SUBSTITUTIONS ONLY
+==================================================
+
+Use Tenant structure, but replace content with Buyer-specific data:
+
+Tenant examples become Buyer equivalents:
+- "Tenant's Broker Commission Structure" -> Buyer’s version
+- "Tenant's Broker Commission Fee" -> Buyer’s version
+- "Services the Tenant Requests..." -> Buyer’s version
+- Tenant-specific service categories -> Buyer service categories
+- Tenant term labels -> Buyer term labels
+
+Do NOT copy Tenant text literally.
+Copy Tenant layout and render Buyer data inside it.
+
+==================================================
+COUNTERBID VIEW RULES
+==================================================
+
+Buyer counterbid display must match Tenant exactly.
+
+Required:
+- latest counter terms shown in same grouped format as Tenant
+- changed chips/badges shown same way
+- added services rendered same way
+- removed services rendered same way
+- waiting-for-response box shown same way
+- no long legacy Buyer-only full-page format
+
+Counter history should use the exact Tenant structural pattern.
+
+==================================================
+ROUTING / VIEW FLOW
+==================================================
+
+Audit the Tenant listing bid display flow and mirror it for Buyer:
+
+- listing page incoming bid preview
+- View Full Bid destination
+- counterbid history rendering
+- status/waiting state rendering
+- expand/collapse behavior
+
+Buyer must use Buyer-specific routes/controllers/models, but the view flow must match Tenant.
+
+==================================================
+IMPLEMENTATION STRATEGY
+==================================================
+
+Step 1:
+Audit the working Tenant listing bid UI:
+- blade template(s)
+- partials/components
+- score helper usage
+- summary card markup
+- counter history markup
+- services added/removed rendering
+- compensation summary block
+- View Full Bid logic
+
+Step 2:
+Audit current Buyer bid/counterbid listing view:
+- identify old/legacy templates
+- identify mismatched sections
+- identify different markup/partials causing UI divergence
+- identify any Buyer-specific view that should be replaced with Tenant-style partial structure
+
+Step 3:
+Refactor Buyer to use the same Tenant structural template/partials, with Buyer-specific substitutions only.
+
+==================================================
+TEST CASES REQUIRED
+==================================================
+
+1. Buyer listing with active bid
+- card visually matches Tenant structure
+- status and match badges in correct place
+- services summary line matches Tenant format
+- Match Summary block appears same way
+- Broker Compensation Summary appears same way
+- View Full Bid appears same way
+
+2. Buyer listing with counterbid history
+- history section visually matches Tenant
+- changed terms highlighted same way
+- added services displayed same way
+- removed services displayed same way
+- waiting/status box displayed same way
+
+3. Buyer listing with multiple bid states
+- Active, Countered, Accepted, Rejected render same style rules as Tenant
+
+4. Full bid view
+- opening full bid preserves Buyer data but Tenant structure
+
+5. Regression test Tenant
+- no Tenant UI changes/breakage
+
+==================================================
+IMPORTANT GUARDRAILS
+==================================================
+
+Do NOT:
+- change Tenant bid UI behavior
+- invent a new Buyer design
+- leave Buyer on the old long-form layout
+- rename DB columns
+- change Buyer service catalog wording
+- change Buyer form fields
+- alter Landlord or Seller while fixing this unless using shared non-destructive partials
+- globally rewrite score logic unless safely shared and regression tested
+
+==================================================
+EXPECTED FINAL RESULT
+==================================================
+
+Buyer listing bid view should look and behave exactly like Tenant listing bid view.
+
+That means:
+- same bid card look
+- same counter history look
+- same summary blocks
+- same action/view flow
+- same changed/added/removed styling
+- same UX polish
+
+Only the Buyer labels, Buyer compensation fields, Buyer requested services, and Buyer route/model data differ.
