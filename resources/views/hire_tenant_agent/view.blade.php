@@ -1620,7 +1620,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     </div>
                                     <div class="d-flex align-items-center">
                                         <span class="badge me-2" style="background: {{ $servicesColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $servicesScore }}%</span>
-                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched'] }}/{{ $compBid['match_score']['services_total'] }} services)</span>
+                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched_count'] }}/{{ $compBid['match_score']['services_baseline_total'] }} services)</span>
                                     </div>
                                 </div>
                             </div>

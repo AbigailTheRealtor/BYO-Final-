@@ -72,7 +72,7 @@ class TenantBidMatchScoreHelper
      *                          the agent changed a parent to 'No'.
      *
      * Maximum 16 active logical groups (when all parent conditions are 'Yes').
-     * Additional_terms is omitted as it is not currently persisted in the DB.
+     * additional_details_broker is intentionally excluded — "Additional Details NEVER counted".
      */
     const LOGICAL_FIELD_GROUPS = [
         // 1. Commission Structure
@@ -205,13 +205,8 @@ class TenantBidMatchScoreHelper
             'fields' => ['brokerage_relationship'],
         ],
 
-        // 17. Additional Terms (free-text) — any meaningful text change counts as a mismatch.
-        //     Blank vs non-blank, added, removed, or edited text all count.
-        //     Whitespace-only differences are ignored (normalizeForMatch collapses all whitespace).
-        [
-            'key'    => 'additional_details_broker',
-            'fields' => ['additional_details_broker'],
-        ],
+        // NOTE: additional_details_broker (free-text Additional Terms) is intentionally
+        // excluded from scoring. "Additional Details NEVER counted" per business rule.
     ];
 
     /**

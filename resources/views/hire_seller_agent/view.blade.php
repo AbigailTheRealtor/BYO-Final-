@@ -2734,7 +2734,7 @@
                                     </div>
                                     <div class="d-flex align-items-center">
                                         <span class="badge me-2" style="background: {{ $cServicesColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $cServicesScore }}%</span>
-                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched'] }}/{{ $compBid['match_score']['services_total'] }} services)</span>
+                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched_count'] }}/{{ $compBid['match_score']['services_baseline_total'] }} services)</span>
                                     </div>
                                 </div>
                             </div>
@@ -2859,8 +2859,8 @@
                             $servicesScore   = $scoreResult['services_percent'] ?? 100;
                             $brokerTotal     = $scoreResult['broker_comp_total'] ?? 0;
                             $brokerMatched   = $scoreResult['broker_comp_matched'] ?? 0;
-                            $servicesTotal   = $scoreResult['services_total'] ?? 0;
-                            $servicesMatched = $scoreResult['services_matched'] ?? 0;
+                            $servicesTotal   = $scoreResult['services_baseline_total'] ?? 0;
+                            $servicesMatched = $scoreResult['services_matched_count'] ?? 0;
                             $servicesExtraCount   = $scoreResult['services_extra_count'] ?? 0;
                             $servicesMissingCount = $scoreResult['services_missing_count'] ?? 0;
                             $totalScoreColor = \App\Helpers\SellerBidMatchScoreHelper::scoreColor($totalScore);

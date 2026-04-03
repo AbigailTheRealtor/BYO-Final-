@@ -1,0 +1,143 @@
+You are still only partially complete.
+
+You fixed UI and normalization issues, but you have NOT completed the core logic systems.
+
+Now we will focus ONLY on core logic verification and correction.
+
+Do not touch UI unless it is required to fix logic.
+
+Do not skip any item.
+
+---
+
+CRITICAL: MATCH SCORE SYSTEM
+
+1. Show exactly how match score is calculated for:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+Provide:
+
+* exact helper functions used
+* exact fields counted
+* exact formula
+
+Then verify:
+
+* all roles use same logic structure as Tenant
+* no role uses legacy logic
+
+---
+
+2. SERVICES COUNTING (CORE RULE)
+
+Verify and fix:
+
+Rule:
+
+* 1 checkmark = 1 service
+
+INCLUDING:
+
+* each digital enhancement sub-option = 1
+* “Other” checkbox = 1
+* each custom additional service entry = 1
+
+Show:
+
+* exact extraction logic
+* exact count logic
+
+Then confirm:
+
+* Buyer counts correct
+* Seller counts correct
+* Landlord counts correct
+
+---
+
+3. TERMS COUNTING (CORE RULE)
+
+Rule:
+
+* each filled broker compensation field = 1 term
+* Additional Details NEVER counted
+
+For each role:
+
+Show:
+
+* exact list of term fields counted
+* max total possible
+
+Then confirm:
+
+* Seller total is correct (verify whether 15 or 16 based on actual fields)
+* Landlord total reaches 17 when all fields filled
+* Buyer no longer shows 0/0 and uses real total
+
+---
+
+4. EXTRA LOGIC
+
+Verify:
+
+* extra services are NOT counted in match %
+* extra terms are NOT counted in match %
+* matched items are NOT incorrectly labeled as extra
+
+---
+
+5. LANDLORD MISSING FIELD
+
+Verify and fix if needed:
+
+Display:
+Tenant's Broker Commission Fee:
+
+Position:
+directly after
+Tenant's Broker Commission Structure:
+
+Confirm:
+
+* display exists
+* included in comparison logic
+
+---
+
+6. CANONICAL SCORE KEYS
+
+Standardize across ALL views:
+
+Use ONLY:
+
+* services_matched_count
+* services_baseline_total
+
+Remove:
+
+* services_matched
+* services_total
+
+---
+
+7. FINAL VERIFICATION
+
+Provide a structured output:
+
+For each role (Tenant, Buyer, Seller, Landlord):
+
+* services total (max possible)
+* terms total (max possible)
+* confirmation of correct match %
+* confirmation no false extras
+
+---
+
+Do not give a summary only.
+
+Show exact logic and verification.

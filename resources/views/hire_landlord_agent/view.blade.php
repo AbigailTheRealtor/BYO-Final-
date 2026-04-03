@@ -3033,35 +3033,37 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             $renewalFeeDisplay = 'Other: '.($oth ?: 'See details');
                                                         }
 
-                                                        // ── B) Tenant Broker composite display ──────────────────────
-                                                        $tenantBrokerStructure = data_get($bid,'get.tenant_broker_commission_structure','');
-                                                        $tenantBrokerDisplay   = $tenantBrokerStructure;
+                                                        // ── B) Tenant Broker — structure and fee displayed SEPARATELY ─
+                                                        $tenantBrokerStructure  = data_get($bid,'get.tenant_broker_commission_structure','');
+                                                        $tenantBrokerFeeDisplay = '';
                                                         $tbs = data_get($bid,'get.tenant_broker_fee_structure','');
                                                         if ($tenantBrokerStructure && $tbs) {
                                                             if ($tbs === 'Percentage of the Rent Due Each Rental Period') {
                                                                 $pct = data_get($bid,'get.tenant_broker_percentage');
-                                                                if ($pct) $tenantBrokerDisplay .= ' – '.$pct.'% of Rent Due Each Rental Period';
+                                                                if ($pct) $tenantBrokerFeeDisplay = $pct.'% of Rent Due Each Rental Period';
                                                             } elseif ($tbs === 'Percentage of the Gross Lease Value') {
                                                                 $pct = data_get($bid,'get.tenant_broker_gross_lease');
-                                                                if ($pct) $tenantBrokerDisplay .= ' – '.$pct.'% of Gross Lease Value';
+                                                                if ($pct) $tenantBrokerFeeDisplay = $pct.'% of Gross Lease Value';
                                                             } elseif ($tbs === "Percentage of the First Month's Rent") {
                                                                 $pct = data_get($bid,'get.tenant_broker_first_month_rent');
-                                                                if ($pct) $tenantBrokerDisplay .= ' – '.$pct."% of First Month's Rent";
+                                                                if ($pct) $tenantBrokerFeeDisplay = $pct."% of First Month's Rent";
                                                             } elseif ($tbs === 'Flat Fee') {
                                                                 $flat = data_get($bid,'get.tenant_broker_flat_fee');
-                                                                if ($flat) $tenantBrokerDisplay .= ' – $'.number_format((float)$flat,2).' Flat Fee';
+                                                                if ($flat) $tenantBrokerFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
                                                             } elseif ($tbs === 'other') {
                                                                 $oth = data_get($bid,'get.tenant_broker_other');
-                                                                if ($oth) $tenantBrokerDisplay .= ' – Other: '.$oth;
+                                                                if ($oth) $tenantBrokerFeeDisplay = 'Other: '.$oth;
                                                             }
                                                         } elseif ($tenantBrokerStructure && !$tbs) {
                                                             // Structure without fee sub-type: show flat/percentage directly
                                                             if (data_get($bid,'get.tenant_broker_flat_fee')) {
-                                                                $tenantBrokerDisplay .= ' – $'.number_format((float)data_get($bid,'get.tenant_broker_flat_fee'),2).' Flat Fee';
+                                                                $tenantBrokerFeeDisplay = '$'.number_format((float)data_get($bid,'get.tenant_broker_flat_fee'),2).' Flat Fee';
                                                             } elseif (data_get($bid,'get.tenant_broker_percentage')) {
-                                                                $tenantBrokerDisplay .= ' – '.data_get($bid,'get.tenant_broker_percentage').'%';
+                                                                $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_percentage').'%';
                                                             }
                                                         }
+                                                        // Combined display kept for counter-term comparison
+                                                        $tenantBrokerDisplay = $tenantBrokerStructure . ($tenantBrokerFeeDisplay ? ' – '.$tenantBrokerFeeDisplay : '');
 
                                                         // ── C) Lease-Option composite displays ──────────────────────
                                                         $leaseOptInterest = data_get($bid,'get.interested_lease_option_agreement','');
@@ -3163,7 +3165,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-4">
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1" style="{{ isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $tenantBrokerDisplay }}{!! isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $tenantBrokerStructure }}{!! isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                                @if ($tenantBrokerFeeDisplay)
+                                                                @php $tbFeeMismatch = isset($brokerMismatches['tenant_broker_fee_structure']) || isset($brokerMismatches['tenant_broker_percentage']) || isset($brokerMismatches['tenant_broker_gross_lease']) || isset($brokerMismatches['tenant_broker_first_month_rent']) || isset($brokerMismatches['tenant_broker_flat_fee']) || isset($brokerMismatches['tenant_broker_other']); @endphp
+                                                                <li class="mb-1" style="{{ $tbFeeMismatch ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $tenantBrokerFeeDisplay }}{!! $tbFeeMismatch ? $mismatchBadge : '' !!}</li>
+                                                                @endif
                                                             </ul>
                                                         </div>
                                                         @endif
@@ -4427,28 +4433,30 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             $ctRenewalFeeDisplay = 'Other: '.($oth ?: 'See details');
                                                         }
 
-                                                        // ── B) Tenant Broker composite display ──
-                                                        $ctTenantBrokerStructure = $allMeta['tenant_broker_commission_structure'] ?? '';
-                                                        $ctTenantBrokerDisplay   = $ctTenantBrokerStructure;
+                                                        // ── B) Tenant Broker — structure and fee SEPARATELY ──
+                                                        $ctTenantBrokerStructure  = $allMeta['tenant_broker_commission_structure'] ?? '';
+                                                        $ctTenantBrokerFeeDisplay = '';
                                                         $ctTbs = $allMeta['tenant_broker_fee_structure'] ?? '';
                                                         if ($ctTenantBrokerStructure && $ctTbs) {
                                                             if ($ctTbs === 'Percentage of the Rent Due Each Rental Period') {
                                                                 $pct = $allMeta['tenant_broker_percentage'] ?? null;
-                                                                if ($pct) $ctTenantBrokerDisplay .= ' – '.$pct.'% of Rent Due Each Rental Period';
+                                                                if ($pct) $ctTenantBrokerFeeDisplay = $pct.'% of Rent Due Each Rental Period';
                                                             } elseif ($ctTbs === 'Percentage of the Gross Lease Value') {
                                                                 $pct = $allMeta['tenant_broker_gross_lease'] ?? null;
-                                                                if ($pct) $ctTenantBrokerDisplay .= ' – '.$pct.'% of Gross Lease Value';
+                                                                if ($pct) $ctTenantBrokerFeeDisplay = $pct.'% of Gross Lease Value';
                                                             } elseif ($ctTbs === "Percentage of the First Month's Rent") {
                                                                 $pct = $allMeta['tenant_broker_first_month_rent'] ?? null;
-                                                                if ($pct) $ctTenantBrokerDisplay .= ' – '.$pct."% of First Month's Rent";
+                                                                if ($pct) $ctTenantBrokerFeeDisplay = $pct."% of First Month's Rent";
                                                             } elseif ($ctTbs === 'Flat Fee') {
                                                                 $flat = $allMeta['tenant_broker_flat_fee'] ?? null;
-                                                                if ($flat) $ctTenantBrokerDisplay .= ' – $'.number_format((float)$flat,2).' Flat Fee';
+                                                                if ($flat) $ctTenantBrokerFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
                                                             } elseif ($ctTbs === 'other') {
                                                                 $oth = $allMeta['tenant_broker_other'] ?? null;
-                                                                if ($oth) $ctTenantBrokerDisplay .= ' – Other: '.$oth;
+                                                                if ($oth) $ctTenantBrokerFeeDisplay = 'Other: '.$oth;
                                                             }
                                                         }
+                                                        // Combined display for counter-term comparison
+                                                        $ctTenantBrokerDisplay = $ctTenantBrokerStructure . ($ctTenantBrokerFeeDisplay ? ' – '.$ctTenantBrokerFeeDisplay : '');
 
                                                         // ── C) Lease-Option composite displays ──
                                                         $ctLeaseOptInterest = $allMeta['interested_lease_option_agreement'] ?? '';
@@ -4600,8 +4608,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <div class="mb-3">
                                                             <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">B) Tenant's Broker Compensation</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                @php $ctTenantBrokerChg = $ctCompositeChanged($ctTenantBrokerDisplay, $tenantBrokerDisplay ?? ''); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctTenantBrokerChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $ctTenantBrokerDisplay }}{!! $ctTenantBrokerChg ? $ctChangedBadge : '' !!}</li>
+                                                                @php $ctTenantBrokerStructureChg = $ctIsChanged($ctTenantBrokerStructure, 'tenant_broker_commission_structure'); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctTenantBrokerStructureChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $ctTenantBrokerStructure }}{!! $ctTenantBrokerStructureChg ? $ctChangedBadge : '' !!}</li>
+                                                                @if ($ctTenantBrokerFeeDisplay)
+                                                                @php $ctTenantBrokerFeeChg = $ctCompositeChanged($ctTenantBrokerFeeDisplay, $tenantBrokerFeeDisplay ?? ''); @endphp
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctTenantBrokerFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $ctTenantBrokerFeeDisplay }}{!! $ctTenantBrokerFeeChg ? $ctChangedBadge : '' !!}</li>
+                                                                @endif
                                                             </ul>
                                                         </div>
                                                         @endif

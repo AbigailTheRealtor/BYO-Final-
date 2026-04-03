@@ -35,6 +35,10 @@ class LandlordBidMatchScoreHelper
     /**
      * Logical field groups — Landlord-specific fields.
      * Same structure as TenantBidMatchScoreHelper::LOGICAL_FIELD_GROUPS.
+     *
+     * Maximum 17 active logical groups (when all parent conditions are 'Yes').
+     * Groups 5a/5b: tenant_broker_commission_structure split from tenant_broker_fee_structure.
+     * additional_details_broker is intentionally excluded — "Additional Details NEVER counted".
      */
     const LOGICAL_FIELD_GROUPS = [
         // 1. Listing Commission Type — type + sub-values = ONE logical decision
@@ -92,11 +96,17 @@ class LandlordBidMatchScoreHelper
             'fields' => ['expansion_commission_percentage'],
         ],
 
-        // 5. Tenant Broker Compensation — structure + fee = ONE decision
+        // 5a. Tenant Broker Commission Structure — the type/policy (who pays, what structure)
         [
             'key'    => 'tenant_broker_commission_structure',
+            'fields' => ['tenant_broker_commission_structure'],
+        ],
+
+        // 5b. Tenant Broker Commission Fee — the fee amount details = ONE decision
+        //     When no_compensation is selected, these fields are blank → excluded from denominator.
+        [
+            'key'    => 'tenant_broker_fee_structure',
             'fields' => [
-                'tenant_broker_commission_structure',
                 'tenant_broker_fee_structure',
                 'tenant_broker_percentage',
                 'tenant_broker_gross_lease',

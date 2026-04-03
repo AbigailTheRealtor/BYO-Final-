@@ -2421,8 +2421,8 @@
 
                                         @php
                                             // Pre-compute compact card variables (Tenant-parity)
-                                            $cardServicesMatched   = $score['services_matched'] ?? 0;
-                                            $cardServicesTotal     = $score['services_total'] ?? 0;
+                                            $cardServicesMatched   = $score['services_matched_count'] ?? 0;
+                                            $cardServicesTotal     = $score['services_baseline_total'] ?? 0;
                                             $cardServicesExtraCount = $score['services_extra_count'] ?? 0;
 
                                             // Determine if we have a dual-score situation (latest buyer counter exists)
@@ -2539,7 +2539,7 @@
                                                             <span style="color: {{ $cardGetScoreColor($score['services_percent'] ?? 100) }}; font-weight: 600;">{{ $score['services_percent'] ?? 100 }}%</span>
                                                         </div>
                                                         <div class="text-muted" style="font-size: 0.8rem;">
-                                                            Matched: {{ $score['services_matched'] ?? 0 }}/{{ $score['services_total'] ?? 0 }}
+                                                            Matched: {{ $score['services_matched_count'] ?? 0 }}/{{ $score['services_baseline_total'] ?? 0 }}
                                                             @if ($cardServicesExtraCount > 0) &bull; Extra: {{ $cardServicesExtraCount }}@endif
                                                             @if (count($missingServices) > 0) &bull; Missing: {{ count($missingServices) }}@endif
                                                         </div>
