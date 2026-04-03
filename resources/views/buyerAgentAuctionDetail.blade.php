@@ -2403,200 +2403,217 @@
                                         $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
                                     @endphp
                                     <!-- Item -->
-                                    <div class="bid-accordion-header" data-target="item{{ $bidId }}"
-                                        style="cursor:pointer; background:{{ $headerBg }}; border-radius:6px; padding:8px 12px; margin-bottom:4px; display:flex; align-items:center; justify-content:space-between;"
+                                    <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header"
+                                        style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
+                                        data-target="item{{ $bidId }}"
                                         aria-expanded="false">
                                         <div class="d-flex align-items-center gap-2">
-                                            <span class="badge bg-primary me-1">Agent {{ $agentNumber }}</span>
-                                            @if ($bidAccepted === 'accepted')
-                                                <span class="badge bg-success ms-1">Accepted</span>
-                                            @elseif ($bidAccepted === 'rejected')
-                                                <span class="badge bg-danger ms-1">Rejected</span>
-                                            @else
-                                                <span class="badge ms-1" style="background-color: {{ $bidStatusColor }}; color: #fff;">{{ $bidStatusDisplay }}</span>
-                                            @endif
+                                            <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                            <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
                                             {{-- Match score badge in header --}}
                                             @if ($isListingOwner)
-                                                <span class="badge ms-1" style="background-color: {{ $scoreColor }}; color: #fff;" title="Overall match score">{{ $overallScore }}% Match</span>
+                                                <span class="badge ms-2" style="background-color: {{ $scoreColor }}; color: #fff; font-size: 0.85rem;" title="Overall match score">{{ $overallScore }}% Match</span>
                                             @endif
                                         </div>
-                                        <i class="fa fa-chevron-down bid-chevron" style="transition:transform .3s;"></i>
+                                        <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusDisplay }}</span>
                                     </div>
 
                                     <div id="item{{ $bidId }}" class="bid-collapse-content" style="display:none; padding:12px 4px;">
-                                        <!-- Match Score Summary Panel -->
-                                        @if ($isListingOwner)
-                                        <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
-                                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                                <div>
-                                                    <span class="fw-semibold" style="font-size: 0.95rem;">Overall Match Score</span>
-                                                    <span class="ms-2 badge" style="background-color: {{ $scoreColor }}; color: #fff; font-size: 0.9rem;">{{ $overallScore }}%</span>
-                                                </div>
-                                                <div class="d-flex gap-3 flex-wrap">
-                                                    <div class="text-center">
-                                                        <div class="fw-bold" style="color: {{ \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)($score['broker_comp_percent'] ?? 100)) }};">{{ $score['broker_comp_percent'] ?? 100 }}%</div>
-                                                        <span class="small text-muted">Broker Terms ({{ $score['broker_comp_matched'] ?? 0 }}/{{ $score['broker_comp_total'] ?? 0 }} fields)</span>
-                                                    </div>
-                                                    <div class="text-center">
-                                                        <div class="fw-bold" style="color: {{ \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)($score['services_percent'] ?? 100)) }};">{{ $score['services_percent'] ?? 100 }}%</div>
-                                                        <span class="small text-muted">Services ({{ $score['services_matched'] ?? 0 }}/{{ $score['services_total'] ?? 0 }} services)</span>
-                                                    </div>
-                                                </div>
+
+                                        @php
+                                            // Pre-compute compact card variables (Tenant-parity)
+                                            $cardServicesMatched   = $score['services_matched'] ?? 0;
+                                            $cardServicesTotal     = $score['services_total'] ?? 0;
+                                            $cardServicesExtraCount = $score['services_extra_count'] ?? 0;
+
+                                            // Determine if we have a dual-score situation (latest buyer counter exists)
+                                            $cardShowDualScore = false;
+                                            $cardOriginalScore = null;
+                                            $cardLatestCounterScore = null;
+                                            if ($latestBuyerCounter) {
+                                                // Re-compute original score against listing baseline (not buyer counter)
+                                                $listingBaselineData = (array) $auction->get;
+                                                $cardOriginalScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($listingBaselineData, $currentBidData, null, $auctionPropType);
+                                                $cardLatestCounterScore = $score;
+                                                $cardShowDualScore = true;
+                                            }
+                                            $cardGetScoreColor = fn($pct) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$pct);
+
+                                            // Compact broker compensation summary
+                                            $cardCommissionStructure = data_get($bid, 'get.commission_structure', '');
+                                            $cardPurchaseFeeType = data_get($bid, 'get.purchase_fee_type', '');
+                                            $cardPurchaseFeeDisplay = '';
+                                            if ($cardPurchaseFeeType === 'Flat Fee') {
+                                                $v = data_get($bid, 'get.purchase_fee_flat'); $cardPurchaseFeeDisplay = $v ? ($fmtMoney($v) ?? '') : '';
+                                            } elseif ($cardPurchaseFeeType === 'Percentage of the Total Purchase Price') {
+                                                $v = data_get($bid, 'get.purchase_fee_percentage'); $cardPurchaseFeeDisplay = $v ? (($fmtPercent($v) ?? '') . ' of Total Purchase Price') : '';
+                                            } elseif ($cardPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                                $p1 = $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')); $p2 = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')); $cardPurchaseFeeDisplay = trim(($p1 ?? '') . ($p1 && $p2 ? ' + ' : '') . ($p2 ? $p2 . ' of Total Purchase Price' : ''), ' +');
+                                            } elseif ($cardPurchaseFeeType === 'other') { $cardPurchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other', ''); }
+                                        @endphp
+
+                                        <div class="card-body" style="padding: 20px;">
+                                            <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
+
+                                            <!-- Offered Services Summary Line -->
+                                            <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
+                                                <span style="font-weight: 600;">Offered Services:</span>
+                                                <span style="color: #28a745; font-weight: 600;">{{ $cardServicesMatched }}/{{ $cardServicesTotal }}</span> matched
+                                                @if ($cardServicesExtraCount > 0)
+                                                    <span class="text-muted ms-2">&bull; {{ $cardServicesExtraCount }} extra</span>
+                                                @endif
+                                                @if (count($missingServices) > 0)
+                                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ count($missingServices) }} missing</span>
+                                                @endif
+                                            </p>
+                                            @if ($cardServicesExtraCount > 0)
+                                            <div class="mt-2 d-flex align-items-center flex-wrap" style="gap: 4px 6px;">
+                                                <span style="font-size: 0.9rem; line-height: 1.4;">&#11088;</span>
+                                                <span style="font-weight: 500; color: #856404; font-size: 0.95rem;" title="Extra services were included by the Agent beyond the Buyer&#39;s original request. These do not increase the match score but may provide additional value.">Extra Value Added: {{ $cardServicesExtraCount }} {{ $cardServicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
+                                                <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
                                             </div>
-                                            @if ($servicesExtraCount > 0)
-                                            <div class="mt-2 small" style="color: #856404;">
-                                                <i class="fa fa-plus-circle me-1"></i>Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }} &mdash; <em>does not affect match score</em>
+                                            @endif
+
+                                            <hr style="margin: 15px 0; border-color: #e0e0e0;">
+
+                                            <!-- Match Summary Box -->
+                                            @if ($isListingOwner)
+                                            <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                                @if ($cardShowDualScore && $cardOriginalScore && $cardLatestCounterScore)
+                                                {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
+                                                <div class="mb-2">
+                                                    <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                                        <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                    </span>
+                                                </div>
+                                                <div class="row g-2 mb-2">
+                                                    @php $osColor = $cardGetScoreColor($cardOriginalScore['overall_percent']); @endphp
+                                                    <div class="col-6">
+                                                        <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                                <span class="badge" style="background: {{ $osColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $cardOriginalScore['overall_percent'] }}%</span>
+                                                            </div>
+                                                            <div style="font-size: 0.75rem; color: #6c757d;">vs. Buyer's Original Request</div>
+                                                            <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardOriginalScore['services_match_percent']) }};">Svcs {{ $cardOriginalScore['services_match_percent'] }}%</div>
+                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardOriginalScore['terms_match_percent']) }};">Terms {{ $cardOriginalScore['terms_match_percent'] }}%</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @php $lcColor = $cardGetScoreColor($cardLatestCounterScore['overall_percent']); @endphp
+                                                    <div class="col-6">
+                                                        <div class="p-2 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColor }};">
+                                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
+                                                                <span class="badge" style="background: {{ $lcColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $cardLatestCounterScore['overall_percent'] }}%</span>
+                                                            </div>
+                                                            <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
+                                                            <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['services_match_percent']) }};">Svcs {{ $cardLatestCounterScore['services_match_percent'] }}%</div>
+                                                                <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['terms_match_percent']) }};">Terms {{ $cardLatestCounterScore['terms_match_percent'] }}%</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
+                                                    <i class="fa fa-info-circle me-1"></i>Added services or terms do not increase either score.
+                                                </div>
+                                                @else
+                                                {{-- SINGLE SCORE --}}
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                                        <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                    </span>
+                                                    <span class="badge" style="background: {{ $scoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
+                                                        {{ $overallScore }}%
+                                                    </span>
+                                                </div>
+                                                <div class="row g-2 small">
+                                                    <div class="col-6">
+                                                        <div class="d-flex justify-content-between">
+                                                            <span class="text-muted">Services Match:</span>
+                                                            <span style="color: {{ $cardGetScoreColor($score['services_percent'] ?? 100) }}; font-weight: 600;">{{ $score['services_percent'] ?? 100 }}%</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size: 0.8rem;">
+                                                            Matched: {{ $score['services_matched'] ?? 0 }}/{{ $score['services_total'] ?? 0 }}
+                                                            @if ($cardServicesExtraCount > 0) &bull; Extra: {{ $cardServicesExtraCount }}@endif
+                                                            @if (count($missingServices) > 0) &bull; Missing: {{ count($missingServices) }}@endif
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="d-flex justify-content-between">
+                                                            <span class="text-muted">Terms Match:</span>
+                                                            <span style="color: {{ $cardGetScoreColor($score['broker_comp_percent'] ?? 100) }}; font-weight: 600;">{{ $score['broker_comp_percent'] ?? 100 }}%</span>
+                                                        </div>
+                                                        <div class="text-muted" style="font-size: 0.8rem;">
+                                                            Matched: {{ $score['broker_comp_matched'] ?? 0 }}/{{ $score['broker_comp_total'] ?? 0 }}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
+                                                    Match Score compares this bid to the Buyer's original request. Added services or terms do not increase the score.
+                                                </div>
+                                                @endif
                                             </div>
                                             @endif
-                                        </div>
-                                        @endif
-                                        <!-- Compact summary bar -->
-                                        <div class="d-flex gap-3 flex-wrap align-items-center mb-2 p-2" style="background:#f0f4ff; border-radius:5px;">
-                                            @if ($servicesCount > 0)
-                                                <span class="small text-muted"><i class="fa fa-list me-1"></i>{{ $servicesCount }} service(s)</span>
+
+                                            <!-- Broker Compensation Summary -->
+                                            <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Buyer's Broker Compensation Summary:</h6>
+                                            @if ($cardCommissionStructure)
+                                            <div class="mb-2">
+                                                <p class="mb-1" style="font-size: 1rem; color: #333;">
+                                                    <span style="font-weight: 600;">Buyer's Broker Commission Structure:</span>
+                                                </p>
+                                                <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $cardCommissionStructure }}</p>
+                                            </div>
                                             @endif
-                                            @if ($commissionSummary)
-                                                <span class="small text-muted"><i class="fa fa-dollar-sign me-1"></i>{{ $commissionSummary }}</span>
+                                            @if ($cardPurchaseFeeDisplay)
+                                            <div class="mb-3">
+                                                <p class="mb-1" style="font-size: 1rem; color: #333;">
+                                                    <span style="font-weight: 600;">Buyer's Broker Purchase Fee:</span>
+                                                </p>
+                                                <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $cardPurchaseFeeDisplay }}</p>
+                                            </div>
                                             @endif
+                                            @if (!$cardCommissionStructure && !$cardPurchaseFeeDisplay)
+                                            <p class="text-muted small" style="font-style: italic;">Full compensation details available in View Full Bid.</p>
+                                            @endif
+
                                             @if ($canEditWithdraw)
-                                                <a href="{{ route('buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn ms-auto">
+                                            <div class="mb-2">
+                                                <a href="{{ route('buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
                                                     <i class="fa fa-edit me-1"></i> Edit Bid
                                                 </a>
+                                            </div>
+                                            @endif
+
+                                            <!-- View Full Bid Link -->
+                                            @if ($isListingOwner || $isBidOwner)
+                                                @if ($isBiddingTimerActive && $isListingOwner && !$isBidOwner)
+                                                    {{-- Bidding Period active: Disable View Bid for listing owner --}}
+                                                    <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
+                                                          title="Bids can be viewed when the bidding period ends.">
+                                                        <i class="fa fa-lock me-1"></i> View Full Bid
+                                                    </span>
+                                                    <div class="text-muted small mt-1">
+                                                        <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
+                                                    </div>
+                                                @else
+                                                    <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
+                                                       style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                                        View Full Bid
+                                                    </a>
+                                                @endif
+                                            @else
+                                            <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                                <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
+                                            </span>
                                             @endif
                                         </div>
-                                        <!-- Agent Information -->
-                                                    {{-- <p class="d-flex justify-content-between  align-items-center small"
-                                                        style="color: #333;">
-                                                        <span>
-                                                            Agent First Name:
-                                                        </span>
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.first_name', '') }}
-                                                        </span>
-                                                    </p> --}}
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        Licensed Since:
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.year_licensed', '') }}
-                                                        </span>
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        Marketing Strategy:
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.marketing_plan', '') }}
-                                                        </span>
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        What Sets This Agent Apart:
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.what_sets_you_apart', '') }}
-                                                        </span>
-                                                    </p>
 
-                                                    {{-- <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        Why Should You Be Hired as Their Agent?
-                                                    </p>
-                                                    <p class="d-flex justify-content-between small"
-                                                        style="font-size:large; color: #333;">
-                                                        <span class="fw-normal" style="font-size: 16px; color: #555;">
-                                                            {{ data_get($bid, 'get.why_hire_you', '') }}
-                                                        </span>
-                                                    </p> --}}
-
-                                                    <!-- Services Offered (Categorized Display using ServicesFormatter) -->
-                                                    @php 
-                                                        $bidServicesList = (array) data_get($bid,'get.services',[]);
-                                                        $bidOrderedServices = !empty($bidServicesList) 
-                                                            ? \App\Support\ServicesFormatter::orderSelectedServices($bidServicesList, $flowKey)
-                                                            : [];
-                                                    @endphp
-                                                    @if (!empty($bidServicesList))
-                                                        <div class="mt-3">
-                                                            <label style="font-size: large; font-weight: 600; color: #049399;">
-                                                                Services Offered:</label>
-                                                            @if (!empty($bidOrderedServices))
-                                                                @foreach ($bidOrderedServices as $catName => $catServices)
-                                                                    @if (!empty($catServices))
-                                                                        <div class="mt-2">
-                                                                            <strong>{{ $catName }}</strong>
-                                                                            <ul class="services services-offered">
-                                                                                @foreach ($catServices as $service)
-                                                                                    @php
-                                                                                        $svcNorm = \App\Helpers\BuyerBidMatchScoreHelper::normalizeService($service);
-                                                                                        $isExtra = in_array($svcNorm, $extraServices, true);
-                                                                                        $isMissing = false;
-                                                                                    @endphp
-                                                                                    <li style="font-size: 16px;">
-                                                                                        {{ $service }}
-                                                                                        @if ($isListingOwner && $isExtra)
-                                                                                            <span class="badge ms-1" style="background-color: #856404; color: #fff; font-size: 0.7rem;" title="Extra value — not in your requested services">Added</span>
-                                                                                        @endif
-                                                                                    </li>
-                                                                                @endforeach
-                                                                            </ul>
-                                                                        </div>
-                                                                    @endif
-                                                                @endforeach
-                                                            @else
-                                                                <ul class="services services-offered">
-                                                                    @foreach ($bidServicesList as $service)
-                                                                        @if ($service != 'Other')
-                                                                            @php
-                                                                                $svcNorm = \App\Helpers\BuyerBidMatchScoreHelper::normalizeService($service);
-                                                                                $isExtra = in_array($svcNorm, $extraServices, true);
-                                                                            @endphp
-                                                                            <li style="font-size: 16px;">
-                                                                                {{ $service }}
-                                                                                @if ($isListingOwner && $isExtra)
-                                                                                    <span class="badge ms-1" style="background-color: #856404; color: #fff; font-size: 0.7rem;">Added</span>
-                                                                                @endif
-                                                                            </li>
-                                                                        @endif
-                                                                    @endforeach
-                                                                </ul>
-                                                            @endif
-                                                            @if ($isListingOwner && count($missingServices) > 0)
-                                                                <div class="mt-2 p-2" style="background:#fff3cd; border-radius:5px; border-left:3px solid #ffc107;">
-                                                                    <strong class="small text-warning-emphasis">Services You Requested Not Included ({{ count($missingServices) }}):</strong>
-                                                                    <ul class="mb-0 mt-1">
-                                                                        @foreach ($missingServices as $missedSvc)
-                                                                            <li class="small" style="color:#856404;">{{ ucfirst($missedSvc) }}</li>
-                                                                        @endforeach
-                                                                    </ul>
-                                                                </div>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-
-                                                    {{-- @php $otherServicesList = (array) data_get($bid,'get.other_services',[]); @endphp
-                                                    @if (!empty($otherServicesList))
-                                                        <div>
-                                                            <label style="font-size: large;">Other Services Offered by the
-                                                                Agent:</label>
-                                                            <ul class="services services-offered">
-                                                                @foreach ($otherServicesList as $service)
-                                                                    <li style="font-size: 16px; margin-top:15px;">
-                                                                        {{ $service }}</li>
-                                                                @endforeach
-                                                            </ul>
-                                                        </div>
-                                                    @endif --}}
-
-                                                    <!-- PRIVATE DATA SECTION - Only visible to listing owner -->
-                                                    @if (data_get($auction, 'user_id') == $auth_id)
-                                                        <!-- Button to trigger modal -->
-                                                        <div class="text-center">
-                                                            <button class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                                                data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
-                                                                style="margin-top: -25px; padding: 12px 30px; width: 100%; background: #049399; border: none; border-radius: 8px; font-weight: 600; color: white;">
-                                                                <i class="fa fa-lock me-2"></i> View Private Compensation &
-                                                                Agreement Terms
-                                                            </button>
-                                                        </div>
+                                                    <!-- PRIVATE DATA SECTION - Visible to listing owner and bid owner -->
+                                                    @if (data_get($auction, 'user_id') == $auth_id || data_get($bid, 'user_id') == $auth_id)
 
                                                         <!-- Private Data Modal -->
                                                         <div class="modal fade"
@@ -3521,32 +3538,30 @@
 
                                                     {{-- Counter Bidding Section - Only visible to listing owner and bidding agent --}}
                                                     @if ($showCounterBids && $counterBids->count() > 0)
-                                                        <div class="counter-bids-section mt-4">
-                                                            <!-- Counter Bids Accordion Header -->
-                                                            <div class="accordion" type="button"
-                                                                data-bs-toggle="collapse"
-                                                                data-bs-target="#counterBids{{ data_get($bid, 'id') }}"
-                                                                aria-expanded="false"
-                                                                aria-controls="counterBids{{ data_get($bid, 'id') }}">
-                                                                <div
-                                                                    class="d-flex justify-content-between align-items-center flex-wrap p-2 border rounded">
-                                                                    <h5 class="mb-0" style="color: #2c3e50;">Counter
-                                                                        Bidding History</h5>
-                                                                    <div class="d-flex align-items-center">
-                                                                        <span
-                                                                            class="badge bg-secondary me-2">{{ $counterBids->count() }}
-                                                                            counter offers</span>
-                                                                        <span class="accordion-arrow">↓</span>
-                                                                    </div>
+                                                    <div class="counter-bids-section mt-4" id="counter-section-{{ $bid->id }}">
+                                                        <!-- Counter Bids Accordion Header -->
+                                                        <div class="counter-bids-toggle"
+                                                            style="cursor: pointer;"
+                                                            onclick="event.stopPropagation(); var target = document.getElementById('counterBids{{ data_get($bid, 'id') }}'); var arrow = this.querySelector('.counter-arrow'); if(target.style.display === 'none' || target.style.display === '') { target.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; } else { target.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; }">
+                                                            <div
+                                                                class="d-flex justify-content-between align-items-center flex-wrap p-2 border rounded">
+                                                                <h5 class="mb-0" style="color: #2c3e50;">Counter
+                                                                    Bidding History</h5>
+                                                                <div class="d-flex align-items-center">
+                                                                    <span
+                                                                        class="badge bg-secondary me-2">{{ $counterBids->count() }}
+                                                                        counter offers</span>
+                                                                    <span class="counter-arrow" style="transition: transform 0.3s;">↓</span>
                                                                 </div>
                                                             </div>
+                                                        </div>
 
-                                                            <!-- Counter Bids Accordion Content -->
-                                                            <div id="counterBids{{ data_get($bid, 'id') }}"
-                                                                class="accordion-collapse collapse"
-                                                                aria-labelledby="counterBidsHeading{{ data_get($bid, 'id') }}">
-                                                                <div
-                                                                    class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
+                                                        <!-- Counter Bids Accordion Content -->
+                                                        <div id="counterBids{{ data_get($bid, 'id') }}"
+                                                            class="counter-bids-content"
+                                                            style="display: none;">
+                                                            <div
+                                                                class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
                                                                     @foreach ($counterBids as $counterBid)
                                                                         @php
                                                                             // Roles
@@ -3570,7 +3585,7 @@
                                                                             );
                                                                             $bidState = in_array(
                                                                                 $rawBidState,
-                                                                                [null, 0, '0'],
+                                                                                [null, 0, '0', 'no', 'pending'],
                                                                                 true,
                                                                             )
                                                                                 ? '0'
@@ -3578,12 +3593,12 @@
 
                                                                             $rawCounterState = data_get(
                                                                                 $counterBid,
-                                                                                'accepted',
-                                                                                '0',
+                                                                                'status',
+                                                                                data_get($counterBid, 'accepted', '0'),
                                                                             );
                                                                             $counterState = in_array(
                                                                                 $rawCounterState,
-                                                                                [null, 0, '0', 'pending'],
+                                                                                [null, 0, '0', 'no', 'pending'],
                                                                                 true,
                                                                             )
                                                                                 ? '0'
@@ -3666,7 +3681,44 @@
                                                                                     class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
                                                                             </div>
 
-                                                                           @php $allMeta = $counterBid->getAllMeta(); @endphp
+                                                                           @php
+                                                                            $allMeta = $counterBid->getAllMeta();
+
+                                                                            // === COMPARISON HELPER: Check if counter value differs from original bid ===
+                                                                            $isChanged = function($counterVal, $origKey) use ($bid) {
+                                                                                $origVal = data_get($bid, 'get.' . $origKey, null);
+                                                                                $normalizeVal = function($v) {
+                                                                                    if (is_null($v) || $v === '') return '';
+                                                                                    if (is_array($v) || is_object($v)) return json_encode($v);
+                                                                                    $v = trim((string) $v);
+                                                                                    return preg_replace('/[\s$,%]/', '', strtolower($v));
+                                                                                };
+                                                                                return $normalizeVal($counterVal) !== $normalizeVal($origVal);
+                                                                            };
+
+                                                                            // CSS for changed fields
+                                                                            $changedStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                                                                            $changedBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; vertical-align: middle;">Changed</span>';
+
+                                                                            // Services diff (counter vs original bid)
+                                                                            $ctrSvcsRaw = is_string($allMeta['services'] ?? '') ? json_decode($allMeta['services'] ?? '', true) ?? [] : ($allMeta['services'] ?? []);
+                                                                            $ctrSvcsRaw = array_filter((array)$ctrSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other');
+                                                                            $origBidSvcsRaw = (array) data_get($bid, 'get.services', []);
+                                                                            if (is_string(data_get($bid, 'get.services', []))) $origBidSvcsRaw = json_decode(data_get($bid, 'get.services', '[]'), true) ?: [];
+                                                                            $origBidSvcsRaw = array_filter($origBidSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other');
+                                                                            $normSvc = fn($s) => strtolower(trim((string)$s));
+                                                                            $origBidSvcsNorm = array_map($normSvc, array_values($origBidSvcsRaw));
+                                                                            $ctrSvcsNorm = array_map($normSvc, array_values($ctrSvcsRaw));
+                                                                            $ctrSvcIsAdded = fn(string $s): bool => !in_array($normSvc($s), $origBidSvcsNorm, true);
+                                                                            $ctrRemovedSvcs = array_values(array_filter($origBidSvcsRaw, fn($s) => !in_array($normSvc($s), $ctrSvcsNorm, true)));
+                                                                            $ctrOtherRaw = is_string($allMeta['other_services'] ?? '') ? json_decode($allMeta['other_services'] ?? '', true) ?? [] : ($allMeta['other_services'] ?? []);
+                                                                            $ctrOtherRaw = array_filter((array)$ctrOtherRaw, fn($s) => is_string($s) && trim($s) !== '');
+                                                                            $origBidOtherRaw = (array)data_get($bid, 'get.other_services', []);
+                                                                            if (is_string(data_get($bid, 'get.other_services', []))) $origBidOtherRaw = json_decode(data_get($bid, 'get.other_services', '[]'), true) ?: [];
+                                                                            $origBidOtherNorm = array_map(fn($s) => strtolower(trim((string)$s)), array_filter((array)$origBidOtherRaw));
+                                                                            $ctrOtherIsAdded = fn(string $s): bool => !in_array(strtolower(trim($s)), $origBidOtherNorm, true);
+                                                                            $ctrOtherRemoved = array_values(array_filter((array)$origBidOtherRaw, fn($s) => !in_array(strtolower(trim((string)$s)), array_map(fn($x) => strtolower(trim((string)$x)), (array)$ctrOtherRaw), true)));
+                                                                            @endphp
 @if (
     !empty($allMeta['commission_structure']) ||
     !empty($allMeta['purchase_fee_type']) ||
@@ -3687,9 +3739,10 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Buyer's Broker Compensation:</h6>
         
         @if (!empty($allMeta['commission_structure']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['commission_structure'], 'commission_structure') ? $changedStyle : '' }}">
             Buyer's Broker Commission Structure:
             <span class="removeBold">{{ $allMeta['commission_structure'] }}</span>
+            @if ($isChanged($allMeta['commission_structure'], 'commission_structure')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
@@ -3719,9 +3772,10 @@
                 $ctrPurchaseVal = $allMeta['purchase_fee_other'];
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type') ? $changedStyle : '' }}">
             Buyer's Broker Purchase Fee:
             <span class="removeBold">{{ $ctrPurchaseVal }}</span>
+            @if ($isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
@@ -3731,9 +3785,10 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Buyer's Broker Lease Fee:</h6>
 
         @if (!empty($allMeta['interested_lease_option']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['interested_lease_option'], 'interested_lease_option') ? $changedStyle : '' }}">
             Interested in a Lease Agreement:
             <span class="removeBold">{{ $allMeta['interested_lease_option'] }}</span>
+            @if ($isChanged($allMeta['interested_lease_option'], 'interested_lease_option')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
@@ -3768,9 +3823,10 @@
                 $ctrLeaseVal = $allMeta['lease_fee_other'];
             }
         @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['lease_fee_type'] ?? '', 'lease_fee_type') ? $changedStyle : '' }}">
             Buyer's Broker Lease Fee:
             <span class="removeBold">{{ $ctrLeaseVal }}</span>
+            @if ($isChanged($allMeta['lease_fee_type'] ?? '', 'lease_fee_type')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
@@ -3780,15 +3836,16 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Lease-Option Details:</h6>
 
         @if (!empty($allMeta['interested_lease_option_agreement']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement') ? $changedStyle : '' }}">
             Interested in a Lease-Option Agreement:
             <span class="removeBold">{{ $allMeta['interested_lease_option_agreement'] }}</span>
+            @if ($isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
         @if (!empty($allMeta['interested_lease_option_agreement']) && $allMeta['interested_lease_option_agreement'] === 'Yes')
             @if (!empty($allMeta['lease_value']))
-            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['lease_value'], 'lease_value') ? $changedStyle : '' }}">
                 Compensation for Creating the Lease-Option Agreement:
                 <span class="removeBold">
                     @if (($allMeta['lease_type'] ?? '') === 'percent')
@@ -3797,10 +3854,11 @@
                         {{ \App\Support\Format::money($allMeta['lease_value']) }}
                     @endif
                 </span>
+                @if ($isChanged($allMeta['lease_value'], 'lease_value')) {!! $changedBadge !!} @endif
             </div>
             @endif
             @if (!empty($allMeta['purchase_value']))
-            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['purchase_value'], 'purchase_value') ? $changedStyle : '' }}">
                 Compensation if Purchase Option is Exercised:
                 <span class="removeBold">
                     @if (($allMeta['purchase_type'] ?? '') === 'percent')
@@ -3809,6 +3867,7 @@
                         {{ \App\Support\Format::money($allMeta['purchase_value']) }}
                     @endif
                 </span>
+                @if ($isChanged($allMeta['purchase_value'], 'purchase_value')) {!! $changedBadge !!} @endif
             </div>
             @endif
         @endif
@@ -3819,23 +3878,26 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Legal Terms:</h6>
 
         @if (!empty($allMeta['protection_period']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['protection_period'], 'protection_period') ? $changedStyle : '' }}">
             Protection Period Timeframe:
             <span class="removeBold">{{ $allMeta['protection_period'] }} Days</span>
+            @if ($isChanged($allMeta['protection_period'], 'protection_period')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
         @if (!empty($allMeta['early_termination_fee_option']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option') ? $changedStyle : '' }}">
             Early Termination Fee:
             <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['early_termination_fee_option'], !empty($allMeta['early_termination_fee_amount']) ? \App\Support\Format::money($allMeta['early_termination_fee_amount']) : null) }}</span>
+            @if ($isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
         @if (!empty($allMeta['retainer_fee_option']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option') ? $changedStyle : '' }}">
             Retainer Fee:
             <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['retainer_fee_option'], !empty($allMeta['retainer_fee_amount']) ? \App\Support\Format::money($allMeta['retainer_fee_amount']) : null) }}</span>
+            @if ($isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option')) {!! $changedBadge !!} @endif
         </div>
         @if (in_array(strtolower($allMeta['retainer_fee_option']), ['yes']))
             @if (!empty($allMeta['retainer_fee_application']))
@@ -3851,9 +3913,10 @@
         @endif
 
         @if (!empty($allMeta['agency_agreement_timeframe']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe') ? $changedStyle : '' }}">
             Buyer Agency Agreement Timeframe:
             <span class="removeBold">{{ ($allMeta['agency_agreement_timeframe'] === 'custom' && !empty($allMeta['agency_agreement_custom'])) ? $allMeta['agency_agreement_custom'] : $allMeta['agency_agreement_timeframe'] }}</span>
+            @if ($isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
@@ -3863,9 +3926,10 @@
         <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Brokerage Relationship:</h6>
 
         @if (!empty($allMeta['brokerage_relationship']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship') ? $changedStyle : '' }}">
             Acceptable Brokerage Relationship:
             <span class="removeBold">{{ $allMeta['brokerage_relationship'] }}</span>
+            @if ($isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship')) {!! $changedBadge !!} @endif
         </div>
         @endif
 
@@ -3909,7 +3973,13 @@
                                                                                                     <strong style="font-size: 13px;">{{ $catName }}</strong>
                                                                                                     <ul class="services services-offered" style="margin-top: 5px;">
                                                                                                         @foreach ($catSrvs as $svc)
-                                                                                                            <li style="font-size: 12px;">{{ $svc }}</li>
+                                                                                                            @if ($svc !== 'Other')
+                                                                                                                @php $svcIsNew = $ctrSvcIsAdded((string)$svc); @endphp
+                                                                                                                <li style="font-size: 12px; {{ $svcIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
+                                                                                                                    {{ $svc }}
+                                                                                                                    @if ($svcIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                                                                                </li>
+                                                                                                            @endif
                                                                                                         @endforeach
                                                                                                     </ul>
                                                                                                 </div>
@@ -3919,10 +3989,29 @@
                                                                                         <ul class="services services-offered">
                                                                                             @foreach ($counterServices as $svc)
                                                                                                 @if ($svc != 'Other')
-                                                                                                    <li style="font-size: 12px;">{{ $svc }}</li>
+                                                                                                    @php $svcIsNew = $ctrSvcIsAdded((string)$svc); @endphp
+                                                                                                    <li style="font-size: 12px; {{ $svcIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
+                                                                                                        {{ $svc }}
+                                                                                                        @if ($svcIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                                                                    </li>
                                                                                                 @endif
                                                                                             @endforeach
                                                                                         </ul>
+                                                                                    @endif
+
+                                                                                    {{-- Removed Services (were in original bid but not in counter) --}}
+                                                                                    @if (!empty($ctrRemovedSvcs))
+                                                                                        <div class="mt-2">
+                                                                                            <strong style="font-size: 12px; color: #dc3545;">Removed Services:</strong>
+                                                                                            <ul class="services services-offered" style="margin-top: 4px;">
+                                                                                                @foreach ($ctrRemovedSvcs as $rmSvc)
+                                                                                                    <li style="font-size: 12px; color: #dc3545; text-decoration: line-through;">
+                                                                                                        {{ $rmSvc }}
+                                                                                                        <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">Removed</span>
+                                                                                                    </li>
+                                                                                                @endforeach
+                                                                                            </ul>
+                                                                                        </div>
                                                                                     @endif
                                                                                 </div>
                                                                             @endif
@@ -3941,9 +4030,27 @@
                                                                                     </label>
                                                                                     <ul class="services services-offered">
                                                                                         @foreach ($counter_other_services as $other_svc)
-                                                                                            <li style="font-size: 12px;">{{ $other_svc }}</li>
+                                                                                            @php $otherIsNew = $ctrOtherIsAdded((string)$other_svc); @endphp
+                                                                                            <li style="font-size: 12px; {{ $otherIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
+                                                                                                {{ $other_svc }}
+                                                                                                @if ($otherIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                                                            </li>
                                                                                         @endforeach
                                                                                     </ul>
+                                                                                    {{-- Removed Other Services --}}
+                                                                                    @if (!empty($ctrOtherRemoved))
+                                                                                        <div class="mt-1">
+                                                                                            <strong style="font-size: 12px; color: #dc3545;">Removed:</strong>
+                                                                                            <ul class="services services-offered" style="margin-top: 4px;">
+                                                                                                @foreach ($ctrOtherRemoved as $rmOther)
+                                                                                                    <li style="font-size: 12px; color: #dc3545; text-decoration: line-through;">
+                                                                                                        {{ $rmOther }}
+                                                                                                        <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">Removed</span>
+                                                                                                    </li>
+                                                                                                @endforeach
+                                                                                            </ul>
+                                                                                        </div>
+                                                                                    @endif
                                                                                 </div>
                                                                             @endif
 
