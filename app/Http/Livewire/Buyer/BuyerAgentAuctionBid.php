@@ -415,6 +415,32 @@ public $additional_details_broker = '';
                     $this->business_card_stored_path = $b['business_card'];
                 }
                 $this->additional_details_broker = $b['additional_details_broker'] ?? '';
+
+                // Load agent credential fields from saved bid, falling back to user profile.
+                // These must be set here (inside edit mode) so the profile auto-fill below
+                // (which is guarded by !isEditMode) does not overwrite them.
+                $_editUser = Auth::user();
+                $this->first_name = (isset($b['first_name']) && trim($b['first_name']) !== '')
+                    ? $b['first_name']
+                    : ($_editUser->first_name ?? '');
+                $this->last_name = (isset($b['last_name']) && trim($b['last_name']) !== '')
+                    ? $b['last_name']
+                    : ($_editUser->last_name ?? '');
+                $this->phone = (isset($b['phone']) && trim($b['phone']) !== '')
+                    ? $b['phone']
+                    : ($_editUser->phone ?? '');
+                $this->email = (isset($b['email']) && trim($b['email']) !== '')
+                    ? $b['email']
+                    : ($_editUser->email ?? '');
+                $this->brokerage = (isset($b['brokerage']) && trim($b['brokerage']) !== '')
+                    ? $b['brokerage']
+                    : ($_editUser->brokerage ?? '');
+                $this->license_no = (isset($b['license_no']) && trim($b['license_no']) !== '')
+                    ? $b['license_no']
+                    : ($_editUser->license_no ?? '');
+                $this->nar_id = (isset($b['nar_id']) && trim($b['nar_id']) !== '')
+                    ? $b['nar_id']
+                    : ($_editUser->nar_id ?? '');
             }
             $this->commission_structure                  = $b['commission_structure'] ?? '';
             $this->purchase_fee_type                     = $b['purchase_fee_type'] ?? '';
@@ -495,13 +521,17 @@ public $additional_details_broker = '';
         // Auto-fill Agent Information from user profile
         $user = Auth::user();
         if ($user) {
-            $this->first_name = $user->first_name ?? '';
-            $this->last_name  = $user->last_name ?? '';
-            $this->phone      = $user->phone ?? '';
-            $this->email      = $user->email ?? '';
-            $this->brokerage  = $user->brokerage ?? '';
-            $this->license_no = $user->license_no ?? '';
-            $this->nar_id     = $user->nar_id ?? '';
+            // In edit mode, credential fields are loaded from the saved bid (above).
+            // Only populate from user profile for new bids.
+            if (!$this->isEditMode) {
+                $this->first_name = $user->first_name ?? '';
+                $this->last_name  = $user->last_name ?? '';
+                $this->phone      = $user->phone ?? '';
+                $this->email      = $user->email ?? '';
+                $this->brokerage  = $user->brokerage ?? '';
+                $this->license_no = $user->license_no ?? '';
+                $this->nar_id     = $user->nar_id ?? '';
+            }
 
             // Auto-load Default Profile only for new bids (not when editing an existing bid)
             if (!$this->isEditMode) {

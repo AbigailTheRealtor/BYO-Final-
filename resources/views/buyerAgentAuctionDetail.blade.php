@@ -3552,7 +3552,7 @@
                                                                                 </div>
                                                                                 <ul class="mb-0" style="padding-left: 1.2rem;">
                                                                                     @foreach ($missingServices as $buyerMissingSvc)
-                                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerSvcMissingStyle }}">{{ $buyerMissingSvc }}{!! $buyerSvcMissingBadge !!}</li>
+                                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerSvcMissingStyle }}">{{ ucfirst($buyerMissingSvc) }}{!! $buyerSvcMissingBadge !!}</li>
                                                                                     @endforeach
                                                                                 </ul>
                                                                             </div>
