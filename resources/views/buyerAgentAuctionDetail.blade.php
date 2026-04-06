@@ -262,14 +262,15 @@
             background-color: #c82333;
         }
 
-        /* Counter (blue) - same convention as Tenant view */
+        /* Counter (yellow) */
         .btn-counter {
-            background-color: #0d6efd !important;
-            color: #ffffff !important;
+            background-color: #ffc107 !important;
+            color: #000000 !important;
         }
 
         .btn-counter:hover {
-            background-color: #0b5ed7 !important;
+            background-color: #e0a800 !important;
+            color: #000000 !important;
         }
 
         .view-btn {
@@ -2918,219 +2919,183 @@
 
                                                                         </div>
 
-                                                                       <!-- Bid Broker Compensation & Agency Agreement Terms (Label:Value Format) -->
-@if (data_get($bid, 'get.commission_structure') ||
-     data_get($bid, 'get.purchase_fee_type') ||
-     data_get($bid, 'get.interested_lease_option') ||
-     data_get($bid, 'get.lease_fee_type') ||
-     data_get($bid, 'get.interested_lease_option_agreement') ||
-     data_get($bid, 'get.protection_period') ||
-     data_get($bid, 'get.early_termination_fee_option') ||
-     data_get($bid, 'get.retainer_fee_option') ||
-     data_get($bid, 'get.agency_agreement_timeframe') ||
-     data_get($bid, 'get.brokerage_relationship') ||
-     data_get($bid, 'get.additional_details_broker'))
-    <div class="mb-5 broker-compensation-section">
-        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
-        </h6>
+                                                                        <!-- 2. Broker Compensation & Agency Agreement Terms -->
+                                                                        @if (data_get($bid, 'get.commission_structure') ||
+                                                                            data_get($bid, 'get.purchase_fee_type') ||
+                                                                            data_get($bid, 'get.interested_lease_option') ||
+                                                                            data_get($bid, 'get.lease_fee_type') ||
+                                                                            data_get($bid, 'get.interested_lease_option_agreement') ||
+                                                                            data_get($bid, 'get.protection_period') ||
+                                                                            data_get($bid, 'get.early_termination_fee_option') ||
+                                                                            data_get($bid, 'get.retainer_fee_option') ||
+                                                                            data_get($bid, 'get.agency_agreement_timeframe') ||
+                                                                            data_get($bid, 'get.brokerage_relationship') ||
+                                                                            data_get($bid, 'get.additional_details_broker'))
+                                                                        <div class="mb-5">
+                                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                                                <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                                            </h6>
 
-        <!-- A) Buyer's Broker Compensation -->
-        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">A) Buyer's Broker Compensation</h6>
-        
-        @if (data_get($bid, 'get.commission_structure'))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
-            Buyer's Broker Commission Structure:
-            <span class="removeBold">{{ data_get($bid, 'get.commission_structure') }}</span>
-            @if ($isListingOwner && isset($brokerMismatches['commission_structure'])){!! $mismatchBadge !!}@endif
-        </div>
-        @endif
+                                                                            @php
+                                                                            $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                                                                            $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
+                                                                            @endphp
 
-        @if (data_get($bid, 'get.purchase_fee_type'))
-        @php
-            $bidPurchaseFeeType = data_get($bid, 'get.purchase_fee_type') ?? '';
-            $bidPurchaseFeeCombined = '—';
-            
-            if ($bidPurchaseFeeType === 'Flat Fee') {
-                $bidPurchaseFeeCombined = $fmtMoney(data_get($bid, 'get.purchase_fee_flat')) ?? '—';
-            } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price') {
-                $pct = data_get($bid, 'get.purchase_fee_percentage');
-                $bidPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
-            } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                $bidPurchaseFeeCombined = $joinParts([
-                    $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')),
-                    data_get($bid, 'get.purchase_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
-                ]) ?? '—';
-            } elseif ($bidPurchaseFeeType === 'other') {
-                $bidPurchaseFeeCombined = data_get($bid, 'get.purchase_fee_other') ?? '—';
-            }
-        @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
-            Buyer's Broker Purchase Fee:
-            <span class="removeBold">{{ $bidPurchaseFeeCombined }}</span>
-            @if ($isListingOwner && isset($brokerMismatches['purchase_fee_type'])){!! $mismatchBadge !!}@endif
-        </div>
-        @endif
+                                                                            <!-- A) Buyer's Broker Compensation -->
+                                                                            @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.purchase_fee_type'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Buyer's Broker Compensation</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    @if (data_get($bid, 'get.commission_structure'))
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! $isListingOwner && isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
+                                                                                    @endif
+                                                                                    @if (data_get($bid, 'get.purchase_fee_type'))
+                                                                                    @php
+                                                                                        $bidPurchaseFeeType = data_get($bid, 'get.purchase_fee_type') ?? '';
+                                                                                        $bidPurchaseFeeCombined = '—';
+                                                                                        if ($bidPurchaseFeeType === 'Flat Fee') {
+                                                                                            $bidPurchaseFeeCombined = $fmtMoney(data_get($bid, 'get.purchase_fee_flat')) ?? '—';
+                                                                                        } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price') {
+                                                                                            $pct = data_get($bid, 'get.purchase_fee_percentage');
+                                                                                            $bidPurchaseFeeCombined = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '—';
+                                                                                        } elseif ($bidPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                                                                            $bidPurchaseFeeCombined = $joinParts([
+                                                                                                $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')),
+                                                                                                data_get($bid, 'get.purchase_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price') : null,
+                                                                                            ]) ?? '—';
+                                                                                        } elseif ($bidPurchaseFeeType === 'other') {
+                                                                                            $bidPurchaseFeeCombined = data_get($bid, 'get.purchase_fee_other') ?? '—';
+                                                                                        } else {
+                                                                                            $bidPurchaseFeeCombined = $bidPurchaseFeeType;
+                                                                                        }
+                                                                                    @endphp
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer's Broker Purchase Fee:</span> {{ $bidPurchaseFeeCombined }}{!! $isListingOwner && isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
+                                                                                    @endif
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
 
-        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
+                                                                            <!-- B) Buyer's Broker Lease Fee -->
+                                                                            @if (data_get($bid, 'get.interested_lease_option') || data_get($bid, 'get.lease_fee_type'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Buyer's Broker Lease Fee</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    @if (data_get($bid, 'get.interested_lease_option'))
+                                                                                    <li class="mb-1"><span class="fw-semibold">Interested in a Lease Agreement:</span> {{ data_get($bid, 'get.interested_lease_option') }}</li>
+                                                                                    @endif
+                                                                                    @if (data_get($bid, 'get.interested_lease_option') === 'Yes' && data_get($bid, 'get.lease_fee_type'))
+                                                                                    @php
+                                                                                        $bidLeaseFeeType = data_get($bid, 'get.lease_fee_type') ?? '';
+                                                                                        $bidLeaseFeeCombined = '—';
+                                                                                        if ($bidLeaseFeeType === 'flat' && data_get($bid, 'get.lease_fee_flat')) {
+                                                                                            $bidLeaseFeeCombined = $fmtMoney(data_get($bid, 'get.lease_fee_flat'));
+                                                                                        } elseif ($bidLeaseFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.lease_fee_percentage')) {
+                                                                                            $bidLeaseFeeCombined = $fmtPercent(data_get($bid, 'get.lease_fee_percentage')) . ' of Gross Lease Value';
+                                                                                        } elseif ($bidLeaseFeeType === 'Percentage of Monthly Rent' && data_get($bid, 'get.lease_fee_percentage_monthly_rent')) {
+                                                                                            $display = $fmtPercent(data_get($bid, 'get.lease_fee_percentage_monthly_rent')) . ' of Monthly Rent';
+                                                                                            if (data_get($bid, 'get.lease_fee_percentage_monthly_number')) {
+                                                                                                $display .= ' x ' . data_get($bid, 'get.lease_fee_percentage_monthly_number') . ' Months';
+                                                                                            }
+                                                                                            $bidLeaseFeeCombined = $display;
+                                                                                        } elseif ($bidLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                                                                                            $bidLeaseFeeCombined = $joinParts([
+                                                                                                $fmtMoney(data_get($bid, 'get.lease_fee_flat_combo')),
+                                                                                                data_get($bid, 'get.lease_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.lease_fee_percentage_combo')) . ' of Gross Lease Value') : null,
+                                                                                            ]) ?? '—';
+                                                                                        } elseif ($bidLeaseFeeType === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.lease_fee_percentage_net')) {
+                                                                                            $bidLeaseFeeCombined = $fmtPercent(data_get($bid, 'get.lease_fee_percentage_net')) . ' of Net Aggregate Rent';
+                                                                                        } elseif (strtolower($bidLeaseFeeType) === 'other' && data_get($bid, 'get.lease_fee_other')) {
+                                                                                            $bidLeaseFeeCombined = data_get($bid, 'get.lease_fee_other');
+                                                                                        } elseif ($bidLeaseFeeType) {
+                                                                                            $bidLeaseFeeCombined = $bidLeaseFeeType;
+                                                                                        }
+                                                                                    @endphp
+                                                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Lease Fee:</span> {{ $bidLeaseFeeCombined }}</li>
+                                                                                    @endif
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
 
-        <!-- B) Buyer's Broker Lease Fee -->
-        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">B) Buyer's Broker Lease Fee</h6>
+                                                                            <!-- C) Lease-Option Details -->
+                                                                            @if (data_get($bid, 'get.interested_lease_option_agreement'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    <li class="mb-1"><span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}</li>
+                                                                                    @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
+                                                                                        @if (data_get($bid, 'get.lease_value'))
+                                                                                        <li class="mb-1"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span>
+                                                                                            @if (data_get($bid, 'get.lease_type') === 'percent')
+                                                                                                {{ data_get($bid, 'get.lease_value') }}%
+                                                                                            @else
+                                                                                                {{ \App\Support\Format::money(data_get($bid, 'get.lease_value')) }}
+                                                                                            @endif
+                                                                                        </li>
+                                                                                        @endif
+                                                                                        @if (data_get($bid, 'get.purchase_value'))
+                                                                                        <li class="mb-1"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span>
+                                                                                            @if (data_get($bid, 'get.purchase_type') === 'percent')
+                                                                                                {{ data_get($bid, 'get.purchase_value') }}%
+                                                                                            @else
+                                                                                                {{ \App\Support\Format::money(data_get($bid, 'get.purchase_value')) }}
+                                                                                            @endif
+                                                                                        </li>
+                                                                                        @endif
+                                                                                    @endif
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
 
-        @if (data_get($bid, 'get.interested_lease_option'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Interested in a Lease Agreement:
-            <span class="removeBold">{{ data_get($bid, 'get.interested_lease_option') }}</span>
-        </div>
-        @endif
+                                                                            <!-- D) Legal Terms -->
+                                                                            @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    @if (data_get($bid, 'get.protection_period'))
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days{!! $isListingOwner && isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}</li>
+                                                                                    @endif
+                                                                                    @if (data_get($bid, 'get.early_termination_fee_option'))
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.early_termination_fee_option'), data_get($bid, 'get.early_termination_fee_amount') ? $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) : null) }}{!! $isListingOwner && isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
+                                                                                    @endif
+                                                                                    @if (data_get($bid, 'get.retainer_fee_option'))
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee:</span> {{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.retainer_fee_option'), data_get($bid, 'get.retainer_fee_amount') ? $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) : null) }}{!! $isListingOwner && isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}</li>
+                                                                                        @if (in_array(strtolower(data_get($bid, 'get.retainer_fee_option')), ['yes']))
+                                                                                            @if (data_get($bid, 'get.retainer_fee_application'))
+                                                                                            @php $bidFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(data_get($bid, 'get.retainer_fee_application')); @endphp
+                                                                                            @if (!empty($bidFormattedRetainer))
+                                                                                            <li class="mb-1"><span class="fw-semibold">Retainer Fee Application:</span> {{ $bidFormattedRetainer }}</li>
+                                                                                            @endif
+                                                                                            @endif
+                                                                                        @endif
+                                                                                    @endif
+                                                                                    @if (data_get($bid, 'get.agency_agreement_timeframe'))
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer Agency Agreement Timeframe:</span> {{ data_get($bid, 'get.agency_agreement_timeframe') === 'custom' ? data_get($bid, 'get.agency_agreement_custom') : data_get($bid, 'get.agency_agreement_timeframe') }}{!! $isListingOwner && isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}</li>
+                                                                                    @endif
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
 
-        @if (data_get($bid, 'get.interested_lease_option') === 'Yes' && data_get($bid, 'get.lease_fee_type'))
-        @php
-            $bidLeaseFeeType = data_get($bid, 'get.lease_fee_type') ?? '';
-            $bidLeaseFeeCombined = '—';
-            
-            if ($bidLeaseFeeType === 'flat' && data_get($bid, 'get.lease_fee_flat')) {
-                $bidLeaseFeeCombined = $fmtMoney(data_get($bid, 'get.lease_fee_flat'));
-            } elseif ($bidLeaseFeeType === 'Percentage of the Gross Lease Value' && data_get($bid, 'get.lease_fee_percentage')) {
-                $bidLeaseFeeCombined = $fmtPercent(data_get($bid, 'get.lease_fee_percentage')) . ' of Gross Lease Value';
-            } elseif ($bidLeaseFeeType === 'Percentage of Monthly Rent' && data_get($bid, 'get.lease_fee_percentage_monthly_rent')) {
-                $display = $fmtPercent(data_get($bid, 'get.lease_fee_percentage_monthly_rent')) . ' of Monthly Rent';
-                if (data_get($bid, 'get.lease_fee_percentage_monthly_number')) {
-                    $display .= ' x ' . data_get($bid, 'get.lease_fee_percentage_monthly_number') . ' Months';
-                }
-                $bidLeaseFeeCombined = $display;
-            } elseif ($bidLeaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                $bidLeaseFeeCombined = $joinParts([
-                    $fmtMoney(data_get($bid, 'get.lease_fee_flat_combo')),
-                    data_get($bid, 'get.lease_fee_percentage_combo') ? ($fmtPercent(data_get($bid, 'get.lease_fee_percentage_combo')) . ' of Gross Lease Value') : null,
-                ]) ?? '—';
-            } elseif ($bidLeaseFeeType === 'Percentage of the Net Aggregate Rent' && data_get($bid, 'get.lease_fee_percentage_net')) {
-                $bidLeaseFeeCombined = $fmtPercent(data_get($bid, 'get.lease_fee_percentage_net')) . ' of Net Aggregate Rent';
-            } elseif (strtolower($bidLeaseFeeType) === 'other' && data_get($bid, 'get.lease_fee_other')) {
-                $bidLeaseFeeCombined = data_get($bid, 'get.lease_fee_other');
-            } elseif ($bidLeaseFeeType) {
-                $bidLeaseFeeCombined = $bidLeaseFeeType;
-            }
-        @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Buyer's Broker Lease Fee:
-            <span class="removeBold">{{ $bidLeaseFeeCombined }}</span>
-        </div>
-        @endif
+                                                                            <!-- E) Brokerage Relationship -->
+                                                                            @if (data_get($bid, 'get.brokerage_relationship'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    <li class="mb-1" style="{{ $isListingOwner && isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}{!! $isListingOwner && isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}</li>
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
 
-        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- C) Lease-Option Details -->
-        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
-
-        @if (data_get($bid, 'get.interested_lease_option_agreement'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Interested in a Lease-Option Agreement:
-            <span class="removeBold">{{ data_get($bid, 'get.interested_lease_option_agreement') }}</span>
-        </div>
-        @endif
-
-        @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-            @if (data_get($bid, 'get.lease_value'))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation for Creating the Lease-Option Agreement:
-                <span class="removeBold">
-                    @if (data_get($bid, 'get.lease_type') === 'percent')
-                        {{ data_get($bid, 'get.lease_value') }}%
-                    @else
-                        {{ \App\Support\Format::money(data_get($bid, 'get.lease_value')) }}
-                    @endif
-                </span>
-            </div>
-            @endif
-            @if (data_get($bid, 'get.purchase_value'))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Compensation if Purchase Option is Exercised:
-                <span class="removeBold">
-                    @if (data_get($bid, 'get.purchase_type') === 'percent')
-                        {{ data_get($bid, 'get.purchase_value') }}%
-                    @else
-                        {{ \App\Support\Format::money(data_get($bid, 'get.purchase_value')) }}
-                    @endif
-                </span>
-            </div>
-            @endif
-        @endif
-
-        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- D) Legal Terms -->
-        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
-
-        @if (data_get($bid, 'get.protection_period'))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
-            Protection Period Timeframe:
-            <span class="removeBold">{{ data_get($bid, 'get.protection_period') }} Days</span>
-            @if ($isListingOwner && isset($brokerMismatches['protection_period'])){!! $mismatchBadge !!}@endif
-        </div>
-        @endif
-
-        @if (data_get($bid, 'get.early_termination_fee_option'))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
-            Early Termination Fee:
-            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.early_termination_fee_option'), data_get($bid, 'get.early_termination_fee_amount') ? $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) : null) }}</span>
-            @if ($isListingOwner && isset($brokerMismatches['early_termination_fee_option'])){!! $mismatchBadge !!}@endif
-        </div>
-        @endif
-
-        @if (data_get($bid, 'get.retainer_fee_option'))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}">
-            Retainer Fee:
-            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical(data_get($bid, 'get.retainer_fee_option'), data_get($bid, 'get.retainer_fee_amount') ? $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) : null) }}</span>
-            @if ($isListingOwner && isset($brokerMismatches['retainer_fee_option'])){!! $mismatchBadge !!}@endif
-        </div>
-        @if (in_array(strtolower(data_get($bid, 'get.retainer_fee_option')), ['yes']))
-            @if (data_get($bid, 'get.retainer_fee_application'))
-            @php $bidFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication(data_get($bid, 'get.retainer_fee_application')); @endphp
-            @if (!empty($bidFormattedRetainer))
-            <div class="col-md-12 col-12 pt-2 fw-bold">
-                Retainer Fee Application:
-                <span class="removeBold">{{ $bidFormattedRetainer }}</span>
-            </div>
-            @endif
-            @endif
-        @endif
-        @endif
-
-        @if (data_get($bid, 'get.agency_agreement_timeframe'))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
-            Buyer Agency Agreement Timeframe:
-            <span class="removeBold">{{ data_get($bid, 'get.agency_agreement_timeframe') === 'custom' ? data_get($bid, 'get.agency_agreement_custom') : data_get($bid, 'get.agency_agreement_timeframe') }}</span>
-            @if ($isListingOwner && isset($brokerMismatches['agency_agreement_timeframe'])){!! $mismatchBadge !!}@endif
-        </div>
-        @endif
-
-        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- E) Brokerage Relationship -->
-        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
-
-        @if (data_get($bid, 'get.brokerage_relationship'))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="{{ $isListingOwner && isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
-            Acceptable Brokerage Relationship:
-            <span class="removeBold">{{ data_get($bid, 'get.brokerage_relationship') }}</span>
-            @if ($isListingOwner && isset($brokerMismatches['brokerage_relationship'])){!! $mismatchBadge !!}@endif
-        </div>
-        @endif
-
-        <div class="my-3"><hr style="border-top: 1px solid #ccc;"></div>
-
-        <!-- F) Additional Terms -->
-        <h6 class="mt-3 mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
-
-        @if (data_get($bid, 'get.additional_details_broker'))
-        <div class="col-md-12 col-12 pt-2 fw-bold">
-            Additional Terms:
-            <span class="removeBold">{{ data_get($bid, 'get.additional_details_broker') }}</span>
-        </div>
-        @endif
-    </div>
-@endif
+                                                                            <!-- F) Additional Terms -->
+                                                                            @if (data_get($bid, 'get.additional_details_broker'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}</li>
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
+                                                                        </div>
+                                                                        @endif
                                                                         <!-- 3. Additional Details -->
                                                                         @if (data_get($bid, 'get.additional_details'))
                                                                             <div class="mb-5">
@@ -3278,12 +3243,17 @@
                                                                                                     style="color: #049399;">
                                                                                                     Uploaded Business Card:
                                                                                                 </div>
-                                                                                                @if (is_string(data_get($bid, 'get.business_card')))
+                                                                                                @php
+                                                                                                    $rawBusinessCard = data_get($bid, 'get.business_card');
+                                                                                                    if (is_object($rawBusinessCard)) { $rawBusinessCard = (array) $rawBusinessCard; }
+                                                                                                    if (is_array($rawBusinessCard)) {
+                                                                                                        $rawBusinessCard = $rawBusinessCard['path'] ?? $rawBusinessCard['file'] ?? $rawBusinessCard['url'] ?? (reset($rawBusinessCard) ?: null);
+                                                                                                    }
+                                                                                                    $normalizedBusinessCard = is_string($rawBusinessCard) ? $rawBusinessCard : null;
+                                                                                                @endphp
+                                                                                                @if ($normalizedBusinessCard)
                                                                                                     @php
-                                                                                                        $businessCardPath = data_get(
-                                                                                                            $bid,
-                                                                                                            'get.business_card',
-                                                                                                        );
+                                                                                                        $businessCardPath = $normalizedBusinessCard;
                                                                                                         $businessCardExtension = pathinfo(
                                                                                                             $businessCardPath,
                                                                                                             PATHINFO_EXTENSION,
@@ -3421,8 +3391,13 @@
                                                                                                                 Files:</div>
                                                                                                             <div
                                                                                                                 class="row">
-                                                                                                                @foreach ($matFiles as $fileIndex => $filePath)
-                                                                                                                    @if (is_string($filePath))
+                                                                                                                @foreach ($matFiles as $fileIndex => $rawFilePath)
+                                                                                                                    @php
+                                                                                                                        if (is_object($rawFilePath)) { $rawFilePath = (array) $rawFilePath; }
+                                                                                                                        if (is_array($rawFilePath)) { $rawFilePath = $rawFilePath['path'] ?? $rawFilePath['file'] ?? $rawFilePath['url'] ?? (reset($rawFilePath) ?: null); }
+                                                                                                                        $filePath = is_string($rawFilePath) ? $rawFilePath : null;
+                                                                                                                    @endphp
+                                                                                                                    @if ($filePath)
                                                                                                                         @php
                                                                                                                             $fileExtension = pathinfo(
                                                                                                                                 $filePath,
@@ -3632,7 +3607,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-success" style="background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                    <button type="submit" class="btn-custom btn-accept" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-check me-1"></i> Accept Bid
                                                                                     </button>
                                                                                 </form>
@@ -3641,7 +3616,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-warning" style="background-color: #ffc107 !important; border-color: #ffc107 !important; color: #212529 !important; padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                    <button type="submit" class="btn-custom btn-counter" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-exchange-alt me-1"></i> Counter Bid
                                                                                     </button>
                                                                                 </form>
@@ -3650,7 +3625,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                    <button type="submit" class="btn-custom btn-reject" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-times me-1"></i> Reject Bid
                                                                                     </button>
                                                                                 </form>
@@ -4327,7 +4302,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn-custom btn-accept" style="font-size:16px">Accept</button>
+                                                                        <button type="submit" class="btn-custom btn-accept" style="font-size:16px"><i class="fa fa-check me-1"></i> Accept Bid</button>
                                                                     </form>
 
                                                                     <form class="d-inline"
@@ -4337,7 +4312,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn-custom btn-reject" style="font-size:16px">Reject</button>
+                                                                        <button type="submit" class="btn-custom btn-reject" style="font-size:16px"><i class="fa fa-times me-1"></i> Reject Bid</button>
                                                                     </form>
 
                                                                     <form class="d-inline"
@@ -4347,7 +4322,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn-custom btn-counter" style="font-size:16px">Counter</button>
+                                                                        <button type="submit" class="btn-custom btn-counter" style="font-size:16px"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
                                                                     </form>
                                                                 </div>
                                                             @endif
@@ -4438,7 +4413,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn-custom btn-accept">Accept</button>
+                                                                        class="btn-custom btn-accept"><i class="fa fa-check me-1"></i> Accept Bid</button>
                                                                 </form>
                                                             </div>
                                                             <div class="biding-btn">
@@ -4451,7 +4426,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn-custom btn-reject">Reject</button>
+                                                                        class="btn-custom btn-reject"><i class="fa fa-times me-1"></i> Reject Bid</button>
                                                                 </form>
                                                             </div>
                                                             <div class="biding-btn">
@@ -4464,7 +4439,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn-custom btn-counter">Counter</button>
+                                                                        class="btn-custom btn-counter"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
                                                                 </form>
                                                             </div>
                                                             @endif

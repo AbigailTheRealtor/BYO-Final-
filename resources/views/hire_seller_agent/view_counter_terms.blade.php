@@ -415,7 +415,7 @@
                         <p class="mb-1"><span class="fw-semibold">Agency Agreement Timeframe:</span> {{ data_get($agentCounterData, 'agency_agreement_timeframe') }}</p>
                         @endif
                         @if(data_get($agentCounterData, 'additional_details_broker'))
-                        <p class="mb-0"><span class="fw-semibold">Additional Details:</span> {{ data_get($agentCounterData, 'additional_details_broker') }}</p>
+                        <p class="mb-0"><span class="fw-semibold">Additional Terms:</span> {{ data_get($agentCounterData, 'additional_details_broker') }}</p>
                         @endif
                     </div>
                     @endif

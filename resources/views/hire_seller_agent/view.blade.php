@@ -4101,9 +4101,15 @@
                                                 @endif
                                                 @if (data_get($bid, 'get.business_card'))
                                                 <div class="mb-2">
-                                                    @if (is_string(data_get($bid, 'get.business_card')))
                                                     @php
-                                                        $businessCardPath = data_get($bid, 'get.business_card');
+                                                        $rawBusinessCard = data_get($bid, 'get.business_card');
+                                                        if (is_object($rawBusinessCard)) { $rawBusinessCard = (array) $rawBusinessCard; }
+                                                        if (is_array($rawBusinessCard)) { $rawBusinessCard = $rawBusinessCard['path'] ?? $rawBusinessCard['file'] ?? $rawBusinessCard['url'] ?? (reset($rawBusinessCard) ?: null); }
+                                                        $normalizedBusinessCard = is_string($rawBusinessCard) ? $rawBusinessCard : null;
+                                                    @endphp
+                                                    @if ($normalizedBusinessCard)
+                                                    @php
+                                                        $businessCardPath = $normalizedBusinessCard;
                                                         $businessCardExt  = strtolower(pathinfo($businessCardPath, PATHINFO_EXTENSION));
                                                         $businessCardUrl  = asset('storage/' . $businessCardPath);
                                                     @endphp
@@ -4184,7 +4190,8 @@
                                                     <div class="d-flex flex-wrap gap-2">
                                                         @foreach ($matFiles as $matFile)
                                                         @php
-                                                            $mfPath = is_object($matFile) ? ($matFile->path ?? '') : (is_array($matFile) ? ($matFile['path'] ?? '') : (string) $matFile);
+                                                            if (is_object($matFile)) { $matFile = (array) $matFile; }
+                                                            $mfPath = is_array($matFile) ? ($matFile['path'] ?? $matFile['file'] ?? $matFile['url'] ?? (reset($matFile) ?: '')) : (is_string($matFile) ? $matFile : '');
                                                             $mfExt  = strtolower(pathinfo($mfPath, PATHINFO_EXTENSION));
                                                             $mfUrl  = $mfPath ? asset('storage/' . $mfPath) : '';
                                                         @endphp

@@ -2679,20 +2679,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        <!-- F) Additional Terms / Additional Details -->
-                                                        @if (data_get($bid, 'get.additional_details_broker') || data_get($bid, 'get.additional_details'))
+                                                        <!-- F) Additional Terms -->
+                                                        @if (data_get($bid, 'get.additional_details_broker'))
                                                         <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms / Additional Details</h6>
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                @if (data_get($bid, 'get.additional_details_broker'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['additional_details_broker']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}{!! isset($brokerMismatches['additional_details_broker']) ? $mismatchBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.additional_details'))
-                                                                <li class="mb-1"><span class="fw-semibold">Additional Details:</span> {{ data_get($bid, 'get.additional_details') }}</li>
-                                                                @endif
                                                             </ul>
                                                         </div>
                                                         @endif
+                                                    </div>
+                                                    @endif
+
+                                                    <!-- Additional Details -->
+                                                    @if (data_get($bid, 'get.additional_details'))
+                                                    <div class="mb-5">
+                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                            <i class="fa fa-info-circle me-2"></i>Additional Details
+                                                        </h6>
+                                                        <div class="text-muted" style="font-style: italic;">
+                                                            {{ data_get($bid, 'get.additional_details') }}
+                                                        </div>
                                                     </div>
                                                     @endif
 
@@ -3078,9 +3085,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                             @if (data_get($bid, 'get.business_card'))
                                                             <div class="mb-2">
-                                                                @if (is_string(data_get($bid, 'get.business_card')))
                                                                 @php
-                                                                    $businessCardPath = data_get($bid, 'get.business_card');
+                                                                    $rawBusinessCard = data_get($bid, 'get.business_card');
+                                                                    if (is_object($rawBusinessCard)) { $rawBusinessCard = (array) $rawBusinessCard; }
+                                                                    if (is_array($rawBusinessCard)) { $rawBusinessCard = $rawBusinessCard['path'] ?? $rawBusinessCard['file'] ?? $rawBusinessCard['url'] ?? (reset($rawBusinessCard) ?: null); }
+                                                                    $normalizedBusinessCard = is_string($rawBusinessCard) ? $rawBusinessCard : null;
+                                                                @endphp
+                                                                @if ($normalizedBusinessCard)
+                                                                @php
+                                                                    $businessCardPath = $normalizedBusinessCard;
                                                                     $businessCardExtension = pathinfo($businessCardPath, PATHINFO_EXTENSION);
                                                                     $businessCardUrl = asset('storage/' . $businessCardPath);
                                                                 @endphp
@@ -3194,8 +3207,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <div class="mb-2">
                                                                     <div class="fw-medium mb-2" style="color: #34465c; font-size: 0.9rem;">Uploaded Files:</div>
                                                                     <div class="row g-2">
-                                                                        @foreach ($matFiles as $fileIndex => $filePath)
-                                                                        @if (is_string($filePath))
+                                                                        @foreach ($matFiles as $fileIndex => $rawFilePath)
+                                                                        @php
+                                                                            if (is_object($rawFilePath)) { $rawFilePath = (array) $rawFilePath; }
+                                                                            if (is_array($rawFilePath)) { $rawFilePath = $rawFilePath['path'] ?? $rawFilePath['file'] ?? $rawFilePath['url'] ?? (reset($rawFilePath) ?: null); }
+                                                                            $filePath = is_string($rawFilePath) ? $rawFilePath : null;
+                                                                        @endphp
+                                                                        @if ($filePath)
                                                                         @php
                                                                             $fileExtension = pathinfo($filePath, PATHINFO_EXTENSION);
                                                                             $fileName = basename($filePath);
@@ -4537,22 +4555,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        {{-- F) Additional Terms / Additional Details --}}
-                                                        @if (!empty($allMeta['additional_details_broker']) || !empty($allMeta['additional_details']))
+                                                        {{-- F) Additional Terms --}}
+                                                        @if (!empty($allMeta['additional_details_broker']))
                                                         <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Additional Terms / Additional Details</div>
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Additional Terms</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
-                                                                @if (!empty($allMeta['additional_details_broker']))
                                                                 @php $addTermsChanged = $isChanged($allMeta['additional_details_broker'], 'additional_details_broker'); @endphp
                                                                 <li class="mb-1" style="font-size: 12px; {{ $addTermsChanged ? $changedStyle : '' }}"><span class="fw-semibold">Additional Terms:</span> {{ $allMeta['additional_details_broker'] }}{!! $addTermsChanged ? $changedBadge : '' !!}</li>
-                                                                @endif
-                                                                @if (!empty($allMeta['additional_details']))
-                                                                @php $addDetailsChanged = $isChanged($allMeta['additional_details'], 'additional_details'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $addDetailsChanged ? $changedStyle : '' }}"><span class="fw-semibold">Additional Details:</span> {{ $allMeta['additional_details'] }}{!! $addDetailsChanged ? $changedBadge : '' !!}</li>
-                                                                @endif
                                                             </ul>
                                                         </div>
                                                         @endif
+                                                    </div>
+                                                    @endif
+
+                                                    {{-- Additional Details --}}
+                                                    @if (!empty($allMeta['additional_details']))
+                                                    <div class="mb-3">
+                                                        <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa fa-info-circle me-1"></i>Additional Details</div>
+                                                        @php $addDetailsChanged = $isChanged($allMeta['additional_details'], 'additional_details'); @endphp
+                                                        <div class="ps-3" style="font-size: 12px; {{ $addDetailsChanged ? $changedStyle : '' }}">{{ $allMeta['additional_details'] }}{!! $addDetailsChanged ? $changedBadge : '' !!}</div>
                                                     </div>
                                                     @endif
 

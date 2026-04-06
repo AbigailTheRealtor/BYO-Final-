@@ -461,6 +461,18 @@
                                 </ul>
                             </div>
                             @endif
+
+                            @if (!empty($counterData['additional_details_broker']))
+                            <div class="mb-4">
+                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
+                                <ul class="list-unstyled ps-3 mb-0">
+                                    <li class="mb-1" style="{{ isset($brokerMismatches['additional_details_broker']) ? $mismatchStyle : '' }}">
+                                        <span class="fw-semibold">Additional Terms:</span> {{ $counterData['additional_details_broker'] }}
+                                        {!! isset($brokerMismatches['additional_details_broker']) ? $mismatchBadge : '' !!}
+                                    </li>
+                                </ul>
+                            </div>
+                            @endif
                         </div>
 
                         <div class="mb-4">
@@ -528,17 +540,12 @@
                             @endif
                         </div>
 
-                        @if (!empty($counterData['additional_details']) || !empty($counterData['additional_details_broker']))
+                        @if (!empty($counterData['additional_details']))
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">
                                 <i class="fas fa-info-circle me-2"></i>Additional Details
                             </h6>
-                            @if (!empty($counterData['additional_details']))
-                            <p class="mb-1 ps-3">{{ $counterData['additional_details'] }}</p>
-                            @endif
-                            @if (!empty($counterData['additional_details_broker']))
-                            <p class="mb-0 ps-3">{{ $counterData['additional_details_broker'] }}</p>
-                            @endif
+                            <p class="mb-0 ps-3">{{ $counterData['additional_details'] }}</p>
                         </div>
                         @endif
                     </div>
