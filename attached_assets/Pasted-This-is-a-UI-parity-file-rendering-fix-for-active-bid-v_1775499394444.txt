@@ -1,0 +1,221 @@
+This is a UI parity + file rendering fix for active bid views only.
+
+Tenant is the gold standard.
+
+Do NOT change listing creation flows, database schema, stored field names, or unrelated dashboard pages.
+Do NOT refactor unrelated bid logic.
+Do NOT touch core score calculation unless absolutely required for rendering.
+Only modify active files used by current bid views / private bid panels / bid action rows / uploaded materials rendering.
+
+---
+
+## GOALS
+
+Fix the following in active current bid views:
+
+1. Buyer Broker Compensation & Agency Agreement Terms must visually match Tenant exactly
+2. Additional Details must be OUTSIDE Broker Compensation & Agency Agreement Terms for:
+
+   * Tenant
+   * Buyer
+   * Seller
+   * Landlord
+3. Buyer Accept / Counter / Reject buttons must match Tenant exactly in:
+
+   * wording
+   * font size
+   * colors
+   * spacing
+   * icon sizing
+   * button classes
+   * layout / wrapping behavior
+4. Agent Presentation and Promotional Materials must properly show pre-saved uploaded items and allow download
+
+   * especially business card
+   * and any uploaded promotional materials / files
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT rename or delete DB columns
+* Do NOT change listing creation forms
+* Do NOT change saved meta structure unless absolutely required to render/download existing files
+* Do NOT create a new upload system
+* Do NOT remove existing uploaded files from edit/save flows
+* Do NOT change route structure unless a currently active bid download link is broken
+* Use Tenant markup/classes as the source of truth for visual parity
+* Only change active current bid view files and any minimal helper/accessor code required to render/download preloaded uploaded items correctly
+
+---
+
+1. BUYER BROKER COMPENSATION & AGENCY AGREEMENT TERMS UI PARITY
+
+---
+
+Buyer currently does NOT visually match Tenant.
+Fix Buyer so the Broker Compensation & Agency Agreement Terms section matches Tenant exactly in:
+
+* heading hierarchy
+* label font size
+* value font size
+* weight / bold styling
+* spacing between rows
+* spacing between subsections
+* teal subsection headers
+* row alignment
+* mismatch badge alignment
+* overall visual rhythm
+
+Important:
+
+* Do NOT just keep Buyer-specific wording with old Buyer styling
+* Use Tenant’s exact visual structure/classes/markup pattern and adapt only the Buyer-specific field labels/content
+
+Buyer should visually feel like the Tenant section, not a separate design.
+
+---
+
+2. ADDITIONAL DETAILS MUST BE OUTSIDE BROKER COMPENSATION & AGENCY AGREEMENT TERMS
+
+---
+
+For ALL active current bid views:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+Requirement:
+
+* Additional Details must be its own separate section OUTSIDE Broker Compensation & Agency Agreement Terms
+* Additional Terms may remain inside Broker Compensation & Agency Agreement Terms where applicable
+* Additional Details must not appear grouped inside the final broker comp subsection label like:
+  “Additional Terms / Additional Details”
+
+Use Buyer’s current separate Additional Details placement as the reference for location ONLY, but visual styling should still remain consistent with each card.
+
+Required outcome:
+
+* Broker Compensation & Agency Agreement Terms contains only actual compensation / agency terms (+ Additional Terms if applicable)
+* Additional Details is a separate section below it
+* This must be true for Tenant, Buyer, Seller, and Landlord
+
+---
+
+3. BUYER ACCEPT / COUNTER / REJECT BUTTON UI PARITY
+
+---
+
+Buyer buttons still do NOT match Tenant.
+
+Make Buyer action buttons match Tenant exactly in:
+
+* text wording
+* line breaks / no awkward wrap differences
+* font size
+* font weight
+* icon size
+* button height
+* padding
+* border radius
+* color classes
+* spacing between buttons
+* alignment
+
+Tenant is the exact source of truth.
+
+Important:
+
+* Use the same button classes / markup pattern as Tenant
+* If Tenant says “Counter Bid”, Buyer should say exactly the same
+* If Tenant uses yellow styling for Counter, Buyer must match that exact styling
+* Do not leave Buyer using blue or oversized text if Tenant does not
+* Make Accept, Counter, Reject appear as the same visual system as Tenant
+
+Also verify functionality still works after the visual parity change.
+
+---
+
+4. AGENT PRESENTATION / PROMOTIONAL MATERIALS / BUSINESS CARD RENDERING + DOWNLOAD
+
+---
+
+Issue:
+
+* pre-saved uploaded materials are not properly showing on the bid
+* business card may not display / render as downloadable
+* uploaded promotional materials may not be downloadable when preloaded
+
+Fix for active bid views:
+
+* If a bid has pre-saved business card / uploaded material metadata, it must render in the bid view
+* If uploaded items exist, user must be able to click and download them
+* This applies to business card and promotional / presentation materials
+
+Requirements:
+
+* support already-saved uploaded items
+* preserve existing stored file paths / metadata
+* normalize data as needed if current storage returns array/stdClass/string inconsistently
+* if file exists, render a visible download link/button
+* do not silently hide preloaded items
+* do not break if a material has one file or multiple files
+* do not remove files during edit/save unless intentionally replaced by the user
+
+Check all active current bid views, especially Buyer, and make sure the same robust rendering/download logic is used where needed.
+
+---
+
+## FILES TO CHECK
+
+Check active current bid views for:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+Also check any minimal model/accessor/helper code currently responsible for:
+
+* preloaded business card metadata
+* promo materials metadata
+* file path rendering
+* download link generation
+
+Only modify what is necessary.
+
+---
+
+## VERIFICATION REQUIRED
+
+After coding, provide a numbered report with:
+
+1. Buyer Broker Compensation & Agency Agreement Terms visual parity
+
+* files checked
+* files changed
+* exact proof it now matches Tenant visually
+
+2. Additional Details separation
+
+* confirm Tenant / Buyer / Seller / Landlord all now have Additional Details outside Broker Compensation & Agency Agreement Terms
+* list exact files changed
+
+3. Buyer button parity
+
+* confirm Buyer buttons now match Tenant in wording, color, font, spacing, and classes
+* list exact files changed
+
+4. Uploaded materials / business card rendering
+
+* confirm preloaded uploaded items now show
+* confirm downloadable links/buttons work
+* list exact files changed
+
+5. Final rendered behavior
+
+* confirm no old Buyer styling remains in Broker Compensation section
+* confirm no role still has Additional Details inside Broker Compensation & Agency Agreement Terms
+* confirm Buyer buttons no longer visually differ from Tenant
