@@ -4108,9 +4108,9 @@
                                                                         <ul style="padding-left: 1.5rem; margin: 4px 0;">
                                                                             @foreach ($modalEnhOrder as $enh)
                                                                                 @if (in_array($enh, $modalPhotoEnhancements))
-                                                                                    @if ($enh === 'Other')
-                                                                                        <li style="font-size: 0.85rem;">Other{{ !empty($modalCustomEnh) ? ': ' . $modalCustomEnh : '' }}</li>
-                                                                                    @else
+                                                                                    @if ($enh === 'Other' && !empty($modalCustomEnh))
+                                                                                        <li style="font-size: 0.85rem;">{{ $modalCustomEnh }}</li>
+                                                                                    @elseif ($enh !== 'Other')
                                                                                         <li style="font-size: 0.85rem;">{{ $enh }}</li>
                                                                                     @endif
                                                                                 @endif
