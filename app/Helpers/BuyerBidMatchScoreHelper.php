@@ -359,10 +359,13 @@ class BuyerBidMatchScoreHelper
 
         $servicesNorm = array_map([self::class, 'normalizeService'], $services);
         if ($catalog !== null) {
-            $servicesNorm = array_values(array_filter(
-                $servicesNorm,
-                fn($s) => in_array($s, $catalog, true)
-            ));
+            $resolved = [];
+            foreach ($servicesNorm as $s) {
+                if (self::matchesCatalog($s, $catalog)) {
+                    $resolved[] = self::resolveToCanonical($s, $catalog);
+                }
+            }
+            $servicesNorm = $resolved;
         }
         $servicesNorm = array_unique($servicesNorm);
 
@@ -619,5 +622,110 @@ class BuyerBidMatchScoreHelper
         $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
         $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
         return strtolower(trim($s));
+    }
+
+    /**
+     * Aliases map: normalized old listing-form text → normalized canonical catalog text.
+     * Handles cases where the listing form historically stored shorter or differently-worded
+     * service strings that are semantically equivalent to the bid form / catalog entries.
+     */
+    private const SERVICE_ALIASES = [
+        // Residential — guidance services
+        "provide general guidance on financing, loan options, property taxes, insurance, and escrow timelines"
+            => "answer general questions about financing, loan options, property taxes, insurance, and escrow timelines (non-legal guidance)",
+        "provide general guidance on inspection expectations, common repair requests, and contingency planning"
+            => "offer general guidance on inspection expectations, common repair requests, and contingency planning during the offer process (non-legal advice)",
+        // Residential — closing
+        "coordinate scheduling for inspections, appraisals, and other requested evaluations"
+            => "coordinate inspections, appraisals, and lease audits (if applicable)",
+        // Income — guidance
+        "provide general guidance on financing options, rent control, property taxes, and landlord responsibilities"
+            => "answer general questions about financing options, rent control, property taxes, and landlord responsibilities",
+        "provide general guidance on due diligence steps, lease audits, and estoppel reviews"
+            => "offer general guidance on due diligence steps, lease audits, and estoppel reviews (non-legal advice)",
+        // Income — factual data (space difference)
+        "provide factual information on rental demand, turnover rates, and submarket conditions using third-party sources"
+            => "provide factual information on rental demand, turnover rates, and sub market conditions using third-party sources",
+        // Commercial — guidance
+        "provide general guidance on zoning regulations, permitted uses, and rental income potential"
+            => "answer general questions about zoning regulations, permitted uses, and rental income potential",
+        "provide general guidance on lease types, contingency timelines, due diligence, and environmental risks"
+            => "offer general guidance on lease types, contingency timelines, due diligence, and environmental risks (non-legal advice only)",
+        // Business — guidance
+        "provide general guidance on licensing, zoning, sba financing, registration steps, and transition timing"
+            => "answer general questions about licensing, zoning, sba financing, registration steps, and transition timing (non-legal guidance)",
+        "provide general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process"
+            => "offer general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process (non-legal advice only)",
+        // Vacant Land — property evaluation
+        "evaluate development feasibility, land use restrictions, and agricultural potential with the buyer"
+            => "assess development feasibility, land use restrictions, or agricultural potential (non-legal advice)",
+        // Vacant Land — CMA (word-order and preposition differ, not just parenthetical)
+        "provide a comparative market analysis (cma) with acreage comps, recent land sales, and price-per-acre benchmarks"
+            => "provide a comparative market analysis (cma) based on recent land sales, acreage comps, and price-per-acre benchmarks (for informational purposes only — not a formal appraisal)",
+        // Vacant Land — guidance
+        "provide general guidance on zoning, utilities, development potential, and environmental constraints"
+            => "answer general questions about zoning, utilities, development potential, and environmental constraints (non-legal guidance only)",
+        "provide general guidance on feasibility timelines, inspection steps, and rural financing considerations"
+            => "offer general guidance on feasibility timelines, inspection steps, and rural financing considerations (non-legal advice only)",
+    ];
+
+    /**
+     * Resolve a normalized service string through aliases, then check catalog membership.
+     * Accepts:
+     *   1. Exact catalog match
+     *   2. Alias → canonical catalog match
+     *   3. Prefix match: service is a leading substring of a catalog entry (handles services
+     *      stored without trailing legal disclaimers/parentheticals)
+     */
+    private static function matchesCatalog(string $normalizedService, array $catalog): bool
+    {
+        // 1. Exact match
+        if (in_array($normalizedService, $catalog, true)) {
+            return true;
+        }
+
+        // 2. Alias map match
+        $canonical = self::SERVICE_ALIASES[$normalizedService] ?? null;
+        if ($canonical !== null && in_array($canonical, $catalog, true)) {
+            return true;
+        }
+
+        // 3. Prefix match: the stored service is the beginning of a catalog entry
+        //    (handles services stored without the trailing parenthetical disclaimer)
+        foreach ($catalog as $catEntry) {
+            if (str_starts_with($catEntry, $normalizedService)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Resolve a normalized service to its canonical catalog form (for consistent comparison).
+     * If the service matches via alias or prefix, return the canonical catalog string.
+     * Otherwise return the original normalized string.
+     */
+    private static function resolveToCanonical(string $normalizedService, array $catalog): string
+    {
+        // Exact match — already canonical
+        if (in_array($normalizedService, $catalog, true)) {
+            return $normalizedService;
+        }
+
+        // Alias match
+        $canonical = self::SERVICE_ALIASES[$normalizedService] ?? null;
+        if ($canonical !== null && in_array($canonical, $catalog, true)) {
+            return $canonical;
+        }
+
+        // Prefix match — find the full catalog entry
+        foreach ($catalog as $catEntry) {
+            if (str_starts_with($catEntry, $normalizedService)) {
+                return $catEntry;
+            }
+        }
+
+        return $normalizedService;
     }
 }
