@@ -3238,7 +3238,372 @@
                                                                             </div>
                                                                         @endif
 
-                                                                        <!-- 5. Agent Presentation & Promotional Materials -->
+                                                                        <!-- 3b. Offered Services -->
+                                                                        @php
+                                                                            $bidPropType = @$auction->get->property_type ?? 'Residential';
+
+                                                                            $buyerResidentialCategories = [
+                                                                                "📣 Buyer Criteria Marketing & Promotion" => [
+                                                                                    "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                                                                    "Post the Buyer's purchase criteria on Craigslist under the \"Real Estate Wanted\" section",
+                                                                                    "Share the Buyer's purchase criteria on Nextdoor in Neighborhood or Community Groups",
+                                                                                    "Promote the Buyer's purchase criteria on Facebook in Real Estate or Housing Groups",
+                                                                                    "Share the Buyer's purchase criteria on Instagram using posts, stories, or reels",
+                                                                                    "Promote the Buyer's purchase criteria on LinkedIn in Real Estate or Housing Groups",
+                                                                                    "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                                                                    "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                                                                    "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                                                                    "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
+                                                                                    "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
+                                                                                ],
+                                                                                "🔍 Property Search, Alerts & Matching" => [
+                                                                                    "Send email alerts with new listings from the MLS that match the Buyer's purchase criteria",
+                                                                                    "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria",
+                                                                                    "Communicate with the Seller's Agent or Seller to confirm availability, purchase terms, and showing instructions",
+                                                                                    "Evaluate properties with the Buyer and provide insights on pricing, terms, potential, and overall fit",
+                                                                                ],
+                                                                                "🏡 Property Showings & Virtual Tours" => [
+                                                                                    "Schedule and attend property showings with the Buyer",
+                                                                                    "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                                                                                    "Preview properties on behalf of the Buyer upon request",
+                                                                                    "Provide factual observations on property layout and condition",
+                                                                                ],
+                                                                                "📝 Offer & Contract Coordination" => [
+                                                                                    "Draft and submit offers using state-approved purchase forms",
+                                                                                    "Provide the Buyer with the necessary disclosure forms required by state or local law",
+                                                                                    "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                                                    "Negotiate price, deposits, and contingencies with the Seller's Agent or Seller (as permitted under the agency agreement)",
+                                                                                    "Manage communications with the Seller's Agent or Seller",
+                                                                                    "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                                                    "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                                                                    "Monitor contract milestones, contingency periods, and financing deadlines",
+                                                                                    "Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)",
+                                                                                ],
+                                                                                "📋 Closing Coordination & Transaction Management" => [
+                                                                                    "Coordinate inspections, appraisals, and lease audits (if applicable)",
+                                                                                    "Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                                                                    "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)",
+                                                                                    "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                                                    "Schedule and confirm the Final Walkthrough",
+                                                                                    "Schedule and confirm the Closing Appointment",
+                                                                                ],
+                                                                                "💡 Buying Strategy & Guidance" => [
+                                                                                    "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions (for informational purposes only — not a formal appraisal)",
+                                                                                    "Answer general questions about financing, loan options, property taxes, insurance, and escrow timelines (non-legal guidance)",
+                                                                                    "Provide factual information about neighborhood characteristics, school zones, crime data, and local amenities using third-party sources (no personal opinions or steering)",
+                                                                                    "Offer general guidance on inspection expectations, common repair requests, and contingency planning during the offer process (non-legal advice)",
+                                                                                ],
+                                                                            ];
+
+                                                                            $buyerIncomeCategories = [
+                                                                                "📣 Buyer Criteria Marketing & Promotion" => [
+                                                                                    "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                                                                    "Post the Buyer's purchase criteria on Craigslist under the \"Real Estate Wanted\" section",
+                                                                                    "Share the Buyer's purchase criteria on Nextdoor in Neighborhood or Community Groups",
+                                                                                    "Promote the Buyer's purchase criteria on Facebook in Real Estate Investor or Multifamily Groups",
+                                                                                    "Share the Buyer's purchase criteria on Instagram using posts, stories, or reels",
+                                                                                    "Promote the Buyer's purchase criteria on LinkedIn in Investment or Property Management Groups",
+                                                                                    "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                                                                    "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                                                                    "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                                                                    "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
+                                                                                    "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
+                                                                                ],
+                                                                                "🔍 Property Search, Alerts & Matching" => [
+                                                                                    "Send email alerts with new listings that match the Buyer's purchase criteria",
+                                                                                    "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria",
+                                                                                    "Communicate with the Seller's Agent or Sellers to confirm pricing, rental income, expenses, and showing instructions",
+                                                                                    "Evaluate investment properties with the Buyer and provide insights on cash flow, cap rates, and value-add potential",
+                                                                                ],
+                                                                                "🏘 Property Showings & Virtual Tours" => [
+                                                                                    "Schedule and attend property showings with the Buyer",
+                                                                                    "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                                                                                    "Preview properties on behalf of the Buyer upon request",
+                                                                                    "Provide observations on tenant occupancy, building condition, and operating expenses",
+                                                                                ],
+                                                                                "📝 Offer & Contract Management" => [
+                                                                                    "Draft and submit offers using state-approved purchase forms",
+                                                                                    "Provide the Buyer with the necessary disclosure forms required by state or local law",
+                                                                                    "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                                                    "Negotiate price, deposits, and contingencies with the Seller's Agent or Seller",
+                                                                                    "Manage communication with the Seller's Agent or Seller",
+                                                                                    "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                                                    "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                                                                    "Monitor contract milestones, contingency periods, and financing deadlines",
+                                                                                    "Provide referrals to Attorneys, Title Companies, Escrow Professionals, Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
+                                                                                ],
+                                                                                "📋 Closing Coordination & Transaction Management" => [
+                                                                                    "Review and provide due diligence documents such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                                                                    "Coordinate with the Seller's Agent, Buyer's Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                                                                    "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)",
+                                                                                    "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                                                    "Schedule and confirm the Final Walkthrough",
+                                                                                    "Schedule and confirm the Closing Appointment",
+                                                                                ],
+                                                                                "💡 Buying Strategy & Guidance" => [
+                                                                                    "Provide a Comparative Market Analysis (CMA) with pricing recommendations, rental comps, and Cap Rate estimates (for informational purposes only — not a formal appraisal)",
+                                                                                    "Answer general questions about financing options, rent control, property taxes, and Landlord responsibilities",
+                                                                                    "Provide factual information on rental demand, turnover rates, and sub market conditions using third-party sources",
+                                                                                    "Offer general guidance on due diligence steps, lease audits, and estoppel reviews (non-legal advice)",
+                                                                                ],
+                                                                            ];
+
+                                                                            $buyerCommercialCategories = [
+                                                                                "📣 Buyer Criteria Marketing & Promotion" => [
+                                                                                    "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                                                                    "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted – Commercial\"",
+                                                                                    "Promote the Buyer's criteria on Facebook in Commercial Real Estate or Investment Groups",
+                                                                                    "Share the Buyer's criteria on Instagram using posts, stories, or reels",
+                                                                                    "Promote the Buyer's criteria on LinkedIn in Commercial or Investment Groups",
+                                                                                    "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                                                                    "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                                                                    "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                                                                    "Distribute branded postcards or flyers in the Buyer's preferred purchase areas",
+                                                                                    "Launch hyperlocal or interest-based digital ad campaigns targeting desired commercial property types",
+                                                                                ],
+                                                                                "🔍 Property Search, Alerts & Matching" => [
+                                                                                    "Send listing alerts from real estate platforms that match the Buyer's purchase criteria",
+                                                                                    "Send property alerts that match the Buyer's purchase criteria from the MLS or commercial listing platforms",
+                                                                                    "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired listings that meet the Buyer's criteria",
+                                                                                    "Communicate with the Seller's Agent or Seller to confirm availability, purchase terms, and showing instructions",
+                                                                                    "Analyze building class, property zoning, income potential, and redevelopment opportunities",
+                                                                                ],
+                                                                                "🏢 Property Showings & Virtual Tours" => [
+                                                                                    "Schedule and attend property showings with the Buyer",
+                                                                                    "Coordinate or conduct virtual showings via live video or recorded walkthroughs",
+                                                                                    "Preview properties on behalf of the Buyer upon request",
+                                                                                    "Provide insights on layout, access, visibility, tenant mix, and surrounding infrastructure",
+                                                                                ],
+                                                                                "📝 Offer & Contract Management" => [
+                                                                                    "Draft and submit offers using state-approved purchase agreements or Letters of Intent (LOIs)",
+                                                                                    "Provide the Buyer with the necessary disclosure forms required by state or local law",
+                                                                                    "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                                                    "Negotiate price, deposit structure, timelines, and contingencies with the Seller or Seller's Agent",
+                                                                                    "Manage communication with the Seller's Agent or Seller",
+                                                                                    "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                                                    "Assist with due diligence negotiations, including repair requests or credits",
+                                                                                    "Monitor contract contingencies, including financing, estoppel review, lease audits, and environmental reports",
+                                                                                    "Provide referrals to Attorneys, Title Companies, Escrow Officers, Commercial Lenders, or 1031 Exchange Intermediaries (referrals only — no endorsement or warranty is made)",
+                                                                                ],
+                                                                                "📋 Closing Coordination & Transaction Management" => [
+                                                                                    "Coordinate inspections, appraisals, environmental assessments, and estoppel certificate collection as needed",
+                                                                                    "Review and request due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                                                                    "Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing",
+                                                                                    "Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)",
+                                                                                    "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                                                    "Schedule and confirm the Final Walkthrough",
+                                                                                    "Schedule and confirm the Closing Appointment",
+                                                                                ],
+                                                                                "💡 Buying Strategy & Guidance" => [
+                                                                                    "Provide a Comparative Market Analysis (CMA) with recent sales comps, lease comps, and an estimated value range (for informational purposes only — not a formal appraisal)",
+                                                                                    "Answer general questions about zoning regulations, permitted uses, and rental income potential",
+                                                                                    "Provide factual data on traffic counts, commercial market trends, and area demographics using third-party sources (no personal opinions or steering)",
+                                                                                    "Offer general guidance on lease types, contingency timelines, due diligence, and environmental risks (non-legal advice only)",
+                                                                                ],
+                                                                            ];
+
+                                                                            $buyerBusinessCategories = [
+                                                                                "📣 Buyer Criteria Marketing & Promotion" => [
+                                                                                    "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                                                                    "Post the Buyer's purchase criteria on Craigslist under \"Business for Sale\" or \"Real Estate Wanted – Commercial\"",
+                                                                                    "Promote the Buyer's purchase criteria on Facebook in Business Opportunity or Franchise Groups",
+                                                                                    "Share the Buyer's purchase criteria on Instagram using posts, stories, or reels",
+                                                                                    "Promote the Buyer's purchase criteria on LinkedIn in Business, Commercial, or Startup Groups",
+                                                                                    "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                                                                    "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                                                                    "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                                                                    "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
+                                                                                    "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
+                                                                                ],
+                                                                                "🔍 Business Search, Alerts & Matching" => [
+                                                                                    "Send alerts for businesses that match the Buyer's acquisition criteria from MLS, BizBuySell, or other listing platforms",
+                                                                                    "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources",
+                                                                                    "Search for off-market, pre-market, distressed, or recently closed businesses that meet the Buyer's criteria",
+                                                                                    "Communicate with the Seller's Broker or Seller to confirm pricing, lease terms, licensing status, and showing availability",
+                                                                                    "Analyze financials, lease assignments, business licensing requirements, and overall market positioning",
+                                                                                ],
+                                                                                "🏢 Property Showings & Virtual Tours" => [
+                                                                                    "Schedule and attend property or business showings with the Buyer",
+                                                                                    "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
+                                                                                    "Preview properties or business locations on behalf of the Buyer upon request",
+                                                                                    "Provide insights on foot traffic, customer base, operational setup, competitive advantages, and location dynamics",
+                                                                                ],
+                                                                                "📝 Offer & Contract Management" => [
+                                                                                    "Draft and submit offers using appropriate business purchase or asset sale forms",
+                                                                                    "Provide the Buyer with required disclosures, financial summaries, and documentation made available by the Seller",
+                                                                                    "Negotiate terms such as purchase price, deposit structure, inventory inclusions, non-compete agreements, and contingencies",
+                                                                                    "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                                                    "Manage communication with the Seller's Broker or Seller",
+                                                                                    "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                                                                    "Assist with due diligence coordination, Buyer-requested repairs, and adjustment negotiations",
+                                                                                    "Monitor contingency periods, financing milestones, and deal approval timelines",
+                                                                                    "Provide referrals to Business Attorneys, CPAs, Escrow Officers, or Lenders (referrals only — no endorsement or warranty is made)",
+                                                                                ],
+                                                                                "📋 Closing Coordination & Transaction Management" => [
+                                                                                    "Coordinate inspections, licensing verifications, lease assignments, and inventory counts",
+                                                                                    "Coordinate with Lenders, Attorneys, Escrow Officers, Title Companies, CPAs, and other involved parties to prepare for Closing",
+                                                                                    "Review the Settlement Statement or Closing Worksheet for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)",
+                                                                                    "Confirm delivery of final executed documents, wire instructions, and business transition materials",
+                                                                                    "Schedule and confirm the Final Walkthrough",
+                                                                                    "Schedule and confirm the Closing Appointment",
+                                                                                ],
+                                                                                "💡 Buying Strategy & Guidance" => [
+                                                                                    "Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks (for informational purposes only — not a formal appraisal or valuation)",
+                                                                                    "Answer general questions about licensing, zoning, SBA financing, registration steps, and transition timing (non-legal guidance)",
+                                                                                    "Offer general guidance on due diligence preparation, key documents to review, and red flags during the acquisition process (non-legal advice only)",
+                                                                                ],
+                                                                            ];
+
+                                                                            $buyerVacantLandCategories = [
+                                                                                "📣 Buyer Criteria Marketing & Promotion" => [
+                                                                                    "Create a branded flyer summarizing the Buyer's purchase criteria",
+                                                                                    "Post the Buyer's criteria on Craigslist under \"Real Estate Wanted – Land\"",
+                                                                                    "Share the Buyer's criteria on Nextdoor in Neighborhood or Rural Groups",
+                                                                                    "Promote the Buyer's criteria on Facebook in Land Buyers, Developers, or Homesteader Groups",
+                                                                                    "Share the Buyer's criteria on Instagram using posts, stories, or reels",
+                                                                                    "Promote the Buyer's criteria on LinkedIn in Land Acquisition or Investment Groups",
+                                                                                    "Upload a TikTok video summarizing the Buyer's purchase criteria",
+                                                                                    "Upload a YouTube video summarizing the Buyer's purchase criteria",
+                                                                                    "Launch a mass email campaign promoting the Buyer's purchase criteria",
+                                                                                    "Distribute branded postcards or flyers in the Buyer's preferred neighborhoods",
+                                                                                    "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
+                                                                                ],
+                                                                                "🔍 Property Search, Alerts & Matching" => [
+                                                                                    "Send property alerts for land listings that match the Buyer's goals from MLS and land-specific platforms",
+                                                                                    "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms",
+                                                                                    "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria",
+                                                                                    "Communicate with the Seller's Agent or Seller to confirm zoning, access, utilities, and pricing",
+                                                                                    "Assess development feasibility, land use restrictions, or agricultural potential (non-legal advice)",
+                                                                                ],
+                                                                                "🏡 Property Showings & Virtual Tours" => [
+                                                                                    "Schedule and attend land visits with the Buyer",
+                                                                                    "Coordinate or conduct virtual walkthroughs using maps, aerials, and site photos",
+                                                                                    "Preview parcels on behalf of the Buyer upon request",
+                                                                                    "Provide observations on topography, road frontage, and surrounding land uses",
+                                                                                ],
+                                                                                "📜 Offer & Contract Management" => [
+                                                                                    "Draft and submit offers using state-approved purchase forms",
+                                                                                    "Provide the Buyer with required state or local disclosure forms",
+                                                                                    "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                                                                    "Negotiate price, deposits, and contingencies (as permitted under the agency agreement)",
+                                                                                    "Manage communication with the Seller's Agent or Seller",
+                                                                                    "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed documents to all parties",
+                                                                                    "Assist with due diligence coordination, including survey review, soil testing, zoning checks, and permit verification (non-legal guidance only)",
+                                                                                    "Monitor contract milestones, contingency deadlines, and financing timelines",
+                                                                                    "Provide referrals to Attorneys, Title Companies, Escrow Officers, Surveyors, or Land Use Consultants (referrals only — no endorsement or warranty is made)",
+                                                                                ],
+                                                                                "📋 Closing Coordination & Transaction Management" => [
+                                                                                    "Coordinate surveys, appraisals, inspections, and environmental assessments",
+                                                                                    "Coordinate with the Lender, Title Company, Escrow Officer, and/or Attorney to prepare for Closing",
+                                                                                    "Review the Settlement Statement for accuracy and coordinate with all parties if corrections are needed (no legal or financial advice provided)",
+                                                                                    "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                                                                    "Schedule and confirm the Final Walkthrough",
+                                                                                    "Schedule and confirm the Closing Appointment",
+                                                                                ],
+                                                                                "💡 Buying Strategy & Guidance" => [
+                                                                                    "Provide a Comparative Market Analysis (CMA) based on recent land sales, acreage comps, and price-per-acre benchmarks (for informational purposes only — not a formal appraisal)",
+                                                                                    "Answer general questions about zoning, utilities, development potential, and environmental constraints (non-legal guidance only)",
+                                                                                    "Provide factual data on flood zones, wetlands, and land use maps using third-party sources (no legal or engineering advice)",
+                                                                                    "Offer general guidance on feasibility timelines, inspection steps, and rural financing considerations (non-legal advice only)",
+                                                                                ],
+                                                                            ];
+
+                                                                            if ($bidPropType === 'Income') {
+                                                                                $buyerCategories = $buyerIncomeCategories;
+                                                                            } elseif ($bidPropType === 'Commercial') {
+                                                                                $buyerCategories = $buyerCommercialCategories;
+                                                                            } elseif ($bidPropType === 'Business') {
+                                                                                $buyerCategories = $buyerBusinessCategories;
+                                                                            } elseif ($bidPropType === 'Vacant Land') {
+                                                                                $buyerCategories = $buyerVacantLandCategories;
+                                                                            } else {
+                                                                                $buyerCategories = $buyerResidentialCategories;
+                                                                            }
+
+                                                                            $flattenBuyer = function($data) use (&$flattenBuyer) {
+                                                                                $result = [];
+                                                                                if (is_array($data) || is_object($data)) {
+                                                                                    foreach ((array)$data as $value) {
+                                                                                        if (is_string($value) && !empty(trim($value)) && $value !== 'Other') {
+                                                                                            $result[] = trim($value);
+                                                                                        } elseif (is_array($value) || is_object($value)) {
+                                                                                            $result = array_merge($result, $flattenBuyer($value));
+                                                                                        }
+                                                                                    }
+                                                                                } elseif (is_string($data) && !empty(trim($data)) && $data !== 'Other') {
+                                                                                    $result[] = trim($data);
+                                                                                }
+                                                                                return $result;
+                                                                            };
+
+                                                                            $rawBuyerServices = data_get($bid, 'get.services', []);
+                                                                            if (is_string($rawBuyerServices) && !empty($rawBuyerServices)) {
+                                                                                $decodedBuyer = json_decode($rawBuyerServices, true);
+                                                                                $parsedBuyerServices = (json_last_error() === JSON_ERROR_NONE && is_array($decodedBuyer)) ? $decodedBuyer : [];
+                                                                            } elseif (is_array($rawBuyerServices) || is_object($rawBuyerServices)) {
+                                                                                $parsedBuyerServices = $rawBuyerServices;
+                                                                            } else {
+                                                                                $parsedBuyerServices = [];
+                                                                            }
+                                                                            $buyerAllServices = array_unique($flattenBuyer($parsedBuyerServices));
+
+                                                                            $rawBuyerOther = data_get($bid, 'get.other_services', []);
+                                                                            if (is_string($rawBuyerOther) && !empty($rawBuyerOther)) {
+                                                                                $decodedBuyerOther = json_decode($rawBuyerOther, true);
+                                                                                $buyerOtherServices = (json_last_error() === JSON_ERROR_NONE && is_array($decodedBuyerOther)) ? $decodedBuyerOther : [];
+                                                                            } elseif (is_array($rawBuyerOther) || is_object($rawBuyerOther)) {
+                                                                                $buyerOtherServices = (array)$rawBuyerOther;
+                                                                            } else {
+                                                                                $buyerOtherServices = [];
+                                                                            }
+                                                                            $buyerOtherServices = array_values(array_filter($buyerOtherServices, fn($s) => is_string($s) && !empty(trim($s))));
+
+                                                                            $hasBuyerServices = !empty($buyerAllServices) || !empty($buyerOtherServices);
+                                                                        @endphp
+
+                                                                        @if ($hasBuyerServices)
+                                                                        <div class="mb-5">
+                                                                            <h6 class="mb-3"
+                                                                                style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                                                <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                                            </h6>
+                                                                            @foreach ($buyerCategories as $catName => $catServices)
+                                                                                @php
+                                                                                    $matchedBuyerSvcs = array_filter($buyerAllServices, function($svc) use ($catServices) {
+                                                                                        return in_array($svc, $catServices);
+                                                                                    });
+                                                                                @endphp
+                                                                                @if (!empty($matchedBuyerSvcs))
+                                                                                <div class="mb-3">
+                                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
+                                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                                        @foreach ($matchedBuyerSvcs as $svc)
+                                                                                            @php $displayBuyerSvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc; @endphp
+                                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">
+                                                                                                <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>{{ $displayBuyerSvc }}
+                                                                                            </li>
+                                                                                        @endforeach
+                                                                                    </ul>
+                                                                                </div>
+                                                                                @endif
+                                                                            @endforeach
+                                                                            @if (!empty($buyerOtherServices))
+                                                                            <div class="mb-3">
+                                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
+                                                                                    @foreach ($buyerOtherServices as $otherSvc)
+                                                                                        @php $displayBuyerOther = function_exists('normalize_service_text') ? normalize_service_text($otherSvc) : $otherSvc; @endphp
+                                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">
+                                                                                            <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>{{ $displayBuyerOther }}
+                                                                                        </li>
+                                                                                    @endforeach
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
+                                                                        </div>
+                                                                        @endif
+
+                                                                        <!-- 4. Agent Presentation & Promotional Materials -->
                                                                         @if (data_get($bid, 'get.presentation_link') ||
                                                                                 data_get($bid, 'get.video_upload') ||
                                                                                 data_get($bid, 'get.business_card_link') ||
@@ -3736,7 +4101,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn-custom btn-accept" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                                                    <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-check me-1"></i> Accept Bid
                                                                                     </button>
                                                                                 </form>
@@ -3745,7 +4110,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn-custom btn-counter" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                                                    <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-exchange-alt me-1"></i> Counter Bid
                                                                                     </button>
                                                                                 </form>
@@ -3754,7 +4119,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn-custom btn-reject" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                                                    <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-times me-1"></i> Reject Bid
                                                                                     </button>
                                                                                 </form>
