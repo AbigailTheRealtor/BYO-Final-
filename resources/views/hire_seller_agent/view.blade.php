@@ -3123,9 +3123,8 @@
                                             style="font-weight: 600;">
                                             <i class="fa fa-lock me-2"></i> Private Compensation &amp; Agreement Terms
                                         </h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
-                                    <div class="modal-body" style="background: #fafafa; padding: 25px; max-height: 80vh; overflow-y: auto;">
+                                    <div class="modal-body" style="background: #fafafa; padding: 25px;">
 
                                         {{-- ========== MATCH SCORE PANEL ========== --}}
                                         <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
@@ -3585,6 +3584,18 @@
                                         </div>
                                         @endif
 
+                                        <!-- Additional Details -->
+                                        @if (data_get($bid, 'get.additional_details'))
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-info-circle me-2"></i>Additional Details
+                                            </h6>
+                                            <div class="text-muted" style="font-style: italic;">
+                                                {{ data_get($bid, 'get.additional_details') }}
+                                            </div>
+                                        </div>
+                                        @endif
+
                                         <!-- 3. Offered Services (grouped bullet points, matches Tenant) -->
                                         @php
                                             $allBidMeta = (array) data_get($bid, 'get', []);
@@ -4015,6 +4026,27 @@
                                                         @foreach ($catSvcs as $service)
                                                             @if (isset($selectedNormalized[$normalizeStr($service)]))
                                                             <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $selectedNormalized[$normalizeStr($service)] }}</li>
+                                                            @if (in_array($normalizeStr($service), ['provide digital photo enhancements', 'provide digital enhancements to media assets']))
+                                                                @php
+                                                                    $modalPhotoEnhRaw = data_get($bid, 'get.photo_enhancements', []);
+                                                                    $modalPhotoEnhancements = is_string($modalPhotoEnhRaw) ? (json_decode($modalPhotoEnhRaw, true) ?: []) : (is_array($modalPhotoEnhRaw) ? $modalPhotoEnhRaw : []);
+                                                                    $modalCustomEnh = data_get($bid, 'get.custom_enhancement', '');
+                                                                    $modalEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                                                @endphp
+                                                                @if (!empty($modalPhotoEnhancements))
+                                                                    <ul style="padding-left: 1.5rem; margin: 4px 0;">
+                                                                        @foreach ($modalEnhOrder as $enh)
+                                                                            @if (in_array($enh, $modalPhotoEnhancements))
+                                                                                @if ($enh === 'Other' && !empty($modalCustomEnh))
+                                                                                    <li style="font-size: 0.85rem;">{{ $modalCustomEnh }}</li>
+                                                                                @elseif ($enh !== 'Other')
+                                                                                    <li style="font-size: 0.85rem;">{{ $enh }}</li>
+                                                                                @endif
+                                                                            @endif
+                                                                        @endforeach
+                                                                    </ul>
+                                                                @endif
+                                                            @endif
                                                             @endif
                                                         @endforeach
                                                     </ul>
@@ -4270,16 +4302,6 @@
                                                 </div>
                                                 @endif
                                             </div>
-                                        </div>
-                                        @endif
-
-                                        <!-- 6. Additional Details -->
-                                        @if (data_get($bid, 'get.additional_details'))
-                                        <div class="mb-4">
-                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                <i class="fa fa-info-circle me-2"></i>Additional Details
-                                            </h6>
-                                            <p class="text-muted">{{ data_get($bid, 'get.additional_details') }}</p>
                                         </div>
                                         @endif
 

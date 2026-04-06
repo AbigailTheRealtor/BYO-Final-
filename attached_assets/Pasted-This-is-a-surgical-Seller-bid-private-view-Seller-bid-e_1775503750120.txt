@@ -1,0 +1,248 @@
+This is a surgical Seller bid/private-view + Seller bid-edit fix only.
+
+Do not change database schema.
+Do not change listing creation flows.
+Do not refactor unrelated bid logic.
+Do not change Tenant behavior except to use Tenant as the exact visual/functional reference.
+Do not touch Buyer or Landlord unless needed only to compare the correct implementation.
+
+Tenant is the gold standard for:
+
+* Private Compensation & Agreement Terms header area
+* placement of Additional Terms and Additional Details
+* edit-bid page navigation/footer behavior
+* bid submit button behavior during edit flow
+
+Landlord is the gold standard only for:
+
+* showing digital photo enhancement sub-options beneath “Provide digital photo enhancements”
+
+---
+
+## GOALS
+
+Fix ONLY these Seller issues:
+
+1. Extra blue box in Seller Private Compensation & Agreement Terms header area
+2. Additional Details placement in Seller private bid card
+3. Seller Offered Services should show digital photo enhancement sub-items like Landlord does
+4. Seller bid edit flow is missing the Submit Bid button on each page like Tenant edit flow
+5. Agent Presentation / Promotional Materials uploads are not carrying over to the Seller bid
+6. Pre-saved business card and uploaded marketing materials are not showing on Seller bid
+7. Manually uploaded business card / materials before bid also are not showing on Seller bid
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT rename or delete DB columns
+* Do NOT change listing creation form field names/options
+* Do NOT change route structure unless a currently active Seller edit or Seller bid view route is broken
+* Do NOT rewrite upload architecture
+* Do NOT remove existing saved file metadata
+* Do NOT touch score calculation logic unless absolutely required for rendering
+* Do NOT create a new Seller-only styling system; copy Tenant markup/classes where required
+* Only modify active current Seller files used by:
+
+  * Seller private bid card/view
+  * Seller bid edit flow
+  * Seller uploaded materials rendering
+  * minimal model/accessor/helper code if needed to preserve/render existing saved uploads
+
+---
+
+1. SELLER PRIVATE COMPENSATION HEADER — REMOVE EXTRA BLUE BOX
+
+---
+
+Issue:
+
+* Seller Private Compensation & Agency Agreement Terms has an extra blue box in the header area
+* Tenant has the correct single blue element / correct header appearance
+
+Requirement:
+
+* Make Seller header area visually match Tenant exactly
+* Remove the extra blue box / duplicate blue element
+* Use Tenant’s active current markup/classes as the source of truth
+
+Do not alter unrelated layout below the header.
+
+---
+
+2. SELLER ADDITIONAL DETAILS PLACEMENT
+
+---
+
+Requirement:
+
+* Additional Details must be a separate section
+* It must appear right after Additional Terms
+* It should match Tenant’s structure
+
+Important:
+
+* Additional Details must remain OUTSIDE the Broker Compensation & Agency Agreement Terms grouping logic
+* Additional Terms may remain inside the final relevant subsection if that is how Tenant is structured
+* Seller must visually follow Tenant’s pattern
+
+---
+
+3. SELLER OFFERED SERVICES — DIGITAL PHOTO ENHANCEMENT SUB-ITEMS
+
+---
+
+Issue:
+
+* If user selects “Provide digital photo enhancements” on Seller bid/services, the sub-items are not showing
+* Landlord currently shows these correctly
+
+Requirement:
+
+* On Seller bid/private view Offered Services, if “Provide digital photo enhancements” is selected, show the selected enhancement sub-items underneath it, like Landlord does
+
+Sub-items include when selected:
+
+* Basic edits
+* Twilight conversion
+* Object removal
+* Virtual twilight photography
+* Color correction or sky replacement
+* Other (and custom value if applicable)
+
+Important:
+
+* Only show the sub-items if the parent digital enhancement service is selected and the sub-items exist
+* Follow the active Landlord display behavior as the source of truth
+* Do not change how services are stored in listing creation; fix rendering/mapping in Seller bid view only
+
+---
+
+4. SELLER BID EDIT FLOW — SUBMIT BID BUTTON MISSING
+
+---
+
+Issue:
+
+* When user edits a Seller bid, the Submit Bid button is missing on each page/tab
+* Tenant edit flow has the correct behavior
+
+Requirement:
+
+* Make Seller edit flow match Tenant edit flow for navigation/footer controls
+* Submit Bid button must appear on each page/tab as appropriate, exactly like Tenant edit bid flow
+* Keep Previous / Next behavior aligned with Tenant
+* Do not create a unique Seller edit footer system
+
+Important:
+
+* Use Tenant edit flow as the exact reference
+* This is for Seller bid edit flow only
+
+---
+
+5. SELLER AGENT PRESENTATION / PROMOTIONAL MATERIALS RENDERING
+
+---
+
+Issue:
+
+* Uploaded items are not showing on the Seller bid
+* Business card and uploaded marketing materials are not carrying over to the bid
+
+Requirement:
+
+* If user uploads a business card or marketing/promo materials, they must show on the Seller bid view
+* This must work for:
+  a) pre-saved uploaded business card
+  b) pre-saved uploaded promotional/marketing materials
+  c) manually uploaded business card before bid submit
+  d) manually uploaded promotional/marketing materials before bid submit
+
+Required behavior:
+
+* Existing saved metadata must be read correctly
+* If files exist, render them visibly on the Seller bid
+* If files are downloadable assets, show working download links/buttons
+* Do not silently hide preloaded items
+* Support one or many uploaded files
+* Preserve files through edit flow unless intentionally replaced/removed by user
+
+Check for likely causes:
+
+* stdClass vs array normalization
+* nested files array not normalized
+* wrong meta key on Seller bid save
+* edit/save flow not persisting uploaded file metadata into bid record
+* view only checking one upload path but not pre-saved profile path
+* business card path saved separately from promo materials path
+
+---
+
+6. FILES TO CHECK
+
+---
+
+Check active current files used by Seller only for:
+
+* Seller private bid card/view
+* Seller bid edit Livewire/component/controller/view
+* Seller upload persistence into bid
+* Seller uploaded materials rendering
+* Seller business card rendering
+
+Use Tenant files only as reference for:
+
+* header layout
+* Additional Terms / Additional Details placement
+* edit footer / submit button behavior
+
+Use Landlord files only as reference for:
+
+* digital photo enhancement sub-item display under Offered Services
+
+Only modify the minimal active files required.
+
+---
+
+7. VERIFICATION REQUIRED
+
+---
+
+After coding, provide a numbered report with:
+
+1. Header fix
+
+* files checked
+* files changed
+* confirm extra blue box removed
+* confirm Seller header now matches Tenant
+
+2. Additional Details placement
+
+* files changed
+* confirm Additional Details is separate and right after Additional Terms
+
+3. Digital photo enhancement sub-items
+
+* files changed
+* confirm Seller now shows selected enhancement sub-items like Landlord
+
+4. Seller edit flow submit button
+
+* files changed
+* confirm Submit Bid now appears on each page/tab like Tenant edit flow
+
+5. Business card / promotional materials rendering
+
+* files changed
+* confirm pre-saved business card shows on Seller bid
+* confirm pre-saved uploaded marketing materials show on Seller bid
+* confirm manually uploaded business card before bid submit shows on Seller bid
+* confirm manually uploaded marketing materials before bid submit show on Seller bid
+* confirm downloadable links/buttons work if files exist
+
+6. Final Seller-only confirmation
+
+* confirm no unrelated role was changed except reference-based comparison
+* confirm no schema change was made

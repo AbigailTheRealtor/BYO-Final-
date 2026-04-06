@@ -107,27 +107,23 @@
                     <!-- Navigation Buttons -->
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
-                            @if ($activeTab > 0)
                             <button type="button" wire:click="goToPreviousStep"
                                     class="btn btn-secondary wizard-step-back">
                                 Previous
                             </button>
-                            @endif
                         </div>
                         <div>
-                            @if ($activeTab < 5)
                             <button type="button" wire:click="goToNextStep"
                                     class="btn btn-primary wizard-step-next">
                                 Next
                             </button>
-                            @else
                             <button type="submit"
                                     class="btn btn-success wizard-step-finish"
                                     id="save-button"
                                     wire:loading.attr="disabled">
-                                Submit Bid
+                                <span wire:loading.remove>Submit Bid</span>
+                                <span wire:loading>Saving...</span>
                             </button>
-                            @endif
                         </div>
                     </div>
                 </form>
