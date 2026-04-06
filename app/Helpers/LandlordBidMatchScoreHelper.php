@@ -244,7 +244,7 @@ class LandlordBidMatchScoreHelper
         // Rental Marketing & Listing Promotion
         "list the property on the local multiple listing service (mls)",
         "syndicate the listing to third-party platforms (e.g., zillow.com, realtor.com, trulia.com, homes.com)",
-        "create a branded flyer featuring the property\u2019s key highlights",
+        "create a branded flyer featuring the property's key highlights",
         "post the property on facebook marketplace",
         "post the property on craigslist in the appropriate \"homes for rent\" category",
         "share the listing on nextdoor in neighborhood or community groups",
@@ -262,7 +262,7 @@ class LandlordBidMatchScoreHelper
         "collect property details and prepare mls remarks and a public listing description",
         "provide a visual consultation for interior layout, cleanliness, and presentation",
         "provide a curb appeal consultation focused on exterior presentation",
-        "provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). vendor fees billed separately. referrals only \u2014 no endorsement or warranty is made",
+        "provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). vendor fees billed separately. referrals only — no endorsement or warranty is made",
         // Photography, Video & Virtual Media
         "provide professional property photography",
         "provide aerial (drone) photography (subject to faa part 107 compliance)",
@@ -276,7 +276,7 @@ class LandlordBidMatchScoreHelper
         "install a real estate sign on the property",
         "install a lockbox for agent access",
         "schedule and attend showings with prospective tenants",
-        "coordinate showings with tenant\u2019s agents",
+        "coordinate showings with tenant's agents",
         "collect and relay feedback to the landlord after showings",
         // Tenant Application Support
         "provide a link to an online application platform with third-party screening tools (e.g., credit, background, and eviction checks)",
@@ -286,13 +286,13 @@ class LandlordBidMatchScoreHelper
         "present complete and organized application packages to the landlord for review and final selection",
         // Lease Preparation & Execution
         "review lease offers submitted by prospective tenants and summarize key terms",
-        "coordinate lease negotiation with the tenant or tenant\u2019s agent",
+        "coordinate lease negotiation with the tenant or tenant's agent",
         "prepare a state-specific lease agreement using approved forms or templates",
         "assist with completing required lease disclosures and reviewing key lease terms",
         "assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
         "confirm receipt of required move-in funds and assist the landlord in verifying amounts due, payment deadlines, and accepted payment methods",
         // Move-In Support & Coordination
-        "coordinate move-in date and key handoff logistics with the tenant or tenant\u2019s agent",
+        "coordinate move-in date and key handoff logistics with the tenant or tenant's agent",
         "confirm completion of any agreed-upon pre-move-in cleaning or repairs",
         "verify receipt of all required move-in funds prior to occupancy (e.g., deposit, rent, pet fees)",
         "provide a utility setup checklist and local provider resources for the tenant",
@@ -314,7 +314,7 @@ class LandlordBidMatchScoreHelper
         "list the property on the local multiple listing service (mls)",
         "list the property on crexi.com",
         "list the property on loopnet.com",
-        "create a branded flyer featuring the property\u2019s key highlights",
+        "create a branded flyer featuring the property's key highlights",
         "post the property on craigslist under the \"office/commercial\" category",
         "promote the listing on facebook in commercial leasing or business startup groups",
         "share the listing on instagram using photos, stories, or reels",
@@ -331,7 +331,7 @@ class LandlordBidMatchScoreHelper
         "prepare a marketing packet including zoning, cap rate references, and permitted uses",
         "provide a visual consultation focused on interior layout, cleanliness, and presentation",
         "provide a curb appeal consultation for exterior appearance and signage opportunities",
-        "provide referrals to third-party vendors (e.g., cleaners, sign installers, minor repair vendors). vendor fees billed separately. referrals only \u2014 no endorsement or warranty is made",
+        "provide referrals to third-party vendors (e.g., cleaners, sign installers, minor repair vendors). vendor fees billed separately. referrals only — no endorsement or warranty is made",
         // Photography, Video & Virtual Media
         "provide professional property photography",
         "provide aerial (drone) photography (subject to faa part 107 compliance)",
@@ -345,23 +345,23 @@ class LandlordBidMatchScoreHelper
         "install a real estate sign on the property",
         "install a lockbox for agent access",
         "schedule and attend showings with prospective tenants",
-        "coordinate showings with tenant\u2019s agents",
+        "coordinate showings with tenant's agents",
         "collect and relay showing feedback to the landlord",
         // Tenant Application Support
-        "provide a link to an online application platform or share instructions with prospective tenants or tenant\u2019s agents",
+        "provide a link to an online application platform or share instructions with prospective tenants or tenant's agents",
         "ensure compliance with applicable federal, state, and local commercial leasing and anti-discrimination laws",
         "collect and organize application documents (e.g., business licenses, financials, entity records, references)",
         "verify basic information provided in the application (e.g., business operations, income sources, references)",
         "present complete application packages to the landlord for review and final selection",
         // Lease Preparation, LOI & Execution
-        "coordinate lease negotiation with the tenant or tenant\u2019s agent",
+        "coordinate lease negotiation with the tenant or tenant's agent",
         "collect and organize letters of intent (lois) or draft lease proposals",
         "draft or assist with execution of the final lease agreement using approved forms or templates",
         "provide and review required lease disclosures and addenda based on state or municipal requirements",
         "assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
         "verify receipt of required deposits and track rent commencement and key lease dates to ensure move-in readiness",
         // Move-In Support & Coordination
-        "coordinate move-in date and key handoff logistics with the tenant or tenant\u2019s agent",
+        "coordinate move-in date and key handoff logistics with the tenant or tenant's agent",
         "confirm completion of any agreed-upon pre-move-in repairs, cleaning, or improvements",
         "verify receipt of all required move-in funds and documents prior to occupancy (e.g., rent, security deposit, insurance certificates)",
         "provide a utility setup checklist and local provider resources for the tenant",
@@ -506,6 +506,7 @@ class LandlordBidMatchScoreHelper
 
         if ($catalog !== null) {
             $normB = array_values(array_filter($normB, fn($s) => in_array($s, $catalog, true)));
+            $normC = array_values(array_filter($normC, fn($s) => in_array($s, $catalog, true)));
         }
 
         $normOtherB = array_map(fn($s) => self::normalizeService((string) $s), $otherBaseline);
@@ -580,12 +581,15 @@ class LandlordBidMatchScoreHelper
 
     /**
      * Return the normalized catalog for the given property type.
+     * Applies normalizeService() to all entries so comparisons are consistent
+     * with DB values that have been through the same normalization pipeline.
      */
     public static function getCatalog(string $propertyType): array
     {
-        return str_contains(strtolower($propertyType), 'commercial')
+        $raw = str_contains(strtolower($propertyType), 'commercial')
             ? self::COMMERCIAL_SERVICES_CATALOG
             : self::RESIDENTIAL_SERVICES_CATALOG;
+        return array_map([self::class, 'normalizeService'], $raw);
     }
 
     /**

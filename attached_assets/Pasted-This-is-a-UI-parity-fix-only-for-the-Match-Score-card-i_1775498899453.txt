@@ -1,0 +1,110 @@
+This is a UI parity fix only for the Match Score card inside the Private Compensation & Agency Agreement Terms section.
+
+Do not change core scoring logic unless absolutely required for rendering.
+Do not change listing creation flows.
+Do not change database schema.
+Do not refactor unrelated bid card sections.
+
+Tenant is the gold standard.
+
+---
+
+## GOAL
+
+Make the Match Score card for:
+
+* Seller
+* Landlord
+* Buyer
+
+match the Tenant Match Score card EXACTLY in the Private Compensation & Agency Agreement Terms section.
+
+Right now:
+
+* Seller still shows old “Match Summary” design
+* Landlord still shows old “Match Summary” design
+* Buyer Match Score block is missing in this section
+
+Tenant is already correct and must be used as the exact visual and structural reference.
+
+---
+
+## REQUIRED UI PARITY
+
+For Seller, Landlord, and Buyer:
+
+1. Replace old “Match Summary” block with Tenant-style “Match Score” block
+
+2. Must match Tenant exactly in:
+
+* title: “Match Score”
+* green badge on top right showing “XX% Match”
+* explanatory text styling
+* side-by-side score boxes
+* box titles:
+
+  * Services Match
+  * Terms Match
+* same spacing
+* same border style
+* same background style
+* same typography sizing
+* same color treatment
+
+3. The score detail lines must follow Tenant format:
+
+Services box:
+
+* Matched Original: X/Y
+* if extras exist: show “Extra Value Added: X Services”
+
+Terms box:
+
+* Matched Original: X/Y
+* if changed terms exist: show “Changed from Baseline: X”
+* if added terms exist and Tenant format supports it, display consistently with Tenant styling
+
+4. Remove old compact white inner card layout from Seller and Landlord
+5. Buyer must render the Match Score block in this section, not omit it
+
+---
+
+## IMPORTANT RULES
+
+* Use Tenant blade structure/classes as the source of truth
+* Do not create a third visual variation
+* Do not leave Seller/Landlord on the old Match Summary layout
+* Do not make Buyer use a custom one-off layout
+* All three must use the same Tenant-style component/markup pattern
+* Preserve the already-correct percentages and counts from the helpers
+* This task is about rendering/layout parity, not recalculating scores
+
+---
+
+## FILES TO CHECK
+
+Check the active current bid view files actually rendering this section for:
+
+* Tenant
+* Seller
+* Landlord
+* Buyer
+
+Only modify the active files used by current routes.
+
+---
+
+## VERIFICATION REQUIRED
+
+After coding, provide:
+
+1. exact files checked
+2. exact files changed
+3. confirmation that:
+
+* Seller now matches Tenant visually
+* Landlord now matches Tenant visually
+* Buyer now shows the Match Score block and matches Tenant visually
+
+4. confirmation that no old “Match Summary” layout remains in active current bid views for Seller/Landlord
+5. screenshot-based verification or rendered proof if available
