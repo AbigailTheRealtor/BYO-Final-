@@ -1,0 +1,251 @@
+This is a CRITICAL persistence fix for Agent Presentation & Promotional Materials across ALL listing types / roles.
+
+Problem:
+When a bid is edited, uploaded marketing materials can disappear from the bid.
+Also, if materials were pre-saved in the user profile and used to pre-load the bid, they may disappear after later edits unless manually re-uploaded right before submit.
+
+This must be fixed so uploaded materials persist correctly.
+
+---
+
+## GOAL
+
+For ALL roles/listing types, make sure Agent Presentation & Promotional Materials persist through:
+
+* initial bid submit
+* bid edit/update
+* repeated edits
+* pre-saved profile assets used to pre-load a bid
+* manually uploaded files added during bid creation
+* manually uploaded files added during later edits
+
+If a file is already attached to the bid OR referenced from the user profile for that bid, it must remain on the bid unless the user intentionally removes/replaces it.
+
+---
+
+## APPLIES TO
+
+All listing types / roles:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+And all relevant bid flows:
+
+* create bid
+* edit bid
+* counter bid if the same materials section is reused there
+* preloaded profile assets
+
+This applies to all Agent Presentation & Promotional Materials items, including but not limited to:
+
+* Business Card
+* uploaded marketing materials
+* uploaded presentation materials
+* uploaded flyers
+* uploaded digital ads
+* uploaded listing presentation files
+* any other file-based promotional material section currently supported
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT rename or delete DB columns
+* Do NOT change route structure unless a currently active upload/download route is broken
+* Do NOT wipe existing uploaded file metadata
+* Do NOT require users to re-upload files on edit just to preserve them
+* Do NOT create a new upload architecture unless absolutely required
+* Do NOT break current file viewing/downloading behavior
+* Do NOT refactor unrelated score logic or bid comparison logic
+* Only modify the active upload persistence / preloading / edit-save pipeline and the minimal rendering code needed
+
+---
+
+## PHASE 1 — AUDIT THE FULL FILE PIPELINE FIRST (DO NOT CODE YET)
+
+For each role flow (Tenant, Buyer, Seller, Landlord), audit the complete file lifecycle for Agent Presentation & Promotional Materials:
+
+1. CREATE BID
+
+* exact file(s)/component(s)/method(s) that save:
+
+  * business card
+  * marketing materials
+  * promotional materials
+  * presentation materials
+* exact keys/meta used to store them
+
+2. PRELOADED PROFILE ASSETS
+
+* exact file(s)/method(s) that load pre-saved user profile assets into a new bid
+* determine whether the bid stores:
+
+  * a copied snapshot of those file references
+  * or only transient UI state
+  * or direct profile references
+
+3. EDIT BID
+
+* exact file(s)/method(s) used when editing a bid
+* determine whether existing uploaded file metadata is:
+
+  * being preserved
+  * overwritten with null/empty arrays
+  * replaced only if new upload exists
+  * lost because edit form does not rehydrate existing files properly
+
+4. RENDER BID VIEW
+
+* exact file(s)/method(s) that load and render the files on the bid view/modal
+* determine whether they read from:
+
+  * bid meta
+  * profile assets
+  * merged data
+  * only current request state
+
+5. ROOT CAUSE
+   For the disappearing-file bug, identify exactly where files are being lost:
+
+* existing file metadata not loaded into edit form
+* save method overwriting files with empty values
+* profile-preloaded assets not copied into bid record
+* files only stored in component state and not persisted
+* nested files array/stdClass normalization issue
+* conditional save logic replacing existing materials with blank arrays on edit
+
+Do NOT code until the exact break point is identified.
+
+---
+
+## PHASE 2 — FIX PERSISTENCE RULES
+
+Implement these rules for ALL roles:
+
+RULE A — Existing bid files must persist
+If a bid already has attached Business Card or Marketing/Promotional Materials,
+and user edits the bid without removing/replacing them,
+those files must remain attached after save.
+
+RULE B — Preloaded profile assets must persist once used in a bid
+If a pre-saved profile asset is used to pre-load a bid,
+that bid must continue to show those assets after edit/save unless the user intentionally removes/replaces them.
+
+RULE C — Empty edit submissions must NOT wipe files
+If no new files are uploaded during edit,
+the save/update logic must preserve the existing stored file metadata.
+
+RULE D — New uploads should merge/replace intentionally only
+If user uploads new files:
+
+* apply the intended replace/append behavior already supported by the UX
+* but do not accidentally wipe unrelated existing file groups
+
+RULE E — Same rule across all roles
+Tenant, Buyer, Seller, Landlord must all preserve files the same way.
+
+---
+
+## PHASE 3 — NORMALIZE FILE DATA SAFELY
+
+Ensure all stored file data is normalized consistently during load/save/render:
+
+Handle safely:
+
+* array
+* stdClass
+* JSON string
+* single file entry
+* multiple file entries
+* nested file arrays
+
+Rules:
+
+* preserve valid existing files
+* remove only null/empty invalid placeholders
+* never silently drop valid saved file records
+* keep file name, path, mime/type, and label/group information intact where available
+
+---
+
+## PHASE 4 — EDIT FORM REHYDRATION
+
+When editing a bid, the form must correctly rehydrate already attached / preloaded files so the save pipeline knows they exist.
+
+Audit and fix:
+
+* business card rehydration
+* marketing materials rehydration
+* presentation materials rehydration
+* grouped upload sections rehydration
+
+If the edit form loads blank file state even though the bid has files, fix that.
+
+---
+
+## PHASE 5 — BID VIEW RENDERING
+
+After persistence is fixed, verify the bid view/modal still renders correctly for all roles:
+
+* Business Card remains visible
+* Marketing Materials remain visible
+* View Full Size / Download or eye/download icons still work
+* Open Link entries still work
+* previously saved files still display after multiple edits
+
+---
+
+## PHASE 6 — CROSS-ROLE VERIFICATION
+
+Verify all roles:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+And verify these scenarios for each role if supported:
+
+1. pre-saved profile asset used in new bid
+2. manual upload during new bid
+3. edit bid with no new upload
+4. edit bid with additional new upload
+5. repeated edit after repeated save
+6. bid view still shows all expected files afterward
+
+---
+
+## SUCCESS CRITERIA
+
+A file that has already been attached to or preloaded into a bid must STAY on that bid across future edits unless intentionally removed/replaced.
+
+This applies to all Agent Presentation & Promotional Materials uploads.
+
+---
+
+## REQUIRED OUTPUT
+
+Return a numbered report with:
+
+1. exact files checked
+2. exact files changed
+3. exact root cause found for disappearing files
+4. exact storage keys/meta used for:
+
+   * Business Card
+   * Marketing Materials / Promotional Materials / Presentation Materials
+5. confirmation that existing files are preserved on edit for:
+
+   * Tenant
+   * Buyer
+   * Seller
+   * Landlord
+6. confirmation that pre-saved profile assets remain attached after edit
+7. confirmation that manual uploads remain attached after edit
+8. note any remaining edge cases if found
+
+Do not give a broad summary.
+This must be an audit-first persistence fix across all listing types/roles.
