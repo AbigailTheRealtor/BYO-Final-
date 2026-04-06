@@ -3592,6 +3592,16 @@
                                             </div>
                                             @endif
 
+                                            <!-- F) Additional Terms -->
+                                            @if (data_get($bid, 'get.additional_details_broker'))
+                                            <div class="mb-4">
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    <li class="mb-1"><span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}</li>
+                                                </ul>
+                                            </div>
+                                            @endif
+
                                         </div>
                                         @endif
 
@@ -4316,27 +4326,6 @@
                                             </div>
                                         </div>
                                         @endif
-
-                                        <!-- 5b. Broker Additional Terms (standalone, outside Broker Comp) -->
-                                        @if (data_get($bid, 'get.additional_details_broker'))
-                                        <div class="mb-5">
-                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                <i class="fa fa-file-alt me-2"></i>Broker Additional Terms
-                                            </h6>
-                                            <div class="ps-3 text-muted">{{ data_get($bid, 'get.additional_details_broker') }}</div>
-                                        </div>
-                                        @endif
-
-                                        <!-- 6. Additional Details -->
-                                        @if (data_get($bid, 'get.additional_details'))
-                                        <div class="mb-4">
-                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                <i class="fa fa-info-circle me-2"></i>Additional Details
-                                            </h6>
-                                            <p class="text-muted">{{ data_get($bid, 'get.additional_details') }}</p>
-                                        </div>
-                                        @endif
-
 
                                     </div>{{-- End modal-body --}}
 
