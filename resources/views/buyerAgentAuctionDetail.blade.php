@@ -3101,131 +3101,20 @@
                                                                             </div>
                                                                             @endif
 
-                                                                        </div>
-                                                                        @endif
-
-                                                                        <!-- 3. Offered Services -->
-                                                                        @php
-                                                                            $bidSvcPropType = @$auction->get->property_type ?? 'Residential Property';
-                                                                            $bidSvcPropTypeMap = [
-                                                                                'Residential' => 'residential',
-                                                                                'Residential Property' => 'residential',
-                                                                                'Income' => 'income',
-                                                                                'Income Property' => 'income',
-                                                                                'Commercial' => 'commercial',
-                                                                                'Commercial Property' => 'commercial',
-                                                                                'Business' => 'business',
-                                                                                'Business Opportunity' => 'business',
-                                                                                'Land' => 'vacant_land',
-                                                                                'Land Property' => 'vacant_land',
-                                                                                'Vacant Land' => 'vacant_land',
-                                                                            ];
-                                                                            $bidSvcConfigKey = $bidSvcPropTypeMap[$bidSvcPropType] ?? 'residential';
-                                                                            $bidSvcFlowKey = 'buyer_agent.' . $bidSvcConfigKey;
-
-                                                                            // Parse bid services
-                                                                            $rawBidSvcServices = data_get($bid, 'get.services', []);
-                                                                            if (is_string($rawBidSvcServices) && !empty($rawBidSvcServices)) {
-                                                                                $decodedBidSvc = json_decode($rawBidSvcServices, true);
-                                                                                $parsedBidSvcServices = (json_last_error() === JSON_ERROR_NONE && is_array($decodedBidSvc)) ? $decodedBidSvc : [];
-                                                                            } elseif (is_array($rawBidSvcServices) || is_object($rawBidSvcServices)) {
-                                                                                $parsedBidSvcServices = (array)$rawBidSvcServices;
-                                                                            } else {
-                                                                                $parsedBidSvcServices = [];
-                                                                            }
-
-                                                                            $rawBidSvcOther = data_get($bid, 'get.other_services', []);
-                                                                            if (is_string($rawBidSvcOther) && !empty($rawBidSvcOther)) {
-                                                                                $decodedBidSvcOther = json_decode($rawBidSvcOther, true);
-                                                                                $bidSvcOtherServices = (json_last_error() === JSON_ERROR_NONE && is_array($decodedBidSvcOther)) ? $decodedBidSvcOther : [];
-                                                                            } elseif (is_array($rawBidSvcOther) || is_object($rawBidSvcOther)) {
-                                                                                $bidSvcOtherServices = (array)$rawBidSvcOther;
-                                                                            } else {
-                                                                                $bidSvcOtherServices = [];
-                                                                            }
-                                                                            $bidSvcOtherServices = array_values(array_filter($bidSvcOtherServices, fn($s) => is_string($s) && !empty(trim($s))));
-
-                                                                            // Use ServicesFormatter to order bid services by category
-                                                                            $bidSvcOrdered = \App\Support\ServicesFormatter::orderSelectedServices($parsedBidSvcServices, $bidSvcFlowKey);
-
-                                                                            $hasAnyBidSvcServices = !empty($parsedBidSvcServices) || !empty($bidSvcOtherServices);
-
-                                                                            // Normalize helper for badge checks (use score arrays from $matchedServices/$missingServices/$extraServices)
-                                                                            $normalizeForSvc = fn($s) => mb_strtolower(trim(str_replace(
-                                                                                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}"],
-                                                                                ["'", "'", '"', '"'],
-                                                                                $s
-                                                                            )));
-                                                                            $matchedSvcNorm = array_map($normalizeForSvc, $matchedServices);
-                                                                            $extraSvcNorm   = array_map($normalizeForSvc, $extraServices);
-                                                                            $missingSvcNorm = array_map($normalizeForSvc, $missingServices);
-
-                                                                            $svcAddedStyle   = 'background-color: #d4edda; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
-                                                                            $svcAddedBadge   = '<span class="badge bg-success ms-2" style="font-size: 0.65rem; vertical-align: middle;">Extra Service Offered</span>';
-                                                                            $svcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
-                                                                            $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
-
-                                                                            $checkSvcIsExtra = fn($svc) => in_array($normalizeForSvc($svc), $extraSvcNorm, true);
-                                                                        @endphp
-                                                                        <div class="mb-5">
-                                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                                <i class="fa fa-clipboard-list me-2"></i>Offered Services
-                                                                            </h6>
-                                                                            @if ($hasAnyBidSvcServices)
-                                                                                @foreach ($bidSvcOrdered as $bidSvcCatName => $bidSvcCatServices)
-                                                                                    @if (!empty($bidSvcCatServices))
-                                                                                    <div class="mb-3">
-                                                                                        <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $bidSvcCatName }}</div>
-                                                                                        <ul class="list-unstyled mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                                                            @foreach ($bidSvcCatServices as $bidSvcService)
-                                                                                                @php $bidSvcIsExtra = $checkSvcIsExtra($bidSvcService); @endphp
-                                                                                                <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $bidSvcIsExtra ? $svcAddedStyle : '' }}">{{ $bidSvcService }}{!! $bidSvcIsExtra ? $svcAddedBadge : '' !!}</li>
-                                                                                            @endforeach
-                                                                                        </ul>
-                                                                                    </div>
-                                                                                    @endif
-                                                                                @endforeach
-                                                                                @if (!empty($bidSvcOtherServices))
-                                                                                <div class="mb-3">
-                                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                                                    <ul class="list-unstyled mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
-                                                                                        @foreach ($bidSvcOtherServices as $bidSvcOther)
-                                                                                            @php $bidSvcOtherIsExtra = $checkSvcIsExtra($bidSvcOther); @endphp
-                                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $bidSvcOtherIsExtra ? $svcAddedStyle : '' }}">{{ $bidSvcOther }}{!! $bidSvcOtherIsExtra ? $svcAddedBadge : '' !!}</li>
-                                                                                        @endforeach
-                                                                                    </ul>
-                                                                                </div>
-                                                                                @endif
-                                                                                @if (!empty($missingServices))
-                                                                                <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
-                                                                                    <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                                                                                        <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
-                                                                                    </div>
-                                                                                    <ul class="mb-0" style="padding-left: 1.2rem;">
-                                                                                        @foreach ($missingServices as $bidSvcMissing)
-                                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $bidSvcMissing }}{!! $svcMissingBadge !!}</li>
-                                                                                        @endforeach
-                                                                                    </ul>
-                                                                                </div>
-                                                                                @endif
-                                                                            @else
-                                                                            <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
-                                                                            @endif
-                                                                        </div>
-
-                                                                        <!-- 4. Broker Additional Terms (standalone, outside Broker Comp section) -->
-                                                                        @if (data_get($bid, 'get.additional_details_broker'))
-                                                                        <div class="mb-5">
-                                                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                                <i class="fa fa-file-alt me-2"></i>Broker Additional Terms
-                                                                            </h6>
-                                                                            <div class="text-muted" style="font-style: italic;">
-                                                                                {{ data_get($bid, 'get.additional_details_broker') }}
+                                                                            <!-- F) Additional Terms -->
+                                                                            @if (data_get($bid, 'get.additional_details_broker'))
+                                                                            <div class="mb-4">
+                                                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
+                                                                                <ul class="list-unstyled ps-3 mb-0">
+                                                                                    <li class="mb-1">{{ data_get($bid, 'get.additional_details_broker') }}</li>
+                                                                                </ul>
                                                                             </div>
+                                                                            @endif
+
                                                                         </div>
                                                                         @endif
 
-                                                                        <!-- 5. Additional Details -->
+                                                                        <!-- 3. Additional Details -->
                                                                         @if (data_get($bid, 'get.additional_details'))
                                                                             <div class="mb-5">
                                                                                 <h6 class="mb-3"
@@ -3559,6 +3448,21 @@
                                                                             $buyerOtherServices = array_values(array_filter($buyerOtherServices, fn($s) => is_string($s) && !empty(trim($s))));
 
                                                                             $hasBuyerServices = !empty($buyerAllServices) || !empty($buyerOtherServices);
+
+                                                                            // Normalize for badge checks
+                                                                            $normBuyerSvc = fn($s) => mb_strtolower(trim(str_replace(
+                                                                                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}"],
+                                                                                ["'", "'", '"', '"'],
+                                                                                $s
+                                                                            )));
+                                                                            $buyerExtraSvcNorm   = array_map($normBuyerSvc, $extraServices ?? []);
+                                                                            $buyerMissingSvcNorm = array_map($normBuyerSvc, $missingServices ?? []);
+                                                                            $checkBuyerSvcIsExtra = fn($svc) => in_array($normBuyerSvc($svc), $buyerExtraSvcNorm, true);
+
+                                                                            $buyerSvcAddedStyle   = 'background-color: #d4edda; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                                                                            $buyerSvcAddedBadge   = '<span class="badge bg-success ms-2" style="font-size: 0.65rem; vertical-align: middle;">Extra Service Offered</span>';
+                                                                            $buyerSvcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
+                                                                            $buyerSvcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
                                                                         @endphp
 
                                                                         @if ($hasBuyerServices)
@@ -3569,18 +3473,24 @@
                                                                             </h6>
                                                                             @foreach ($buyerCategories as $catName => $catServices)
                                                                                 @php
-                                                                                    $matchedBuyerSvcs = array_filter($buyerAllServices, function($svc) use ($catServices) {
+                                                                                    $matchedBuyerSvcs = array_values(array_filter($buyerAllServices, function($svc) use ($catServices) {
                                                                                         return in_array($svc, $catServices);
-                                                                                    });
+                                                                                    }));
                                                                                 @endphp
                                                                                 @if (!empty($matchedBuyerSvcs))
                                                                                 <div class="mb-3">
                                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
                                                                                     <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                                         @foreach ($matchedBuyerSvcs as $svc)
-                                                                                            @php $displayBuyerSvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc; @endphp
-                                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">
-                                                                                                <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>{{ $displayBuyerSvc }}
+                                                                                            @php
+                                                                                                $displayBuyerSvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc;
+                                                                                                $buyerSvcIsExtra = $checkBuyerSvcIsExtra($svc);
+                                                                                            @endphp
+                                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerSvcIsExtra ? $buyerSvcAddedStyle : '' }}">
+                                                                                                @if (!$buyerSvcIsExtra)
+                                                                                                    <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>
+                                                                                                @endif
+                                                                                                {{ $displayBuyerSvc }}{!! $buyerSvcIsExtra ? $buyerSvcAddedBadge : '' !!}
                                                                                             </li>
                                                                                         @endforeach
                                                                                     </ul>
@@ -3592,10 +3502,28 @@
                                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                                                     @foreach ($buyerOtherServices as $otherSvc)
-                                                                                        @php $displayBuyerOther = function_exists('normalize_service_text') ? normalize_service_text($otherSvc) : $otherSvc; @endphp
-                                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px;">
-                                                                                            <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>{{ $displayBuyerOther }}
+                                                                                        @php
+                                                                                            $displayBuyerOther = function_exists('normalize_service_text') ? normalize_service_text($otherSvc) : $otherSvc;
+                                                                                            $buyerOtherIsExtra = $checkBuyerSvcIsExtra($otherSvc);
+                                                                                        @endphp
+                                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerOtherIsExtra ? $buyerSvcAddedStyle : '' }}">
+                                                                                            @if (!$buyerOtherIsExtra)
+                                                                                                <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>
+                                                                                            @endif
+                                                                                            {{ $displayBuyerOther }}{!! $buyerOtherIsExtra ? $buyerSvcAddedBadge : '' !!}
                                                                                         </li>
+                                                                                    @endforeach
+                                                                                </ul>
+                                                                            </div>
+                                                                            @endif
+                                                                            @if (!empty($missingServices))
+                                                                            <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
+                                                                                <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
+                                                                                    <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
+                                                                                </div>
+                                                                                <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                                                    @foreach ($missingServices as $buyerMissingSvc)
+                                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerSvcMissingStyle }}">{{ $buyerMissingSvc }}{!! $buyerSvcMissingBadge !!}</li>
                                                                                     @endforeach
                                                                                 </ul>
                                                                             </div>
@@ -4796,7 +4724,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn-custom btn-accept" style="font-size:16px"><i class="fa fa-check me-1"></i> Accept Bid</button>
+                                                                        <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
                                                                     </form>
 
                                                                     <form class="d-inline"
@@ -4806,7 +4734,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn-custom btn-reject" style="font-size:16px"><i class="fa fa-times me-1"></i> Reject Bid</button>
+                                                                        <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
                                                                     </form>
 
                                                                     <form class="d-inline"
@@ -4816,7 +4744,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn-custom btn-counter" style="font-size:16px"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
+                                                                        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
                                                                     </form>
                                                                 </div>
                                                             @endif
@@ -4907,7 +4835,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn-custom btn-accept"><i class="fa fa-check me-1"></i> Accept Bid</button>
+                                                                        class="btn btn-success w-100" style="padding: 10px 20px; font-size: 0.95rem; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
                                                                 </form>
                                                             </div>
                                                             <div class="biding-btn">
@@ -4920,7 +4848,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn-custom btn-reject"><i class="fa fa-times me-1"></i> Reject Bid</button>
+                                                                        class="btn btn-danger w-100" style="padding: 10px 20px; font-size: 0.95rem; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
                                                                 </form>
                                                             </div>
                                                             <div class="biding-btn">
@@ -4933,7 +4861,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn-custom btn-counter"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
+                                                                        class="btn btn-primary w-100" style="padding: 10px 20px; font-size: 0.95rem; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
                                                                 </form>
                                                             </div>
                                                             @endif
