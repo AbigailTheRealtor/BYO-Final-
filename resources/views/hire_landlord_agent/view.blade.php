@@ -2736,34 +2736,55 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             </div>
                                                         </div>
                                                         @else
-                                                        {{-- SINGLE SCORE fallback --}}
-                                                        <h6 class="mb-2" style="color: #1a3a5c; font-weight: 600;">
-                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
-                                                        </h6>
+                                                        {{-- SINGLE SCORE --}}
+                                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                            </h6>
+                                                            <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                                {{ $totalScore }}% Match
+                                                            </span>
+                                                        </div>
                                                         <p class="small text-muted mb-3">
-                                                            <i class="fa fa-info-circle me-1"></i>
-                                                            Compares this bid to the Landlord's original listing request.<br>
-                                                            Added services or terms do not increase the score.
+                                                            <i class="fa fa-info-circle me-1"></i>Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                                            Comparing to: <strong>{{ $baselineLabel }}</strong>
                                                         </p>
                                                         <div class="row g-3">
-                                                            @php $omColorS = $getScoreColor($originalScore['overall_percent']); @endphp
                                                             <div class="col-md-6">
-                                                                <div class="p-3 bg-white rounded" style="border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
-                                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                                        <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
-                                                                        <span class="badge" style="background: {{ $omColorS }}; font-size: 1rem; padding: 5px 12px; color: white;">{{ $originalScore['overall_percent'] }}%</span>
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Services Match</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
                                                                     </div>
-                                                                    <div class="small text-muted mb-2">vs. Landlord's Original Request</div>
-                                                                    <div class="d-flex justify-content-between small">
-                                                                        <div>
-                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
-                                                                            <div class="text-muted">{{ $originalScore['services_matched_count'] }}/{{ $originalScore['services_baseline_total'] }}</div>
-                                                                        </div>
-                                                                        <div>
-                                                                            <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
-                                                                            <div class="text-muted">{{ $originalScore['terms_matched_count'] }}/{{ $originalScore['terms_baseline_total'] }}</div>
-                                                                        </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}
                                                                     </div>
+                                                                    @if ($servicesExtraCount > 0)
+                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Landlord&#39;s original request. These do not increase the match score but may provide additional value.">
+                                                                        <span>&#11088;</span>
+                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
+                                                                    </div>
+                                                                    @endif
+                                                                    @if ($servicesMissingCount > 0)
+                                                                    <div class="small mt-1" style="color: #dc3545;">Missing from Original: {{ $servicesMissingCount }}</div>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                                    <div class="d-flex justify-content-between align-items-center">
+                                                                        <span class="small fw-semibold">Terms Match</span>
+                                                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                                    </div>
+                                                                    <div class="small text-muted mt-1">
+                                                                        Matched Original: {{ $brokerMatched }}/{{ $brokerTotal }}
+                                                                    </div>
+                                                                    @if ($termsChangedCount > 0)
+                                                                    <div class="small mt-1" style="color: #dc3545;">Changed from Baseline: {{ $termsChangedCount }}</div>
+                                                                    @endif
+                                                                    @if ($termsAddedCount > 0)
+                                                                    <div class="small mt-1" style="color: #6c757d;">Added by Agent: {{ $termsAddedCount }}</div>
+                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
