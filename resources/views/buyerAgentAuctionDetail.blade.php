@@ -4029,7 +4029,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                                                    <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-check me-1"></i> Accept Bid
                                                                                     </button>
                                                                                 </form>
@@ -4038,7 +4038,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                                                    <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-exchange-alt me-1"></i> Counter Bid
                                                                                     </button>
                                                                                 </form>
@@ -4047,7 +4047,7 @@
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                                    <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                                                    <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                                                         <i class="fa fa-times me-1"></i> Reject Bid
                                                                                     </button>
                                                                                 </form>
@@ -4724,7 +4724,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
+                                                                        <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
                                                                     </form>
 
                                                                     <form class="d-inline"
@@ -4734,7 +4734,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
+                                                                        <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
                                                                     </form>
 
                                                                     <form class="d-inline"
@@ -4744,7 +4744,7 @@
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
+                                                                        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
                                                                     </form>
                                                                 </div>
                                                             @endif
@@ -4835,7 +4835,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn btn-success w-100" style="padding: 10px 20px; font-size: 0.95rem; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
+                                                                        class="btn btn-success w-100" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
                                                                 </form>
                                                             </div>
                                                             <div class="biding-btn">
@@ -4848,7 +4848,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn btn-danger w-100" style="padding: 10px 20px; font-size: 0.95rem; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
+                                                                        class="btn btn-danger w-100" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
                                                                 </form>
                                                             </div>
                                                             <div class="biding-btn">
@@ -4861,7 +4861,7 @@
                                                                     <input type="hidden" name="bid_id"
                                                                         value="{{ data_get($bid, 'id') }}">
                                                                     <button type="submit"
-                                                                        class="btn btn-primary w-100" style="padding: 10px 20px; font-size: 0.95rem; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
+                                                                        class="btn btn-primary w-100" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
                                                                 </form>
                                                             </div>
                                                             @endif
