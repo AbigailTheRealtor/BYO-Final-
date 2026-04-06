@@ -1,0 +1,146 @@
+This is a surgical Seller bid rendering fix only.
+
+Do not change database schema.
+Do not change listing creation forms.
+Do not rename stored field keys unless absolutely required.
+Do not refactor unrelated bid logic.
+Do not touch Buyer, Tenant, or Landlord except to compare the correct rendering pattern.
+
+---
+
+## GOAL
+
+Fix Seller bid rendering for “Provide digital photo enhancements” so that when the user selected:
+
+* Other
+
+the bid view shows the ACTUAL custom text value,
+not just the word:
+
+* Other
+
+---
+
+## CURRENT PROBLEM
+
+On Seller bids, under:
+
+* Provide digital photo enhancements
+
+the rendered sub-items currently show:
+
+* Other
+
+But this is wrong when the user entered a custom Other value.
+
+It should instead show the actual custom value, for example:
+
+* Other: twilight sky replacement for exterior shot
+  or just the exact custom text value if that matches the existing display pattern
+
+---
+
+## REQUIRED BEHAVIOR
+
+If the Seller bid includes:
+
+* Provide digital photo enhancements
+  and
+* Other was selected with a custom entered value
+
+Then the bid view must render the exact custom text value.
+
+Examples of acceptable final rendering:
+
+* Other: custom twilight edit for front exterior
+  or
+* custom twilight edit for front exterior
+
+Use whichever format best matches the existing service sub-item display pattern, but the custom value must be visible.
+
+Do NOT render only the generic label “Other” when a custom value exists.
+
+---
+
+## WHAT TO AUDIT FIRST
+
+Before coding, identify:
+
+1. the exact stored key for the digital photo enhancement sub-options on Seller bids
+2. the exact stored key for the custom “Other” value
+3. whether the custom value is:
+
+   * saved correctly but not rendered
+   * saved under a different key than the view expects
+   * missing during bid persistence
+   * normalized incorrectly
+
+Do not code until you identify the exact storage/render path.
+
+---
+
+## FIX REQUIREMENTS
+
+1. If custom Other value exists:
+
+* render the custom value in Seller bid view
+
+2. If custom Other value does NOT exist:
+
+* fallback can remain “Other” only if that is the true saved state
+
+3. Do not break the rendering of the other enhancement sub-items:
+
+* Basic edits
+* Twilight conversion
+* Object removal
+* Virtual twilight photography
+* Color correction or sky replacement
+
+4. Keep this fix Seller-only unless you confirm the exact same bug exists elsewhere
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT rename or delete DB columns
+* Do NOT change listing creation field labels/options
+* Do NOT break existing saved Seller bids
+* Do NOT change score logic
+* Do NOT touch unrelated services rendering
+* Only modify the minimal active Seller bid render path and any minimal Seller bid data-loading code if required
+
+---
+
+## FILES TO CHECK
+
+Check only:
+
+* active Seller bid/private view
+* active Seller bid save/load path if needed
+* any minimal model/accessor/helper involved in loading the enhancement sub-item data
+
+Modify only the minimal Seller files required.
+
+---
+
+## VERIFICATION REQUIRED
+
+After coding, provide:
+
+1. exact files checked
+2. exact files changed
+3. exact stored key found for:
+
+* enhancement sub-options
+* enhancement Other custom value
+
+4. root cause found
+5. confirmation that:
+
+* when custom Other text exists, Seller bid now shows the actual text
+* when no custom Other text exists, fallback behavior is still safe
+* other enhancement sub-items still render correctly
+
+Do not give a broad summary.
+This is a Seller-only digital photo enhancement Other-value rendering fix.

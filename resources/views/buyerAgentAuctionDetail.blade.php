@@ -2826,21 +2826,34 @@
                                                                             @endif
 
                                                                             <!-- Reviews Links -->
-                                                                            @if (data_get($bid, 'get.reviews_links'))
+                                                                            @php
+                                                                                $buyerReviewLinks = data_get($bid, 'get.reviews_links', []);
+                                                                                $hasAnyBuyerReviewUrl = !empty(array_filter((array) $buyerReviewLinks, fn($rl) => !empty(is_object($rl) ? $rl->url : ($rl['url'] ?? ''))));
+                                                                            @endphp
+                                                                            @if ($hasAnyBuyerReviewUrl)
                                                                                 <div class="mb-3">
                                                                                     <div class="fw-semibold"
-                                                                                        style="color: #049399;">Reviews
-                                                                                        Links</div>
+                                                                                        style="color: #049399;">Review Links:</div>
                                                                                     <div>
-                                                                                        @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
-                                                                                            @if (!empty($reviewLink->url))
+                                                                                        @foreach ($buyerReviewLinks as $reviewLink)
+                                                                                            @php
+                                                                                                $rlUrlVal = is_object($reviewLink) ? $reviewLink->url : ($reviewLink['url'] ?? '');
+                                                                                            @endphp
+                                                                                            @if (!empty($rlUrlVal))
+                                                                                                @php
+                                                                                                    $rlFinal = $rlUrlVal;
+                                                                                                    if (!str_starts_with($rlFinal, 'http://') && !str_starts_with($rlFinal, 'https://')) {
+                                                                                                        $rlFinal = 'https://' . $rlFinal;
+                                                                                                    }
+                                                                                                    $rlText = is_object($reviewLink) ? ($reviewLink->text ?? '') : ($reviewLink['text'] ?? '');
+                                                                                                @endphp
                                                                                                 <div class="mb-1">
-                                                                                                    <a href="https://{{ $reviewLink->url }}"
+                                                                                                    <a href="{{ $rlFinal }}"
                                                                                                         target="_blank"
+                                                                                                        rel="noopener noreferrer"
                                                                                                         class="text-primary text-decoration-none">
-                                                                                                        <i
-                                                                                                            class="fa fa-external-link-alt me-1"></i>
-                                                                                                        {{ !empty($reviewLink->text) ? $reviewLink->text : $reviewLink->url }}
+                                                                                                        <i class="fa fa-external-link-alt me-1"></i>
+                                                                                                        {{ !empty($rlText) ? $rlText : $rlUrlVal }}
                                                                                                     </a>
                                                                                                 </div>
                                                                                             @endif
@@ -3479,7 +3492,15 @@
                                                                             @foreach ($buyerCategories as $catName => $catServices)
                                                                                 @php
                                                                                     $matchedBuyerSvcs = array_values(array_filter($buyerAllServices, function($svc) use ($catServices) {
-                                                                                        return in_array($svc, $catServices);
+                                                                                        $trimSvc = trim($svc);
+                                                                                        foreach ($catServices as $catEntry) {
+                                                                                            if ($catEntry === $trimSvc) return true;
+                                                                                            // Catalog entry has extra parenthetical appended: stored string is a prefix
+                                                                                            if (str_starts_with($catEntry, $trimSvc)) return true;
+                                                                                            // Stored string has extra text: catalog string is a prefix
+                                                                                            if (str_starts_with($trimSvc, $catEntry)) return true;
+                                                                                        }
+                                                                                        return false;
                                                                                     }));
                                                                                 @endphp
                                                                                 @if (!empty($matchedBuyerSvcs))
@@ -3675,36 +3696,36 @@
                                                                                                 @if ($normalizedBusinessCard)
                                                                                                     @php
                                                                                                         $businessCardPath = $normalizedBusinessCard;
-                                                                                                        $businessCardExtension = pathinfo(
-                                                                                                            $businessCardPath,
-                                                                                                            PATHINFO_EXTENSION,
-                                                                                                        );
+                                                                                                        $businessCardExtension = pathinfo($businessCardPath, PATHINFO_EXTENSION);
+                                                                                                        $businessCardUrl = asset('storage/' . $businessCardPath);
                                                                                                     @endphp
 
                                                                                                     @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                                                                                        <img src="{{ asset('storage/' . $businessCardPath) }}"
-                                                                                                            style="max-width: 300px; max-height: 200px; border-radius: 6px; border: 1px solid #e0e0e0;"
-                                                                                                            alt="Business Card"
-                                                                                                            class="img-fluid">
+                                                                                                        <div class="business-card-preview mb-2">
+                                                                                                            <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                                                                                                <img src="{{ $businessCardUrl }}"
+                                                                                                                    style="max-width: 450px; width: 100%; height: auto; border-radius: 8px; border: 2px solid #e0e0e0; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                                                                                                                    alt="Business Card"
+                                                                                                                    class="img-fluid">
+                                                                                                            </a>
+                                                                                                        </div>
+                                                                                                        <div class="d-flex gap-2 mt-2">
+                                                                                                            <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                                                                                                                <i class="fa fa-expand me-1"></i> View Full Size
+                                                                                                            </a>
+                                                                                                            <a href="{{ $businessCardUrl }}" download class="btn btn-outline-success btn-sm">
+                                                                                                                <i class="fa fa-download me-1"></i> Download
+                                                                                                            </a>
+                                                                                                        </div>
                                                                                                     @else
-                                                                                                        <div
-                                                                                                            class="d-flex align-items-center text-muted">
-                                                                                                            <i
-                                                                                                                class="fa fa-file me-2"></i>
-                                                                                                            <div>
-                                                                                                                <div>
-                                                                                                                    Business
-                                                                                                                    Card
-                                                                                                                    File
-                                                                                                                </div>
-                                                                                                                <small>{{ $businessCardExtension }}
-                                                                                                                    file</small>
+                                                                                                        <div class="d-flex align-items-center p-3 border rounded bg-light">
+                                                                                                            <i class="fa fa-file-alt fa-2x text-muted me-3"></i>
+                                                                                                            <div class="flex-grow-1">
+                                                                                                                <div class="fw-medium">Business Card File</div>
+                                                                                                                <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
                                                                                                             </div>
-                                                                                                            <a href="{{ asset('storage/' . $businessCardPath) }}"
-                                                                                                                target="_blank"
-                                                                                                                class="btn btn-sm btn-outline-primary ms-2">
-                                                                                                                <i
-                                                                                                                    class="fa fa-download"></i>
+                                                                                                            <a href="{{ $businessCardUrl }}" download class="btn btn-outline-primary btn-sm">
+                                                                                                                <i class="fa fa-download me-1"></i> Download
                                                                                                             </a>
                                                                                                         </div>
                                                                                                     @endif
@@ -3793,12 +3814,10 @@
                                                                                                             @endphp
                                                                                                             <a href="{{ $materialLink }}"
                                                                                                                 target="_blank"
-                                                                                                                class="text-primary text-decoration-none">
-                                                                                                                <i
-                                                                                                                    class="fa fa-external-link-alt me-1"></i>
-                                                                                                                View
-                                                                                                                Material
-                                                                                                                Link
+                                                                                                                rel="noopener noreferrer"
+                                                                                                                class="btn btn-outline-primary btn-sm">
+                                                                                                                <i class="fa fa-external-link-alt me-1"></i>
+                                                                                                                Open Link
                                                                                                             </a>
                                                                                                         </div>
                                                                                                     @endif
@@ -3842,59 +3861,32 @@
                                                                                                                             );
                                                                                                                         @endphp
 
-                                                                                                                        <div
-                                                                                                                            class="col-md-6 col-lg-4 mb-2">
-                                                                                                                            <div
-                                                                                                                                class="border rounded p-2 d-flex align-items-center">
+                                                                                                                        @php $fileUrl = asset('storage/' . $filePath); @endphp
+                                                                                                                        <div class="col-md-6 mb-2">
+                                                                                                                            <div class="border rounded p-2 bg-white d-flex align-items-center">
                                                                                                                                 @if ($isImage)
-                                                                                                                                    <img src="{{ asset('storage/' . $filePath) }}"
-                                                                                                                                        style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
-                                                                                                                                        alt="Marketing Material">
+                                                                                                                                    <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer">
+                                                                                                                                        <img src="{{ $fileUrl }}"
+                                                                                                                                            style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
+                                                                                                                                            alt="Marketing Material">
+                                                                                                                                    </a>
                                                                                                                                 @else
                                                                                                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
                                                                                                                                         style="width: 60px; height: 60px;">
-                                                                                                                                        <i
-                                                                                                                                            class="fa fa-file text-muted"></i>
+                                                                                                                                        <i class="fa fa-file fa-lg text-muted"></i>
                                                                                                                                     </div>
                                                                                                                                 @endif
-                                                                                                                                <div
-                                                                                                                                    class="flex-grow-1">
-                                                                                                                                    <div
-                                                                                                                                        class="small text-truncate">
-                                                                                                                                        {{ $fileName }}
-                                                                                                                                    </div>
-                                                                                                                                    <small
-                                                                                                                                        class="text-muted">{{ strtoupper($fileExtension) }}
-                                                                                                                                        file</small>
+                                                                                                                                <div class="flex-grow-1 overflow-hidden">
+                                                                                                                                    <div class="small text-truncate fw-medium">{{ $fileName }}</div>
+                                                                                                                                    <small class="text-muted">{{ strtoupper($fileExtension) }} file</small>
                                                                                                                                 </div>
-                                                                                                                                <a href="{{ asset('storage/' . $filePath) }}"
-                                                                                                                                    target="_blank"
-                                                                                                                                    class="btn btn-sm btn-outline-primary ms-1">
-                                                                                                                                    <i
-                                                                                                                                        class="fa fa-eye"></i>
-                                                                                                                                </a>
-                                                                                                                            </div>
-                                                                                                                        </div>
-                                                                                                                    @else
-                                                                                                                        <div
-                                                                                                                            class="col-md-6 col-lg-4 mb-2">
-                                                                                                                            <div
-                                                                                                                                class="border rounded p-2 d-flex align-items-center">
-                                                                                                                                <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
-                                                                                                                                    style="width: 60px; height: 60px;">
-                                                                                                                                    <i
-                                                                                                                                        class="fa fa-file text-muted"></i>
-                                                                                                                                </div>
-                                                                                                                                <div
-                                                                                                                                    class="flex-grow-1">
-                                                                                                                                    <div
-                                                                                                                                        class="small">
-                                                                                                                                        File
-                                                                                                                                        {{ $fileIndex + 1 }}
-                                                                                                                                    </div>
-                                                                                                                                    <small
-                                                                                                                                        class="text-muted">Uploaded
-                                                                                                                                        file</small>
+                                                                                                                                <div class="d-flex gap-1 ms-2">
+                                                                                                                                    <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="View">
+                                                                                                                                        <i class="fa fa-eye"></i>
+                                                                                                                                    </a>
+                                                                                                                                    <a href="{{ $fileUrl }}" download class="btn btn-sm btn-outline-success" title="Download">
+                                                                                                                                        <i class="fa fa-download"></i>
+                                                                                                                                    </a>
                                                                                                                                 </div>
                                                                                                                             </div>
                                                                                                                         </div>
