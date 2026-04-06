@@ -4099,9 +4099,9 @@
                                                                 <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$sellerSvcInBaseline ? $svcAddedStyle : '' }}">{{ $sellerDisplaySvc }}{!! !$sellerSvcInBaseline ? $svcAddedBadge : '' !!}</li>
                                                                 @if (in_array($normalizeStr($service), ['provide digital photo enhancements', 'provide digital enhancements to media assets']))
                                                                     @php
-                                                                        $modalPhotoEnhRaw = data_get($bid, 'get.photo_enhancements', []);
+                                                                        $modalPhotoEnhRaw = $allBidMeta['photo_enhancements'] ?? [];
                                                                         $modalPhotoEnhancements = is_string($modalPhotoEnhRaw) ? (json_decode($modalPhotoEnhRaw, true) ?: []) : (is_array($modalPhotoEnhRaw) ? $modalPhotoEnhRaw : []);
-                                                                        $modalCustomEnh = data_get($bid, 'get.custom_enhancement', '');
+                                                                        $modalCustomEnh = $allBidMeta['custom_enhancement'] ?? '';
                                                                         $modalEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
                                                                     @endphp
                                                                     @if (!empty($modalPhotoEnhancements))
