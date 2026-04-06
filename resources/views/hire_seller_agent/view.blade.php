@@ -4037,9 +4037,9 @@
                                                                     <ul style="padding-left: 1.5rem; margin: 4px 0;">
                                                                         @foreach ($modalEnhOrder as $enh)
                                                                             @if (in_array($enh, $modalPhotoEnhancements))
-                                                                                @if ($enh === 'Other' && !empty($modalCustomEnh))
-                                                                                    <li style="font-size: 0.85rem;">{{ $modalCustomEnh }}</li>
-                                                                                @elseif ($enh !== 'Other')
+                                                                                @if ($enh === 'Other')
+                                                                                    <li style="font-size: 0.85rem;">Other{{ !empty($modalCustomEnh) ? ': ' . $modalCustomEnh : '' }}</li>
+                                                                                @else
                                                                                     <li style="font-size: 0.85rem;">{{ $enh }}</li>
                                                                                 @endif
                                                                             @endif
@@ -4075,7 +4075,7 @@
                                              data_get($bid, 'get.video_upload') ||
                                              data_get($bid, 'get.business_card_link') ||
                                              data_get($bid, 'get.business_card') ||
-                                             data_get($bid, 'get.promoMaterials'))
+                                             data_get($bid, 'get.promo_materials'))
                                         <div class="mb-5">
                                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                 <i class="fa fa-chart-line me-2"></i>Agent Presentation &amp; Promotional Materials
@@ -4174,10 +4174,11 @@
                                             @endif
 
                                             <!-- Marketing Materials -->
-                                            @if (data_get($bid, 'get.promoMaterials'))
+                                            @if (data_get($bid, 'get.promo_materials'))
                                             @php
                                                 $hasAnyMaterials = false;
-                                                $promoMaterialsRaw = data_get($bid, 'get.promoMaterials', []);
+                                                $promoMaterialsRaw = data_get($bid, 'get.promo_materials', []);
+                                                if (is_string($promoMaterialsRaw)) { $promoMaterialsRaw = json_decode($promoMaterialsRaw, true) ?? []; }
                                                 $promoMaterialsNormalized = [];
                                                 if (is_array($promoMaterialsRaw) || is_object($promoMaterialsRaw)) {
                                                     foreach ($promoMaterialsRaw as $m) {

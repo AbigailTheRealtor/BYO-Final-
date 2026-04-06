@@ -355,6 +355,12 @@ class SellerAgentAuctionBid extends Component
                     }
                 }
 
+                // Fallback: if business_card meta key holds a stored file path, populate
+                // business_card_stored_path so re-saves preserve it without re-uploading
+                if (empty($this->business_card_stored_path) && !empty($m['business_card']) && is_string($m['business_card'])) {
+                    $this->business_card_stored_path = $m['business_card'];
+                }
+
                 // Services (catalog-filtered to prevent cross-role contamination)
                 $editSvcs = $m['services'] ?? [];
                 if (is_string($editSvcs)) { $editSvcs = json_decode($editSvcs, true) ?? []; }
@@ -822,6 +828,9 @@ class SellerAgentAuctionBid extends Component
             if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'store')) {
                 $cardPath = $this->business_card->store('auction/documents', 'public');
                 $bid->saveMeta('business_card', $cardPath);
+            } elseif (!empty($this->business_card_stored_path)) {
+                // No new file uploaded — persist the pre-saved / previously stored path
+                $bid->saveMeta('business_card', $this->business_card_stored_path);
             }
 
             // Promo materials
