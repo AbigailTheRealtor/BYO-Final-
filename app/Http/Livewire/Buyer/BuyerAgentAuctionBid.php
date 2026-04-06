@@ -409,6 +409,11 @@ public $additional_details_broker = '';
                 $this->presentation_link        = $b['presentation_link'] ?? null;
                 $this->business_card_link       = $b['business_card_link'] ?? null;
                 $this->business_card_stored_path = $b['business_card_stored_path'] ?? null;
+                // Fallback: if business_card meta key holds a stored file path, populate
+                // business_card_stored_path so re-saves preserve it without re-uploading
+                if (empty($this->business_card_stored_path) && !empty($b['business_card']) && is_string($b['business_card'])) {
+                    $this->business_card_stored_path = $b['business_card'];
+                }
                 $this->additional_details_broker = $b['additional_details_broker'] ?? '';
             }
             $this->commission_structure                  = $b['commission_structure'] ?? '';
@@ -896,7 +901,7 @@ public $additional_details_broker = '';
             }
 
             // Handle business card upload
-            if ($this->business_card) {
+            if ($this->business_card && is_object($this->business_card) && method_exists($this->business_card, 'getClientOriginalExtension')) {
                 $extension = $this->business_card->getClientOriginalExtension();
                 if (in_array($extension, $allowedPhotos)) {
                     $uuid = (string) Str::uuid();
@@ -904,6 +909,9 @@ public $additional_details_broker = '';
                     $path = $this->business_card->storeAs('auction/documents', $fileName, 'public');
                     $bid->saveMeta('business_card', $path);
                 }
+            } elseif (!empty($this->business_card_stored_path)) {
+                // No new file uploaded — persist the pre-saved / previously stored path
+                $bid->saveMeta('business_card', $this->business_card_stored_path);
             }
 
             // Handle promotional materials upload
@@ -926,6 +934,11 @@ public $additional_details_broker = '';
                     if (is_array($files) && !empty($files)) {
                         foreach ($files as $file) {
                             if (!$file) continue;
+                            if (is_string($file) && !empty($file)) {
+                                // Existing stored path — preserve it as-is
+                                $stored[] = $file;
+                                continue;
+                            }
                             if (!is_object($file) || !method_exists($file, 'getClientOriginalExtension')) continue;
                             $ext = strtolower($file->getClientOriginalExtension());
                             if (!in_array($ext, $allowed, true)) continue;
