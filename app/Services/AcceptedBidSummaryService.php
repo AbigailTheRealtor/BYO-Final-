@@ -14,27 +14,39 @@ class AcceptedBidSummaryService
     public function getRenderedHtml(AcceptedBidSummary $summary): string
     {
         $html = $summary->summary_html ?? '';
-        
+
         $html = $this->fixAcceptedDateFormat($html, $summary);
-        
+
+        // ── Unconditional placeholder replacement (works for ALL roles) ────────
+        // New-format summaries keep {{...}} placeholders in stored HTML.
+        // Signed   → replace with the actual value.
+        // Unsigned → replace with the pending indicator.
         if ($summary->isTenantSigned()) {
             $tenantSignedDisplay = $this->formatSignatureTimestamp($summary->tenant_signed_at, $summary->tenant_timezone);
             $html = str_replace('{{tenant_signature_name}}', e($summary->tenant_signature_name), $html);
-            $html = str_replace('{{tenant_signed_at}}', $tenantSignedDisplay, $html);
-            $html = str_replace('{{tenant_ip_address}}', $summary->tenant_ip_address ?: 'Unavailable', $html);
-            
+            $html = str_replace('{{tenant_signed_at}}',      $tenantSignedDisplay,                $html);
+            $html = str_replace('{{tenant_ip_address}}',     $summary->tenant_ip_address ?: 'Unavailable', $html);
+            // Legacy regex path: old Tenant summaries stored "—" instead of placeholder
             $html = $this->updateTenantSignatureInHtml($html, $summary, $tenantSignedDisplay);
+        } else {
+            $html = str_replace('{{tenant_signature_name}}', '—',       $html);
+            $html = str_replace('{{tenant_signed_at}}',      'Pending', $html);
+            $html = str_replace('{{tenant_ip_address}}',     '—',       $html);
         }
-        
+
         if ($summary->isAgentSigned()) {
             $agentSignedDisplay = $this->formatSignatureTimestamp($summary->agent_signed_at, $summary->agent_timezone);
             $html = str_replace('{{agent_signature_name}}', e($summary->agent_signature_name), $html);
-            $html = str_replace('{{agent_signed_at}}', $agentSignedDisplay, $html);
-            $html = str_replace('{{agent_ip_address}}', $summary->agent_ip_address ?: 'Unavailable', $html);
-            
+            $html = str_replace('{{agent_signed_at}}',      $agentSignedDisplay,               $html);
+            $html = str_replace('{{agent_ip_address}}',     $summary->agent_ip_address ?: 'Unavailable', $html);
+            // Legacy regex path: old Tenant summaries stored "—" instead of placeholder
             $html = $this->updateAgentSignatureInHtml($html, $summary, $agentSignedDisplay);
+        } else {
+            $html = str_replace('{{agent_signature_name}}', '—',       $html);
+            $html = str_replace('{{agent_signed_at}}',      'Pending', $html);
+            $html = str_replace('{{agent_ip_address}}',     '—',       $html);
         }
-        
+
         return $html;
     }
     

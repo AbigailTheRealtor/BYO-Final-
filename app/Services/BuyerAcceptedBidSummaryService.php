@@ -189,15 +189,15 @@ ul { padding-left: 20px; }
 </div>
 <div class="section">
 <h3>Buyer Acknowledgement</h3>
-<p><strong>Signature:</strong> &mdash;</p>
-<p><strong>Date/Time:</strong> Pending</p>
-<p><strong>IP Address:</strong> &mdash;</p>
+<p><strong>Signature:</strong> {{tenant_signature_name}}</p>
+<p><strong>Date/Time:</strong> {{tenant_signed_at}}</p>
+<p><strong>IP Address:</strong> {{tenant_ip_address}}</p>
 </div>
 <div class="section">
 <h3>Agent Acknowledgement</h3>
-<p><strong>Signature:</strong> &mdash;</p>
-<p><strong>Date/Time:</strong> Pending</p>
-<p><strong>IP Address:</strong> &mdash;</p>
+<p><strong>Signature:</strong> {{agent_signature_name}}</p>
+<p><strong>Date/Time:</strong> {{agent_signed_at}}</p>
+<p><strong>IP Address:</strong> {{agent_ip_address}}</p>
 </div>
 </body>
 </html>

@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Landlord;
 
 use Livewire\Component;
 use App\Models\LandlordCounterBidding;
+use App\Models\LandlordCounterTerm;
 use App\Notifications\CounterBidSubmittedNotification;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -422,10 +423,142 @@ class LandlordAgentAuctionBidCounter extends Component
     }
     public function mount($pab, $bidId)
     {
-
         $this->pab   = $pab;
         $this->bidId = $bidId;
         $this->property_type = $pab->get->property_type;
+
+        // COUNTER BID PREFILL RULE: Agent counters with the Landlord's latest counter terms.
+        // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
+        $landlordCounter = LandlordCounterTerm::with('meta')
+            ->where('landlord_agent_auction_id', $this->bidId)
+            ->where('user_id', '!=', Auth::id())
+            ->latest()
+            ->first();
+
+        if ($landlordCounter) {
+            $this->hydrateFromMetaMap(
+                $landlordCounter->meta->pluck('meta_value', 'meta_key')->toArray()
+            );
+        } else {
+            // No landlord counter yet — prefill from the original agent bid terms.
+            $bid = LandlordAgentAuctionBid::with('meta')->find($this->bidId);
+            if ($bid) {
+                $this->hydrateFromMetaMap(
+                    $bid->meta->pluck('meta_value', 'meta_key')->toArray()
+                );
+            }
+        }
+    }
+
+    private function hydrateFromMetaMap(array $m): void
+    {
+        $assign = [
+            'additional_details',
+            'custom_enhancement',
+            'purchase_fee_type',
+            'purchase_fee_flat_type',
+            'purchase_fee_flat',
+            'purchase_fee_rental_period',
+            'purchase_fee_percentage_combo',
+            'purchase_fee_flat_combo',
+            'purchase_fee_other',
+            'purchase_fee_gross_rent',
+            'purchase_fee_net_aggregate',
+            'purchase_fee_monthly_percentage',
+            'purchase_fee_months',
+            'purchase_fee_flat_commercial',
+            'purchase_fee_purchase_price',
+            'purchase_fee_other_commercial',
+            'sales_tax_option_gross',
+            'sales_tax_option_flat',
+            'sales_tax_option_monthly',
+            'interested_lease_option_agreement',
+            'lease_type',
+            'lease_value',
+            'purchase_type',
+            'purchase_value',
+            'interested_in_selling',
+            'interested_in_selling_type',
+            'landlord_broker_purchase_price',
+            'landlord_broker_percentage_price',
+            'landlord_broker_dollar_price',
+            'landlord_broker_flate_fee',
+            'landlord_broker_flate_fee_type',
+            'landlord_broker_other',
+            'lease_fee_flat_type',
+            'broker_fee_timing',
+            'broker_fee_days_from_rent',
+            'broker_fee_days_after_lease',
+            'broker_fee_days_after_rent',
+            'broker_fee_timing_other',
+            'split_payment_due',
+            'split_payment_due_other',
+            'broker_fee_days_after_due_event',
+            'renewal_fee_type',
+            'renewal_fee_percentage',
+            'renewal_fee_lease_value',
+            'renewal_fee_first_month',
+            'renewal_fee_flat_free',
+            'renewal_fee_custom',
+            'renewal_fee_sales_tax_lease_value',
+            'renewal_fee_sales_tax_flat_fee',
+            'renewal_fee_sales_tax_first_month',
+            'renewal_fee_no_of_months',
+            'expansion_commission_percentage',
+            'tenant_broker_commission_structure',
+            'tenant_broker_fee_structure',
+            'tenant_broker_percentage',
+            'tenant_broker_gross_lease',
+            'tenant_broker_first_month_rent',
+            'tenant_broker_flat_fee',
+            'tenant_broker_other',
+            'protection_period',
+            'early_termination_fee_option',
+            'early_termination_fee_amount',
+            'agency_agreement_timeframe',
+            'agency_agreement_custom',
+            'interested_in_property_management',
+            'interested_in_property_management_fee',
+            'interested_in_property_management_fee_gross_lease',
+            'interested_in_property_management_fee_rental_periord',
+            'interested_in_property_management_fee_flate_free',
+            'interested_in_property_management_fee_other',
+            'brokerage_relationship',
+            'additional_details_broker',
+            'other_services_enabled',
+            'commission_structure',
+        ];
+
+        foreach ($assign as $key) {
+            if (array_key_exists($key, $m) && property_exists($this, $key)) {
+                $this->$key = $m[$key];
+            }
+        }
+
+        if (isset($m['services'])) {
+            $raw = $m['services'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+            $this->services = is_array($decoded) ? $decoded : [];
+        }
+
+        if (isset($m['other_services'])) {
+            $raw = $m['other_services'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+            $this->other_services = is_array($decoded) ? array_values($decoded) : [];
+        }
+
+        if (isset($m['photo_enhancements'])) {
+            $raw = $m['photo_enhancements'];
+            $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+            if (is_array($decoded) && property_exists($this, 'photo_enhancements')) {
+                $this->photo_enhancements = $decoded;
+            }
+        }
+
+        if (isset($m['other_services_enabled'])) {
+            $this->other_services_enabled = filter_var($m['other_services_enabled'], FILTER_VALIDATE_BOOLEAN)
+                || $m['other_services_enabled'] === '1';
+        }
     }
 
 

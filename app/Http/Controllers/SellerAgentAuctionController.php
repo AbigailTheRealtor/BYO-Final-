@@ -25,6 +25,7 @@ use App\Models\SellerAgentAuctionMeta;
 use App\Models\AgentDefaultProfile;
 use App\Models\AcceptedBidSummary;
 use App\Services\AcceptedBidSummaryService;
+use App\Services\SellerAcceptedBidSummaryService;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
 use Illuminate\Support\Facades\Log;
@@ -745,7 +746,7 @@ class SellerAgentAuctionController extends Controller
 
             $summaryId = null;
             try {
-                $summaryService = new AcceptedBidSummaryService();
+                $summaryService = new SellerAcceptedBidSummaryService();
                 $summary = $summaryService->generateSummary($pab, null);
                 if ($summary) {
                     $summaryId = $summary->id;
@@ -964,7 +965,7 @@ class SellerAgentAuctionController extends Controller
 
             $summaryId = null;
             try {
-                $summaryService = new AcceptedBidSummaryService();
+                $summaryService = new SellerAcceptedBidSummaryService();
                 $summary = $summaryService->generateSummary($bid, $counterTerm);
                 if ($summary) {
                     $summaryId = $summary->id;

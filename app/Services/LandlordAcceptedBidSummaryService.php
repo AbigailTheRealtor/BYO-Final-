@@ -667,12 +667,9 @@ class LandlordAcceptedBidSummaryService
         $additionalDetailsHtml = $this->buildAdditionalDetailsHtml($sourceData, $listingData);
         $html = str_replace('{{additional_details_block}}', $additionalDetailsHtml, $html);
 
-        $html = str_replace('{{tenant_signature_name}}', '—', $html);
-        $html = str_replace('{{tenant_signed_at}}',      'Pending', $html);
-        $html = str_replace('{{tenant_ip_address}}',     '—', $html);
-        $html = str_replace('{{agent_signature_name}}',  '—', $html);
-        $html = str_replace('{{agent_signed_at}}',       'Pending', $html);
-        $html = str_replace('{{agent_ip_address}}',      '—', $html);
+        // Leave {{tenant_signature_name}}, {{tenant_signed_at}}, {{tenant_ip_address}},
+        // {{agent_signature_name}}, {{agent_signed_at}}, {{agent_ip_address}} as-is.
+        // AcceptedBidSummaryService::getRenderedHtml() replaces them universally for all roles.
 
         return $html;
     }
