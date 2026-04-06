@@ -1,0 +1,151 @@
+This is a UI STANDARDIZATION task.
+
+Tenant view is the GOLD STANDARD.
+
+We need to make Buyer, Seller, and Landlord match Tenant EXACTLY for:
+
+Agent Presentation & Promotional Materials section.
+
+---
+
+## GOAL
+
+Make ALL roles visually and functionally IDENTICAL to Tenant.
+
+This includes:
+
+* Business Card
+* Marketing Materials (files)
+* Marketing Materials (links)
+
+---
+
+## SECTION 1 — BUSINESS CARD (MANDATORY MATCH)
+
+Match Tenant EXACTLY:
+
+* Display image preview
+* Under image show TWO buttons:
+
+1. "View Full Size"
+2. "Download"
+
+Do NOT use:
+
+* "View"
+* icons only
+* different button styles
+
+Buttons must match:
+
+* same class
+* same size
+* same spacing
+
+---
+
+## SECTION 2 — MARKETING MATERIALS (FILES)
+
+Match Tenant EXACTLY:
+
+Each uploaded file must show:
+
+* Thumbnail (if image)
+* File name
+* File type
+
+Actions (RIGHT SIDE):
+
+1. 👁 Eye icon → view file
+2. ⬇ Download icon → download file
+
+Do NOT use:
+
+* text buttons
+* different icon styles
+* stacked layout
+
+Must match Tenant layout exactly.
+
+---
+
+## SECTION 3 — MARKETING MATERIALS (LINKS)
+
+Match Tenant EXACTLY:
+
+* Show button: "Open Link"
+
+Do NOT use:
+
+* "View Material"
+* "View Link"
+* multi-line buttons
+
+Use same class and styling as Tenant.
+
+---
+
+## SECTION 4 — SOURCE OF TRUTH
+
+DO NOT recreate UI manually.
+
+Find Tenant Blade/view file and:
+
+👉 COPY the exact structure
+👉 REUSE same markup/classes
+
+Then apply to:
+
+* buyer view
+* seller view
+* landlord view
+
+---
+
+## SECTION 5 — FILES TO UPDATE
+
+Only update:
+
+* Buyer agent auction view blade
+* Seller agent auction view blade
+* Landlord agent auction view blade
+
+DO NOT modify:
+
+* Tenant view (already correct)
+* backend logic
+* database
+
+---
+
+## SECTION 6 — HARD SAFEGUARDS
+
+* Do NOT change data structure
+* Do NOT refactor unrelated UI
+* Do NOT rename variables
+* Do NOT alter routes
+* Only update presentation layer
+
+---
+
+## SUCCESS CRITERIA
+
+All 4 roles (Tenant, Buyer, Seller, Landlord):
+
+✔ identical layout
+✔ identical button text
+✔ identical icons
+✔ identical spacing
+✔ identical behavior
+
+No visual differences allowed.
+
+---
+
+## RETURN
+
+Provide:
+
+1. before vs after screenshots (Buyer, Seller, Landlord)
+2. confirmation Tenant was used as source template
+3. confirmation no backend changes were made

@@ -3749,41 +3749,31 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 @endphp
 
                                                                 @if (in_array(strtolower($businessCardExtension), ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                                                <div class="mb-2">
-                                                                    <img src="{{ asset('storage/' . $businessCardPath) }}"
-                                                                        style="max-width: 300px; max-height: 200px; border-radius: 6px; border: 1px solid #e0e0e0; display: block; margin-bottom: 8px;"
-                                                                        alt="Business Card"
-                                                                        class="img-fluid">
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}"
-                                                                        target="_blank"
-                                                                        class="btn btn-sm btn-outline-primary me-2">
-                                                                        <i class="fa fa-eye me-1"></i> View
+                                                                <div class="business-card-preview mb-2">
+                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" target="_blank" rel="noopener noreferrer" title="Click to view full size">
+                                                                        <img src="{{ asset('storage/' . $businessCardPath) }}"
+                                                                            style="max-width: 450px; width: 100%; height: auto; border-radius: 8px; border: 2px solid #e0e0e0; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"
+                                                                            alt="Business Card"
+                                                                            class="img-fluid">
                                                                     </a>
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}"
-                                                                        download
-                                                                        class="btn btn-sm btn-outline-secondary">
+                                                                </div>
+                                                                <div class="d-flex gap-2 mt-2">
+                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fa fa-expand me-1"></i> View Full Size
+                                                                    </a>
+                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" download class="btn btn-outline-success btn-sm">
                                                                         <i class="fa fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                                 @else
-                                                                <div
-                                                                    class="d-flex align-items-center text-muted">
-                                                                    <i
-                                                                        class="fa fa-file me-2"></i>
-                                                                    <div>
-                                                                        <div>
-                                                                            Business
-                                                                            Card
-                                                                            File:
-                                                                        </div>
-                                                                        <small>{{ $businessCardExtension }}
-                                                                            file</small>
+                                                                <div class="d-flex align-items-center p-3 border rounded bg-light">
+                                                                    <i class="fa fa-file-alt fa-2x text-muted me-3"></i>
+                                                                    <div class="flex-grow-1">
+                                                                        <div class="fw-medium">Business Card File</div>
+                                                                        <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
                                                                     </div>
-                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}"
-                                                                        target="_blank"
-                                                                        class="btn btn-sm btn-outline-primary ms-2">
-                                                                        <i
-                                                                            class="fa fa-download"></i>
+                                                                    <a href="{{ asset('storage/' . $businessCardPath) }}" download class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fa fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                                 @endif
@@ -3867,12 +3857,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                     @endphp
                                                                     <a href="{{ $materialLink }}"
                                                                         target="_blank"
-                                                                        class="text-primary text-decoration-none">
-                                                                        <i
-                                                                            class="fa fa-external-link-alt me-1"></i>
-                                                                        View
-                                                                        Material
-                                                                        Link
+                                                                        rel="noopener noreferrer"
+                                                                        class="btn btn-outline-primary btn-sm">
+                                                                        <i class="fa fa-external-link-alt me-1"></i>
+                                                                        Open Link
                                                                     </a>
                                                                 </div>
                                                                 @endif
@@ -3927,38 +3915,36 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                             <div
                                                                                 class="border rounded p-2 d-flex align-items-center">
                                                                                 @if ($isImage)
-                                                                                <img src="{{ asset('storage/' . $filePath) }}"
-                                                                                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
-                                                                                    alt="Marketing Material">
+                                                                                <a href="{{ asset('storage/' . $filePath) }}" target="_blank" rel="noopener noreferrer">
+                                                                                    <img src="{{ asset('storage/' . $filePath) }}"
+                                                                                        style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;"
+                                                                                        alt="Marketing Material">
+                                                                                </a>
                                                                                 @else
                                                                                 <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
                                                                                     style="width: 60px; height: 60px;">
-                                                                                    <i
-                                                                                        class="fa fa-file text-muted"></i>
+                                                                                    <i class="fa fa-file fa-lg text-muted"></i>
                                                                                 </div>
                                                                                 @endif
-                                                                                <div
-                                                                                    class="flex-grow-1">
-                                                                                    <div
-                                                                                        class="small text-truncate">
-                                                                                        {{ $fileName }}
-                                                                                    </div>
-                                                                                    <small
-                                                                                        class="text-muted">{{ strtoupper($fileExtension) }}
-                                                                                        file</small>
+                                                                                <div class="flex-grow-1 overflow-hidden">
+                                                                                    <div class="small text-truncate fw-medium">{{ $fileName }}</div>
+                                                                                    <small class="text-muted">{{ strtoupper($fileExtension) }} file</small>
                                                                                 </div>
-                                                                                <a href="{{ asset('storage/' . $filePath) }}"
-                                                                                    target="_blank"
-                                                                                    class="btn btn-sm btn-outline-primary ms-1"
-                                                                                    title="View">
-                                                                                    <i class="fa fa-eye"></i>
-                                                                                </a>
-                                                                                <a href="{{ asset('storage/' . $filePath) }}"
-                                                                                    download
-                                                                                    class="btn btn-sm btn-outline-secondary ms-1"
-                                                                                    title="Download">
-                                                                                    <i class="fa fa-download"></i>
-                                                                                </a>
+                                                                                <div class="d-flex gap-1 ms-2">
+                                                                                    <a href="{{ asset('storage/' . $filePath) }}"
+                                                                                        target="_blank"
+                                                                                        rel="noopener noreferrer"
+                                                                                        class="btn btn-sm btn-outline-primary"
+                                                                                        title="View">
+                                                                                        <i class="fa fa-eye"></i>
+                                                                                    </a>
+                                                                                    <a href="{{ asset('storage/' . $filePath) }}"
+                                                                                        download
+                                                                                        class="btn btn-sm btn-outline-success"
+                                                                                        title="Download">
+                                                                                        <i class="fa fa-download"></i>
+                                                                                    </a>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                         @else

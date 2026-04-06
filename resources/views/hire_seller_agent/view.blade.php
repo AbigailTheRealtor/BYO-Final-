@@ -4309,32 +4309,53 @@
                                                         @php
                                                             $matLinkFull = (!str_starts_with($matLink, 'http://') && !str_starts_with($matLink, 'https://')) ? 'https://' . $matLink : $matLink;
                                                         @endphp
-                                                        <a href="{{ $matLinkFull }}" target="_blank" class="text-primary text-decoration-none">
-                                                            <i class="fa fa-external-link-alt me-1"></i> View Material
+                                                        <a href="{{ $matLinkFull }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
+                                                            <i class="fa fa-external-link-alt me-1"></i> Open Link
                                                         </a>
                                                     </div>
                                                     @endif
                                                     @if (!empty($matFiles) && is_array($matFiles))
-                                                    <div class="d-flex flex-wrap gap-2">
-                                                        @foreach ($matFiles as $matFile)
-                                                        @php
-                                                            if (is_object($matFile)) { $matFile = (array) $matFile; }
-                                                            $mfPath = is_array($matFile) ? ($matFile['path'] ?? $matFile['file'] ?? $matFile['url'] ?? (reset($matFile) ?: '')) : (is_string($matFile) ? $matFile : '');
-                                                            $mfExt  = strtolower(pathinfo($mfPath, PATHINFO_EXTENSION));
-                                                            $mfUrl  = $mfPath ? asset('storage/' . $mfPath) : '';
-                                                        @endphp
-                                                        @if ($mfUrl)
-                                                        @if (in_array($mfExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']))
-                                                        <a href="{{ $mfUrl }}" target="_blank" rel="noopener noreferrer">
-                                                            <img src="{{ $mfUrl }}" style="max-width: 120px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid #ddd;" alt="Material">
-                                                        </a>
-                                                        @else
-                                                        <a href="{{ $mfUrl }}" download class="btn btn-outline-secondary btn-sm">
-                                                            <i class="fa fa-download me-1"></i> {{ strtoupper($mfExt) ?: 'File' }}
-                                                        </a>
-                                                        @endif
-                                                        @endif
-                                                        @endforeach
+                                                    <div class="mb-2">
+                                                        <div class="fw-medium mb-2" style="color: #34465c; font-size: 0.9rem;">Uploaded Files:</div>
+                                                        <div class="row g-2">
+                                                            @foreach ($matFiles as $matFile)
+                                                            @php
+                                                                if (is_object($matFile)) { $matFile = (array) $matFile; }
+                                                                $mfPath = is_array($matFile) ? ($matFile['path'] ?? $matFile['file'] ?? $matFile['url'] ?? (reset($matFile) ?: '')) : (is_string($matFile) ? $matFile : '');
+                                                                $mfExt  = strtolower(pathinfo($mfPath, PATHINFO_EXTENSION));
+                                                                $mfName = basename($mfPath);
+                                                                $mfUrl  = $mfPath ? asset('storage/' . $mfPath) : '';
+                                                                $mfIsImage = in_array($mfExt, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+                                                            @endphp
+                                                            @if ($mfUrl)
+                                                            <div class="col-md-6 mb-2">
+                                                                <div class="border rounded p-2 bg-white d-flex align-items-center">
+                                                                    @if ($mfIsImage)
+                                                                    <a href="{{ $mfUrl }}" target="_blank" rel="noopener noreferrer">
+                                                                        <img src="{{ $mfUrl }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; margin-right: 10px;" alt="Marketing Material">
+                                                                    </a>
+                                                                    @else
+                                                                    <div class="bg-light rounded d-flex align-items-center justify-content-center me-2" style="width: 60px; height: 60px;">
+                                                                        <i class="fa fa-file fa-lg text-muted"></i>
+                                                                    </div>
+                                                                    @endif
+                                                                    <div class="flex-grow-1 overflow-hidden">
+                                                                        <div class="small text-truncate fw-medium">{{ $mfName }}</div>
+                                                                        <small class="text-muted">{{ strtoupper($mfExt) }} file</small>
+                                                                    </div>
+                                                                    <div class="d-flex gap-1 ms-2">
+                                                                        <a href="{{ $mfUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="View">
+                                                                            <i class="fa fa-eye"></i>
+                                                                        </a>
+                                                                        <a href="{{ $mfUrl }}" download class="btn btn-sm btn-outline-success" title="Download">
+                                                                            <i class="fa fa-download"></i>
+                                                                        </a>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            @endif
+                                                            @endforeach
+                                                        </div>
                                                     </div>
                                                     @endif
                                                 </div>
