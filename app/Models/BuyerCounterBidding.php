@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class BuyerCounterBidding extends Model
 {
     use HasFactory;
+
+    protected $appends = ['get'];
 
     protected $table = 'buyer_counter_bidding';
 
@@ -77,5 +80,22 @@ class BuyerCounterBidding extends Model
     public function getAllMeta()
     {
         return $this->meta->pluck('meta_value', 'meta_key')->toArray();
+    }
+
+    public function getGetAttribute()
+    {
+        $data = [];
+        $metas = BuyerCounterBiddingMeta::where('counter_bidding_id', $this->id)->get();
+        foreach ($metas as $row) {
+            if (gettype(json_decode($row->meta_value)) == 'array') {
+                $value = json_decode($row->meta_value);
+            } else {
+                $value = $row->meta_value;
+            }
+            $data[$row->meta_key] = $value;
+        }
+        $collection = new Collection();
+        $collection->push((object) $data);
+        return $collection->first();
     }
 }

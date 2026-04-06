@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Buyer;
 
 use Livewire\Component;
 use App\Models\BuyerAgentAuction;
+use App\Models\BuyerCounterTerm;
 use App\Models\BuyerCounterBidding;
 use App\Helpers\BuyerBidMatchScoreHelper;
 use App\Notifications\CounterBidSubmittedNotification;
@@ -201,14 +202,82 @@ public $additional_details_broker = '';
         $this->bidId = $bidId;
         $this->property_type = $pab->get->property_type;
 
-        // Carry forward services from the original bid, filtered to current catalog
-        $existingBid = \App\Models\BuyerAgentAuctionBid::with('meta')->find($bidId);
-        if ($existingBid) {
-            $rawServices = $existingBid->info('services');
-            if ($rawServices) {
-                $decoded = is_string($rawServices) ? json_decode($rawServices, true) ?? [] : (array) $rawServices;
-                $this->services = $this->filterServicesToCurrentCatalog($decoded);
+        $sourceData = null;
+
+        // COUNTER BID PREFILL RULE: Agent counters with Buyer's latest counter terms for this listing.
+        // BuyerCounterTerm stores auction/listing ID in buyer_agent_auction_id (not the bid ID).
+        $buyerCounter = BuyerCounterTerm::where('buyer_agent_auction_id', $pab->id)
+            ->where('user_id', $pab->user_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($buyerCounter && $buyerCounter->get) {
+            $sourceData = $buyerCounter->get;
+        }
+
+        // If no Buyer counter exists, fall back to the original listing (auction) terms
+        if (!$sourceData) {
+            if ($pab && $pab->get) {
+                $sourceData = $pab->get;
             }
+        }
+
+        // Final fallback: original bid terms
+        if (!$sourceData) {
+            $originalBid = \App\Models\BuyerAgentAuctionBid::find($bidId);
+            if ($originalBid) {
+                $sourceData = $originalBid->get;
+            }
+        }
+
+        if ($sourceData) {
+            $this->commission_structure = $sourceData->commission_structure ?? '';
+            $this->lease_fee_type = $sourceData->lease_fee_type ?? '';
+            $this->lease_fee_flat = $sourceData->lease_fee_flat ?? '';
+            $this->lease_fee_percentage = $sourceData->lease_fee_percentage ?? '';
+            $this->lease_fee_percentage_monthly_rent = $sourceData->lease_fee_percentage_monthly_rent ?? '';
+            $this->lease_fee_percentage_monthly_number = $sourceData->lease_fee_percentage_monthly_number ?? '';
+            $this->lease_fee_flat_combo = $sourceData->lease_fee_flat_combo ?? '';
+            $this->lease_fee_percentage_combo = $sourceData->lease_fee_percentage_combo ?? '';
+            $this->lease_fee_percentage_net = $sourceData->lease_fee_percentage_net ?? '';
+            $this->lease_fee_flat_combo_net = $sourceData->lease_fee_flat_combo_net ?? '';
+            $this->lease_fee_percentage_combo_net = $sourceData->lease_fee_percentage_combo_net ?? '';
+            $this->lease_fee_other = $sourceData->lease_fee_other ?? '';
+
+            $this->interested_lease_option = $sourceData->interested_lease_option ?? '';
+            $this->interested_purchase_fee_type = $sourceData->interested_purchase_fee_type ?? '';
+            $this->purchase_fee_type = $sourceData->purchase_fee_type ?? '';
+            $this->purchase_fee_flat = $sourceData->purchase_fee_flat ?? '';
+            $this->purchase_fee_percentage = $sourceData->purchase_fee_percentage ?? '';
+            $this->purchase_fee_percentage_combo = $sourceData->purchase_fee_percentage_combo ?? '';
+            $this->purchase_fee_flat_combo = $sourceData->purchase_fee_flat_combo ?? '';
+            $this->purchase_fee_other = $sourceData->purchase_fee_other ?? '';
+
+            $this->interested_lease_option_agreement = $sourceData->interested_lease_option_agreement ?? '';
+            $this->lease_type = $sourceData->lease_type ?? 'percent';
+            $this->lease_value = $sourceData->lease_value ?? '';
+            $this->purchase_type = $sourceData->purchase_type ?? 'percent';
+            $this->purchase_value = $sourceData->purchase_value ?? '';
+
+            $this->protection_period = $sourceData->protection_period ?? '';
+            $this->early_termination_fee_option = $sourceData->early_termination_fee_option ?? '';
+            $this->early_termination_fee_amount = $sourceData->early_termination_fee_amount ?? '';
+            $this->retainer_fee_option = $sourceData->retainer_fee_option ?? '';
+            $this->retainer_fee_amount = $sourceData->retainer_fee_amount ?? '';
+            $this->retainer_fee_application = $sourceData->retainer_fee_application ?? '';
+            $this->agency_agreement_timeframe = $sourceData->agency_agreement_timeframe ?? '';
+            $this->agency_agreement_custom = $sourceData->agency_agreement_custom ?? '';
+            $this->brokerage_relationship = $sourceData->brokerage_relationship ?? '';
+            $this->additional_details_broker = $sourceData->additional_details_broker ?? '';
+            $this->additional_details = $sourceData->additional_details ?? '';
+
+            $services = $sourceData->services ?? '';
+            $rawServices = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
+            $this->services = $this->filterServicesToCurrentCatalog($rawServices);
+
+            $otherServices = $sourceData->other_services ?? '';
+            $this->other_services = is_string($otherServices) ? json_decode($otherServices, true) ?? [] : (array) $otherServices;
+            $this->other_services_enabled = !empty($this->other_services);
         }
     }
 

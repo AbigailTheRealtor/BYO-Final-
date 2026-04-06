@@ -4,6 +4,7 @@ namespace App\Http\Livewire\Buyer;
 
 use Livewire\Component;
 use App\Models\BuyerCounterTerm;
+use App\Models\BuyerCounterBidding;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\User;
 use App\Helpers\BuyerBidMatchScoreHelper;
@@ -198,17 +199,36 @@ public $additional_details_broker = '';
         $this->bidId = $bidId;
         $this->property_type = $pab->get->property_type;
 
-        // EDIT MODE: Try load existing counter term by auction id
+        // EDIT MODE: Try load existing counter term for this buyer (current user) + bid thread
         $existing = BuyerCounterTerm::with('meta')
             ->where('buyer_agent_auction_id', $this->pab->id)
+            ->where('user_id', Auth::id())
+            ->latest()
             ->first();
 
         if ($existing) {
             $this->counterTermId = $existing->id;
             $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
         } else {
-            // NEW COUNTER: Prefill from the agent's bid terms
-            $this->prefillFromAgentBid($pab);
+            // NEW COUNTER: Prefill from the Agent's most recent counter (BuyerCounterBidding).
+            // BuyerCounterBidding stores the auction ID in buyer_agent_auction_id.
+            $agentCounter = BuyerCounterBidding::where('buyer_agent_auction_id', $this->pab->id)
+                ->latest()
+                ->first();
+
+            if ($agentCounter && $agentCounter->get) {
+                $sourceData = $agentCounter->get;
+                $m = (array) $sourceData;
+                foreach ($m as $key => $value) {
+                    if (is_array($value)) {
+                        $m[$key] = json_encode($value);
+                    }
+                }
+                $this->hydrateFromMetaMap($m);
+            } else {
+                // Fall back to agent's original bid terms if no counter exists
+                $this->prefillFromAgentBid($pab);
+            }
         }
     }
 

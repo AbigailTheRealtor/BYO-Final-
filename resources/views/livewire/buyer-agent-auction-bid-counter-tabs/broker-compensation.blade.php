@@ -277,13 +277,13 @@
 
     <!-- TAB 1 -->
     <div id="tab1" class="tab-content">
-        <h5 class="compensation_tab">
+        <label class="fw-bold">
             Compensation for Creating the Lease-Option Agreement:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the Tenant. This compensation is typically paid upfront and is separate from any commission owed if the purchase option is later exercised.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
-        </h5>
+        </label>
 
         <div class="form-group">
             <label class="fw-bold d-block mb-1">Compensation Amount</label>
@@ -313,13 +313,13 @@
 
     <!-- TAB 2 -->
     <div id="tab2" class="tab-content">
-        <h5 class="compensation_tab">
+        <label class="fw-bold">
             Compensation if Purchase Option is Exercised:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="If the Tenant chooses to exercise the option and purchase the property, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time—such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited against the final amount due, depending on the terms of the agreement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
-        </h5>
+        </label>
 
         <div class="form-group">
             <label class="fw-bold d-block mb-1">Compensation Amount</label>
