@@ -1,0 +1,181 @@
+This is a surgical Buyer counter-flow + Buyer lease-option field styling fix only.
+
+Do not change database schema.
+Do not change listing creation forms.
+Do not refactor unrelated bid logic.
+Do not touch Tenant except to use Tenant as the exact source of truth.
+Do not touch Seller or Landlord unless absolutely necessary for shared counter behavior already proven by Tenant.
+
+Tenant counter flow is the gold standard for:
+
+* pre-populating the last submitted terms when countering
+* pre-populating the last submitted services when countering
+* lease-option field label styling (black, not blue)
+
+---
+
+## GOALS
+
+Fix ONLY these Buyer issues:
+
+1. When a user clicks Counter on a Buyer bid, the counter form must automatically pre-populate from the OTHER PARTY’S most recent submitted bid/counter
+2. Services must also pre-populate the same way
+3. Buyer lease-option labels must use black styling like Tenant, not blue
+
+---
+
+## REQUIRED COUNTER PRE-POPULATION LOGIC
+
+Use Tenant counter behavior as the exact source of truth.
+
+Buyer flow must work like this:
+
+A. If the BUYER is countering the AGENT:
+
+* pre-populate the form with the AGENT’S most recent submitted bid/counter terms
+* pre-populate services from the AGENT’S most recent submitted bid/counter
+
+B. If the AGENT is countering the BUYER:
+
+* pre-populate the form with the BUYER’S most recent submitted offer/counter terms
+* pre-populate services from the BUYER’S most recent submitted offer/counter
+
+Important:
+
+* Do NOT pre-populate from the original listing unless Tenant does that in the exact same situation
+* Do NOT pre-populate stale earlier data if a newer counter exists
+* Always use the most recent submitted bid/counter from the opposite party
+* This should follow Tenant’s same structure and same concept
+
+---
+
+## WHAT TO AUDIT FIRST
+
+Before coding, inspect and identify:
+
+1. The active Tenant counter flow files and logic
+2. The active Buyer counter flow files and logic
+3. Which record/query Tenant uses to determine “latest bid/counter”
+4. Which payload/fields Tenant uses to prefill:
+
+   * broker compensation / agency agreement terms
+   * services
+   * additional details if applicable
+5. Where Buyer is currently failing:
+
+   * using original listing instead of latest counter?
+   * using wrong party’s last bid?
+   * not loading services?
+   * not loading lease-option subfields?
+
+Do not code until you identify the exact Tenant source-of-truth implementation.
+
+---
+
+## FIELDS THAT MUST PRE-POPULATE
+
+At minimum, all active Buyer counter form fields that Tenant pre-populates must also pre-populate, including:
+
+Broker Compensation & Agency Agreement Terms:
+
+* commission structure fields
+* purchase fee fields
+* lease fee fields if applicable
+* Interested in a Lease-Option Agreement
+* Compensation for Creating the Lease-Option Agreement
+* Compensation if Purchase Option is Exercised
+* legal terms
+* brokerage relationship
+* additional terms if applicable
+* additional details if Tenant pre-populates it in the same flow
+
+Services:
+
+* all selected service checkboxes
+* any grouped service selections
+* custom/other services if supported by Buyer in the same pattern Tenant uses
+
+Important:
+
+* if latest counter changed these values, the form must show the latest changed values
+* if services were changed in the latest counter, the services tab must reflect that immediately
+
+---
+
+## LEASE-OPTION STYLING FIX
+
+Issue:
+If user selects Yes to:
+
+* Interested in a Lease-Option Agreement
+
+then these Buyer labels render in blue, which is wrong:
+
+* Compensation for Creating the Lease-Option Agreement:
+* Compensation if Purchase Option is Exercised:
+
+Requirement:
+
+* Change these Buyer labels to black styling
+* Match Tenant exactly in:
+
+  * font color
+  * font weight
+  * font size
+  * spacing
+  * overall format
+
+Important:
+
+* This is a Buyer-only visual parity fix
+* Do not change the underlying field logic
+* Use Tenant’s active current markup/classes as the exact reference
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT rename or delete DB columns
+* Do NOT change route structure unless a currently active Buyer counter route is broken
+* Do NOT create a new Buyer-only counter architecture
+* Do NOT hardcode field values
+* Do NOT pre-populate from the wrong source record
+* Do NOT change scoring logic
+* Do NOT alter Tenant behavior
+* Only modify active Buyer counter flow files and any minimal Buyer-only styling/classes needed
+* If a shared helper is used by Tenant and Buyer, only extend it in a way that preserves Tenant’s current working behavior
+
+---
+
+## FILES TO CHECK
+
+Check:
+
+* active Tenant counter flow files
+* active Buyer counter flow files
+* active Buyer counter form view
+* active Buyer counter submit/edit Livewire component or controller
+* any minimal helper/query used to fetch latest bid/counter data
+
+Modify only the minimal active Buyer files required, unless a shared Tenant-proven helper can safely be reused.
+
+---
+
+## VERIFICATION REQUIRED
+
+After coding, provide a numbered report with:
+
+1. exact Tenant files checked for source-of-truth behavior
+2. exact Buyer files checked
+3. exact Buyer files changed
+4. root cause found for Buyer counter pre-population bug
+5. confirmation that:
+
+   * Buyer countering Agent now pre-populates Agent’s latest submitted bid/counter
+   * Agent countering Buyer now pre-populates Buyer’s latest submitted offer/counter
+   * services also pre-populate from the latest opposite-party submission
+   * latest counter is used, not stale/original data
+6. confirmation that Buyer lease-option labels are now black and match Tenant visually
+
+Do not give a broad summary.
+This is a Buyer-only counter pre-population + styling fix using Tenant as the exact reference.
