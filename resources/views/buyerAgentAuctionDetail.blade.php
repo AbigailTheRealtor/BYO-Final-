@@ -3681,10 +3681,6 @@
 
                                                                                         @if (data_get($bid, 'get.business_card'))
                                                                                             <div class="mb-2">
-                                                                                                <div class="fw-medium mb-1"
-                                                                                                    style="color: #049399;">
-                                                                                                    Uploaded Business Card:
-                                                                                                </div>
                                                                                                 @php
                                                                                                     $rawBusinessCard = data_get($bid, 'get.business_card');
                                                                                                     if (is_object($rawBusinessCard)) { $rawBusinessCard = (array) $rawBusinessCard; }
