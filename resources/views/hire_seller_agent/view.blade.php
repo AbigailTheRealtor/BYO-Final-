@@ -2841,6 +2841,8 @@
                                 ->where('status', 1)
                                 ->latest('updated_at')
                                 ->first();
+                            // Note: ->get accessor on SellerAgentAuction / SellerAgentAuctionBid calls getGetAttribute()
+                            // which queries the meta table directly each access — always fresh, no eager-load dependency.
                             $propertyType    = data_get($auction, 'get.property_type', '');
                             $bidDataArr      = (array) data_get($bid, 'get', []);
                             $auctionDataArr  = (array) data_get($auction, 'get', []);
@@ -4030,6 +4032,50 @@
                                             $hasAnyServices = !empty($services) || !empty($otherSvcsModal) || !empty($unmappedSvcs);
                                         @endphp
 
+                                        @php
+                                        // === Seller Offered Services - Inline Extra/Missing Badge Pattern ===
+                                        // Build baseline service list from the active baseline (counter or original auction)
+                                        $sellerBsRaw = $baselineData['services'] ?? [];
+                                        if (is_string($sellerBsRaw)) { $sellerBsRaw = json_decode($sellerBsRaw, true) ?? []; }
+                                        $sellerBsRaw = array_values(array_filter((array)$sellerBsRaw, fn($s) => is_string($s) && !empty(trim($s)) && $s !== 'Other'));
+
+                                        $sellerBsOtherRaw = $baselineData['other_services'] ?? [];
+                                        if (is_string($sellerBsOtherRaw)) { $sellerBsOtherRaw = json_decode($sellerBsOtherRaw, true) ?? []; }
+                                        $sellerBsOtherRaw = array_values(array_filter((array)$sellerBsOtherRaw, fn($s) => is_string($s) && !empty(trim($s))));
+
+                                        $sellerBaselineServices = array_merge($sellerBsRaw, $sellerBsOtherRaw);
+
+                                        // Service style/badge variables
+                                        $svcAddedStyle  = 'background-color: #d4edda; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                                        $svcAddedBadge  = '<span class="badge bg-success ms-2" style="font-size: 0.65rem; vertical-align: middle;">Extra Service Offered</span>';
+                                        $svcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
+                                        $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
+
+                                        // Build full normalized baseline set (includes custom/other services)
+                                        $sellerNormFn = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s);
+                                        $sellerBaselineNormFull = array_unique(array_map($sellerNormFn, $sellerBaselineServices));
+                                        $sellerBidNormFull = array_unique(array_map(
+                                            $sellerNormFn,
+                                            array_merge(array_values((array)$services), array_values((array)$otherSvcsModal))
+                                        ));
+
+                                        $checkSellerSvcInBaseline = function($svc) use ($sellerBaselineNormFull, $sellerNormFn) {
+                                            return in_array($sellerNormFn($svc), $sellerBaselineNormFull, true);
+                                        };
+
+                                        $checkSellerSvcInBid = function($svc) use ($sellerBidNormFull, $sellerNormFn) {
+                                            return in_array($sellerNormFn($svc), $sellerBidNormFull, true);
+                                        };
+
+                                        // Compute missing services: in baseline but not in bid
+                                        $sellerMissingServices = [];
+                                        foreach ($sellerBaselineServices as $bSvc) {
+                                            if (!$checkSellerSvcInBid($bSvc)) {
+                                                $sellerMissingServices[] = $bSvc;
+                                            }
+                                        }
+                                        @endphp
+
                                         @if ($hasAnyServices)
                                         <div class="mb-5">
                                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
@@ -4046,28 +4092,32 @@
                                                     <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                         @foreach ($catSvcs as $service)
                                                             @if (isset($selectedNormalized[$normalizeStr($service)]))
-                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $selectedNormalized[$normalizeStr($service)] }}</li>
-                                                            @if (in_array($normalizeStr($service), ['provide digital photo enhancements', 'provide digital enhancements to media assets']))
                                                                 @php
-                                                                    $modalPhotoEnhRaw = data_get($bid, 'get.photo_enhancements', []);
-                                                                    $modalPhotoEnhancements = is_string($modalPhotoEnhRaw) ? (json_decode($modalPhotoEnhRaw, true) ?: []) : (is_array($modalPhotoEnhRaw) ? $modalPhotoEnhRaw : []);
-                                                                    $modalCustomEnh = data_get($bid, 'get.custom_enhancement', '');
-                                                                    $modalEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                                                    $sellerDisplaySvc = $selectedNormalized[$normalizeStr($service)];
+                                                                    $sellerSvcInBaseline = $checkSellerSvcInBaseline($sellerDisplaySvc);
                                                                 @endphp
-                                                                @if (!empty($modalPhotoEnhancements))
-                                                                    <ul style="padding-left: 1.5rem; margin: 4px 0;">
-                                                                        @foreach ($modalEnhOrder as $enh)
-                                                                            @if (in_array($enh, $modalPhotoEnhancements))
-                                                                                @if ($enh === 'Other')
-                                                                                    <li style="font-size: 0.85rem;">Other{{ !empty($modalCustomEnh) ? ': ' . $modalCustomEnh : '' }}</li>
-                                                                                @else
-                                                                                    <li style="font-size: 0.85rem;">{{ $enh }}</li>
+                                                                <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$sellerSvcInBaseline ? $svcAddedStyle : '' }}">{{ $sellerDisplaySvc }}{!! !$sellerSvcInBaseline ? $svcAddedBadge : '' !!}</li>
+                                                                @if (in_array($normalizeStr($service), ['provide digital photo enhancements', 'provide digital enhancements to media assets']))
+                                                                    @php
+                                                                        $modalPhotoEnhRaw = data_get($bid, 'get.photo_enhancements', []);
+                                                                        $modalPhotoEnhancements = is_string($modalPhotoEnhRaw) ? (json_decode($modalPhotoEnhRaw, true) ?: []) : (is_array($modalPhotoEnhRaw) ? $modalPhotoEnhRaw : []);
+                                                                        $modalCustomEnh = data_get($bid, 'get.custom_enhancement', '');
+                                                                        $modalEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                                                    @endphp
+                                                                    @if (!empty($modalPhotoEnhancements))
+                                                                        <ul style="padding-left: 1.5rem; margin: 4px 0;">
+                                                                            @foreach ($modalEnhOrder as $enh)
+                                                                                @if (in_array($enh, $modalPhotoEnhancements))
+                                                                                    @if ($enh === 'Other')
+                                                                                        <li style="font-size: 0.85rem;">Other{{ !empty($modalCustomEnh) ? ': ' . $modalCustomEnh : '' }}</li>
+                                                                                    @else
+                                                                                        <li style="font-size: 0.85rem;">{{ $enh }}</li>
+                                                                                    @endif
                                                                                 @endif
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </ul>
+                                                                            @endforeach
+                                                                        </ul>
+                                                                    @endif
                                                                 @endif
-                                                            @endif
                                                             @endif
                                                         @endforeach
                                                     </ul>
@@ -4075,15 +4125,39 @@
                                                 @endif
                                             @endforeach
 
-                                            {{-- Unmapped services (not in property-type config) are silently skipped,
-                                                 matching listing view behavior (listing view only shows category-matched services). --}}
+                                            @if (!empty($unmappedSvcs))
+                                            <div class="mb-3">
+                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">Other Services</div>
+                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                    @foreach ($unmappedSvcs as $unmappedSvc)
+                                                        @php $sellerUnmappedInBaseline = $checkSellerSvcInBaseline($unmappedSvc); @endphp
+                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$sellerUnmappedInBaseline ? $svcAddedStyle : '' }}">{{ $unmappedSvc }}{!! !$sellerUnmappedInBaseline ? $svcAddedBadge : '' !!}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                            @endif
 
                                             @if (!empty($otherSvcsModal))
                                             <div class="mb-3">
                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                     @foreach ($otherSvcsModal as $otherService)
-                                                    <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
+                                                        @php $sellerOtherInBaseline = $checkSellerSvcInBaseline($otherService); @endphp
+                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$sellerOtherInBaseline ? $svcAddedStyle : '' }}">{{ $otherService }}{!! !$sellerOtherInBaseline ? $svcAddedBadge : '' !!}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            {{-- Show services that were in baseline but agent did not include --}}
+                                            @if (!empty($sellerMissingServices))
+                                            <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
+                                                <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
+                                                    <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($sellerMissingServices) }})
+                                                </div>
+                                                <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                    @foreach ($sellerMissingServices as $sellerMissingSvc)
+                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $sellerMissingSvc }}{!! $svcMissingBadge !!}</li>
                                                     @endforeach
                                                 </ul>
                                             </div>

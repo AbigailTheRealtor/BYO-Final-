@@ -2336,6 +2336,10 @@
                             <p>No one has bid on this auction.</p>
                         @endif
                         <div id="buyerBidsList">
+                                @php
+                                // Reload meta once before bid loop to guarantee fresh listing baseline from DB.
+                                $auction->load('meta');
+                                @endphp
 
                                 @foreach (@$auction->bids as $bid)
                                     @php
@@ -2354,6 +2358,7 @@
                                         $headerBg = $bidAccepted === 'accepted' ? '#d4edda' : ($bidAccepted === 'rejected' ? '#f8d7da' : '#f8f9fa');
 
                                         // === MATCH SCORE — baseline-driven (BuyerBidMatchScoreHelper) ===
+                                        // $auction->meta reloaded before loop; $bid->get queries DB directly on each call.
                                         $auctionPropType = data_get($auction, 'get.property_type', '');
                                         $baselineData = $auction->meta->pluck('meta_value', 'meta_key')->toArray();
                                         $currentBidData = (array) $bid->get;
@@ -3487,9 +3492,6 @@
                                                                                                 $buyerSvcIsExtra = $checkBuyerSvcIsExtra($svc);
                                                                                             @endphp
                                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerSvcIsExtra ? $buyerSvcAddedStyle : '' }}">
-                                                                                                @if (!$buyerSvcIsExtra)
-                                                                                                    <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>
-                                                                                                @endif
                                                                                                 {{ $displayBuyerSvc }}{!! $buyerSvcIsExtra ? $buyerSvcAddedBadge : '' !!}
                                                                                             </li>
                                                                                         @endforeach
@@ -3507,9 +3509,6 @@
                                                                                             $buyerOtherIsExtra = $checkBuyerSvcIsExtra($otherSvc);
                                                                                         @endphp
                                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $buyerOtherIsExtra ? $buyerSvcAddedStyle : '' }}">
-                                                                                            @if (!$buyerOtherIsExtra)
-                                                                                                <i class="fa fa-check-circle me-1" style="color: #28a745;"></i>
-                                                                                            @endif
                                                                                             {{ $displayBuyerOther }}{!! $buyerOtherIsExtra ? $buyerSvcAddedBadge : '' !!}
                                                                                         </li>
                                                                                     @endforeach
