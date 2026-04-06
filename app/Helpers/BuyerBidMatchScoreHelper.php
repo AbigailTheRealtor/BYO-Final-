@@ -595,16 +595,16 @@ class BuyerBidMatchScoreHelper
     {
         $pt = strtolower(trim($propertyType));
 
-        if ($pt === 'income') {
-            return self::INCOME_SERVICES_CATALOG;
-        }
-        if ($pt === 'commercial') {
+        if (str_contains($pt, 'commercial')) {
             return self::COMMERCIAL_SERVICES_CATALOG;
         }
-        if ($pt === 'business') {
+        if (str_contains($pt, 'income')) {
+            return self::INCOME_SERVICES_CATALOG;
+        }
+        if (str_contains($pt, 'business')) {
             return self::BUSINESS_SERVICES_CATALOG;
         }
-        if ($pt === 'vacant land') {
+        if (str_contains($pt, 'vacant') || str_contains($pt, 'land')) {
             return self::VACANT_LAND_SERVICES_CATALOG;
         }
 

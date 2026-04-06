@@ -3389,7 +3389,7 @@
                                             @endphp
                                             @if ($showSellerBrokerComp)
                                             <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Seller's Broker Compensation</h6>
+                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Broker Compensation</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     @if ($bidPurchaseFeeType)
                                                     <li class="mb-1"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>

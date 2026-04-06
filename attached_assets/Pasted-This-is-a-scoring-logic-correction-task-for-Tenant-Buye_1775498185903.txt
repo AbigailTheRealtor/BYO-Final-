@@ -1,0 +1,410 @@
+This is a scoring-logic correction task for Tenant, Buyer, Seller, and Landlord bid cards.
+
+Goal:
+Make Match Score calculate correctly for Services Match and Terms Match across all supported property types and roles.
+
+Tenant is the gold standard for visual layout, but the scoring logic must follow the rules below exactly.
+
+---
+
+## HARD RULES
+
+1. Only score against what the user actually selected or filled in.
+2. Do NOT score against all possible fields in the form.
+3. Every checked service = 1 service.
+4. Every filled broker compensation / agency agreement field = 1 term.
+5. Additional Details must NEVER count as a term.
+6. Extra services must NOT increase Services Match %.
+7. Extra terms must NOT increase Terms Match %.
+8. Changed terms must be counted separately from Added terms.
+9. Matched items must never be mislabeled as extra.
+10. Do not change listing creation forms or stored field structure unless absolutely required for scoring correctness.
+11. Do not refactor unrelated code.
+12. Do not change database schema.
+
+---
+
+## SUPPORTED ROLE × PROPERTY TYPE COMBINATIONS
+
+Tenant:
+
+* Residential
+* Commercial
+
+Landlord:
+
+* Residential
+* Commercial
+
+Buyer:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Seller:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+---
+
+## CORE SCORING RULES
+
+A. SERVICES MATCH
+
+Baseline for Services Match:
+
+* Only the services the listing owner actually selected
+* Not the full catalog
+* Not all possible services for that property type
+
+Compared set:
+
+* Only the services the agent actually offered in the bid
+
+Formula:
+
+* services_baseline_total = count of unique services actually selected by the user on the original listing
+* services_matched_count = count of baseline services also offered in the agent bid
+* services_missing_count = count of baseline services not offered in the agent bid
+* services_extra_count = count of bid services not present in the original listing
+* services_match_percent = services_matched_count / services_baseline_total × 100
+* If services_baseline_total = 0, score should be 0 and display safely, not divide by zero
+
+Important:
+
+* services_extra_count is display-only transparency
+* services_extra_count must NOT increase the match percentage
+* services_missing_count must reduce the match percentage
+* a matched item can never also be counted as extra
+
+Examples:
+
+1. User selected 2 services, agent matched both:
+
+* Matched = 2/2
+* Missing = 0
+* Extra = 0
+* Score = 100%
+
+2. User selected 2 services, agent matched both and added 5 more:
+
+* Matched = 2/2
+* Missing = 0
+* Extra = 5
+* Score = 100%
+
+3. User selected 2 services, agent matched 1 and added 7 extra:
+
+* Matched = 1/2
+* Missing = 1
+* Extra = 7
+* Score = 50%
+
+---
+
+## B. TERMS MATCH
+
+Baseline for Terms Match:
+
+* Only the broker compensation / agency agreement fields the user actually filled in on the original listing
+* Not all possible fields for that role/property type
+* Additional Details is NOT part of Terms Match
+
+Compared set:
+
+* Only the corresponding broker compensation / agency agreement fields the agent filled in on the bid
+
+Formula:
+
+* terms_baseline_total = count of actual original filled term groups
+* terms_matched_count = count of baseline term groups that match exactly in the bid
+* terms_changed_count = count of baseline term groups that exist in both but do not match
+* terms_missing_count = count of baseline term groups not offered/populated in the bid when they should be
+* terms_added_count = count of bid term groups added beyond the original request
+* terms_match_percent = terms_matched_count / terms_baseline_total × 100
+* If terms_baseline_total = 0, score should be 0 and display safely
+
+Important:
+
+* terms_added_count is transparency only
+* terms_added_count must NOT increase match percentage
+* changed terms must be separate from added terms
+* Additional Details must NEVER count as a term
+* a matched term can never also be counted as added or changed
+
+Examples:
+
+1. User filled 2 terms, agent matches both:
+
+* Matched = 2/2
+* Changed = 0
+* Added = 0
+* Score = 100%
+
+2. User filled 2 terms, agent matches both and adds 3 more:
+
+* Matched = 2/2
+* Changed = 0
+* Added = 3
+* Score = 100%
+
+3. User filled 2 terms, agent matches 1, changes 1, adds 2 more:
+
+* Matched = 1/2
+* Changed = 1
+* Added = 2
+* Score = 50%
+
+---
+
+## SERVICE COUNTING RULES
+
+Every checked service counts as 1.
+
+This includes:
+
+* each standard checked service option = 1
+* each checked digital enhancement sub-option = 1
+* checked “Other” = 1 if it is stored as its own selected option
+* each custom text entry under “Other – Specify additional services as needed” = 1
+
+Required handling:
+
+1. If the form stores standard services in services[] and custom text in other_services[], merge both into the comparison set.
+2. Standard service options must use the correct property-type catalog.
+3. Custom entries in other_services[] must count even if they are not in the catalog.
+4. Do not drop valid custom entries.
+5. Do not let blank strings count as services.
+6. Normalize strings before comparison:
+
+   * trim whitespace
+   * lowercase
+   * normalize repeated spaces
+   * normalize punctuation consistently where safe
+
+Digital enhancement rule:
+If these appear as separately checked items, each counts as 1:
+
+* Basic edits
+* Twilight conversion
+* Object removal
+* Virtual twilight photography
+* Color correction or sky replacement
+* Other
+
+---
+
+## TERM COUNTING RULES
+
+Every filled broker compensation / agency agreement field group counts as 1 term group.
+
+Important:
+
+* Count the logical group, not every tiny subfield independently when they belong to one compensation structure choice
+* But do split fields that are truly separate business concepts
+
+Examples:
+
+* If “Tenant’s Broker Commission Structure” and “Tenant’s Broker Commission Fee” are separate business concepts, they must be counted separately
+* If one compensation structure has supporting amount subfields that belong to that same structure choice, those can remain inside the same logical group
+
+Additional Details rule:
+
+* additional_details_broker or any freeform Additional Details field must NEVER count toward terms_baseline_total or terms_matched_count
+
+---
+
+## PROPERTY-TYPE ROUTING RULE
+
+The correct catalog and term mapping must load for the actual property type.
+
+Do NOT assume Residential for everything.
+
+Use robust property-type detection:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Do not rely on strict equality if the stored DB values may be:
+
+* “Commercial Property”
+* “Income Property”
+* “Vacant Land”
+* similar full labels
+
+Use robust matching such as normalized contains / mapping logic so the correct catalog is loaded at runtime.
+
+---
+
+## DISPLAY RULES
+
+On the bid card / private bid panel, display:
+
+Services Match:
+
+* Matched: X/Y
+* Missing: X if greater than 0
+* Added: X if greater than 0
+* Score %
+
+Terms Match:
+
+* Matched: X/Y
+* Changed: X if greater than 0
+* Added: X if greater than 0
+* Score %
+
+Important:
+
+* Added services are not bad by default; they can be shown as “Extra Value Added” or “Added Services”
+* Added terms are more sensitive; show clearly as “Added Terms”
+* Changed terms must remain distinct from Added terms
+* Do not label matched original items as added
+
+---
+
+## REQUIRED IMPLEMENTATION TASKS
+
+1. Audit the active score helper for each role:
+
+* TenantBidMatchScoreHelper
+* BuyerBidMatchScoreHelper
+* SellerBidMatchScoreHelper
+* LandlordBidMatchScoreHelper
+
+2. For each helper, confirm:
+
+* baseline is built only from actual selected/filled original listing values
+* compared set is built from actual bid values
+* extras are excluded from denominator
+* Additional Details is excluded from terms
+
+3. For each role × property type combination, verify:
+
+* correct service catalog routing
+* correct service count logic
+* correct term group mapping
+* correct total baseline behavior when the user filled only a few items
+
+4. Fix any place where the code currently:
+
+* scores against all possible services instead of selected services
+* scores against all possible terms instead of filled terms
+* counts Additional Details as a term
+* labels matched items as extra
+* routes non-residential property types to the wrong catalog
+* still uses legacy score keys in active views
+
+5. Standardize active views to use canonical keys:
+
+* services_matched_count
+* services_baseline_total
+* services_missing_count
+* services_extra_count
+* terms_matched_count
+* terms_baseline_total
+* terms_changed_count
+* terms_added_count
+
+---
+
+## REQUIRED VERIFICATION MATRIX
+
+After implementation, verify all real combinations:
+
+Tenant:
+
+* Residential
+* Commercial
+
+Landlord:
+
+* Residential
+* Commercial
+
+Buyer:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Seller:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+For each combination, report:
+
+* service baseline total logic confirmed
+* term baseline total logic confirmed
+* correct property-type routing confirmed
+* extras excluded from percentage confirmed
+* Additional Details excluded confirmed
+* result: fixed or already correct
+
+---
+
+## TEST CASES YOU MUST VERIFY
+
+Test Case 1:
+User selects only 2 services, agent matches both
+Expected:
+
+* Services Match = 2/2 = 100%
+
+Test Case 2:
+User selects only 2 services, agent matches both and adds 5 extra
+Expected:
+
+* Services Match = 2/2 = 100%
+* Added Services = 5
+
+Test Case 3:
+User fills only 2 terms, agent matches both and adds 3 extra terms
+Expected:
+
+* Terms Match = 2/2 = 100%
+* Added Terms = 3
+
+Test Case 4:
+User fills 2 terms, agent matches 1 and changes 1
+Expected:
+
+* Terms Match = 1/2 = 50%
+* Changed Terms = 1
+
+Test Case 5:
+Buyer / Seller / Landlord non-residential property type
+Expected:
+
+* correct non-residential catalog loads
+* not Residential fallback unless truly Residential
+
+---
+
+## FINAL OUTPUT REQUIRED
+
+Return:
+
+1. exact files checked
+2. exact files changed
+3. a role × property-type matrix showing service totals logic and term totals logic
+4. confirmation that scoring now only uses actual selected/filled baseline fields
+5. confirmation that extras do not inflate percentages
+6. confirmation that Additional Details is excluded everywhere
+7. any remaining edge cases still needing follow-up

@@ -3508,7 +3508,7 @@
                                                                             @endphp
                                                                             @if ($showBuyerActionButtons)
                                                                             <div class="d-flex gap-3 justify-content-center align-items-center w-100 mb-3" style="flex-wrap: nowrap;">
-                                                                                <form action="{{ route('hire.agent.auction.bid.accept') }}" method="POST" style="margin: 0;"
+                                                                                <form action="{{ route('buyer.hire.agent.auction.bid.accept') }}" method="POST" style="margin: 0;"
                                                                                       onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
@@ -3517,7 +3517,16 @@
                                                                                         <i class="fa fa-check me-1"></i> Accept Bid
                                                                                     </button>
                                                                                 </form>
-                                                                                <form action="{{ route('hire.agent.auction.bid.reject') }}" method="POST" style="margin: 0;"
+                                                                                <form action="{{ route('buyer.hire.agent.auction.bid.counter') }}" method="POST" style="margin: 0;"
+                                                                                      onsubmit="return confirm('Are you sure you want to counter this bid?');">
+                                                                                    @csrf
+                                                                                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                                    <button type="submit" class="btn btn-warning" style="background-color: #ffc107 !important; border-color: #ffc107 !important; color: #212529 !important; padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
+                                                                                        <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+                                                                                    </button>
+                                                                                </form>
+                                                                                <form action="{{ route('buyer.hire.agent.auction.bid.reject') }}" method="POST" style="margin: 0;"
                                                                                       onsubmit="return confirm('Are you sure you want to reject this bid?');">
                                                                                     @csrf
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
@@ -4193,7 +4202,7 @@
                                                                 {{-- 🔹 Active Counter Actions --}}
                                                                 <div class="d-flex gap-3 flex-wrap justify-content-between">
                                                                     <form class="d-inline"
-                                                                        action="{{ route('hire.agent.auction.counter.bid.accept') }}"
+                                                                        action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}"
                                                                         method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
@@ -4203,7 +4212,7 @@
                                                                     </form>
 
                                                                     <form class="d-inline"
-                                                                        action="{{ route('hire.agent.auction.counter.bid.reject') }}"
+                                                                        action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}"
                                                                         method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
@@ -4213,7 +4222,7 @@
                                                                     </form>
 
                                                                     <form class="d-inline"
-                                                                        action="{{ route('hire.agent.auction.bid.counter') }}"
+                                                                        action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
                                                                         method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
@@ -4302,7 +4311,7 @@
                                                             @else
                                                             <div class="biding-btn">
                                                                 <form
-                                                                    action="{{ route('hire.agent.auction.bid.accept') }}"
+                                                                    action="{{ route('buyer.hire.agent.auction.bid.accept') }}"
                                                                     method="post">
                                                                     @csrf
                                                                     <input type="hidden" name="auction_id"
@@ -4315,7 +4324,7 @@
                                                             </div>
                                                             <div class="biding-btn">
                                                                 <form
-                                                                    action="{{ route('hire.agent.auction.bid.reject') }}"
+                                                                    action="{{ route('buyer.hire.agent.auction.bid.reject') }}"
                                                                     method="post">
                                                                     @csrf
                                                                     <input type="hidden" name="auction_id"
@@ -4328,7 +4337,7 @@
                                                             </div>
                                                             <div class="biding-btn">
                                                                 <form
-                                                                    action="{{ route('hire.agent.auction.bid.counter') }}"
+                                                                    action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
                                                                     method="post">
                                                                     @csrf
                                                                     <input type="hidden" name="auction_id"

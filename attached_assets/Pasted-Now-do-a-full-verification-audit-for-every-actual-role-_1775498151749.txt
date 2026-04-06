@@ -1,0 +1,148 @@
+Now do a full verification audit for every actual role × property-type combination used by this platform.
+
+This is verification first, then fix only what is wrong.
+
+Do not stop at Residential.
+Do not assume logic is correct across all property types unless you prove it.
+
+---
+
+## SCOPE
+
+Roles and property types actually used:
+
+Tenant:
+
+* Residential
+* Commercial
+
+Landlord:
+
+* Residential
+* Commercial
+
+Buyer:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Seller:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+For EACH role × property-type combination, verify both:
+
+1. SERVICES COUNTING
+2. BROKER COMPENSATION & AGENCY AGREEMENT TERMS COUNTING
+
+---
+
+## RULES TO VERIFY
+
+Services:
+
+* every checkmark = 1 service
+* each checked digital enhancement sub-option = 1 service
+* checked “Other” = 1 service
+* each custom entry under “Other – Specify additional services as needed” = 1 service
+
+Terms:
+
+* every filled broker compensation / agency agreement field = 1 term
+* Additional Details must NEVER count as a term
+* property-type-specific fields must be included when present
+* fields must not be incorrectly merged if they should count separately
+
+Important:
+
+* if a property type has an extra broker compensation field such as Nominal Consideration Fee or any other property-type-specific compensation / agency field, that field must be counted correctly for that exact role/property type
+* do not assume Residential mappings apply to Commercial, Income, Business, or Vacant Land
+
+---
+
+## REQUIRED OUTPUT
+
+For each role × property-type combination, provide:
+
+A. SERVICE CATALOG
+
+* exact catalog/source used
+* exact service items counted
+* total possible service count for that property type
+
+B. TERM GROUP MAPPING
+
+* exact broker compensation / agency agreement term groups used
+* exact underlying fields in each group
+* total possible term count for that property type
+
+C. PROPERTY-TYPE-SPECIFIC FIELDS
+
+* list any extra fields that exist only for that property type
+* confirm whether they are counted correctly
+
+D. ROUTING / CATALOG MATCHING
+
+* confirm the correct property-type catalog is actually selected at runtime
+* flag any weak matching logic such as strict equality that may route Commercial/Income/etc. to Residential incorrectly
+
+E. RESULT
+
+* already correct / needs fix
+
+---
+
+## IF ANY COMBINATION IS WRONG
+
+Fix only the incorrect combinations.
+
+Do not refactor unrelated code.
+Do not change listing creation forms.
+Do not change labels or stored data structure unless required for correct counting.
+Use surgical fixes only.
+
+---
+
+## FINAL DELIVERABLE
+
+Return a matrix with these 14 combinations:
+
+Tenant:
+
+* Residential
+* Commercial
+
+Landlord:
+
+* Residential
+* Commercial
+
+Buyer:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Seller:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+For each, show:
+
+* service total
+* term total
+* whether correct
+* what was fixed if needed
