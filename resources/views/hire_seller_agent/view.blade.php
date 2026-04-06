@@ -2863,6 +2863,9 @@
                             $servicesMatched = $scoreResult['services_matched_count'] ?? 0;
                             $servicesExtraCount   = $scoreResult['services_extra_count'] ?? 0;
                             $servicesMissingCount = $scoreResult['services_missing_count'] ?? 0;
+                            $brokerMismatches = $scoreResult['changed_terms'] ?? [];
+                            $mismatchStyle    = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                            $mismatchBadge    = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Mismatch</span>';
                             $totalScoreColor = \App\Helpers\SellerBidMatchScoreHelper::scoreColor($totalScore);
                             $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
 
@@ -3374,8 +3377,7 @@
                                                 data_get($bid, 'get.retainer_fee_option') ||
                                                 data_get($bid, 'get.retained_deposits') ||
                                                 data_get($bid, 'get.agency_agreement_timeframe') ||
-                                                data_get($bid, 'get.brokerage_relationship') ||
-                                                data_get($bid, 'get.additional_details_broker');
+                                                data_get($bid, 'get.brokerage_relationship');
                                         @endphp
                                         @if ($bidBrokerHasAny)
                                         <div class="mb-5">
@@ -3412,16 +3414,16 @@
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Broker Compensation</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     @if ($bidPurchaseFeeType)
-                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $sellerPurchaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                     @if ($bidNominal)
-                                                    <li class="mb-1"><span class="fw-semibold">Nominal Consideration Fee:</span> {{ $fmtMoney($bidNominal) ?? '-' }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['nominal']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Nominal Consideration Fee:</span> {{ $fmtMoney($bidNominal) ?? '-' }}{!! isset($brokerMismatches['nominal']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                     @if ($bidCommStruct)
-                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $bidCommStruct }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $bidCommStruct }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                     @if ($bidBuyerBrokerFee)
-                                                    <li class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $bidBuyerBrokerFee }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $bidBuyerBrokerFee }}{!! isset($brokerMismatches['commission_structure_type']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -3474,9 +3476,9 @@
                                             <div class="mb-4">
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease Terms</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1"><span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $bidInterestedLease }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $bidInterestedLease }}{!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                     @if ($showLeaseTerms && $bidLeasingFeeAmt)
-                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $bidLeasingFeeAmt }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['seller_leasing_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $bidLeasingFeeAmt }}{!! isset($brokerMismatches['seller_leasing_fee_type']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -3513,12 +3515,16 @@
                                             <div class="mb-4">
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Terms</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1"><span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $bidLeaseOption }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $bidLeaseOption }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}</li>
                                                     @if ($showLeaseOption && $bidLeaseOptionFee)
-                                                    <li class="mb-1"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> {{ $bidLeaseOptionFee }}</li>
+                                                    <li class="mb-1" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> {{ $bidLeaseOptionFee }}{!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}</li>
+                                                    @elseif ($showLeaseOption && (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])))
+                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> —{!! $mismatchBadge !!}</li>
                                                     @endif
                                                     @if ($showLeaseOption && $bidPurchaseOptFee)
-                                                    <li class="mb-1"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $bidPurchaseOptFee }}</li>
+                                                    <li class="mb-1" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $bidPurchaseOptFee }}{!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}</li>
+                                                    @elseif ($showLeaseOption && (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])))
+                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> —{!! $mismatchBadge !!}</li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -3543,22 +3549,34 @@
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     @if ($bidEarlyTermOpt)
-                                                    <li class="mb-1"><span class="fw-semibold">Early Termination Fee:</span> {!! \App\Helpers\ListingDisplayHelper::formatYesParenthetical($bidEarlyTermOpt, $fmtMoney($bidEarlyTermAmt)) !!}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($bidEarlyTermOpt) }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
+                                                    @if (strtolower($bidEarlyTermOpt) === 'yes' && $bidEarlyTermAmt)
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($bidEarlyTermAmt) }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}</li>
+                                                    @elseif (strtolower($bidEarlyTermOpt) === 'yes' && isset($brokerMismatches['early_termination_fee_amount']))
+                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Termination Fee Amount:</span> —{!! $mismatchBadge !!}</li>
+                                                    @endif
                                                     @endif
                                                     @if ($bidRetainerOpt)
-                                                    <li class="mb-1"><span class="fw-semibold">Retainer Fee:</span> {!! \App\Helpers\ListingDisplayHelper::formatYesParenthetical($bidRetainerOpt, $fmtMoney($bidRetainerAmt)) !!}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee:</span> {{ ucfirst($bidRetainerOpt) }}{!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}</li>
+                                                        @if (strtolower($bidRetainerOpt) === 'yes' && $bidRetainerAmt)
+                                                        <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee Amount:</span> {{ $fmtMoney($bidRetainerAmt) }}{!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}</li>
+                                                        @elseif (isset($brokerMismatches['retainer_fee_amount']))
+                                                        <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Amount:</span> —{!! $mismatchBadge !!}</li>
+                                                        @endif
                                                         @if (strtolower($bidRetainerOpt) === 'yes' && $bidRetainerApp)
-                                                        <li class="mb-1 ps-3"><span class="fw-semibold">Retainer Fee Application:</span> {{ $bidRetainerApp }}</li>
+                                                        <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Retainer Fee Application:</span> {{ $bidRetainerApp }}{!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}</li>
+                                                        @elseif (isset($brokerMismatches['retainer_fee_application']))
+                                                        <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Application:</span> —{!! $mismatchBadge !!}</li>
                                                         @endif
                                                     @endif
                                                     @if ($bidRetainedDep)
-                                                    <li class="mb-1"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $fmtPercent($bidRetainedDep) }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['retained_deposits']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $fmtPercent($bidRetainedDep) }}{!! isset($brokerMismatches['retained_deposits']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                     @if ($bidProtPeriod)
-                                                    <li class="mb-1"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $bidProtPeriod }} days</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $bidProtPeriod }} days{!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                     @if ($bidAgencyTf)
-                                                    <li class="mb-1"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $bidAgencyDsp }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $bidAgencyDsp }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}</li>
                                                     @endif
                                                 </ul>
                                             </div>
@@ -3569,18 +3587,11 @@
                                             <div class="mb-4">
                                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                                                 <ul class="list-unstyled ps-3 mb-0">
-                                                    <li class="mb-1"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}</li>
+                                                    <li class="mb-1" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}{!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}</li>
                                                 </ul>
                                             </div>
                                             @endif
 
-                                            <!-- F) Additional Terms -->
-                                            @if (data_get($bid, 'get.additional_details_broker'))
-                                            <div class="mb-4">
-                                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
-                                                <div class="ps-3 text-muted">{{ data_get($bid, 'get.additional_details_broker') }}</div>
-                                            </div>
-                                            @endif
                                         </div>
                                         @endif
 
@@ -4303,6 +4314,26 @@
                                                 </div>
                                                 @endif
                                             </div>
+                                        </div>
+                                        @endif
+
+                                        <!-- 5b. Broker Additional Terms (standalone, outside Broker Comp) -->
+                                        @if (data_get($bid, 'get.additional_details_broker'))
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-file-alt me-2"></i>Broker Additional Terms
+                                            </h6>
+                                            <div class="ps-3 text-muted">{{ data_get($bid, 'get.additional_details_broker') }}</div>
+                                        </div>
+                                        @endif
+
+                                        <!-- 6. Additional Details -->
+                                        @if (data_get($bid, 'get.additional_details'))
+                                        <div class="mb-4">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-info-circle me-2"></i>Additional Details
+                                            </h6>
+                                            <p class="text-muted">{{ data_get($bid, 'get.additional_details') }}</p>
                                         </div>
                                         @endif
 

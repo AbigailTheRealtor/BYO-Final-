@@ -379,16 +379,22 @@
                                     </li>
                                     @if ($counterData['interested_lease_option_agreement'] === 'Yes')
                                         @if (!empty($counterData['lease_value']))
-                                        <li class="mb-2">
+                                        <li class="mb-2" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}">
                                             <span class="fw-semibold">Compensation for Lease-Option Agreement:</span>
                                             {{ ($counterData['lease_type'] ?? '') === 'percent' ? $fmtPercent($counterData['lease_value']) : $fmtMoney($counterData['lease_value']) }}
+                                            {!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}
                                         </li>
+                                        @elseif (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']))
+                                        <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation for Lease-Option Agreement:</span> —{!! $mismatchBadge !!}</li>
                                         @endif
                                         @if (!empty($counterData['purchase_value']))
-                                        <li class="mb-2">
+                                        <li class="mb-2" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}">
                                             <span class="fw-semibold">Compensation if Purchase Option Exercised:</span>
                                             {{ ($counterData['purchase_type'] ?? '') === 'percent' ? $fmtPercent($counterData['purchase_value']) : $fmtMoney($counterData['purchase_value']) }}
+                                            {!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}
                                         </li>
+                                        @elseif (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']))
+                                        <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation if Purchase Option Exercised:</span> —{!! $mismatchBadge !!}</li>
                                         @endif
                                     @endif
                                 </ul>
@@ -411,9 +417,12 @@
                                         {!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @if (($counterData['early_termination_fee_option'] ?? '') === 'Yes' && !empty($counterData['early_termination_fee_amount']))
-                                    <li class="mb-2">
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}">
                                         <span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($counterData['early_termination_fee_amount']) }}
+                                        {!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}
                                     </li>
+                                    @elseif (($counterData['early_termination_fee_option'] ?? '') === 'Yes' && isset($brokerMismatches['early_termination_fee_amount']))
+                                    <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Termination Fee Amount:</span> —{!! $mismatchBadge !!}</li>
                                     @endif
                                     @endif
                                     @if (!empty($counterData['retainer_fee_option']))
@@ -423,15 +432,21 @@
                                     </li>
                                     @if (($counterData['retainer_fee_option'] ?? '') === 'Yes')
                                         @if (!empty($counterData['retainer_fee_amount']))
-                                        <li class="mb-2">
+                                        <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}">
                                             <span class="fw-semibold">Retainer Fee Amount:</span> {{ $fmtMoney($counterData['retainer_fee_amount']) }}
+                                            {!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}
                                         </li>
+                                        @elseif (isset($brokerMismatches['retainer_fee_amount']))
+                                        <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Amount:</span> —{!! $mismatchBadge !!}</li>
                                         @endif
                                         @if (!empty($counterData['retainer_fee_application']))
-                                        <li class="mb-2">
+                                        <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}">
                                             <span class="fw-semibold">Retainer Fee Application:</span>
                                             {{ $counterData['retainer_fee_application'] === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}
+                                            {!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}
                                         </li>
+                                        @elseif (isset($brokerMismatches['retainer_fee_application']))
+                                        <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Application:</span> —{!! $mismatchBadge !!}</li>
                                         @endif
                                     @endif
                                     @endif
@@ -462,17 +477,6 @@
                             </div>
                             @endif
 
-                            @if (!empty($counterData['additional_details_broker']))
-                            <div class="mb-4">
-                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
-                                <ul class="list-unstyled ps-3 mb-0">
-                                    <li class="mb-1" style="{{ isset($brokerMismatches['additional_details_broker']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Additional Terms:</span> {{ $counterData['additional_details_broker'] }}
-                                        {!! isset($brokerMismatches['additional_details_broker']) ? $mismatchBadge : '' !!}
-                                    </li>
-                                </ul>
-                            </div>
-                            @endif
                         </div>
 
                         <div class="mb-4">
@@ -539,6 +543,15 @@
                             </div>
                             @endif
                         </div>
+
+                        @if (!empty($counterData['additional_details_broker']))
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">
+                                <i class="fa fa-file-alt me-2"></i>Broker Additional Terms
+                            </h6>
+                            <p class="mb-0 ps-3 text-muted">{{ $counterData['additional_details_broker'] }}</p>
+                        </div>
+                        @endif
 
                         @if (!empty($counterData['additional_details']))
                         <div class="mb-4">

@@ -88,6 +88,10 @@
                                 'commission_structure_type'     => $auction->get->commission_structure_type ?? null,
                                 'interested_purchase_fee_type'  => $auction->get->interested_purchase_fee_type ?? null,
                                 'interested_lease_option_agreement' => $auction->get->interested_lease_option_agreement ?? null,
+                                'lease_type'                    => $auction->get->lease_type ?? null,
+                                'lease_value'                   => $auction->get->lease_value ?? null,
+                                'purchase_type'                 => $auction->get->purchase_type ?? null,
+                                'purchase_value'                => $auction->get->purchase_value ?? null,
                                 'protection_period'             => $auction->get->protection_period ?? null,
                                 'early_termination_fee_option'  => $auction->get->early_termination_fee_option ?? null,
                                 'early_termination_fee_amount'  => $auction->get->early_termination_fee_amount ?? null,
@@ -103,6 +107,20 @@
                                 'purchase_fee_percentage_combo' => $auction->get->purchase_fee_percentage_combo ?? null,
                                 'purchase_fee_other'            => $auction->get->purchase_fee_other ?? null,
                                 'nominal'                       => $auction->get->nominal ?? null,
+                                'seller_leasing_fee_type'                       => $auction->get->seller_leasing_fee_type ?? null,
+                                'seller_leasing_gross_purchase_fee_flat_amount' => $auction->get->seller_leasing_gross_purchase_fee_flat_amount ?? null,
+                                'seller_leasing_gross'                          => $auction->get->seller_leasing_gross ?? null,
+                                'seller_leasing_gross_rental'                   => $auction->get->seller_leasing_gross_rental ?? null,
+                                'seller_leasing_gross_month_rent'               => $auction->get->seller_leasing_gross_month_rent ?? null,
+                                'seller_leasing_gross_no_of_months'             => $auction->get->seller_leasing_gross_no_of_months ?? null,
+                                'seller_leasing_gross_other'                    => $auction->get->seller_leasing_gross_other ?? null,
+                                'seller_leasing_gross_percentage'               => $auction->get->seller_leasing_gross_percentage ?? null,
+                                'seller_leasing_gross_ross_percentage_rent'     => $auction->get->seller_leasing_gross_ross_percentage_rent ?? null,
+                                'seller_leasing_gross_flat_combo'               => $auction->get->seller_leasing_gross_flat_combo ?? null,
+                                'seller_leasing_gross_percentage_combo'         => $auction->get->seller_leasing_gross_percentage_combo ?? null,
+                                'seller_leasing_gross_flat_net_combo'           => $auction->get->seller_leasing_gross_flat_net_combo ?? null,
+                                'seller_leasing_gross_percentage_net_combo'     => $auction->get->seller_leasing_gross_percentage_net_combo ?? null,
+                                'seller_leasing_gross_purchase_fee_other'       => $auction->get->seller_leasing_gross_purchase_fee_other ?? null,
                                 'additional_details_broker'     => $auction->get->additional_details_broker ?? null,
                                 'services'                      => $auction->get->services ?? [],
                                 'other_services'                => $auction->get->other_services ?? [],
@@ -202,6 +220,10 @@
                             $ctCommStructType = data_get($counterData, 'commission_structure_type', '');
                             $ctInterestedLease = data_get($counterData, 'interested_purchase_fee_type', '');
                             $ctLeaseOption = data_get($counterData, 'interested_lease_option_agreement', '');
+                            $ctLeaseType = data_get($counterData, 'lease_type', '');
+                            $ctLeaseValue = data_get($counterData, 'lease_value', '');
+                            $ctPurchaseType = data_get($counterData, 'purchase_type', '');
+                            $ctPurchaseValue = data_get($counterData, 'purchase_value', '');
                             $ctEarlyTermOpt = data_get($counterData, 'early_termination_fee_option', '');
                             $ctEarlyTermAmt = data_get($counterData, 'early_termination_fee_amount', '');
                             $ctRetainerOpt = data_get($counterData, 'retainer_fee_option', '');
@@ -215,6 +237,34 @@
                             $ctAddlDetails = data_get($counterData, 'additional_details_broker', '');
                             $ctRetainedDep = data_get($counterData, 'retained_deposits', '');
                             $ctNominal = data_get($counterData, 'nominal', '');
+                            // Build leasing fee display for B) Lease Terms
+                            $ctLeasingFeeType = data_get($counterData, 'seller_leasing_fee_type', '');
+                            $ctLeasingFeeAmt = null;
+                            if ($ctLeasingFeeType === 'Flat Fee' && data_get($counterData, 'seller_leasing_gross_purchase_fee_flat_amount')) {
+                                $ctLeasingFeeAmt = $fmtMoney(data_get($counterData, 'seller_leasing_gross_purchase_fee_flat_amount'));
+                            } elseif ($ctLeasingFeeType === 'Percentage of the Gross Lease Value' && data_get($counterData, 'seller_leasing_gross')) {
+                                $ctLeasingFeeAmt = ($fmtPercent(data_get($counterData, 'seller_leasing_gross')) ?? '-') . ' of the Gross Lease Value';
+                            } elseif ($ctLeasingFeeType === 'Percentage of the Rent Due Each Rental Period' && data_get($counterData, 'seller_leasing_gross_rental')) {
+                                $ctLeasingFeeAmt = ($fmtPercent(data_get($counterData, 'seller_leasing_gross_rental')) ?? '-') . ' of the Rent Due Each Rental Period';
+                            } elseif ($ctLeasingFeeType === "Percentage of the First Month's Rent" && data_get($counterData, 'seller_leasing_gross_month_rent')) {
+                                $ctLeasingFeeAmt = ($fmtPercent(data_get($counterData, 'seller_leasing_gross_month_rent')) ?? '-') . " of the First Month's Rent";
+                            } elseif ($ctLeasingFeeType === "Percentage of Month's Rent" && data_get($counterData, 'seller_leasing_gross_month_rent')) {
+                                $ctLeasingFeeAmt = ($fmtPercent(data_get($counterData, 'seller_leasing_gross_month_rent')) ?? '-') . " of Month's Rent";
+                                $ctLeasingMonths = data_get($counterData, 'seller_leasing_gross_no_of_months');
+                                if (!empty($ctLeasingMonths) && $ctLeasingMonths != 'null') {
+                                    $ctLeasingFeeAmt .= ' x ' . intval($ctLeasingMonths) . ' Months';
+                                }
+                            } elseif ($ctLeasingFeeType === 'Percentage of Net Aggregate Rent' && (data_get($counterData, 'seller_leasing_gross_other') ?: data_get($counterData, 'seller_leasing_gross'))) {
+                                $netAggVal = data_get($counterData, 'seller_leasing_gross_other') ?: data_get($counterData, 'seller_leasing_gross');
+                                $ctLeasingFeeAmt = ($fmtPercent($netAggVal) ?? '-') . ' of Net Aggregate Rent';
+                            } elseif ($ctLeasingFeeType === 'Percentage of Gross Rent' && (data_get($counterData, 'seller_leasing_gross_percentage') || data_get($counterData, 'seller_leasing_gross_ross_percentage_rent'))) {
+                                $grossRentVal = data_get($counterData, 'seller_leasing_gross_percentage') ?? data_get($counterData, 'seller_leasing_gross_ross_percentage_rent');
+                                $ctLeasingFeeAmt = ($fmtPercent($grossRentVal) ?? '-') . ' of Gross Rent';
+                            } elseif (strtolower($ctLeasingFeeType ?? '') === 'other' && data_get($counterData, 'seller_leasing_gross_purchase_fee_other')) {
+                                $ctLeasingFeeAmt = data_get($counterData, 'seller_leasing_gross_purchase_fee_other');
+                            } elseif ($ctLeasingFeeType) {
+                                $ctLeasingFeeAmt = $ctLeasingFeeType;
+                            }
                         @endphp
 
                         {{-- A) Seller Broker Compensation --}}
@@ -230,8 +280,9 @@
                                 </li>
                                 @endif
                                 @if($ctNominal)
-                                <li class="mb-1">
+                                <li class="mb-1 @if(isset($brokerMismatches['nominal'])) text-danger @endif">
                                     <span class="fw-semibold">Nominal Consideration Fee:</span> {{ $fmtMoney($ctNominal) ?? '-' }}
+                                    @if(isset($brokerMismatches['nominal']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
                                 </li>
                                 @endif
                                 @if($ctCommStruct)
@@ -259,6 +310,14 @@
                                     <span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $ctInterestedLease }}
                                     @if(isset($brokerMismatches['interested_purchase_fee_type']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
                                 </li>
+                                @if(strtolower($ctInterestedLease) === 'yes' && $ctLeasingFeeAmt)
+                                <li class="mb-1 @if(isset($brokerMismatches['seller_leasing_fee_type'])) text-danger @endif">
+                                    <span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $ctLeasingFeeAmt }}
+                                    @if(isset($brokerMismatches['seller_leasing_fee_type']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @elseif(strtolower($ctInterestedLease) === 'yes' && isset($brokerMismatches['seller_leasing_fee_type']))
+                                <li class="mb-1 text-danger"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                @endif
                             </ul>
                         </div>
                         @endif
@@ -268,7 +327,28 @@
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Terms</h6>
                             <ul class="list-unstyled ps-3 mb-0">
-                                <li class="mb-1"><span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $ctLeaseOption }}</li>
+                                <li class="mb-1 @if(isset($brokerMismatches['interested_lease_option_agreement'])) text-danger @endif">
+                                    <span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $ctLeaseOption }}
+                                    @if(isset($brokerMismatches['interested_lease_option_agreement']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @if(strtolower($ctLeaseOption) === 'yes' && $ctLeaseValue)
+                                <li class="mb-1 @if(isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) text-danger @endif">
+                                    <span class="fw-semibold">Compensation for Lease-Option Agreement:</span>
+                                    {{ $ctLeaseType === 'percent' ? ($fmtPercent($ctLeaseValue) . ' of Total Purchase Price') : $fmtMoney($ctLeaseValue) }}
+                                    @if(isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @elseif(strtolower($ctLeaseOption) === 'yes' && (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])))
+                                <li class="mb-1 text-danger"><span class="fw-semibold">Compensation for Lease-Option Agreement:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                @endif
+                                @if(strtolower($ctLeaseOption) === 'yes' && $ctPurchaseValue)
+                                <li class="mb-1 @if(isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) text-danger @endif">
+                                    <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span>
+                                    {{ $ctPurchaseType === 'percent' ? ($fmtPercent($ctPurchaseValue) . ' of Total Purchase Price') : $fmtMoney($ctPurchaseValue) }}
+                                    @if(isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @elseif(strtolower($ctLeaseOption) === 'yes' && (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])))
+                                <li class="mb-1 text-danger"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                @endif
                             </ul>
                         </div>
                         @endif
@@ -279,23 +359,49 @@
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                             <ul class="list-unstyled ps-3 mb-0">
                                 @if($ctEarlyTermOpt)
-                                <li class="mb-1">
+                                <li class="mb-1 @if(isset($brokerMismatches['early_termination_fee_option'])) text-danger @endif">
                                     <span class="fw-semibold">Early Termination Fee:</span>
-                                    {{ ucfirst($ctEarlyTermOpt) }}{{ strtolower($ctEarlyTermOpt) === 'yes' && $ctEarlyTermAmt ? ' (' . ($fmtMoney($ctEarlyTermAmt) ?? $ctEarlyTermAmt) . ')' : '' }}
+                                    {{ ucfirst($ctEarlyTermOpt) }}
+                                    @if(isset($brokerMismatches['early_termination_fee_option']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
                                 </li>
+                                @if(strtolower($ctEarlyTermOpt) === 'yes' && $ctEarlyTermAmt)
+                                <li class="mb-1 @if(isset($brokerMismatches['early_termination_fee_amount'])) text-danger @endif">
+                                    <span class="fw-semibold">Termination Fee Amount:</span>
+                                    {{ $fmtMoney($ctEarlyTermAmt) ?? $ctEarlyTermAmt }}
+                                    @if(isset($brokerMismatches['early_termination_fee_amount']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @elseif(strtolower($ctEarlyTermOpt) === 'yes' && isset($brokerMismatches['early_termination_fee_amount']))
+                                <li class="mb-1 text-danger"><span class="fw-semibold">Termination Fee Amount:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                @endif
                                 @endif
                                 @if($ctRetainerOpt)
-                                <li class="mb-1">
+                                <li class="mb-1 @if(isset($brokerMismatches['retainer_fee_option'])) text-danger @endif">
                                     <span class="fw-semibold">Retainer Fee:</span>
-                                    {{ ucfirst($ctRetainerOpt) }}{{ strtolower($ctRetainerOpt) === 'yes' && $ctRetainerAmt ? ' (' . ($fmtMoney($ctRetainerAmt) ?? $ctRetainerAmt) . ')' : '' }}
+                                    {{ ucfirst($ctRetainerOpt) }}
+                                    @if(isset($brokerMismatches['retainer_fee_option']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
                                 </li>
+                                @if(strtolower($ctRetainerOpt) === 'yes' && $ctRetainerAmt)
+                                <li class="mb-1 @if(isset($brokerMismatches['retainer_fee_amount'])) text-danger @endif">
+                                    <span class="fw-semibold">Retainer Fee Amount:</span>
+                                    {{ $fmtMoney($ctRetainerAmt) ?? $ctRetainerAmt }}
+                                    @if(isset($brokerMismatches['retainer_fee_amount']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @elseif(strtolower($ctRetainerOpt) === 'yes' && isset($brokerMismatches['retainer_fee_amount']))
+                                <li class="mb-1 text-danger"><span class="fw-semibold">Retainer Fee Amount:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                @endif
                                 @if(strtolower($ctRetainerOpt) === 'yes' && $ctRetainerApp)
-                                <li class="mb-1 ps-3"><span class="fw-semibold">Retainer Fee Application:</span> {{ $ctRetainerApp }}</li>
+                                <li class="mb-1 @if(isset($brokerMismatches['retainer_fee_application'])) text-danger @endif">
+                                    <span class="fw-semibold">Retainer Fee Application:</span> {{ $ctRetainerApp }}
+                                    @if(isset($brokerMismatches['retainer_fee_application']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                </li>
+                                @elseif(strtolower($ctRetainerOpt) === 'yes' && isset($brokerMismatches['retainer_fee_application']))
+                                <li class="mb-1 text-danger"><span class="fw-semibold">Retainer Fee Application:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
                                 @endif
                                 @endif
                                 @if($ctRetainedDep)
-                                <li class="mb-1">
+                                <li class="mb-1 @if(isset($brokerMismatches['retained_deposits'])) text-danger @endif">
                                     <span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $fmtPercent($ctRetainedDep) ?? $ctRetainedDep }}
+                                    @if(isset($brokerMismatches['retained_deposits']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
                                 </li>
                                 @endif
                                 @if($ctProtPeriod)
@@ -324,14 +430,6 @@
                                     @if(isset($brokerMismatches['brokerage_relationship']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
                                 </li>
                             </ul>
-                        </div>
-                        @endif
-
-                        {{-- F) Additional Terms --}}
-                        @if($ctAddlDetails)
-                        <div class="mb-4">
-                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
-                            <div class="ps-3 text-muted">{{ $ctAddlDetails }}</div>
                         </div>
                         @endif
 
@@ -372,6 +470,16 @@
                         </div>
                         @endif
                     </div>
+
+                    {{-- Broker Additional Terms (standalone, outside Counter Terms Details) --}}
+                    @if($ctAddlDetails)
+                    <div class="mb-4">
+                        <h6 class="mb-2" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                            <i class="fa fa-file-alt me-2"></i>Broker Additional Terms
+                        </h6>
+                        <div class="ps-3 text-muted">{{ $ctAddlDetails }}</div>
+                    </div>
+                    @endif
 
                     {{-- Agent Counter-Back Section --}}
                     @if($agentCounterBack)

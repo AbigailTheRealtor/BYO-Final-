@@ -75,10 +75,49 @@ class SellerBidMatchScoreHelper
             'fields' => ['interested_purchase_fee_type'],
         ],
 
+        // 5a. Seller's Broker Leasing Fee — only active when parent = Yes in BOTH
+        [
+            'key'    => 'seller_leasing_fee_type',
+            'fields' => [
+                'seller_leasing_fee_type',
+                'seller_leasing_gross_purchase_fee_flat_amount',
+                'seller_leasing_gross',
+                'seller_leasing_gross_rental',
+                'seller_leasing_gross_month_rent',
+                'seller_leasing_gross_no_of_months',
+                'seller_leasing_gross_other',
+                'seller_leasing_gross_percentage',
+                'seller_leasing_gross_ross_percentage_rent',
+                'seller_leasing_gross_flat_combo',
+                'seller_leasing_gross_percentage_combo',
+                'seller_leasing_gross_flat_net_combo',
+                'seller_leasing_gross_percentage_net_combo',
+                'seller_leasing_gross_purchase_fee_other',
+            ],
+            'baseline_active_when' => ['interested_purchase_fee_type' => 'Yes'],
+            'bid_active_when'      => ['interested_purchase_fee_type' => 'Yes'],
+        ],
+
         // 6. Interested in a Lease-Option Agreement (parent)
         [
             'key'    => 'interested_lease_option_agreement',
             'fields' => ['interested_lease_option_agreement'],
+        ],
+
+        // 6a. Lease-Option creation fee — only active when parent = Yes in BOTH
+        [
+            'key'    => 'lease_type',
+            'fields' => ['lease_type', 'lease_value'],
+            'baseline_active_when' => ['interested_lease_option_agreement' => 'Yes'],
+            'bid_active_when'      => ['interested_lease_option_agreement' => 'Yes'],
+        ],
+
+        // 6b. Purchase option exercise fee — only active when parent = Yes in BOTH
+        [
+            'key'    => 'purchase_type',
+            'fields' => ['purchase_type', 'purchase_value'],
+            'baseline_active_when' => ['interested_lease_option_agreement' => 'Yes'],
+            'bid_active_when'      => ['interested_lease_option_agreement' => 'Yes'],
         ],
 
         // 7. Early Termination Fee (Yes/No parent)
@@ -156,7 +195,12 @@ class SellerBidMatchScoreHelper
         'commission_structure',
         'commission_structure_type',
         'interested_purchase_fee_type',
+        'seller_leasing_fee_type',
         'interested_lease_option_agreement',
+        'lease_type',
+        'lease_value',
+        'purchase_type',
+        'purchase_value',
         'early_termination_fee_option',
         'early_termination_fee_amount',
         'retainer_fee_option',

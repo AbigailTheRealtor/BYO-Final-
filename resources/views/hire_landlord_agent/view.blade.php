@@ -3203,9 +3203,13 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
                                                                     @if ($leaseOptionCreatedDisplay !== '-')
                                                                     <li class="mb-1" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $leaseOptionCreatedDisplay }}{!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}</li>
+                                                                    @elseif (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']))
+                                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> —{!! $mismatchBadge !!}</li>
                                                                     @endif
                                                                     @if ($leaseOptionExercisedDisplay !== '-')
                                                                     <li class="mb-1" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $leaseOptionExercisedDisplay }}{!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}</li>
+                                                                    @elseif (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']))
+                                                                    <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> —{!! $mismatchBadge !!}</li>
                                                                     @endif
                                                                 @endif
                                                             </ul>
@@ -3237,6 +3241,8 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid,'get.early_termination_fee_option') === 'yes' ? 'Yes' : 'No' }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.early_termination_fee_option') === 'yes' && data_get($bid, 'get.early_termination_fee_amount'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney(data_get($bid,'get.early_termination_fee_amount')) ?? ('$'.data_get($bid,'get.early_termination_fee_amount')) }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}</li>
+                                                                @elseif (data_get($bid, 'get.early_termination_fee_option') === 'yes' && isset($brokerMismatches['early_termination_fee_amount']))
+                                                                <li class="mb-1" style="{{ $mismatchStyle }}"><span class="fw-semibold">Termination Fee Amount:</span> —{!! $mismatchBadge !!}</li>
                                                                 @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.agency_agreement_timeframe'))
