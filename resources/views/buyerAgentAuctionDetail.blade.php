@@ -3489,16 +3489,25 @@
                                                                                 style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                                                 <i class="fa fa-clipboard-list me-2"></i>Offered Services
                                                                             </h6>
+                                                                            @php
+                                                                                $normalizeSvcStr = function(string $s): string {
+                                                                                    $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
+                                                                                    $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
+                                                                                    $s = preg_replace('/[\x{2013}\x{2014}]/u', '-', $s);
+                                                                                    return trim($s);
+                                                                                };
+                                                                            @endphp
                                                                             @foreach ($buyerCategories as $catName => $catServices)
                                                                                 @php
-                                                                                    $matchedBuyerSvcs = array_values(array_filter($buyerAllServices, function($svc) use ($catServices) {
-                                                                                        $trimSvc = trim($svc);
+                                                                                    $matchedBuyerSvcs = array_values(array_filter($buyerAllServices, function($svc) use ($catServices, $normalizeSvcStr) {
+                                                                                        $normSvc = $normalizeSvcStr($svc);
                                                                                         foreach ($catServices as $catEntry) {
-                                                                                            if ($catEntry === $trimSvc) return true;
+                                                                                            $normCat = $normalizeSvcStr($catEntry);
+                                                                                            if ($normCat === $normSvc) return true;
                                                                                             // Catalog entry has extra parenthetical appended: stored string is a prefix
-                                                                                            if (str_starts_with($catEntry, $trimSvc)) return true;
+                                                                                            if (str_starts_with($normCat, $normSvc)) return true;
                                                                                             // Stored string has extra text: catalog string is a prefix
-                                                                                            if (str_starts_with($trimSvc, $catEntry)) return true;
+                                                                                            if (str_starts_with($normSvc, $normCat)) return true;
                                                                                         }
                                                                                         return false;
                                                                                     }));
