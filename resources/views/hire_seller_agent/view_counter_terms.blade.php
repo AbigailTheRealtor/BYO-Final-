@@ -95,18 +95,59 @@
                             $counterPropType
                         );
 
-                        $brokerScore      = $score['terms_match_percent'];
-                        $brokerMatched    = $score['terms_matched_count'];
-                        $brokerTotal      = $score['terms_baseline_total'];
+                        $brokerScore     = $score['terms_match_percent'];
+                        $brokerMatched   = $score['terms_matched_count'];
+                        $brokerTotal     = $score['terms_baseline_total'];
                         $brokerMismatches = $score['changed_terms'];
-                        $servicesScore    = $score['services_match_percent'];
-                        $servicesMatched  = $score['services_matched_count'];
-                        $servicesTotal    = $score['services_baseline_total'];
-                        $totalScore       = $score['overall_percent'];
+                        $servicesScore   = $score['services_match_percent'];
+                        $servicesMatched = $score['services_matched_count'];
+                        $servicesTotal   = $score['services_baseline_total'];
+                        $servicesMissing = $score['missing_services'];
+                        $totalScore      = $score['overall_percent'];
 
                         $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
                         $totalScoreColor = $getScoreColor($totalScore);
                         $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
+
+                        $normalizeService = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s);
+                        $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
+                        $displayCatalog   = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($counterPropType);
+
+                        $addedStyle   = 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                        $missingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                        $addedBadge    = '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added</span>';
+
+                        // Counter services (catalog-filtered for this property type)
+                        $ctSvcRaw = $counterData['services'] ?? [];
+                        if (is_string($ctSvcRaw)) $ctSvcRaw = json_decode($ctSvcRaw, true) ?? [];
+                        $ctSvcRaw = is_array($ctSvcRaw) ? array_values(array_filter($ctSvcRaw)) : [];
+                        $ctSvcRaw = array_values(array_filter(
+                            $ctSvcRaw,
+                            fn($s) => !empty(trim((string)$s)) && $s !== 'Other'
+                                && in_array($normalizeService((string)$s), $displayCatalog, true)
+                        ));
+                        $ctOtherSvcRaw = $counterData['other_services'] ?? [];
+                        if (is_string($ctOtherSvcRaw)) $ctOtherSvcRaw = json_decode($ctOtherSvcRaw, true) ?? [];
+                        $ctOtherSvcRaw = is_array($ctOtherSvcRaw)
+                            ? array_values(array_filter($ctOtherSvcRaw, fn($s) => is_string($s) && !empty(trim($s))))
+                            : [];
+                        $allCounterServices = array_merge($ctSvcRaw, $ctOtherSvcRaw);
+
+                        // Baseline services for "Not Included" list
+                        $bsSvcRaw = $baselineData['services'] ?? [];
+                        if (is_string($bsSvcRaw)) $bsSvcRaw = json_decode($bsSvcRaw, true) ?? [];
+                        $bsSvcRaw = is_array($bsSvcRaw) ? array_values(array_filter($bsSvcRaw)) : [];
+                        $bsSvcRaw = array_values(array_filter(
+                            $bsSvcRaw,
+                            fn($s) => !empty(trim((string)$s)) && $s !== 'Other'
+                                && in_array($normalizeService((string)$s), $displayCatalog, true)
+                        ));
+                        $bsOtherSvcRaw = $baselineData['other_services'] ?? [];
+                        if (is_string($bsOtherSvcRaw)) $bsOtherSvcRaw = json_decode($bsOtherSvcRaw, true) ?? [];
+                        $bsOtherSvcRaw = is_array($bsOtherSvcRaw)
+                            ? array_values(array_filter($bsOtherSvcRaw, fn($s) => is_string($s) && !empty(trim($s))))
+                            : [];
+                        $allBaselineServices = array_merge($bsSvcRaw, $bsOtherSvcRaw);
                     @endphp
 
                     {{-- Match Score Panel --}}
@@ -398,39 +439,41 @@
                         </div>
                         @endif
 
-                        {{-- Services in Counter (catalog-filtered for property type) --}}
-                        @php
-                            $ctPropType  = $auction->get->property_type ?? 'Residential Property';
-                            $ctCatalog   = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($ctPropType);
-                            $ctServices  = $counterData['services'] ?? [];
-                            if (is_string($ctServices)) { $ctServices = json_decode($ctServices, true) ?? []; }
-                            $ctServices  = array_filter((array)$ctServices, function($s) use ($ctCatalog) {
-                                return !empty(trim((string)$s))
-                                    && $s !== 'Other'
-                                    && in_array(\App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s), $ctCatalog, true);
-                            });
-                            $ctOtherSvcs = $counterData['other_services'] ?? [];
-                            if (is_string($ctOtherSvcs)) { $ctOtherSvcs = json_decode($ctOtherSvcs, true) ?? []; }
-                            $ctOtherSvcs = array_filter((array)$ctOtherSvcs, fn($s) => is_string($s) && !empty(trim($s)));
-                            $hasCtServices = !empty($ctServices) || !empty($ctOtherSvcs);
-                        @endphp
-                        @if($hasCtServices)
+                        {{-- Services in Counter (catalog-filtered, with Added/Not-in-Counter badges) --}}
+                        @if(!empty($allCounterServices) || !empty($allBaselineServices))
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Offered Services in Counter</h6>
-                            @if(!empty($ctServices))
-                            <ul class="ps-3 mb-2">
-                                @foreach($ctServices as $svc)
-                                <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
+
+                            @if(!empty($allCounterServices))
+                            <ul class="list-unstyled ps-3 mb-2">
+                                @foreach($allCounterServices as $svc)
+                                @php
+                                    $svcNorm    = $normalizeService((string)$svc);
+                                    $isInBaseline = in_array($svcNorm, $baselineNorm, true);
+                                @endphp
+                                <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
+                                    <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $svc }}
+                                    @if (!$isInBaseline)
+                                    {!! $addedBadge !!}
+                                    @endif
+                                </li>
                                 @endforeach
                             </ul>
                             @endif
-                            @if(!empty($ctOtherSvcs))
-                            <div class="fw-semibold small" style="color: #34465c;">Additional Services:</div>
-                            <ul class="ps-3 mb-0">
-                                @foreach($ctOtherSvcs as $svc)
-                                <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
-                                @endforeach
-                            </ul>
+
+                            @if (!empty($servicesMissing))
+                            <div class="mt-3 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
+                                <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services Not Included in Counter:</strong>
+                                <ul class="list-unstyled ps-3 mt-2 mb-0">
+                                    @foreach ($allBaselineServices as $bsSvc)
+                                        @if (in_array($normalizeService((string)$bsSvc), $servicesMissing, true))
+                                        <li class="mb-1" style="{{ $missingStyle }}">
+                                            <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $bsSvc }}
+                                        </li>
+                                        @endif
+                                    @endforeach
+                                </ul>
+                            </div>
                             @endif
                         </div>
                         @endif
