@@ -1,0 +1,195 @@
+This is the FINAL implementation step for Broker Compensation & Agency Agreement Terms Match.
+
+The audit is complete and confirmed.
+
+Do NOT re-audit.
+Do NOT change group counts.
+Do NOT modify database schema.
+
+---
+
+## CONFIRMED GROUP COUNTS (LOCKED)
+
+* Tenant = 16
+* Buyer = 14
+* Landlord = 17
+* Seller = 18
+
+These are final. Do NOT add or remove groups.
+
+---
+
+## IMPLEMENTATION GOAL
+
+Ensure that Terms Match:
+
+1. Counts correctly
+2. Detects mismatches correctly
+3. Applies conditional rules correctly
+4. Displays correctly
+5. Works consistently across all roles
+
+---
+
+## CORE MATCH LOGIC
+
+For each role:
+
+1. Baseline = listing values
+2. Comparison = agent bid values OR latest counter values
+
+For each logical group:
+
+IF baseline group has NO value:
+→ do NOT count it in denominator
+
+IF baseline group HAS value:
+→ include in denominator
+
+---
+
+## MATCH / MISMATCH RULES
+
+For each counted group:
+
+* If baseline value == bid value → MATCH
+* If baseline value != bid value → MISMATCH
+
+---
+
+## CRITICAL: CONDITIONAL GROUPS
+
+For all roles:
+
+Child groups must ONLY be counted when parent condition is active.
+
+Examples:
+
+Lease Option:
+
+* Only count lease-option compensation fields if:
+  interested_lease_option_agreement = Yes (baseline AND bid)
+
+Property Management (Landlord):
+
+* Only count property management-related values if:
+  interested_in_property_management = Yes
+
+Selling:
+
+* Only count purchase fee if:
+  interested_in_selling = Yes
+
+Early Termination:
+
+* Only count termination amount if:
+  early_termination_fee_option = Yes
+
+Retainer:
+
+* Only count retainer amount/application if:
+  retainer_fee_option = Yes
+
+If parent = No:
+→ child group is NOT counted at all
+
+---
+
+## IMPORTANT EDGE RULES
+
+* Do NOT count Additional Details
+* DO count Additional Terms where present in helper
+* Do NOT allow agent-added values to increase denominator
+* If baseline is empty but agent filled value:
+  → treat as “extra” but NOT part of denominator
+
+---
+
+## COUNTER LOGIC
+
+Ensure:
+
+* Original match = compared to original listing
+* Counter match = compared to latest counter
+
+Always use:
+→ latest submitted state as baseline for next comparison
+
+Do NOT use stale data
+
+---
+
+## DISPLAY CONSISTENCY
+
+Ensure UI reflects logic:
+
+* Matched fields = truly matched
+* Changed fields = truly mismatched
+* Added fields = clearly marked
+* No hidden fields in scoring
+* No fields displayed but not counted
+
+---
+
+## ZERO-BASELINE UX
+
+If no baseline terms:
+→ show "No terms provided"
+→ hide match score
+
+---
+
+## CROSS-ROLE CONSISTENCY
+
+Ensure:
+
+* Same logic pattern across:
+
+  * Tenant
+  * Buyer
+  * Seller
+  * Landlord
+
+Only differences should be:
+
+* number of groups
+* group definitions
+
+NOT behavior
+
+---
+
+## VERIFICATION REQUIRED
+
+Return:
+
+1. Files updated
+
+2. Confirmation per role:
+
+   * Tenant
+   * Buyer
+   * Seller
+   * Landlord
+
+3. Example scenarios:
+
+   * match
+   * mismatch
+   * conditional group active
+   * conditional group inactive
+
+4. Confirmation:
+
+   * no incorrect counts
+   * no missing groups
+   * no mismatched UI vs logic
+
+---
+
+## THIS IS FINAL TERMS IMPLEMENTATION
+
+Do NOT re-audit.
+Do NOT change counts.
+
+Implement exactly as defined.
