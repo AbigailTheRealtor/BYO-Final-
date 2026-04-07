@@ -1,0 +1,202 @@
+There are still counter-bid parity and calculation issues that need to be fixed.
+
+This request is specifically about COUNTER BIDS and how they display / calculate after a user or agent has already submitted counter terms.
+
+I need you to audit and fix this carefully with Tenant as the parity reference wherever applicable, but also verify Seller specifically because Seller counter bids are currently showing stale/old term comparisons.
+
+==================================================
+ISSUES TO FIX
+==================================================
+
+1. SELLER COUNTER BID MATCH SCORE IS USING OLD TERMS
+Problem:
+On Seller counter bid views, the Match Score appears to be comparing against old/original terms instead of the latest counter terms / latest comparison baseline that should be used.
+
+Required:
+- Audit Seller counter bid comparison logic
+- Confirm what baseline data source is being used right now
+- Make Seller counter bid Match Score reflect the latest correct comparison source
+- Make sure terms, services matched, missing, extra, and percentages are all based on the correct latest counter state
+
+2. COUNTER STATUS UI / ACTIONS MUST EXIST FOR TENANT, BUYER, AND SELLER
+Problem:
+Only Seller counter bids currently show:
+- “You have submitted a counter offer for this bid.”
+- “View Counter Terms”
+- “Edit Counter Terms”
+
+We need this same pattern and functionality for:
+- Tenant
+- Buyer
+- Seller
+
+Required:
+- Add the same submitted-counter status message/banner where applicable
+- Add “View Counter Terms” button
+- Add “Edit Counter Terms” button
+- Match Seller pattern where it is correct, or Tenant if Tenant has the more complete working logic
+- Ensure the buttons route correctly for each role
+- Ensure visibility rules are correct:
+  - only show when a counter has actually been submitted by that side
+  - do not show when there is no counter
+  - do not show the wrong party’s controls
+
+3. COUNTER BID MATCH / SERVICES / TERMS CALCULATIONS MUST BE CORRECT
+Problem:
+We need to make sure counter bid calculations are correct for:
+- number of services matched
+- terms matched
+- mismatch indicators
+- extra services
+- not offered by agent
+- percentages shown in Match Score
+
+Required:
+- Audit all counter-bid comparison calculations for Tenant, Buyer, Seller, and Landlord where applicable
+- Ensure counter views compare against the correct baseline
+- Ensure the displayed totals and percentages are accurate
+- Ensure latest counter values are used, not stale original values, when the comparison is supposed to be against the latest counter state
+
+==================================================
+WHAT TO AUDIT
+==================================================
+
+For each applicable role/view:
+- Seller counter bid views
+- Buyer counter bid views
+- Tenant counter bid views
+- Landlord counter bid views if the same shared logic affects them
+
+Audit:
+
+A. BASELINE SOURCE
+- original listing terms?
+- original bid terms?
+- latest counter terms?
+- latest accepted state?
+- confirm what SHOULD be used for that exact view, then make sure that is what IS used
+
+B. COUNTER DATA SOURCE
+- latest counter term record
+- original bid meta
+- latest bid meta
+- latest counter history record
+- ensure the latest correct counter values are being loaded
+
+C. MATCH SCORE CALCULATION
+- terms total
+- services total
+- mismatch detection
+- extra services
+- missing services
+- percent display
+- labels shown next to changed fields
+
+D. UI STATE
+- submitted counter banner/message
+- View Counter Terms button
+- Edit Counter Terms button
+- visibility conditions
+- route targets
+- per-role parity
+
+==================================================
+EXPECTED BEHAVIOR
+==================================================
+
+For counter views, the system should:
+- compare against the correct latest comparison state
+- show current/latest counter values
+- show accurate match totals and percentages
+- show accurate mismatches, extra services, and missing services
+- show counter-status UI consistently for Tenant, Buyer, and Seller when a counter has been submitted
+
+==================================================
+IMPLEMENTATION RULES
+==================================================
+
+1. Audit first
+Before broad code changes, identify:
+- which role(s) are using stale baseline data
+- which role(s) are missing the counter-status UI
+- which helper/service/view is responsible
+
+2. Then implement only confirmed fixes
+- keep changes surgical
+- fix the exact role/view/helper involved
+- if a shared helper is the root cause, fix it carefully and verify all affected roles afterward
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Do not rename database columns
+- Do not change unrelated labels/tooltips/options
+- Do not break accepted bid / e-sign flows
+- Do not alter working Tenant logic unless a shared bug requires a safe shared fix
+- Do not broadly refactor all bid logic unless absolutely necessary
+- Preserve current routes unless one is objectively wrong
+- Keep changes scoped to counter-bid comparison accuracy and counter-status UI parity
+- Verify with real sample records, not assumptions
+
+==================================================
+REQUIRED VERIFICATION
+==================================================
+
+After fixing, verify on real counter bid pages:
+
+1. SELLER
+- Match Score now reflects latest correct counter comparison state
+- terms/services counts are correct
+- stale/original values are no longer used where latest counter values should be used
+
+2. BUYER
+- if a counter has been submitted, show:
+  - “You have submitted a counter offer for this bid.”
+  - “View Counter Terms”
+  - “Edit Counter Terms”
+- routes work correctly
+- calculations are correct
+
+3. TENANT
+- if a counter has been submitted, show:
+  - “You have submitted a counter offer for this bid.”
+  - “View Counter Terms”
+  - “Edit Counter Terms”
+- routes work correctly
+- calculations are correct
+
+4. SELLER
+- submitted-counter banner/buttons still work correctly
+- calculations remain correct after baseline fix
+
+5. LANDLORD
+- verify whether shared counter calculation changes affected Landlord
+- ensure no regression if shared logic was touched
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+When done, provide:
+
+1. A role-by-role audit summary:
+- Seller
+- Buyer
+- Tenant
+- Landlord
+
+2. For each role:
+- baseline source used before
+- correct baseline source now
+- whether counter-status UI was missing
+- what was fixed
+
+3. Exact files changed
+
+4. What was visually verified on real counter bid pages
+
+5. Confirmation that:
+- Seller counter Match Score no longer uses stale old terms
+- Tenant, Buyer, and Seller now all show the submitted-counter banner/buttons when appropriate
+- counter services/terms/mismatch calculations are accurate
