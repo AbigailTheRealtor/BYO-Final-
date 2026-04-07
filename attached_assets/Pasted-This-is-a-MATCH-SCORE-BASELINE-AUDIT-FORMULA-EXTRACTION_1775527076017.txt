@@ -1,0 +1,228 @@
+This is a MATCH SCORE BASELINE AUDIT + FORMULA EXTRACTION task.
+
+Do NOT change code yet.
+Do NOT change Match Score logic yet.
+Do NOT refactor anything yet.
+
+This phase is AUDIT ONLY.
+
+---
+
+## GOAL
+
+I want you to go into the current system and derive the correct baseline formulas for:
+
+1. Broker Compensation & Agency Agreement Terms
+2. Offered Services
+
+for all supported role × property-type combinations, using the real active forms and listing screens inside the system.
+
+I do NOT want guessing.
+I do NOT want hardcoded assumptions.
+I want the formulas derived from the actual current active system.
+
+---
+
+## WHY THIS AUDIT IS IMPORTANT
+
+We now have one verified reference example for Commercial Landlord.
+
+Verified Commercial Landlord baseline:
+
+BROKER COMPENSATION & AGENCY AGREEMENT TERMS
+Maximum dynamic baseline fields = 18 total possible matchable term fields, with conditional logic:
+
+A) Lease / Rental Terms
+
+1. Landlord’s Broker Lease Fee
+2. Tenant’s Broker Commission Structure
+3. Tenant’s Broker Commission Fee
+4. Payment Timing for Broker Fees
+5. Lease Renewal / Extension Fee
+
+B) Property Management
+6. Interested in Property Management
+7. Property Management Fee
+
+C) Lease-Option
+8. Interested in Offering a Lease-Option Agreement
+9. Compensation for Creating Lease-Option
+10. Compensation if Purchase Option is Exercised
+
+D) Purchase / Sale
+11. Interested in Selling
+12. Landlord’s Broker Purchase Fee
+
+E) Legal Terms
+13. Protection Period Timeframe
+14. Early Termination Fee
+15. Termination Fee Amount
+
+F) Agreement Structure
+16. Landlord Agency Agreement Timeframe
+17. Acceptable Brokerage Relationship
+
+G) Additional
+18. Additional Terms
+
+Important dynamic rules:
+
+* Termination Fee Amount only counts if Early Termination Fee = Yes
+* Property Management Fee only counts if Interested in Property Management = Yes
+* Lease-Option fields only count if Lease-Option = Yes
+* Purchase Fee only counts if Interested in Selling = Yes
+
+OFFERED SERVICES
+Verified Commercial Landlord service baseline:
+
+* Rental Marketing & Listing Promotion = 14
+* Listing Presentation & Preparation = 6
+* Photography, Video & Virtual Media = 13
+* Showings & Access Coordination = 6
+* Tenant Application Support = 5
+* Lease Preparation & Execution = 6
+* Move-In Support & Coordination = 5
+* Property Management = 1
+* Leasing Strategy & Guidance = 4
+* Additional Services = dynamic, 1 per custom service entered
+
+Fixed total before custom Additional Services = 60
+Final baseline formula = 60 + number of Additional Services entered
+Example: 1 custom service = 61 total baseline services
+
+Use this verified Commercial Landlord example as the pattern for how I want the rest of the audit performed.
+
+---
+
+## SUPPORTED ROLE × PROPERTY TYPE COMBINATIONS
+
+Tenant:
+
+* Residential
+* Commercial
+
+Landlord:
+
+* Residential
+* Commercial
+
+Buyer:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Seller:
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+---
+
+## WHAT I NEED FROM THE AUDIT
+
+For EACH supported role × property-type combination, derive:
+
+A. TERMS BASELINE FORMULA
+
+1. total possible matchable Broker Compensation & Agency Agreement Terms fields
+2. exact breakdown by section
+3. dynamic conditional rules
+4. which fields only count when parent = Yes
+5. whether Additional Details is excluded
+6. whether Additional Terms is included
+
+B. SERVICES BASELINE FORMULA
+
+1. exact count of standard services by category
+2. exact total fixed baseline
+3. dynamic rule for Additional Services / custom services
+4. any grouped sub-options that count individually
+5. final formula structure:
+   fixed total + number of custom additional services
+   OR other dynamic formula if different
+
+---
+
+## HOW TO DO THE AUDIT
+
+Use the REAL active system.
+
+For each role/property type, inspect:
+
+* active listing creation form
+* active agent bid form
+* active listing view if needed
+* active helper/service catalogs if needed
+
+Cross-check all of them so the formula reflects the true system in use right now.
+
+Do NOT rely on stale hardcoded arrays if the live form differs.
+Do NOT rely only on helper counts if the live form differs.
+Do NOT assume Residential and Commercial are the same.
+
+---
+
+## SPECIFIC FIRST CHECK
+
+Before doing the full matrix, first confirm the Commercial Landlord listing below matches the verified formulas above:
+
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/hire/agent/auction/view/57
+
+Confirm whether the system’s actual current Commercial Landlord form/baseline matches:
+
+* Terms max = 18 with the conditional rules listed above
+* Services fixed total = 60 plus custom Additional Services
+
+If there is any mismatch between the real system and this verified formula, report it clearly before proceeding.
+
+---
+
+## REQUIRED OUTPUT FORMAT
+
+Return the audit as a structured matrix.
+
+For each role/property type, provide:
+
+ROLE / PROPERTY TYPE:
+
+1. Terms baseline max:
+2. Terms breakdown by section:
+3. Terms conditional counting rules:
+4. Services fixed baseline total:
+5. Services breakdown by category:
+6. Additional Services rule:
+7. Final services formula:
+8. Any inconsistencies found between:
+
+   * live form
+   * bid form
+   * helper/catalog
+9. Confidence level:
+
+   * confirmed from live form
+   * confirmed from helper
+   * needs manual review
+
+---
+
+## IMPORTANT SAFEGUARDS
+
+* AUDIT ONLY — do NOT code yet
+* Do NOT change Match Score logic yet
+* Do NOT edit forms yet
+* Do NOT normalize counts by guessing
+* Do NOT collapse categories or simplify formulas
+* Do NOT skip property-specific differences
+* If any role/property-type combination is inconsistent in the current system, flag it clearly
+
+---
+
+## FINAL GOAL
+
+At the end of this audit, I want a full baseline formula map for all role/property-type combinations so we can then implement or verify Match Score logic confidently without manual counting by hand.
