@@ -1,0 +1,162 @@
+The audit is finalized. Proceed to implementation using the confirmed baseline formulas.
+
+Do NOT re-audit.
+Do NOT change counts.
+Do NOT guess or simplify logic.
+
+---
+
+## FINAL RULES — USE EXACTLY AS DEFINED
+
+TERMS (ROLE-BASED MAX)
+
+Use the existing helper structure per role:
+
+* Tenant = 16 max
+* Buyer = 14 max
+* Landlord = 17 max
+* Seller = 18 max
+
+Important:
+
+* Landlord Residential = 17
+* Landlord Commercial = 17
+* Do NOT add an 18th Landlord group
+
+Rules:
+
+* Only count groups where baseline has values
+* Do NOT count empty groups
+* Do NOT count Additional Details
+* DO count Additional Terms where applicable
+* Respect all conditional parent/child rules
+
+---
+
+SERVICES (ROLE + PROPERTY TYPE BASED)
+
+Use the audited fixed baseline + dynamic additions.
+
+Tenant:
+
+* Residential = 36 + count(other_services)
+* Commercial = 36 + count(other_services)
+
+Landlord:
+
+* Residential = 54 + count(photo_enhancements_selected) + count(other_services)
+* Commercial = 55 + count(photo_enhancements_selected) + count(other_services)
+
+Buyer:
+
+* Residential = 38 + count(other_services)
+* Income = 38 + count(other_services)
+* Commercial = 38 + count(other_services)
+* Business = 36 + count(other_services)
+* Vacant Land = 38 + count(other_services)
+
+Seller:
+
+* Residential = 52 + count(photo_enhancements_selected) + count(other_services)
+* Commercial = 55 + count(photo_enhancements_selected) + count(other_services)
+* Income = 56 + count(photo_enhancements_selected) + count(other_services)
+* Business = 59 + count(photo_enhancements_selected) + count(other_services)
+* Vacant Land = 47 + count(photo_enhancements_selected) + count(other_services)
+
+---
+
+## PHOTO ENHANCEMENTS RULE
+
+Applies ONLY to:
+
+* Seller
+* Landlord
+
+Rule:
+
+* Base photography = 7
+* Each selected enhancement sub-option = +1
+* Max additional = +6
+
+If no enhancements selected:
+
+* add 0
+
+Do NOT apply this to Tenant or Buyer.
+
+---
+
+## ADDITIONAL SERVICES RULE
+
+Applies to ALL roles:
+
+Each custom entry in:
+other_services
+
+= +1 to services baseline
+
+---
+
+## MATCH SCORE RULES
+
+* Baseline = dynamic denominator from formulas above
+* Matched = intersection of baseline vs agent selections
+* Extra services = do NOT increase denominator
+* Missing services = count as mismatch
+
+---
+
+## ZERO-BASELINE UX
+
+If no baseline services:
+→ show “No services requested”
+
+If no baseline terms:
+→ show “No terms provided”
+
+If both missing:
+→ hide Match Score block or show neutral message
+
+Do NOT display 0/0.
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT change database schema
+* Do NOT rename fields
+* Do NOT change form options
+* Do NOT hardcode totals incorrectly
+* Do NOT re-audit
+* Only implement based on confirmed formulas
+
+---
+
+## OUTPUT REQUIRED
+
+Return:
+
+1. Files updated
+
+2. Confirmation per role:
+
+   * Tenant
+   * Buyer
+   * Seller
+   * Landlord
+
+3. Example calculations showing:
+
+   * baseline
+   * matched
+   * extra
+   * missing
+
+4. Confirmation:
+
+   * dynamic formulas are used
+   * enhancement selections are counted correctly
+   * other_services counted correctly
+   * Landlord terms remain at 17
+
+Proceed with implementation.

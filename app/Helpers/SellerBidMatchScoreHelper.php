@@ -686,8 +686,23 @@ class SellerBidMatchScoreHelper
         $normOtherB = array_map(fn($s) => self::normalizeService((string) $s), $otherBaseline);
         $normOtherC = array_map(fn($s) => self::normalizeService((string) $s), $otherCompared);
 
-        $allNormB = array_merge($normB, $normOtherB);
-        $allNormC = array_merge($normC, $normOtherC);
+        // Photo enhancement sub-options (Seller-specific) — each selected sub-option = +1
+        // Applies to all Seller property types including Vacant Land (where the parent item
+        // is named "Provide digital enhancements to media assets" but the sub-options are
+        // stored identically in photo_enhancements[]).
+        $photoEnhB = $baselineData['photo_enhancements'] ?? [];
+        if (is_string($photoEnhB)) $photoEnhB = json_decode($photoEnhB, true) ?? [];
+        $photoEnhB = is_array($photoEnhB) ? array_values(array_filter($photoEnhB, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+
+        $photoEnhC = $comparedData['photo_enhancements'] ?? [];
+        if (is_string($photoEnhC)) $photoEnhC = json_decode($photoEnhC, true) ?? [];
+        $photoEnhC = is_array($photoEnhC) ? array_values(array_filter($photoEnhC, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+
+        $normPhotoEnhB = array_map(fn($s) => self::normalizeService((string) $s), $photoEnhB);
+        $normPhotoEnhC = array_map(fn($s) => self::normalizeService((string) $s), $photoEnhC);
+
+        $allNormB = array_merge($normB, $normOtherB, $normPhotoEnhB);
+        $allNormC = array_merge($normC, $normOtherC, $normPhotoEnhC);
 
         $matchedServices = array_values(array_intersect($allNormB, $allNormC));
         $missingServices = array_values(array_diff($allNormB, $allNormC));
