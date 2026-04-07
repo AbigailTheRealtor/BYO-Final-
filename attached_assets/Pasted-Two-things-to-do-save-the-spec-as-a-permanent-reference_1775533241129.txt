@@ -1,0 +1,51 @@
+Two things to do: save the spec as a permanent reference file, and fix the both-empty guard across all four bid views. Let me first check how each view renders the overall match score block:
+
+Let me look at the match score blocks in each view to understand the wrapping structure:
+
+I can see $hasAnyBaseline already exists in all four views. Now let me check whether the overall score block is actually gated on it in each view, or whether it leaks through:
+
+The bid card blocks in all four views are already gated on $hasAnyBaseline. Now I need to check whether the private data modal's match score section also has the guard, since it's a separate rendering area:
+
+The $hasAnyBaseline variable exists, but the private modal match score sections aren't yet gated with it. Let me read those areas in Tenant and verify across all four views:
+
+The private modal match-score-panel divs in Tenant, Landlord, and Seller views are not gated. I need to find the closing div of each panel to wrap it. Let me find the exact closing structure:
+
+Good, Landlord has an explicit end comment. Let me find the closing divs for Tenant and Seller, then apply all four fixes simultaneously:
+
+Now I have all the exact locations. Let me read the closing divs for Tenant, Landlord, and Buyer panels before making all the edits:
+
+I have everything I need. Now I'll apply all four changes across the four views simultaneously — wrapping each private modal match-score-panel with the $hasAnyBaseline guard and the neutral fallback message. I'll also save the spec file:
+
+Now add the @else fallback and @endif closing to each of the four panels:
+
+Let me get the exact text for the Seller panel closing:
+
+Now fix the Buyer panel close and save the spec file simultaneously:
+
+All edits done. Let me do a quick blade syntax check and restart:
+
+Good — all four guards confirmed. Let me also verify the @else/@endif pairs are all intact:
+
+All four fallback messages are in place. Let me restart the server to confirm no Blade errors:
+
+Server is running cleanly. Let me do a quick smoke-test:
+
+App is running cleanly (the font CORS message is a pre-existing unrelated issue). Here's a summary of what was completed:
+
+Zero-Baseline Guard — All 4 Private Modal Match Score Panels
+
+The private data modal match score panels in all four listing type views are now fully gated:
+View	Guard Variable	Lines
+Tenant	$hasAnyBaseline	2256 → 2379
+Landlord	$hasAnyBaseline	2682 → 2802
+Seller	$hasAnyBaseline	3139 → 3259
+Buyer	$cardHasAnyBaseline	2660 → 2781
+
+What this means in practice:
+
+    When a listing has at least one terms or services baseline value → the full match score panel renders as before
+    When a listing has zero baseline data on both terms and services → instead of showing a misleading 100% score, the panel is replaced with a neutral: "No match data available for this listing."
+
+The bid card blocks (in the accordion headers) already had this guard in place from the previous session. The private modal panels are now consistent with that.
+
+Also saved: A complete locked match score spec file at .local/match_score_spec.md covering all formulas, group counts, conditional rules, and recommended UI explanation text — ready to reference for the next phase (Match Score Explanation UI).

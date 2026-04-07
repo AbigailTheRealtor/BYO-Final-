@@ -1,0 +1,202 @@
+I need a full audit of the bid comparison logic for:
+
+- Broker Compensation & Agency Agreement Terms
+- Offered Services
+
+across all applicable roles/views where bids are shown.
+
+The purpose of this audit is to verify that every item shown as:
+
+- Mismatch
+- Extra Service Offered
+- Not Offered by Agent
+
+is correct, with no false positives, no false negatives, and no missing fields.
+
+This is an audit first, not a broad refactor. Do not start changing unrelated code until the audit identifies the exact problem areas.
+
+==================================================
+AUDIT GOAL
+==================================================
+
+Confirm that bid comparison output is accurate everywhere it appears, especially on bid cards, private bid views, and private compensation / services comparison sections.
+
+I want you to verify that:
+
+1. A field only shows as Mismatch when the values truly differ
+2. A service only shows as Extra Service Offered when the agent truly offered something the user did not request
+3. A service only shows as Not Offered by Agent when the user truly requested it and the agent did not offer it
+4. Matching items are not incorrectly shown as mismatched, extra, or missing
+5. Custom “Other” entries and sub-options are handled correctly
+6. Additional Details is not being counted as a terms mismatch
+7. All relevant terms fields are included in the comparison
+8. No fields are silently missing from display or scoring
+9. Display labels correspond to the correct stored field/meta key
+10. Comparison logic is consistent across Tenant, Buyer, Seller, and Landlord where applicable
+
+==================================================
+WHAT TO AUDIT
+==================================================
+
+Audit all roles and views where these comparisons appear, including as applicable:
+
+- Tenant bids
+- Buyer bids
+- Seller bids
+- Landlord bids
+
+Audit both:
+
+A. Broker Compensation & Agency Agreement Terms
+- baseline data source
+- bid data source
+- counter term source if applicable
+- displayed labels
+- mismatch detection
+- total term counts
+- fields included vs omitted
+
+B. Offered Services
+- requested services baseline
+- offered services from agent bid
+- category rendering
+- matched services
+- extra services
+- missing services
+- custom “Other” service entries
+- sub-options such as digital photo enhancements
+- per-property-type service totals and normalization
+
+==================================================
+REQUIRED AUDIT METHOD
+==================================================
+
+For each role, trace the full pipeline:
+
+1. Identify the baseline data source
+- original listing meta
+- latest counter terms if comparison should be against latest counter
+- whichever source the view is supposed to use
+
+2. Identify the bid data source
+- original bid meta
+- edited bid meta
+- counter bid meta if applicable
+
+3. Identify the comparison helper/service/class used
+- scoring helper
+- normalization helper
+- render helper
+- view logic
+
+4. Verify that the compared field names and keys actually match
+- especially fields with similar names
+- structure vs fee fields
+- lease vs purchase vs lease-option fields
+- retainer and termination fee amounts
+- brokerage relationship fields
+- custom additional terms fields
+
+5. Verify the display output against real sample records
+- choose real bids from each role if possible
+- compare stored data vs rendered mismatch/extra/missing output
+
+6. Produce a precise list of issues before making broad changes
+
+==================================================
+SPECIFIC THINGS TO CATCH
+==================================================
+
+Please specifically audit for these common failure points:
+
+TERMS
+- field present in data but missing from display
+- field shown in display but not included in scoring
+- field label tied to wrong value
+- mismatch shown when values are actually equal after normalization
+- numeric fields mismatching because of formatting only
+- percent/currency formatting causing false mismatch
+- “Other” custom values not displayed
+- Additional Details incorrectly counted as a term
+- NAR Member ID / review links / credentials fields not rendering though saved
+- term counts being wrong because one or more fields are omitted
+
+SERVICES
+- listing service text and bid service text not normalized to same canonical value
+- old saved service text vs new service text causing false extra/missing services
+- sub-options counted wrong
+- custom “Other” services counted wrong
+- custom “Other” text not displayed
+- extra services list showing items that actually match
+- missing services list showing items that were actually offered
+- capitalization / display formatting issues in rendered missing-services list
+- category arrays not matching stored values
+- property-type-specific service catalogs not matching forms
+
+==================================================
+DELIVERABLE BEFORE CHANGING CODE
+==================================================
+
+Before making broad fixes, provide a numbered audit report with:
+
+1. Role
+2. View/file
+3. Issue found
+4. Whether it affects:
+   - mismatch
+   - extra service
+   - not offered by agent
+   - display only
+   - scoring only
+   - both display and scoring
+5. Root cause
+6. Exact file(s) involved
+7. Recommended surgical fix
+
+Do not say “all good” unless you actually verified real records and code paths.
+
+==================================================
+IF FIXES ARE NEEDED
+==================================================
+
+After the audit, implement only the confirmed fixes.
+
+For each fix:
+- keep it surgical
+- do not refactor unrelated code
+- do not rename DB columns
+- do not change labels/tooltips/options unless necessary
+- do not alter working Tenant logic unless a shared bug requires a safe shared fix
+- if using Tenant as source of truth, mirror Tenant behavior carefully into the affected role only
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Audit first, then fix
+- No broad refactors
+- No schema changes unless absolutely required
+- Do not modify unrelated roles/flows
+- Preserve existing accepted bid / counter / e-sign logic
+- Do not break existing working match score displays
+- Keep all changes limited to comparison accuracy and rendering accuracy
+- If a shared helper is the root cause, fix it carefully and verify all affected roles afterward
+- Verify with real bids, not just code assumptions
+
+==================================================
+FINAL REQUIRED OUTPUT
+==================================================
+
+When finished, provide:
+
+1. Full audit checklist by role
+2. Every issue found
+3. Exact files changed
+4. What each fix corrected
+5. What was visually/functionally verified
+6. Confirmation that:
+   - Mismatch items are accurate
+   - Extra Service Offered items are accurate
+   - Not Offered by Agent items are accurate
+   - no incorrect fields are being shown
+   - no required fields are missing from comparison

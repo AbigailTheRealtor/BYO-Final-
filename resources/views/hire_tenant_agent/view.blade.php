@@ -3521,6 +3521,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     </div>
 
                                                     {{-- Match Score Panel for Limited View (Agent-to-Agent Comparison) --}}
+                                                    @if ($hasAnyBaseline)
                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
@@ -3567,6 +3568,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             </div>
                                                         </div>
                                                     </div>
+                                                    @else
+                                                    <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
+                                                        <i class="fa fa-info-circle me-1"></i>No match data available for this listing.
+                                                    </div>
+                                                    @endif
 
                                                     {{-- Mismatch Highlighting Styles --}}
                                                     @php
