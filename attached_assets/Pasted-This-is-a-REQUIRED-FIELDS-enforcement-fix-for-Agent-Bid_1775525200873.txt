@@ -1,0 +1,208 @@
+This is a REQUIRED-FIELDS enforcement fix for **Agent Bid submission** across all 4 role types.
+
+Apply to:
+
+* Tenant Agent Bids
+* Landlord Agent Bids
+* Buyer Agent Bids
+* Seller Agent Bids
+
+Do NOT change listing creation validation.
+Use the existing **listing creation required-field validation UX** as the exact source of truth.
+
+---
+
+## GOAL
+
+For agent bids, any field marked with a **red star / required indicator** must be required before the agent can submit the bid.
+
+Right now agent bids are submitting even when required fields are missing.
+
+This must be fixed so agent bids behave like listing creation:
+
+* block submit
+* show the required fields in red
+* show the same style of validation/required-field feedback as listing creation
+
+---
+
+## EXPECTED BEHAVIOR
+
+When an agent clicks **Submit Bid** and required fields are missing:
+
+1. Submission must be blocked
+2. Missing required fields must be highlighted in red
+3. The validation UX should match listing creation as closely as possible
+4. If listing creation shows a top error message / red required state, use that same pattern
+5. This must work across all bid tabs, not just the current visible tab
+
+---
+
+## APPLIES TO
+
+All agent bid flows:
+
+* Tenant
+* Landlord
+* Buyer
+* Seller
+
+And all relevant bid contexts:
+
+* new bid submit
+* edit bid submit
+* counter submit if the same required-field system is used there and fields have required stars
+
+If a field has a red star, it must be treated as required.
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT change database schema
+* Do NOT remove or rename fields
+* Do NOT change which fields are marked required in the UI unless the current required star is provably wrong
+* Do NOT refactor unrelated bid logic
+* Do NOT change listing creation validation (use it as reference only)
+* Do NOT create a new inconsistent validation pattern
+* Only modify the active agent bid validation / submit flow and related view highlighting needed for parity
+
+---
+
+## PHASE 1 — AUDIT FIRST
+
+Before coding, inspect the working listing creation validation flow and the current agent bid validation flow.
+
+Identify:
+
+1. Listing creation required-field validation source of truth
+
+* exact files/components/methods used
+* how missing required fields are determined
+* how red highlighting / error display is triggered
+* whether there is a top banner / per-field message / both
+
+2. Agent bid validation current state
+   For each role:
+
+* Tenant
+* Landlord
+* Buyer
+* Seller
+
+Identify:
+
+* exact submit method
+* exact validation rules currently used
+* whether required-star fields are included in validation
+* whether the submit button bypasses missing required fields
+* whether hidden tabs prevent required checks from firing
+
+3. Root cause
+   Determine exactly why required-star fields are not blocking submit:
+
+* missing validation rules?
+* rules not aligned with required-star UI?
+* tab/wizard submit bypass?
+* save/update path not calling validation?
+* required-star fields not included in rules array?
+
+Do NOT code until the audit clearly identifies the break point.
+
+---
+
+## PHASE 2 — IMPLEMENT REQUIRED-FIELD ENFORCEMENT
+
+After the audit, fix all 4 agent bid flows so:
+
+1. Every field marked with a red star is validated as required
+2. Submit Bid is blocked until all required fields are present
+3. Missing required fields show the same style/pattern as listing creation
+
+Required parity with listing creation:
+
+* same red visual emphasis for missing required fields
+* same required-field feedback style
+* same general user experience if possible
+
+If listing creation uses:
+
+* top red message
+* field-level red borders
+* field-level required text
+* tab-specific required handling
+
+then copy that behavior as closely as possible into agent bid flows.
+
+---
+
+## PHASE 3 — CROSS-TAB / WIZARD VALIDATION
+
+This is important:
+
+Agent bid flows use tabs / multi-step layout.
+
+Required validation must still work even when the missing field is on another tab.
+
+If a required field is missing on:
+
+* Broker Compensation & Agency Agreement Terms
+* Additional Details
+* Offered Services
+* Agent Presentation & Promotional Materials
+* Agent Credentials & Contact Info
+  or any other required section
+
+then submit must still be blocked and the missing required field must be surfaced clearly.
+
+Use the same approach as listing creation if listing creation already handles missing required fields across tabs.
+
+---
+
+## PHASE 4 — EDIT + COUNTER SAFETY
+
+Also verify whether the same required-field enforcement must apply to:
+
+* edit bid submit
+* counter submit
+
+If those screens use the same required-star fields, they must not bypass required validation either.
+
+If not applicable, report that clearly instead of changing blindly.
+
+---
+
+## SUCCESS CRITERIA
+
+For all 4 agent bid types:
+
+* required-star fields are truly required
+* Submit Bid cannot bypass missing required fields
+* missing required fields show the same red validation pattern as listing creation
+* validation works across tabs
+* user gets clear error feedback before submit succeeds
+
+---
+
+## REQUIRED OUTPUT
+
+Return a numbered report with:
+
+1. exact listing-creation validation files checked (reference only)
+2. exact agent bid files checked
+3. exact files changed
+4. exact root cause found
+5. confirmation for each role:
+
+   * Tenant
+   * Landlord
+   * Buyer
+   * Seller
+
+that required-star fields now block submit
+
+6. confirmation that the error display now matches listing creation style as closely as possible
+7. note any remaining edge cases if found
+
+Do not give a broad summary.
+This must be an audit-first required-field enforcement fix for all agent bid types.

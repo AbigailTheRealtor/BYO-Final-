@@ -1,0 +1,81 @@
+There is still a Landlord bid card issue that needs to be fixed.
+
+ISSUE:
+On Landlord listings, under the bid card section:
+
+- Private Compensation & Agreement Terms
+
+the field:
+
+- Tenant's Broker Commission Fee:
+
+is missing from the bid card.
+
+This field needs to appear in the Landlord bid card under Private Compensation & Agreement Terms, and it should be placed directly after:
+
+- Tenant's Broker Commission Structure:
+
+This is one of the terms that should be part of the Landlord private compensation / agreement terms display and matching logic.
+
+==================================================
+REQUIRED FIX
+==================================================
+
+1. Find where the Landlord bid card / private compensation view renders the Landlord terms list.
+2. Find where:
+- Tenant's Broker Commission Structure
+is rendered.
+3. Insert:
+- Tenant's Broker Commission Fee:
+directly after it.
+4. Make sure the correct stored value is being pulled and displayed.
+5. If the field is already included in scoring/match calculations but missing only from display, fix display only.
+6. If it is missing from both display and calculation, fix both carefully so Landlord terms total remains correct.
+
+==================================================
+REFERENCE
+==================================================
+
+Use the working Landlord/Tenant compensation terms structure as the pattern for how fields should display:
+- label
+- placement
+- formatting
+- spacing
+
+The Landlord bid card should clearly show both:
+- Tenant's Broker Commission Structure:
+- Tenant's Broker Commission Fee:
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Landlord only unless a safe shared partial is clearly the root cause
+- Do not modify unrelated roles
+- Do not rename database columns or meta keys
+- Do not change labels/tooltips/options
+- Do not refactor broadly
+- Keep the change surgical
+- Preserve existing match score logic unless this exact field is missing from scoring too
+- If scoring must be updated, update only what is necessary for this exact Landlord field
+
+==================================================
+VERIFY
+==================================================
+
+After fixing, verify on a real Landlord bid page that:
+1. Tenant's Broker Commission Fee now appears
+2. It appears directly after Tenant's Broker Commission Structure
+3. The value shown is the correct stored value
+4. The rest of the Landlord Private Compensation & Agreement Terms section remains unchanged
+5. If applicable, Landlord terms count/match now includes this field correctly
+
+==================================================
+FINAL REPORT
+==================================================
+
+When done, provide:
+1. exact file(s) changed
+2. what caused the field to be missing
+3. whether the fix was display-only or display + scoring
+4. what was visually verified on the Landlord bid page
