@@ -42,6 +42,8 @@
           <div class="alert alert-danger">{{ session('error') }}</div>
         @endif
 
+        <h4 class="mb-4" style="color:#049399;">Counter Agent Bid</h4>
+
         <form wire:submit.prevent="submit">
           @php
             $tabs = ['Broker Compensation and Agency Agreement','Additional Details'];
