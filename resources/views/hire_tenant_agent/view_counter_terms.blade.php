@@ -162,6 +162,7 @@
                         $totalScore      = $score['overall_percent'];
                         $getScoreColor   = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::scoreColor((int)$s);
                         $totalScoreColor = $getScoreColor($totalScore);
+                        $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
 
                         // Variables re-exported for per-service rendering in the Services section
                         $normalizeService = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$s);
@@ -268,6 +269,7 @@
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
                         </div>
                         
+                        @if ($hasAnyBaseline)
                         <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
 
                             @if ($showDualScore && $latestCounterScore)
@@ -295,11 +297,11 @@
                                         <div class="row g-1 mt-2">
                                             <div class="col-6">
                                                 <div class="small fw-semibold" style="color: {{ $getScoreColor($servicesScore) }};">Services {{ $servicesScore }}%</div>
-                                                <div class="small text-muted">{{ $servicesMatched }}/{{ $servicesTotal }}</div>
+                                                <div class="small text-muted">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal : 'No services requested' }}</div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="small fw-semibold" style="color: {{ $getScoreColor($brokerScore) }};">Terms {{ $brokerScore }}%</div>
-                                                <div class="small text-muted">{{ $brokerMatched }}/{{ $brokerTotal }}</div>
+                                                <div class="small text-muted">{{ $brokerTotal > 0 ? $brokerMatched.'/'.$brokerTotal : 'No terms provided' }}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -329,15 +331,15 @@
                                         <div class="row g-1 mt-2">
                                             <div class="col-6">
                                                 <div class="small fw-semibold" style="color: {{ $getScoreColor($lcSvcScore) }};">Services {{ $lcSvcScore }}%</div>
-                                                <div class="small text-muted">{{ $lcSvcMatch }}/{{ $lcSvcTotal }}</div>
-                                                @if($lcSvcExtra > 0)<div class="small" style="color: #6c757d;">+{{ $lcSvcExtra }} added</div>@endif
-                                                @if($lcSvcMiss > 0)<div class="small" style="color: #dc3545;">{{ $lcSvcMiss }} missing</div>@endif
+                                                <div class="small text-muted">{{ $lcSvcTotal > 0 ? $lcSvcMatch.'/'.$lcSvcTotal : 'No services requested' }}</div>
+                                                @if($lcSvcTotal > 0 && $lcSvcExtra > 0)<div class="small" style="color: #6c757d;">+{{ $lcSvcExtra }} added</div>@endif
+                                                @if($lcSvcTotal > 0 && $lcSvcMiss > 0)<div class="small" style="color: #dc3545;">{{ $lcSvcMiss }} missing</div>@endif
                                             </div>
                                             <div class="col-6">
                                                 <div class="small fw-semibold" style="color: {{ $getScoreColor($lcTrmScore) }};">Terms {{ $lcTrmScore }}%</div>
-                                                <div class="small text-muted">{{ $lcTrmMatch }}/{{ $lcTrmTotal }}</div>
-                                                @if($lcTrmChg > 0)<div class="small" style="color: #dc3545;">{{ $lcTrmChg }} changed</div>@endif
-                                                @if($lcTrmAdded > 0)<div class="small" style="color: #6c757d;">+{{ $lcTrmAdded }} added</div>@endif
+                                                <div class="small text-muted">{{ $lcTrmTotal > 0 ? $lcTrmMatch.'/'.$lcTrmTotal : 'No terms provided' }}</div>
+                                                @if($lcTrmTotal > 0 && $lcTrmChg > 0)<div class="small" style="color: #dc3545;">{{ $lcTrmChg }} changed</div>@endif
+                                                @if($lcTrmTotal > 0 && $lcTrmAdded > 0)<div class="small" style="color: #6c757d;">+{{ $lcTrmAdded }} added</div>@endif
                                             </div>
                                         </div>
                                     </div>
@@ -365,11 +367,11 @@
                                             <span class="text-muted small fw-semibold">Services Match</span>
                                             <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
                                         </div>
-                                        <div class="text-muted small mt-1">Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}</div>
-                                        @if ($servicesExtraCount > 0)
+                                        <div class="text-muted small mt-1">{{ $servicesTotal > 0 ? 'Matched Original: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}</div>
+                                        @if ($servicesTotal > 0 && $servicesExtraCount > 0)
                                         <div class="small mt-1" style="color: #6c757d;">Extra (Added): {{ $servicesExtraCount }}</div>
                                         @endif
-                                        @if ($servicesMissingCount > 0)
+                                        @if ($servicesTotal > 0 && $servicesMissingCount > 0)
                                         <div class="small mt-1" style="color: #dc3545;">Missing: {{ $servicesMissingCount }}</div>
                                         @endif
                                     </div>
@@ -380,11 +382,11 @@
                                             <span class="text-muted small fw-semibold">Terms Match</span>
                                             <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
                                         </div>
-                                        <div class="text-muted small mt-1">Matched Original: {{ $brokerMatched }}/{{ $brokerTotal }}</div>
-                                        @if ($termsChangedCount > 0)
+                                        <div class="text-muted small mt-1">{{ $brokerTotal > 0 ? 'Matched Original: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}</div>
+                                        @if ($brokerTotal > 0 && $termsChangedCount > 0)
                                         <div class="small mt-1" style="color: #dc3545;">Changed: {{ $termsChangedCount }}</div>
                                         @endif
-                                        @if ($termsAddedCount > 0)
+                                        @if ($brokerTotal > 0 && $termsAddedCount > 0)
                                         <div class="small mt-1" style="color: #6c757d;">Added: {{ $termsAddedCount }}</div>
                                         @endif
                                     </div>
@@ -392,6 +394,11 @@
                             </div>
                             @endif
                         </div>
+                        @else
+                        <div class="alert alert-secondary mb-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
+                            <i class="fas fa-info-circle me-2"></i>No match score available — no requirements were provided in the baseline.
+                        </div>
+                        @endif
                         
                         <div class="mb-4">
                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">

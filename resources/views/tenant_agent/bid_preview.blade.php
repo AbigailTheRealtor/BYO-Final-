@@ -285,12 +285,12 @@
                     <div class="text-center">
                         <small class="text-muted d-block">Broker Terms</small>
                         <span style="color: {{ $brokerScoreColor }}; font-weight: 600;">{{ $brokerScore }}%</span>
-                        <small class="text-muted">({{ $brokerMatched }}/{{ $brokerTotal }})</small>
+                        <small class="text-muted">{{ $brokerTotal > 0 ? '('.$brokerMatched.'/'.$brokerTotal.')' : 'No terms provided' }}</small>
                     </div>
                     <div class="text-center">
                         <small class="text-muted d-block">Services</small>
                         <span style="color: {{ $servicesScoreColor }}; font-weight: 600;">{{ $servicesScore }}%</span>
-                        <small class="text-muted">({{ $servicesMatched }}/{{ $servicesTotal }})</small>
+                        <small class="text-muted">{{ $servicesTotal > 0 ? '('.$servicesMatched.'/'.$servicesTotal.')' : 'No services requested' }}</small>
                     </div>
                 </div>
             </div>

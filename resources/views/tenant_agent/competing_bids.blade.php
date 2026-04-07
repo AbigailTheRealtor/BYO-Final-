@@ -118,7 +118,7 @@
                                             @endphp
                                             <div class="fw-bold" style="font-size: 1.5rem; color: {{ $brokerColor }};">{{ $brokerScore }}%</div>
                                             <small class="text-muted">Broker Compensation</small>
-                                            <div class="small text-muted">{{ $bid['match_score']['broker_comp_matched'] }}/{{ $bid['match_score']['broker_comp_total'] }} fields matched</div>
+                                            <div class="small text-muted">{{ $bid['match_score']['broker_comp_total'] > 0 ? $bid['match_score']['broker_comp_matched'].'/'.$bid['match_score']['broker_comp_total'].' fields matched' : 'No terms provided' }}</div>
                                         </div>
                                     </div>
                                     <div class="col-md-4">
@@ -129,7 +129,7 @@
                                             @endphp
                                             <div class="fw-bold" style="font-size: 1.5rem; color: {{ $servicesColor }};">{{ $servicesScore }}%</div>
                                             <small class="text-muted">Services</small>
-                                            <div class="small text-muted">{{ $bid['match_score']['services_matched'] }}/{{ $bid['match_score']['services_total'] }} services matched</div>
+                                            <div class="small text-muted">{{ $bid['match_score']['services_total'] > 0 ? $bid['match_score']['services_matched'].'/'.$bid['match_score']['services_total'].' services matched' : 'No services requested' }}</div>
                                         </div>
                                     </div>
                                     <div class="col-md-4">

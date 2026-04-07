@@ -82,49 +82,7 @@
                             $baselineData = (array) $bid->get;
                             $baselineLabel = 'Your Original Bid';
                         } else {
-                            $baselineData = [
-                                'commission_structure'          => $auction->get->commission_structure ?? null,
-                                'purchase_fee_type'             => $auction->get->purchase_fee_type ?? null,
-                                'commission_structure_type'     => $auction->get->commission_structure_type ?? null,
-                                'interested_purchase_fee_type'  => $auction->get->interested_purchase_fee_type ?? null,
-                                'interested_lease_option_agreement' => $auction->get->interested_lease_option_agreement ?? null,
-                                'lease_type'                    => $auction->get->lease_type ?? null,
-                                'lease_value'                   => $auction->get->lease_value ?? null,
-                                'purchase_type'                 => $auction->get->purchase_type ?? null,
-                                'purchase_value'                => $auction->get->purchase_value ?? null,
-                                'protection_period'             => $auction->get->protection_period ?? null,
-                                'early_termination_fee_option'  => $auction->get->early_termination_fee_option ?? null,
-                                'early_termination_fee_amount'  => $auction->get->early_termination_fee_amount ?? null,
-                                'retainer_fee_option'           => $auction->get->retainer_fee_option ?? null,
-                                'retainer_fee_amount'           => $auction->get->retainer_fee_amount ?? null,
-                                'retainer_fee_application'      => $auction->get->retainer_fee_application ?? null,
-                                'retained_deposits'             => $auction->get->retained_deposits ?? null,
-                                'agency_agreement_timeframe'    => $auction->get->agency_agreement_timeframe ?? null,
-                                'brokerage_relationship'        => $auction->get->brokerage_relationship ?? null,
-                                'purchase_fee_flat'             => $auction->get->purchase_fee_flat ?? null,
-                                'purchase_fee_percentage'       => $auction->get->purchase_fee_percentage ?? null,
-                                'purchase_fee_flat_combo'       => $auction->get->purchase_fee_flat_combo ?? null,
-                                'purchase_fee_percentage_combo' => $auction->get->purchase_fee_percentage_combo ?? null,
-                                'purchase_fee_other'            => $auction->get->purchase_fee_other ?? null,
-                                'nominal'                       => $auction->get->nominal ?? null,
-                                'seller_leasing_fee_type'                       => $auction->get->seller_leasing_fee_type ?? null,
-                                'seller_leasing_gross_purchase_fee_flat_amount' => $auction->get->seller_leasing_gross_purchase_fee_flat_amount ?? null,
-                                'seller_leasing_gross'                          => $auction->get->seller_leasing_gross ?? null,
-                                'seller_leasing_gross_rental'                   => $auction->get->seller_leasing_gross_rental ?? null,
-                                'seller_leasing_gross_month_rent'               => $auction->get->seller_leasing_gross_month_rent ?? null,
-                                'seller_leasing_gross_no_of_months'             => $auction->get->seller_leasing_gross_no_of_months ?? null,
-                                'seller_leasing_gross_other'                    => $auction->get->seller_leasing_gross_other ?? null,
-                                'seller_leasing_gross_percentage'               => $auction->get->seller_leasing_gross_percentage ?? null,
-                                'seller_leasing_gross_ross_percentage_rent'     => $auction->get->seller_leasing_gross_ross_percentage_rent ?? null,
-                                'seller_leasing_gross_flat_combo'               => $auction->get->seller_leasing_gross_flat_combo ?? null,
-                                'seller_leasing_gross_percentage_combo'         => $auction->get->seller_leasing_gross_percentage_combo ?? null,
-                                'seller_leasing_gross_flat_net_combo'           => $auction->get->seller_leasing_gross_flat_net_combo ?? null,
-                                'seller_leasing_gross_percentage_net_combo'     => $auction->get->seller_leasing_gross_percentage_net_combo ?? null,
-                                'seller_leasing_gross_purchase_fee_other'       => $auction->get->seller_leasing_gross_purchase_fee_other ?? null,
-                                'additional_details_broker'     => $auction->get->additional_details_broker ?? null,
-                                'services'                      => $auction->get->services ?? [],
-                                'other_services'                => $auction->get->other_services ?? [],
-                            ];
+                            $baselineData = (array) $auction->get;
                             $baselineLabel = 'Your Original Listing Terms';
                         }
 
@@ -148,9 +106,11 @@
 
                         $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
                         $totalScoreColor = $getScoreColor($totalScore);
+                        $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
                     @endphp
 
                     {{-- Match Score Panel --}}
+                    @if ($hasAnyBaseline)
                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
@@ -170,7 +130,7 @@
                                         <span class="small fw-semibold">Broker Compensation</span>
                                         <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
                                     </div>
-                                    <div class="small text-muted mt-1">{{ $brokerMatched }}/{{ $brokerTotal }} fields match</div>
+                                    <div class="small text-muted mt-1">{{ $brokerTotal > 0 ? $brokerMatched.'/'.$brokerTotal.' fields match' : 'No terms provided' }}</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -179,11 +139,16 @@
                                         <span class="small fw-semibold">Offered Services</span>
                                         <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
                                     </div>
-                                    <div class="small text-muted mt-1">{{ $servicesMatched }}/{{ $servicesTotal }} services match</div>
+                                    <div class="small text-muted mt-1">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal.' services match' : 'No services requested' }}</div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    @else
+                    <div class="alert alert-secondary mb-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
+                        <i class="fa fa-info-circle me-2"></i>No match score available — no requirements were provided in the baseline.
+                    </div>
+                    @endif
 
                     {{-- Counter Terms Details --}}
                     <div class="mb-4">

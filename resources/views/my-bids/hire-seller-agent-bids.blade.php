@@ -76,12 +76,12 @@
                     <div class="col-md-4 mb-2">
                         <small class="text-muted">Terms Match</small>
                         <div class="fw-bold" style="color: {{ $brokerScoreColor }};">{{ $brokerScore }}%</div>
-                        <small class="text-muted">{{ $brokerMatched }}/{{ $brokerTotal }} fields</small>
+                        <small class="text-muted">{{ $brokerTotal > 0 ? $brokerMatched.'/'.$brokerTotal.' fields' : 'No terms provided' }}</small>
                     </div>
                     <div class="col-md-4 mb-2">
                         <small class="text-muted">Services Match</small>
                         <div class="fw-bold" style="color: {{ $servicesScoreColor }};">{{ $servicesScore }}%</div>
-                        <small class="text-muted">{{ $servicesMatched }}/{{ $servicesTotal }} services</small>
+                        <small class="text-muted">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal.' services' : 'No services requested' }}</small>
                     </div>
                 </div>
                 @if(count($servicesMissing) > 0)

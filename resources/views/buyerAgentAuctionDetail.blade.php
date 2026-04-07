@@ -2447,6 +2447,7 @@
                                             // Match score visibility: listing owner OR bid owner OR BP agent with a bid
                                             $cardIsAgentViewer = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
                                             $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
+                                            $cardHasAnyBaseline = (($score['broker_comp_total'] ?? 0) > 0 || $cardServicesTotal > 0);
 
                                             // Compact broker compensation summary
                                             $cardCommissionStructure = data_get($bid, 'get.commission_structure', '');
@@ -2467,11 +2468,11 @@
                                             <!-- Offered Services Summary Line -->
                                             <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
                                                 <span style="font-weight: 600;">Offered Services:</span>
-                                                <span style="color: #28a745; font-weight: 600;">{{ $cardServicesMatched }}/{{ $cardServicesTotal }}</span> matched
-                                                @if ($cardServicesExtraCount > 0)
+                                                <span style="color: #28a745; font-weight: 600;">{{ $cardServicesTotal > 0 ? $cardServicesMatched.'/'.$cardServicesTotal : 'No services requested' }}</span>{{ $cardServicesTotal > 0 ? ' matched' : '' }}
+                                                @if ($cardServicesTotal > 0 && $cardServicesExtraCount > 0)
                                                     <span class="text-muted ms-2">&bull; {{ $cardServicesExtraCount }} extra</span>
                                                 @endif
-                                                @if (count($missingServices) > 0)
+                                                @if ($cardServicesTotal > 0 && count($missingServices) > 0)
                                                     <span class="ms-2" style="color: #dc3545;">&bull; {{ count($missingServices) }} missing</span>
                                                 @endif
                                             </p>
@@ -2486,7 +2487,7 @@
                                             <hr style="margin: 15px 0; border-color: #e0e0e0;">
 
                                             <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
-                                            @if ($cardShowMatchScoreOnCard)
+                                            @if ($cardShowMatchScoreOnCard && $cardHasAnyBaseline)
                                             <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
                                                 @if ($cardShowDualScore && $cardOriginalScore && $cardLatestCounterScore)
                                                 {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
@@ -2545,9 +2546,9 @@
                                                             <span style="color: {{ $cardGetScoreColor($score['services_percent'] ?? 100) }}; font-weight: 600;">{{ $score['services_percent'] ?? 100 }}%</span>
                                                         </div>
                                                         <div class="text-muted" style="font-size: 0.8rem;">
-                                                            Matched: {{ $score['services_matched_count'] ?? 0 }}/{{ $score['services_baseline_total'] ?? 0 }}
-                                                            @if ($cardServicesExtraCount > 0) &bull; Extra: {{ $cardServicesExtraCount }}@endif
-                                                            @if (count($missingServices) > 0) &bull; Missing: {{ count($missingServices) }}@endif
+                                                            {{ ($score['services_baseline_total'] ?? 0) > 0 ? 'Matched: '.($score['services_matched_count'] ?? 0).'/'.($score['services_baseline_total'] ?? 0) : 'No services requested' }}
+                                                            @if (($score['services_baseline_total'] ?? 0) > 0 && $cardServicesExtraCount > 0) &bull; Extra: {{ $cardServicesExtraCount }}@endif
+                                                            @if (($score['services_baseline_total'] ?? 0) > 0 && count($missingServices) > 0) &bull; Missing: {{ count($missingServices) }}@endif
                                                         </div>
                                                     </div>
                                                     <div class="col-6">
@@ -2556,9 +2557,9 @@
                                                             <span style="color: {{ $cardGetScoreColor($score['broker_comp_percent'] ?? 100) }}; font-weight: 600;">{{ $score['broker_comp_percent'] ?? 100 }}%</span>
                                                         </div>
                                                         <div class="text-muted" style="font-size: 0.8rem;">
-                                                            Matched: {{ $score['broker_comp_matched'] ?? 0 }}/{{ $score['broker_comp_total'] ?? 0 }}
-                                                            @if (($score['terms_changed_count'] ?? 0) > 0) &bull; Changed: {{ $score['terms_changed_count'] }}@endif
-                                                            @if (($score['terms_added_count'] ?? 0) > 0) &bull; Added: {{ $score['terms_added_count'] }}@endif
+                                                            {{ ($score['broker_comp_total'] ?? 0) > 0 ? 'Matched: '.($score['broker_comp_matched'] ?? 0).'/'.($score['broker_comp_total'] ?? 0) : 'No terms provided' }}
+                                                            @if (($score['broker_comp_total'] ?? 0) > 0 && ($score['terms_changed_count'] ?? 0) > 0) &bull; Changed: {{ $score['terms_changed_count'] }}@endif
+                                                            @if (($score['broker_comp_total'] ?? 0) > 0 && ($score['terms_added_count'] ?? 0) > 0) &bull; Added: {{ $score['terms_added_count'] }}@endif
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2678,11 +2679,11 @@
                                                                                         <div class="d-flex justify-content-between small">
                                                                                             <div>
                                                                                                 <div class="fw-semibold" style="color: {{ $cardGetScoreColor($cardOriginalScore['services_match_percent']) }};">Services {{ $cardOriginalScore['services_match_percent'] }}%</div>
-                                                                                                <div class="text-muted">{{ $cardOriginalScore['services_matched_count'] }}/{{ $cardOriginalScore['services_baseline_total'] }}</div>
+                                                                                                <div class="text-muted">{{ $cardOriginalScore['services_baseline_total'] > 0 ? $cardOriginalScore['services_matched_count'].'/'.$cardOriginalScore['services_baseline_total'] : 'No services requested' }}</div>
                                                                                             </div>
                                                                                             <div>
                                                                                                 <div class="fw-semibold" style="color: {{ $cardGetScoreColor($cardOriginalScore['terms_match_percent']) }};">Terms {{ $cardOriginalScore['terms_match_percent'] }}%</div>
-                                                                                                <div class="text-muted">{{ $cardOriginalScore['terms_matched_count'] }}/{{ $cardOriginalScore['terms_baseline_total'] }}</div>
+                                                                                                <div class="text-muted">{{ $cardOriginalScore['terms_baseline_total'] > 0 ? $cardOriginalScore['terms_matched_count'].'/'.$cardOriginalScore['terms_baseline_total'] : 'No terms provided' }}</div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
@@ -2699,13 +2700,13 @@
                                                                                         <div class="d-flex justify-content-between small">
                                                                                             <div>
                                                                                                 <div class="fw-semibold" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['services_match_percent']) }};">Services {{ $cardLatestCounterScore['services_match_percent'] }}%</div>
-                                                                                                <div class="text-muted">{{ $cardLatestCounterScore['services_matched_count'] }}/{{ $cardLatestCounterScore['services_baseline_total'] }}</div>
-                                                                                                @if($cardLatestCounterScore['services_extra_count'] > 0)<div style="color: #6c757d;">+{{ $cardLatestCounterScore['services_extra_count'] }} added</div>@endif
-                                                                                                @if($cardLatestCounterScore['services_missing_count'] > 0)<div style="color: #dc3545;">{{ $cardLatestCounterScore['services_missing_count'] }} missing</div>@endif
+                                                                                                <div class="text-muted">{{ $cardLatestCounterScore['services_baseline_total'] > 0 ? $cardLatestCounterScore['services_matched_count'].'/'.$cardLatestCounterScore['services_baseline_total'] : 'No services requested' }}</div>
+                                                                                                @if($cardLatestCounterScore['services_baseline_total'] > 0 && $cardLatestCounterScore['services_extra_count'] > 0)<div style="color: #6c757d;">+{{ $cardLatestCounterScore['services_extra_count'] }} added</div>@endif
+                                                                                                @if($cardLatestCounterScore['services_baseline_total'] > 0 && $cardLatestCounterScore['services_missing_count'] > 0)<div style="color: #dc3545;">{{ $cardLatestCounterScore['services_missing_count'] }} missing</div>@endif
                                                                                             </div>
                                                                                             <div>
                                                                                                 <div class="fw-semibold" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['terms_match_percent']) }};">Terms {{ $cardLatestCounterScore['terms_match_percent'] }}%</div>
-                                                                                                <div class="text-muted">{{ $cardLatestCounterScore['terms_matched_count'] }}/{{ $cardLatestCounterScore['terms_baseline_total'] }}</div>
+                                                                                                <div class="text-muted">{{ $cardLatestCounterScore['terms_baseline_total'] > 0 ? $cardLatestCounterScore['terms_matched_count'].'/'.$cardLatestCounterScore['terms_baseline_total'] : 'No terms provided' }}</div>
                                                                                                 @if($cardLatestCounterScore['terms_changed_count'] > 0)<div style="color: #dc3545;">{{ $cardLatestCounterScore['terms_changed_count'] }} changed</div>@endif
                                                                                                 @if($cardLatestCounterScore['terms_added_count'] > 0)<div style="color: #6c757d;">+{{ $cardLatestCounterScore['terms_added_count'] }} added</div>@endif
                                                                                             </div>
@@ -2736,7 +2737,7 @@
                                                                                             <span class="badge" style="background: {{ $cardGetScoreColor($score['services_percent'] ?? 100) }};">{{ $score['services_percent'] ?? 100 }}%</span>
                                                                                         </div>
                                                                                         <div class="small text-muted mt-1">
-                                                                                            Matched Original: {{ $score['services_matched_count'] ?? 0 }}/{{ $score['services_baseline_total'] ?? 0 }}
+                                                                                            {{ ($score['services_baseline_total'] ?? 0) > 0 ? 'Matched Original: '.($score['services_matched_count'] ?? 0).'/'.($score['services_baseline_total'] ?? 0) : 'No services requested' }}
                                                                                         </div>
                                                                                         @if ($cardServicesExtraCount > 0)
                                                                                         <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Buyer&#39;s original request. These do not increase the match score but may provide additional value.">
@@ -2756,9 +2757,9 @@
                                                                                             <span class="badge" style="background: {{ $cardGetScoreColor($score['broker_comp_percent'] ?? 100) }};">{{ $score['broker_comp_percent'] ?? 100 }}%</span>
                                                                                         </div>
                                                                                         <div class="small text-muted mt-1">
-                                                                                            Matched Original: {{ $score['broker_comp_matched'] ?? 0 }}/{{ $score['broker_comp_total'] ?? 0 }}
+                                                                                            {{ ($score['broker_comp_total'] ?? 0) > 0 ? 'Matched Original: '.($score['broker_comp_matched'] ?? 0).'/'.($score['broker_comp_total'] ?? 0) : 'No terms provided' }}
                                                                                         </div>
-                                                                                        @if (($score['terms_changed_count'] ?? 0) > 0)
+                                                                                        @if (($score['broker_comp_total'] ?? 0) > 0 && ($score['terms_changed_count'] ?? 0) > 0)
                                                                                         <div class="small mt-1" style="color: #dc3545;">Changed from Baseline: {{ $score['terms_changed_count'] }}</div>
                                                                                         @endif
                                                                                         @if (($score['terms_added_count'] ?? 0) > 0)

@@ -580,16 +580,18 @@ class LandlordBidMatchScoreHelper
     }
 
     /**
-     * Return the normalized catalog for the given property type.
-     * Applies normalizeService() to all entries so comparisons are consistent
-     * with DB values that have been through the same normalization pipeline.
+     * Return the catalog for the given property type.
+     *
+     * Entries are normalized (lowercased, trimmed, whitespace-collapsed, smart-quotes
+     * replaced) so that the returned catalog can be compared directly against
+     * normalized user input without a second normalizeService() pass.
      */
     public static function getCatalog(string $propertyType): array
     {
         $raw = str_contains(strtolower($propertyType), 'commercial')
             ? self::COMMERCIAL_SERVICES_CATALOG
             : self::RESIDENTIAL_SERVICES_CATALOG;
-        return array_map([self::class, 'normalizeService'], $raw);
+        return array_map(fn($s) => self::normalizeService((string) $s), $raw);
     }
 
     /**

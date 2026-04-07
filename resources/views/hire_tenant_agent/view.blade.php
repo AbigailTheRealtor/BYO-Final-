@@ -1616,11 +1616,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @endphp
                                     <div class="d-flex align-items-center">
                                         <span class="badge me-2" style="background: {{ $brokerColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $brokerScore }}%</span>
-                                        <span class="small text-muted">Broker Compensation ({{ $compBid['match_score']['broker_comp_matched'] }}/{{ $compBid['match_score']['broker_comp_total'] }} fields)</span>
+                                        <span class="small text-muted">Broker Compensation {{ $compBid['match_score']['broker_comp_total'] > 0 ? '('.$compBid['match_score']['broker_comp_matched'].'/'.$compBid['match_score']['broker_comp_total'].' fields)' : '(No terms provided)' }}</span>
                                     </div>
                                     <div class="d-flex align-items-center">
                                         <span class="badge me-2" style="background: {{ $servicesColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $servicesScore }}%</span>
-                                        <span class="small text-muted">Offered Services ({{ $compBid['match_score']['services_matched_count'] }}/{{ $compBid['match_score']['services_baseline_total'] }} services)</span>
+                                        <span class="small text-muted">Offered Services {{ $compBid['match_score']['services_baseline_total'] > 0 ? '('.$compBid['match_score']['services_matched_count'].'/'.$compBid['match_score']['services_baseline_total'].' services)' : '(No services requested)' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1938,6 +1938,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $totalScore      = $score['overall_percent'];
                             $getScoreColor   = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::scoreColor((int)$s);
                             $totalScoreColor = $getScoreColor($totalScore);
+                            $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
 
                             // === DUAL SCORE: Original Match + Latest Counter Match ===
                             // Original Match: bid vs. Tenant's original listing request (never changes)
@@ -2003,11 +2004,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <!-- B) Offered Services Count Row -->
                                 <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
                                     <span style="font-weight: 600;">Offered Services:</span>
-                                    <span style="color: #28a745; font-weight: 600;">{{ $servicesMatched }}/{{ $servicesTotal }}</span> matched
-                                    @if ($servicesExtraCount > 0)
+                                    <span style="color: #28a745; font-weight: 600;">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal : 'No services requested' }}</span>{{ $servicesTotal > 0 ? ' matched' : '' }}
+                                    @if ($servicesTotal > 0 && $servicesExtraCount > 0)
                                     <span class="text-muted ms-2">&bull; {{ $servicesExtraCount }} extra</span>
                                     @endif
-                                    @if ($servicesMissingCount > 0)
+                                    @if ($servicesTotal > 0 && $servicesMissingCount > 0)
                                     <span class="ms-2" style="color: #dc3545;">&bull; {{ $servicesMissingCount }} missing</span>
                                     @endif
                                 </p>
@@ -2025,7 +2026,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     // Show Match Score for: listing owner OR agents viewing any bid in Bidding Period listings
                                     $showMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
                                 @endphp
-                                @if ($showMatchScoreOnCard)
+                                @if ($showMatchScoreOnCard && $hasAnyBaseline)
                                 <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
 
                                     @if ($showDualScore && $originalScore && $latestCounterScore)
@@ -2092,9 +2093,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
                                             </div>
                                             <div class="text-muted" style="font-size: 0.8rem;">
-                                                Matched: {{ $servicesMatched }}/{{ $servicesTotal }}
-                                                @if ($servicesExtraCount > 0) &bull; Extra: {{ $servicesExtraCount }}@endif
-                                                @if ($servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
+                                                {{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
+                                                @if ($servicesTotal > 0 && $servicesExtraCount > 0) &bull; Extra: {{ $servicesExtraCount }}@endif
+                                                @if ($servicesTotal > 0 && $servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
                                             </div>
                                         </div>
                                         <div class="col-6">
@@ -2103,9 +2104,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
                                             </div>
                                             <div class="text-muted" style="font-size: 0.8rem;">
-                                                Matched: {{ $brokerMatched }}/{{ $brokerTotal }}
-                                                @if ($termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
-                                                @if ($termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
+                                                {{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
+                                                @if ($brokerTotal > 0 && $termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
+                                                @if ($brokerTotal > 0 && $termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
                                             </div>
                                         </div>
                                     </div>
@@ -2275,11 +2276,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <div class="d-flex justify-content-between small">
                                                                         <div>
                                                                             <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['services_match_percent']) }};">Services {{ $originalScore['services_match_percent'] }}%</div>
-                                                                            <div class="text-muted">{{ $originalScore['services_matched_count'] }}/{{ $originalScore['services_baseline_total'] }}</div>
+                                                                            <div class="text-muted">{{ $originalScore['services_baseline_total'] > 0 ? $originalScore['services_matched_count'].'/'.$originalScore['services_baseline_total'] : 'No services requested' }}</div>
                                                                         </div>
                                                                         <div>
                                                                             <div class="fw-semibold" style="color: {{ $getScoreColor($originalScore['terms_match_percent']) }};">Terms {{ $originalScore['terms_match_percent'] }}%</div>
-                                                                            <div class="text-muted">{{ $originalScore['terms_matched_count'] }}/{{ $originalScore['terms_baseline_total'] }}</div>
+                                                                            <div class="text-muted">{{ $originalScore['terms_baseline_total'] > 0 ? $originalScore['terms_matched_count'].'/'.$originalScore['terms_baseline_total'] : 'No terms provided' }}</div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -2296,13 +2297,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <div class="d-flex justify-content-between small">
                                                                         <div>
                                                                             <div class="fw-semibold" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
-                                                                            <div class="text-muted">{{ $latestCounterScore['services_matched_count'] }}/{{ $latestCounterScore['services_baseline_total'] }}</div>
-                                                                            @if($latestCounterScore['services_extra_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['services_extra_count'] }} added</div>@endif
-                                                                            @if($latestCounterScore['services_missing_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['services_missing_count'] }} missing</div>@endif
+                                                                            <div class="text-muted">{{ $latestCounterScore['services_baseline_total'] > 0 ? $latestCounterScore['services_matched_count'].'/'.$latestCounterScore['services_baseline_total'] : 'No services requested' }}</div>
+                                                                            @if($latestCounterScore['services_baseline_total'] > 0 && $latestCounterScore['services_extra_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['services_extra_count'] }} added</div>@endif
+                                                                            @if($latestCounterScore['services_baseline_total'] > 0 && $latestCounterScore['services_missing_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['services_missing_count'] }} missing</div>@endif
                                                                         </div>
                                                                         <div>
                                                                             <div class="fw-semibold" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
-                                                                            <div class="text-muted">{{ $latestCounterScore['terms_matched_count'] }}/{{ $latestCounterScore['terms_baseline_total'] }}</div>
+                                                                            <div class="text-muted">{{ $latestCounterScore['terms_baseline_total'] > 0 ? $latestCounterScore['terms_matched_count'].'/'.$latestCounterScore['terms_baseline_total'] : 'No terms provided' }}</div>
                                                                             @if($latestCounterScore['terms_changed_count'] > 0)<div style="color: #dc3545;">{{ $latestCounterScore['terms_changed_count'] }} changed</div>@endif
                                                                             @if($latestCounterScore['terms_added_count'] > 0)<div style="color: #6c757d;">+{{ $latestCounterScore['terms_added_count'] }} added</div>@endif
                                                                         </div>
@@ -2333,7 +2334,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
                                                                     </div>
                                                                     <div class="small text-muted mt-1">
-                                                                        Matched Original: {{ $servicesMatched }}/{{ $servicesTotal }}
+                                                                        {{ $servicesTotal > 0 ? 'Matched Original: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
                                                                     </div>
                                                                     @if ($servicesExtraCount > 0)
                                                                     <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Tenant&#39;s original request. These do not increase the match score but may provide additional value.">
@@ -2353,9 +2354,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
                                                                     </div>
                                                                     <div class="small text-muted mt-1">
-                                                                        Matched Original: {{ $brokerMatched }}/{{ $brokerTotal }}
+                                                                        {{ $brokerTotal > 0 ? 'Matched Original: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
                                                                     </div>
-                                                                    @if ($termsChangedCount > 0)
+                                                                    @if ($brokerTotal > 0 && $termsChangedCount > 0)
                                                                     <div class="small mt-1" style="color: #dc3545;">Changed from Baseline: {{ $termsChangedCount }}</div>
                                                                     @endif
                                                                     @if ($termsAddedCount > 0)
@@ -3534,8 +3535,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
                                                                     </div>
                                                                     <div class="small text-muted mt-1">
-                                                                        Matched: {{ $servicesMatched }}/{{ $servicesTotal }}
-                                                                        @if ($servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
+                                                                        {{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
+                                                                        @if ($servicesTotal > 0 && $servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
                                                                     </div>
                                                                     @if ($servicesExtraCount > 0)
                                                                     <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Tenant&#39;s original request. These do not increase the match score but may provide additional value.">
@@ -3552,9 +3553,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
                                                                     </div>
                                                                     <div class="small text-muted mt-1">
-                                                                        Matched: {{ $brokerMatched }}/{{ $brokerTotal }}
-                                                                        @if ($termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
-                                                                        @if ($termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
+                                                                        {{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
+                                                                        @if ($brokerTotal > 0 && $termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
+                                                                        @if ($brokerTotal > 0 && $termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
                                                                     </div>
                                                                 </div>
                                                             </div>
