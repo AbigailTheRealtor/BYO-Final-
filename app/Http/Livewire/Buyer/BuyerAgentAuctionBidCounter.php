@@ -4,7 +4,7 @@ namespace App\Http\Livewire\Buyer;
 
 use Livewire\Component;
 use App\Models\BuyerAgentAuction;
-use App\Models\BuyerCounterTerm;
+use App\Models\BuyerAgentAuctionBid;
 use App\Models\BuyerCounterBidding;
 use App\Helpers\BuyerBidMatchScoreHelper;
 use App\Notifications\CounterBidSubmittedNotification;
@@ -15,6 +15,16 @@ use Illuminate\Support\Facades\Log;
 
 class BuyerAgentAuctionBidCounter extends Component
 {
+    /**
+     * Override syncInput to prevent Str::studly() crash when Livewire passes NULL/empty property names.
+     */
+    public function syncInput($name, $value, $rehash = true)
+    {
+        if (empty($name)) {
+            return;
+        }
+        parent::syncInput($name, $value, $rehash);
+    }
 
     public $pab;
     public $bidId;
@@ -196,18 +206,21 @@ public $additional_details_broker = '';
         }));
     }
 
-    public function mount($pab, $bidId)
+    public function mount($pab, $bidId, $parent_counter_id = null)
     {
-        $this->pab   = $pab;
-        $this->bidId = $bidId;
-        $this->property_type = $pab->get->property_type;
+        $this->pab              = $pab;
+        $this->bidId            = $bidId;
+        $this->parent_counter_id = $parent_counter_id;
+
+        // Get property_type from the listing (auction), not from the agent bid
+        $this->property_type = $pab->get->property_type ?? '';
 
         $sourceData = null;
 
-        // COUNTER BID PREFILL RULE: Agent counters with Buyer's latest counter terms for this listing.
-        // BuyerCounterTerm stores auction/listing ID in buyer_agent_auction_id (not the bid ID).
-        $buyerCounter = BuyerCounterTerm::where('buyer_agent_auction_id', $pab->id)
-            ->where('user_id', $pab->user_id)
+        // COUNTER BID PREFILL RULE (mirrors Tenant flow exactly):
+        // 1. Try the Buyer's latest counter for this specific bid thread
+        //    BuyerCounterBidding.buyer_agent_auction_bid_id = the agent bid ID
+        $buyerCounter = BuyerCounterBidding::where('buyer_agent_auction_bid_id', $bidId)
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -215,20 +228,16 @@ public $additional_details_broker = '';
             $sourceData = $buyerCounter->get;
         }
 
-        // If no Buyer counter exists, fall back to the original listing (auction) terms
+        // 2. If no prior counter exists, load the original agent bid terms
         if (!$sourceData) {
-            if ($pab && $pab->get) {
-                $sourceData = $pab->get;
-            }
-        }
-
-        // Final fallback: original bid terms
-        if (!$sourceData) {
-            $originalBid = \App\Models\BuyerAgentAuctionBid::find($bidId);
-            if ($originalBid) {
+            $originalBid = BuyerAgentAuctionBid::find($bidId);
+            if ($originalBid && $originalBid->get) {
                 $sourceData = $originalBid->get;
             }
         }
+
+        // NOTE: We NEVER fall back to $pab->get (the listing) — that would pre-fill
+        // with the buyer's own listing data instead of the agent's bid terms.
 
         if ($sourceData) {
             $this->commission_structure = $sourceData->commission_structure ?? '';
