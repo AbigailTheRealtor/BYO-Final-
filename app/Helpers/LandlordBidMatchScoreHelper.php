@@ -640,7 +640,7 @@ class LandlordBidMatchScoreHelper
     private static function checkGroupCondition(array $conditionMap, array $data): bool
     {
         foreach ($conditionMap as $condField => $condValue) {
-            if (($data[$condField] ?? '') !== $condValue) {
+            if (strtolower((string) ($data[$condField] ?? '')) !== strtolower((string) $condValue)) {
                 return false;
             }
         }

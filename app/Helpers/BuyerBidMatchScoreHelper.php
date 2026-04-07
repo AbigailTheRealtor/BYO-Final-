@@ -326,6 +326,12 @@ class BuyerBidMatchScoreHelper
             'key'    => 'agency_agreement_timeframe',
             'fields' => ['agency_agreement_timeframe'],
         ],
+
+        // 15. Brokerage Relationship
+        [
+            'key'    => 'brokerage_relationship',
+            'fields' => ['brokerage_relationship'],
+        ],
     ];
 
     /**
@@ -398,7 +404,7 @@ class BuyerBidMatchScoreHelper
     private static function checkGroupCondition(array $conditionMap, array $data): bool
     {
         foreach ($conditionMap as $condField => $condValue) {
-            if (($data[$condField] ?? '') !== $condValue) {
+            if (strtolower((string) ($data[$condField] ?? '')) !== strtolower((string) $condValue)) {
                 return false;
             }
         }
