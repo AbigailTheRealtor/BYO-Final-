@@ -20,7 +20,7 @@ class LandlordAgentAuctionCounterTerm extends Component
 
     public $auctionId;
     public $user_id;
-    public $parent_counter_id = '';
+    public $parent_counter_id = null;
     public $service_type; // 'full_service' or 'limited_service'
     public $user_type;
     public $property_type;
@@ -413,7 +413,7 @@ class LandlordAgentAuctionCounterTerm extends Component
     {
         $this->pab              = $pab;
         $this->bidId            = $bidId;
-        $this->parent_counter_id = $parent_counter_id ?? '';
+        $this->parent_counter_id = $parent_counter_id ?: null;
 
         // property_type lives on the auction, not on the bid meta.
         // $pab may be either a LandlordAgentAuction (from counter_bid controller)
@@ -653,7 +653,7 @@ class LandlordAgentAuctionCounterTerm extends Component
                 // ensure base columns still correct if you want
                 $counterTerm->update([
                     'property_type' => $this->property_type,
-                    'parent_counter_id' => $this->parent_counter_id,
+                    'parent_counter_id' => $this->parent_counter_id ?: null,
                 ]);
             } else {
                 // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
@@ -661,7 +661,7 @@ class LandlordAgentAuctionCounterTerm extends Component
                     'user_id' => Auth::id(),
                     'landlord_agent_auction_id' => $this->bidId,
                     'property_type' => $this->property_type,
-                    'parent_counter_id' => $this->parent_counter_id,
+                    'parent_counter_id' => $this->parent_counter_id ?: null,
                 ]);
 
                 $this->counterTermId = $counterTerm->id; // track after create
