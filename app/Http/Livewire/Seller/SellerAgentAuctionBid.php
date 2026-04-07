@@ -199,6 +199,17 @@ class SellerAgentAuctionBid extends Component
             $this->other_services_enabled = true;
         }
 
+        // Pre-load photo enhancements from listing (mirrors Landlord bid pattern)
+        $rawPhotoEnh = $auction->get->photo_enhancements ?? null;
+        $this->photo_enhancements = is_string($rawPhotoEnh)
+            ? (json_decode($rawPhotoEnh, true) ?? [])
+            : (is_array($rawPhotoEnh) ? $rawPhotoEnh : []);
+        $this->custom_enhancement  = $auction->get->custom_enhancement ?? '';
+        // Handle both standard and Vacant Land service name variants
+        $this->showEnhancements    = in_array('Provide digital photo enhancements', $this->services)
+                                  || in_array('Provide digital enhancements to media assets', $this->services);
+        $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
+
         // Prefill compensation from listing
         $l = $auction->get;
         $this->purchase_fee_type              = $l->purchase_fee_type ?? '';
@@ -382,6 +393,9 @@ class SellerAgentAuctionBid extends Component
                 $editPhotoEnh = $m['photo_enhancements'] ?? [];
                 if (is_string($editPhotoEnh)) { $editPhotoEnh = json_decode($editPhotoEnh, true) ?? []; }
                 if (is_array($editPhotoEnh)) { $this->photo_enhancements = $editPhotoEnh; }
+                $this->showEnhancements    = in_array('Provide digital photo enhancements', $this->services)
+                                          || in_array('Provide digital enhancements to media assets', $this->services);
+                $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
 
                 // Array fields
                 foreach (['reviews_links', 'social_media', 'website_link'] as $arrField) {
@@ -470,6 +484,12 @@ class SellerAgentAuctionBid extends Component
     public function updatedAgencyAgreementTimeframe($value)
     {
         $this->agency_agreement_custom = '';
+    }
+
+    // Mirrors LandlordAgentAuctionBid: keep showCustomEnhancement in sync with checkbox state
+    public function updatedPhotoEnhancements()
+    {
+        $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
     }
 
     public function updatedEarlyTerminationFeeOption($value)
