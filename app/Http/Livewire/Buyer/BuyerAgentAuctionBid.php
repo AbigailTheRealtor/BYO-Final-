@@ -173,7 +173,12 @@ public $additional_details_broker = '';
             'promoMaterials.*.text'  => ['nullable', 'string'],
             'promoMaterials.*.files' => ['nullable', 'array'],
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
-
+            'first_name'  => 'required|string',
+            'last_name'   => 'required|string',
+            'phone'       => 'required|string',
+            'email'       => 'required|email',
+            'brokerage'   => 'required|string',
+            'license_no'  => 'required|string',
         ];
     }
 
@@ -183,6 +188,13 @@ public $additional_details_broker = '';
         'what_sets_you_apart.required' => 'Please fill in "What Sets You Apart From Other Agents?".',
         'marketing_plan.required'      => 'Please fill in "What Is Your Marketing Strategy?".',
         'year_licensed.required'       => 'Please enter the year you were licensed.',
+        'first_name.required'  => 'Please enter your first name.',
+        'last_name.required'   => 'Please enter your last name.',
+        'phone.required'       => 'Please enter your phone number.',
+        'email.required'       => 'Please enter your email address.',
+        'email.email'          => 'Please enter a valid email address.',
+        'brokerage.required'   => 'Please enter your brokerage name.',
+        'license_no.required'  => 'Please enter your real estate license number.',
     ];
 
 

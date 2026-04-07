@@ -273,7 +273,12 @@ class TenantAgentAuctionBid extends Component
             // Note: File validation is handled manually in submit() to allow
             // existing file paths (strings) in edit mode while validating new uploads
             'year_licensed' => 'required|numeric|min:1900|max:' . date('Y'),
-
+            'first_name'  => 'required|string',
+            'last_name'   => 'required|string',
+            'phone'       => 'required|string',
+            'email'       => 'required|email',
+            'brokerage'   => 'required|string',
+            'license_no'  => 'required|string',
         ];
     }
 
@@ -285,6 +290,13 @@ class TenantAgentAuctionBid extends Component
         'commission_structure.required' => 'Please select a Tenant\'s Broker Commission Structure.',
         'lease_fee_type.required' => 'Please select a Tenant\'s Broker Lease Fee.',
         'year_licensed.required'       => 'Please enter the year you were licensed.',
+        'first_name.required'  => 'Please enter your first name.',
+        'last_name.required'   => 'Please enter your last name.',
+        'phone.required'       => 'Please enter your phone number.',
+        'email.required'       => 'Please enter your email address.',
+        'email.email'          => 'Please enter a valid email address.',
+        'brokerage.required'   => 'Please enter your brokerage name.',
+        'license_no.required'  => 'Please enter your real estate license number.',
     ];
 
     public function updatePlaceholder($index, $platform)

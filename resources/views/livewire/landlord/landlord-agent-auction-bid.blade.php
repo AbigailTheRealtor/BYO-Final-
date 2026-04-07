@@ -214,7 +214,11 @@
                         {{ session('error') }}
                     </div>
                 @endif
-                <form wire:submit.prevent="submit" novalidate>
+                <form wire:submit.prevent="submit" novalidate id="landlord-bid-form">
+                    <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
+                        <strong>Please complete the required fields before submitting:</strong>
+                        <ul id="submit-error-list" class="mb-0 mt-2"></ul>
+                    </div>
                     <!-- Tab Navigation -->
 
                         @php
@@ -573,4 +577,140 @@ document.addEventListener('DOMContentLoaded', function() {
     addIconsToInputs();
 });
 </script>
+    <script>
+        (function() {
+            var _landlordBidCorrectionMode = false;
+            var _landlordBidMissingItems = [];
+
+            function landlordBidGetInvalidItems() {
+                var allTabPanes = Array.from(document.querySelectorAll('#landlord-bid-form .tab-content .tab-pane'));
+                var items = [];
+                document.querySelectorAll('#landlord-bid-form [required]').forEach(function(field) {
+                    var tabPane = field.closest('.tab-pane');
+                    if (!tabPane) return;
+                    var el = field.parentElement;
+                    while (el && el !== tabPane) {
+                        if (el.classList && el.classList.contains('d-none')) return;
+                        if (el.style && el.style.display === 'none') return;
+                        el = el.parentElement;
+                    }
+                    var isEmpty = false;
+                    if (field.type === 'checkbox' || field.type === 'radio') {
+                        isEmpty = !field.checked;
+                    } else if (field.tagName === 'SELECT') {
+                        isEmpty = field.value === '' || field.value === null;
+                    } else {
+                        isEmpty = !field.value || field.value.trim() === '';
+                    }
+                    if (isEmpty) {
+                        var label = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
+                        var fieldName = label ? label.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
+                        var key = field.getAttribute('wire:model') || field.getAttribute('wire:model.defer') || field.getAttribute('wire:model.lazy') || field.id || field.name || '';
+                        var tabIndex = allTabPanes.indexOf(tabPane);
+                        items.push({ field: field, tab: tabPane, tabIndex: tabIndex, fieldName: fieldName, key: key });
+                    }
+                });
+                var seen = new Set();
+                return items.filter(function(item) {
+                    var k = item.key || item.fieldName;
+                    if (seen.has(k)) return false;
+                    seen.add(k);
+                    return true;
+                });
+            }
+
+            function landlordBidMarkAllInvalid(items) {
+                document.querySelectorAll('#landlord-bid-form .is-invalid').forEach(function(f) { f.classList.remove('is-invalid'); });
+                items.forEach(function(item) {
+                    if (item.field) item.field.classList.add('is-invalid');
+                });
+            }
+
+            function landlordBidNavigateToItem(item) {
+                if (item && item.tabIndex >= 0) {
+                    try { @this.call('setActiveTab', item.tabIndex); } catch(e) {}
+                    var navLinks = document.querySelectorAll('#myTab .nav-link');
+                    if (navLinks[item.tabIndex]) {
+                        try { new bootstrap.Tab(navLinks[item.tabIndex]).show(); } catch(e2) {}
+                    }
+                }
+                setTimeout(function() {
+                    if (item && item.field && item.field !== document.body) {
+                        item.field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        if (typeof item.field.focus === 'function' && item.field.tagName !== 'DIV') {
+                            item.field.focus();
+                        }
+                    }
+                    var banner = document.getElementById('submit-error-banner');
+                    if (banner) {
+                        banner.classList.remove('d-none');
+                        banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 350);
+            }
+
+            function landlordBidBuildErrorBanner(items, errorList) {
+                if (!errorList) return;
+                errorList.innerHTML = '';
+                items.forEach(function(item) {
+                    var li = document.createElement('li');
+                    var a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = item.fieldName;
+                    a.style.color = 'inherit';
+                    a.addEventListener('click', function(ev) {
+                        ev.preventDefault();
+                        landlordBidNavigateToItem(item);
+                    });
+                    li.appendChild(a);
+                    errorList.appendChild(li);
+                });
+            }
+
+            function landlordBidAdvanceCorrection() {
+                if (!_landlordBidCorrectionMode) return;
+                var freshMissing = landlordBidGetInvalidItems();
+                var errorList = document.getElementById('submit-error-list');
+                var banner = document.getElementById('submit-error-banner');
+                landlordBidMarkAllInvalid(freshMissing);
+                if (freshMissing.length === 0) {
+                    _landlordBidCorrectionMode = false;
+                    _landlordBidMissingItems = [];
+                    if (banner) banner.classList.add('d-none');
+                    return;
+                }
+                landlordBidBuildErrorBanner(freshMissing, errorList);
+                if (banner) banner.classList.remove('d-none');
+                _landlordBidMissingItems = freshMissing;
+            }
+
+            if (typeof Livewire !== 'undefined') {
+                Livewire.hook('message.processed', function() {
+                    setTimeout(landlordBidAdvanceCorrection, 350);
+                });
+            }
+
+            document.addEventListener('submit', function(e) {
+                var form = document.getElementById('landlord-bid-form');
+                if (!form || e.target !== form) return;
+                var banner = document.getElementById('submit-error-banner');
+                var errorList = document.getElementById('submit-error-list');
+                if (banner) banner.classList.add('d-none');
+                if (errorList) errorList.innerHTML = '';
+                var invalidItems = landlordBidGetInvalidItems();
+                if (invalidItems.length > 0) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    landlordBidMarkAllInvalid(invalidItems);
+                    landlordBidBuildErrorBanner(invalidItems, errorList);
+                    if (banner) banner.classList.remove('d-none');
+                    _landlordBidCorrectionMode = true;
+                    _landlordBidMissingItems = invalidItems;
+                    landlordBidNavigateToItem(invalidItems[0]);
+                    return false;
+                }
+                if (banner) banner.classList.add('d-none');
+            }, true);
+        })();
+    </script>
 @endpush
