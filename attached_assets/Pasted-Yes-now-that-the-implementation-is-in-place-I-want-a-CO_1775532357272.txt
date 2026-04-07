@@ -1,0 +1,178 @@
+Yes — now that the implementation is in place, I want a COMPLETE WRITTEN SPEC for Match Score so I can save it, manually verify it, and use it later for the Match Score Explanation UI.
+
+This is DOCUMENTATION / EXPLANATION ONLY.
+Do NOT change code in this step.
+
+---
+
+## GOAL
+
+Write out the exact implemented Match Score logic for:
+
+1. Broker Compensation & Agency Agreement Terms
+2. Offered Services
+
+for all supported roles/property types.
+
+I want the actual implemented rules, formulas, counts, and examples written clearly in plain English and structured format.
+
+---
+
+## WHAT TO DOCUMENT
+
+For EACH role / property type, document:
+
+A. TERMS MATCH
+
+* max possible logical groups
+* exact logical groups counted
+* which groups are conditional
+* when each conditional group becomes active
+* what is excluded
+* how denominator is built
+* how match / mismatch is determined
+* how changed terms are identified
+* how added terms are treated
+* how zero-baseline terms are handled in the UI
+
+B. SERVICES MATCH
+
+* fixed baseline catalog total
+* dynamic additions (photo enhancements, other_services)
+* exact final formula
+* how denominator is built from actual selected baseline values
+* how matched services are determined
+* how extra services are determined
+* how missing services are determined
+* how zero-baseline services are handled in the UI
+
+---
+
+## SUPPORTED MATRIX
+
+Tenant
+
+* Residential
+* Commercial
+
+Landlord
+
+* Residential
+* Commercial
+
+Buyer
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+Seller
+
+* Residential
+* Income
+* Commercial
+* Business
+* Vacant Land
+
+---
+
+## REQUIRED OUTPUT FORMAT
+
+For each role/property type, provide:
+
+1. TERMS MATCH SPEC
+
+* Terms max:
+* Counted groups:
+* Conditional groups:
+* Excluded fields:
+* Denominator rule:
+* Match rule:
+* Mismatch rule:
+* Zero-baseline rule:
+
+2. SERVICES MATCH SPEC
+
+* Fixed baseline total:
+* Dynamic additions:
+* Final formula:
+* Denominator rule:
+* Match rule:
+* Extra rule:
+* Missing rule:
+* Zero-baseline rule:
+
+3. EXAMPLE CALCULATION
+   Provide one worked example with:
+
+* baseline selected terms/services
+* bid selected terms/services
+* matched count
+* changed/missing/extra count
+* final percentage
+
+---
+
+## GLOBAL RULES TO DOCUMENT
+
+Also provide a GLOBAL summary section that explains:
+
+1. Baseline source of truth
+
+* listing baseline for original comparison
+* latest counter baseline for counter comparison
+
+2. Terms logic
+
+* only filled baseline groups count
+* child groups only count when parent is active
+* Additional Details never counted
+* Additional Terms counted only where part of helper structure
+
+3. Services logic
+
+* only selected baseline services count
+* photo enhancements only apply to Seller/Landlord where implemented
+* other_services count +1 each
+* extra services do not increase denominator
+
+4. Zero-baseline UX
+
+* "No terms provided"
+* "No services requested"
+* no misleading 0/0
+
+---
+
+## MATCH SCORE EXPLANATION UI PREP
+
+At the end, add a section called:
+
+"Recommended Explanation Text for UI"
+
+For both Terms Match and Services Match, write plain-English explanation snippets such as:
+
+* "Matched 12 of 14 requested terms"
+* "2 terms were changed from your request"
+* "Matched 38 of 40 requested services"
+* "3 extra services were offered beyond your request"
+* "No services were requested, so no Services Match score is shown"
+
+These should be based on the actual implemented logic, not generic guesses.
+
+---
+
+## IMPORTANT
+
+* Do NOT modify code
+* Do NOT re-audit from scratch
+* Use the current implemented logic as source of truth
+* Write this as a permanent saved technical + business reference
+
+---
+
+## FINAL DELIVERABLE
+
+Return this as a structured spec I can save and reference later.
