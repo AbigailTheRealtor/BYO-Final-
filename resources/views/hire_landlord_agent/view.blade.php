@@ -2676,6 +2676,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     style="background: #fafafa; padding: 25px;">
 
                                                     {{-- ========== MATCH SCORE PANEL ========== --}}
+                                                    @if ($hasAnyBaseline)
                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
                                                         @if ($showDualScore && $originalScore && $latestCounterScore)
                                                         {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
@@ -2791,6 +2792,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         </div>
                                                         @endif
                                                     </div>
+                                                    @else
+                                                    <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
+                                                        <i class="fa fa-info-circle me-1"></i>No match data available for this listing.
+                                                    </div>
+                                                    @endif
                                                     {{-- ========== END MATCH SCORE PANEL ========== --}}
 
                                                     <!-- 1. Agent Overview & Qualifications -->
