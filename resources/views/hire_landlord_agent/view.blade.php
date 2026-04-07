@@ -3059,21 +3059,36 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         $tenantBrokerFeeDisplay = '';
                                                         $tbs = data_get($bid,'get.tenant_broker_fee_structure','');
                                                         if ($tenantBrokerStructure && $tbs) {
-                                                            if ($tbs === 'Percentage of the Rent Due Each Rental Period') {
+                                                            $tbsNorm = strtolower(trim($tbs));
+                                                            if (str_contains($tbsNorm, 'rent due each')) {
                                                                 $pct = data_get($bid,'get.tenant_broker_percentage');
                                                                 if ($pct) $tenantBrokerFeeDisplay = $pct.'% of Rent Due Each Rental Period';
-                                                            } elseif ($tbs === 'Percentage of the Gross Lease Value') {
+                                                            } elseif (str_contains($tbsNorm, 'gross lease')) {
                                                                 $pct = data_get($bid,'get.tenant_broker_gross_lease');
                                                                 if ($pct) $tenantBrokerFeeDisplay = $pct.'% of Gross Lease Value';
-                                                            } elseif ($tbs === "Percentage of the First Month's Rent") {
+                                                            } elseif (str_contains($tbsNorm, 'first month')) {
                                                                 $pct = data_get($bid,'get.tenant_broker_first_month_rent');
                                                                 if ($pct) $tenantBrokerFeeDisplay = $pct."% of First Month's Rent";
-                                                            } elseif (strcasecmp($tbs, 'Flat fee') === 0) {
+                                                            } elseif ($tbsNorm === 'flat fee' || str_contains($tbsNorm, 'flat')) {
                                                                 $flat = data_get($bid,'get.tenant_broker_flat_fee');
                                                                 if ($flat) $tenantBrokerFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
-                                                            } elseif (strcasecmp($tbs, 'Other') === 0) {
+                                                            } elseif ($tbsNorm === 'other') {
                                                                 $oth = data_get($bid,'get.tenant_broker_other');
                                                                 if ($oth) $tenantBrokerFeeDisplay = 'Other: '.$oth;
+                                                            }
+                                                            // Fallback: tbs present but unmatched — try all fee meta keys in priority order
+                                                            if (!$tenantBrokerFeeDisplay) {
+                                                                if (data_get($bid,'get.tenant_broker_flat_fee')) {
+                                                                    $tenantBrokerFeeDisplay = '$'.number_format((float)data_get($bid,'get.tenant_broker_flat_fee'),2).' Flat Fee';
+                                                                } elseif (data_get($bid,'get.tenant_broker_percentage')) {
+                                                                    $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_percentage').'% of Rent Due Each Rental Period';
+                                                                } elseif (data_get($bid,'get.tenant_broker_gross_lease')) {
+                                                                    $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_gross_lease').'% of Gross Lease Value';
+                                                                } elseif (data_get($bid,'get.tenant_broker_first_month_rent')) {
+                                                                    $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_first_month_rent')."% of First Month's Rent";
+                                                                } elseif (data_get($bid,'get.tenant_broker_other')) {
+                                                                    $tenantBrokerFeeDisplay = 'Other: '.data_get($bid,'get.tenant_broker_other');
+                                                                }
                                                             }
                                                         } elseif ($tenantBrokerStructure && !$tbs) {
                                                             // Structure without fee sub-type: show flat/percentage directly
@@ -3081,6 +3096,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 $tenantBrokerFeeDisplay = '$'.number_format((float)data_get($bid,'get.tenant_broker_flat_fee'),2).' Flat Fee';
                                                             } elseif (data_get($bid,'get.tenant_broker_percentage')) {
                                                                 $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_percentage').'%';
+                                                            } elseif (data_get($bid,'get.tenant_broker_gross_lease')) {
+                                                                $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_gross_lease').'% of Gross Lease Value';
+                                                            } elseif (data_get($bid,'get.tenant_broker_first_month_rent')) {
+                                                                $tenantBrokerFeeDisplay = data_get($bid,'get.tenant_broker_first_month_rent')."% of First Month's Rent";
+                                                            } elseif (data_get($bid,'get.tenant_broker_other')) {
+                                                                $tenantBrokerFeeDisplay = 'Other: '.data_get($bid,'get.tenant_broker_other');
                                                             }
                                                         }
                                                         // Combined display kept for counter-term comparison
@@ -3219,10 +3240,8 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Tenant's Broker Compensation</h6>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $tenantBrokerStructure }}{!! isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchBadge : '' !!}</li>
-                                                                @if ($tenantBrokerFeeDisplay)
                                                                 @php $tbFeeMismatch = isset($brokerMismatches['tenant_broker_fee_structure']) || isset($brokerMismatches['tenant_broker_percentage']) || isset($brokerMismatches['tenant_broker_gross_lease']) || isset($brokerMismatches['tenant_broker_first_month_rent']) || isset($brokerMismatches['tenant_broker_flat_fee']) || isset($brokerMismatches['tenant_broker_other']); @endphp
-                                                                <li class="mb-1" style="{{ $tbFeeMismatch ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $tenantBrokerFeeDisplay }}{!! $tbFeeMismatch ? $mismatchBadge : '' !!}</li>
-                                                                @endif
+                                                                <li class="mb-1" style="{{ $tbFeeMismatch ? $mismatchStyle : '' }}"><span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $tenantBrokerFeeDisplay ?: '—' }}{!! $tbFeeMismatch ? $mismatchBadge : '' !!}</li>
                                                             </ul>
                                                         </div>
                                                         @endif
