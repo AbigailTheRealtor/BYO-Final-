@@ -9,7 +9,10 @@ use Illuminate\Support\Str;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionBid as SellerAgentAuctionBidData;
 use App\Models\AgentDefaultProfile;
+use App\Models\User;
+use App\Notifications\BidSubmittedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SellerAgentAuctionBid extends Component
 {
@@ -878,6 +881,21 @@ class SellerAgentAuctionBid extends Component
             $bid->saveMeta('promo_materials', json_encode($savedMaterials));
 
             DB::commit();
+
+            if (!$this->isEditMode) {
+                try {
+                    $auction = SellerAgentAuction::find($this->auctionId);
+                    if ($auction) {
+                        $listingOwner = User::find($auction->user_id);
+                        if ($listingOwner) {
+                            $listingOwner->notify(new BidSubmittedNotification($bid, $auction, 'seller_agent'));
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('[SellerBid] Failed to send bid submitted notification', ['error' => $e->getMessage()]);
+                }
+            }
+
             $msg = $this->isEditMode ? 'Your bid has been updated successfully!' : 'Your bid has been submitted successfully!';
             session()->flash('success', $msg);
             return redirect()->route('seller.agent.auction.detail', $this->auctionId);

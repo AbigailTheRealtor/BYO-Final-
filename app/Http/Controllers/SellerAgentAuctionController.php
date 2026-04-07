@@ -28,6 +28,7 @@ use App\Services\AcceptedBidSummaryService;
 use App\Services\SellerAcceptedBidSummaryService;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
+use App\Notifications\SellerAgentHiredNotification;
 use Illuminate\Support\Facades\Log;
 use DateTime;
 
@@ -771,6 +772,19 @@ class SellerAgentAuctionController extends Controller
                 ]);
             }
 
+            try {
+                $seller = User::find($pa->user_id);
+                if ($seller) {
+                    $seller->notify(new SellerAgentHiredNotification($pab, $pa, $summaryId, 'seller_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send seller hired notification', [
+                    'bid_id'    => $pab->id,
+                    'seller_id' => $pa->user_id,
+                    'error'     => $e->getMessage(),
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Bid accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -985,6 +999,15 @@ class SellerAgentAuctionController extends Controller
                 }
             } catch (\Exception $e) {
                 Log::error('[SellerCounter] Failed to send counter accepted notification to agent', ['error' => $e->getMessage()]);
+            }
+
+            try {
+                $seller = User::find($auction->user_id);
+                if ($seller) {
+                    $seller->notify(new SellerAgentHiredNotification($bid, $auction, $summaryId, 'seller_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('[SellerCounter] Failed to send seller hired notification', ['error' => $e->getMessage()]);
             }
 
             if ($summaryId) {

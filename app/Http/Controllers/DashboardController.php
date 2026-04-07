@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AgentService;
 use App\Models\AgentServiceAuctionBid;
+use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\BuyerCriteriaAuctionBid;
 use App\Models\City;
@@ -15,6 +16,7 @@ use App\Models\LandlordAuctionBid;
 use App\Models\PropertyAuction;
 use App\Models\PropertyAuctionBid;
 use App\Models\PropertyType;
+use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\State;
 use App\Models\TenantAgentAuction;
@@ -264,6 +266,26 @@ class DashboardController extends Controller
                     return in_array($bid->bid_status, ['Active', 'Countered']);
                 });
             return view('my-bids.hire-landlord-agent-bids', $page_data);
+        } else if ($type == 'hire-buyer-agent-bids') {
+            $userAuctions = BuyerAgentAuction::where('user_id', $user->id)->pluck('id');
+            $page_data['pendingAgentBids'] = BuyerAgentAuctionBid::whereIn('buyer_agent_auction_id', $userAuctions)
+                ->with(['user', 'auction', 'meta', 'acceptedBidSummary'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->filter(function($bid) {
+                    return in_array($bid->bid_status, ['Active', 'Countered']);
+                });
+            return view('my-bids.hire-buyer-agent-bids', $page_data);
+        } else if ($type == 'hire-seller-agent-bids') {
+            $userAuctions = SellerAgentAuction::where('user_id', $user->id)->pluck('id');
+            $page_data['pendingAgentBids'] = SellerAgentAuctionBid::whereIn('seller_agent_auction_id', $userAuctions)
+                ->with(['user', 'auction', 'meta', 'acceptedBidSummary'])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->filter(function($bid) {
+                    return in_array($bid->bid_status, ['Active', 'Countered']);
+                });
+            return view('my-bids.hire-seller-agent-bids', $page_data);
         } else {
             abort(404);
         }

@@ -103,6 +103,9 @@ class NotificationController extends Controller
                     if ($auctionType === 'buyer_agent') {
                         return route('buyer.view-auction', $auctionId);
                     }
+                    if ($auctionType === 'landlord_agent') {
+                        return route('landlord.agent.auction.view', $auctionId);
+                    }
                     return route('tenant.agent.auction.view', $auctionId);
                 }
                 return route('dashboard');
@@ -114,6 +117,9 @@ class NotificationController extends Controller
                     }
                     if ($auctionType === 'buyer_agent') {
                         return route('buyer.view-auction', $auctionId);
+                    }
+                    if ($auctionType === 'landlord_agent') {
+                        return route('landlord.agent.auction.view', $auctionId);
                     }
                     return route('tenant.agent.auction.view', $auctionId);
                 }

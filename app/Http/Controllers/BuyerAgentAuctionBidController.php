@@ -12,6 +12,7 @@ use App\Models\UserAgent;
 use App\Notifications\BidAcceptedNotification;
 use App\Notifications\BidRejectedNotification;
 use App\Notifications\BidSubmittedNotification;
+use App\Notifications\BuyerAgentHiredNotification;
 use App\Services\BuyerAcceptedBidSummaryService;
 use DateTime;
 use Illuminate\Http\Request;
@@ -251,6 +252,20 @@ class BuyerAgentAuctionBidController extends Controller
                 ]);
             }
 
+            // Notify the listing owner (buyer) that they have hired an agent
+            try {
+                $buyer = User::find($auction->user_id);
+                if ($buyer) {
+                    $buyer->notify(new BuyerAgentHiredNotification($bid, $auction, $summaryId, 'buyer_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send buyer hired notification', [
+                    'bid_id'   => $bid->id,
+                    'buyer_id' => $auction->user_id,
+                    'error'    => $e->getMessage(),
+                ]);
+            }
+
             return redirect()->back()->with('success', 'Bid Accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -390,6 +405,20 @@ class BuyerAgentAuctionBidController extends Controller
                     'bid_id'     => $originalBid->id,
                     'counter_id' => $counterBid->id,
                     'error'      => $e->getMessage(),
+                ]);
+            }
+
+            // Notify the listing owner (buyer) that they have hired an agent
+            try {
+                $buyer = User::find($auction->user_id);
+                if ($buyer) {
+                    $buyer->notify(new BuyerAgentHiredNotification($originalBid, $auction, $summaryId, 'buyer_agent'));
+                }
+            } catch (\Exception $e) {
+                Log::error('Failed to send buyer hired notification after counter accept', [
+                    'bid_id'   => $originalBid->id,
+                    'buyer_id' => $auction->user_id,
+                    'error'    => $e->getMessage(),
                 ]);
             }
 

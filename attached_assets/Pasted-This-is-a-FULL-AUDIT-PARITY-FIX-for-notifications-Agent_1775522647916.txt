@@ -1,0 +1,292 @@
+This is a FULL AUDIT + PARITY FIX for notifications, Agent Bids pages, and My Bids tabs across all 4 role types.
+
+Tenant is the GOLD STANDARD.
+
+Do not change database schema.
+Do not refactor unrelated bid logic.
+Do not change score formulas.
+Do not change listing creation forms.
+Do not change route structure unless a currently active route is broken.
+Do not touch unrelated UI outside:
+
+* notifications
+* Agent Bids page(s)
+* My Bids page(s)
+* role-specific bid tab routing/display
+
+---
+
+## GOAL
+
+Make Buyer, Seller, and Landlord behave like Tenant for:
+
+1. Notifications
+2. Agent Bids page behavior
+3. My Bids page behavior
+4. Correct tab placement by role
+5. Correct status/action display by role
+
+We need audit-first, then fix.
+
+---
+
+## WHAT MUST WORK
+
+For ALL four role flows:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+Both SIDES must get correct notices:
+
+* listing user
+* bidding agent
+
+Notifications should work for:
+
+* new bid submitted
+* counter bid submitted
+* bid accepted
+* bid rejected
+
+And those notifications must:
+
+* appear in Recent Notices / Notifications
+* link to the correct listing/bid
+* show the correct role-specific context
+* not route to the wrong listing or wrong role page
+
+---
+
+## PART 1 — NOTIFICATIONS AUDIT
+
+Audit all notification generation and display logic for:
+
+A. New bid submitted
+B. Counter bid submitted
+C. Bid accepted
+D. Bid rejected
+
+For each role:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+Verify notifications for BOTH:
+
+* user side
+* agent side
+
+Check:
+
+1. exact files/controllers/services generating the notices
+2. exact notification text/content
+3. exact route/view opened by the notice "View" button
+4. whether each role behaves like Tenant
+5. whether any roles are missing notice generation entirely
+6. whether any role is using wrong route or wrong listing ID
+
+Do NOT code until this audit is written clearly.
+
+---
+
+## PART 2 — AGENT BIDS PAGE PARITY AUDIT
+
+Tenant is the gold standard.
+
+Audit the Agent Bids page behavior and layout.
+
+We need the same Tenant-style behavior extended correctly to:
+
+* Buyer
+* Seller
+* Landlord
+
+This includes:
+
+* correct bid cards
+* correct statuses
+* correct match summary area if applicable
+* correct action buttons
+* correct role-specific content
+* correct route targets
+
+Verify:
+
+1. exact files for Tenant Agent Bids page
+2. exact files for Buyer Agent Bids page
+3. exact files for Seller Agent Bids page
+4. exact files for Landlord Agent Bids page
+
+Check whether Buyer/Seller/Landlord are:
+
+* missing Tenant parity features
+* routed incorrectly
+* using older card format
+* displaying wrong bid type in the wrong place
+
+---
+
+## PART 3 — MY BIDS TAB AUDIT (AGENT DASHBOARD)
+
+Tenant is the gold standard for tab behavior and bid card behavior.
+
+We need My Bids on the AGENT dashboard to be updated so all 4 listing types behave like Tenant but appear in the correct tabs.
+
+Required tab behavior:
+
+1. Hiring Tenant’s Agent
+
+* tenant agent bids go here
+* same format as Tenant gold standard
+
+2. Hiring Landlord’s Agent
+
+* landlord agent bids go here
+* same format as Tenant gold standard but with Landlord role data
+
+3. Hiring Buyer’s Agent
+
+* buyer agent bids go here
+* same format as Tenant gold standard but with Buyer role data
+
+4. Hiring Seller’s Agent
+
+* seller agent bids go here
+* same format as Tenant gold standard but with Seller role data
+
+Audit:
+
+* exact files for My Bids tabs
+* exact query per tab
+* whether any roles are appearing in wrong tabs
+* whether any roles still use old layout
+* whether status/actions differ from Tenant pattern
+* whether View/Edit Bid, View Listing, View Counter Terms, Accepted Bid Summary, etc. are wired correctly per role
+
+---
+
+## PART 4 — REQUIRED FINAL BEHAVIOR
+
+After fixes, all 4 roles must behave like Tenant in structure and logic, but stay in their correct role-specific tabs.
+
+Notifications:
+
+* new bid
+* counter
+* accepted
+* rejected
+
+Agent dashboard / My Bids:
+
+* correct bid appears in correct tab
+* same card/action/status behavior as Tenant
+* role-specific content/routing correct
+
+User dashboard / Agent Bids:
+
+* same parity behavior across Tenant, Buyer, Seller, Landlord
+* correct bid cards and actions
+* correct role-specific routes
+
+---
+
+## HARD SAFEGUARDS
+
+* Do NOT rename or delete DB columns
+* Do NOT move bids into the wrong role tabs
+* Do NOT hardcode tenant-only labels into other roles
+* Do NOT break working Tenant behavior
+* Do NOT change accepted summary services/signature logic in this task
+* Do NOT change Match Score logic in this task
+* Only modify notifications, bid tab queries, dashboard role-tab display logic, and related view/controller code required for parity
+
+---
+
+## PHASE 1 OUTPUT REQUIRED (AUDIT ONLY FIRST)
+
+Before coding, return a structured audit report with:
+
+1. Notifications
+
+* files checked
+* which role events generate notices
+* which are missing
+* which routes are wrong
+* which roles do not yet match Tenant
+
+2. Agent Bids pages
+
+* files checked
+* which role pages do not match Tenant
+* what layout/status/action gaps exist
+* any wrong queries or wrong listing types
+
+3. My Bids tabs on agent dashboard
+
+* files checked
+* exact tab query for each role
+* any role showing in wrong tab
+* any role still using old format
+* action/status differences vs Tenant
+
+4. Root causes
+
+* exact reasons Buyer/Seller/Landlord are not matching Tenant parity
+
+Do NOT code until the audit is returned.
+
+---
+
+## PHASE 2 — IMPLEMENT FIXES
+
+After the audit, fix only the identified gaps so:
+
+* notifications match Tenant behavior across all 4 roles
+* Agent Bids page matches Tenant behavior across all 4 roles
+* My Bids tab behavior matches Tenant across all 4 roles
+* each role stays in the correct tab
+* all routes/actions/view links open the correct role-specific bid/listing
+
+---
+
+## FINAL VERIFICATION REQUIRED
+
+After coding, verify all 4 roles:
+
+Tenant
+Buyer
+Seller
+Landlord
+
+For BOTH user and agent sides confirm:
+
+A. New bid notification works
+B. Counter bid notification works
+C. Accepted bid notification works
+D. Rejected bid notification works
+E. Agent Bids page uses correct format/actions
+F. My Bids tab shows correct bids in correct tab
+G. View/Edit Bid routes correctly
+H. View Listing routes correctly
+I. Counter/Accept/Reject actions point to correct role flow
+
+---
+
+## REQUIRED OUTPUT AFTER FIXES
+
+Return:
+
+1. exact files changed
+2. exact root causes fixed
+3. confirmation notifications now match Tenant across all 4 roles
+4. confirmation Agent Bids page now matches Tenant across all 4 roles
+5. confirmation My Bids tab now matches Tenant across all 4 roles and uses correct role tabs
+6. any remaining edge cases if found
+
+Do not give a broad summary.
+This must be an audit-first Tenant-parity dashboard/notifications fix.

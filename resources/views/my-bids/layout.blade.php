@@ -57,7 +57,16 @@
                                         <a href="{{route('myBids', 'tenant-agent')}}" class="nav-link {{ ($type=='tenant-agent')?"active":"" }}">Hiring Tenant's Agent</a>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <a href="{{route('myBids', 'agent-bids')}}" class="nav-link {{ ($type=='agent-bids')?"active":"" }}" style="background-color: {{ ($type=='agent-bids') ? '#049399' : 'transparent' }}; color: {{ ($type=='agent-bids') ? '#fff' : '#049399' }}; border-color: #049399;">Agent Bids</a>
+                                        <a href="{{route('myBids', 'agent-bids')}}" class="nav-link {{ ($type=='agent-bids')?"active":"" }}" style="background-color: {{ ($type=='agent-bids') ? '#049399' : 'transparent' }}; color: {{ ($type=='agent-bids') ? '#fff' : '#049399' }}; border-color: #049399;">Tenant Agent Bids</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a href="{{route('myBids', 'hire-landlord-agent-bids')}}" class="nav-link {{ ($type=='hire-landlord-agent-bids')?"active":"" }}" style="background-color: {{ ($type=='hire-landlord-agent-bids') ? '#049399' : 'transparent' }}; color: {{ ($type=='hire-landlord-agent-bids') ? '#fff' : '#049399' }}; border-color: #049399;">Landlord Agent Bids</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a href="{{route('myBids', 'hire-buyer-agent-bids')}}" class="nav-link {{ ($type=='hire-buyer-agent-bids')?"active":"" }}" style="background-color: {{ ($type=='hire-buyer-agent-bids') ? '#049399' : 'transparent' }}; color: {{ ($type=='hire-buyer-agent-bids') ? '#fff' : '#049399' }}; border-color: #049399;">Buyer Agent Bids</a>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <a href="{{route('myBids', 'hire-seller-agent-bids')}}" class="nav-link {{ ($type=='hire-seller-agent-bids')?"active":"" }}" style="background-color: {{ ($type=='hire-seller-agent-bids') ? '#049399' : 'transparent' }}; color: {{ ($type=='hire-seller-agent-bids') ? '#fff' : '#049399' }}; border-color: #049399;">Seller Agent Bids</a>
                                     </li>
                                     @endif
                                 </ul>
