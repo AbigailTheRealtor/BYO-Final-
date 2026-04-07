@@ -1,31 +1,8 @@
-@push('scripts')
-<script>
-    function addIconsToInputs() {
-        document.querySelectorAll('.has-icon').forEach(input => {
-            const iconClass = input.getAttribute('data-icon');
-            const parent = input.parentNode;
-            if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
-            if (parent.querySelector(':scope > .input-icon')) return;
-            const icon = document.createElement('i');
-            icon.className = `input-icon ${iconClass}`;
-            parent.insertBefore(icon, input);
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        addIconsToInputs();
-    });
-
-    Livewire.hook('message.processed', () => {
-        addIconsToInputs();
-    });
-</script>
-@endpush
-
 @push('styles')
 <style>
     .wizard-steps-progress{height:5px;width:100%;background:#CCC;position:absolute;top:0;left:0}
     .steps-progress-percent{height:100%;width:0%;background:#11b7cf}
+    .wizard-step{display:none}.wizard-step.active{display:block}
     .tab-content{padding:20px;border:1px solid #ddd;border-top:none}
     .nav-tabs .nav-link{border:1px solid #ddd;border-bottom:none;margin-right:5px;padding:10px 20px;background:#f8f9fa}
     .nav-tabs .nav-link.active{background:#049399!important;color:#fff!important;border-color:#049399!important}
@@ -34,10 +11,12 @@
     .input-cover .input-icon{position:absolute;left:10px;font-size:25px;color:#11b7cf;pointer-events:none;top:50%;transform:translateY(-50%)}
     .has-icon{padding-left:40px}
     .error{display:block;color:red;font-size:14px;margin-top:5px;width:100%}
-    .d-none{display:none}
+    .d-none{display:none}.hidden{display:none}
     .service-section{margin-bottom:1.5rem}
     .section-header{font-size:1rem;border-radius:4px}
     .form-check-label{cursor:pointer}
+    /* Submit disabled look — matches Tenant/Buyer/Landlord */
+    #save-button.disabled{opacity:.5;cursor:not-allowed;pointer-events:none}
 </style>
 @endpush
 
@@ -69,7 +48,7 @@
                             <li class="nav-item" role="presentation">
                                 <button
                                     class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
-                                    wire:click.prevent="setActiveTab({{ $index }})"
+                                    wire:click="setActiveTab({{ $index }})"
                                     type="button"
                                     role="tab">
                                     {{ $tab }}
@@ -92,38 +71,157 @@
                         </div>
                     </div>
 
+                    {{-- Navigation footer — mirrors Tenant / Buyer / Landlord wizard pattern exactly --}}
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
-                            @if ($activeTab > 0)
-                                <button type="button" wire:click.prevent="setActiveTab({{ $activeTab - 1 }})"
-                                    class="btn btn-secondary">
-                                    <i class="fa fa-arrow-left me-1"></i> Previous
-                                </button>
-                            @endif
+                            <button type="button" class="btn btn-secondary wizard-step-back">Previous</button>
                         </div>
                         <div class="d-flex gap-2">
-                            @if ($activeTab < count($tabs) - 1)
-                                <button type="button" wire:click.prevent="setActiveTab({{ $activeTab + 1 }})"
-                                    class="btn btn-primary" style="background:#049399;border-color:#049399;">
-                                    Next <i class="fa fa-arrow-right ms-1"></i>
-                                </button>
-                            @else
-                                <button type="submit" class="btn btn-success" id="save-button">
-                                    <span wire:loading wire:target="submit">
-                                        <span class="spinner-border spinner-border-sm" role="status"></span>
-                                        Saving...
-                                    </span>
-                                    <span wire:loading.remove wire:target="submit">
-                                        <i class="fa fa-check me-1"></i>
-                                        {{ $counterTermId ? 'Update Counter' : 'Submit Counter' }}
-                                    </span>
-                                </button>
-                            @endif
+                            <button type="button" class="btn btn-primary wizard-step-next"
+                                style="background:#049399;border-color:#049399;">Next</button>
+
+                            <button type="submit"
+                                    id="save-button"
+                                    class="btn btn-success wizard-step-finish disabled"
+                                    wire:loading.attr="disabled">
+                                {{ $counterTermId ? 'Update Counter' : 'Submit Counter' }}
+                            </button>
                         </div>
                     </div>
+
                 </form>
 
             </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+// =============== Icon Injection ===============
+window.addIconsToInputs = function (root) {
+    root = root || document;
+    root.querySelectorAll('.has-icon').forEach(function (input) {
+        const iconClass = input.getAttribute('data-icon');
+        const parent = input.parentNode;
+        if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
+        if (parent.querySelector(':scope > .input-icon')) return;
+        const icon = document.createElement('i');
+        icon.className = 'input-icon ' + iconClass;
+        parent.insertBefore(icon, input);
+    });
+};
+
+// =============== Validation ===============
+function checkFieldValidity(field) {
+    if (!field.required) return true;
+    const value = field.value;
+    if (!value) return false;
+    if (field.type === 'number' && field.hasAttribute('min') && parseInt(value) < parseInt(field.getAttribute('min'))) return false;
+    if (field.type === 'url' && value && !value.startsWith('http')) return false;
+    if (field.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return false;
+    return true;
+}
+function validateFieldWithErrors(field) {
+    if (!field.required) return true;
+    const isValid = checkFieldValidity(field);
+    let errorSpan = document.getElementById(field.id + '_error');
+    if (!errorSpan) {
+        errorSpan = document.createElement('span');
+        errorSpan.className = 'error mt-2 text-danger';
+        errorSpan.id = field.id + '_error';
+        const container = field.closest('.form-group') || field.parentNode;
+        (container || field.parentNode).appendChild(errorSpan);
+    }
+    if (!isValid) {
+        field.classList.add('is-invalid');
+        errorSpan.textContent = 'This field is required';
+        return false;
+    } else {
+        field.classList.remove('is-invalid');
+        errorSpan.textContent = '';
+        return true;
+    }
+}
+function validateCurrentTabWithErrors() {
+    const currentTab = document.querySelector('.tab-pane.active');
+    if (!currentTab) return true;
+    let isValid = true, firstInvalid = null;
+    currentTab.querySelectorAll('[required]').forEach(function (field) {
+        if (!validateFieldWithErrors(field)) { isValid = false; if (!firstInvalid) firstInvalid = field; }
+    });
+    if (firstInvalid) firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return isValid;
+}
+function checkAllTabsValidity() {
+    return Array.from(document.querySelectorAll('[required]')).every(checkFieldValidity);
+}
+function updateSaveButton() {
+    const saveButton = document.getElementById('save-button');
+    if (!saveButton) return;
+    if (checkAllTabsValidity()) {
+        saveButton.classList.remove('disabled'); saveButton.disabled = false;
+    } else {
+        saveButton.classList.add('disabled'); saveButton.disabled = true;
+    }
+}
+
+// =============== Init ===============
+document.addEventListener('DOMContentLoaded', function () {
+    window.addIconsToInputs();
+    updateSaveButton();
+});
+document.addEventListener('livewire:load', function () {
+    window.addIconsToInputs();
+    updateSaveButton();
+});
+if (typeof Livewire !== 'undefined') {
+    Livewire.hook('message.processed', function () {
+        setTimeout(function () {
+            window.addIconsToInputs();
+            updateSaveButton();
+        }, 10);
+    });
+}
+
+// =============== Event Delegation (survives Livewire re-renders) ===============
+document.addEventListener('click', function (e) {
+    // Next
+    var nextBtn = e.target.closest('.wizard-step-next');
+    if (nextBtn) {
+        e.preventDefault();
+        if (validateCurrentTabWithErrors()) {
+            var links = Array.from(document.querySelectorAll('.nav-link'));
+            var current = document.querySelector('.nav-link.active');
+            var idx = links.indexOf(current);
+            var next = links[idx + 1];
+            if (next) next.click();
+            var tc = document.querySelector('.tab-content');
+            if (tc) tc.scrollIntoView({ behavior: 'smooth' });
+        }
+        return;
+    }
+    // Back
+    var backBtn = e.target.closest('.wizard-step-back');
+    if (backBtn) {
+        e.preventDefault();
+        var links = Array.from(document.querySelectorAll('.nav-link'));
+        var current = document.querySelector('.nav-link.active');
+        var idx = links.indexOf(current);
+        var prev = links[idx - 1];
+        if (prev) prev.click();
+        var tc = document.querySelector('.tab-content');
+        if (tc) tc.scrollIntoView({ behavior: 'smooth' });
+        return;
+    }
+});
+
+// Re-check save button state on any input change
+document.addEventListener('input', function (e) {
+    if (e.target.matches('input, textarea, select')) { checkFieldValidity(e.target); updateSaveButton(); }
+});
+document.addEventListener('blur', function (e) {
+    if (e.target.matches('input, textarea, select')) { checkFieldValidity(e.target); updateSaveButton(); }
+}, true);
+</script>
+@endpush
