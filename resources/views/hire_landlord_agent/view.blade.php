@@ -3015,7 +3015,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         } elseif ($feeTimingRaw === 'Paid Within Calendar Days of Tenant Rent Payment') {
                                                             $d = data_get($bid,'get.broker_fee_days_after_rent');
                                                             if ($d) $feeTimingDisplay = "Within $d days of tenant rent payment";
-                                                        } elseif ($feeTimingRaw === 'other') {
+                                                        } elseif (strcasecmp($feeTimingRaw, 'Other') === 0) {
                                                             $oth = data_get($bid,'get.broker_fee_timing_other');
                                                             $feeTimingDisplay = $oth ?: 'Custom arrangement';
                                                         } elseif (in_array($feeTimingRaw, ['50% due upon execution, 50% due upon commencement of agreement','50% due upon execution, 50% due upon occupancy of premises'])) {
@@ -3067,10 +3067,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             } elseif ($tbs === "Percentage of the First Month's Rent") {
                                                                 $pct = data_get($bid,'get.tenant_broker_first_month_rent');
                                                                 if ($pct) $tenantBrokerFeeDisplay = $pct."% of First Month's Rent";
-                                                            } elseif ($tbs === 'Flat Fee') {
+                                                            } elseif (strcasecmp($tbs, 'Flat fee') === 0) {
                                                                 $flat = data_get($bid,'get.tenant_broker_flat_fee');
                                                                 if ($flat) $tenantBrokerFeeDisplay = '$'.number_format((float)$flat,2).' Flat Fee';
-                                                            } elseif ($tbs === 'other') {
+                                                            } elseif (strcasecmp($tbs, 'Other') === 0) {
                                                                 $oth = data_get($bid,'get.tenant_broker_other');
                                                                 if ($oth) $tenantBrokerFeeDisplay = 'Other: '.$oth;
                                                             }
@@ -3155,6 +3155,32 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 if ($oth) $pmFeeDisplay = 'Other: '.$oth;
                                                             }
                                                         }
+
+                                                        // ── A) Sales Tax for Lease Fee (Commercial only) ─────────────
+                                                        $leaseSalesTaxDisplay = '';
+                                                        if ($leaseFeeType === 'Percentage of the Gross Rent') {
+                                                            $v = data_get($bid,'get.sales_tax_option_gross');
+                                                            if ($v && $v !== 'null') $leaseSalesTaxDisplay = $v === 'including' ? 'Including Sales Tax' : ($v === 'excluding' ? 'Excluding Sales Tax' : $v);
+                                                        } elseif ($canon($leaseFeeType) === "Percentage of Month's Rent") {
+                                                            $v = data_get($bid,'get.sales_tax_option_monthly');
+                                                            if ($v && $v !== 'null') $leaseSalesTaxDisplay = $v === 'including' ? 'Including Sales Tax' : ($v === 'excluding' ? 'Excluding Sales Tax' : $v);
+                                                        } elseif ($leaseFeeType === 'Flat Fee') {
+                                                            $v = data_get($bid,'get.sales_tax_option_flat');
+                                                            if ($v && $v !== 'null') $leaseSalesTaxDisplay = $v === 'including' ? 'Including Sales Tax' : ($v === 'excluding' ? 'Excluding Sales Tax' : $v);
+                                                        }
+
+                                                        // ── A) Sales Tax for Renewal Fee (Commercial only) ───────────
+                                                        $renewalSalesTaxDisplay = '';
+                                                        if ($renewalFeeType === 'Percentage of the Gross Rent') {
+                                                            $v = data_get($bid,'get.renewal_fee_sales_tax_lease_value');
+                                                            if ($v && $v !== 'null') $renewalSalesTaxDisplay = $v === 'including' ? 'Including Sales Tax' : ($v === 'excluding' ? 'Excluding Sales Tax' : $v);
+                                                        } elseif ($canon($renewalFeeType) === "Percentage of Month's Rent") {
+                                                            $v = data_get($bid,'get.renewal_fee_sales_tax_first_month');
+                                                            if ($v && $v !== 'null') $renewalSalesTaxDisplay = $v === 'including' ? 'Including Sales Tax' : ($v === 'excluding' ? 'Excluding Sales Tax' : $v);
+                                                        } elseif ($renewalFeeType === 'Flat Fee') {
+                                                            $v = data_get($bid,'get.renewal_fee_sales_tax_flat_fee');
+                                                            if ($v && $v !== 'null') $renewalSalesTaxDisplay = $v === 'including' ? 'Including Sales Tax' : ($v === 'excluding' ? 'Excluding Sales Tax' : $v);
+                                                        }
                                                         @endphp
 
                                                         <!-- A) Landlord's Broker Lease Fee -->
@@ -3164,12 +3190,18 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @if (data_get($bid, 'get.purchase_fee_type'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Landlord's Broker Lease Fee:</span> {{ $leaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}</li>
+                                                                @if ($leaseSalesTaxDisplay)
+                                                                <li class="mb-1"><span class="fw-semibold">Sales Tax (Lease Fee):</span> {{ $leaseSalesTaxDisplay }}</li>
+                                                                @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.broker_fee_timing'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['broker_fee_timing']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $feeTimingDisplay }}{!! isset($brokerMismatches['broker_fee_timing']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.renewal_fee_type'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['renewal_fee_type']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Lease Renewal/Extension Fee:</span> {{ $renewalFeeDisplay }}{!! isset($brokerMismatches['renewal_fee_type']) ? $mismatchBadge : '' !!}</li>
+                                                                @if ($renewalSalesTaxDisplay)
+                                                                <li class="mb-1"><span class="fw-semibold">Sales Tax (Renewal Fee):</span> {{ $renewalSalesTaxDisplay }}</li>
+                                                                @endif
                                                                 @endif
                                                                 @if (data_get($bid, 'get.expansion_commission_percentage'))
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['expansion_commission_percentage']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Expansion Commission for Lease Amendment:</span> {{ data_get($bid,'get.expansion_commission_percentage') }}% of original commission{!! isset($brokerMismatches['expansion_commission_percentage']) ? $mismatchBadge : '' !!}</li>
