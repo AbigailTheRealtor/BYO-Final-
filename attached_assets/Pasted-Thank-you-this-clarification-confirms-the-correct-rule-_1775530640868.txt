@@ -1,0 +1,69 @@
+Thank you — this clarification confirms the correct rule.
+
+For Commercial Landlord Broker Compensation & Agency Agreement Terms, keep the max at **17**, not 18.
+
+Do **NOT** add an 18th group.
+
+The current live form confirms that the correct matchable term structure is 17 total groups.
+
+The earlier assumption of 18 was incorrect and should be discarded.
+
+---
+
+## CONFIRMED COMMERCIAL LANDLORD TERMS COUNT
+
+Use this as the correct baseline max for Commercial Landlord terms:
+
+1. Landlord’s Broker Lease Fee
+2. Payment Timing for Broker Fees
+3. Lease Renewal / Extension Fee
+4. Number of Months
+5. Sales Tax
+6. Expansion Commission for Lease Amendment
+7. Interested in Property Management
+8. Property Management Fee  (conditional on Interested in Property Management = Yes)
+9. Interested in Offering a Lease-Option Agreement
+10. Compensation for Creating Lease-Option
+11. Compensation if Purchase Option is Exercised
+12. Interested in Selling
+13. Landlord’s Broker Purchase Fee
+14. Protection Period Timeframe
+15. Landlord Agency Agreement Timeframe
+16. Acceptable Brokerage Relationship
+17. Additional Terms
+
+---
+
+## CONDITIONAL RULES
+
+Keep these dynamic rules:
+
+* Property Management Fee only counts if Interested in Property Management = Yes
+* Compensation for Creating Lease-Option only counts if Lease-Option = Yes
+* Compensation if Purchase Option is Exercised only counts if Lease-Option = Yes
+* Landlord’s Broker Purchase Fee only counts if Interested in Selling = Yes
+
+---
+
+## IMPORTANT
+
+This means:
+
+* Commercial Landlord terms max = 17
+* Do NOT create an 18th logical group
+* Do NOT modify Landlord helper to add a fake extra group
+* Update the audit/formula notes so Commercial Landlord terms are finalized at 17
+
+---
+
+## NEXT STEP
+
+Now proceed using the clarified fixed vs dynamic baseline formulas exactly as defined in the updated audit.
+
+Do not re-open the 17 vs 18 Landlord terms issue again unless the live form changes.
+
+Return a short confirmation that:
+
+1. Commercial Landlord terms max is finalized at 17
+2. No extra 18th group will be added
+3. The formula notes have been updated accordingly
