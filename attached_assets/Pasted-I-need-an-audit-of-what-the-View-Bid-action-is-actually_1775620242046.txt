@@ -1,0 +1,182 @@
+I need an audit of what the “View Bid” action is actually showing inside the Private Compensation & Agency Agreement Terms area after a counter exists.
+
+I want to know, for each role:
+
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+whether clicking **View Bid** shows:
+
+1. the agent’s ORIGINAL bid terms, or
+2. the latest COUNTERED terms / updated terms, or
+3. a mix of original + counter data depending on section
+
+This is an AUDIT FIRST task.
+Do not change anything yet unless you identify a confirmed bug and can explain the exact root cause.
+
+==================================================
+AUDIT QUESTION
+==================================================
+
+When an agent or user clicks **View Bid** in the Private Compensation & Agency Agreement Terms / private bid area after countering has happened, what data is actually being rendered?
+
+I need this answered separately for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+==================================================
+WHAT TO VERIFY
+==================================================
+
+For each role, audit the exact data source used by the View Bid screen / modal / private bid section after a counter exists.
+
+Specifically determine:
+
+A. BEFORE ANY COUNTER EXISTS
+- Does View Bid show the original submitted bid terms/services?
+- What model/meta source is used?
+
+B. AFTER LISTING OWNER SUBMITS A COUNTER
+- Does View Bid still show the original bid?
+- Or does it now show the latest counter terms?
+- If different sections use different baselines, identify exactly which sections do what
+
+C. AFTER AGENT COUNTERS BACK
+- Does View Bid show:
+  - original bid
+  - latest owner counter
+  - latest agent counter-back
+  - some merged combination
+- Which model / query is controlling this?
+
+D. MATCH SUMMARY VS DISPLAYED TERMS
+- Does the displayed Match Summary use the same baseline as the displayed terms below it?
+- Or could the Match Summary be based on counter terms while the visible field list still shows original bid terms?
+- If there is a mismatch, identify it
+
+E. VIEW COUNTER TERMS VS VIEW BID
+- Clarify the intended difference between:
+  - View Bid
+  - View Counter Terms
+- For each role, explain what each one currently shows
+
+==================================================
+ROLE-BY-ROLE AUDIT REQUIRED
+==================================================
+
+For each role:
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+Provide:
+
+1. Which page/modal/button was audited
+2. Which Blade file renders it
+3. Which controller/action prepares the data
+4. Which model/meta source is used for:
+   - visible terms/services
+   - match summary
+   - counter summary if applicable
+5. Whether View Bid currently shows:
+   - original bid
+   - latest counter
+   - latest counter-back
+   - mixed data
+6. Whether that behavior is correct or a bug
+7. If it is a bug, the exact file(s) causing it
+
+==================================================
+IMPORTANT EDGE CASES TO CHECK
+==================================================
+
+Please specifically audit these scenarios where applicable:
+
+1. Listing owner countered, but agent has not countered back yet
+- What does View Bid show?
+
+2. Agent countered back after owner counter
+- What does View Bid show?
+
+3. Counter history exists, but user clicks View Bid instead of View Counter Terms
+- What does View Bid show?
+
+4. Match summary says “Counter Match” but terms section below still looks like original bid
+- determine whether that inconsistency exists
+
+==================================================
+AUDIT METHOD
+==================================================
+
+Use both:
+- code tracing
+- browser verification if possible
+
+For each role, inspect:
+- listing detail bid card
+- private modal
+- View Bid target
+- View Counter Terms target
+- match summary calculation block
+- terms/services rendering block
+
+Do not rely only on assumptions from naming.
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Audit first, do not start broad edits
+- Do not modify unrelated logic
+- Do not rename DB columns
+- Do not change routes
+- Keep this focused only on what data View Bid is showing after counters
+- If you find a bug, do not fix it until you first report the exact behavior and root cause
+
+==================================================
+FINAL REQUIRED OUTPUT
+==================================================
+
+Provide a clear report in this structure:
+
+ROLE: Tenant
+- View Bid currently shows:
+- View Counter Terms currently shows:
+- Match Summary source:
+- Terms/services display source:
+- Correct or bug:
+- Files involved:
+
+ROLE: Buyer
+- View Bid currently shows:
+- View Counter Terms currently shows:
+- Match Summary source:
+- Terms/services display source:
+- Correct or bug:
+- Files involved:
+
+ROLE: Seller
+- View Bid currently shows:
+- View Counter Terms currently shows:
+- Match Summary source:
+- Terms/services display source:
+- Correct or bug:
+- Files involved:
+
+ROLE: Landlord
+- View Bid currently shows:
+- View Counter Terms currently shows:
+- Match Summary source:
+- Terms/services display source:
+- Correct or bug:
+- Files involved:
+
+Then end with one concise summary:
+- whether View Bid is consistently showing original bids across all roles
+- whether any roles are incorrectly showing countered data or mixed data
+- whether Match Summary and visible terms are aligned or inconsistent
