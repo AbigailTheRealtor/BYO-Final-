@@ -25,10 +25,6 @@ class CompetingBidsController extends Controller
             return back()->with('error', 'Competing bids are only visible for Bidding Period listings.');
         }
 
-        if (!$auction->isBiddingPeriodActive()) {
-            return back()->with('error', 'The bidding period has ended. Competing bids are no longer visible.');
-        }
-
         if (!$this->competingBidsService->canViewCompetingBids($auctionId, $user->id)) {
             return back()->with('error', 'You must submit a bid to view competing bids.');
         }

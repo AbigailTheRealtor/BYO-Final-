@@ -22,10 +22,6 @@ class CompetingBidsService
             return false;
         }
 
-        if (!$auction->isBiddingPeriodActive()) {
-            return false;
-        }
-
         $hasSubmittedBid = TenantAgentAuctionBid::where('tenant_agent_auction_id', $auctionId)
             ->where('user_id', $userId)
             ->whereNull('deleted_at')

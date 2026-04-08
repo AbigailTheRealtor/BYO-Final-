@@ -1404,10 +1404,9 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     // 🧾 Determine if expired (for Bidding Period) or listing expiration (for Traditional)
     $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
     
-    // 🔹 For Bidding Period: timer active means actions are locked
-    // For Traditional: actions are always unlocked (no timer restriction)
+    // 🔹 Timer is informational only — actions are never locked by the BP timer
     $isBiddingTimerActive = $isBiddingPeriodListing && $expiration && !$isExpired;
-    $canTakeAction = $isTraditionalListing || ($isBiddingPeriodListing && $isExpired);
+    $canTakeAction = true; // Soft deadline: timer never locks bid actions
 
     // ⏱ Calculate remaining time if not expired (only for Bidding Period)
     if ($isBiddingPeriodListing && $expiration && !$isExpired) {
@@ -2150,21 +2149,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <!-- D) View Full Terms Link - visibility rules by listing type and user -->
                                 @if ($isListingOwner || $isBidOwner)
                                 {{-- Listing Owner or Bid Owner: Full access --}}
-                                @if ($isBiddingPeriodListing && $isBiddingTimerActive && $isListingOwner && !$isBidOwner)
-                                {{-- Bidding Period active: Disable View Bid for listing owner --}}
-                                <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;" 
-                                      title="Bids can be viewed when the bidding period ends.">
-                                    <i class="fa fa-lock me-1"></i> View Full Bid
-                                </span>
-                                <div class="text-muted small mt-1">
-                                    <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
-                                </div>
-                                @else
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
-                                @endif
                                 @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
                                 {{-- Bidding Period: Agent viewing another agent\'s bid - show limited view button --}}
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
@@ -3408,8 +3396,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     
                                                     @if ($isListingOwner && !$latestTenantCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                                         @php
-                                                            // Traditional: show if not expired; Bidding Period: show when timer ends
-                                                            $showActionButtons = ($isTraditionalListing && !$isExpired) || ($isBiddingPeriodListing && $isExpired);
+                                                            // Traditional: show if not expired; Bidding Period: always show (timer is informational)
+                                                            $showActionButtons = ($isTraditionalListing && !$isExpired) || $isBiddingPeriodListing;
                                                         @endphp
                                                         @if ($showActionButtons)
                                                         {{-- Traditional (not expired) OR Bidding Period (timer ended): show buttons --}}
@@ -3438,11 +3426,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <i class="fa fa-times me-1"></i> Reject Bid
                                                                 </button>
                                                             </form>
-                                                        </div>
-                                                        @elseif ($isBiddingPeriodListing && !$canTakeAction)
-                                                        {{-- Bidding Period: timer still active, actions locked --}}
-                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-clock me-1"></i> Actions unlock when the bidding period ends.
                                                         </div>
                                                         @elseif ($isTraditionalListing && $isExpired)
                                                         {{-- Traditional listing has expired --}}
@@ -4138,40 +4121,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     {{-- ── Listing owner: action buttons when bid is undecided ── --}}
                                                     @if ($mfState === '0' && $mfIsOwner && !data_get($auction, 'is_sold'))
-                                                        @if ($isBiddingPeriodListing && $isBiddingTimerActive)
-                                                        <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
-                                                        </div>
-                                                        @elseif ($isTraditionalListing && $isExpired)
+                                                        @if ($isTraditionalListing && $isExpired)
                                                         <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                                         </div>
-                                                        @elseif ($isBiddingPeriodListing && $isExpired)
-                                                        <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
-                                                            <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="post" style="margin: 0;"
-                                                                  onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
-                                                                @csrf
-                                                                <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                                <button type="submit" class="btn btn-success btn-accept" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-check me-1"></i> Accept Bid
-                                                                </button>
-                                                            </form>
-                                                            <a href="{{ route('tenant.counter-terms', data_get($bid, 'id')) }}"
-                                                               class="btn btn-primary btn-counter" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Bid
-                                                            </a>
-                                                            <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="post" style="margin: 0;"
-                                                                  onsubmit="return confirm('Are you sure you want to reject this bid?');">
-                                                                @csrf
-                                                                <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                                <button type="submit" class="btn btn-danger btn-reject" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-times me-1"></i> Reject Bid
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                        @elseif ($isTraditionalListing)
+                                                        @else
+                                                        {{-- Traditional (not expired) OR Bidding Period (any state): timer is informational --}}
                                                         <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
                                                             <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="post" style="margin: 0;"
                                                                   onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">

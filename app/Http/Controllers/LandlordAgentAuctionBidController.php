@@ -34,7 +34,7 @@ class LandlordAgentAuctionBidController extends Controller
         if (!$_listingGuard) {
             return redirect()->back()->with('error', 'Listing not found.');
         }
-        if (in_array($_listingGuard->status, ['Hired Agent', 'Pending', 'Expired'])) {
+        if (in_array($_listingGuard->status, ['Hired Agent'])) {
             return redirect()->back()->with('error', 'This listing is not currently accepting new bids.');
         }
 

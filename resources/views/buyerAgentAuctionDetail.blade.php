@@ -2183,10 +2183,9 @@
     // 🧾 Determine if expired
     $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
 
-    // 🔹 For Bidding Period: timer active means actions are locked
-    // For Traditional: actions are always unlocked (no timer restriction)
+    // 🔹 Timer is informational only — actions are never locked by the BP timer
     $isBiddingTimerActive = $isBiddingPeriodListing && $expiration && !$isExpired;
-    $canTakeAction = $isTraditionalListing || ($isBiddingPeriodListing && $isExpired);
+    $canTakeAction = true; // Soft deadline: timer never locks bid actions
 
     // ⏱ Calculate remaining time if not expired (only for Bidding Period)
     if ($isBiddingPeriodListing && $expiration && !$isExpired) {
@@ -2645,21 +2644,10 @@
                                             <!-- D) View Full Bid Link - visibility rules by listing type and user -->
                                             @if ($isListingOwner || $isBidOwner)
                                             {{-- Listing Owner or Bid Owner: Full access --}}
-                                            @if ($isBiddingTimerActive && $isListingOwner && !$isBidOwner)
-                                            {{-- Bidding Period active: Disable View Bid for listing owner --}}
-                                            <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
-                                                  title="Bids can be viewed when the bidding period ends.">
-                                                <i class="fa fa-lock me-1"></i> View Full Bid
-                                            </span>
-                                            <div class="text-muted small mt-1">
-                                                <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
-                                            </div>
-                                            @else
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                                style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                                 View Full Bid
                                             </a>
-                                            @endif
                                             @elseif ($isBiddingPeriodListing && $cardIsAgentViewer && !$isBidOwner)
                                             {{-- Bidding Period: Agent viewing another agent's bid - show limited view button --}}
                                             <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
@@ -4129,11 +4117,7 @@
 
                                                                         {{-- ── Listing owner: action buttons when bid is undecided ── --}}
                                                                         @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold)
-                                                                            @if ($isBiddingPeriodListing && $isBiddingTimerActive)
-                                                                            <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                                                <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
-                                                                            </div>
-                                                                            @elseif ($isTraditionalListing && $isExpired)
+                                                                            @if ($isTraditionalListing && $isExpired)
                                                                             <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
                                                                                 <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                                                             </div>

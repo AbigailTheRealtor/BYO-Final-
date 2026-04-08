@@ -2502,10 +2502,9 @@
     // 🧾 Determine if expired
     $isExpired = $expiration ? $carbon::now()->gte($expiration) : false;
 
-    // 🔹 For Bidding Period: timer active means actions are locked
-    // For Traditional: actions are always unlocked (no timer restriction)
+    // 🔹 Timer is informational only — actions are never locked by the BP timer
     $isBiddingTimerActive = $isBiddingPeriodListing && $expiration && !$isExpired;
-    $canTakeAction = $isTraditionalListing || ($isBiddingPeriodListing && $isExpired);
+    $canTakeAction = true; // Soft deadline: timer never locks bid actions
 
     // ⏱ Calculate remaining time if not expired (only for Bidding Period)
     if ($isBiddingPeriodListing && $expiration && !$isExpired) {
@@ -3018,20 +3017,10 @@
 
                                 <!-- D) View Full Bid link / Lock / BP lockout -->
                                 @if ($isListingOwner || $isBidOwner)
-                                    @if ($isBiddingPeriodListing && $isBiddingTimerActive && $isListingOwner && !$isBidOwner)
-                                    <span style="color: #999; font-size: 1rem; font-weight: 500; cursor: not-allowed;"
-                                          title="Bids can be viewed when the bidding period ends.">
-                                        <i class="fa fa-lock me-1"></i> View Full Bid
-                                    </span>
-                                    <div class="text-muted small mt-1">
-                                        <i class="fa fa-clock me-1"></i> Bids can be viewed when the bidding period ends.
-                                    </div>
-                                    @else
                                     <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                        style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                         View Full Bid
                                     </a>
-                                    @endif
                                 @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
@@ -5397,11 +5386,7 @@
 
                                         {{-- ── Listing owner: action buttons when bid is undecided ── --}}
                                         @if ($state === '0' && $isOwnerRow && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true))
-                                            @if ($isBiddingPeriodListing && $isBiddingTimerActive)
-                                            <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
-                                            </div>
-                                            @elseif ($isTraditionalListing && $isExpired)
+                                            @if ($isTraditionalListing && $isExpired)
                                             <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
                                                 <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                             </div>
