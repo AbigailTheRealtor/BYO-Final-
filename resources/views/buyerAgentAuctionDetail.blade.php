@@ -2531,15 +2531,45 @@
                                             </div>
                                             @endif
 
+                                            <!-- Terms Match Row -->
+                                            @php
+                                                $cardBrokerTotal = $score['broker_comp_total'] ?? 0;
+                                                $cardBrokerMatched = $score['broker_comp_matched'] ?? 0;
+                                                $cardTermsChangedCount = $score['terms_changed_count'] ?? 0;
+                                                $cardTermsAddedCount = $score['terms_added_count'] ?? 0;
+                                            @endphp
+                                            @if ($cardHasAnyBaseline && $cardBrokerTotal > 0)
+                                            <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                                <span style="font-weight: 600;">Terms Match:</span>
+                                                <span style="color: #28a745; font-weight: 600;">{{ $cardBrokerMatched }}/{{ $cardBrokerTotal }} matched</span>
+                                                @if ($cardTermsChangedCount > 0)
+                                                <span class="ms-2" style="color: #dc3545;">&bull; {{ $cardTermsChangedCount }} changed</span>
+                                                @endif
+                                                @if ($cardTermsAddedCount > 0)
+                                                <span class="text-muted ms-2">&bull; {{ $cardTermsAddedCount }} added</span>
+                                                @endif
+                                                @php $cardTermsMissingCount = max(0, $cardBrokerTotal - $cardBrokerMatched - $cardTermsChangedCount); @endphp
+                                                @if ($cardTermsMissingCount > 0)
+                                                <span class="ms-2" style="color: #dc3545;">&bull; {{ $cardTermsMissingCount }} missing</span>
+                                                @endif
+                                            </p>
+                                            <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+                                            @elseif ($cardHasAnyBaseline && $cardBrokerTotal === 0)
+                                            <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                                <span style="font-weight: 600;">Terms Match:</span>
+                                                <span class="text-muted">&mdash;</span>
+                                            </p>
+                                            @endif
+
                                             <hr style="margin: 15px 0; border-color: #e0e0e0;">
 
                                             <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
                                             @if ($cardShowMatchScoreOnCard && $cardHasAnyBaseline)
-                                            <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                            <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
                                                 @if ($cardShowDualScore && $cardOriginalScore && $cardLatestCounterScore)
                                                 {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
                                                 <div class="mb-2">
-                                                    <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                                    <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
                                                         <i class="fa fa-chart-pie me-2"></i>Match Summary
                                                     </span>
                                                 </div>
@@ -2579,7 +2609,7 @@
                                                 @else
                                                 {{-- SINGLE SCORE --}}
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                                    <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
                                                         <i class="fa fa-chart-pie me-2"></i>Match Score
                                                     </span>
                                                     <span class="badge" style="background: {{ $scoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">

@@ -2512,16 +2512,41 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
                                 </div>
                                 @endif
+
+                                <!-- Terms Match Row -->
+                                @if ($hasAnyBaseline && $brokerTotal > 0)
+                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Terms Match:</span>
+                                    <span style="color: #28a745; font-weight: 600;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</span>
+                                    @if ($termsChangedCount > 0)
+                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $termsChangedCount }} changed</span>
+                                    @endif
+                                    @if ($termsAddedCount > 0)
+                                    <span class="text-muted ms-2">&bull; {{ $termsAddedCount }} added</span>
+                                    @endif
+                                    @php $termsMissingCount = max(0, $brokerTotal - $brokerMatched - $termsChangedCount); @endphp
+                                    @if ($termsMissingCount > 0)
+                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $termsMissingCount }} missing</span>
+                                    @endif
+                                </p>
+                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+                                @elseif ($hasAnyBaseline && $brokerTotal === 0)
+                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Terms Match:</span>
+                                    <span class="text-muted">&mdash;</span>
+                                </p>
+                                @endif
+
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
 
                                 <!-- Match Score Summary (Compact Display on Bid Card) -->
                                 @php $showMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid); @endphp
                                 @if ($showMatchScoreOnCard && $hasAnyBaseline)
-                                <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
                                     @if ($showDualScore && $originalScore && $latestCounterScore)
                                     {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
                                     <div class="mb-2">
-                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
                                             <i class="fa fa-chart-pie me-2"></i>Match Summary
                                         </span>
                                     </div>
@@ -2567,7 +2592,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     @else
                                     {{-- SINGLE SCORE fallback --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
                                             <i class="fa fa-chart-pie me-2"></i>Match Score
                                         </span>
                                         <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">

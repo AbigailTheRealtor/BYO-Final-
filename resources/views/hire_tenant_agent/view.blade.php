@@ -1576,11 +1576,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
             @elseif ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
             <div class="alert alert-warning small mb-3 py-2">
-                <i class="fa fa-info-circle me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view anonymized competing bids (Broker Terms, Services, and Match Scores only).
+                <i class="fa fa-info-circle me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view competing bids (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
             </div>
             @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
             <div class="alert alert-info small mb-3 py-2">
-                <i class="fa fa-eye me-1"></i> <strong>Bidding Period:</strong> Anonymized competing bids are visible below (Broker Terms, Services, Match Scores only).
+                <i class="fa fa-eye me-1"></i> <strong>Bidding Period:</strong> Competing bids are visible below (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
             </div>
             {{-- 🔹 INLINE COMPETING BIDS DISPLAY --}}
             @php
@@ -1603,52 +1603,52 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                         </span>
                     </div>
                     <div class="card-body" style="padding: 16px;">
+                        @php
+                            $cSvcTotal   = $compBid['match_score']['services_baseline_total'] ?? $compBid['match_score']['services_total'] ?? 0;
+                            $cSvcMatched = $compBid['match_score']['services_matched_count'] ?? $compBid['match_score']['services_matched'] ?? 0;
+                            $cSvcExtra   = $compBid['match_score']['services_extra_count'] ?? 0;
+                            $cSvcMissing = $compBid['match_score']['services_missing_count'] ?? 0;
+                            $cTrmTotal   = $compBid['match_score']['broker_comp_total'] ?? 0;
+                            $cTrmMatched = $compBid['match_score']['broker_comp_matched'] ?? 0;
+                            $cTrmChanged = $compBid['match_score']['terms_changed_count'] ?? 0;
+                            $cTrmAdded   = $compBid['match_score']['terms_added_count'] ?? 0;
+                            $cTrmMissing = max(0, $cTrmTotal - $cTrmMatched - $cTrmChanged);
+                        @endphp
                         <div class="row">
-                            {{-- Match Score Breakdown --}}
-                            <div class="col-12 mb-3">
-                                <div class="d-flex flex-wrap gap-3">
-                                    @php
-                                        $brokerScore = $compBid['match_score']['broker_comp_percent'];
-                                        $brokerColor = $brokerScore >= 80 ? '#28a745' : ($brokerScore >= 50 ? '#ffc107' : '#dc3545');
-                                        $servicesScore = $compBid['match_score']['services_percent'];
-                                        $servicesColor = $servicesScore >= 80 ? '#28a745' : ($servicesScore >= 50 ? '#ffc107' : '#dc3545');
-                                    @endphp
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge me-2" style="background: {{ $brokerColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $brokerScore }}%</span>
-                                        <span class="small text-muted">Broker Compensation {{ $compBid['match_score']['broker_comp_total'] > 0 ? '('.$compBid['match_score']['broker_comp_matched'].'/'.$compBid['match_score']['broker_comp_total'].' fields)' : '(No terms provided)' }}</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge me-2" style="background: {{ $servicesColor }}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">{{ $servicesScore }}%</span>
-                                        <span class="small text-muted">Offered Services {{ $compBid['match_score']['services_baseline_total'] > 0 ? '('.$compBid['match_score']['services_matched_count'].'/'.$compBid['match_score']['services_baseline_total'].' services)' : '(No services requested)' }}</span>
-                                    </div>
-                                </div>
-                            </div>
-                            {{-- Offered Services Summary --}}
-                            <div class="col-md-6 mb-2">
-                                <div class="fw-semibold small" style="color: #049399;">Offered Services:</div>
-                                <div class="small">{{ count($compBid['offered_services']['standard']) + count($compBid['offered_services']['other']) }} Services</div>
-                            </div>
-                            {{-- Broker Compensation Summary --}}
-                            <div class="col-md-6 mb-2">
-                                <div class="fw-semibold small" style="color: #049399;">Broker Compensation Summary:</div>
-                                @if(count($compBid['broker_compensation']) > 0)
-                                    @php
-                                        $commStructure = $compBid['broker_compensation']['commission_structure'] ?? null;
-                                        $leaseFeeType = $compBid['broker_compensation']['lease_fee_type'] ?? null;
-                                    @endphp
-                                    @if($commStructure)
-                                    <div class="small">Structure: {{ $commStructure }}</div>
+                            {{-- Offered Services Row --}}
+                            <div class="col-12 mb-2">
+                                <span class="fw-semibold small" style="color: #049399;">Offered Services:</span>
+                                <span class="small ms-1">
+                                    @if($cSvcTotal > 0)
+                                        <span style="color: #28a745; font-weight: 600;">{{ $cSvcMatched }}/{{ $cSvcTotal }} matched</span>
+                                        @if($cSvcExtra > 0) <span class="text-muted">&bull; {{ $cSvcExtra }} extra</span>@endif
+                                        @if($cSvcMissing > 0) <span style="color: #dc3545;">&bull; {{ $cSvcMissing }} missing</span>@endif
+                                    @else
+                                        <span class="text-muted">No services requested</span>
                                     @endif
-                                    @if($leaseFeeType)
-                                    <div class="small">Fee Type: {{ $leaseFeeType }}</div>
-                                    @endif
-                                @else
-                                    <div class="small text-muted">Not specified</div>
+                                </span>
+                                @if($cSvcExtra > 0)
+                                <div class="mt-1" style="font-size: 0.75rem; color: #6c757d; font-style: italic; margin-left: 0.25rem;">&#11088; Extra Value Added &mdash; does not affect match score</div>
                                 @endif
+                            </div>
+                            {{-- Terms Match Row --}}
+                            <div class="col-12 mb-2">
+                                <span class="fw-semibold small" style="color: #049399;">Terms Match:</span>
+                                <span class="small ms-1">
+                                    @if($cTrmTotal > 0)
+                                        <span style="color: #28a745; font-weight: 600;">{{ $cTrmMatched }}/{{ $cTrmTotal }} matched</span>
+                                        @if($cTrmChanged > 0) <span style="color: #dc3545;">&bull; {{ $cTrmChanged }} changed</span>@endif
+                                        @if($cTrmAdded > 0) <span class="text-muted">&bull; {{ $cTrmAdded }} added</span>@endif
+                                        @if($cTrmMissing > 0) <span style="color: #dc3545;">&bull; {{ $cTrmMissing }} missing</span>@endif
+                                    @else
+                                        <span class="text-muted">No terms provided</span>
+                                    @endif
+                                </span>
+                                <div class="mt-1" style="font-size: 0.75rem; color: #6c757d; font-style: italic; margin-left: 0.25rem;">&mdash; affects match score</div>
                             </div>
                         </div>
                         <div class="text-end mt-2">
-                            <small class="text-muted fst-italic">Compared to Your Bid</small>
+                            <small class="text-muted fst-italic">Compared to Your Bid &mdash; Agent identities and compensation details remain confidential.</small>
                         </div>
                     </div>
                 </div>
@@ -2027,6 +2027,31 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
                                 </div>
                                 @endif
+
+                                <!-- Terms Match Row -->
+                                @if ($hasAnyBaseline && $brokerTotal > 0)
+                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Terms Match:</span>
+                                    <span style="color: #28a745; font-weight: 600;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</span>
+                                    @if ($termsChangedCount > 0)
+                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $termsChangedCount }} changed</span>
+                                    @endif
+                                    @if ($termsAddedCount > 0)
+                                    <span class="text-muted ms-2">&bull; {{ $termsAddedCount }} added</span>
+                                    @endif
+                                    @php $termsMissingCount = max(0, $brokerTotal - $brokerMatched - $termsChangedCount); @endphp
+                                    @if ($termsMissingCount > 0)
+                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $termsMissingCount }} missing</span>
+                                    @endif
+                                </p>
+                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+                                @elseif ($hasAnyBaseline && $brokerTotal === 0)
+                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Terms Match:</span>
+                                    <span class="text-muted">&mdash;</span>
+                                </p>
+                                @endif
+
                                 <hr style="margin: 15px 0; border-color: #e0e0e0;">
                                 
                                 <!-- B2) Match Score Summary (Compact Display on Bid Card) -->
@@ -2035,12 +2060,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     $showMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgentViewer && $userHasBid);
                                 @endphp
                                 @if ($showMatchScoreOnCard && $hasAnyBaseline)
-                                <div class="match-score-summary mb-3 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6;">
+                                <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
 
                                     @if ($showDualScore && $originalScore && $latestCounterScore)
                                     {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
                                     <div class="mb-2">
-                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
                                             <i class="fa fa-chart-pie me-2"></i>Match Summary
                                         </span>
                                     </div>
@@ -2087,7 +2112,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @else
                                     {{-- SINGLE SCORE (no counter in this bid's context) --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <span style="font-weight: 600; color: #1a3a5c; font-size: 1rem;">
+                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
                                             <i class="fa fa-chart-pie me-2"></i>Match Score
                                         </span>
                                         <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">

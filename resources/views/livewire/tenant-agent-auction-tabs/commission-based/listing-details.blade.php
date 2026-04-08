@@ -507,7 +507,7 @@
     <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding timer ends. During the bidding period, bids cannot be accepted or finalized. Once the timer ends, all Agent bids are revealed for review and comparison. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time. Bids are visible as received and may be reviewed, accepted, countered, or rejected immediately.">
+                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding timer ends. During this period, bids are advisory — the listing owner reviews all bids together once the timer has ended. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time. Bids are visible as received and may be reviewed, accepted, countered, or rejected immediately.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -523,7 +523,7 @@
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                     data-icon="fa-solid fa-file-alt" required>
                     <option value="">Select</option>
-                    <option value="Bidding Period">Bidding Period</option>
+                    <option value="Bidding Period" title="Agents submit bids until the countdown timer ends. Bids are advisory — you review all bids together once the timer has ended.">Bidding Period</option>
                     <option value="Traditional">Traditional</option>
                 </select>
             </div>
@@ -531,12 +531,6 @@
         @endif
     </div>
 
-    @if ($auction_type === 'Bidding Period')
-    <div class="alert alert-info mt-3" style="background: #e3f2fd; border: 1px solid #90caf9;">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>Bidding Period Transparency Notice:</strong> During the active bidding period, participating agents may view anonymized competing bids limited to Broker Compensation & Agency Agreement Terms, Offered Services, and Match Scores only. Agent identities and all other bid information remain confidential.
-    </div>
-    @endif
 
     <div class="form-group mt-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif>
         <label class="fw-bold">Bidding Period Length: <span class="text-danger">*</span>
@@ -544,7 +538,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long Agents have to submit bids on this listing. Once the bidding period ends, you may review all submitted bids and hire an Agent.">
+            title="Select how long Agents have to submit bids on this listing. Bids are advisory during this period — you review all bids together once the timer has ended and are not required to select any particular Agent.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
@@ -563,6 +557,12 @@
             </select>
         </div>
         <span class="error mt-2" id="auction_time_error"></span>
+    </div>
+
+    {{-- Bidding Period Advisory Notice (shown only when Bidding Period is selected) --}}
+    <div class="alert alert-info small py-2 mt-2 mb-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif wire:key="bp-notice-tenant">
+        <i class="fa-solid fa-circle-info me-1"></i>
+        <strong>Bidding Period:</strong> During the active bidding period, submitted bids are advisory. The listing owner reviews all bids together once the timer has ended — you are not required to select any particular Agent. Competing Agent identities and compensation details remain confidential until a decision is made.
     </div>
 
     <div class="form-group">

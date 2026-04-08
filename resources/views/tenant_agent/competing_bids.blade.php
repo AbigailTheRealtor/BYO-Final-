@@ -15,7 +15,7 @@
 
             <div class="alert alert-info mb-4">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Bidding Period Transparency:</strong> During the active bidding period, you can view anonymized competing bids showing only Broker Compensation & Agency Agreement Terms, Offered Services, and Match Scores. Agent identities remain confidential.
+                <strong>Bidding Period:</strong> During the active bidding period, bids are advisory. You can view other Agents' Offered Services and Terms Match summaries below. Agent identities and compensation details remain confidential.
             </div>
 
             @if(count($competingBids) === 0)
@@ -53,93 +53,66 @@
                         </div>
                         
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-4">
-                                    <h6 class="fw-bold mb-3" style="color: #049399;">
-                                        <i class="fas fa-file-contract me-2"></i>Broker Compensation & Agency Agreement Terms
-                                    </h6>
-                                    <div class="bg-light p-3 rounded">
-                                        @if(count($bid['broker_compensation']) > 0)
-                                            <div class="row">
-                                                @foreach($bid['broker_compensation'] as $field => $value)
-                                                    <div class="col-6 mb-2">
-                                                        <small class="text-muted d-block">{{ ucwords(str_replace('_', ' ', $field)) }}</small>
-                                                        <span class="fw-medium">
-                                                            @if(is_array($value))
-                                                                {{ implode(', ', $value) }}
-                                                            @else
-                                                                {{ $value }}
-                                                            @endif
-                                                        </span>
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <p class="text-muted mb-0">No broker compensation terms specified.</p>
-                                        @endif
+                            @php
+                                $svcTotal   = $bid['match_score']['services_total'] ?? 0;
+                                $svcMatched = $bid['match_score']['services_matched'] ?? 0;
+                                $svcExtra   = $bid['match_score']['services_extra_count'] ?? 0;
+                                $svcMissing = $bid['match_score']['services_missing_count'] ?? 0;
+                                $trmTotal   = $bid['match_score']['broker_comp_total'] ?? 0;
+                                $trmMatched = $bid['match_score']['broker_comp_matched'] ?? 0;
+                                $trmChanged = $bid['match_score']['terms_changed_count'] ?? 0;
+                                $trmAdded   = $bid['match_score']['terms_added_count'] ?? 0;
+                                $trmMissing = max(0, $trmTotal - $trmMatched - $trmChanged);
+                            @endphp
+
+                            {{-- Offered Services --}}
+                            <p class="mb-0" style="font-size: 1.05rem; color: #1a3a5c;">
+                                <span style="font-weight: 600;">Offered Services:</span>
+                                @if($svcTotal > 0)
+                                    <span style="color: #28a745; font-weight: 600;">{{ $svcMatched }}/{{ $svcTotal }} matched</span>
+                                    @if($svcExtra > 0) <span class="text-muted ms-2">&bull; {{ $svcExtra }} extra</span>@endif
+                                    @if($svcMissing > 0) <span class="ms-2" style="color: #dc3545;">&bull; {{ $svcMissing }} missing</span>@endif
+                                @else
+                                    <span class="text-muted">No services requested</span>
+                                @endif
+                            </p>
+                            @if($svcExtra > 0)
+                            <div class="mt-1 mb-2" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&#11088; Extra Value Added &mdash; does not affect match score</div>
+                            @endif
+
+                            {{-- Terms Match --}}
+                            <p class="mb-0 mt-2" style="font-size: 1.05rem; color: #1a3a5c;">
+                                <span style="font-weight: 600;">Terms Match:</span>
+                                @if($trmTotal > 0)
+                                    <span style="color: #28a745; font-weight: 600;">{{ $trmMatched }}/{{ $trmTotal }} matched</span>
+                                    @if($trmChanged > 0) <span class="ms-2" style="color: #dc3545;">&bull; {{ $trmChanged }} changed</span>@endif
+                                    @if($trmAdded > 0) <span class="text-muted ms-2">&bull; {{ $trmAdded }} added</span>@endif
+                                    @if($trmMissing > 0) <span class="ms-2" style="color: #dc3545;">&bull; {{ $trmMissing }} missing</span>@endif
+                                @else
+                                    <span class="text-muted">No terms provided</span>
+                                @endif
+                            </p>
+                            <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+
+                            {{-- Match Summary (de-emphasized) --}}
+                            <hr style="margin: 12px 0; border-color: #e0e0e0;">
+                            <div class="p-2 rounded" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; font-size: 0.88rem;">
+                                <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;"><i class="fas fa-chart-pie me-1"></i>Match Summary</span>
+                                <div class="row g-2 mt-1">
+                                    @php
+                                        $servicesScore = $bid['match_score']['services_percent'];
+                                        $servicesColor = $servicesScore >= 80 ? '#28a745' : ($servicesScore >= 50 ? '#ffc107' : '#dc3545');
+                                    @endphp
+                                    <div class="col-6 text-center">
+                                        <div class="fw-bold" style="font-size: 1.2rem; color: {{ $servicesColor }};">{{ $servicesScore }}%</div>
+                                        <small class="text-muted">Services Match</small>
+                                    </div>
+                                    <div class="col-6 text-center">
+                                        <div class="fw-bold" style="font-size: 1.2rem; color: {{ $scoreColor }};">{{ $score }}%</div>
+                                        <small class="text-muted">Overall Match</small>
                                     </div>
                                 </div>
-                                
-                                <div class="col-md-6 mb-4">
-                                    <h6 class="fw-bold mb-3" style="color: #049399;">
-                                        <i class="fas fa-concierge-bell me-2"></i>Offered Services
-                                    </h6>
-                                    <div class="bg-light p-3 rounded">
-                                        @if(count($bid['offered_services']['standard']) > 0 || count($bid['offered_services']['other']) > 0)
-                                            <div class="d-flex flex-wrap gap-2">
-                                                @foreach($bid['offered_services']['standard'] as $service)
-                                                    <span class="badge" style="background: #e8f5e9; color: #2e7d32; padding: 6px 12px; border-radius: 20px;">
-                                                        <i class="fas fa-check me-1"></i>{{ $service }}
-                                                    </span>
-                                                @endforeach
-                                                @foreach($bid['offered_services']['other'] as $service)
-                                                    <span class="badge" style="background: #fff3e0; color: #e65100; padding: 6px 12px; border-radius: 20px;">
-                                                        <i class="fas fa-plus me-1"></i>{{ $service }}
-                                                    </span>
-                                                @endforeach
-                                            </div>
-                                        @else
-                                            <p class="text-muted mb-0">No services specified.</p>
-                                        @endif
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="border-top pt-3">
-                                <h6 class="fw-bold mb-3" style="color: #049399;">
-                                    <i class="fas fa-chart-bar me-2"></i>Match Score Breakdown
-                                </h6>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 rounded" style="background: #f8f9fa;">
-                                            @php
-                                                $brokerScore = $bid['match_score']['broker_comp_percent'];
-                                                $brokerColor = $brokerScore >= 80 ? '#28a745' : ($brokerScore >= 50 ? '#ffc107' : '#dc3545');
-                                            @endphp
-                                            <div class="fw-bold" style="font-size: 1.5rem; color: {{ $brokerColor }};">{{ $brokerScore }}%</div>
-                                            <small class="text-muted">Broker Compensation</small>
-                                            <div class="small text-muted">{{ $bid['match_score']['broker_comp_total'] > 0 ? $bid['match_score']['broker_comp_matched'].'/'.$bid['match_score']['broker_comp_total'].' fields matched' : 'No terms provided' }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 rounded" style="background: #f8f9fa;">
-                                            @php
-                                                $servicesScore = $bid['match_score']['services_percent'];
-                                                $servicesColor = $servicesScore >= 80 ? '#28a745' : ($servicesScore >= 50 ? '#ffc107' : '#dc3545');
-                                            @endphp
-                                            <div class="fw-bold" style="font-size: 1.5rem; color: {{ $servicesColor }};">{{ $servicesScore }}%</div>
-                                            <small class="text-muted">Services</small>
-                                            <div class="small text-muted">{{ $bid['match_score']['services_total'] > 0 ? $bid['match_score']['services_matched'].'/'.$bid['match_score']['services_total'].' services matched' : 'No services requested' }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="text-center p-3 rounded" style="background: #e3f2fd;">
-                                            <div class="fw-bold" style="font-size: 1.5rem; color: {{ $scoreColor }};">{{ $score }}%</div>
-                                            <small class="text-muted">Overall Match</small>
-                                            <div class="small" style="color: #666;">{{ $bid['match_score']['compared_to_label'] }}</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <div class="small text-muted mt-1" style="font-style: italic;">{{ $bid['match_score']['compared_to_label'] }}</div>
                             </div>
                         </div>
                     </div>
