@@ -2436,15 +2436,26 @@
                                             $cardServicesTotal     = $score['services_baseline_total'] ?? 0;
                                             $cardServicesExtraCount = $score['services_extra_count'] ?? 0;
 
-                                            // Determine if we have a dual-score situation (latest buyer counter exists)
+                                            // Determine if we have a dual-score situation (latest buyer counter or agent counter exists)
                                             $cardShowDualScore = false;
                                             $cardOriginalScore = null;
                                             $cardLatestCounterScore = null;
+                                            $cardCounterLabel = 'vs. Latest Counter Terms';
                                             if ($latestBuyerCounter) {
                                                 // Re-compute original score against listing baseline (not buyer counter)
                                                 $listingBaselineData = (array) $auction->get;
                                                 $cardOriginalScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($listingBaselineData, $currentBidData, null, $auctionPropType);
                                                 $cardLatestCounterScore = $score;
+                                                $cardCounterLabel = $isListingOwner ? 'vs. Your Counter Terms' : "vs. Buyer's Counter Terms";
+                                                $cardShowDualScore = true;
+                                            } elseif ($latestAgentCounter) {
+                                                // Listing owner has sent a counter offer via BuyerCounterBidding
+                                                // Left: bid vs original listing; Right: bid vs owner's counter offer terms
+                                                $listingBaselineData = $auction->meta->pluck('meta_value', 'meta_key')->toArray();
+                                                $cardOriginalScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($listingBaselineData, $currentBidData, null, $auctionPropType);
+                                                $agentCounterMeta = $latestAgentCounter->getAllMeta();
+                                                $cardLatestCounterScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($agentCounterMeta, $currentBidData, null, $auctionPropType);
+                                                $cardCounterLabel = $isListingOwner ? 'vs. Your Counter Offer' : "vs. Owner's Counter Offer";
                                                 $cardShowDualScore = true;
                                             }
                                             $cardGetScoreColor = fn($pct) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$pct);
@@ -2551,7 +2562,7 @@
                                                                 <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
                                                                 <span class="badge" style="background: {{ $lcColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $cardLatestCounterScore['overall_percent'] }}%</span>
                                                             </div>
-                                                            <div style="font-size: 0.75rem; color: #6c757d;">vs. Your Latest Counter</div>
+                                                            <div style="font-size: 0.75rem; color: #6c757d;">{{ $cardCounterLabel }}</div>
                                                             <div class="row g-0 mt-1" style="font-size: 0.75rem;">
                                                                 <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['services_match_percent']) }};">Services {{ $cardLatestCounterScore['services_match_percent'] }}%</div>
                                                                 <div class="col-6" style="color: {{ $cardGetScoreColor($cardLatestCounterScore['terms_match_percent']) }};">Terms {{ $cardLatestCounterScore['terms_match_percent'] }}%</div>
@@ -5361,6 +5372,16 @@
 
                                                     @if ($showCounterActions)
                                                         <div class="counter-response-buttons mt-3 pt-3 border-top">
+                                                            <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mb-2">
+                                                                <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                                </a>
+                                                                @if ($isOwner)
+                                                                <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                                    <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                                </a>
+                                                                @endif
+                                                            </div>
                                                             <h6>Respond to this Counter Offer:</h6>
 
                                                             @if ($isExpired)

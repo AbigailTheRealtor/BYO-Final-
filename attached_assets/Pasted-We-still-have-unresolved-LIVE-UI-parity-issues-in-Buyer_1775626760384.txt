@@ -1,0 +1,231 @@
+We still have unresolved LIVE UI parity issues in Buyer and Seller.
+
+This is a strict correction pass.
+Do NOT give me another “close enough” parity result.
+Buyer and Seller must match Tenant exactly in the affected areas.
+
+==================================================
+CURRENT LIVE PROBLEMS TO FIX
+==================================================
+
+1. BUYER MATCH SUMMARY IS STILL WRONG
+Buyer still shows the old/wrong Match Score format.
+It does NOT match Tenant’s current live structure.
+
+2. VIEW COUNTER TERMS IS STILL MISSING
+View Counter Terms is still missing from:
+- Buyer
+- Seller
+
+3. COUNTER BIDDING HISTORY FONT / FORMATTING STILL DOES NOT MATCH TENANT
+Buyer and Seller still differ from Tenant in:
+- font sizes
+- spacing
+- layout density
+- section separation
+- structure of the counter history area
+
+4. SELLER OFFERED SERVICES IS STILL WRONG
+Seller is still rendering these under “Other Services” even though they do NOT belong there:
+
+- Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only — no endorsement or warranty is made
+- Coordinate showings with Buyer’s Agents
+- Provide referrals to Attorneys, Title Companies, and Escrow Professionals (referrals only — no endorsement or warranty is made)
+- Negotiate price, terms, and contingencies with the Buyer’s Agent or Buyer
+- Manage communications with the Buyer’s Agent or Buyer
+- Coordinate with the Buyer’s Agent, Lender, Title, Escrow, and/or Attorney to prepare for Closing
+
+These are not in the correct placement.
+Seller services ordering / section mapping is still wrong.
+
+==================================================
+MASTER GOAL
+==================================================
+
+Fix BUYER and SELLER so they match TENANT exactly in the affected live views.
+
+This is NOT a broad rewrite.
+This is a surgical live-view correction.
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+TENANT is the only render/source-of-truth reference for:
+
+- Match Summary structure
+- Counter Bidding History structure
+- font size
+- spacing
+- layout density
+- View Counter Terms / Edit Counter Terms placement
+- counter action area presentation
+
+SELLER source of truth for services/section mapping is:
+- the canonical Seller services configuration / listing form structure
+- the canonical Seller field/category order
+
+Do NOT invent fallback grouping.
+Do NOT dump defined services into Other Services.
+
+==================================================
+PHASE 1 — AUDIT FIRST
+==================================================
+
+Before editing, identify the exact LIVE files/sections currently controlling:
+
+BUYER:
+- Match Summary in the main bid card / expanded bid view
+- Match Summary in the private compensation / private modal area
+- Counter Bidding History
+- View Counter Terms link rendering
+
+SELLER:
+- Counter Bidding History
+- View Counter Terms link rendering
+- Offered Services section rendering
+- service grouping/order mapping
+- Other Services rendering
+
+Report:
+1. exact file paths
+2. exact line ranges or section anchors
+3. exact mismatch vs Tenant / canonical Seller source of truth
+
+Do not skip this step.
+
+==================================================
+PHASE 2 — FIX ONLY THE CONFIRMED LIVE ISSUES
+==================================================
+
+----------------------------------
+FIX A — BUYER MATCH SUMMARY
+----------------------------------
+
+Buyer must match Tenant exactly.
+
+Update Buyer Match Summary anywhere it is still using the old format.
+
+Required:
+- same layout as Tenant
+- same heading structure
+- same font sizes
+- same spacing
+- same card/wrapper structure
+- same Original Match / Counter Match treatment
+- same note placement
+
+Do NOT approximate Tenant.
+Reuse Tenant structure exactly if safe.
+
+----------------------------------
+FIX B — VIEW COUNTER TERMS
+----------------------------------
+
+View Counter Terms must appear in Buyer and Seller anywhere Tenant shows the equivalent action.
+
+Audit the gating/conditions and restore the missing View Counter Terms link in the correct live location(s).
+
+Do NOT add it randomly.
+Place it where Tenant places it in the equivalent state.
+
+----------------------------------
+FIX C — COUNTER BIDDING HISTORY FONT / FORMATTING
+----------------------------------
+
+Buyer and Seller must match Tenant exactly in Counter Bidding History:
+
+- section header styling
+- text size
+- spacing
+- padding
+- card structure
+- typography rhythm
+- button row spacing
+- vertical density
+
+This is a render parity fix.
+Do not just tweak one font size.
+Match Tenant’s live structure.
+
+----------------------------------
+FIX D — SELLER OFFERED SERVICES ORDER / SECTION MAPPING
+----------------------------------
+
+Seller services must be rendered in the exact correct section and order.
+
+Those listed services above must NOT appear under Other Services if they belong to defined Seller categories.
+
+Requirements:
+- use canonical Seller services config / order only
+- render each service under the correct category heading
+- keep exact order within the correct category
+- reserve Other Services / Additional Services only for true unmatched custom entries
+- do not flatten or mis-group services
+- keep added/removed indicators correct
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- Tenant rendering
+- Landlord
+- scoring formulas
+- helper calculations unless audit proves mapping/render logic there is causing the wrong output
+- database schema
+- business logic unrelated to these render/gating issues
+- backup files
+
+==================================================
+IMPLEMENTATION RULES
+==================================================
+
+1. LIVE VIEWS ONLY
+Only fix the actual live render paths.
+
+2. TENANT PARITY MEANS EXACT STRUCTURE
+Do not describe parity.
+Implement exact structure/classes/wrappers/spacing pattern where applicable.
+
+3. SELLER SERVICES MUST FOLLOW CANONICAL CATEGORY MAP
+No fallback grouping if a defined category exists.
+
+4. NO “CLOSE ENOUGH”
+If Buyer/Seller do not visually match Tenant after the fix, the task is not complete.
+
+==================================================
+VERIFICATION REQUIRED
+==================================================
+
+After fixes, provide screenshot proof and/or precise report notes for:
+
+BUYER
+1. Match Summary now matches Tenant exactly
+2. View Counter Terms is visible where appropriate
+3. Counter Bidding History matches Tenant formatting
+
+SELLER
+4. View Counter Terms is visible where appropriate
+5. Counter Bidding History matches Tenant formatting
+6. Offered Services is under the correct headings
+7. The listed misplaced services are no longer dumped into Other Services
+8. Other Services contains only true custom/additional services
+
+ALL
+9. No Blade/PHP errors
+10. Tenant unchanged
+
+For each verification item, state either:
+- VERIFIED
+or
+- REMAINING DIFFERENCE: [exact issue]
+
+==================================================
+CRITICAL SAFEGUARDS
+==================================================
+
+- Do NOT mark complete based on code inspection alone
+- Do NOT use “at parity” without screenshot proof
+- Do NOT broaden scope beyond Buyer and Seller
+- Do NOT refactor unrelated sections
+- If canonical Seller service mapping is ambiguous, STOP and report the ambiguity before editing

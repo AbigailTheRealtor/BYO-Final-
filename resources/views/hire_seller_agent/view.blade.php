@@ -3198,7 +3198,15 @@
                                         $scOtherSvcs  = array_values(array_filter((array)$scOtherSvcs, fn($s) => is_string($s) && trim($s) !== ''));
 
                                         // Unicode-safe normalizer (matches main bid section normalizeStr)
-                                        $scNormStr = fn($s) => strtolower(trim(preg_replace('/[\x{2018}\x{2019}]/u', "'", preg_replace('/[\x{201C}\x{201D}]/u', '"', (string)$s))));
+                                        $scNormStr = function($s) {
+                                            $s = (string)$s;
+                                            // Convert literal \uXXXX escape sequences to actual Unicode (handles copy-pasted JSON strings in config)
+                                            $s = preg_replace_callback('/\\\\u([0-9a-fA-F]{4})/i', fn($m) => mb_chr(hexdec($m[1]), 'UTF-8'), $s);
+                                            // Normalize curly/smart quotes to straight equivalents
+                                            $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
+                                            $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
+                                            return strtolower(trim($s));
+                                        };
 
                                         // Build normalized lookup for counter services
                                         $scSelectedNormalized = [];
@@ -3738,7 +3746,7 @@
 
                                             @if (!empty($scUnmappedSvcs))
                                             <div class="mb-3">
-                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">Other Services</div>
+                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                     @foreach ($scUnmappedSvcs as $scUnmappedSvc)
                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $scCtrSvcIsAdded((string)$scUnmappedSvc) ? 'background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;' : '' }}">
@@ -4924,7 +4932,7 @@
 
                                             @if (!empty($unmappedSvcs))
                                             <div class="mb-3">
-                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">Other Services</div>
+                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                 <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
                                                     @foreach ($unmappedSvcs as $unmappedSvc)
                                                         @php $sellerUnmappedInBaseline = $checkSellerSvcInBaseline($unmappedSvc); @endphp
