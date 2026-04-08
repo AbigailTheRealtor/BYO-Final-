@@ -1,0 +1,114 @@
+SELLER STILL NOT MATCHING TENANT — FULL CORRECTION REQUIRED
+
+Do NOT patch or tweak.
+
+We need strict component-level parity with Tenant.
+
+-----------------------------------
+
+CRITICAL ISSUES TO FIX
+
+1. OFFERED SERVICES — MUST MATCH TENANT EXACTLY
+
+Seller is currently rendering a flat bullet list.
+
+This is WRONG.
+
+Replace Seller services rendering with the EXACT Tenant structure:
+
+- Use categorized sections (same as Tenant)
+- Same headers (emoji + section title)
+- Same spacing and hierarchy
+- Same grouping logic (servicesConfig pattern)
+
+Do NOT use ServicesFormatter flat output.
+
+Seller must render services IDENTICAL to Tenant.
+
+-----------------------------------
+
+2. REMOVE WRONG BUTTONS (ACCEPT / REJECT / COUNTER)
+
+Seller is incorrectly showing:
+- Accept
+- Reject
+- Counter
+
+These DO NOT belong in agent hiring counter UI.
+
+REMOVE THEM COMPLETELY from Seller counter history.
+
+-----------------------------------
+
+3. ADD CORRECT COUNTER ACTION UI (MATCH TENANT)
+
+Inside the bid card (NOT bottom of page), when counter exists:
+
+Show EXACT Tenant pattern:
+
+- Yellow banner:
+  “You have submitted a counter offer for this bid.”
+  OR
+  “[User Name] has submitted a counter offer.”
+
+- Buttons directly under banner:
+  - View Counter Terms (btn-warning btn-sm text-dark)
+  - Edit Counter Terms (btn-outline-secondary btn-sm)
+
+Placement must match Tenant EXACTLY.
+
+-----------------------------------
+
+4. REMOVE DUPLICATE / MISPLACED COUNTER UI
+
+Seller currently shows:
+- Bottom banner + button (incorrect placement)
+
+REMOVE bottom section entirely.
+
+Counter UI must ONLY exist inside bid card like Tenant.
+
+-----------------------------------
+
+5. COUNTER BIDDING HISTORY STRUCTURE
+
+Ensure Seller matches Tenant EXACTLY:
+
+- Same card layout
+- Same spacing
+- Same section order:
+  A–F sections
+  THEN services (categorized)
+  THEN removed services
+  THEN status/footer
+
+-----------------------------------
+
+6. DO NOT MODIFY TENANT
+
+Tenant is source of truth.
+
+-----------------------------------
+
+7. REQUIRED VERIFICATION (MANDATORY)
+
+Before marking complete:
+
+Provide screenshot pairs:
+
+- Seller vs Tenant (bid card expanded)
+- Seller vs Tenant (counter history)
+- Seller vs Tenant (services section)
+- Seller vs Tenant (counter banner + buttons)
+
+If ANY visual difference exists, do not mark complete.
+
+-----------------------------------
+
+RULE
+
+This is NOT a styling task.
+
+This is a STRUCTURE REPLACEMENT task.
+
+Seller must reuse Tenant rendering pattern exactly.
