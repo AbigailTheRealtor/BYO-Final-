@@ -4946,6 +4946,27 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                             @else
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
                                                                             @endif
+                                                                            @if (strtolower(trim($svc)) === 'provide digital photo enhancements')
+                                                                            @php
+                                                                                $ctPhotoEnhRaw = $allMeta['photo_enhancements'] ?? [];
+                                                                                if (is_string($ctPhotoEnhRaw)) $ctPhotoEnhRaw = json_decode($ctPhotoEnhRaw, true) ?: [];
+                                                                                $ctCustomEnh = $allMeta['custom_enhancement'] ?? '';
+                                                                                $ctEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                                                            @endphp
+                                                                            @if (!empty($ctPhotoEnhRaw))
+                                                                            <ul style="padding-left: 1.5rem; margin: 4px 0; list-style: disc;">
+                                                                                @foreach ($ctEnhOrder as $ctEnh)
+                                                                                    @if (in_array($ctEnh, $ctPhotoEnhRaw))
+                                                                                        @if ($ctEnh === 'Other' && !empty($ctCustomEnh))
+                                                                                            <li style="font-size: 0.85rem;">{{ $ctCustomEnh }}</li>
+                                                                                        @elseif ($ctEnh !== 'Other')
+                                                                                            <li style="font-size: 0.85rem;">{{ $ctEnh }}</li>
+                                                                                        @endif
+                                                                                    @endif
+                                                                                @endforeach
+                                                                            </ul>
+                                                                            @endif
+                                                                            @endif
                                                                         @endforeach
                                                                     </ul>
                                                                 </div>

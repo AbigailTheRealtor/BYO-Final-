@@ -1,0 +1,160 @@
+There are still 2 specific counter-bid history issues that need to be fixed.
+
+Do not work broadly.
+Do not change unrelated logic.
+Keep this surgical.
+
+==================================================
+ISSUE 1 — SELLER / LANDLORD COUNTER BID HISTORY MUST SHOW PHOTO ENHANCEMENT SUB-OPTIONS
+==================================================
+
+Problem:
+On Seller and Landlord counter bidding history cards, if the user selected:
+
+- Provide digital photo enhancements
+
+the card is currently only showing the parent service label:
+- Provide digital photo enhancements
+
+But it is NOT showing the selected sub-options underneath it.
+
+This is wrong.
+
+Expected behavior:
+If "Provide digital photo enhancements" is selected in the counter and sub-options were selected, the counter bidding history card must show the selected sub-options underneath it, just like the service hierarchy should display.
+
+Examples of sub-options that should appear when selected:
+- Basic edits (brightness, contrast, cropping)
+- Twilight conversion (convert daytime photo to sunset look)
+- Object removal (e.g., cars, trash cans, furniture, etc.)
+- Virtual twilight photography
+- Color correction or sky replacement
+- Other + custom text if applicable
+
+Required:
+1. Audit Seller counter bidding history rendering
+2. Audit Landlord counter bidding history rendering
+3. Find where "Provide digital photo enhancements" is output
+4. Add the selected child sub-options directly underneath the parent line in the counter card
+5. If "Other" was selected and custom text exists, show the custom custom text too
+6. Preserve the existing service grouping and styling
+
+Important:
+- Do not just show the word "Other"
+- Show the actual custom text entered if it exists
+- Only show sub-options that were actually selected
+
+==================================================
+ISSUE 2 — BUYER COUNTER BIDDING HISTORY STILL DOES NOT MATCH TENANT STYLE
+==================================================
+
+Problem:
+Buyer counter bidding history still visually does not match Tenant.
+It still looks like the old Buyer layout instead of the Tenant-style structure.
+
+Expected behavior:
+Buyer counter bidding history must match Tenant in:
+- spacing
+- font sizes
+- heading structure
+- section rhythm
+- row density
+- Changed badge placement
+- A/B/C/D/E/F formatting
+- Additional Details layout
+- overall visual feel
+
+Required:
+1. Compare Buyer counter bidding history directly to Tenant counter bidding history
+2. Update Buyer counter bidding history so it matches Tenant exactly in structure and visual rhythm
+3. Do NOT just make partial changes
+4. Fix the exact live-rendered Buyer counter card branch
+
+==================================================
+FILES TO CHECK
+==================================================
+
+Seller likely targets:
+- resources/views/hire_seller_agent/view.blade.php
+- any Seller counter card partial/section inside counter bidding history
+
+Landlord likely targets:
+- resources/views/hire_landlord_agent/view.blade.php
+- any Landlord counter card partial/section inside counter bidding history
+
+Buyer likely targets:
+- resources/views/buyerAgentAuctionDetail.blade.php
+- any Buyer counter history/card partial used on the live buyer listing page
+
+Tenant reference:
+- resources/views/hire_tenant_agent/view.blade.php
+
+==================================================
+IMPLEMENTATION DETAILS
+==================================================
+
+FOR ISSUE 1 (Seller / Landlord photo enhancements):
+- Mirror the same hierarchical service rendering logic used wherever these sub-options already display correctly
+- Parent service should remain visible
+- Child selected sub-options should render as nested bullets / nested lines underneath
+- Keep styling consistent with the rest of the services block
+
+FOR ISSUE 2 (Buyer parity):
+- Use Tenant as exact source of truth
+- Match the exact container structure used by Tenant for counter bidding history
+- Match typography and spacing, not just field content
+- If Buyer still uses old row layout, replace it with Tenant-equivalent grouped layout
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- scoring formulas
+- DB schema
+- route names
+- acceptance/rejection/counter business logic
+- unrelated roles or pages
+- Tenant implementation
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Seller / Landlord change only for the photo-enhancement sub-option rendering
+- Buyer change only for counter bidding history parity
+- No broad refactors unless a safe shared rendering partial is the real root cause
+- Do not remove existing working fields
+- Do not hide existing Changed / Added / Removed indicators
+- Keep changes surgical
+
+==================================================
+VERIFY
+==================================================
+
+After implementing, provide screenshot proof of:
+
+1. Seller counter bidding history:
+- "Provide digital photo enhancements" parent line
+- selected sub-options showing underneath
+
+2. Landlord counter bidding history:
+- same as above
+
+3. Buyer counter bidding history:
+- updated screenshot
+- equivalent Tenant screenshot
+- proof Buyer now matches Tenant much more closely in spacing/structure
+
+Also confirm:
+- if "Other" custom photo-enhancement text exists, it now displays correctly
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+When done, provide:
+1. exact files changed
+2. how Seller photo-enhancement sub-options were rendered
+3. how Landlord photo-enhancement sub-options were rendered
+4. what was changed in Buyer counter bidding history for Tenant parity
+5. screenshot proof for all three

@@ -3873,6 +3873,27 @@
                                                                 @else
                                                                 <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $scServiceDisplay }}</li>
                                                                 @endif
+                                                                @if (strtolower(trim($scService)) === 'provide digital photo enhancements')
+                                                                @php
+                                                                    $scCtrPhotoEnhRaw = $scAllMeta['photo_enhancements'] ?? [];
+                                                                    if (is_string($scCtrPhotoEnhRaw)) $scCtrPhotoEnhRaw = json_decode($scCtrPhotoEnhRaw, true) ?: [];
+                                                                    $scCtrCustomEnh = $scAllMeta['custom_enhancement'] ?? '';
+                                                                    $scEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                                                @endphp
+                                                                @if (!empty($scCtrPhotoEnhRaw))
+                                                                <ul style="padding-left: 1.5rem; margin: 4px 0; list-style: disc;">
+                                                                    @foreach ($scEnhOrder as $scEnh)
+                                                                        @if (in_array($scEnh, $scCtrPhotoEnhRaw))
+                                                                            @if ($scEnh === 'Other' && !empty($scCtrCustomEnh))
+                                                                                <li style="font-size: 0.85rem;">{{ $scCtrCustomEnh }}</li>
+                                                                            @elseif ($scEnh !== 'Other')
+                                                                                <li style="font-size: 0.85rem;">{{ $scEnh }}</li>
+                                                                            @endif
+                                                                        @endif
+                                                                    @endforeach
+                                                                </ul>
+                                                                @endif
+                                                                @endif
                                                             @endif
                                                         @endforeach
                                                     </ul>

@@ -5235,31 +5235,48 @@
                 @if (!empty($allMeta['protection_period']))
                 <li class="mb-1" style="{{ $isChanged($allMeta['protection_period'], 'protection_period') ? $changedStyle : '' }}">
                     <span class="fw-semibold">Protection Period Timeframe:</span>
-                    {{ $allMeta['protection_period'] }} Days
+                    {{ $allMeta['protection_period'] }} days
                     @if ($isChanged($allMeta['protection_period'], 'protection_period')) {!! $changedBadge !!} @endif
                 </li>
                 @endif
                 @if (!empty($allMeta['early_termination_fee_option']))
-                <li class="mb-1" style="{{ $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option') ? $changedStyle : '' }}">
+                @php $buyerTermOptChg = $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option'); @endphp
+                <li class="mb-1" style="{{ $buyerTermOptChg ? $changedStyle : '' }}">
                     <span class="fw-semibold">Early Termination Fee:</span>
-                    {{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['early_termination_fee_option'], !empty($allMeta['early_termination_fee_amount']) ? \App\Support\Format::money($allMeta['early_termination_fee_amount']) : null) }}
-                    @if ($isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option')) {!! $changedBadge !!} @endif
+                    {{ $allMeta['early_termination_fee_option'] }}
+                    @if ($buyerTermOptChg) {!! $changedBadge !!} @endif
                 </li>
+                @if (strtolower($allMeta['early_termination_fee_option']) === 'yes' && !empty($allMeta['early_termination_fee_amount']))
+                @php $buyerTermAmtChg = $isChanged($allMeta['early_termination_fee_amount'], 'early_termination_fee_amount'); @endphp
+                <li class="mb-1" style="{{ $buyerTermAmtChg ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Termination Fee Amount:</span>
+                    {{ \App\Support\Format::money($allMeta['early_termination_fee_amount']) }}
+                    @if ($buyerTermAmtChg) {!! $changedBadge !!} @endif
+                </li>
+                @endif
                 @endif
                 @if (!empty($allMeta['retainer_fee_option']))
-                <li class="mb-1" style="{{ $isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option') ? $changedStyle : '' }}">
+                @php $buyerRetOptChg = $isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option'); @endphp
+                <li class="mb-1" style="{{ $buyerRetOptChg ? $changedStyle : '' }}">
                     <span class="fw-semibold">Retainer Fee:</span>
-                    {{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['retainer_fee_option'], !empty($allMeta['retainer_fee_amount']) ? \App\Support\Format::money($allMeta['retainer_fee_amount']) : null) }}
-                    @if ($isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option')) {!! $changedBadge !!} @endif
+                    {{ $allMeta['retainer_fee_option'] }}
+                    @if ($buyerRetOptChg) {!! $changedBadge !!} @endif
                 </li>
-                @if (in_array(strtolower($allMeta['retainer_fee_option']), ['yes']) && !empty($allMeta['retainer_fee_application']))
-                @php $counterFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication($allMeta['retainer_fee_application']); @endphp
-                @if (!empty($counterFormattedRetainer))
-                <li class="mb-1">
-                    <span class="fw-semibold">Retainer Fee Application:</span>
-                    {{ $counterFormattedRetainer }}
+                @if (strtolower($allMeta['retainer_fee_option']) === 'yes' && !empty($allMeta['retainer_fee_amount']))
+                @php $buyerRetAmtChg = $isChanged($allMeta['retainer_fee_amount'], 'retainer_fee_amount'); @endphp
+                <li class="mb-1" style="{{ $buyerRetAmtChg ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Retainer Fee Amount:</span>
+                    {{ \App\Support\Format::money($allMeta['retainer_fee_amount']) }}
+                    @if ($buyerRetAmtChg) {!! $changedBadge !!} @endif
                 </li>
                 @endif
+                @if (strtolower($allMeta['retainer_fee_option'] ?? '') === 'yes' && !empty($allMeta['retainer_fee_application']))
+                @php $buyerRetAppChg = $isChanged($allMeta['retainer_fee_application'], 'retainer_fee_application'); @endphp
+                <li class="mb-1" style="{{ $buyerRetAppChg ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Retainer Fee Application:</span>
+                    {{ $allMeta['retainer_fee_application'] === 'applied' ? 'Applied toward final compensation' : ($allMeta['retainer_fee_application'] === 'additional' ? 'Charged in addition to final compensation' : $allMeta['retainer_fee_application']) }}
+                    @if ($buyerRetAppChg) {!! $changedBadge !!} @endif
+                </li>
                 @endif
                 @endif
                 @if (!empty($allMeta['agency_agreement_timeframe']))
