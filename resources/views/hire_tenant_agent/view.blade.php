@@ -1824,7 +1824,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $latestTenantCounter = \App\Models\TenantCounterTerm::with('meta')
                                 ->where('tenant_agent_auction_id', $bid->id)
                                 ->where('user_id', $listingOwnerUserId)
-                                ->where('status', 1)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
                             
@@ -4108,7 +4107,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     $_mfHasOwnerCounter = isset($latestTenantCounter) && $latestTenantCounter !== null;
                                                     $mfState       = (!$_mfIsTerminal && $_mfHasOwnerCounter)
                                                         ? 'countered'
-                                                        : (in_array($mfRawState, [null, 0, '0'], true) ? '0' : (string)$mfRawState);
+                                                        : (in_array($mfRawState, [null, 0, '0', ''], true) ? '0' : (string)$mfRawState);
                                                     $mfOwnerId     = data_get($auction, 'user_id');
                                                     $mfOwnerFirst  = data_get($auction, 'user.first_name', '');
                                                     $mfOwnerLast   = data_get($auction, 'user.last_name', '');

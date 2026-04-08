@@ -2434,11 +2434,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                             // Use the most recently submitted non-terminal counter as the active baseline.
                             // Exclude accepted/rejected records so stale terminal counters are never used as baseline.
                             $latestActiveCounter = $counterBids->filter(fn($c) => !in_array((string)$c->status, ['accepted', 'rejected'], true))->first();
-                            // Detect whether the listing OWNER specifically submitted an active counter (status=1, owner-scoped).
+                            // Detect whether the listing OWNER specifically submitted any counter (owner-scoped).
                             // This is used exclusively by the footer state machine to determine the 'countered' state.
                             $latestOwnerCounter = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', data_get($bid, 'id'))
                                 ->where('user_id', data_get($auction, 'user_id'))
-                                ->where('status', 1)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
                             if ($latestActiveCounter && $latestActiveCounter->meta->count()) {
@@ -4153,13 +4152,13 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                 </div>
                                                 @php
-                                                    // Compute modal-footer state — uses $latestOwnerCounter (owner-scoped, status=1) for countered detection
+                                                    // Compute modal-footer state — uses $latestOwnerCounter (owner-scoped) for countered detection
                                                     $_mfRawL    = data_get($bid, 'accepted', '0');
                                                     $_mfTermL   = in_array((string)$_mfRawL, ['accepted', 'rejected'], true);
                                                     $_mfActiveL = isset($latestOwnerCounter) && $latestOwnerCounter !== null;
                                                     $mfStateL   = (!$_mfTermL && $_mfActiveL)
                                                         ? 'countered'
-                                                        : (in_array($_mfRawL, [null, 0, '0'], true) ? '0' : (string)$_mfRawL);
+                                                        : (in_array($_mfRawL, [null, 0, '0', ''], true) ? '0' : (string)$_mfRawL);
                                                     $mfOwnerIdL    = data_get($auction, 'user_id');
                                                     $mfOwnerFirstL = data_get($auction, 'user.first_name', '');
                                                     $mfOwnerLastL  = data_get($auction, 'user.last_name', '');
