@@ -2412,10 +2412,12 @@
                                         $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
                                         $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
                                     @endphp
-                                    <!-- Item -->
+                                    <!-- Bid Card - Collapsible Accordion Design -->
+                                    <div class="card mb-3" style="border: 1px solid #e0e0e0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                                    <!-- A) Card Header - Clickable to expand/collapse (using custom JS toggle) -->
                                     <div class="card-header d-flex justify-content-between align-items-center bid-accordion-header"
                                         style="cursor: pointer; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 15px 20px;"
-                                        data-target="item{{ $bidId }}"
+                                        data-target="bidCollapse-{{ $bidId }}"
                                         aria-expanded="false">
                                         <div class="d-flex align-items-center gap-2">
                                             <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
@@ -2424,7 +2426,8 @@
                                         <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusDisplay }}</span>
                                     </div>
 
-                                    <div id="item{{ $bidId }}" class="bid-collapse-content" style="display:none; padding:12px 4px;">
+                                    <!-- Collapsible Content - Default collapsed (custom toggle, no Bootstrap) -->
+                                    <div class="bid-collapse-content" id="bidCollapse-{{ $bidId }}" style="display: none;">
 
                                         @php
                                             // Pre-compute compact card variables (Tenant-parity)
@@ -2635,6 +2638,40 @@
                                                 <a href="{{ route('agent.buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
                                                     <i class="fa fa-edit me-1"></i> Edit Bid
                                                 </a>
+                                            </div>
+                                            @elseif ($isBidOwner && $isExpired)
+                                            <div class="mt-3">
+                                                <span class="text-muted small">
+                                                    <i class="fa fa-clock me-1"></i> Bidding has ended - edit unavailable
+                                                </span>
+                                            </div>
+                                            @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
+                                            <div class="mt-3">
+                                                <span class="text-muted small">
+                                                    <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
+                                                </span>
+                                                @if($bidAccepted === 'accepted')
+                                                @php
+                                                    $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', $bidId)->first();
+                                                @endphp
+                                                @if($bidOwnerSummary)
+                                                <div class="d-flex gap-2 flex-wrap mt-2">
+                                                    <a href="{{ route('accepted-bid-summary.view', $bidOwnerSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                                        <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                                    </a>
+                                                    @if(!$bidOwnerSummary->isAgentSigned())
+                                                    <a href="{{ route('accepted-bid-summary.sign-form', $bidOwnerSummary->id) }}" class="btn btn-primary btn-sm">
+                                                        <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                                    </a>
+                                                    @endif
+                                                    @if($bidOwnerSummary->isFullySigned())
+                                                    <a href="{{ route('accepted-bid-summary.download-pdf', $bidOwnerSummary->id) }}" class="btn btn-success btn-sm">
+                                                        <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                    </a>
+                                                    @endif
+                                                </div>
+                                                @endif
+                                                @endif
                                             </div>
                                             @endif
                                         </div>
@@ -4833,56 +4870,103 @@
                                                         </div>
                                                     @endif
 
-                                                    {{-- Main Bid Actions (keep this section as is) --}}
+                                                    {{-- Main Bid Actions - Traditional vs Bidding Period --}}
                                                     <div class="d-flex justify-content-between flex-wrap gap-2 mt-3">
                                                         @if ($state === '0' && $isOwnerRow && !$isSold)
 
-                                                            @if ($isExpired)
-                                                            {{-- 🔹 Show expired message if auction expired --}}
-                                                                <div class="alert alert-warning text-center mt-2 mb-0 p-2 ml-2" style="margin-left: 20px;">
-                                                                    <strong>Bidding/Counter Period Ended</strong>
-                                                                </div>
-                                                            @else
-                                                            <div class="biding-btn">
-                                                                <form
-                                                                    action="{{ route('buyer.hire.agent.auction.bid.accept') }}"
-                                                                    method="post">
-                                                                    @csrf
-                                                                    <input type="hidden" name="auction_id"
-                                                                        value="{{ data_get($auction, 'id') }}">
-                                                                    <input type="hidden" name="bid_id"
-                                                                        value="{{ data_get($bid, 'id') }}">
-                                                                    <button type="submit"
-                                                                        class="btn btn-success w-100" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
-                                                                </form>
-                                                            </div>
-                                                            <div class="biding-btn">
-                                                                <form
-                                                                    action="{{ route('buyer.hire.agent.auction.bid.reject') }}"
-                                                                    method="post">
-                                                                    @csrf
-                                                                    <input type="hidden" name="auction_id"
-                                                                        value="{{ data_get($auction, 'id') }}">
-                                                                    <input type="hidden" name="bid_id"
-                                                                        value="{{ data_get($bid, 'id') }}">
-                                                                    <button type="submit"
-                                                                        class="btn btn-danger w-100" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
-                                                                </form>
-                                                            </div>
-                                                            <div class="biding-btn">
-                                                                <form
-                                                                    action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
-                                                                    method="post">
-                                                                    @csrf
-                                                                    <input type="hidden" name="auction_id"
-                                                                        value="{{ data_get($auction, 'id') }}">
-                                                                    <input type="hidden" name="bid_id"
-                                                                        value="{{ data_get($bid, 'id') }}">
-                                                                    <button type="submit"
-                                                                        class="btn btn-primary w-100" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
-                                                                </form>
-                                                            </div>
-                                                            @endif
+                                                        @if ($isBiddingPeriodListing && $isBiddingTimerActive)
+                                                        {{-- 🔹 Bidding Period: Timer still active - actions locked --}}
+                                                        <div class="alert alert-info text-center mt-2 mb-0 p-2 w-100" style="margin-left: 20px;">
+                                                            <i class="fa fa-clock me-1"></i> <strong>Actions unlock when the bidding period ends.</strong>
+                                                        </div>
+                                                        @elseif ($isTraditionalListing && $isExpired)
+                                                        {{-- 🔹 Traditional: Listing expired --}}
+                                                        <div class="alert alert-warning text-center mt-2 mb-0 p-2 ml-2" style="margin-left: 20px;">
+                                                            <strong>Listing Expired</strong>
+                                                        </div>
+                                                        @elseif ($isBiddingPeriodListing && $isExpired)
+                                                        {{-- 🔹 Bidding Period: Timer ended - show actions --}}
+                                                        <div class="biding-btn">
+                                                            <form
+                                                                action="{{ route('buyer.hire.agent.auction.bid.accept') }}"
+                                                                method="post">
+                                                                @csrf
+                                                                <input type="hidden" name="auction_id"
+                                                                    value="{{ data_get($auction, 'id') }}">
+                                                                <input type="hidden" name="bid_id"
+                                                                    value="{{ data_get($bid, 'id') }}">
+                                                                <button type="submit"
+                                                                    class="btn-custom btn-accept">Accept</button>
+                                                            </form>
+                                                        </div>
+                                                        <div class="biding-btn">
+                                                            <form
+                                                                action="{{ route('buyer.hire.agent.auction.bid.reject') }}"
+                                                                method="post">
+                                                                @csrf
+                                                                <input type="hidden" name="auction_id"
+                                                                    value="{{ data_get($auction, 'id') }}">
+                                                                <input type="hidden" name="bid_id"
+                                                                    value="{{ data_get($bid, 'id') }}">
+                                                                <button type="submit"
+                                                                    class="btn-custom btn-reject">Reject</button>
+                                                            </form>
+                                                        </div>
+                                                        <div class="biding-btn">
+                                                            <form
+                                                                action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
+                                                                method="post">
+                                                                @csrf
+                                                                <input type="hidden" name="auction_id"
+                                                                    value="{{ data_get($auction, 'id') }}">
+                                                                <input type="hidden" name="bid_id"
+                                                                    value="{{ data_get($bid, 'id') }}">
+                                                                <button type="submit"
+                                                                    class="btn-custom btn-counter">Counter</button>
+                                                            </form>
+                                                        </div>
+                                                        @elseif ($isTraditionalListing)
+                                                        {{-- 🔹 Traditional: Actions always available immediately --}}
+                                                        <div class="biding-btn">
+                                                            <form
+                                                                action="{{ route('buyer.hire.agent.auction.bid.accept') }}"
+                                                                method="post">
+                                                                @csrf
+                                                                <input type="hidden" name="auction_id"
+                                                                    value="{{ data_get($auction, 'id') }}">
+                                                                <input type="hidden" name="bid_id"
+                                                                    value="{{ data_get($bid, 'id') }}">
+                                                                <button type="submit"
+                                                                    class="btn-custom btn-accept">Accept</button>
+                                                            </form>
+                                                        </div>
+                                                        <div class="biding-btn">
+                                                            <form
+                                                                action="{{ route('buyer.hire.agent.auction.bid.reject') }}"
+                                                                method="post">
+                                                                @csrf
+                                                                <input type="hidden" name="auction_id"
+                                                                    value="{{ data_get($auction, 'id') }}">
+                                                                <input type="hidden" name="bid_id"
+                                                                    value="{{ data_get($bid, 'id') }}">
+                                                                <button type="submit"
+                                                                    class="btn-custom btn-reject">Reject</button>
+                                                            </form>
+                                                        </div>
+                                                        <div class="biding-btn">
+                                                            <form
+                                                                action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
+                                                                method="post">
+                                                                @csrf
+                                                                <input type="hidden" name="auction_id"
+                                                                    value="{{ data_get($auction, 'id') }}">
+                                                                <input type="hidden" name="bid_id"
+                                                                    value="{{ data_get($bid, 'id') }}">
+                                                                <button type="submit"
+                                                                    class="btn-custom btn-counter">Counter</button>
+                                                            </form>
+                                                        </div>
+                                                        @endif
                                                         @endif
 
                                                         @if ($state === 'accepted')
@@ -4963,6 +5047,9 @@
                                                     </div>
 
                                     </div>
+                                    {{-- End of bid-collapse-content --}}
+                                    </div>
+                                    {{-- End of card mb-3 --}}
                                 @endforeach
 
                                 @if ($auction->bids->count() > 0)

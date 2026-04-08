@@ -1,0 +1,183 @@
+The Seller counter-bid UI is still not matching Tenant closely enough. I need the Seller counter-bid history / counter terms presentation to match the Tenant implementation as closely as possible in structure, spacing, summary layout, alert styling, and action area.
+
+This is a Seller-only parity task using Tenant as the exact UI/UX reference.
+Do not alter Tenant.
+Do not do broad refactors unless a shared partial is the safe root cause.
+Keep changes surgical.
+
+==================================================
+PROBLEM
+==================================================
+
+Seller counter-bidding history and counter terms UI still looks different from Tenant.
+
+From the screenshots, Seller still differs in:
+- font sizing / typography feel
+- spacing / vertical gaps
+- section separation
+- counter match summary layout
+- original summary vs counter summary presentation
+- "You have submitted a counter offer for this bid." banner / action section styling
+- "View Counter Terms" / "Edit Counter Terms" area
+- private compensation & agency agreement terms counter summary layout
+- removed services styling
+- counter bidding history card/container styling
+
+I need Seller to visually and structurally match Tenant as closely as possible.
+
+==================================================
+TARGET
+==================================================
+
+Use the Tenant counter-bid history / counter terms UI as the exact reference standard for Seller in these areas:
+
+1. Counter Bidding History container
+2. Counter offer card layout
+3. Match summary section layout
+4. Original Match vs Latest Counter Match presentation
+5. Private Compensation & Agency Agreement Terms summary styling
+6. Offered Services summary styling
+7. Removed services / changed / added styling
+8. Bottom status / awaiting response area
+9. "You have submitted a counter offer for this bid." banner
+10. "View Counter Terms" and "Edit Counter Terms" button row
+11. Typography, heading sizes, section spacing, padding, margin rhythm
+12. Box/background/border treatment for changed, removed, and added callouts
+
+==================================================
+SPECIFIC THINGS TO FIX
+==================================================
+
+Please compare Seller directly against Tenant and make Seller match Tenant for:
+
+A. COUNTER BIDDING HISTORY
+- outer container structure
+- inner card spacing
+- heading style
+- timestamp placement
+- pending/waiting response badge placement and styling
+- section spacing between A/B/C/D/etc
+- overall vertical rhythm
+
+B. MATCH SUMMARY
+- make Seller match Tenant format for:
+  - Match Summary heading area
+  - Original Match
+  - Latest Counter Match / Counter Match layout
+  - typography size / hierarchy
+  - spacing between summary blocks
+- ensure Seller uses the same visual grouping and density as Tenant
+
+C. PRIVATE COMPENSATION & AGENCY AGREEMENT TERMS
+- Seller counter summary under this section should match Tenant’s pattern
+- changed fields should visually match Tenant treatment
+- spacing between subsections should match Tenant
+- do not leave Seller with larger gaps or different visual rhythm
+
+D. OFFERED SERVICES / REMOVED SERVICES
+- Seller removed services area should match Tenant styling as closely as possible
+- if Tenant uses a red bordered/light red box with consistent padding/margins, Seller should match it
+- bullet indentation, icon spacing, label styling, and gap above/below should match Tenant
+- changed/added/removed visual treatments should be consistent with Tenant
+
+E. COUNTER ACTION BANNER + BUTTONS
+- The section:
+  "You have submitted a counter offer for this bid."
+  plus:
+  - View Counter Terms
+  - Edit Counter Terms
+must match Tenant in:
+  - banner background
+  - padding
+  - spacing from surrounding sections
+  - button alignment
+  - button spacing
+  - overall size and density
+
+F. GENERAL TYPOGRAPHY / SPACING PARITY
+- Seller currently appears more spread out / gapped than Tenant
+- tighten spacing to match Tenant
+- heading sizes, line heights, and section gaps should visually align with Tenant
+- do not leave Seller looking like a different component family
+
+==================================================
+IMPLEMENTATION METHOD
+==================================================
+
+1. Inspect Tenant files that render:
+- counter bidding history
+- counter terms page / view
+- removed services block
+- submitted counter banner
+- action buttons row
+- match summary layout
+
+2. Inspect the corresponding Seller files.
+
+3. Identify exactly which CSS classes / Blade structures differ.
+
+4. Update Seller to mirror Tenant as closely as possible.
+- Prefer reusing the same class names / structure where safe
+- If a shared partial can safely be used without affecting Tenant negatively, it is okay
+- Otherwise make Seller-specific Blade/class adjustments only
+
+==================================================
+FILES TO AUDIT
+==================================================
+
+At minimum inspect the Seller and Tenant equivalents of:
+- main listing detail bid view
+- counter terms view
+- counter bidding history section
+- match summary section
+- removed services / changed / added display blocks
+- submitted counter banner / action button row
+
+Likely Seller targets include:
+- resources/views/hire_seller_agent/view.blade.php
+- resources/views/hire_seller_agent/view_counter_terms.blade.php
+
+Reference Tenant equivalents:
+- resources/views/hire_tenant_agent/view.blade.php
+- resources/views/hire_tenant_agent/view_counter_terms.blade.php
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Seller only, using Tenant as visual reference
+- Do not change Tenant behavior
+- Do not alter Buyer or Landlord in this task
+- Do not change scoring logic unless a tiny render dependency absolutely requires it
+- Do not rename DB fields
+- Do not refactor broad platform styling
+- Keep changes surgical and scoped to Seller parity with Tenant
+- Preserve the already-correct Seller data logic and dual score logic
+- This task is about visual/layout parity and section rendering parity
+
+==================================================
+VERIFY
+==================================================
+
+After updating, verify with side-by-side comparison against Tenant that Seller now matches Tenant for:
+
+1. Counter Bidding History structure
+2. Match Summary layout
+3. Original vs Counter summary presentation
+4. Private Compensation & Agency Agreement Terms counter styling
+5. Removed Services box styling
+6. Submitted counter banner and button row
+7. Overall spacing / density / typography rhythm
+
+Use real browser screenshots if possible.
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+When done, provide:
+1. exact Seller files changed
+2. which Tenant structures/classes were mirrored
+3. what visual differences were corrected
+4. what was verified side-by-side against Tenant
+5. confirmation that Seller counter-bid history and counter terms UI now matches Tenant as closely as possible
