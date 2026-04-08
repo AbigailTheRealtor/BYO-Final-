@@ -1,0 +1,202 @@
+Implement a surgical bid-card parity cleanup across all four listing roles:
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+This task is focused ONLY on:
+1. removing Broker Compensation Summary from bid cards
+2. fixing counter bidding history typography parity
+3. standardizing counter notice / Send Message parity where applicable
+
+Do NOT change database schema, routes, scoring formulas, listing type logic, or counter workflow logic in this task.
+
+==================================================
+PART 1 — REMOVE BROKER COMPENSATION SUMMARY FROM BID CARDS
+==================================================
+
+Goal:
+The main bid cards should no longer show a "Broker Compensation Summary" block for:
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+Instead, the card structure should be:
+
+1. Header
+2. Offered Services
+3. Terms Match
+4. Match Summary
+5. private notices / counter notices / actions
+
+Required action:
+- remove the Broker Compensation Summary section from the bid cards themselves
+- do NOT remove the underlying private terms data from modal/detail/counter pages unless the card is directly rendering that block
+- do NOT break Terms Match or Match Summary data sources
+- do NOT remove compensation details from dedicated detail pages or counter review pages unless they are part of the actual bid card block being cleaned up
+
+Important:
+This is specifically about the visible bid cards.
+If a role still renders a legacy card block with Broker Compensation Summary in the card, remove that section and close the spacing cleanly.
+
+Expected result:
+Bid cards should no longer show:
+- Broker Compensation Summary
+- Tenant's Broker Commission Structure
+- Buyer's Broker Commission Structure
+- Seller's Broker Purchase Fee
+- Landlord's Broker Lease Fee
+inside the card summary area
+
+Those terms should instead be represented through:
+- Terms Match row
+- Match Summary
+- dedicated detail/counter views where appropriate
+
+==================================================
+PART 2 — FIX COUNTER BIDDING HISTORY TYPOGRAPHY PARITY
+==================================================
+
+Goal:
+Counter Bidding History must visually match Tenant across all four roles, especially Buyer.
+
+Use Tenant as the exact typography reference.
+
+Audit and fix:
+- section title font size
+- section subtitle font size
+- field label font size
+- field value font size
+- row spacing
+- padding
+- visual density
+- heading-to-content scale
+
+Current known issue:
+In Buyer, the section headings and the inner field labels/values are visually mismatched.
+For example:
+- main section labels like "Broker Compensation & Agency Agreement Terms" are one size
+- inner term labels like "Buyer's Broker Commission Structure:" are rendering larger than they should
+- Tenant currently shows a more consistent type scale where those elements visually match better
+
+Required behavior:
+Make Buyer match Tenant exactly for:
+- heading sizes
+- label sizes
+- value sizes
+- spacing
+
+Then verify Seller and Landlord use the same typography scale too.
+
+Important:
+- do NOT enlarge Tenant to match Buyer
+- bring Buyer / Seller / Landlord into Tenant parity
+- do NOT use broad global CSS that may affect unrelated pages
+- prefer scoped class reuse or copying the exact Tenant structure/classes/styles where safe
+
+If the issue is caused by:
+- inline styles
+- ul/li font-size inheritance
+- stronger heading tags in Buyer
+- role-specific markup
+fix the smallest exact source of difference
+
+==================================================
+PART 3 — STANDARDIZE COUNTER NOTICE PARITY
+==================================================
+
+Goal:
+Standardize the in-card counter notice behavior across all four roles.
+
+Known issue:
+Buyer currently shows:
+"Counter Offer Sent. You sent a counter offer on this bid. Review it in Counter Bidding History below."
+
+but Tenant / Seller / Landlord do not consistently mirror this same behavior and wording.
+
+Required action:
+Audit the in-card counter notice/banner for all four roles and make them consistent.
+
+Use one standard rule:
+- if the listing owner has submitted a counter, show the same style and wording pattern across all four roles
+- if the logged-in side has NOT submitted a counter, do not falsely show that notice
+- if there is already an accepted/rejected terminal state, do not show the active counter-sent banner incorrectly
+
+Preferred standardized wording:
+"Counter Offer Sent. You sent a counter offer on this bid. Review it in Counter Bidding History below."
+
+Apply consistently only when true.
+
+Important:
+- do NOT confuse owner-submitted counters with agent-submitted counters
+- preserve the owner/user scoping logic already fixed in Buyer
+- do NOT introduce false positives
+
+==================================================
+PART 4 — SEND MESSAGE PARITY
+==================================================
+
+Goal:
+Ensure Buyer bids have the same Send Message availability/presentation parity as the other roles where applicable.
+
+Known issue:
+Buyer is missing Send Message on bids.
+
+Required action:
+Audit the role-specific bid view/card/action areas and confirm why Buyer is missing Send Message.
+Then add Buyer parity using the same existing pattern used in Tenant / Seller / Landlord, but only in the correct area.
+
+Important:
+- do NOT duplicate Send Message buttons
+- do NOT place it in the wrong section
+- do NOT move card blocks around
+- use the same area/pattern as the working roles
+- if visibility depends on authentication / role / ownership, preserve that logic
+
+==================================================
+PART 5 — FILE SCOPING
+==================================================
+
+Before editing, identify the exact files for:
+- bid card rendering per role
+- counter bidding history rendering per role
+- counter-sent notice/banner rendering per role
+- Send Message rendering per role
+
+Likely files include role detail Blade views, but do not assume all roles use the same file names or structure.
+
+Update only the minimum necessary files.
+
+==================================================
+PART 6 — SAFEGUARDS
+==================================================
+
+- Do NOT change database schema
+- Do NOT rename routes
+- Do NOT refactor scoring logic
+- Do NOT alter Terms Match formulas
+- Do NOT alter Match Summary formulas
+- Do NOT change listing type logic
+- Do NOT change timer logic
+- Do NOT move bid cards below other sections
+- Do NOT duplicate state/action blocks
+- Do NOT globally restyle unrelated pages
+- Do NOT touch notifications unless required for in-card rendering parity
+- Do NOT remove private counter/detail pages
+- Do NOT remove compensation data from true detail pages unless it is part of the bid-card summary block itself
+
+If any one role requires a broader refactor to match the others, stop and report before making broad changes.
+
+==================================================
+PART 7 — OUTPUT REQUIRED
+==================================================
+
+Return:
+1. exact files changed
+2. which Broker Compensation Summary blocks were removed from bid cards
+3. which files/sections were changed for counter history typography parity
+4. which files/sections were changed for counter notice parity
+5. where Send Message was restored/added for Buyer
+6. confirmation that Tenant remained the typography reference
+7. confirmation that no bid cards were moved to a different section of the page

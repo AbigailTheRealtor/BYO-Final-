@@ -2008,7 +2008,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             <div class="card-body" style="padding: 20px;">
                                 
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
-                                
+
+                                {{-- Counter Offer Notice Banner — visible immediately on accordion expand --}}
+                                @if ($latestTenantCounter)
+                                <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
+                                     style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
+                                    <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
+                                    <div>
+                                        @if ($isListingOwner)
+                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner)
+                                            <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+
                                 <!-- B) Offered Services Count Row -->
                                 <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
                                     <span style="font-weight: 600;">Offered Services:</span>
@@ -2153,23 +2170,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                 </div>
                                 @endif
-                                
-                                <!-- C) Broker Compensation Summary Section -->
-                                <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
-                                
-                                <div class="mb-2">
-                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant's Broker Commission Structure:</span>
-                                    </p>
-                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionStructure }}</p>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Tenant's Broker Commission Fee:</span>
-                                    </p>
-                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $commissionFeeDisplay }}</p>
-                                </div>
                                 
                                 <!-- D) View Full Terms Link - visibility rules by listing type and user -->
                                 @if ($isListingOwner || $isBidOwner)

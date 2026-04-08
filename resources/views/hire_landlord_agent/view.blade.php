@@ -2494,6 +2494,24 @@ $auser = $auctionUser::find(@$auction->user_id);
                             <div class="bid-collapse-content" id="bidCollapse-{{ data_get($bid, 'id') }}" style="display: none;">
                             <div class="card-body" style="padding: 20px;">
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
+
+                                {{-- Counter Offer Notice Banner — visible immediately on accordion expand --}}
+                                @if ($latestOwnerCounter)
+                                <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
+                                     style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
+                                    <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
+                                    <div>
+                                        @if ($isListingOwner)
+                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner)
+                                            <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @endif
+                                    </div>
+                                </div>
+                                @endif
+
                                 <!-- Offered Services Count Row -->
                                 <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
                                     <span style="font-weight: 600;">Offered Services:</span>
@@ -2633,21 +2651,6 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 </div>
                                 @endif
 
-                                <!-- Broker Compensation Summary -->
-                                <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
-
-                                @if ($landlordFeeType)
-                                <div class="mb-2">
-                                    <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                        <span style="font-weight: 600;">Landlord's Broker Lease Fee:</span>
-                                    </p>
-                                    <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $landlordFeeDisplay }}</p>
-                                </div>
-                                @endif
-
-                                @if (!$landlordFeeType)
-                                <p class="text-muted" style="font-size: 0.95rem; font-style: italic;">No compensation details provided.</p>
-                                @endif
                                 <!-- View Full Bid link -->
                                 @if ($isListingOwner || $isBidOwner)
                                 {{-- Listing Owner or Bid Owner: Full access --}}

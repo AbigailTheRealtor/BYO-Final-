@@ -295,6 +295,11 @@
             }
         }
 
+        /* Counter bidding history — field rows match Tenant typography (12px per li) */
+        .counter-bid-card ul.list-unstyled li {
+            font-size: 12px;
+        }
+
         /* Bid card accordion chevron rotation (custom JS toggle) */
         .bid-accordion-header .bid-chevron {
             transition: transform 0.3s ease;
@@ -2209,11 +2214,9 @@
 
 
         {{-- 📩 Message Button --}}
-        @if (@$auction->user_id != $auth_id)
-        <a href="{{ route('auction-chat', ['tenant-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
+        <a href="{{ route('auction-chat', ['buyer-agent', $auction->id]) }}" class="btn btn-success w-100 mb-2">
             <i class="fa-solid fa-paper-plane"></i> Send Message
         </a>
-        @endif
 
 
         {{-- ⏳ Countdown Timer - Only shown for Bidding Period listings --}}
@@ -2477,17 +2480,6 @@
                                              */
                                             $cardHasAnyBaseline = (($score['broker_comp_total'] ?? 0) > 0 || $cardServicesTotal > 0);
 
-                                            // Compact broker compensation summary
-                                            $cardCommissionStructure = data_get($bid, 'get.commission_structure', '');
-                                            $cardPurchaseFeeType = data_get($bid, 'get.purchase_fee_type', '');
-                                            $cardPurchaseFeeDisplay = '';
-                                            if ($cardPurchaseFeeType === 'Flat Fee') {
-                                                $v = data_get($bid, 'get.purchase_fee_flat'); $cardPurchaseFeeDisplay = $v ? ($fmtMoney($v) ?? '') : '';
-                                            } elseif ($cardPurchaseFeeType === 'Percentage of the Total Purchase Price') {
-                                                $v = data_get($bid, 'get.purchase_fee_percentage'); $cardPurchaseFeeDisplay = $v ? (($fmtPercent($v) ?? '') . ' of Total Purchase Price') : '';
-                                            } elseif ($cardPurchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                                                $p1 = $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')); $p2 = $fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')); $cardPurchaseFeeDisplay = trim(($p1 ?? '') . ($p1 && $p2 ? ' + ' : '') . ($p2 ? $p2 . ' of Total Purchase Price' : ''), ' +');
-                                            } elseif ($cardPurchaseFeeType === 'other') { $cardPurchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other', ''); }
                                         @endphp
 
                                         <div class="card-body" style="padding: 20px;">
@@ -2648,28 +2640,6 @@
                                                 </div>
                                                 @endif
                                             </div>
-                                            @endif
-
-                                            <!-- Broker Compensation Summary -->
-                                            <h6 style="font-weight: 600; color: #1a3a5c; font-size: 1.15rem; margin-bottom: 12px;">Broker Compensation Summary:</h6>
-                                            @if ($cardCommissionStructure)
-                                            <div class="mb-2">
-                                                <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                                    <span style="font-weight: 600;">Buyer's Broker Commission Structure:</span>
-                                                </p>
-                                                <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $cardCommissionStructure }}</p>
-                                            </div>
-                                            @endif
-                                            @if ($cardPurchaseFeeDisplay)
-                                            <div class="mb-3">
-                                                <p class="mb-1" style="font-size: 1rem; color: #333;">
-                                                    <span style="font-weight: 600;">Buyer's Broker Purchase Fee:</span>
-                                                </p>
-                                                <p class="mb-0" style="font-size: 1rem; color: #555;">{{ $cardPurchaseFeeDisplay }}</p>
-                                            </div>
-                                            @endif
-                                            @if (!$cardCommissionStructure && !$cardPurchaseFeeDisplay)
-                                            <p class="text-muted small" style="font-style: italic;">Full compensation details available in View Full Bid.</p>
                                             @endif
 
                                             <!-- D) View Full Bid Link - visibility rules by listing type and user -->
