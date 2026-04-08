@@ -2835,7 +2835,13 @@
                             }
 
                             // === MATCH SCORE CALCULATION via SellerBidMatchScoreHelper ===
-                            // Use latest active counter terms as baseline when present (same as Tenant flow)
+                            // ── Seller Match Score Baseline (Verified) ─────────────────────────────────────────────
+                            // BASELINE POLICY: If the seller has submitted a counter offer (SellerCounterTerm, status=1),
+                            // the counter terms become the baseline for match score comparison.
+                            // Seller Livewire (SellerAgentAuctionCounterTerm) explicitly sets status=1 on every save,
+                            // so this filter correctly selects active/submitted counter terms.
+                            // If no active counter exists, the original auction listing terms are used as baseline.
+                            // This mirrors the same logic used by Tenant, Buyer, and Landlord roles.
                             $latestCounter   = \App\Models\SellerCounterTerm::with('meta')
                                 ->where('seller_agent_auction_bid_id', $bid->id)
                                 ->where('status', 1)

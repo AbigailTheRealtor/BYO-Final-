@@ -217,31 +217,6 @@
                                 </li>
                               @endif
                               <li>
-                                @php
-                                  $counter = App\Models\BuyerCounterTerm::where(
-                                      'buyer_agent_auction_id',
-                                      @$auction->id,
-                                  )->first();
-                                @endphp
-
-                                @if (isset($counter))
-                                <a class="dropdown-item" href="{{ route('buyer.edit-counter-terms', $auction->id) }}">
-                                    <i class="fa-solid fa-edit" style="font-size:14px;"></i>
-                                    <span style="font-size:14px;"> Edit Terms </span>
-                                </a>
-                                  <a data-toggle="modal" data-target="#modal-{{ $auction->id }}" class="dropdown-item"
-                                    href="#">
-                                    <i class="fa-solid fa-eye" style="font-size:14px;"></i>
-                                    <span style="font-size:14px;"> View Terms </span>
-                                  </a>
-                                @else
-                                  <a class="dropdown-item" href="{{ route('buyer.counter-terms', $auction->id) }}">
-                                    <i class="fa-solid fa-plus" style="font-size:14px;"></i>
-                                    <span style="font-size:14px;"> Add Terms </span>
-                                  </a>
-                                @endif
-                              </li>
-                              <li>
                                 <a class="dropdown-item"
                                   href="{{ route('manage.bot.questions', ['tenant-agent', $auction->id]) }}">
                                   <i class="fa-solid fa-robot" style="font-size:14px;"></i>
@@ -266,6 +241,9 @@
                       </tr>
                       <!-- Modal -->
 
+                      @php $counter = $counter ?? null; @endphp
+                      {{-- Counter terms modal (trigger removed — counter terms are now managed per-bid in auction detail) --}}
+                      @if($counter)
                       <!-- Modal -->
                                                 <div class="modal fade" id="modal-{{ @$auction->id }}" tabindex="-1"
                                                     aria-labelledby="modalLabel-{{ @$auction->id }}" aria-hidden="true">
@@ -633,6 +611,7 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                      @endif
 
                     @endforeach
                   </tbody>

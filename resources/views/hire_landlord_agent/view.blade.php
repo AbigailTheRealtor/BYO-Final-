@@ -2431,8 +2431,9 @@ $auser = $auctionUser::find(@$auction->user_id);
                             $originalScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
                                 $landlordBaselineData, $currentBidData, null, $auctionPropType
                             );
-                            // Check for latest active counter term for this bid
-                            $latestActiveCounter = $counterBids->where('status', 1)->first();
+                            // Use the most recently submitted non-terminal counter as the active baseline.
+                            // Exclude accepted/rejected records so stale terminal counters are never used as baseline.
+                            $latestActiveCounter = $counterBids->filter(fn($c) => !in_array((string)$c->status, ['accepted', 'rejected'], true))->first();
                             if ($latestActiveCounter && $latestActiveCounter->meta->count()) {
                                 $counterBaselineData = $latestActiveCounter->meta->pluck('meta_value', 'meta_key')->toArray();
                                 $latestCounterScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
@@ -4257,9 +4258,11 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                     @php
                                     $rawState = data_get($bid, 'accepted', '0');
-                                    $state = in_array($rawState, [null, 0, '0'], true)
-                                    ? '0'
-                                    : (string) $rawState;
+                                    $_isTerminalLandlord = in_array((string)$rawState, ['accepted', 'rejected'], true);
+                                    $_hasLandlordCounterRecords = $counterBids->count() > 0;
+                                    $state = (!$_isTerminalLandlord && $_hasLandlordCounterRecords)
+                                        ? 'countered'
+                                        : (in_array($rawState, [null, 0, '0'], true) ? '0' : (string) $rawState);
                                     $isOwnerRow = data_get($auction, 'user_id') == $auth_id;
 
                                     $ownerFirst = data_get($auction, 'user.first_name', '');
@@ -5236,6 +5239,25 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                 ❌ {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected the bid.
                                             </div>
                                             @endif
+                                        @elseif($state === 'countered')
+                                            <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                <i class="fa fa-exchange-alt me-1"></i>
+                                                @if (Auth::id() == $ownerId)
+                                                    You have submitted a counter offer for this bid.
+                                                @else
+                                                    {{ trim($ownerFirst . ' ' . $ownerLast) }} has submitted a counter offer.
+                                                @endif
+                                            </div>
+                                            <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                                <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                </a>
+                                                @if (Auth::id() == $ownerId)
+                                                <a href="{{ route('landlord.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                </a>
+                                                @endif
+                                            </div>
                                         @elseif($hasAcceptedCounterBid)
                                             <div class="alert alert-success mt-2 w-100 mb-0 py-1 small">
                                                 ✅ A counter offer has been accepted for this bid.

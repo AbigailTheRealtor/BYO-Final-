@@ -596,7 +596,7 @@
                             </button>
                         </form>
                         @else
-                        <a href="{{ route('buyer.counter-terms', ['id' => $auction->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                        <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-reply me-2"></i>Counter Back
                         </a>
                         <form action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">

@@ -121,36 +121,6 @@
                                                                 </li>
                                                             @endif
                                                             <li>
-                                                                @php
-                                                                    $counter = App\Models\CounterTerm::where(
-                                                                        'buyer_auction_id',
-                                                                        @$auction->id,
-                                                                    )->first();
-                                                                @endphp
-                                                                @if (isset($counter))
-                                                                    <a class="dropdown-item"
-                                                                        href="{{ route('buyer.edit-counter-terms', @$auction->id) }}">
-                                                                        <i class="fa-solid fa-edit"
-                                                                            style="font-size:14px;"></i>
-                                                                        <span style="font-size:14px;">Edit Terms </span>
-                                                                    </a>
-                                                                    <a data-toggle="modal"
-                                                                        data-target="#modal-{{ @$auction->id }}"
-                                                                        class="dropdown-item" href="#">
-                                                                        <i class="fa-solid fa-eye"
-                                                                            style="font-size:14px;"></i>
-                                                                        <span style="font-size:14px;">View Terms </span>
-                                                                    </a>
-                                                                @else
-                                                                    <a class="dropdown-item"
-                                                                        href="{{ route('buyer.counter-terms', @$auction->id) }}">
-                                                                        <i class="fa-solid fa-plus"
-                                                                            style="font-size:14px;"></i>
-                                                                        <span style="font-size:14px;">Add Terms </span>
-                                                                    </a>
-                                                                @endif
-                                                            </li>
-                                                            <li>
                                                                 <a class="dropdown-item"
                                                                     href="{{ route('manage.bot.questions', ['buyer-agent', $auction->id]) }}">
                                                                     <i class="fa-solid fa-robot"

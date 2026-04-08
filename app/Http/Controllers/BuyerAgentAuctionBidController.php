@@ -465,18 +465,15 @@ class BuyerAgentAuctionBidController extends Controller
             return redirect()->back()->with('error', 'Buyer counter term not found.');
         }
 
-        $auction = BuyerAgentAuction::find($buyerCounterTerm->buyer_agent_auction_id);
-        if (!$auction) {
-            return redirect()->back()->with('error', 'Listing not found.');
-        }
-
-        // Find the original bid by the current agent (bidder who is accepting buyer's counter)
-        $originalBid = BuyerAgentAuctionBid::where('buyer_agent_auction_id', $auction->id)
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->first();
+        // buyer_agent_auction_id now stores the specific bid ID (per-bid architecture).
+        $originalBid = BuyerAgentAuctionBid::find($buyerCounterTerm->buyer_agent_auction_id);
         if (!$originalBid) {
             return redirect()->back()->with('error', 'Original bid not found.');
+        }
+
+        $auction = BuyerAgentAuction::find($originalBid->buyer_agent_auction_id);
+        if (!$auction) {
+            return redirect()->back()->with('error', 'Listing not found.');
         }
 
         // Authorization: only the bidding agent can accept the buyer's counter
@@ -561,18 +558,13 @@ class BuyerAgentAuctionBidController extends Controller
             return redirect()->back()->with('error', 'Buyer counter term not found.');
         }
 
-        $auction = BuyerAgentAuction::find($buyerCounterTerm->buyer_agent_auction_id);
-        if (!$auction) {
-            return redirect()->back()->with('error', 'Listing not found.');
+        // buyer_agent_auction_id now stores the specific bid ID (per-bid architecture).
+        $originalBid = BuyerAgentAuctionBid::find($buyerCounterTerm->buyer_agent_auction_id);
+        if (!$originalBid) {
+            return redirect()->back()->with('error', 'Original bid not found.');
         }
 
-        // Find the original bid by the current agent
-        $originalBid = BuyerAgentAuctionBid::where('buyer_agent_auction_id', $auction->id)
-            ->where('user_id', Auth::id())
-            ->latest()
-            ->first();
-
-        if (!$originalBid || $originalBid->user_id !== Auth::id()) {
+        if ($originalBid->user_id !== Auth::id()) {
             abort(403, 'You are not authorized to reject this buyer counter term.');
         }
 
@@ -613,7 +605,7 @@ class BuyerAgentAuctionBidController extends Controller
             ->first();
 
         $buyerCounter = BuyerCounterTerm::with('meta')
-            ->where('buyer_agent_auction_id', $auction->id)
+            ->where('buyer_agent_auction_id', $bid_id)
             ->where('user_id', $auction->user_id)
             ->orderBy('created_at', 'desc')
             ->first();

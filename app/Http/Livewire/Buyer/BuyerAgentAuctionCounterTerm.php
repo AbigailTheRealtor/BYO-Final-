@@ -3,6 +3,7 @@
 namespace App\Http\Livewire\Buyer;
 
 use Livewire\Component;
+use App\Models\BuyerAgentAuction;
 use App\Models\BuyerCounterTerm;
 use App\Models\BuyerCounterBidding;
 use App\Models\BuyerAgentAuctionBid;
@@ -195,11 +196,16 @@ public $additional_details_broker = '';
 
     public function mount($pab, $bidId)
     {
+        // $pab is a BuyerAgentAuctionBid (the specific agent bid being countered).
+        // We load the parent auction to get listing-level data like property_type.
         $this->pab   = $pab;
         $this->bidId = $bidId;
-        $this->property_type = $pab->get->property_type;
 
-        // EDIT MODE: Try load existing counter term for this buyer (current user) + bid thread
+        $auction = BuyerAgentAuction::find($pab->buyer_agent_auction_id);
+        $this->auctionId = $pab->buyer_agent_auction_id;
+        $this->property_type = $auction ? ($auction->get->property_type ?? '') : '';
+
+        // EDIT MODE: Try load existing counter term for this buyer (current user) + specific bid
         $existing = BuyerCounterTerm::with('meta')
             ->where('buyer_agent_auction_id', $this->pab->id)
             ->where('user_id', Auth::id())
@@ -211,8 +217,8 @@ public $additional_details_broker = '';
             $this->hydrateFromMetaMap($existing->meta->pluck('meta_value', 'meta_key')->toArray());
         } else {
             // NEW COUNTER: Prefill from the Agent's most recent counter (BuyerCounterBidding).
-            // BuyerCounterBidding stores the auction ID in buyer_agent_auction_id.
-            $agentCounter = BuyerCounterBidding::where('buyer_agent_auction_id', $this->pab->id)
+            // BuyerCounterBidding stores the bid ID in buyer_agent_auction_bid_id.
+            $agentCounter = BuyerCounterBidding::where('buyer_agent_auction_bid_id', $this->bidId)
                 ->latest()
                 ->first();
 
@@ -366,13 +372,15 @@ public $additional_details_broker = '';
             // Notify the agent (bid owner) that the buyer submitted counter terms
             try {
                 $originalBid = BuyerAgentAuctionBid::find($this->bidId);
-                if ($originalBid && $this->pab) {
+                // $this->pab is the bid; load the parent auction for the notification
+                $notifyAuction = BuyerAgentAuction::find($this->auctionId);
+                if ($originalBid && $notifyAuction) {
                     $agent = User::find($originalBid->user_id);
                     $sender = Auth::user();
                     if ($agent && $sender) {
                         $agent->notify(new CounterBidSubmittedNotification(
                             $originalBid,
-                            $this->pab,
+                            $notifyAuction,
                             $sender,
                             $agent->id,
                             'buyer_agent'

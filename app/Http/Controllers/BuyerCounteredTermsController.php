@@ -14,8 +14,6 @@ use App\Models\PropertyType;
 use Illuminate\Http\Request;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
-use App\Models\TenantCounterTerm;
-use App\Models\TenantAgentAuction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -23,10 +21,9 @@ class BuyerCounteredTermsController extends Controller
 {
     public function add(Request $request, $id)
     {
-        $pab = BuyerAgentAuction::whereId($id)->first();
+        $pab = BuyerAgentAuctionBid::whereId($id)->first();
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ? $request->counter_bid_id : null;
-
 
         return view('buyer_counter_terms.add', compact('bid_id', 'pab', 'parent_counter_id'));
     }
@@ -34,11 +31,11 @@ class BuyerCounteredTermsController extends Controller
 
     public function edit(Request $request, $id)
     {
-        $pab = BuyerAgentAuction::findOrFail($id);
+        $pab = BuyerAgentAuctionBid::findOrFail($id);
         $bid_id = $id;
         $parent_counter_id = $request->counter_bid_id ?: null;
 
-        // reuse the same Blade + Livewire; Livewire will detect existing data
+        // reuse the same Blade + Livewire; Livewire detects existing record and enters edit mode
         return view('buyer_counter_terms.add', compact('bid_id', 'pab', 'parent_counter_id'));
     }
 

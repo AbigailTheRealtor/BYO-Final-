@@ -4122,9 +4122,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                     @php
                                     $rawState = data_get($bid, 'accepted', '0');
-                                    $state = in_array($rawState, [null, 0, '0'], true)
-                                    ? '0'
-                                    : (string) $rawState;
+                                    $_isTerminalTenant = in_array((string)$rawState, ['accepted', 'rejected'], true);
+                                    // Only listing-owner's counter terms (TenantCounterTerm) trigger the 'countered' state banner.
+                                    // TenantCounterBidding records are agent-side legacy counters handled separately.
+                                    $_hasTenantOwnerCounter = $tenantCounterTerms->count() > 0;
+                                    $state = (!$_isTerminalTenant && $_hasTenantOwnerCounter)
+                                        ? 'countered'
+                                        : (in_array($rawState, [null, 0, '0'], true) ? '0' : (string) $rawState);
                                     $isOwnerRow = data_get($auction, 'user_id') == $auth_id;
 
                                     $ownerFirst = data_get($auction, 'user.first_name', '');
@@ -5157,6 +5161,25 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             the bid.
                                         </div>
                                         @endif
+                                        @elseif ($state === 'countered')
+                                        <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                            <i class="fa fa-exchange-alt me-1"></i>
+                                            @if (Auth::id() == $ownerId)
+                                                You have submitted a counter offer for this bid.
+                                            @else
+                                                {{ trim($ownerFirst . ' ' . $ownerLast) }} has submitted a counter offer.
+                                            @endif
+                                        </div>
+                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                            <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                            </a>
+                                            @if (Auth::id() == $ownerId)
+                                            <a href="{{ route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                            </a>
+                                            @endif
+                                        </div>
                                         @elseif ($state === '0')
                                         @if (data_get($bid, 'user_id') == Auth::id())
                                         <div
