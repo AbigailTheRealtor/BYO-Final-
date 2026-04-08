@@ -2327,16 +2327,17 @@
                 $agentNumberMap[$orderedBid->id] = $bidIdx;
             }
         @endphp
-            </div>{{-- end rightCol sidebar --}}
-        </div>{{-- end main row --}}
-        <div class="card higestBider">
-                    <div class="card-body card-body-padding">
-                        @if ($lowest_bidder)
-                            <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
-                        @else
-                            <p>No one has bid on this auction.</p>
-                        @endif
-                        <div id="buyerBidsList">
+
+        {{-- Last Bidder Info - outside the card (matches Tenant view layout) --}}
+        @if ($lowest_bidder)
+            <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
+        @else
+            <p class="mb-3">No one has bid on this auction.</p>
+        @endif
+
+        <div class="card higestBider" id="bids-section">
+            <div class="card-body card-body-padding">
+                <div id="buyerBidsList">
                                 @php
                                 // Reload meta once before bid loop to guarantee fresh listing baseline from DB.
                                 $auction->load('meta');
@@ -5550,10 +5551,12 @@
                         </div>
                     </div>
                 </div>
-                <button class="btn w-100 mt-0">
-                    <span class="bid m-0"><i class="fa fa-user"></i> </span>
-                </button>
-                <div class="p-4 card">
+            </div>{{-- end rightCol sidebar --}}
+        </div>{{-- end main row --}}
+        <button class="btn w-100 mt-0">
+            <span class="bid m-0"><i class="fa fa-user"></i> </span>
+        </button>
+        <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
                     <div class="qr-code" style="width: 100%; height:200px;">
                         {{ qr_code(route('buyer.view-auction', @$auction->id), 200) }}

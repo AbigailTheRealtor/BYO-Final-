@@ -1,0 +1,224 @@
+Implement a unified bid card structure across all four listing roles:
+
+Tenant
+Buyer
+Seller
+Landlord
+
+This applies to:
+
+active bids
+countered bids
+accepted/rejected states where cards render
+
+Do NOT change listing logic, bidding flow, or database schema.
+
+🎯 GOAL
+
+Each bid card must follow this exact order:
+
+Header (Agent + Status)
+Offered Services block
+Terms Match block (NEW)
+Match Summary block (existing, slightly reduced visual weight)
+Existing private notices / action buttons
+🔧 PART 1 — TERMS MATCH BLOCK (NEW)
+Required Format
+
+Display directly under Offered Services:
+
+Terms Match: X/Y matched • A changed • B added • C missing
+
+Only show segments that exist.
+
+Definitions (CRITICAL — DO NOT CHANGE LOGIC)
+
+Use existing system data. Do NOT invent new logic.
+
+Matched
+Term exists on both sides AND values match exactly
+Changed
+Term exists on both sides BUT values differ
+Missing
+User/listing defined the term
+Agent did NOT include it
+Added
+Agent included a term
+User/listing did NOT define it
+Example
+
+If:
+
+User only filled Broker Compensation
+Agent added Retainer Fee + Cancellation Fee
+
+Then:
+
+Terms Match: 1/3 matched • 2 added
+
+NOT “extra”
+
+Display Rules
+DO NOT show “added” if count = 0
+DO NOT show “missing” if count = 0
+DO NOT show “changed” if count = 0
+Always show matched count
+Label Standard
+
+Use EXACT label:
+
+Terms Match:
+
+Do NOT use:
+
+Offered Terms
+Terms Summary
+Any variation
+Scoring Rule
+
+Add helper text under Terms block:
+
+affects match score
+
+Do NOT change scoring logic — only display counts.
+
+🔧 PART 2 — SERVICES BLOCK (CONFIRM / STANDARDIZE)
+
+Ensure ALL roles use same format:
+
+Offered Services: X/Y matched • A extra • B missing
+⭐ Extra Value Added: X Services
+does not affect match score
+
+Rules
+“extra” is valid ONLY for Services
+Do NOT rename to “added”
+Keep existing service match logic intact
+Do NOT modify how services are counted
+🔧 PART 3 — MATCH SUMMARY BLOCK
+
+Keep existing match summary logic but adjust presentation.
+
+Required Behavior
+Show:
+Original Match
+Counter Match ONLY if exists
+Each shows:
+overall %
+Services %
+Terms %
+DO NOT:
+Show extra / added / missing inside summary
+Recalculate scores
+Duplicate counts from rows above
+UI Adjustment
+
+Reduce visual weight:
+
+slightly smaller font
+slightly less padding
+
+This must remain secondary to Services + Terms rows.
+
+🔧 PART 4 — APPLY TO ALL ROLES
+
+You MUST update bid cards for:
+
+Tenant
+Buyer
+Seller
+Landlord
+Important
+
+DO NOT assume shared file.
+
+Audit and update each role’s:
+
+Blade views
+Partial templates
+Components
+Expected Final Order (ALL ROLES)
+
+Every bid card must render:
+
+Agent Header
+Offered Services
+Terms Match
+Match Summary
+Notices / Actions
+🔧 PART 5 — DATA SOURCE RULES
+Reuse existing:
+match scoring logic
+services comparison logic
+terms comparison logic (if exists)
+If terms comparison is fragmented:
+unify by mapping:
+requested terms
+agent terms
+
+BUT:
+
+do NOT create new database fields
+do NOT restructure schema
+🔧 PART 6 — EDGE CASE HANDLING
+Case 1: No terms defined by user
+
+Show:
+
+Terms Match: —
+
+Do NOT show added/missing/changed
+
+Case 2: No differences
+
+Show:
+
+Terms Match: X/X matched
+
+No additional labels
+
+Case 3: Only added terms
+
+Show:
+
+Terms Match: X/Y matched • X added
+
+🔧 PART 7 — SAFEGUARDS (CRITICAL)
+Do NOT modify database schema
+Do NOT rename routes
+Do NOT refactor entire components
+Do NOT break Tenant logic (this is baseline)
+Do NOT change scoring formulas
+Do NOT change counter logic
+Do NOT remove existing fields
+Do NOT alter notifications
+Do NOT change listing type logic (Traditional vs Bidding Period already handled separately)
+Do NOT assume all roles use same structure
+Only inject Terms block and standardize layout
+🔧 PART 8 — VALIDATION BEFORE COMPLETION
+
+Confirm ALL of the following:
+
+All 4 roles show:
+Offered Services
+Terms Match
+Match Summary
+Terms correctly shows:
+matched
+changed
+added
+missing
+No duplication between:
+rows
+summary
+Match score % remains unchanged from original system
+Counter bids correctly update Terms counts
+🔧 OUTPUT REQUIRED
+
+Return:
+
+List of files updated
+Where Terms logic was injected
+Confirmation each role matches structure
+Any role that required special handling
+Any limitations or assumptions made
