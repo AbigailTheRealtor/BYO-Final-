@@ -1,0 +1,79 @@
+Perform a read-only audit of the current “Bidding Period / Traditional” logic across all four roles:
+Tenant, Buyer, Seller, and Landlord.
+
+Scope
+
+Identify ALL locations where the following are used:
+
+bidding period
+traditional listing type
+bidding deadline
+countdown/timer
+expiration
+auction end
+time-based restrictions
+Required Audit Areas
+
+Check and report findings for:
+
+Where listing type is stored
+database fields
+model properties
+Livewire/component properties
+Where it is used
+create flow (TenantAgentAuction.php or equivalent)
+edit flow (TenantAgentAuctionEdit.php or equivalents)
+listing detail pages (all roles)
+dashboard pages (My Listings, My Bids)
+search/listing cards
+Where time affects behavior
+Confirm if deadline/timer restricts:
+placing a bid
+editing a bid
+countering a bid
+accepting a bid
+rejecting a bid
+showing/hiding buttons
+Status logic
+Identify if bidding period affects:
+Active / Pending / Expired / Hired Agent
+any automatic status changes
+any helper methods or computed statuses
+Timer rendering
+List all places countdown/timer is displayed:
+public listing page
+logged-in listing page
+dashboard cards
+notifications
+bid/counter sections
+Role differences
+Compare Tenant, Buyer, Seller, Landlord:
+Do they behave differently?
+Do they use different files or logic?
+Background logic
+Check for:
+cron jobs
+scheduled tasks
+queued jobs
+model accessors/helpers
+that enforce expiration or deadlines
+Output Required
+
+Return a structured report with:
+
+File-by-file list of all relevant code locations
+Exact field names used for listing type / deadline
+All actions currently restricted by time
+All status changes tied to bidding period
+All UI locations where timer appears
+Any inconsistencies across roles
+Clear recommendation for converting to:
+→ “Optional soft deadline only (no enforcement)”
+🚨 Safeguards (CRITICAL)
+READ ONLY — do NOT modify any code
+Do NOT rename files
+Do NOT change database schema
+Do NOT refactor anything
+Do NOT assume all roles behave the same
+If unsure, flag it instead of guessing
+Keep scope LIMITED to bidding period / deadline logic only

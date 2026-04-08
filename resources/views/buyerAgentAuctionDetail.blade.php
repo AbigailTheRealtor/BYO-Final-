@@ -2328,7 +2328,9 @@
                 $agentNumberMap[$orderedBid->id] = $bidIdx;
             }
         @endphp
-                <div class="card higestBider">
+            </div>{{-- end rightCol sidebar --}}
+        </div>{{-- end main row --}}
+        <div class="card higestBider">
                     <div class="card-body card-body-padding">
                         @if ($lowest_bidder)
                             <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
@@ -5600,8 +5602,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
     </div>
     <hr>
     <div class="container buyerOfferContentDetails">
