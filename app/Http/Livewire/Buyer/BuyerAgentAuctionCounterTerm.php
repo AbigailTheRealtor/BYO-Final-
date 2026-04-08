@@ -207,7 +207,8 @@ public $additional_details_broker = '';
 
         // EDIT MODE: Try load existing counter term for this buyer (current user) + specific bid
         $existing = BuyerCounterTerm::with('meta')
-            ->where('buyer_agent_auction_id', $this->pab->id)
+            ->where('buyer_agent_auction_id', $this->auctionId)
+            ->where('parent_counter_id', $this->bidId)
             ->where('user_id', Auth::id())
             ->latest()
             ->first();
@@ -348,18 +349,18 @@ public $additional_details_broker = '';
             if ($this->counterTermId) {
                 // UPDATE same record
                 $counterTerm = BuyerCounterTerm::findOrFail($this->counterTermId);
-                // ensure base columns still correct if you want
+                // ensure base columns still correct
                 $counterTerm->update([
                     'property_type' => $this->property_type,
-                    'parent_counter_id' => $this->parent_counter_id,
+                    'parent_counter_id' => $this->bidId,
                 ]);
             } else {
                 // CREATE new record
                 $counterTerm = BuyerCounterTerm::create([
                     'user_id' => Auth::id(),
-                    'buyer_agent_auction_id' => $this->pab->id,
+                    'buyer_agent_auction_id' => $this->auctionId,
                     'property_type' => $this->property_type,
-                    'parent_counter_id' => $this->parent_counter_id,
+                    'parent_counter_id' => $this->bidId,
                 ]);
                 $this->counterTermId = $counterTerm->id; // track after create
             }

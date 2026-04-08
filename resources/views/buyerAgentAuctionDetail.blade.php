@@ -2364,9 +2364,10 @@
                                         $currentBidData = (array) $bid->get;
 
                                         // Check for buyer-countered terms (BuyerCounterTerm) — buyer counters the agent.
-                                        // buyer_agent_auction_id stores the bid ID (per-bid scope, matching Tenant pattern).
+                                        // buyer_agent_auction_id = auction ID; parent_counter_id = bid ID (per-bid scope).
                                         $latestBuyerCounter = \App\Models\BuyerCounterTerm::with('meta')
-                                            ->where('buyer_agent_auction_id', $bidId)
+                                            ->where('buyer_agent_auction_id', $auction->id)
+                                            ->where('parent_counter_id', $bidId)
                                             ->where('user_id', $auction->user_id)
                                             ->orderBy('created_at', 'desc')
                                             ->first();
@@ -4404,218 +4405,211 @@
     !empty($allMeta['agency_agreement_timeframe']) ||
     !empty($allMeta['brokerage_relationship']) ||
     !empty($allMeta['additional_details_broker']))
-    <div class="mb-4 broker-compensation-section">
-        <h6 class="mb-3" style="font-weight: 600; border-bottom: 1px solid #ddd; padding-bottom: 8px;">
-            Broker Compensation & Agency Agreement Terms
+    <div class="mb-4">
+        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
         </h6>
 
-        <!-- 1. Buyer's Broker Compensation -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Buyer's Broker Compensation:</h6>
-        
-        @if (!empty($allMeta['commission_structure']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['commission_structure'], 'commission_structure') ? $changedStyle : '' }}">
-            Buyer's Broker Commission Structure:
-            <span class="removeBold">{{ $allMeta['commission_structure'] }}</span>
-            @if ($isChanged($allMeta['commission_structure'], 'commission_structure')) {!! $changedBadge !!} @endif
+        {{-- A) Buyer's Broker Compensation --}}
+        @if (!empty($allMeta['commission_structure']) || !empty($allMeta['purchase_fee_type']))
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">A) Buyer's Broker Compensation</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                @if (!empty($allMeta['commission_structure']))
+                <li class="mb-1" style="{{ $isChanged($allMeta['commission_structure'], 'commission_structure') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Buyer's Broker Commission Structure:</span>
+                    {{ $allMeta['commission_structure'] }}
+                    @if ($isChanged($allMeta['commission_structure'], 'commission_structure')) {!! $changedBadge !!} @endif
+                </li>
+                @endif
+                @if (!empty($allMeta['purchase_fee_type']))
+                @php
+                    $ctrPurchaseVal = '—';
+                    $cpType = $allMeta['purchase_fee_type'];
+                    $safeNumber = function($v, $decimals = 2) {
+                        if ($v === null || $v === '') return null;
+                        $clean = str_replace([',', '$', ' '], '', (string)$v);
+                        if ($clean === '' || !is_numeric($clean)) return null;
+                        return number_format((float)$clean, $decimals);
+                    };
+                    if ($cpType === 'Flat Fee' && !empty($allMeta['purchase_fee_flat'])) {
+                        $formatted = $safeNumber($allMeta['purchase_fee_flat']);
+                        $ctrPurchaseVal = $formatted ? ('$' . $formatted) : '—';
+                    } elseif ($cpType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
+                        $formatted = $safeNumber($allMeta['purchase_fee_percentage']);
+                        $ctrPurchaseVal = $formatted ? (rtrim(rtrim($formatted, '0'), '.') . '% of Total Purchase Price') : '—';
+                    } elseif ($cpType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                        $pctFormatted = $safeNumber($allMeta['purchase_fee_percentage_combo'] ?? null);
+                        $pctPart = $pctFormatted ? (rtrim(rtrim($pctFormatted, '0'), '.') . '% of Total Purchase Price') : null;
+                        $flatFormatted = $safeNumber($allMeta['purchase_fee_flat_combo'] ?? null);
+                        $flatPart = $flatFormatted ? ('$' . $flatFormatted . ' flat') : null;
+                        $ctrPurchaseVal = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart ?? '—');
+                    } elseif ($cpType === 'other' && !empty($allMeta['purchase_fee_other'])) {
+                        $ctrPurchaseVal = $allMeta['purchase_fee_other'];
+                    }
+                @endphp
+                <li class="mb-1" style="{{ $isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Buyer's Broker Purchase Fee:</span>
+                    {{ $ctrPurchaseVal }}
+                    @if ($isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type')) {!! $changedBadge !!} @endif
+                </li>
+                @endif
+            </ul>
         </div>
         @endif
 
-        @if (!empty($allMeta['purchase_fee_type']))
-        @php
-            $ctrPurchaseVal = '—';
-            $cpType = $allMeta['purchase_fee_type'];
-            $safeNumber = function($v, $decimals = 2) {
-                if ($v === null || $v === '') return null;
-                $clean = str_replace([',', '$', ' '], '', (string)$v);
-                if ($clean === '' || !is_numeric($clean)) return null;
-                return number_format((float)$clean, $decimals);
-            };
-            if ($cpType === 'Flat Fee' && !empty($allMeta['purchase_fee_flat'])) {
-                $formatted = $safeNumber($allMeta['purchase_fee_flat']);
-                $ctrPurchaseVal = $formatted ? ('$' . $formatted) : '—';
-            } elseif ($cpType === 'Percentage of the Total Purchase Price' && !empty($allMeta['purchase_fee_percentage'])) {
-                $formatted = $safeNumber($allMeta['purchase_fee_percentage']);
-                $ctrPurchaseVal = $formatted ? (rtrim(rtrim($formatted, '0'), '.') . '% of Total Purchase Price') : '—';
-            } elseif ($cpType === 'Percentage of the Total Purchase Price + Flat Fee') {
-                $pctFormatted = $safeNumber($allMeta['purchase_fee_percentage_combo'] ?? null);
-                $pctPart = $pctFormatted ? (rtrim(rtrim($pctFormatted, '0'), '.') . '% of Total Purchase Price') : null;
-                $flatFormatted = $safeNumber($allMeta['purchase_fee_flat_combo'] ?? null);
-                $flatPart = $flatFormatted ? ('$' . $flatFormatted . ' flat') : null;
-                $ctrPurchaseVal = $pctPart && $flatPart ? "$pctPart + $flatPart" : ($pctPart ?? $flatPart ?? '—');
-            } elseif ($cpType === 'other' && !empty($allMeta['purchase_fee_other'])) {
-                $ctrPurchaseVal = $allMeta['purchase_fee_other'];
-            }
-        @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type') ? $changedStyle : '' }}">
-            Buyer's Broker Purchase Fee:
-            <span class="removeBold">{{ $ctrPurchaseVal }}</span>
-            @if ($isChanged($allMeta['purchase_fee_type'] ?? '', 'purchase_fee_type')) {!! $changedBadge !!} @endif
-        </div>
-        @endif
-
-        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
-
-        <!-- 2. Buyer's Broker Lease Fee -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Buyer's Broker Lease Fee:</h6>
-
+        {{-- B) Lease Fee --}}
         @if (!empty($allMeta['interested_lease_option']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['interested_lease_option'], 'interested_lease_option') ? $changedStyle : '' }}">
-            Interested in a Lease Agreement:
-            <span class="removeBold">{{ $allMeta['interested_lease_option'] }}</span>
-            @if ($isChanged($allMeta['interested_lease_option'], 'interested_lease_option')) {!! $changedBadge !!} @endif
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">B) Lease Fee</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                <li class="mb-1" style="{{ $isChanged($allMeta['interested_lease_option'], 'interested_lease_option') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Interested in a Lease Agreement:</span>
+                    {{ $allMeta['interested_lease_option'] }}
+                    @if ($isChanged($allMeta['interested_lease_option'], 'interested_lease_option')) {!! $changedBadge !!} @endif
+                </li>
+                @if ($allMeta['interested_lease_option'] === 'Yes' && !empty($allMeta['lease_fee_type']))
+                @php
+                    $ctrLeaseVal = '—';
+                    $lfType = $allMeta['lease_fee_type'];
+                    $safeNumberLease = function($v, $decimals = 2) {
+                        if ($v === null || $v === '') return null;
+                        $clean = str_replace([',', '$', ' '], '', (string)$v);
+                        if ($clean === '' || !is_numeric($clean)) return null;
+                        return number_format((float)$clean, $decimals);
+                    };
+                    if ($lfType === 'flat' && !empty($allMeta['lease_fee_flat'])) {
+                        $formatted = $safeNumberLease($allMeta['lease_fee_flat']);
+                        $ctrLeaseVal = $formatted ? ('$' . $formatted) : '—';
+                    } elseif ($lfType === 'Percentage of the Gross Lease Value' && !empty($allMeta['lease_fee_percentage'])) {
+                        $ctrLeaseVal = $allMeta['lease_fee_percentage'] . '% of Gross Lease Value';
+                    } elseif ($lfType === 'Percentage of Monthly Rent' && !empty($allMeta['lease_fee_percentage_monthly_rent'])) {
+                        $ctrLeaseVal = $allMeta['lease_fee_percentage_monthly_rent'] . '% of Monthly Rent';
+                        if (!empty($allMeta['lease_fee_percentage_monthly_number'])) {
+                            $ctrLeaseVal .= ' x ' . $allMeta['lease_fee_percentage_monthly_number'] . ' Months';
+                        }
+                    } elseif ($lfType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                        $flatFormatted = $safeNumberLease($allMeta['lease_fee_flat_combo'] ?? null);
+                        $flatPart = $flatFormatted ? ('$' . $flatFormatted) : null;
+                        $pctPart = !empty($allMeta['lease_fee_percentage_combo']) ? ($allMeta['lease_fee_percentage_combo'] . '% of Gross Lease Value') : null;
+                        $ctrLeaseVal = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart ?? '—');
+                    } elseif ($lfType === 'Percentage of the Net Aggregate Rent' && !empty($allMeta['lease_fee_percentage_net'])) {
+                        $ctrLeaseVal = $allMeta['lease_fee_percentage_net'] . '% of Net Aggregate Rent';
+                    } elseif (strtolower($lfType) === 'other' && !empty($allMeta['lease_fee_other'])) {
+                        $ctrLeaseVal = $allMeta['lease_fee_other'];
+                    }
+                @endphp
+                <li class="mb-1" style="{{ $isChanged($allMeta['lease_fee_type'] ?? '', 'lease_fee_type') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Buyer's Broker Lease Fee:</span>
+                    {{ $ctrLeaseVal }}
+                    @if ($isChanged($allMeta['lease_fee_type'] ?? '', 'lease_fee_type')) {!! $changedBadge !!} @endif
+                </li>
+                @endif
+            </ul>
         </div>
         @endif
 
-        @if (!empty($allMeta['interested_lease_option']) && $allMeta['interested_lease_option'] === 'Yes' && !empty($allMeta['lease_fee_type']))
-        @php
-            $ctrLeaseVal = '—';
-            $lfType = $allMeta['lease_fee_type'];
-            $safeNumberLease = function($v, $decimals = 2) {
-                if ($v === null || $v === '') return null;
-                $clean = str_replace([',', '$', ' '], '', (string)$v);
-                if ($clean === '' || !is_numeric($clean)) return null;
-                return number_format((float)$clean, $decimals);
-            };
-            if ($lfType === 'flat' && !empty($allMeta['lease_fee_flat'])) {
-                $formatted = $safeNumberLease($allMeta['lease_fee_flat']);
-                $ctrLeaseVal = $formatted ? ('$' . $formatted) : '—';
-            } elseif ($lfType === 'Percentage of the Gross Lease Value' && !empty($allMeta['lease_fee_percentage'])) {
-                $ctrLeaseVal = $allMeta['lease_fee_percentage'] . '% of Gross Lease Value';
-            } elseif ($lfType === 'Percentage of Monthly Rent' && !empty($allMeta['lease_fee_percentage_monthly_rent'])) {
-                $ctrLeaseVal = $allMeta['lease_fee_percentage_monthly_rent'] . '% of Monthly Rent';
-                if (!empty($allMeta['lease_fee_percentage_monthly_number'])) {
-                    $ctrLeaseVal .= ' x ' . $allMeta['lease_fee_percentage_monthly_number'] . ' Months';
-                }
-            } elseif ($lfType === 'Flat Fee + Percentage of the Gross Lease Value') {
-                $flatFormatted = $safeNumberLease($allMeta['lease_fee_flat_combo'] ?? null);
-                $flatPart = $flatFormatted ? ('$' . $flatFormatted) : null;
-                $pctPart = !empty($allMeta['lease_fee_percentage_combo']) ? ($allMeta['lease_fee_percentage_combo'] . '% of Gross Lease Value') : null;
-                $ctrLeaseVal = $flatPart && $pctPart ? "$flatPart + $pctPart" : ($flatPart ?? $pctPart ?? '—');
-            } elseif ($lfType === 'Percentage of the Net Aggregate Rent' && !empty($allMeta['lease_fee_percentage_net'])) {
-                $ctrLeaseVal = $allMeta['lease_fee_percentage_net'] . '% of Net Aggregate Rent';
-            } elseif (strtolower($lfType) === 'other' && !empty($allMeta['lease_fee_other'])) {
-                $ctrLeaseVal = $allMeta['lease_fee_other'];
-            }
-        @endphp
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['lease_fee_type'] ?? '', 'lease_fee_type') ? $changedStyle : '' }}">
-            Buyer's Broker Lease Fee:
-            <span class="removeBold">{{ $ctrLeaseVal }}</span>
-            @if ($isChanged($allMeta['lease_fee_type'] ?? '', 'lease_fee_type')) {!! $changedBadge !!} @endif
-        </div>
-        @endif
-
-        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
-
-        <!-- 3. Lease-Option Details -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Lease-Option Details:</h6>
-
+        {{-- C) Lease-Option Details --}}
         @if (!empty($allMeta['interested_lease_option_agreement']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement') ? $changedStyle : '' }}">
-            Interested in a Lease-Option Agreement:
-            <span class="removeBold">{{ $allMeta['interested_lease_option_agreement'] }}</span>
-            @if ($isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement')) {!! $changedBadge !!} @endif
-        </div>
-        @endif
-
-        @if (!empty($allMeta['interested_lease_option_agreement']) && $allMeta['interested_lease_option_agreement'] === 'Yes')
-            @if (!empty($allMeta['lease_value']))
-            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['lease_value'], 'lease_value') ? $changedStyle : '' }}">
-                Compensation for Creating the Lease-Option Agreement:
-                <span class="removeBold">
-                    @if (($allMeta['lease_type'] ?? '') === 'percent')
-                        {{ $allMeta['lease_value'] }}%
-                    @else
-                        {{ \App\Support\Format::money($allMeta['lease_value']) }}
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">C) Lease-Option Details</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                <li class="mb-1" style="{{ $isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Interested in a Lease-Option Agreement:</span>
+                    {{ $allMeta['interested_lease_option_agreement'] }}
+                    @if ($isChanged($allMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement')) {!! $changedBadge !!} @endif
+                </li>
+                @if ($allMeta['interested_lease_option_agreement'] === 'Yes')
+                    @if (!empty($allMeta['lease_value']))
+                    <li class="mb-1" style="{{ $isChanged($allMeta['lease_value'], 'lease_value') ? $changedStyle : '' }}">
+                        <span class="fw-semibold">Compensation for Lease-Option Agreement:</span>
+                        @if (($allMeta['lease_type'] ?? '') === 'percent') {{ $allMeta['lease_value'] }}%
+                        @else {{ \App\Support\Format::money($allMeta['lease_value']) }}
+                        @endif
+                        @if ($isChanged($allMeta['lease_value'], 'lease_value')) {!! $changedBadge !!} @endif
+                    </li>
                     @endif
-                </span>
-                @if ($isChanged($allMeta['lease_value'], 'lease_value')) {!! $changedBadge !!} @endif
-            </div>
-            @endif
-            @if (!empty($allMeta['purchase_value']))
-            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['purchase_value'], 'purchase_value') ? $changedStyle : '' }}">
-                Compensation if Purchase Option is Exercised:
-                <span class="removeBold">
-                    @if (($allMeta['purchase_type'] ?? '') === 'percent')
-                        {{ $allMeta['purchase_value'] }}%
-                    @else
-                        {{ \App\Support\Format::money($allMeta['purchase_value']) }}
+                    @if (!empty($allMeta['purchase_value']))
+                    <li class="mb-1" style="{{ $isChanged($allMeta['purchase_value'], 'purchase_value') ? $changedStyle : '' }}">
+                        <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span>
+                        @if (($allMeta['purchase_type'] ?? '') === 'percent') {{ $allMeta['purchase_value'] }}%
+                        @else {{ \App\Support\Format::money($allMeta['purchase_value']) }}
+                        @endif
+                        @if ($isChanged($allMeta['purchase_value'], 'purchase_value')) {!! $changedBadge !!} @endif
+                    </li>
                     @endif
-                </span>
-                @if ($isChanged($allMeta['purchase_value'], 'purchase_value')) {!! $changedBadge !!} @endif
-            </div>
-            @endif
-        @endif
-
-        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
-
-        <!-- 4. Legal Terms -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Legal Terms:</h6>
-
-        @if (!empty($allMeta['protection_period']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['protection_period'], 'protection_period') ? $changedStyle : '' }}">
-            Protection Period Timeframe:
-            <span class="removeBold">{{ $allMeta['protection_period'] }} Days</span>
-            @if ($isChanged($allMeta['protection_period'], 'protection_period')) {!! $changedBadge !!} @endif
+                @endif
+            </ul>
         </div>
         @endif
 
-        @if (!empty($allMeta['early_termination_fee_option']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option') ? $changedStyle : '' }}">
-            Early Termination Fee:
-            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['early_termination_fee_option'], !empty($allMeta['early_termination_fee_amount']) ? \App\Support\Format::money($allMeta['early_termination_fee_amount']) : null) }}</span>
-            @if ($isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option')) {!! $changedBadge !!} @endif
+        {{-- D) Legal Terms --}}
+        @if (!empty($allMeta['protection_period']) || !empty($allMeta['early_termination_fee_option']) || !empty($allMeta['retainer_fee_option']) || !empty($allMeta['agency_agreement_timeframe']))
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">D) Legal Terms</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                @if (!empty($allMeta['protection_period']))
+                <li class="mb-1" style="{{ $isChanged($allMeta['protection_period'], 'protection_period') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Protection Period Timeframe:</span>
+                    {{ $allMeta['protection_period'] }} Days
+                    @if ($isChanged($allMeta['protection_period'], 'protection_period')) {!! $changedBadge !!} @endif
+                </li>
+                @endif
+                @if (!empty($allMeta['early_termination_fee_option']))
+                <li class="mb-1" style="{{ $isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Early Termination Fee:</span>
+                    {{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['early_termination_fee_option'], !empty($allMeta['early_termination_fee_amount']) ? \App\Support\Format::money($allMeta['early_termination_fee_amount']) : null) }}
+                    @if ($isChanged($allMeta['early_termination_fee_option'], 'early_termination_fee_option')) {!! $changedBadge !!} @endif
+                </li>
+                @endif
+                @if (!empty($allMeta['retainer_fee_option']))
+                <li class="mb-1" style="{{ $isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Retainer Fee:</span>
+                    {{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['retainer_fee_option'], !empty($allMeta['retainer_fee_amount']) ? \App\Support\Format::money($allMeta['retainer_fee_amount']) : null) }}
+                    @if ($isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option')) {!! $changedBadge !!} @endif
+                </li>
+                @if (in_array(strtolower($allMeta['retainer_fee_option']), ['yes']) && !empty($allMeta['retainer_fee_application']))
+                @php $counterFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication($allMeta['retainer_fee_application']); @endphp
+                @if (!empty($counterFormattedRetainer))
+                <li class="mb-1">
+                    <span class="fw-semibold">Retainer Fee Application:</span>
+                    {{ $counterFormattedRetainer }}
+                </li>
+                @endif
+                @endif
+                @endif
+                @if (!empty($allMeta['agency_agreement_timeframe']))
+                <li class="mb-1" style="{{ $isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Buyer Agency Agreement Timeframe:</span>
+                    {{ ($allMeta['agency_agreement_timeframe'] === 'custom' && !empty($allMeta['agency_agreement_custom'])) ? $allMeta['agency_agreement_custom'] : $allMeta['agency_agreement_timeframe'] }}
+                    @if ($isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe')) {!! $changedBadge !!} @endif
+                </li>
+                @endif
+            </ul>
         </div>
         @endif
 
-        @if (!empty($allMeta['retainer_fee_option']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option') ? $changedStyle : '' }}">
-            Retainer Fee:
-            <span class="removeBold">{{ \App\Helpers\ListingDisplayHelper::formatYesParenthetical($allMeta['retainer_fee_option'], !empty($allMeta['retainer_fee_amount']) ? \App\Support\Format::money($allMeta['retainer_fee_amount']) : null) }}</span>
-            @if ($isChanged($allMeta['retainer_fee_option'], 'retainer_fee_option')) {!! $changedBadge !!} @endif
-        </div>
-        @if (in_array(strtolower($allMeta['retainer_fee_option']), ['yes']))
-            @if (!empty($allMeta['retainer_fee_application']))
-            @php $counterFormattedRetainer = \App\Support\CompensationFormatter::formatRetainerFeeApplication($allMeta['retainer_fee_application']); @endphp
-            @if (!empty($counterFormattedRetainer))
-            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-                Retainer Fee Application:
-                <span class="removeBold">{{ $counterFormattedRetainer }}</span>
-            </div>
-            @endif
-            @endif
-        @endif
-        @endif
-
-        @if (!empty($allMeta['agency_agreement_timeframe']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe') ? $changedStyle : '' }}">
-            Buyer Agency Agreement Timeframe:
-            <span class="removeBold">{{ ($allMeta['agency_agreement_timeframe'] === 'custom' && !empty($allMeta['agency_agreement_custom'])) ? $allMeta['agency_agreement_custom'] : $allMeta['agency_agreement_timeframe'] }}</span>
-            @if ($isChanged($allMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe')) {!! $changedBadge !!} @endif
-        </div>
-        @endif
-
-        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
-
-        <!-- 5. Brokerage Relationship -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Brokerage Relationship:</h6>
-
+        {{-- E) Brokerage Relationship --}}
         @if (!empty($allMeta['brokerage_relationship']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship') ? $changedStyle : '' }}">
-            Acceptable Brokerage Relationship:
-            <span class="removeBold">{{ $allMeta['brokerage_relationship'] }}</span>
-            @if ($isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship')) {!! $changedBadge !!} @endif
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">E) Brokerage Relationship</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                <li class="mb-1" style="{{ $isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship') ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Acceptable Brokerage Relationship:</span>
+                    {{ $allMeta['brokerage_relationship'] }}
+                    @if ($isChanged($allMeta['brokerage_relationship'], 'brokerage_relationship')) {!! $changedBadge !!} @endif
+                </li>
+            </ul>
         </div>
         @endif
 
-        <div class="my-2"><hr style="border-top: 1px solid #eee;"></div>
-
-        <!-- 6. Additional Terms -->
-        <h6 class="mt-3 mb-2" style="font-weight: 600; font-size: 13px;">Additional Terms:</h6>
-
+        {{-- F) Additional Terms --}}
         @if (!empty($allMeta['additional_details_broker']))
-        <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-            Additional Terms:
-            <span class="removeBold">{{ $allMeta['additional_details_broker'] }}</span>
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Additional Terms</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                <li class="mb-1">{{ $allMeta['additional_details_broker'] }}</li>
+            </ul>
         </div>
         @endif
     </div>
@@ -4636,10 +4630,10 @@
                                                                             @endphp
 
                                                                             @if (!empty($counterServices))
-                                                                                <div style="margin-top: 20px;">
-                                                                                    <label style="font-size: 15px; font-weight: 600; color: #049399; display: block; margin-bottom: 10px;">
-                                                                                        Services Offered:
-                                                                                    </label>
+                                                                                <div class="mb-4 mt-3">
+                                                                                    <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                                                        <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                                                    </h6>
                                                                                     @if (!empty($counterOrderedServices))
                                                                                         @foreach ($counterOrderedServices as $catName => $catSrvs)
                                                                                             @if (!empty($catSrvs))
@@ -4698,10 +4692,8 @@
                                                                             @endphp
 
                                                                             @if (!empty($counter_other_services))
-                                                                                <div style="margin-top: 15px;">
-                                                                                    <label style="font-size: 13px; font-weight: 600;">
-                                                                                        Other Services:
-                                                                                    </label>
+                                                                                <div class="mb-3 mt-2">
+                                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
                                                                                     <ul class="services services-offered">
                                                                                         @foreach ($counter_other_services as $other_svc)
                                                                                             @php $otherIsNew = $ctrOtherIsAdded((string)$other_svc); @endphp

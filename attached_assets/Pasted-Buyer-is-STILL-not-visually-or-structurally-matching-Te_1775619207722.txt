@@ -1,0 +1,239 @@
+Buyer is STILL not visually or structurally matching Tenant.
+
+This is a BUYER-ONLY parity correction.
+Do not work on Seller, Landlord, or Tenant.
+Do not change scoring formulas or backend business logic unless a tiny render dependency absolutely requires it.
+This is about BUYER view parity with TENANT.
+
+==================================================
+GOAL
+==================================================
+
+Make the Buyer bid experience match the live Tenant implementation exactly anywhere these appear:
+
+1. Main bid card / bid detail area
+2. Counter bidding history
+3. Match Summary
+4. Private Compensation & Agency Agreement Terms
+5. Counter action banner and buttons
+6. Counter terms presentation / spacing / section rhythm
+
+The screenshots show Buyer is still wrong:
+- match summary format is still the old single-score layout in places
+- private compensation section does NOT match Tenant
+- counter bidding history formatting/text structure differs
+- spacing is much larger / looser than Tenant
+- headings / section separation differ
+- counter summary is not using the same Original Match vs Counter Match presentation as Tenant
+
+Buyer must visually and structurally mirror Tenant.
+
+==================================================
+BUYER ISSUES TO FIX
+==================================================
+
+A. MATCH SUMMARY PARITY
+Buyer must match Tenant exactly.
+
+If no counter exists:
+- show Original Match only
+
+If counter exists:
+- show BOTH:
+  - Original Match
+  - Counter Match
+
+This must match Tenant exactly in:
+- heading text
+- supporting note text
+- ordering
+- card layout
+- spacing
+- font sizes
+- color treatment
+- separation between summary cards
+- percentages / services / terms sub-lines
+- note placement underneath
+
+Current Buyer still shows the old single "Match Score" style in places. That must be replaced with the exact Tenant structure wherever Tenant shows the dual summary.
+
+B. PRIVATE COMPENSATION & AGENCY AGREEMENT TERMS
+Buyer private section must match Tenant exactly.
+
+It currently still uses the wrong format.
+Update Buyer so this section matches Tenant in:
+- section heading style
+- match summary placement at the top
+- Original Match / Counter Match format
+- text hierarchy
+- mismatch row treatment
+- spacing between A/B/C/D sections
+- overall density and rhythm
+
+Do not leave Buyer with the old format shown in the screenshots.
+
+C. COUNTER BIDDING HISTORY
+Buyer counter bidding history must match Tenant exactly in:
+- outer container
+- heading row
+- timestamp placement
+- pending/waiting response badge placement
+- section spacing
+- typography
+- box styling
+- vertical density
+- changed / added / removed section presentation
+
+Buyer is still much more spread out than Tenant. Tighten spacing and mirror Tenant structure.
+
+D. COUNTER ACTION AREA
+Buyer must match Tenant exactly for:
+- “You have submitted a counter offer for this bid.”
+- View Counter Terms
+- Edit Counter Terms
+
+Match Tenant in:
+- wording
+- placement
+- surrounding banner/container
+- spacing from surrounding sections
+- button styling
+- button spacing
+- alignment
+
+Do not approximate. Copy Tenant structure.
+
+E. COUNTER TERMS PRESENTATION
+Buyer counter terms page / section still looks different from Tenant.
+Mirror Tenant exactly for:
+- gradient/section containers if Tenant uses them
+- section headings
+- border-bottom separators
+- mismatch box style
+- added/removed row style
+- services grouping
+- spacing between sections
+- overall rhythm and typography
+
+F. GENERAL VISUAL PARITY
+Buyer must match Tenant in:
+- font sizes
+- margins
+- padding
+- section separation
+- card structure
+- heading hierarchy
+- container widths/feel where applicable
+- line-height / density
+
+Buyer should not look like a different component family.
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+Tenant is the source of truth.
+
+Reference ONLY the live Tenant implementation for:
+- main bid card
+- counter bidding history
+- private compensation tab / section
+- match summary block
+- original vs counter summary split
+- submitted counter banner
+- View Counter Terms / Edit Counter Terms area
+
+Buyer should match Tenant exactly, adapted only for Buyer-specific field labels/routes.
+
+==================================================
+LIKELY FILES TO AUDIT
+==================================================
+
+Buyer:
+- resources/views/buyerAgentAuctionDetail.blade.php
+- resources/views/hire_buyer_agent/view_counter_terms.blade.php
+- any Buyer-specific partials used for private modal / counter history / match summary
+
+Tenant reference:
+- resources/views/hire_tenant_agent/view.blade.php
+- resources/views/hire_tenant_agent/view_counter_terms.blade.php
+- any Tenant-specific partials used for the same areas
+
+==================================================
+IMPLEMENTATION METHOD
+==================================================
+
+1. First inspect the exact live Tenant sections that render:
+- Match Summary
+- Counter action area
+- Counter bidding history
+- Private Compensation & Agency Agreement Terms
+- Counter terms page/section
+
+2. Then inspect the Buyer equivalents and identify the exact structural/class differences.
+
+3. Update Buyer to mirror Tenant exactly.
+- Prefer reusing Tenant structure/classes where safe
+- If reuse is not safe, make surgical Buyer-only Blade/class changes
+- Do not create a “close enough” Buyer version
+
+4. Replace any remaining old Buyer single-score blocks where Tenant already uses the dual Original/Counter summary
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- scoring formulas
+- helper calculations
+- baseline logic
+- database schema
+- acceptance / rejection / counter business logic
+- status enums / backend values
+- unrelated roles
+- Tenant implementation
+
+This is a BUYER parity fix only.
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Buyer only
+- Do not modify Tenant except to inspect/reference it
+- Do not modify Seller or Landlord
+- Do not refactor broadly
+- Do not rename DB columns or variables unnecessarily
+- Do not alter existing route names unless a Buyer route is objectively wrong
+- Keep changes surgical and scoped to Buyer parity with Tenant
+- Preserve already-correct Buyer data logic and per-bid counter logic
+
+==================================================
+VERIFY
+==================================================
+
+After implementing, verify with real Buyer pages and provide screenshots or a precise report confirming:
+
+1. Buyer main bid card now matches Tenant exactly
+2. Buyer counter bidding history now matches Tenant exactly
+3. Buyer Original Match / Counter Match layout now matches Tenant exactly
+4. Buyer Private Compensation & Agency Agreement Terms now matches Tenant exactly
+5. Buyer “You have submitted a counter offer for this bid.” area now matches Tenant exactly
+6. Buyer View Counter Terms / Edit Counter Terms area now matches Tenant exactly
+7. Buyer spacing / density / typography rhythm now matches Tenant closely
+8. No remaining old single-score layout remains where Tenant uses dual summary
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+When done, provide:
+1. exact Buyer files changed
+2. which Tenant structures/classes were mirrored
+3. what visual differences were corrected
+4. what was verified side-by-side against Tenant
+5. confirmation that Buyer now matches Tenant as closely as possible in:
+   - main bid card
+   - counter bidding history
+   - private compensation section
+   - match summary
+   - counter action area

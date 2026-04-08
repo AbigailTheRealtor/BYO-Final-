@@ -1,0 +1,208 @@
+Seller is STILL not visually matching Tenant closely enough.
+
+This is the FINAL SELLER parity correction.
+Do not work on Buyer, Landlord, or Tenant.
+Do not change backend logic, scoring formulas, helper calculations, or routing unless a tiny render dependency absolutely requires it.
+This is a Seller-only visual/structural parity pass using Tenant as the exact source of truth.
+
+==================================================
+GOAL
+==================================================
+
+Make the SELLER bid / counter-bid UI look and feel like the live TENANT implementation as closely as possible in:
+
+1. Counter Bidding History
+2. Counter card typography and density
+3. Match Summary rhythm and spacing
+4. Private Compensation & Agency Agreement Terms
+5. Removed / Added / Changed service and term blocks
+6. Counter action banner and buttons
+7. Overall spacing, font sizing, line-height, padding, and vertical rhythm
+
+The screenshots confirm Seller is still wrong:
+- counter bidding history still looks more spaced out than Tenant
+- typography rhythm does not match Tenant
+- counter card density is different
+- list spacing and section spacing are still off
+- Seller does not feel like the same component family as Tenant
+
+This must be a strict Tenant-to-Seller parity pass.
+
+==================================================
+WHAT MUST MATCH TENANT EXACTLY
+==================================================
+
+A. COUNTER BIDDING HISTORY CONTAINER
+Seller must match Tenant exactly for:
+- outer card/container
+- inner counter card container
+- heading row
+- timestamp placement
+- pending/waiting badge placement
+- accordion/collapse spacing
+- padding inside the counter history card
+- top/bottom margin between sections
+
+B. TYPOGRAPHY + DENSITY
+Seller must match Tenant exactly in:
+- font sizes
+- font weights
+- line-height
+- section heading size
+- subsection heading size
+- paragraph/list density
+- spacing between list items
+- spacing above and below headings
+- spacing between A/B/C/D/etc sections
+
+Seller currently looks more spread out / less dense than Tenant.
+Tighten Seller to match Tenant exactly.
+
+C. MATCH SUMMARY BLOCK
+Seller must match Tenant exactly in:
+- heading row
+- explanatory note text block
+- spacing between note and score cards
+- Original Match and Counter Match card layout
+- padding inside each score card
+- services/terms line spacing
+- changed/added/missing line spacing
+- overall card heights and rhythm
+
+D. PRIVATE COMPENSATION & AGENCY AGREEMENT TERMS
+Seller must match Tenant exactly in:
+- heading styling
+- section separator line
+- mismatch row spacing
+- mismatch box padding
+- label/value alignment
+- spacing between subsections
+- overall compactness
+
+Do not leave Seller with extra white space or looser stacking than Tenant.
+
+E. OFFERED SERVICES / REMOVED SERVICES / ADDED / CHANGED
+Seller must match Tenant exactly in:
+- removed services box style
+- padding inside removed box
+- border radius and border treatment
+- bullet spacing
+- label styling
+- added/changed row spacing
+- icon spacing
+- margin above and below the box
+
+F. COUNTER ACTION BANNER + BUTTON ROW
+Seller must match Tenant exactly for:
+- “You have submitted a counter offer for this bid.”
+- View Counter Terms
+- Edit Counter Terms
+
+This includes:
+- banner height
+- banner padding
+- font size
+- margin above/below
+- button alignment
+- button spacing
+- button sizing
+- overall density
+
+G. OVERALL RHYTHM
+Seller page should visually feel like the same component set as Tenant.
+No extra airy spacing.
+No looser typography.
+No different list density.
+No noticeably different card rhythm.
+
+==================================================
+REFERENCE FILES
+==================================================
+
+TENANT source of truth:
+- resources/views/hire_tenant_agent/view.blade.php
+- resources/views/hire_tenant_agent/view_counter_terms.blade.php
+
+SELLER target files:
+- resources/views/hire_seller_agent/view.blade.php
+- resources/views/hire_seller_agent/view_counter_terms.blade.php
+
+Inspect Tenant first and mirror its exact structure/classes/spacing into Seller wherever safe.
+
+==================================================
+IMPLEMENTATION METHOD
+==================================================
+
+1. Compare Tenant and Seller side by side in the exact sections shown in the screenshots.
+2. Identify the exact Blade structure and class differences causing:
+- larger gaps
+- different font density
+- different line-height
+- different list spacing
+- different section rhythm
+3. Update Seller to reuse Tenant structure/classes wherever safe.
+4. If reuse is not safe, make surgical Seller-only class/markup changes until Seller visually matches Tenant.
+
+Do NOT stop at “close enough.”
+This is a strict parity correction.
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- Tenant files
+- Buyer files
+- Landlord files
+- scoring logic
+- match formulas
+- route names
+- DB fields
+- business logic
+
+This task is SELLER visual parity only.
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Seller only
+- No broad refactors
+- No backend changes unless absolutely required for a render dependency
+- Preserve the already-correct Seller data logic and dual score logic
+- Keep edits surgical and scoped to visual/layout parity
+- Prefer copying Tenant structure/classes over inventing new Seller-only styling
+- Do not claim completion without real screenshot comparison
+
+==================================================
+REQUIRED VISUAL VERIFICATION
+==================================================
+
+After implementing, do authenticated browser verification and provide:
+
+1. Seller screenshot of counter bidding history
+2. Tenant screenshot of the equivalent area
+3. Seller screenshot of Private Compensation & Agency Agreement Terms
+4. Tenant screenshot of the equivalent area
+
+Then explicitly confirm whether Seller now matches Tenant for:
+- font sizing
+- line-height
+- list spacing
+- section spacing
+- match summary density
+- counter action banner/button row
+- removed services box styling
+- overall visual rhythm
+
+If any differences still remain, list them specifically and fix them before marking complete.
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+When done, provide:
+1. exact Seller files changed
+2. exact Tenant structures/classes mirrored
+3. exact spacing/typography differences corrected
+4. screenshot-based proof of Seller vs Tenant parity
+5. explicit confirmation that Seller now looks and feels like Tenant in the affected counter-bid sections
