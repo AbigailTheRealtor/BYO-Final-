@@ -3117,6 +3117,379 @@
                             </div> {{-- End collapse div --}}
                         </div> {{-- End bid card --}}
 
+                        {{-- ===== INLINE COUNTER BIDDING HISTORY ===== --}}
+                        @php
+                            $sellerCounterBids = \App\Models\SellerCounterTerm::with('meta', 'user')
+                                ->where('seller_agent_auction_bid_id', data_get($bid, 'id'))
+                                ->orderBy('created_at', 'desc')
+                                ->get();
+                            $showSellerCounterBids = ($isListingOwner || $isBidOwner);
+                        @endphp
+
+                        @if ($showSellerCounterBids && $sellerCounterBids->count() > 0)
+                        <div class="counter-bids-section mt-4" id="counter-section-{{ data_get($bid, 'id') }}">
+                            <div class="counter-bids-toggle"
+                                style="cursor: pointer;"
+                                onclick="event.stopPropagation(); var target = document.getElementById('counterBids{{ data_get($bid, 'id') }}'); var arrow = this.querySelector('.counter-arrow'); if(target.style.display === 'none' || target.style.display === '') { target.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; } else { target.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; }">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap p-2 border rounded">
+                                    <h5 class="mb-0" style="color: #2c3e50;">Counter Bidding History</h5>
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-secondary me-2">{{ $sellerCounterBids->count() }} counter offers</span>
+                                        <span class="counter-arrow" style="transition: transform 0.3s;">↓</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="counterBids{{ data_get($bid, 'id') }}"
+                                class="counter-bids-content"
+                                style="display: none;">
+                                <div class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
+                                    @foreach ($sellerCounterBids as $counterBid)
+                                    @php
+                                        $scIsOwner = data_get($auction, 'user_id') == $auth_id;
+                                        $scIsAgent = data_get($bid, 'user_id') == $auth_id;
+                                        $scIsCounterFromOwner = $counterBid->user_id == data_get($auction, 'user_id');
+                                        $scIsCounterFromAgent = $counterBid->user_id == data_get($bid, 'user_id');
+
+                                        $scRawBidState = data_get($bid, 'accepted', '0');
+                                        $scBidState = in_array($scRawBidState, [null, 0, '0', 'no', 'pending'], true)
+                                            ? '0'
+                                            : (string) $scRawBidState;
+
+                                        // Seller uses integer status: 1 = active/pending, 0 = rejected
+                                        $scRawCounterState = data_get($counterBid, 'status', '0');
+                                        // Normalize: 0 or '0' → rejected; 1 or '1' → pending ('0' in canonical form)
+                                        $scCounterState = in_array((string)$scRawCounterState, ['0'], true)
+                                            ? 'rejected'
+                                            : (in_array((string)$scRawCounterState, ['1'], true) ? '0' : (string) $scRawCounterState);
+
+                                        $scShowCounterActions = false;
+                                        if ($scBidState === '0' && $scCounterState === '0') {
+                                            if ($scIsOwner && $scIsCounterFromAgent) {
+                                                $scShowCounterActions = true;
+                                            }
+                                            if ($scIsAgent && $scIsCounterFromOwner) {
+                                                $scShowCounterActions = true;
+                                            }
+                                        }
+
+                                        $scOwnerFirst = data_get($auction, 'user.first_name', '');
+                                        $scOwnerLast  = data_get($auction, 'user.last_name', '');
+                                        $scAgentFirst = data_get($bid, 'user.first_name', '');
+                                        $scAgentLast  = data_get($bid, 'user.last_name', '');
+
+                                        $scActorUserId = $scIsCounterFromOwner ? data_get($bid, 'user_id') : data_get($auction, 'user_id');
+                                        $scActorFirst  = $scIsCounterFromOwner ? $scAgentFirst : $scOwnerFirst;
+                                        $scActorLast   = $scIsCounterFromOwner ? $scAgentLast  : $scOwnerLast;
+
+                                        $scCreatorFirst = data_get($counterBid, 'user.first_name', '');
+                                        $scCreatorLast  = data_get($counterBid, 'user.last_name', '');
+
+                                        // Get all meta for this counter term
+                                        $scAllMeta = $counterBid->getAllMeta();
+
+                                        // Changed badge helper: compare counter value against original bid
+                                        $scIsChanged = function($counterVal, $origKey) use ($bid) {
+                                            $origVal = data_get($bid, 'get.' . $origKey, null);
+                                            $normalizeVal = function($v) {
+                                                if (is_null($v) || $v === '') return '';
+                                                if (is_array($v) || is_object($v)) return json_encode($v);
+                                                $v = trim((string) $v);
+                                                return preg_replace('/[\s$,%]/', '', strtolower($v));
+                                            };
+                                            return $normalizeVal($counterVal) !== $normalizeVal($origVal);
+                                        };
+
+                                        $scChangedStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                                        $scChangedBadge = '<span class="badge bg-warning text-dark ms-2" style="font-size: 0.7rem; vertical-align: middle;">Changed</span>';
+
+                                        // Purchase fee display
+                                        $scPurchaseFeeType = $scAllMeta['purchase_fee_type'] ?? '';
+                                        $scPurchaseFeeDisplay = $scPurchaseFeeType;
+                                        if ($scPurchaseFeeType === 'flat' && !empty($scAllMeta['purchase_fee_flat'])) {
+                                            $scPurchaseFeeDisplay = '$' . number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['purchase_fee_flat']), 2);
+                                        } elseif ($scPurchaseFeeType === 'percentage' && !empty($scAllMeta['purchase_fee_percentage'])) {
+                                            $scPurchaseFeeDisplay = rtrim(rtrim(number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['purchase_fee_percentage']), 2), '0'), '.') . '% of Total Purchase Price';
+                                        } elseif ($scPurchaseFeeType === 'combo') {
+                                            $pctPart = !empty($scAllMeta['purchase_fee_percentage_combo']) ? (rtrim(rtrim(number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['purchase_fee_percentage_combo']), 2), '0'), '.') . '% of Total Purchase Price') : null;
+                                            $flatPart = !empty($scAllMeta['purchase_fee_flat_combo']) ? ('$' . number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['purchase_fee_flat_combo']), 2)) : null;
+                                            $scPurchaseFeeDisplay = implode(' + ', array_filter([$pctPart, $flatPart])) ?: $scPurchaseFeeType;
+                                        } elseif ($scPurchaseFeeType === 'other' && !empty($scAllMeta['purchase_fee_other'])) {
+                                            $scPurchaseFeeDisplay = $scAllMeta['purchase_fee_other'];
+                                        }
+
+                                        // Services diff
+                                        $scCtrSvcsRaw = is_string($scAllMeta['services'] ?? '') ? json_decode($scAllMeta['services'] ?? '', true) ?? [] : ($scAllMeta['services'] ?? []);
+                                        $scCtrSvcsRaw = array_filter((array)$scCtrSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other');
+                                        $scOrigBidSvcsRaw = (array) data_get($bid, 'get.services', []);
+                                        if (is_string(data_get($bid, 'get.services', []))) $scOrigBidSvcsRaw = json_decode(data_get($bid, 'get.services', '[]'), true) ?: [];
+                                        $scOrigBidSvcsRaw = array_filter($scOrigBidSvcsRaw, fn($s) => is_string($s) && trim($s) !== '' && $s !== 'Other');
+                                        $scNormSvc = fn($s) => strtolower(trim((string)$s));
+                                        $scOrigBidSvcsNorm = array_map($scNormSvc, array_values($scOrigBidSvcsRaw));
+                                        $scCtrSvcsNorm = array_map($scNormSvc, array_values($scCtrSvcsRaw));
+                                        $scCtrSvcIsAdded = fn(string $s): bool => !in_array($scNormSvc($s), $scOrigBidSvcsNorm, true);
+                                        $scCtrRemovedSvcs = array_values(array_filter($scOrigBidSvcsRaw, fn($s) => !in_array($scNormSvc($s), $scCtrSvcsNorm, true)));
+                                    @endphp
+
+                                    <div class="counter-bid-card mb-3 p-3 border rounded mt-2">
+                                        <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                                            <h6 class="mb-0">
+                                                @if ($counterBid->user_id == Auth::id())
+                                                    Your Counter Offer
+                                                @else
+                                                    Counter Offer from {{ data_get($counterBid, 'user.first_name') }} {{ data_get($counterBid, 'user.last_name') }}
+                                                @endif
+                                            </h6>
+                                            <small class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
+                                        </div>
+
+                                        {{-- Status badge --}}
+                                        @if (in_array((string)$scCounterState, ['accepted']))
+                                        <div class="mb-2">
+                                            <span class="badge bg-success">Accepted</span>
+                                            <small class="text-muted ms-2">by {{ $scActorFirst }} {{ $scActorLast }}</small>
+                                        </div>
+                                        @elseif (in_array((string)$scCounterState, ['rejected']))
+                                        <div class="mb-2">
+                                            <span class="badge bg-danger">Rejected</span>
+                                            <small class="text-muted ms-2">by {{ $scActorFirst }} {{ $scActorLast }}</small>
+                                        </div>
+                                        @elseif ($scCounterState === '0')
+                                        <div class="mb-2">
+                                            <span class="badge bg-warning text-dark">Pending Response</span>
+                                            @if (!$scShowCounterActions)
+                                            <small class="text-muted ms-2">Awaiting {{ $scIsCounterFromOwner ? $scAgentFirst.' '.$scAgentLast : $scOwnerFirst.' '.$scOwnerLast }}</small>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        {{-- Broker Compensation & Terms --}}
+                                        @if (!empty($scAllMeta['purchase_fee_type']) || !empty($scAllMeta['commission_structure']))
+                                        <div class="mb-3">
+                                            <strong style="font-size: 13px; color: #049399;">A) Seller's Broker Compensation:</strong>
+                                            @if (!empty($scAllMeta['commission_structure']))
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['commission_structure'], 'commission_structure') ? $scChangedStyle : '' }}">
+                                                Buyer's Broker Commission Structure:
+                                                <span class="removeBold">{{ $scAllMeta['commission_structure'] }}</span>
+                                                @if ($scIsChanged($scAllMeta['commission_structure'], 'commission_structure')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                            @if (!empty($scAllMeta['purchase_fee_type']))
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['purchase_fee_type'], 'purchase_fee_type') ? $scChangedStyle : '' }}">
+                                                Seller's Broker Purchase Fee:
+                                                <span class="removeBold">{{ $scPurchaseFeeDisplay }}</span>
+                                                @if ($scIsChanged($scAllMeta['purchase_fee_type'], 'purchase_fee_type')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                            @if (!empty($scAllMeta['nominal']))
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['nominal'], 'nominal') ? $scChangedStyle : '' }}">
+                                                Nominal Consideration Fee:
+                                                <span class="removeBold">${{ number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['nominal']), 2) }}</span>
+                                                @if ($scIsChanged($scAllMeta['nominal'], 'nominal')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        {{-- Lease Terms --}}
+                                        @if (!empty($scAllMeta['interested_purchase_fee_type']))
+                                        <div class="mb-3">
+                                            <strong style="font-size: 13px; color: #049399;">B) Lease Terms:</strong>
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type') ? $scChangedStyle : '' }}">
+                                                Interested in Offering a Lease Agreement:
+                                                <span class="removeBold">{{ $scAllMeta['interested_purchase_fee_type'] }}</span>
+                                                @if ($scIsChanged($scAllMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        {{-- Lease-Option Terms --}}
+                                        @if (!empty($scAllMeta['interested_lease_option_agreement']))
+                                        <div class="mb-3">
+                                            <strong style="font-size: 13px; color: #049399;">C) Lease-Option Terms:</strong>
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement') ? $scChangedStyle : '' }}">
+                                                Interested in Lease-Option Agreement:
+                                                <span class="removeBold">{{ $scAllMeta['interested_lease_option_agreement'] }}</span>
+                                                @if ($scIsChanged($scAllMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        {{-- Legal Terms --}}
+                                        @if (!empty($scAllMeta['early_termination_fee_option']) || !empty($scAllMeta['retainer_fee_option']) || !empty($scAllMeta['protection_period']) || !empty($scAllMeta['agency_agreement_timeframe']))
+                                        <div class="mb-3">
+                                            <strong style="font-size: 13px; color: #049399;">D) Legal Terms:</strong>
+                                            @if (!empty($scAllMeta['early_termination_fee_option']))
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['early_termination_fee_option'], 'early_termination_fee_option') ? $scChangedStyle : '' }}">
+                                                Early Termination Fee:
+                                                <span class="removeBold">{{ ucfirst($scAllMeta['early_termination_fee_option']) }}</span>
+                                                @if (!empty($scAllMeta['early_termination_fee_amount'])) <span class="removeBold">({{ '$'.number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['early_termination_fee_amount']), 2) }})</span> @endif
+                                                @if ($scIsChanged($scAllMeta['early_termination_fee_option'], 'early_termination_fee_option')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                            @if (!empty($scAllMeta['retainer_fee_option']))
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['retainer_fee_option'], 'retainer_fee_option') ? $scChangedStyle : '' }}">
+                                                Retainer Fee:
+                                                <span class="removeBold">{{ ucfirst($scAllMeta['retainer_fee_option']) }}</span>
+                                                @if (!empty($scAllMeta['retainer_fee_amount'])) <span class="removeBold">({{ '$'.number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['retainer_fee_amount']), 2) }})</span> @endif
+                                                @if ($scIsChanged($scAllMeta['retainer_fee_option'], 'retainer_fee_option')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                            @if (!empty($scAllMeta['protection_period']))
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['protection_period'], 'protection_period') ? $scChangedStyle : '' }}">
+                                                Protection Period:
+                                                <span class="removeBold">{{ $scAllMeta['protection_period'] }} days</span>
+                                                @if ($scIsChanged($scAllMeta['protection_period'], 'protection_period')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                            @if (!empty($scAllMeta['agency_agreement_timeframe']))
+                                            @php
+                                                $scAgencyTfDisplay = strtolower(trim($scAllMeta['agency_agreement_timeframe'] ?? '')) === 'other'
+                                                    ? ($scAllMeta['agency_agreement_custom'] ?? 'Other')
+                                                    : $scAllMeta['agency_agreement_timeframe'];
+                                            @endphp
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe') ? $scChangedStyle : '' }}">
+                                                Seller Agency Agreement Timeframe:
+                                                <span class="removeBold">{{ $scAgencyTfDisplay }}</span>
+                                                @if ($scIsChanged($scAllMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        {{-- Brokerage Relationship --}}
+                                        @if (!empty($scAllMeta['brokerage_relationship']))
+                                        <div class="mb-3">
+                                            <strong style="font-size: 13px; color: #049399;">E) Brokerage Relationship:</strong>
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['brokerage_relationship'], 'brokerage_relationship') ? $scChangedStyle : '' }}">
+                                                Acceptable Brokerage Relationship:
+                                                <span class="removeBold">{{ $scAllMeta['brokerage_relationship'] }}</span>
+                                                @if ($scIsChanged($scAllMeta['brokerage_relationship'], 'brokerage_relationship')) {!! $scChangedBadge !!} @endif
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        {{-- Additional Terms --}}
+                                        @if (!empty($scAllMeta['additional_details_broker']))
+                                        <div class="mb-3">
+                                            <strong style="font-size: 13px; color: #049399;">F) Additional Terms:</strong>
+                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
+                                                <span class="removeBold">{{ $scAllMeta['additional_details_broker'] }}</span>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        {{-- Services Offered --}}
+                                        @if (!empty($scCtrSvcsRaw))
+                                        <div style="margin-top: 12px;">
+                                            <label style="font-size: 13px; font-weight: 600; color: #049399; display: block; margin-bottom: 8px;">
+                                                G) Services Offered:
+                                            </label>
+                                            @php
+                                                $scFlowKey = data_get($auction, 'get.property_type', 'Residential Property');
+                                                $scCounterOrderedServices = !empty($scCtrSvcsRaw)
+                                                    ? \App\Support\ServicesFormatter::orderSelectedServices(array_values($scCtrSvcsRaw), $scFlowKey)
+                                                    : [];
+                                            @endphp
+                                            @if (!empty($scCounterOrderedServices))
+                                                @foreach ($scCounterOrderedServices as $catName => $catSrvs)
+                                                    @if (!empty($catSrvs))
+                                                    <div class="mb-2">
+                                                        <strong style="font-size: 12px;">{{ $catName }}</strong>
+                                                        <ul class="services services-offered" style="margin-top: 4px;">
+                                                            @foreach ($catSrvs as $svc)
+                                                                @if ($svc !== 'Other')
+                                                                    @php $scSvcIsNew = $scCtrSvcIsAdded((string)$svc); @endphp
+                                                                    <li style="font-size: 12px; {{ $scSvcIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
+                                                                        {{ $svc }}
+                                                                        @if ($scSvcIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                                    </li>
+                                                                @endif
+                                                            @endforeach
+                                                        </ul>
+                                                    </div>
+                                                    @endif
+                                                @endforeach
+                                            @else
+                                                <ul class="services services-offered">
+                                                    @foreach ($scCtrSvcsRaw as $svc)
+                                                        @if ($svc != 'Other')
+                                                            @php $scSvcIsNew = $scCtrSvcIsAdded((string)$svc); @endphp
+                                                            <li style="font-size: 12px; {{ $scSvcIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
+                                                                {{ $svc }}
+                                                                @if ($scSvcIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                            </li>
+                                                        @endif
+                                                    @endforeach
+                                                </ul>
+                                            @endif
+                                            {{-- Removed Services --}}
+                                            @if (!empty($scCtrRemovedSvcs))
+                                            <div class="mt-2 p-2" style="background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
+                                                <strong style="font-size: 12px; color: #856404;"><i class="fas fa-exclamation-triangle me-1"></i>Removed from Original Bid:</strong>
+                                                <ul class="services" style="margin-top: 4px;">
+                                                    @foreach ($scCtrRemovedSvcs as $svc)
+                                                    <li style="font-size: 12px; color: #856404;">{{ $svc }}</li>
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                            @endif
+                                        </div>
+                                        @endif
+
+                                        {{-- Counter Actions --}}
+                                        {{-- Show notice + buttons when this counter record is pending (status=1 normalized to '0') --}}
+                                        @if ($scCounterState === '0' && $scIsCounterFromOwner)
+                                        {{-- Owner submitted this counter; showing to both parties --}}
+                                        <div class="w-100 p-2 text-center mt-3" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                            <i class="fa fa-exchange-alt me-1"></i>
+                                            @if ($scIsOwner)
+                                                You have submitted a counter offer for this bid.
+                                            @else
+                                                {{ trim($scOwnerFirst . ' ' . $scOwnerLast) }} has submitted a counter offer.
+                                            @endif
+                                        </div>
+                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                            <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
+                                               class="btn btn-warning btn-sm text-dark">
+                                                <i class="fa fa-eye me-1"></i>View Counter Terms
+                                            </a>
+                                            @if ($scIsOwner)
+                                            <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}"
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fa fa-edit me-1"></i>Edit Counter Terms
+                                            </a>
+                                            @endif
+                                        </div>
+                                        @elseif ($scCounterState === '0' && $scIsCounterFromAgent)
+                                        {{-- Agent submitted this counter-back; showing notice --}}
+                                        <div class="w-100 p-2 text-center mt-3" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                            <i class="fa fa-exchange-alt me-1"></i>
+                                            @if ($scIsOwner)
+                                                {{ trim($scCreatorFirst . ' ' . $scCreatorLast) }} has submitted a counter-back. Please review and respond.
+                                            @else
+                                                You have submitted a counter-back. Awaiting seller response.
+                                            @endif
+                                        </div>
+                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                            <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
+                                               class="btn btn-warning btn-sm text-dark">
+                                                <i class="fa fa-eye me-1"></i>View Counter Terms
+                                            </a>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        @elseif (!$showSellerCounterBids && $sellerCounterBids->count() > 0)
+                        <div class="mt-3 p-2" style="background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
+                            <small class="text-muted"><i class="fa fa-lock me-1"></i>Counter offer history is private and only visible to the listing owner and the bidding agent.</small>
+                        </div>
+                        @endif
+                        {{-- ===== END INLINE COUNTER BIDDING HISTORY ===== --}}
+
                         @if ($isListingOwner || $isBidOwner)
                         {{-- Private Data Modal - visible to listing owner OR bid owner (agent) --}}
                         @php

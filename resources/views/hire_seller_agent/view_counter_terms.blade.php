@@ -65,7 +65,7 @@
                             $activeCounter = $agentCounterBack ?? $sellerCounter;
                         }
 
-                        $counterData = $activeCounter ? (array) $activeCounter->get : [];
+                        $counterData = $activeCounter ? $activeCounter->getAllMeta() : [];
 
                         $fmtMoney = function($v) {
                             if ($v === null || $v === '') return null;
@@ -133,7 +133,7 @@
                         $latestCounterScore = null;
                         if ($viewerRole === 'seller' && $sellerCounter && $agentCounterBack) {
                             $latestCounterScore = \App\Helpers\SellerBidMatchScoreHelper::calculate(
-                                (array) $sellerCounter->get,
+                                $sellerCounter->getAllMeta(),
                                 $counterData,
                                 null,
                                 $counterPropType
@@ -614,7 +614,7 @@
                     {{-- Only show for agent viewing (seller already sees agent counter-back as main panel above) --}}
                     @if($agentCounterBack && $viewerRole === 'agent')
                     @php
-                        $agentCounterData = (array) $agentCounterBack->get;
+                        $agentCounterData = $agentCounterBack->getAllMeta();
                         $agentPurchaseFeeType = data_get($agentCounterData, 'purchase_fee_type', '');
                         $agentPurchaseFeeFlat = data_get($agentCounterData, 'purchase_fee_flat', '');
                         $agentPurchaseFeePerc = data_get($agentCounterData, 'purchase_fee_percentage', '');

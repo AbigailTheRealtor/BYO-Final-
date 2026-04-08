@@ -43,6 +43,11 @@ class SellerCounterTerm extends Model
         return $meta ? $meta->meta_value : $default;
     }
 
+    public function getAllMeta()
+    {
+        return $this->meta->pluck('meta_value', 'meta_key')->toArray();
+    }
+
     public function getGetAttribute()
     {
         $data = [];
