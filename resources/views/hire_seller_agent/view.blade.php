@@ -3390,8 +3390,11 @@
                                                 $scCounterOrderedServices = !empty($scCtrSvcsRaw)
                                                     ? \App\Support\ServicesFormatter::orderSelectedServices(array_values($scCtrSvcsRaw), $scFlowKey)
                                                     : [];
+                                                // Guard: orderSelectedServices returns a flat array when no catalog key matches.
+                                                // Only use the grouped (nested) rendering path if values are actually arrays.
+                                                $scSvcsIsGrouped = !empty($scCounterOrderedServices) && is_array(reset($scCounterOrderedServices));
                                             @endphp
-                                            @if (!empty($scCounterOrderedServices))
+                                            @if ($scSvcsIsGrouped)
                                                 @foreach ($scCounterOrderedServices as $catName => $catSrvs)
                                                     @if (!empty($catSrvs))
                                                     <div class="mb-2">
@@ -3410,7 +3413,7 @@
                                                     </div>
                                                     @endif
                                                 @endforeach
-                                            @else
+                                            @elseif (!empty($scCtrSvcsRaw))
                                                 <ul class="services services-offered">
                                                     @foreach ($scCtrSvcsRaw as $svc)
                                                         @if ($svc != 'Other')
