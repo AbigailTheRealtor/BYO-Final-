@@ -3810,6 +3810,38 @@
                                                 </a>
                                                 @endif
                                             </div>
+
+                                            {{-- Respond to this Counter Offer: Accept / Reject / Counter --}}
+                                            <div class="counter-response-buttons mt-3">
+                                                <h6>Respond to this Counter Offer:</h6>
+
+                                                @if ($isExpired)
+                                                <div class="alert alert-warning text-center mt-2 mb-0 p-2" style="font-size: 15px">
+                                                    <strong>Bidding/Counter Period Ended</strong>
+                                                </div>
+                                                @else
+                                                <div class="d-flex gap-3 flex-wrap justify-content-between">
+                                                    {{-- Accept --}}
+                                                    <form class="d-inline" action="{{ route('hire.seller.agent.auction.counter.accept') }}" method="post">
+                                                        @csrf
+                                                        <input type="hidden" name="counter_term_id" value="{{ data_get($counterBid, 'id') }}">
+                                                        <button type="submit" class="btn-custom btn-accept" style="font-size:16px">Accept</button>
+                                                    </form>
+
+                                                    {{-- Reject --}}
+                                                    <form class="d-inline" action="{{ route('hire.seller.agent.auction.counter.reject') }}" method="post">
+                                                        @csrf
+                                                        <input type="hidden" name="counter_term_id" value="{{ data_get($counterBid, 'id') }}">
+                                                        <button type="submit" class="btn-custom btn-reject" style="font-size:16px">Reject</button>
+                                                    </form>
+
+                                                    {{-- Counter --}}
+                                                    <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}"
+                                                       class="btn-custom btn-counter"
+                                                       style="font-size:16px; display:inline-block; text-decoration:none;">Counter</a>
+                                                </div>
+                                                @endif
+                                            </div>
                                         </div>
                                         @endif
 
