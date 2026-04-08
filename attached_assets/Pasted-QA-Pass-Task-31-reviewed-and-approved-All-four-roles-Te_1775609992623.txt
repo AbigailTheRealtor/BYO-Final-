@@ -1,0 +1,87 @@
+QA Pass Task #31 reviewed and approved.
+
+All four roles (Tenant, Buyer, Seller, Landlord) are now verified with real database cases and match expected scoring behavior. Legacy scoring paths have been removed and replaced with helper-based logic. Counter-bid flows are corrected and user_type mismatches are resolved.
+
+Next step: LOCK THIS QA STATE AND PREVENT REGRESSION.
+
+---
+
+TASK 1: Create Permanent QA Reference File
+
+Create:
+qa_reports/QA_LOCK_BidComparison_v1.md
+
+Content:
+
+- Reference Task #31 as the baseline QA pass
+- Document all verified cases per role:
+  - Buyer: standard, mismatch, counter
+  - Seller: standard (no mismatch/counter data available)
+  - Landlord: standard, empty baseline case
+  - Tenant: standard, mismatch, counter
+- Clearly define expected scoring behavior:
+  - 100% when all terms match
+  - Correct reduced % when mismatches exist
+  - 100% when denominator = 0 (empty baseline case)
+- Note that ALL scoring must come from:
+  - TenantBidMatchScoreHelper
+  - BuyerBidMatchScoreHelper
+  - SellerBidMatchScoreHelper
+  - LandlordBidMatchScoreHelper
+- Explicit rule:
+  “No inline scoring logic is allowed in Blade views. All scoring must come from helpers.”
+
+This is documentation only. Do not modify logic.
+
+---
+
+TASK 2: Add Anti-Regression Comments in Critical Files
+
+Add comment block at the top of these files:
+
+1. resources/views/my-bids/agent-bids.blade.php
+2. resources/views/tenant_agent/bid_preview.blade.php
+
+Comment:
+
+/**
+ * QA LOCK — BID COMPARISON SCORING
+ *
+ * This file previously used inline scoring logic (union-based).
+ * It has been replaced with helper-based scoring per Task #31 QA pass.
+ *
+ * RULES:
+ * - DO NOT reintroduce inline scoring logic
+ * - All scoring must come from BidMatchScoreHelper classes
+ * - Any scoring changes must be applied across ALL four roles
+ *
+ * Reference:
+ * qa_reports/QA_LOCK_BidComparison_v1.md
+ */
+
+Do not change logic. Comment only.
+
+---
+
+TASK 3: Sanity Check (NO CHANGES UNLESS BROKEN)
+
+Verify:
+
+- Buyer mismatch case still shows reduced % (not 100%)
+- Tenant mismatch case still shows correct reduced % (93%)
+- Landlord empty baseline still returns 100% (not error or 0%)
+- No Blade errors or undefined variables anywhere
+
+If all checks pass → STOP.
+
+---
+
+CRITICAL RULES:
+
+- DO NOT refactor working helper logic
+- DO NOT modify scoring formulas
+- DO NOT touch database
+- DO NOT change unrelated UI
+- Only perform the tasks above
+
+If anything is unclear or cannot be completed safely, STOP and report.

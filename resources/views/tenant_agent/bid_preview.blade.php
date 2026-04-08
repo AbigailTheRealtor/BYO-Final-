@@ -1,3 +1,17 @@
+{{--
+    QA LOCK — BID COMPARISON SCORING
+
+    This file previously used inline scoring logic (union-based).
+    It has been replaced with helper-based scoring per Task #31 QA pass.
+
+    RULES:
+    - DO NOT reintroduce inline scoring logic
+    - All scoring must come from BidMatchScoreHelper classes
+    - Any scoring changes must be applied across ALL four roles
+
+    Reference:
+    qa_reports/QA_LOCK_BidComparison_v1.md
+--}}
 @extends('layouts.main')
 
 @php
