@@ -3406,7 +3406,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         is private and only visible to you{{ $isListingOwner ? ' as the listing owner' : '' }}.
                                                     </div>
                                                     
-                                                    @if ($isListingOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                    @if ($isListingOwner && !$latestTenantCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                                         @php
                                                             // Traditional: show if not expired; Bidding Period: show when timer ends
                                                             $showActionButtons = ($isTraditionalListing && !$isExpired) || ($isBiddingPeriodListing && $isExpired);
@@ -3450,6 +3450,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <i class="fa fa-clock me-1"></i> Listing has expired - no further actions available. You can extend the expiration date by editing the listing.
                                                         </div>
                                                         @endif
+                                                    @elseif ($isListingOwner && $latestTenantCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                    {{-- Counter submitted: owner already sent a counter offer --}}
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                        <i class="fa fa-exchange-alt me-1"></i> You have submitted a counter offer for this bid.
+                                                    </div>
+                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
+                                                        <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                        </a>
+                                                        <a href="{{ route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                            <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                        </a>
+                                                    </div>
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
                                                         <i class="fa fa-check-circle me-1"></i> This bid has been accepted
