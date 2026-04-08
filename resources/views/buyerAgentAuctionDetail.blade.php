@@ -4092,11 +4092,17 @@
                                                                         // Compute modal-footer state — available variables: $bidAccepted, $auction, $bid, $auth_id
                                                                         $_mfRawB    = data_get($bid, 'accepted', '0');
                                                                         $_mfTermB   = in_array((string)$_mfRawB, ['accepted', 'rejected'], true);
-                                                                        $_mfCounterB = !$_mfTermB && \App\Models\BuyerCounterTerm
-                                                                            ::where('buyer_agent_auction_id', data_get($auction, 'id'))
-                                                                            ->where('parent_counter_id', data_get($bid, 'id'))
-                                                                            ->where('user_id', data_get($auction, 'user_id'))
-                                                                            ->exists();
+                                                                        $_mfCounterB = !$_mfTermB && (
+                                                                            \App\Models\BuyerCounterTerm
+                                                                                ::where('buyer_agent_auction_id', data_get($auction, 'id'))
+                                                                                ->where('parent_counter_id', data_get($bid, 'id'))
+                                                                                ->where('user_id', data_get($auction, 'user_id'))
+                                                                                ->exists() ||
+                                                                            \App\Models\BuyerCounterBidding
+                                                                                ::where('buyer_agent_auction_bid_id', data_get($bid, 'id'))
+                                                                                ->where('user_id', data_get($auction, 'user_id'))
+                                                                                ->exists()
+                                                                        );
                                                                         $mfStateB   = $_mfCounterB
                                                                             ? 'countered'
                                                                             : (in_array($_mfRawB, [null, 0, '0', ''], true) ? '0' : (string)$_mfRawB);
