@@ -3579,6 +3579,116 @@
                                             (array)$scOrigOtherRaw,
                                             fn($s) => is_string($s) && trim($s) !== '' && !in_array(strtolower(trim($s)), array_map(fn($x) => strtolower(trim((string)$x)), $scOtherSvcs), true)
                                         ));
+
+                                        // === Format helpers ===
+                                        $scFmtMoney = function($v) {
+                                            if (empty($v)) return null;
+                                            $c = preg_replace('/[^0-9.\-]/', '', (string)$v);
+                                            if ($c === '' || !is_numeric($c)) return null;
+                                            return '$' . number_format((float)$c, 2);
+                                        };
+                                        $scFmtPct = function($v) {
+                                            if (empty($v)) return null;
+                                            $c = preg_replace('/[^0-9.\-]/', '', (string)$v);
+                                            if ($c === '' || !is_numeric($c)) return null;
+                                            return rtrim(rtrim(number_format((float)$c, 2), '0'), '.') . '%';
+                                        };
+
+                                        // === A) Buyer's Broker Commission Fee ===
+                                        $scCommStructType = $scAllMeta['commission_structure_type'] ?? '';
+                                        $scBuyerBrokerFee = null;
+                                        if ($scCommStructType === 'Flat Fee' && !empty($scAllMeta['commission_structure_type_fee_flat'])) {
+                                            $scBuyerBrokerFee = $scFmtMoney($scAllMeta['commission_structure_type_fee_flat']);
+                                        } elseif ($scCommStructType === 'Percentage of the Total Purchase Price' && !empty($scAllMeta['commission_structure_type_fee_percentage'])) {
+                                            $scBuyerBrokerFee = $scFmtPct($scAllMeta['commission_structure_type_fee_percentage']) . ' of Total Purchase Price';
+                                        } elseif ($scCommStructType === 'Flat Fee + Percentage' && (!empty($scAllMeta['commission_structure_type_fee_flat_combo']) || !empty($scAllMeta['commission_structure_type_fee_percentage_combo']))) {
+                                            $bbfParts = [];
+                                            if (!empty($scAllMeta['commission_structure_type_fee_percentage_combo'])) $bbfParts[] = ($scFmtPct($scAllMeta['commission_structure_type_fee_percentage_combo']) ?? '') . ' of Total Purchase Price';
+                                            if (!empty($scAllMeta['commission_structure_type_fee_flat_combo'])) $bbfParts[] = $scFmtMoney($scAllMeta['commission_structure_type_fee_flat_combo']);
+                                            $scBuyerBrokerFee = implode(' + ', array_filter($bbfParts)) ?: null;
+                                        } elseif (strtolower($scCommStructType) === 'other' && !empty($scAllMeta['commission_structure_type_fee_other'])) {
+                                            $scBuyerBrokerFee = $scAllMeta['commission_structure_type_fee_other'];
+                                        } elseif ($scCommStructType) {
+                                            $scBuyerBrokerFee = $scCommStructType;
+                                        }
+
+                                        // === B) Seller's Broker Leasing Fee ===
+                                        $scLeasingFeeType = $scAllMeta['seller_leasing_fee_type'] ?? '';
+                                        $scLeasingFeeDisplay = null;
+                                        if ($scLeasingFeeType === 'Flat Fee' && !empty($scAllMeta['seller_leasing_gross_purchase_fee_flat_amount'])) {
+                                            $scLeasingFeeDisplay = $scFmtMoney($scAllMeta['seller_leasing_gross_purchase_fee_flat_amount']);
+                                        } elseif ($scLeasingFeeType === 'Percentage of the Gross Lease Value' && !empty($scAllMeta['seller_leasing_gross'])) {
+                                            $scLeasingFeeDisplay = $scFmtPct($scAllMeta['seller_leasing_gross']) . ' of the Gross Lease Value';
+                                        } elseif ($scLeasingFeeType === 'Percentage of the Rent Due Each Rental Period' && !empty($scAllMeta['seller_leasing_gross_rental'])) {
+                                            $scLeasingFeeDisplay = $scFmtPct($scAllMeta['seller_leasing_gross_rental']) . ' of the Rent Due Each Rental Period';
+                                        } elseif ($scLeasingFeeType === "Percentage of the First Month's Rent" && !empty($scAllMeta['seller_leasing_gross_month_rent'])) {
+                                            $scLeasingFeeDisplay = $scFmtPct($scAllMeta['seller_leasing_gross_month_rent']) . " of the First Month's Rent";
+                                        } elseif ($scLeasingFeeType === "Percentage of Month's Rent" && !empty($scAllMeta['seller_leasing_gross_month_rent'])) {
+                                            $scLeasingFeeDisplay = $scFmtPct($scAllMeta['seller_leasing_gross_month_rent']) . " of Month's Rent";
+                                            if (!empty($scAllMeta['seller_leasing_gross_no_of_months']) && $scAllMeta['seller_leasing_gross_no_of_months'] != 'null') {
+                                                $scLeasingFeeDisplay .= ' x ' . intval($scAllMeta['seller_leasing_gross_no_of_months']) . ' Months';
+                                            }
+                                        } elseif ($scLeasingFeeType === 'Percentage of Net Aggregate Rent') {
+                                            $scNetAggVal = $scAllMeta['seller_leasing_gross_other'] ?? $scAllMeta['seller_leasing_gross'] ?? null;
+                                            if ($scNetAggVal) $scLeasingFeeDisplay = $scFmtPct($scNetAggVal) . ' of Net Aggregate Rent';
+                                        } elseif ($scLeasingFeeType === 'Percentage of Gross Rent') {
+                                            $scGrossRentVal = $scAllMeta['seller_leasing_gross_percentage'] ?? $scAllMeta['seller_leasing_gross_ross_percentage_rent'] ?? null;
+                                            if ($scGrossRentVal) $scLeasingFeeDisplay = $scFmtPct($scGrossRentVal) . ' of Gross Rent';
+                                        } elseif ($scLeasingFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                                            $scLfParts = [];
+                                            if (!empty($scAllMeta['seller_leasing_gross_flat_combo'])) $scLfParts[] = $scFmtMoney($scAllMeta['seller_leasing_gross_flat_combo']);
+                                            if (!empty($scAllMeta['seller_leasing_gross_percentage_combo'])) $scLfParts[] = $scFmtPct($scAllMeta['seller_leasing_gross_percentage_combo']) . ' of Gross Lease Value';
+                                            $scLeasingFeeDisplay = implode(' + ', array_filter($scLfParts)) ?: null;
+                                        } elseif ($scLeasingFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                                            $scLfParts = [];
+                                            if (!empty($scAllMeta['seller_leasing_gross_flat_net_combo'])) $scLfParts[] = $scFmtMoney($scAllMeta['seller_leasing_gross_flat_net_combo']);
+                                            if (!empty($scAllMeta['seller_leasing_gross_percentage_net_combo'])) $scLfParts[] = $scFmtPct($scAllMeta['seller_leasing_gross_percentage_net_combo']) . ' of Net Aggregate Rent';
+                                            $scLeasingFeeDisplay = implode(' + ', array_filter($scLfParts)) ?: null;
+                                        } elseif (strtolower($scLeasingFeeType) === 'other' && !empty($scAllMeta['seller_leasing_gross_purchase_fee_other'])) {
+                                            $scLeasingFeeDisplay = $scAllMeta['seller_leasing_gross_purchase_fee_other'];
+                                        } elseif ($scLeasingFeeType) {
+                                            $scLeasingFeeDisplay = $scLeasingFeeType;
+                                        }
+
+                                        // === C) Lease-Option Term fee displays ===
+                                        $scLeaseValue   = $scAllMeta['lease_value'] ?? '';
+                                        $scLeaseType2   = $scAllMeta['lease_type'] ?? '';
+                                        $scPurchaseValue = $scAllMeta['purchase_value'] ?? '';
+                                        $scPurchaseType2 = $scAllMeta['purchase_type'] ?? '';
+                                        $scLeaseOptionFee = null;
+                                        if ($scLeaseValue) {
+                                            if (in_array($scLeaseType2, ['%', 'percent']) || str_contains((string)$scLeaseValue, '%')) {
+                                                $scLeaseOptionFee = str_replace('%', '', $scLeaseValue) . '% of Total Purchase Price';
+                                            } else {
+                                                $scLeaseOptionFee = $scFmtMoney($scLeaseValue);
+                                            }
+                                        }
+                                        $scPurchaseOptFee = null;
+                                        if ($scPurchaseValue) {
+                                            if (in_array($scPurchaseType2, ['%', 'percent']) || str_contains((string)$scPurchaseValue, '%')) {
+                                                $scPurchaseOptFee = str_replace('%', '', $scPurchaseValue) . '% of Total Purchase Price';
+                                            } else {
+                                                $scPurchaseOptFee = $scFmtMoney($scPurchaseValue);
+                                            }
+                                        }
+
+                                        // === D) Legal Terms fields ===
+                                        $scEarlyTermAmt = $scAllMeta['early_termination_fee_amount'] ?? '';
+                                        $scRetainerAmt  = $scAllMeta['retainer_fee_amount'] ?? '';
+                                        $scRetainerApp  = $scAllMeta['retainer_fee_application'] ?? '';
+                                        $scRetainedDep  = $scAllMeta['retained_deposits'] ?? '';
+                                        $scAgencyTfDisplay = strtolower(trim($scAllMeta['agency_agreement_timeframe'] ?? '')) === 'other'
+                                            ? ($scAllMeta['agency_agreement_custom'] ?? 'Other')
+                                            : ($scAllMeta['agency_agreement_timeframe'] ?? '');
+
+                                        $scHasBrokerComp =
+                                            !empty($scAllMeta['purchase_fee_type']) || !empty($scAllMeta['commission_structure']) ||
+                                            !empty($scAllMeta['nominal']) || !empty($scAllMeta['commission_structure_type']) ||
+                                            !empty($scAllMeta['interested_purchase_fee_type']) || !empty($scAllMeta['interested_lease_option_agreement']) ||
+                                            !empty($scAllMeta['protection_period']) || !empty($scAllMeta['early_termination_fee_option']) ||
+                                            !empty($scAllMeta['retainer_fee_option']) || !empty($scAllMeta['retained_deposits']) ||
+                                            !empty($scAllMeta['agency_agreement_timeframe']) || !empty($scAllMeta['brokerage_relationship']) ||
+                                            !empty($scAllMeta['additional_details_broker']) || !empty($scAllMeta['additional_details']);
                                     @endphp
 
                                     <div class="counter-bid-card mb-3 p-3 border rounded mt-2">
@@ -3593,119 +3703,145 @@
                                             <small class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
                                         </div>
 
-                                        {{-- Broker Compensation & Terms --}}
-                                        @if (!empty($scAllMeta['purchase_fee_type']) || !empty($scAllMeta['commission_structure']))
-                                        <div class="mb-3">
-                                            <strong style="font-size: 13px; color: #049399;">A) Seller's Broker Compensation:</strong>
-                                            @if (!empty($scAllMeta['commission_structure']))
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['commission_structure'], 'commission_structure') ? $scChangedStyle : '' }}">
-                                                Buyer's Broker Commission Structure:
-                                                <span class="removeBold">{{ $scAllMeta['commission_structure'] }}</span>
-                                                @if ($scIsChanged($scAllMeta['commission_structure'], 'commission_structure')) {!! $scChangedBadge !!} @endif
+                                        {{-- ── Broker Compensation & Agency Agreement Terms ── --}}
+                                        @if ($scHasBrokerComp)
+                                        <div class="mb-4">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-handshake me-2"></i>Broker Compensation &amp; Agency Agreement Terms
+                                            </h6>
+
+                                            {{-- A) Broker Compensation --}}
+                                            @if (!empty($scAllMeta['purchase_fee_type']) || !empty($scAllMeta['commission_structure']) || !empty($scAllMeta['nominal']) || !empty($scAllMeta['commission_structure_type']))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">A) Broker Compensation</div>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @if (!empty($scAllMeta['purchase_fee_type']))
+                                                    @php $scPFChg = $scIsChanged($scAllMeta['purchase_fee_type'], 'purchase_fee_type'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scPFChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $scPurchaseFeeDisplay }}{!! $scPFChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @if (!empty($scAllMeta['nominal']))
+                                                    @php $scNomChg = $scIsChanged($scAllMeta['nominal'], 'nominal'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scNomChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Nominal Consideration Fee:</span> {{ $scFmtMoney($scAllMeta['nominal']) }}{!! $scNomChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @if (!empty($scAllMeta['commission_structure']))
+                                                    @php $scCSChg = $scIsChanged($scAllMeta['commission_structure'], 'commission_structure'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scCSChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $scAllMeta['commission_structure'] }}{!! $scCSChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @if (!empty($scAllMeta['commission_structure_type']) && $scBuyerBrokerFee)
+                                                    @php $scCSTChg = $scIsChanged($scAllMeta['commission_structure_type'], 'commission_structure_type'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scCSTChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Buyer's Broker Commission Fee:</span> {{ $scBuyerBrokerFee }}{!! $scCSTChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                </ul>
                                             </div>
                                             @endif
-                                            @if (!empty($scAllMeta['purchase_fee_type']))
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['purchase_fee_type'], 'purchase_fee_type') ? $scChangedStyle : '' }}">
-                                                Seller's Broker Purchase Fee:
-                                                <span class="removeBold">{{ $scPurchaseFeeDisplay }}</span>
-                                                @if ($scIsChanged($scAllMeta['purchase_fee_type'], 'purchase_fee_type')) {!! $scChangedBadge !!} @endif
+
+                                            {{-- B) Lease Terms --}}
+                                            @if (!empty($scAllMeta['interested_purchase_fee_type']))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">B) Lease Terms</div>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @php $scIPFTChg = $scIsChanged($scAllMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scIPFTChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $scAllMeta['interested_purchase_fee_type'] }}{!! $scIPFTChg ? $scChangedBadge : '' !!}</li>
+                                                    @if (strtolower(trim($scAllMeta['interested_purchase_fee_type'])) === 'yes' && $scLeasingFeeDisplay)
+                                                    @php $scLFChg = $scIsChanged($scLeasingFeeType, 'seller_leasing_fee_type'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scLFChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $scLeasingFeeDisplay }}{!! $scLFChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                </ul>
                                             </div>
                                             @endif
-                                            @if (!empty($scAllMeta['nominal']))
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['nominal'], 'nominal') ? $scChangedStyle : '' }}">
-                                                Nominal Consideration Fee:
-                                                <span class="removeBold">${{ number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['nominal']), 2) }}</span>
-                                                @if ($scIsChanged($scAllMeta['nominal'], 'nominal')) {!! $scChangedBadge !!} @endif
+
+                                            {{-- C) Lease-Option Terms --}}
+                                            @if (!empty($scAllMeta['interested_lease_option_agreement']))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">C) Lease-Option Terms</div>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @php $scILOAChg = $scIsChanged($scAllMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scILOAChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $scAllMeta['interested_lease_option_agreement'] }}{!! $scILOAChg ? $scChangedBadge : '' !!}</li>
+                                                    @if (strtolower(trim($scAllMeta['interested_lease_option_agreement'])) === 'yes')
+                                                        @if ($scLeaseOptionFee)
+                                                        @php $scLOFChg = $scIsChanged($scLeaseType2, 'lease_type'); @endphp
+                                                        <li class="mb-1" style="font-size: 12px; {{ $scLOFChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Compensation for Creating Lease-Option Agreement:</span> {{ $scLeaseOptionFee }}{!! $scLOFChg ? $scChangedBadge : '' !!}</li>
+                                                        @endif
+                                                        @if ($scPurchaseOptFee)
+                                                        @php $scPOFChg = $scIsChanged($scPurchaseType2, 'purchase_type'); @endphp
+                                                        <li class="mb-1" style="font-size: 12px; {{ $scPOFChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $scPurchaseOptFee }}{!! $scPOFChg ? $scChangedBadge : '' !!}</li>
+                                                        @endif
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            {{-- D) Legal Terms --}}
+                                            @if (!empty($scAllMeta['early_termination_fee_option']) || !empty($scAllMeta['retainer_fee_option']) || $scRetainedDep || !empty($scAllMeta['protection_period']) || !empty($scAllMeta['agency_agreement_timeframe']))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">D) Legal Terms</div>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @if (!empty($scAllMeta['early_termination_fee_option']))
+                                                    @php $scETFChg = $scIsChanged($scAllMeta['early_termination_fee_option'], 'early_termination_fee_option'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scETFChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($scAllMeta['early_termination_fee_option']) }}{!! $scETFChg ? $scChangedBadge : '' !!}</li>
+                                                    @if (strtolower($scAllMeta['early_termination_fee_option']) === 'yes' && $scEarlyTermAmt)
+                                                    @php $scETAChg = $scIsChanged($scEarlyTermAmt, 'early_termination_fee_amount'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scETAChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Termination Fee Amount:</span> {{ $scFmtMoney($scEarlyTermAmt) }}{!! $scETAChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @endif
+                                                    @if (!empty($scAllMeta['retainer_fee_option']))
+                                                    @php $scRFOChg = $scIsChanged($scAllMeta['retainer_fee_option'], 'retainer_fee_option'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scRFOChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Retainer Fee:</span> {{ ucfirst($scAllMeta['retainer_fee_option']) }}{!! $scRFOChg ? $scChangedBadge : '' !!}</li>
+                                                    @if (strtolower($scAllMeta['retainer_fee_option']) === 'yes' && $scRetainerAmt)
+                                                    @php $scRAChg = $scIsChanged($scRetainerAmt, 'retainer_fee_amount'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scRAChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Retainer Fee Amount:</span> {{ $scFmtMoney($scRetainerAmt) }}{!! $scRAChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @if (strtolower($scAllMeta['retainer_fee_option'] ?? '') === 'yes' && $scRetainerApp)
+                                                    @php $scRAppChg = $scIsChanged($scRetainerApp, 'retainer_fee_application'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scRAppChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Retainer Fee Application:</span> {{ $scRetainerApp }}{!! $scRAppChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @endif
+                                                    @if ($scRetainedDep)
+                                                    @php $scRDChg = $scIsChanged($scRetainedDep, 'retained_deposits'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scRDChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $scFmtPct($scRetainedDep) }}{!! $scRDChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @if (!empty($scAllMeta['protection_period']))
+                                                    @php $scPPChg = $scIsChanged($scAllMeta['protection_period'], 'protection_period'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scPPChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Protection Period Timeframe:</span> {{ $scAllMeta['protection_period'] }} days{!! $scPPChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                    @if (!empty($scAllMeta['agency_agreement_timeframe']))
+                                                    @php $scATChg = $scIsChanged($scAllMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scATChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $scAgencyTfDisplay }}{!! $scATChg ? $scChangedBadge : '' !!}</li>
+                                                    @endif
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            {{-- E) Brokerage Relationship --}}
+                                            @if (!empty($scAllMeta['brokerage_relationship']))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">E) Brokerage Relationship</div>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @php $scBRChg = $scIsChanged($scAllMeta['brokerage_relationship'], 'brokerage_relationship'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scBRChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $scAllMeta['brokerage_relationship'] }}{!! $scBRChg ? $scChangedBadge : '' !!}</li>
+                                                </ul>
+                                            </div>
+                                            @endif
+
+                                            {{-- F) Additional Terms --}}
+                                            @if (!empty($scAllMeta['additional_details_broker']))
+                                            <div class="mb-3">
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">F) Additional Terms</div>
+                                                <ul class="list-unstyled ps-3 mb-0">
+                                                    @php $scADBChg = $scIsChanged($scAllMeta['additional_details_broker'], 'additional_details_broker'); @endphp
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scADBChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Additional Terms:</span> {{ $scAllMeta['additional_details_broker'] }}{!! $scADBChg ? $scChangedBadge : '' !!}</li>
+                                                </ul>
                                             </div>
                                             @endif
                                         </div>
                                         @endif
 
-                                        {{-- Lease Terms --}}
-                                        @if (!empty($scAllMeta['interested_purchase_fee_type']))
+                                        {{-- Additional Details --}}
+                                        @if (!empty($scAllMeta['additional_details']))
                                         <div class="mb-3">
-                                            <strong style="font-size: 13px; color: #049399;">B) Lease Terms:</strong>
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type') ? $scChangedStyle : '' }}">
-                                                Interested in Offering a Lease Agreement:
-                                                <span class="removeBold">{{ $scAllMeta['interested_purchase_fee_type'] }}</span>
-                                                @if ($scIsChanged($scAllMeta['interested_purchase_fee_type'], 'interested_purchase_fee_type')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                        </div>
-                                        @endif
-
-                                        {{-- Lease-Option Terms --}}
-                                        @if (!empty($scAllMeta['interested_lease_option_agreement']))
-                                        <div class="mb-3">
-                                            <strong style="font-size: 13px; color: #049399;">C) Lease-Option Terms:</strong>
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement') ? $scChangedStyle : '' }}">
-                                                Interested in Lease-Option Agreement:
-                                                <span class="removeBold">{{ $scAllMeta['interested_lease_option_agreement'] }}</span>
-                                                @if ($scIsChanged($scAllMeta['interested_lease_option_agreement'], 'interested_lease_option_agreement')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                        </div>
-                                        @endif
-
-                                        {{-- Legal Terms --}}
-                                        @if (!empty($scAllMeta['early_termination_fee_option']) || !empty($scAllMeta['retainer_fee_option']) || !empty($scAllMeta['protection_period']) || !empty($scAllMeta['agency_agreement_timeframe']))
-                                        <div class="mb-3">
-                                            <strong style="font-size: 13px; color: #049399;">D) Legal Terms:</strong>
-                                            @if (!empty($scAllMeta['early_termination_fee_option']))
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['early_termination_fee_option'], 'early_termination_fee_option') ? $scChangedStyle : '' }}">
-                                                Early Termination Fee:
-                                                <span class="removeBold">{{ ucfirst($scAllMeta['early_termination_fee_option']) }}</span>
-                                                @if (!empty($scAllMeta['early_termination_fee_amount'])) <span class="removeBold">({{ '$'.number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['early_termination_fee_amount']), 2) }})</span> @endif
-                                                @if ($scIsChanged($scAllMeta['early_termination_fee_option'], 'early_termination_fee_option')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                            @endif
-                                            @if (!empty($scAllMeta['retainer_fee_option']))
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['retainer_fee_option'], 'retainer_fee_option') ? $scChangedStyle : '' }}">
-                                                Retainer Fee:
-                                                <span class="removeBold">{{ ucfirst($scAllMeta['retainer_fee_option']) }}</span>
-                                                @if (!empty($scAllMeta['retainer_fee_amount'])) <span class="removeBold">({{ '$'.number_format((float)preg_replace('/[^0-9.]/', '', $scAllMeta['retainer_fee_amount']), 2) }})</span> @endif
-                                                @if ($scIsChanged($scAllMeta['retainer_fee_option'], 'retainer_fee_option')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                            @endif
-                                            @if (!empty($scAllMeta['protection_period']))
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['protection_period'], 'protection_period') ? $scChangedStyle : '' }}">
-                                                Protection Period:
-                                                <span class="removeBold">{{ $scAllMeta['protection_period'] }} days</span>
-                                                @if ($scIsChanged($scAllMeta['protection_period'], 'protection_period')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                            @endif
-                                            @if (!empty($scAllMeta['agency_agreement_timeframe']))
-                                            @php
-                                                $scAgencyTfDisplay = strtolower(trim($scAllMeta['agency_agreement_timeframe'] ?? '')) === 'other'
-                                                    ? ($scAllMeta['agency_agreement_custom'] ?? 'Other')
-                                                    : $scAllMeta['agency_agreement_timeframe'];
-                                            @endphp
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe') ? $scChangedStyle : '' }}">
-                                                Seller Agency Agreement Timeframe:
-                                                <span class="removeBold">{{ $scAgencyTfDisplay }}</span>
-                                                @if ($scIsChanged($scAllMeta['agency_agreement_timeframe'], 'agency_agreement_timeframe')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                            @endif
-                                        </div>
-                                        @endif
-
-                                        {{-- Brokerage Relationship --}}
-                                        @if (!empty($scAllMeta['brokerage_relationship']))
-                                        <div class="mb-3">
-                                            <strong style="font-size: 13px; color: #049399;">E) Brokerage Relationship:</strong>
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px; {{ $scIsChanged($scAllMeta['brokerage_relationship'], 'brokerage_relationship') ? $scChangedStyle : '' }}">
-                                                Acceptable Brokerage Relationship:
-                                                <span class="removeBold">{{ $scAllMeta['brokerage_relationship'] }}</span>
-                                                @if ($scIsChanged($scAllMeta['brokerage_relationship'], 'brokerage_relationship')) {!! $scChangedBadge !!} @endif
-                                            </div>
-                                        </div>
-                                        @endif
-
-                                        {{-- Additional Terms --}}
-                                        @if (!empty($scAllMeta['additional_details_broker']))
-                                        <div class="mb-3">
-                                            <strong style="font-size: 13px; color: #049399;">F) Additional Terms:</strong>
-                                            <div class="col-md-12 col-12 pt-2 fw-bold" style="font-size: 12px;">
-                                                <span class="removeBold">{{ $scAllMeta['additional_details_broker'] }}</span>
-                                            </div>
+                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa fa-info-circle me-1"></i>Additional Details</div>
+                                            @php $scADChg = $scIsChanged($scAllMeta['additional_details'], 'additional_details'); @endphp
+                                            <div class="ps-3" style="font-size: 12px; {{ $scADChg ? $scChangedStyle : '' }}">{{ $scAllMeta['additional_details'] }}{!! $scADChg ? $scChangedBadge : '' !!}</div>
                                         </div>
                                         @endif
 
