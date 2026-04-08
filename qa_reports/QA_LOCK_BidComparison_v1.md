@@ -90,8 +90,10 @@ modal panels.
 | Case | Bid ID | Auction ID | Expected Score | Key Fields |
 |------|--------|------------|----------------|------------|
 | Standard — full match | 1 | 47 (LAA-ASNYUZPZ) | 100% (4/4 active terms match) | All terms align |
-| Empty baseline | N/A | 45 | "No match data available" | Auction 45 listing terms were restored post-test; for a truly empty listing (auction 36), the zero-baseline guard displays the no-data message instead of a percentage |
+| Zero-baseline | N/A | 36 | "No match data available" | Auction 36 has no services and no term fields configured — the guard correctly suppresses the score panel and shows the no-data message |
 | Counter-bid | N/A | N/A | N/A | No records in landlord_counter_bidding at time of QA lock |
+
+> **Note — Auction 45 correction (2026-04-08):** The original Task #31 report referenced Landlord auction 45 as the zero-baseline example because its terms were blank at the time of that QA run (they had been temporarily cleared during a zero-baseline test). Auction 45's terms were subsequently restored. It is **no longer a zero-baseline example**. The correct zero-baseline reference is auction 36. This is not a bug — it is an expected state change after data restoration.
 
 ---
 
@@ -138,3 +140,4 @@ Before any merge touching scoring or bid views, verify:
 |------|------|--------|
 | 2026-04-08 | Task #31 | Initial QA baseline locked. Legacy inline scoring removed from agent-bids.blade.php and bid_preview.blade.php. user_type corrected in buyer and landlord counter views. |
 | 2026-04-08 | Task #32 | Seller counter terms view: dual score panel standardized to match Buyer/Landlord/Tenant pattern. |
+| 2026-04-08 | Clarification | Landlord auction 45 no longer qualifies as zero-baseline example (terms restored). Auction 36 is the canonical zero-baseline reference. Addendum added to task31_bid_comparison_qa_report.md. |

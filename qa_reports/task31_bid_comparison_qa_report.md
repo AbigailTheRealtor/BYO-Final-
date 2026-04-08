@@ -420,3 +420,40 @@ Verified against real DB records:
 - Landlord Bid 1 / Auction 47 (LAA-ASNYUZPZ): standard case, 100% expected — 4 active groups match
 - Tenant Bid 3 / Auction 3 (TAA-95LMYPW7): standard case, 100% expected — all 6 active groups match
 - Tenant Bid 40 / Auction 136 (TAA-IZOL8SH9): mismatch case, **93% expected** (11/13 terms, 2 changed: `brokerage_relationship`, `agency_agreement_timeframe`). Mismatch badges expected and now correctly keyed to `payment_timing` group.
+
+---
+
+## ADDENDUM — 2026-04-08: Landlord Auction 45 Zero-Baseline Correction
+
+**This addendum updates one finding from the original Task #31 report. All other findings remain accurate. Historical QA evidence is preserved as-is above.**
+
+### What Was Reported in Task #31
+
+The QA Case Coverage table listed:
+
+> Landlord: Bid 2 / Auction 45 — all baseline terms blank; denominator = 0, entire bid is "added by agent" ✓
+
+This was accurate **at the time of the Task #31 QA run**. Landlord auction 45's term fields were blank because they had been temporarily cleared during a prior zero-baseline guard test session.
+
+### What Changed
+
+Auction 45's listing terms were **restored** after that session concluded. As of 2026-04-08, auction 45 has non-empty terms: `purchase_fee_type`, `broker_fee_timing`, and `renewal_fee_type` are all populated.
+
+Auction 45 is **no longer a zero-baseline example**. It will produce a non-zero denominator and a real match percentage.
+
+### Correct Zero-Baseline Reference Going Forward
+
+**Landlord auction 36** is the correct example of a listing with no services and no configured term fields. The zero-baseline guard correctly suppresses the score panel and displays "No match data available" for auction 36.
+
+### Is This a Bug?
+
+**No.** The zero-baseline guard logic is unchanged and working correctly. This is purely a data state change — the listing's terms were restored, so the listing no longer triggers the zero-baseline path.
+
+### Locked Expected Behavior (All Roles)
+
+| Condition | Expected Display |
+|-----------|-----------------|
+| Listing has services and/or term fields configured | Score panel shown with real match percentage |
+| Listing has **no** services AND **no** term fields | "No match data available for this listing." shown; score panel hidden |
+
+This behavior is locked by `qa_reports/QA_LOCK_BidComparison_v1.md`.

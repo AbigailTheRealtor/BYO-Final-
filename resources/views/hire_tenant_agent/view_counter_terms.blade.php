@@ -162,6 +162,15 @@
                         $totalScore      = $score['overall_percent'];
                         $getScoreColor   = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::scoreColor((int)$s);
                         $totalScoreColor = $getScoreColor($totalScore);
+                        /**
+                         * ZERO-BASELINE / NO-DATA GUARD
+                         *
+                         * If there is no comparable baseline match data, do not display 100%.
+                         * Render "No match data available" instead.
+                         *
+                         * This behavior is locked by QA baseline documentation.
+                         * Reference: qa_reports/QA_LOCK_BidComparison_v1.md
+                         */
                         $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
 
                         // Variables re-exported for per-service rendering in the Services section

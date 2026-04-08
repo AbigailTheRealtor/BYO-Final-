@@ -2460,6 +2460,15 @@ $auser = $auctionUser::find(@$auction->user_id);
                             $termsChangedCount = $matchScore['terms_changed_count'];
                             $termsAddedCount   = $matchScore['terms_added_count'];
                             $baselineLabel     = "Landlord's Original Listing";
+                            /**
+                             * ZERO-BASELINE / NO-DATA GUARD
+                             *
+                             * If there is no comparable baseline match data, do not display 100%.
+                             * Render "No match data available" instead.
+                             *
+                             * This behavior is locked by QA baseline documentation.
+                             * Reference: qa_reports/QA_LOCK_BidComparison_v1.md
+                             */
                             $hasAnyBaseline    = ($brokerTotal > 0 || $servicesTotal > 0);
                         @endphp
 

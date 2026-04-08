@@ -2448,6 +2448,15 @@
                                             // Match score visibility: listing owner OR bid owner OR BP agent with a bid
                                             $cardIsAgentViewer = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
                                             $cardShowMatchScoreOnCard = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $cardIsAgentViewer && $userHasBid);
+                                            /**
+                                             * ZERO-BASELINE / NO-DATA GUARD
+                                             *
+                                             * If there is no comparable baseline match data, do not display 100%.
+                                             * Render "No match data available" instead.
+                                             *
+                                             * This behavior is locked by QA baseline documentation.
+                                             * Reference: qa_reports/QA_LOCK_BidComparison_v1.md
+                                             */
                                             $cardHasAnyBaseline = (($score['broker_comp_total'] ?? 0) > 0 || $cardServicesTotal > 0);
 
                                             // Compact broker compensation summary
