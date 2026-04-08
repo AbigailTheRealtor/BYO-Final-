@@ -1,0 +1,180 @@
+Good, that confirms the problem.
+
+The Buyer parity issue is NOT in the logged-out public view.
+It is in the authenticated Traditional listing render path for listing 155.
+
+Do not keep testing the non-authenticated page.
+Focus ONLY on the logged-in bid card render path that actually outputs the Buyer bid UI.
+
+==================================================
+LOCKED TARGET
+==================================================
+
+Use listing 155 as the working parity target.
+
+Relevant live path:
+- /buyer/agent/auction/view/155
+
+Relevant authenticated users:
+- listing owner user_id = 5
+- bid owner for bid 18 user_id = 11
+
+Because this is a Traditional listing:
+- $isBiddingPeriodListing = false
+- the public/logged-out view is not the correct parity target
+- the visible parity work must be done in the authenticated bid loop / expanded accordion / modal / counter history render path
+
+==================================================
+GOAL
+==================================================
+
+Make BUYER match TENANT exactly in the live authenticated bid experience for Traditional listings.
+
+This includes:
+
+1. expanded bid card body
+2. match summary block
+3. private compensation + agency agreement terms area
+4. counter bidding history
+5. counter notice / action buttons
+6. modal / “View Full Bid” path if Tenant shows the same structure there
+
+==================================================
+REQUIRED BUYER PARITY FIXES
+==================================================
+
+A. MATCH SUMMARY
+Inside the authenticated Buyer bid card, make the Match Summary match Tenant exactly in:
+
+- font size
+- spacing
+- vertical separation
+- heading style
+- Original Match block
+- Counter Match block
+- note placement
+- overall visual hierarchy
+
+Do not produce an approximate version.
+Match Tenant exactly.
+
+--------------------------------------------------
+B. COUNTER NOTICE BANNER
+--------------------------------------------------
+
+Inside the expanded Buyer bid card body, use the same Tenant-style counter notice treatment and placement pattern.
+
+If counter exists, Buyer must show the correct equivalent banner/state in the same place and style logic as Tenant.
+
+--------------------------------------------------
+C. PRIVATE COMPENSATION & AGENCY AGREEMENT TERMS
+--------------------------------------------------
+
+Inside the Buyer authenticated bid card / modal path, make the Private Compensation & Agency Agreement Terms section match Tenant exactly in:
+
+- Match Summary layout
+- Original Match vs Counter Match formatting
+- spacing and section breaks
+- counter notice
+- View Counter Terms
+- Edit Counter Terms
+
+where applicable
+
+--------------------------------------------------
+D. COUNTER BIDDING HISTORY
+--------------------------------------------------
+
+Inside the Buyer authenticated expanded bid card, make Counter Bidding History match Tenant exactly in:
+
+- section heading style
+- spacing
+- card layout
+- counter term presentation
+- action area placement
+- View Counter Terms / Edit Counter Terms presentation
+
+--------------------------------------------------
+E. ACTION BUTTONS
+--------------------------------------------------
+
+Where Tenant shows:
+- You have submitted a counter offer for this bid.
+- View Counter Terms
+- Edit Counter Terms
+
+Buyer must show the same equivalent UI in the same layout/positioning pattern.
+
+==================================================
+IMPORTANT IMPLEMENTATION NOTE
+==================================================
+
+Your previous explanation confirms the active render paths for listing 155 are:
+
+1. Main bid card
+   lines 2417–2684
+
+2. Match summary
+   lines 2519–2607
+
+3. Private compensation
+   lines 2608–2660 and 2705–4203
+
+4. Counter bidding history
+   lines 4477–5197
+
+5. Counter action buttons
+   lines 5052 and 5213
+
+Use those exact live render paths.
+Do NOT spend more time on paths gated by $isBiddingPeriodListing for this listing.
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+Tenant is the only source of truth.
+
+Compare Buyer directly against Tenant in the equivalent authenticated bid UI, not against the public logged-out page.
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- scoring logic
+- helper formulas
+- database schema
+- acceptance / rejection / counter business logic
+- routing
+- backup files
+- unrelated roles
+
+This is a Buyer authenticated UI parity fix only.
+
+==================================================
+VERIFICATION REQUIRED
+==================================================
+
+Verify using listing 155 in the logged-in path:
+
+1. log in as listing owner and expand bid 18
+2. log in as bid owner and expand bid 18
+3. confirm Buyer now matches Tenant in:
+   - match summary
+   - private compensation area
+   - counter bidding history
+   - counter notice/actions
+4. include screenshots of the expanded Buyer accordion card and any modal/private section used for verification
+5. confirm no Blade/PHP errors
+6. confirm Tenant unchanged
+
+==================================================
+CRITICAL SAFEGUARDS
+==================================================
+
+- Do NOT test only the logged-out view
+- Do NOT mark complete based on public page output
+- Do NOT change shared logic unless necessary and safe
+- If shared partials are touched, Tenant output must remain unchanged
+
+If there is any ambiguity about the equivalent Tenant authenticated render path, STOP and identify the exact Tenant files/line ranges first.

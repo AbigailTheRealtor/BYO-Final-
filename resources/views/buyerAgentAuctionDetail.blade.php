@@ -5072,41 +5072,31 @@
                                                             <h6>Respond to this Counter Offer:</h6>
 
                                                             @if ($isExpired)
-                                                                {{-- 🔹 Show expired message if auction expired --}}
                                                                 <div class="alert alert-warning text-center mt-2 mb-0 p-2" style="font-size: 15px">
                                                                     <strong>Bidding/Counter Period Ended</strong>
                                                                 </div>
                                                             @else
-                                                                {{-- 🔹 Active Counter Actions --}}
                                                                 <div class="d-flex gap-3 flex-wrap justify-content-between">
-                                                                    <form class="d-inline"
-                                                                        action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}"
-                                                                        method="post">
+                                                                    <form class="d-inline" action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}" method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-check me-1"></i> Accept Bid</button>
+                                                                        <button type="submit" class="btn-custom btn-accept" style="font-size:16px">Accept</button>
                                                                     </form>
-
-                                                                    <form class="d-inline"
-                                                                        action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}"
-                                                                        method="post">
+                                                                    <form class="d-inline" action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}" method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-times me-1"></i> Reject Bid</button>
+                                                                        <button type="submit" class="btn-custom btn-reject" style="font-size:16px">Reject</button>
                                                                     </form>
-
-                                                                    <form class="d-inline"
-                                                                        action="{{ route('buyer.hire.agent.auction.bid.counter') }}"
-                                                                        method="post">
+                                                                    <form class="d-inline" action="{{ route('buyer.hire.agent.auction.bid.counter') }}" method="post">
                                                                         @csrf
                                                                         <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
                                                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                         <input type="hidden" name="counter_bid_id" value="{{ data_get($counterBid, 'id') }}">
-                                                                        <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap;"><i class="fa fa-exchange-alt me-1"></i> Counter Bid</button>
+                                                                        <button type="submit" class="btn-custom btn-counter" style="font-size:16px">Counter</button>
                                                                     </form>
                                                                 </div>
                                                             @endif
