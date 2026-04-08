@@ -2091,7 +2091,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         <div class="d-flex align-items-center">
             <i class="fa fa-check-circle me-3" style="font-size: 28px; color: #28a745;"></i>
             <div class="flex-grow-1">
-                <h5 class="mb-1 fw-bold">🎉 Listing Sold!</h5>
+                <h5 class="mb-1 fw-bold">🎉 Agent Selected!</h5>
                 @if($acceptedCounterBid)
                     <p class="mb-1">
                         <strong>Accepted Counter Offer from:</strong>
@@ -2241,7 +2241,7 @@ $auser = $auctionUser::find(@$auction->user_id);
             @endif
         @else
             <div class="alert alert-success text-center mt-2 mb-0 p-2">
-                <strong><i class="fa fa-check-circle"></i> Bidding Closed - Listing Sold</strong>
+                <strong><i class="fa fa-check-circle"></i> Bidding Closed - Agent Selected</strong>
             </div>
         @endif
 
