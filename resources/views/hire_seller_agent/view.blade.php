@@ -3142,7 +3142,8 @@
 
                             <div id="counterBids{{ data_get($bid, 'id') }}"
                                 class="counter-bids-content"
-                                style="display: none;">
+                                style="display: none;"
+                                aria-labelledby="counterBidsHeading{{ data_get($bid, 'id') }}">
                                 <div class="accordion-body p-3 border border-top-0 rounded-bottom counter-font">
                                     @foreach ($sellerCounterBids as $counterBid)
                                     @php

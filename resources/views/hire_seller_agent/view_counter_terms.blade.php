@@ -55,6 +55,10 @@
                         </div>
                     </div>
 
+                    @php
+                        $counterPartyName = ($viewerRole === 'seller') ? 'Agent' : 'Seller';
+                    @endphp
+
                     @if($sellerCounter || $agentCounterBack)
                     @php
                         // Determine which counter to display as the primary subject.
@@ -145,6 +149,8 @@
                         $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
                         $displayCatalog   = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($counterPropType);
 
+                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                        $mismatchBadge = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Mismatch</span>';
                         $addedStyle   = 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
                         $missingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
                         $addedBadge    = '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added</span>';
@@ -180,7 +186,382 @@
                             ? array_values(array_filter($bsOtherSvcRaw, fn($s) => is_string($s) && !empty(trim($s))))
                             : [];
                         $allBaselineServices = array_merge($bsSvcRaw, $bsOtherSvcRaw);
+                        $counterOtherServices = $ctOtherSvcRaw;
+
+                        // Service categories for grouped display (keyed by property type)
+                        $residentialCategories = [
+                            "📢 Property Marketing & Listing Promotion" => [
+                                "List the property on the local Multiple Listing Service (MLS)",
+                                "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                "Create a branded flyer featuring the property's key highlights",
+                                "Post the property on Facebook Marketplace",
+                                "Post the property on Craigslist under the \"Homes for Sale\" category",
+                                "Share the listing on Nextdoor in Neighborhood or Community Groups",
+                                "Promote the listing on Facebook in Real Estate or Community Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Professional or Real Estate Groups",
+                                "Upload a TikTok video walkthrough of the property",
+                                "Upload a YouTube video walkthrough of the property",
+                                "Launch a mass email campaign promoting the listing",
+                                "Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Presentation" => [
+                                "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                "Provide a custom listing preparation checklist",
+                                "Collect property details and prepare MLS remarks and a public listing description",
+                                "Provide a visual consultation for interior layout, cleanliness, and presentation",
+                                "Provide a curb appeal consultation focused on exterior presentation",
+                                "Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only — no endorsement or warranty is made",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video walkthrough tour",
+                                "Provide a 3D virtual tour",
+                                "Provide virtual staging (digital enhancements only; no physical staging)",
+                                "Provide digital photo enhancements",
+                                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏡 Showings & Access Coordination" => [
+                                "Ensure proper notice is provided if the property is occupied",
+                                "Install a real estate sign on the property",
+                                "Install a lockbox for Agent access",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer's Agents",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📑 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate price, terms, and contingencies with the Buyer's Agent or Buyer",
+                                "Manage communications with the Buyer's Agent or Buyer",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                "Monitor contract milestones, contingency periods, and financing deadlines",
+                                "Provide referrals to Attorneys, Title Companies, and Escrow Professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "🧾 Closing Coordination & Transaction Management" => [
+                                "Coordinate scheduling for inspections, appraisals, and other requested evaluations",
+                                "Coordinate with the Buyer's Agent, Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on comparable sales, neighborhood trends, and current market conditions",
+                                "Provide general insight on local market trends, seasonal timing, and pricing thresholds",
+                                "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                "Provide general guidance on Seller obligations, required disclosures, and listing preparation",
+                            ],
+                        ];
+
+                        $commercialCategories = [
+                            "📢 Property Marketing & Listing Promotion" => [
+                                "List the property on the local Multiple Listing Service (MLS)",
+                                "List the property on Crexi.com",
+                                "List the property on LoopNet.com",
+                                "Create a branded flyer summarizing the property's investment highlights and key selling points",
+                                "Post the property on Craigslist under the \"Commercial for Sale\" category",
+                                "Promote the listing on Facebook in Commercial or Investor Real Estate Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
+                                "Upload a TikTok video walkthrough of the property",
+                                "Upload a YouTube video walkthrough of the property",
+                                "Launch a mass email campaign promoting the listing",
+                                "Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Asset Presentation" => [
+                                "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                "Provide a visual consultation on interior layout, cleanliness, and overall presentation",
+                                "Provide a curb appeal consultation focused on exterior appearance and first impressions",
+                                "Provide referrals to third-party vendors such as cleaners, handypeople, electricians, and landscapers (vendor fees billed separately; referrals only — no endorsement or warranty is made)",
+                                "Compile essential marketing materials such as rent rolls, lease summaries, financial statements, and operating data (as available)",
+                                "Organize zoning documentation, surveys, and public record reports (as available)",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video walkthrough tour",
+                                "Provide a 3D virtual tour",
+                                "Provide virtual staging (digital enhancements only; no physical staging)",
+                                "Provide digital photo enhancements",
+                                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏢 Showings & Access Coordination" => [
+                                "Respond to Buyer inquiries and screen for general qualifications",
+                                "Provide Non-Disclosure Agreement (NDA) templates for access to confidential documents or showings",
+                                "Ensure proper notice is provided if the property is occupied",
+                                "Install a real estate sign on the property",
+                                "Install a lockbox for Agent access",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer's Agents",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Coordinate Letter of Intent (LOI) submissions, counteroffers, and contract revisions",
+                                "Negotiate deal terms such as pricing, deposit structure, closing timelines, and due diligence periods",
+                                "Manage communication with the Buyer's Agent or Buyer",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with inspection-related negotiations and Buyer requests for repairs or credits",
+                                "Monitor contract contingencies, including financing, estoppel review, lease audits, and environmental reports",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, or 1031 Exchange Professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "🧾 Closing Coordination & Transaction Management" => [
+                                "Coordinate inspections, appraisals, and estoppel certificate delivery with the Buyer's Agent or Buyer, as applicable",
+                                "Provide due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                "Coordinate with the Buyer's Agent, Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing insights based on recent commercial property sales, rental income trends, market cap rates, and investor activity",
+                                "Assist in estimating Capitalization Rate (Cap Rate), Price per Square Foot, or Gross Rent Multiplier (GRM) based on listing details and commercial comparables",
+                                "Provide general insight on likely Buyer types (e.g., Owner-User, Investor, 1031 Exchange Buyer), common value drivers, and investment strategies",
+                                "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                "Provide general guidance on lease structures, expense ratios, and Tenant impacts",
+                            ],
+                        ];
+
+                        $incomeCategories = [
+                            "📢 Property Marketing & Listing Promotion" => [
+                                "List the property on the local Multiple Listing Service (MLS)",
+                                "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                "List the property on Crexi.com",
+                                "List the property on LoopNet.com",
+                                "Create a branded flyer with key rental data (e.g., unit mix, gross income, occupancy)",
+                                "Post the property on Craigslist under the \"Multi-Family for Sale\" category",
+                                "Share the listing on Nextdoor in Neighborhood or Community Groups",
+                                "Promote the listing on Facebook in Real Estate Investor or Multi-Family Buyer Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Investment or Real Estate Groups",
+                                "Upload a TikTok video walkthrough of the property",
+                                "Upload a YouTube video walkthrough of the property",
+                                "Launch a mass email campaign promoting the listing",
+                                "Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Investment Packaging" => [
+                                "Conduct a property walkthrough and provide recommendations for listing readiness",
+                                "Provide a custom listing preparation checklist",
+                                "Assist with assembling an income property packet, including rent roll, lease copies, and an income/expense summary (as available)",
+                                "Provide a visual consultation focused on interior layout, cleanliness, and unit presentation",
+                                "Provide a curb appeal consultation focused on exterior maintenance and first impressions",
+                                "Provide referrals to third-party vendors (e.g., cleaners, handypeople, electricians, landscapers). Vendor fees billed separately. Referrals only — no endorsement or warranty is made",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video walkthrough tour",
+                                "Provide a 3D virtual tour",
+                                "Provide virtual staging (digital enhancements only; no physical staging)",
+                                "Provide digital photo enhancements",
+                                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏘️ Showings & Access Coordination" => [
+                                "Respond to Buyer inquiries and screen for general qualifications",
+                                "Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access",
+                                "Ensure proper notice is provided if the property is occupied",
+                                "Install a real estate sign on the property",
+                                "Install a lockbox for Agent access",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer's Agents",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate deal structure, deposits, due diligence timelines, and Buyer contingencies",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Manage communication with the Buyer's Agent or Buyers",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with inspection-related negotiations and Buyer requests for repairs",
+                                "Monitor contract contingencies, including financing, lease audits, estoppel review, insurance, inspections, and environmental reports",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, or 1031 Exchange Professionals. Referrals only — no endorsement or warranty is made",
+                            ],
+                            "🧾 Closing Coordination & Transaction Management" => [
+                                "Review and organize due diligence documentation such as lease agreements, estoppel certificates, rent rolls, utility summaries, and operating expense breakdowns (as available)",
+                                "Coordinate with the Buyer's Agent, Buyer's Lender, Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing insights based on recent income property sales, rental income trends, unit mix, and local investor activity",
+                                "Assist in estimating Gross Rent Multiplier (GRM), Capitalization Rate (Cap Rate), or Price per Unit based on listing details and income property comparables ",
+                                "Provide general insight on likely Investor Buyer behavior, common value drivers, and investment strategies",
+                                "Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest",
+                                "Provide general guidance on lease transfers, rent proration, security deposits, and possession timelines",
+                            ],
+                        ];
+
+                        $businessCategories = [
+                            "📢 Business Marketing & Listing Promotion" => [
+                                "List the Business Opportunity on the local Multiple Listing Service (MLS)",
+                                "List the Business Opportunity on Crexi.com",
+                                "List the Business Opportunity on LoopNet.com",
+                                "List the Business Opportunity on BizBuySell.com",
+                                "List the Business Opportunity on BizQuest.com",
+                                "List the Business Opportunity on BusinessesForSale.com",
+                                "Create a branded flyer summarizing the Business's key features (e.g., industry, cash flow, assets)",
+                                "Post the Business Opportunity on Craigslist under the \"Business for Sale\" category",
+                                "Promote the listing on Facebook in Business Buyer, Franchise, or Investor Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Business Acquisition, Startup, or Investor Groups",
+                                "Upload a TikTok video summarizing the Business Opportunity",
+                                "Upload a YouTube video summarizing the Business Opportunity",
+                                "Launch a mass email campaign promoting the listing",
+                                "Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Confidential Marketing" => [
+                                "Conduct a preliminary Seller consultation to gather details about the Business's operations, assets, and goals",
+                                "Provide a business sale checklist to collect financials, licenses, lease terms, and key operational details",
+                                "Assist with preparing a non-confidential teaser or executive summary for marketing purposes",
+                                "Organize internal documentation such as profit and loss statements, balance sheets, FF&E summaries, inventory lists, and staffing overviews (as available)",
+                                "Refer third-party professionals such as valuation experts, accountants, or financial consultants, if requested (referrals only — no endorsement or warranty is made)",
+                                "Compile essential marketing materials including business overviews, location descriptions, asset lists, and financial summaries",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video walkthrough tour",
+                                "Provide a 3D virtual tour",
+                                "Provide virtual staging (digital enhancements only; no physical staging)",
+                                "Provide digital photo enhancements",
+                                "Create a basic schematic floor plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏢 Showings & Access Coordination" => [
+                                "Respond to Buyer inquiries and screen for general qualifications",
+                                "Provide Non-Disclosure Agreement (NDA) templates for confidential showings or document access",
+                                "Ensure proper notice is provided if the property or business premises is occupied",
+                                "Install a real estate sign on the property",
+                                "Install a lockbox for Agent access",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer's Agents",
+                                "Coordinate directly with Tenant(s) or business staff to arrange access for showings",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate deal terms such as pricing, deposit structure, closing timelines, and due diligence periods",
+                                "Coordinate Letter of Intent (LOI) submissions, counteroffers, and revisions",
+                                "Manage communication with the Buyer's Agent or Buyer",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Assist with due diligence negotiations, Buyer requests, and contingency management",
+                                "Provide referrals to Attorneys, Escrow Officers, or Business Brokers (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📃 Closing Coordination & Transaction Management" => [
+                                "Coordinate Buyer inspections, management interviews, and site visits as applicable",
+                                "Provide a transaction checklist and track key deadlines throughout the escrow period",
+                                "Coordinate with the Buyer's Attorney, Escrow Officer, or designated Closing Facilitator",
+                                "Review the Settlement Statement and coordinate corrections with relevant parties",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a business market overview with insights from recent comparable listings",
+                                "Identify likely Buyer types (e.g., Owner-Operator, Investor, Franchisee) and discuss common deal structures (e.g., asset sale, stock sale)",
+                                "Provide general insight on common value drivers such as cash flow, recurring revenue, transferable licenses, and key staff retention",
+                                "Provide general guidance on operational transition timelines, staff notifications, lease assignments, and post-sale training periods",
+                                "Provide referrals to business valuation, accounting, or legal professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                        ];
+
+                        $vacantLandCategories = [
+                            "📢 Property Marketing & Listing Promotion" => [
+                                "List the property in the local Multiple Listing Service (MLS)",
+                                "Syndicate the listing to third-party platforms (e.g., Zillow.com, Realtor.com, Trulia.com, Homes.com)",
+                                "List the property on LandWatch.com",
+                                "List the property on Land.com",
+                                "List the property on LandAndFarm.com",
+                                "Create a branded flyer highlighting lot features, zoning, and potential use",
+                                "Post the listing on Facebook Marketplace",
+                                "Post the listing on Craigslist under the \"Land for Sale\" category",
+                                "Share the listing on Nextdoor in Neighborhood or Rural Groups",
+                                "Promote the listing on Facebook in Land Buyers, Developers, or Homesteader Groups",
+                                "Share the listing on Instagram using posts, stories, or reels",
+                                "Promote the listing on LinkedIn in Land Acquisition or Investment Groups",
+                                "Upload a TikTok video summarizing the land opportunity",
+                                "Upload a YouTube video summarizing the land opportunity (e.g., drone tour, narrated overview)",
+                                "Launch a mass email campaign promoting the listing Distribute printed flyers or postcards in target geographic areas",
+                                "Launch hyperlocal or interest-based digital ad campaigns promoting the listing",
+                            ],
+                            "🛠️ Listing Preparation & Research" => [
+                                "Provide a checklist to gather parcel data (e.g., APN, lot size, zoning, utilities, and access)",
+                                "Assist with collecting public records, flood zone data, and land use information (as available)",
+                                "Provide referrals to surveyors, soil testers, or land service professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📸 Photography, Video & Virtual Media" => [
+                                "Provide professional property photography",
+                                "Provide aerial (drone) photography (subject to FAA Part 107 compliance)",
+                                "Provide a video overview or narrated walkthrough",
+                                "Provide a 3D virtual tour (if applicable)",
+                                "Provide digital enhancements to media assets",
+                                "Provide a parcel map, topographical image, or plot plan (non-certified; for marketing purposes only)",
+                            ],
+                            "🏡 Showings & Access Coordination" => [
+                                "Install a real estate sign on the property",
+                                "Schedule and attend showings with prospective Buyers",
+                                "Coordinate showings with Buyer's Agents",
+                                "Collect and relay showing feedback to the Seller",
+                            ],
+                            "📉 Offer & Contract Management" => [
+                                "Present all offers to the Seller and summarize key terms, pricing, and contingencies",
+                                "Provide the Seller with the necessary disclosure forms required by state or local law",
+                                "Negotiate price, due diligence timelines, and closing terms",
+                                "Draft and deliver counteroffers and manage revisions to the purchase agreement",
+                                "Manage communication with the Buyer's Agent or Buyer",
+                                "Assist with in-person or electronic contract signing, including e-signature setup and secure delivery of executed purchase agreements, addenda, and disclosures to all parties",
+                                "Monitor contract contingencies, including survey, zoning verification, financing, and environmental reviews",
+                                "Provide referrals to Attorneys, Title Companies, Escrow Officers, or Land Use Professionals (referrals only — no endorsement or warranty is made)",
+                            ],
+                            "📃 Closing Coordination & Transaction Management" => [
+                                "Coordinate surveys, site visits, or environmental access with the Buyer or Buyer's Agent, as applicable",
+                                "Coordinate with Title, Escrow, and/or Attorney to prepare for Closing",
+                                "Review the Settlement Statement and coordinate with all parties if corrections are needed",
+                                "Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties",
+                                "Schedule and confirm the Final Walkthrough",
+                                "Schedule and confirm the Closing Appointment",
+                            ],
+                            "💡 Selling Strategy & Guidance" => [
+                                "Provide a Comparative Market Analysis (CMA) with pricing recommendations based on recent land sales, zoning categories, and location-based trends",
+                                "Provide general insight on permitted uses, utility access, parcel features, and Buyer demand in the area",
+                                "Recommend adjustments to pricing or marketing strategy if the land is not receiving sufficient interest",
+                                "Provide general guidance on Seller obligations, disclosure requirements, and listing preparation",
+                            ],
+                        ];
+
+                        $pt = strtolower(trim($counterPropType));
+                        if (str_contains($pt, 'income')) {
+                            $categories = $incomeCategories;
+                        } elseif (str_contains($pt, 'commercial')) {
+                            $categories = $commercialCategories;
+                        } elseif (str_contains($pt, 'business')) {
+                            $categories = $businessCategories;
+                        } elseif (str_contains($pt, 'vacant') || str_contains($pt, 'land')) {
+                            $categories = $vacantLandCategories;
+                        } else {
+                            $categories = $residentialCategories;
+                        }
                     @endphp
+
+                    <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 style="color: #049399; font-weight: 600; margin: 0;">
+                                <i class="fas fa-file-contract me-2"></i>{{ $counterPartyName }}'s Counter Terms
+                            </h5>
+                            <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
+                        </div>
 
                     {{-- Match Score Panel --}}
                     @if ($hasAnyBaseline)
@@ -312,14 +693,11 @@
                     </div>
                     @endif
 
-                    {{-- Counter Terms Details --}}
+                    {{-- Broker Compensation & Agency Agreement Terms --}}
                     <div class="mb-4">
-                        <h5 style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                            <i class="fa fa-handshake me-2"></i>Counter Terms Details
-                        </h5>
-                        <p class="text-muted small">
-                            Submitted: {{ $activeCounter?->created_at?->format('M d, Y h:i A') ?? 'N/A' }}
-                        </p>
+                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                            <i class="fas fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                        </h6>
 
                         @php
                             $ctPurchaseFeeType = data_get($counterData, 'purchase_fee_type', '');
@@ -400,28 +778,28 @@
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Seller's Broker Compensation</h6>
                             <ul class="list-unstyled ps-3 mb-0">
                                 @if($ctPurchaseFeeType)
-                                <li class="mb-1 @if(isset($brokerMismatches['purchase_fee_type'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Seller's Broker Purchase Fee:</span>
                                     {{ $ctPurchaseFeeDisplay }}
-                                    @if(isset($brokerMismatches['purchase_fee_type']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                                 @if($ctNominal)
-                                <li class="mb-1 @if(isset($brokerMismatches['nominal'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['nominal']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Nominal Consideration Fee:</span> {{ $fmtMoney($ctNominal) ?? '-' }}
-                                    @if(isset($brokerMismatches['nominal']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['nominal']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                                 @if($ctCommStruct)
-                                <li class="mb-1 @if(isset($brokerMismatches['commission_structure'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ $ctCommStruct }}
-                                    @if(isset($brokerMismatches['commission_structure']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                                 @if($ctCommStructType)
-                                <li class="mb-1 @if(isset($brokerMismatches['commission_structure_type'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['commission_structure_type']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Buyer's Broker Commission Type:</span> {{ $ctCommStructType }}
-                                    @if(isset($brokerMismatches['commission_structure_type']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['commission_structure_type']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                             </ul>
@@ -433,17 +811,17 @@
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease Terms</h6>
                             <ul class="list-unstyled ps-3 mb-0">
-                                <li class="mb-1 @if(isset($brokerMismatches['interested_purchase_fee_type'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Interested in Offering a Lease Agreement:</span> {{ $ctInterestedLease }}
-                                    @if(isset($brokerMismatches['interested_purchase_fee_type']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @if(strtolower($ctInterestedLease) === 'yes' && $ctLeasingFeeAmt)
-                                <li class="mb-1 @if(isset($brokerMismatches['seller_leasing_fee_type'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['seller_leasing_fee_type']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Seller's Broker Leasing Fee:</span> {{ $ctLeasingFeeAmt }}
-                                    @if(isset($brokerMismatches['seller_leasing_fee_type']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['seller_leasing_fee_type']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @elseif(strtolower($ctInterestedLease) === 'yes' && isset($brokerMismatches['seller_leasing_fee_type']))
-                                <li class="mb-1 text-danger"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Seller's Broker Leasing Fee:</span> —{!! $mismatchBadge !!}</li>
                                 @endif
                             </ul>
                         </div>
@@ -454,27 +832,27 @@
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Terms</h6>
                             <ul class="list-unstyled ps-3 mb-0">
-                                <li class="mb-1 @if(isset($brokerMismatches['interested_lease_option_agreement'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Interested in Lease-Option Agreement:</span> {{ $ctLeaseOption }}
-                                    @if(isset($brokerMismatches['interested_lease_option_agreement']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @if(strtolower($ctLeaseOption) === 'yes' && $ctLeaseValue)
-                                <li class="mb-1 @if(isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) text-danger @endif">
+                                <li class="mb-2" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Compensation for Lease-Option Agreement:</span>
                                     {{ $ctLeaseType === 'percent' ? ($fmtPercent($ctLeaseValue) . ' of Total Purchase Price') : $fmtMoney($ctLeaseValue) }}
-                                    @if(isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}
                                 </li>
                                 @elseif(strtolower($ctLeaseOption) === 'yes' && (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])))
-                                <li class="mb-1 text-danger"><span class="fw-semibold">Compensation for Lease-Option Agreement:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation for Lease-Option Agreement:</span> —{!! $mismatchBadge !!}</li>
                                 @endif
                                 @if(strtolower($ctLeaseOption) === 'yes' && $ctPurchaseValue)
-                                <li class="mb-1 @if(isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) text-danger @endif">
+                                <li class="mb-2" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span>
                                     {{ $ctPurchaseType === 'percent' ? ($fmtPercent($ctPurchaseValue) . ' of Total Purchase Price') : $fmtMoney($ctPurchaseValue) }}
-                                    @if(isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}
                                 </li>
                                 @elseif(strtolower($ctLeaseOption) === 'yes' && (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])))
-                                <li class="mb-1 text-danger"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> —{!! $mismatchBadge !!}</li>
                                 @endif
                             </ul>
                         </div>
@@ -486,61 +864,61 @@
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                             <ul class="list-unstyled ps-3 mb-0">
                                 @if($ctEarlyTermOpt)
-                                <li class="mb-1 @if(isset($brokerMismatches['early_termination_fee_option'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Early Termination Fee:</span>
                                     {{ ucfirst($ctEarlyTermOpt) }}
-                                    @if(isset($brokerMismatches['early_termination_fee_option']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @if(strtolower($ctEarlyTermOpt) === 'yes' && $ctEarlyTermAmt)
-                                <li class="mb-1 @if(isset($brokerMismatches['early_termination_fee_amount'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Termination Fee Amount:</span>
                                     {{ $fmtMoney($ctEarlyTermAmt) ?? $ctEarlyTermAmt }}
-                                    @if(isset($brokerMismatches['early_termination_fee_amount']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @elseif(strtolower($ctEarlyTermOpt) === 'yes' && isset($brokerMismatches['early_termination_fee_amount']))
-                                <li class="mb-1 text-danger"><span class="fw-semibold">Termination Fee Amount:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Termination Fee Amount:</span> —{!! $mismatchBadge !!}</li>
                                 @endif
                                 @endif
                                 @if($ctRetainerOpt)
-                                <li class="mb-1 @if(isset($brokerMismatches['retainer_fee_option'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Retainer Fee:</span>
                                     {{ ucfirst($ctRetainerOpt) }}
-                                    @if(isset($brokerMismatches['retainer_fee_option']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @if(strtolower($ctRetainerOpt) === 'yes' && $ctRetainerAmt)
-                                <li class="mb-1 @if(isset($brokerMismatches['retainer_fee_amount'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Retainer Fee Amount:</span>
                                     {{ $fmtMoney($ctRetainerAmt) ?? $ctRetainerAmt }}
-                                    @if(isset($brokerMismatches['retainer_fee_amount']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @elseif(strtolower($ctRetainerOpt) === 'yes' && isset($brokerMismatches['retainer_fee_amount']))
-                                <li class="mb-1 text-danger"><span class="fw-semibold">Retainer Fee Amount:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Amount:</span> —{!! $mismatchBadge !!}</li>
                                 @endif
                                 @if(strtolower($ctRetainerOpt) === 'yes' && $ctRetainerApp)
-                                <li class="mb-1 @if(isset($brokerMismatches['retainer_fee_application'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Retainer Fee Application:</span> {{ $ctRetainerApp }}
-                                    @if(isset($brokerMismatches['retainer_fee_application']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @elseif(strtolower($ctRetainerOpt) === 'yes' && isset($brokerMismatches['retainer_fee_application']))
-                                <li class="mb-1 text-danger"><span class="fw-semibold">Retainer Fee Application:</span> —<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span></li>
+                                <li class="mb-2" style="{{ $mismatchStyle }}"><span class="fw-semibold">Retainer Fee Application:</span> —{!! $mismatchBadge !!}</li>
                                 @endif
                                 @endif
                                 @if($ctRetainedDep)
-                                <li class="mb-1 @if(isset($brokerMismatches['retained_deposits'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['retained_deposits']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Seller's Broker's Share of Retained Deposits:</span> {{ $fmtPercent($ctRetainedDep) ?? $ctRetainedDep }}
-                                    @if(isset($brokerMismatches['retained_deposits']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['retained_deposits']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                                 @if($ctProtPeriod)
-                                <li class="mb-1 @if(isset($brokerMismatches['protection_period'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Protection Period:</span> {{ $ctProtPeriod }} days
-                                    @if(isset($brokerMismatches['protection_period']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                                 @if($ctAgencyTf)
-                                <li class="mb-1 @if(isset($brokerMismatches['agency_agreement_timeframe'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Seller Agency Agreement Timeframe:</span> {{ $ctAgencyDsp }}
-                                    @if(isset($brokerMismatches['agency_agreement_timeframe']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
                             </ul>
@@ -552,55 +930,90 @@
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                             <ul class="list-unstyled ps-3 mb-0">
-                                <li class="mb-1 @if(isset($brokerMismatches['brokerage_relationship'])) text-danger @endif">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ $ctBrokerRel }}
-                                    @if(isset($brokerMismatches['brokerage_relationship']))<span class="badge bg-danger ms-1" style="font-size:0.7rem;">Changed</span>@endif
+                                    {!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}
                                 </li>
                             </ul>
                         </div>
                         @endif
+                    </div>
 
-                        {{-- Services in Counter (catalog-filtered, with Added/Not-in-Counter badges) --}}
-                        @if(!empty($allCounterServices) || !empty($allBaselineServices))
-                        <div class="mb-4">
-                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Offered Services in Counter</h6>
+                    {{-- Requested Services (category-grouped, with Added/Not-in-Counter badges) --}}
+                    @if(!empty($allCounterServices) || !empty($allBaselineServices))
+                    <div class="mb-4">
+                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                            <i class="fas fa-list-check me-2"></i>Requested Services
+                        </h6>
 
-                            @if(!empty($allCounterServices))
-                            <ul class="list-unstyled ps-3 mb-2">
-                                @foreach($allCounterServices as $svc)
+                        @foreach ($categories as $categoryName => $categoryServices)
+                            @php
+                                $matchedServicesInCategory = [];
+                                foreach ($allCounterServices as $service) {
+                                    foreach ($categoryServices as $catService) {
+                                        if ($normalizeService($service) === $normalizeService($catService)) {
+                                            $isInBaseline = in_array($normalizeService($service), $baselineNorm);
+                                            $matchedServicesInCategory[] = ['service' => $service, 'inBaseline' => $isInBaseline];
+                                            break;
+                                        }
+                                    }
+                                }
+                            @endphp
+                            @if (!empty($matchedServicesInCategory))
+                            <div class="mt-3">
+                                <strong>{{ $categoryName }}</strong>
+                                <ul class="list-unstyled ps-3 mt-2">
+                                    @foreach ($matchedServicesInCategory as $serviceData)
+                                    <li class="mb-1" style="{{ !$serviceData['inBaseline'] ? $addedStyle : '' }}">
+                                        <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $serviceData['service'] }}
+                                        @if (!$serviceData['inBaseline'])
+                                        {!! $addedBadge !!}
+                                        @endif
+                                    </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @endif
+                        @endforeach
+
+                        @if (!empty($counterOtherServices))
+                        <div class="mt-3">
+                            <strong>✍️ Additional Services</strong>
+                            <ul class="list-unstyled ps-3 mt-2">
+                                @foreach ($counterOtherServices as $otherService)
                                 @php
-                                    $svcNorm    = $normalizeService((string)$svc);
-                                    $isInBaseline = in_array($svcNorm, $baselineNorm, true);
+                                    $isInBaseline = in_array($normalizeService($otherService), $baselineNorm);
                                 @endphp
                                 <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                    <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $svc }}
+                                    <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $otherService }}
                                     @if (!$isInBaseline)
                                     {!! $addedBadge !!}
                                     @endif
                                 </li>
                                 @endforeach
                             </ul>
-                            @endif
+                        </div>
+                        @endif
 
-                            @if (!empty($servicesMissing))
-                            <div class="mt-3 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
-                                <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services Not Included in Counter:</strong>
-                                <ul class="list-unstyled ps-3 mt-2 mb-0">
-                                    @foreach ($allBaselineServices as $bsSvc)
-                                        @if (in_array($normalizeService((string)$bsSvc), $servicesMissing, true))
-                                        <li class="mb-1" style="{{ $missingStyle }}">
-                                            <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $bsSvc }}
-                                        </li>
-                                        @endif
-                                    @endforeach
-                                </ul>
-                            </div>
-                            @endif
+                        @if (!empty($servicesMissing))
+                        <div class="mt-4 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
+                            <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services Not Included in Counter:</strong>
+                            <ul class="list-unstyled ps-3 mt-2 mb-0">
+                                @foreach ($allBaselineServices as $bsSvc)
+                                    @if (in_array($normalizeService((string)$bsSvc), $servicesMissing, true))
+                                    <li class="mb-1" style="{{ $missingStyle }}">
+                                        <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $bsSvc }}
+                                    </li>
+                                    @endif
+                                @endforeach
+                            </ul>
                         </div>
                         @endif
                     </div>
+                    @endif
+                    </div>{{-- end gradient container --}}
 
-                    {{-- Broker Additional Terms (standalone, outside Counter Terms Details) --}}
+                    {{-- Broker Additional Terms (standalone, outside gradient container) --}}
                     @if($ctAddlDetails)
                     <div class="mb-4">
                         <h6 class="mb-2" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
