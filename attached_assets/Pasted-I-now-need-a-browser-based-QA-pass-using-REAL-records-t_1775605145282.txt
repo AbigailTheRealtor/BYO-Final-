@@ -1,0 +1,172 @@
+I now need a browser-based QA pass using REAL records to verify the bid comparison output after the helper audit/fixes.
+
+This is NOT another abstract code audit.
+This is a real-record visual and functional QA pass across all four roles:
+
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+The helper audit and unit tests are good, but now I need confirmation that the actual rendered UI matches the stored data and comparison logic on real bid pages.
+
+==================================================
+GOAL
+==================================================
+
+Verify that the rendered bid comparison UI is correct in the browser for:
+
+1. Mismatch items
+2. Extra Service Offered items
+3. Not Offered by Agent items
+4. Match score counts / displayed totals
+5. Changed / Removed / Added labels and colors where applicable
+6. Custom “Other” text rendering where applicable
+7. Terms fields actually shown on the page match the stored values and compared values
+
+==================================================
+REQUIRED QA METHOD
+==================================================
+
+Use REAL records from the database and real browser/UI checks.
+
+For each role (Tenant, Buyer, Seller, Landlord), select at least:
+
+A. One listing/bid pair with substantial baseline data
+B. One listing/bid or counter case where mismatches or missing/extra items actually exist
+C. If available, one counter-bid case showing Changed / Removed / Added output
+
+Do not rely only on code review. Open the actual pages and verify rendered output.
+
+==================================================
+FOR EACH ROLE, VERIFY ALL OF THE FOLLOWING
+==================================================
+
+1. TERMS / MISMATCH DISPLAY
+- The terms shown on the page match the actual stored baseline data and bid data
+- A field marked Mismatch truly differs
+- A field not marked Mismatch truly matches
+- Conditional child fields are handled correctly:
+  - early termination fee amount
+  - retainer fee amount
+  - retainer fee application
+  - any similar conditional child fields
+- brokerage_relationship mismatch appears correctly where applicable
+- Additional Details is NOT counted as a term mismatch
+- Any field expected to appear in private compensation / agreement terms is actually rendered
+
+2. SERVICES DISPLAY
+- Services requested by the user are compared correctly against agent-offered services
+- “Extra Service Offered” only shows true extras
+- “Services Requested But Agent Did Not Include” only shows true missing services
+- Matching services are not incorrectly shown as extra or missing
+- Custom “Other” service entries display correctly
+- Landlord photo enhancement sub-options display correctly
+- If “Other” under photo enhancements has custom text, actual custom text shows (not just “Other”)
+- Counts displayed on page match actual rendered arrays
+
+3. COUNTS / SCORE PARITY
+- Terms totals displayed are correct
+- Services totals displayed are correct
+- matched + missing = expected denominator where applicable
+- extra services are NOT included in denominator score
+- score percentages shown on bid cards and modals are consistent with rendered lists
+
+4. CHANGED / REMOVED / ADDED
+If a real counter example exists for the role:
+- Changed items are truly changed
+- Removed items are truly removed
+- Added items are truly added
+- Added is GREEN, not yellow
+- Labels and color classes are consistent and correct
+
+==================================================
+REQUIRED OUTPUT FORMAT
+==================================================
+
+Provide a role-by-role QA report in this exact structure:
+
+ROLE: Tenant
+- Listing ID:
+- Bid ID:
+- Counter ID if applicable:
+- Page/view tested:
+- What was visually verified:
+- Any mismatch between UI and stored data:
+- Any issue found:
+- Screenshot(s) or selector evidence if available:
+
+ROLE: Buyer
+- Listing ID:
+- Bid ID:
+- Counter ID if applicable:
+- Page/view tested:
+- What was visually verified:
+- Any mismatch between UI and stored data:
+- Any issue found:
+- Screenshot(s) or selector evidence if available:
+
+ROLE: Seller
+- Listing ID:
+- Bid ID:
+- Counter ID if applicable:
+- Page/view tested:
+- What was visually verified:
+- Any mismatch between UI and stored data:
+- Any issue found:
+- Screenshot(s) or selector evidence if available:
+
+ROLE: Landlord
+- Listing ID:
+- Bid ID:
+- Counter ID if applicable:
+- Page/view tested:
+- What was visually verified:
+- Any mismatch between UI and stored data:
+- Any issue found:
+- Screenshot(s) or selector evidence if available:
+
+==================================================
+IF ISSUES ARE FOUND
+==================================================
+
+If the browser QA reveals any discrepancies:
+1. List each issue precisely
+2. Identify the exact file(s) likely responsible
+3. State whether it is:
+   - helper logic
+   - view rendering
+   - data normalization
+   - counter baseline selection
+   - color/styling only
+4. Recommend the surgical fix
+
+Do NOT do a broad refactor first.
+Do NOT mark the system as fully correct unless the live UI was actually verified.
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Browser QA first, not broad code changes
+- Use real records
+- Do not modify schema
+- Do not change unrelated roles/flows
+- Do not assume helper tests guarantee UI correctness
+- Keep focus strictly on comparison accuracy and displayed output
+- If you need to create temporary test data, clean it up afterward and report exactly what was created and removed
+- Preserve existing accepted/rejected/counter/e-sign flows
+
+==================================================
+FINAL REQUIRED CONCLUSION
+==================================================
+
+At the end, state one of these clearly:
+
+A. “Browser QA confirms the rendered bid comparison UI is accurate across Tenant, Buyer, Seller, and Landlord for the records tested.”
+
+OR
+
+B. “Browser QA found remaining discrepancies,” followed by the exact list.
+
+Do not give a vague summary. I need a concrete QA conclusion based on actual page verification.

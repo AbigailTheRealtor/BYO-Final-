@@ -1,0 +1,231 @@
+I need a full audit of how listing mode works across all 4 user types:
+
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Specifically, I want to audit the difference between:
+
+- Bidding Period listings
+- Traditional listings
+
+Tenant should be treated as the GOLD STANDARD reference. The goal is to determine what is actually true based on the current code, where parity exists, where it does not, and what each role currently allows or hides.
+
+This is an AUDIT first. Do not start broad fixes until the audit is complete and the results are clearly documented.
+
+==================================================
+AUDIT GOAL
+==================================================
+
+Determine, for each role and listing mode, exactly how bids are processed and displayed in the current codebase.
+
+I want to know:
+
+1. During a Bidding Period listing:
+- can the listing owner view bids before the timer ends?
+- can the listing owner accept a bid before the timer ends?
+- are bids hidden until timer ends?
+- are only partial bid details shown before timer ends?
+- can agents still submit bids while timer is active?
+- what happens exactly when the timer ends?
+- does the listing auto-lock, auto-change status, or simply stop accepting bids?
+- what notifications/actions become available after timer ends?
+
+2. During a Traditional listing:
+- can the listing owner view bids anytime?
+- can the listing owner accept a bid anytime?
+- are bids visible immediately after submission?
+- can counters happen immediately?
+- does Traditional mode ever lock bid viewing or acceptance?
+
+3. Across all 4 roles:
+- does current behavior match Tenant?
+- where does Seller differ from Tenant?
+- where does Buyer differ from Tenant?
+- where does Landlord differ from Tenant?
+- which role is correct based on the intended Tenant standard?
+- which role has code drift or inconsistent behavior?
+
+==================================================
+TENANT IS THE SOURCE OF TRUTH
+==================================================
+
+Use Tenant as the gold standard and document:
+
+- how Bidding Period currently works in Tenant
+- how Traditional currently works in Tenant
+- what is shown vs hidden in Tenant
+- when accept/counter/reject becomes available in Tenant
+- how bid cards / private bid views / action buttons behave in Tenant
+
+Then compare Seller, Buyer, and Landlord against that.
+
+==================================================
+WHAT TO AUDIT FOR EACH ROLE
+==================================================
+
+For:
+- Tenant
+- Seller
+- Buyer
+- Landlord
+
+Audit both listing modes:
+- Bidding Period
+- Traditional
+
+For each role/mode, trace and document:
+
+A. LISTING CREATION / STORED MODE
+- where listing mode is stored
+- what values exist (e.g. traditional, bidding_period, etc.)
+- where expiration date / bidding length / timer values are stored
+- whether the mode is read consistently across controllers/views/components
+
+B. BID SUBMISSION RULES
+- can agents submit bids while timer active?
+- can agents edit bids while timer active?
+- can agents submit counter bids while timer active?
+- what conditions block bid submission?
+
+C. LISTING OWNER BID VISIBILITY
+- can owner see bids before timer ends?
+- can owner see full bid details or only partial summary?
+- can owner see private compensation/services before timer ends?
+- are bid cards hidden or disabled?
+
+D. ACTION BUTTONS / DECISION LOGIC
+- can owner Accept before timer ends?
+- can owner Reject before timer ends?
+- can owner Counter before timer ends?
+- are these buttons hidden, disabled, or blocked server-side?
+- what exact conditions control those actions?
+
+E. TIMER / EXPIRATION LOGIC
+- what happens when timer expires?
+- does listing status change?
+- does bid submission stop?
+- does viewing unlock?
+- does accept become available only after expiration?
+- is this enforced only in UI, only in controller, or both?
+
+F. TRADITIONAL MODE LOGIC
+- when do bids become visible?
+- when can owner accept/counter/reject?
+- are there any waiting rules?
+- can owner act immediately?
+
+G. DASHBOARD / DETAIL PAGE / NOTIFICATION BEHAVIOR
+- what does owner see on listing detail page?
+- what does agent see in My Bids / dashboard?
+- do notifications route correctly?
+- do bidding period vs traditional states show different messages?
+- are there role-specific inconsistencies?
+
+H. STATUS / LABELING
+- what statuses are used during:
+  - active bidding period
+  - countered
+  - accepted
+  - rejected
+  - expired
+  - traditional active
+- are statuses consistent across roles?
+
+==================================================
+IMPORTANT QUESTIONS TO ANSWER
+==================================================
+
+I want the audit to explicitly answer these questions for EACH role:
+
+1. In Bidding Period mode, can the owner see bids before the timer ends?
+2. In Bidding Period mode, can the owner accept/reject/counter before the timer ends?
+3. In Bidding Period mode, what is hidden until timer end?
+4. In Bidding Period mode, what unlocks after timer end?
+5. In Traditional mode, can the owner view bids and act on them anytime?
+6. Does this role match Tenant exactly?
+7. If not, what files/logic cause the difference?
+
+==================================================
+REQUIRED AUDIT METHOD
+==================================================
+
+Do not guess. Trace actual code paths.
+
+For each role:
+1. Inspect model fields / listing mode storage
+2. Inspect create/edit Livewire/component logic
+3. Inspect listing detail controllers
+4. Inspect bid submission controllers/components
+5. Inspect bid card views / private bid views
+6. Inspect action-button conditions
+7. Inspect timer / expiration checks
+8. Inspect any helper methods that control:
+   - can view bids
+   - can accept
+   - can reject
+   - can counter
+   - bidding period lock/unlock
+9. Verify against at least one real sample listing in each mode if possible
+
+==================================================
+DELIVERABLE FORMAT
+==================================================
+
+Before changing code, give me a structured audit report.
+
+For each role:
+- Tenant
+- Seller
+- Buyer
+- Landlord
+
+Provide two sections:
+1. Bidding Period
+2. Traditional
+
+For each section, answer:
+- Can view bids?
+- Can view full details?
+- Can accept?
+- Can reject?
+- Can counter?
+- Can agents still bid?
+- What is hidden?
+- What unlocks when timer ends?
+- Which file(s)/conditions enforce this?
+
+Then provide a parity section:
+
+- Matches Tenant exactly: Yes/No
+- If No, list exact differences
+- File(s) causing the difference
+- Recommended surgical fix
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Audit first only
+- Do not broadly refactor while auditing
+- Do not rename database fields
+- Do not change listing mode labels/values yet
+- Do not change routes yet
+- Do not modify accepted bid / e-sign logic
+- Keep findings grounded in actual code and real sample records
+- Tenant is the benchmark, but still report what Tenant actually does in code, not assumptions
+
+==================================================
+FINAL REQUIRED OUTPUT
+==================================================
+
+When finished, provide:
+
+1. Role-by-role audit summary for all 4 roles
+2. Bidding Period vs Traditional behavior for each role
+3. Exact files / methods / views controlling each behavior
+4. A parity matrix showing where Seller, Buyer, and Landlord differ from Tenant
+5. A short list of recommended surgical fixes to make all roles match Tenant, if needed
+
+Do not start broad fixes until the audit is complete and clearly documented.

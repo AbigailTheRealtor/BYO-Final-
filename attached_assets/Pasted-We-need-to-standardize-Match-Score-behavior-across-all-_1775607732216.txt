@@ -1,0 +1,148 @@
+We need to standardize Match Score behavior across all four roles so it is consistent and correct:
+
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+Right now:
+- Seller and Tenant bid cards show both Original Match and Counter Match when applicable
+- Landlord and Buyer are still showing only the original-style score
+- I want all roles to follow the same logic and I want the calculations to be correct
+
+==================================================
+GOAL
+==================================================
+
+Make Match Score behavior consistent across all roles:
+
+1. If NO counter exists:
+- show a single Match Score
+- compare against the user’s original listing/request
+
+2. If a counter DOES exist:
+- show a Match Summary with BOTH:
+  - Original Match
+  - Counter Match
+- Original Match = compared to the user’s original listing/request
+- Counter Match = compared to the latest valid counter terms / latest comparison baseline
+
+This should be consistent for:
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+==================================================
+REQUIRED AUDIT
+==================================================
+
+Before changing code, audit each role and identify:
+
+1. What baseline source is currently used for Original Match
+2. What baseline source is currently used for Counter Match
+3. Whether the role currently supports both scores or only one
+4. Whether the current calculations are accurate
+5. Whether services matched / terms matched / percentages are using the correct baseline
+6. Whether extra services and added terms are being excluded from score increases the same way across all roles
+
+==================================================
+REQUIRED FIXES
+==================================================
+
+For each role:
+
+A. NO COUNTER EXISTS
+- Show one Match Score only
+- Compare to original listing/request baseline
+
+B. COUNTER EXISTS
+- Show Match Summary with:
+  - Original Match
+  - Counter Match
+
+C. CALCULATION RULES
+- Original Match must always compare against original listing/request
+- Counter Match must always compare against the latest counter baseline
+- Services and Terms percentages must reflect the correct baseline
+- Extra services / added value may be displayed, but should not incorrectly inflate the score unless that role already intentionally does so
+- Mismatch / extra / not offered logic must reflect the same baseline used for that score
+
+D. UI CONSISTENCY
+- Use the same layout, labels, spacing, and visual hierarchy across all four roles
+- If Seller/Tenant currently have the best version, use that as the visual reference
+- Landlord and Buyer need to be brought into parity
+
+==================================================
+IMPORTANT LABELING
+==================================================
+
+Do NOT call it “Counter Match Score 2”.
+
+Use clear labels such as:
+- Original Match
+- Counter Match
+
+If only one score is shown when no counter exists, label it:
+- Match Score
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Audit first, then implement
+- Do not rename database columns
+- Do not change unrelated labels/tooltips/options
+- Do not break accepted bid, counter flow, or e-sign logic
+- Do not broadly refactor all bid logic unless absolutely necessary
+- Keep changes surgical
+- If a shared helper is the root cause, fix it carefully and verify all affected roles
+- Preserve existing working logic where it is already correct
+- Use real sample bids/counters for verification, not assumptions
+
+==================================================
+VERIFY
+==================================================
+
+After implementation, verify with real records for all four roles:
+
+1. Tenant
+- no-counter state correct
+- counter state shows Original Match + Counter Match
+- calculations correct
+
+2. Seller
+- no-counter state correct
+- counter state shows Original Match + Counter Match
+- calculations correct
+
+3. Buyer
+- no-counter state correct
+- counter state now shows Original Match + Counter Match
+- calculations correct
+
+4. Landlord
+- no-counter state correct
+- counter state now shows Original Match + Counter Match
+- calculations correct
+
+For each verified case confirm:
+- correct baseline used
+- correct services matched count
+- correct terms matched count
+- correct percentages
+- correct display of extra/missing/mismatch items based on the same baseline
+
+==================================================
+FINAL OUTPUT
+==================================================
+
+When done, provide:
+1. role-by-role audit summary
+2. exact baseline source used for Original Match and Counter Match for each role
+3. exact files changed
+4. what UI was standardized
+5. what calculations were corrected
+6. what was visually verified on real bid cards
+
+Do not stop after one role. Finish all four roles.
