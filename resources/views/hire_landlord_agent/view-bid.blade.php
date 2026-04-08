@@ -113,22 +113,22 @@
                 @endif
                 @if (isset($bid->get->compensation_amount))
                     <div class="col-12 fw-bold"> <i class="fa-regular fa-check-square"></i>What compensation is being offered to the tenant's broker?
-                        <span class="removeBold">{{ $bid->get->compensation_amount . '(' . $bid->get->compensation_tenant_broker . ')'}}</span>
+                        <span class="removeBold">{{ $bid->get->compensation_amount . (isset($bid->get->compensation_tenant_broker) ? '(' . $bid->get->compensation_tenant_broker . ')' : '')}}</span>
                     </div>
                 @endif
                 @if (isset($bid->get->payment_timing))
                     <div class="col-12 fw-bold"> <i class="fa-regular fa-check-square"></i>Payment Timing for Broker Fees:
-                        <span class="removeBold">{{ $bid->get->payment_timing . '(' . $bid->get->payment_timing_days . ')'}}</span>
+                        <span class="removeBold">{{ $bid->get->payment_timing . (isset($bid->get->payment_timing_days) ? '(' . $bid->get->payment_timing_days . ')' : '')}}</span>
                     </div>
                 @endif
                 @if (isset($bid->get->early_termination))
                     <div class="col-12 fw-bold"> <i class="fa-regular fa-check-square"></i>Early Termination:
-                        <span class="removeBold">{{ $bid->get->early_termination . '(' . $bid->get->early_termination_amount . ')'}}</span>
+                        <span class="removeBold">{{ $bid->get->early_termination . (isset($bid->get->early_termination_amount) ? '(' . $bid->get->early_termination_amount . ')' : '')}}</span>
                     </div>
                 @endif
                 @if (isset($bid->get->protection_period))
                     <div class="col-12 fw-bold"> <i class="fa-regular fa-check-square"></i>Protection Period:
-                        <span class="removeBold">{{ $bid->get->protection_period . '(' . $bid->get->protection_period_days . ')'}}</span>
+                        <span class="removeBold">{{ $bid->get->protection_period . (isset($bid->get->protection_period_days) ? '(' . $bid->get->protection_period_days . ')' : '')}}</span>
                     </div>
                 @endif
                 @if (isset($bid->get->compensation_new_lease))
@@ -138,7 +138,7 @@
                 @endif
                 @if (isset($bid->get->compensation_new_lease_percent))
                     <div class="col-12 fw-bold"> <i class="fa-regular fa-check-square"></i>If the owner enters into a new lease or renewal with a tenant placed by the broker, does the broker require compensation?
-                        <span class="removeBold">{{ $bid->get->compensation_new_lease_percent . '(' . $bid->get->compensation_new_lease_amount . ')' }}</span>
+                        <span class="removeBold">{{ $bid->get->compensation_new_lease_percent . (isset($bid->get->compensation_new_lease_amount) ? '(' . $bid->get->compensation_new_lease_amount . ')' : '') }}</span>
                     </div>
                 @endif
                 @if (isset($bid->get->bio))
