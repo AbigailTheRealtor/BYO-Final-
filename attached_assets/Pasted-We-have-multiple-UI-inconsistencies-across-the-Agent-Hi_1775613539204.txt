@@ -1,0 +1,249 @@
+We have multiple UI inconsistencies across the Agent Hiring system related to counter-bids and match summaries.
+
+This needs to be fixed in ONE coordinated pass across ALL FOUR roles:
+
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+==================================================
+MASTER GOAL
+==================================================
+
+Create ONE consistent, transparent, negotiation-focused UI system across:
+
+1. Bid card / bid detail area
+2. Counter Bidding History
+3. Private Compensation & Agency Agreement Terms tab
+4. Counter terms views
+
+This is primarily a UI parity + rendering task.
+
+==================================================
+ISSUES TO FIX
+==================================================
+
+1. MATCH SUMMARY INCONSISTENCY
+- Some roles/sections show a single “Match Score”
+- Others show dual “Original Match + Counter Match”
+- Public vs Private tab also differs
+
+This creates conflicting information.
+
+---
+
+2. COUNTER BIDDING HISTORY INCONSISTENCY
+- Tenant shows full counter state + actions (correct)
+- Buyer, Seller, Landlord do NOT consistently show:
+  - counter notice
+  - View Counter Terms
+  - Edit Counter Terms
+
+---
+
+3. PRIVATE COMPENSATION TAB INCONSISTENCY
+- Seller shows counter state + actions
+- Other roles do not
+
+---
+
+4. INLINE COUNTER TERMS MISSING (MAJOR ISSUE)
+
+Tenant correctly shows FULL counter terms inline inside the listing.
+
+Other roles rely on:
+→ clicking “View Counter Terms” page
+
+This breaks the negotiation experience.
+
+---
+
+5. VIEW COUNTER TERMS PAGE ISSUE
+
+“View Counter Terms” page may show:
+→ “No counter terms submitted” even when counter exists
+
+This indicates a data wiring inconsistency.
+
+==================================================
+FINAL LOCKED BEHAVIOR
+==================================================
+
+A. MATCH SUMMARY (STANDARDIZE EVERYWHERE)
+
+If NO counter exists:
+→ Show ONLY:
+  Original Match
+
+If counter EXISTS:
+→ Show BOTH:
+  - Original Match
+  - Counter Match
+
+Each includes:
+- % score
+- Services %
+- Terms %
+- Added/changed indicators (if available)
+
+Include note:
+“Added services or terms do not increase either score”
+
+This must be identical across:
+- Bid cards
+- Detail views
+- Private tab
+- Counter views
+
+---
+
+B. INLINE COUNTER TERMS (PRIMARY VIEW)
+
+When a counter exists, display FULL counter terms inline for ALL roles:
+
+Sections must match Tenant exactly:
+
+A) Compensation  
+B) Purchase / Lease Details  
+C) Lease-Option (if applicable)  
+D) Legal Terms  
+E) Brokerage Relationship  
+F) Additional Terms  
+
+Include:
+- Changed tags
+- Added values
+- Clear formatting
+
+This inline view is the PRIMARY experience.
+
+---
+
+C. COUNTER ACTION UI (STANDARDIZE)
+
+When listing owner has submitted a counter:
+
+Show consistently across ALL roles and sections:
+
+- “You have submitted a counter offer for this bid.”
+- View Counter Terms
+- Edit Counter Terms
+
+Apply to:
+- Counter Bidding History
+- Private Compensation tab
+- Any relevant bid detail area
+
+Owner-only visibility must remain consistent across roles.
+
+---
+
+D. VIEW COUNTER TERMS PAGE (SECONDARY VIEW)
+
+Keep page, but:
+
+- Must display SAME data as inline view
+- Must NEVER show “no counter terms” if data exists
+- Used only for:
+  - full detail
+  - long-form viewing
+  - future print/export
+
+---
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+Use Tenant implementation as the PRIMARY reference for:
+
+- Inline counter rendering
+- Counter Bidding History UI
+- Match Summary layout (where dual already exists)
+
+Use Seller private tab where relevant.
+
+Then standardize Buyer + Seller + Landlord UP to match.
+
+---
+
+==================================================
+IMPLEMENTATION REQUIREMENTS
+==================================================
+
+1. Identify live files before editing
+If unclear, STOP and list:
+- Match Summary files
+- Counter Bidding History files
+- Private tab files
+- Counter terms view files
+
+2. Prefer shared partial/component if safe
+If risky, do surgical updates only
+
+3. Ensure all sections pull from SAME data source
+(No mismatched or empty counter views)
+
+---
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- scoring logic
+- helper calculations
+- baseline logic
+- database schema
+- bid acceptance / counter / reject logic
+- backend status values
+
+This is UI + rendering + visibility parity only.
+
+---
+
+==================================================
+VERIFICATION REQUIRED
+==================================================
+
+Confirm with screenshots or detailed report:
+
+1. Tenant
+- no regression
+- still correct
+
+2. Buyer
+- inline counter terms now visible
+- counter actions visible
+- match summary correct
+
+3. Seller
+- inline counter terms visible
+- private tab consistent
+- no regression
+
+4. Landlord
+- inline counter terms visible
+- counter actions visible
+- match summary correct
+
+5. All roles
+- no conflicting layouts
+- no missing counter UI
+- no blank counter pages
+- no Blade/PHP errors
+
+---
+
+==================================================
+CRITICAL SAFEGUARDS
+==================================================
+
+- Do NOT touch backup files
+- Do NOT refactor helpers unless necessary
+- Do NOT alter DB structure
+- Do NOT break Tenant flow (use as benchmark)
+- Only update live UI rendering and visibility wiring
+
+If anything requires deeper architectural change:
+→ STOP and report before proceeding
