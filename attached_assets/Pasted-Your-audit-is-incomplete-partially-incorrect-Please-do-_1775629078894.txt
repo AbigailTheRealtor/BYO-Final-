@@ -1,0 +1,102 @@
+Your audit is incomplete / partially incorrect. Please do not code yet. Re-audit the correct rendering paths and verify against the live pages, not just one similar section.
+
+The issues still exist in the UI, so the current audit missed the actual render locations.
+
+CORRECTIONS TO YOUR AUDIT
+
+1. Private card counter notice is NOT fully in parity
+You said Tenant, Buyer, Seller, and Landlord are all already in parity for:
+   • “[Name] has submitted a counter offer.”
+   • “View Counter Terms”
+But that is not correct in the live UI.
+
+Seller is the current reference that is behaving correctly in this area.
+Re-audit the ACTUAL private compensation / agency agreement terms block for:
+   • Tenant
+   • Buyer
+   • Landlord
+and confirm whether the counter notice bar and View Counter Terms button are actually rendering on the live bid page in the same place and under the same conditions as Seller.
+
+Do not just find a similar state==='countered' block and assume it is the active path.
+Trace the real rendered path from the live page.
+
+2. Accept / Reject / Counter buttons are NOT fully in parity
+You said all four roles already have showCounterActions present and functional.
+That is not correct from the live behavior.
+
+The issue is not whether some action block exists somewhere in code.
+The issue is whether the bottom response action area is actually rendering on the live counter card for the responding party.
+
+Re-audit all four roles and verify:
+   • exact condition that controls visibility
+   • whether the latest counter card on the live page actually shows Accept / Reject / Counter
+   • whether the current viewer role is being evaluated correctly
+   • whether the action row is inside the actual rendered counter history card, not in an unused branch
+
+3. Buyer counter terms formatting still does NOT match Tenant
+You said Buyer and Tenant heading/typography are identical because one h6 style matches.
+That is too shallow and does not address the issue.
+
+The mismatch is in the full rendered Broker Compensation & Agency Agreement Terms section, including:
+   • wrapper markup
+   • row layout
+   • label/value spacing
+   • changed badge sizing/placement
+   • section spacing
+   • typography rhythm
+   • inner card padding
+
+Re-audit the full counter terms markup block, not just the h6.
+
+4. Buyer “View Bid” latest counter behavior still needs full audit
+You did not fully verify the real effective source for the Buyer view.
+I need you to trace exactly what data source Buyer uses when agent clicks View Bid and compare that to Tenant.
+
+Confirm:
+   • whether Buyer resolves to original bid or latest counter
+   • what variable holds the effective/latest counter
+   • where changed-field highlighting is built
+   • where mismatch / extra services / not offered by agent is built
+   • whether Buyer is using the same comparison source order as Tenant
+
+5. The live UI is the source of truth
+If your audit says parity exists but the live screenshots still show it missing, then you audited the wrong file, wrong branch, wrong conditional, or an unused block.
+
+RE-AUDIT INSTRUCTIONS
+
+Please re-audit using this method:
+
+A. Identify the exact live route and exact blade/livewire/component file that renders for each role:
+   • Buyer
+   • Seller
+   • Landlord
+   • Tenant
+
+For each role identify the exact file and exact block for:
+1. private compensation / agency agreement notice area
+2. counter bidding history card
+3. bottom response action row
+4. bid detail “View Bid” effective terms rendering
+
+B. For each area, do not stop at finding similar markup.
+Trace the actual variables and conditions that must be true for the block to render on the live page.
+
+C. Compare Buyer to Tenant for the FULL counter terms section, not just the heading.
+
+D. Compare Seller to Tenant and Landlord for the private counter notice/button area.
+
+E. Confirm whether there are duplicate or legacy branches causing you to inspect an unused block.
+
+DELIVERABLE I WANT BEFORE YOU EDIT
+
+Reply with:
+1. exact files
+2. exact line ranges
+3. exact variables controlling each of the four areas
+4. whether that block is definitely the live rendered path
+5. which roles are actually missing each feature after the corrected audit
+
+IMPORTANT
+Do not make edits yet.
+The previous audit was too shallow and missed the actual live issue.
+Please do a corrected audit first.
