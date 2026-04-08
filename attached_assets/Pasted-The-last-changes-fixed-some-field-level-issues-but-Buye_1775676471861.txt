@@ -1,0 +1,177 @@
+The last changes fixed some field-level issues, but Buyer counter bidding history still does NOT visually match Tenant.
+
+This is now a strict BUYER visual parity correction for the inline counter card shown inside Counter Bidding History.
+
+Do not work on Seller or Landlord in this pass.
+Do not change scoring/business logic.
+Do not give me another summary of field fixes.
+I need the actual Buyer counter card to visually match the Tenant counter card.
+
+==================================================
+PROBLEM
+==================================================
+
+The Buyer counter card still looks different from Tenant even after the recent fixes.
+
+From the screenshots, Buyer is still wrong in:
+- font size
+- text scale
+- row density
+- spacing between labels/values
+- heading size
+- section rhythm
+- card compactness vs Tenant
+- overall width/feel of the counter rows
+
+Buyer still looks more compressed and not like the Tenant component.
+
+This is a strict Tenant-to-Buyer visual parity issue.
+
+==================================================
+GOAL
+==================================================
+
+Make the BUYER inline counter bidding history card match the TENANT inline counter bidding history card exactly in visual structure and density.
+
+I am NOT asking for more data fixes.
+I am asking for the actual rendered counter card to look the same as Tenant.
+
+==================================================
+TARGET AREA
+==================================================
+
+Focus on the inline counter card inside:
+- Counter Bidding History
+on the live Buyer listing page
+
+Compare directly against the equivalent Tenant inline counter card.
+
+==================================================
+REQUIRED BUYER FIXES
+==================================================
+
+1. TYPOGRAPHY PARITY
+Buyer must match Tenant exactly in:
+- title font size for "Your Counter Offer"
+- timestamp size and alignment
+- main teal heading size
+- A/B/C/D/E/F subsection heading size
+- label font size
+- value font size
+- Additional Details font size
+- Offered Services header size
+
+Do not leave Buyer smaller or more compressed than Tenant.
+
+--------------------------------------------------
+
+2. SPACING / DENSITY PARITY
+Buyer must match Tenant exactly in:
+- padding inside the counter card
+- vertical spacing between sections
+- spacing between subsection heading and rows
+- spacing between list rows
+- spacing between label/value pairs
+- spacing around Additional Details
+- spacing before Offered Services
+
+Buyer currently feels tighter and more compressed than Tenant.
+Fix that exact difference.
+
+--------------------------------------------------
+
+3. ROW / LAYOUT PARITY
+Buyer must match Tenant exactly in:
+- how field rows wrap
+- how label/value pairs align
+- width proportions used in the changed rows
+- changed badge placement
+- row height
+- margin between changed rows
+
+Do not leave Buyer using a compressed or differently proportioned row layout.
+
+--------------------------------------------------
+
+4. SECTION STRUCTURE PARITY
+Buyer inline counter card must match Tenant’s structure exactly:
+- title row
+- timestamp row
+- teal heading
+- A/B/C/D/E/F sections
+- Additional Details
+- Offered Services
+
+Even if the Buyer labels differ, the visual structure must be the same.
+
+--------------------------------------------------
+
+5. OFFERED SERVICES HEADER / TRANSITION
+Buyer must match Tenant in how the card transitions from:
+- Additional Details
+to
+- Offered Services
+
+Same spacing
+Same heading style
+Same density
+
+==================================================
+IMPLEMENTATION METHOD
+==================================================
+
+1. Inspect the exact Tenant inline counter card HTML/CSS classes in:
+- resources/views/hire_tenant_agent/view.blade.php
+
+2. Inspect the exact Buyer inline counter card HTML/CSS classes in:
+- resources/views/buyerAgentAuctionDetail.blade.php
+
+3. Compare the exact live-rendered branch for the Buyer listing page, not the separate View Counter Terms page.
+
+4. Copy/mirror Tenant’s exact structure/classes/spacing into the Buyer inline counter card wherever safe.
+
+Do not make this “close enough.”
+Make it visually the same component family.
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- scoring logic
+- DB schema
+- route names
+- controller logic
+- helper formulas
+- Seller/Landlord/Tenant files unless absolutely necessary for reference only
+
+This is a BUYER inline counter-card visual parity fix only.
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Buyer only
+- No broad refactors
+- No business logic changes
+- No route changes
+- No field-removal changes
+- Keep all field-level fixes already made
+- Only fix the visual/structural parity of the inline Buyer counter card
+
+==================================================
+REQUIRED VERIFICATION
+==================================================
+
+After implementing, provide:
+1. updated screenshot of Buyer inline counter card
+2. equivalent Tenant screenshot
+3. exact Buyer file changed
+4. exact Tenant classes/structure mirrored
+5. explicit confirmation that Buyer now matches Tenant in:
+   - font sizes
+   - spacing
+   - row density
+   - heading hierarchy
+   - section rhythm
+
+Do not claim completion unless the screenshots visibly show parity.
