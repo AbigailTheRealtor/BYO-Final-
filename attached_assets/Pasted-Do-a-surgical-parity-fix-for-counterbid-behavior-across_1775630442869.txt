@@ -1,0 +1,279 @@
+Do a surgical parity fix for counterbid behavior across Buyer, Seller, Landlord, and Tenant.
+
+IMPORTANT:
+This is NOT a redesign.
+This is NOT a schema change.
+This is NOT a global refactor.
+Use the existing working implementations as the source of truth.
+
+SOURCE OF TRUTH
+1. SELLER is the source of truth for:
+   • private compensation / agency agreement modal footer state handling
+   • counter notice placement in the private area
+   • View Counter Terms button placement
+   • action button visibility logic inside the modal footer
+
+2. TENANT is the source of truth for:
+   • latest counter terms rendering
+   • mismatch rendering
+   • extra services offered rendering
+   • not offered by agent rendering
+   • Broker Compensation & Agency Agreement Terms section formatting / spacing / changed badge layout
+
+HARD SAFEGUARDS
+1. Do NOT rename routes.
+2. Do NOT change schema, migrations, models, or database columns.
+3. Do NOT refactor unrelated views/controllers.
+4. Do NOT touch create/edit listing flows.
+5. Do NOT change working Tenant behavior except where needed for parity placement requested below.
+6. Do NOT redesign cards or typography globally.
+7. Patch ONLY the actual live rendered paths.
+8. If a file has duplicate or legacy branches, patch the branch that is actually rendered by the live route.
+9. Preserve role-specific wording and labels.
+10. Do NOT remove Seller’s currently working behavior.
+
+GOAL
+Fix the remaining counterbid issues so Buyer, Seller, Landlord, and Tenant behave consistently.
+
+-----------------------------------
+TASK 1 — ADD COUNTERBID RECEIVED NOTICE TO TENANT, SELLER, LANDLORD
+-----------------------------------
+
+Current issue:
+The “Counter Offer Received” style notice only shows on Buyer listings.
+
+Add the same styled notice to:
+• Tenant
+• Seller
+• Landlord
+
+Keep Buyer as-is unless the final location must change for parity with the private modal fix below.
+
+Use the same visual style already used on Buyer:
+• amber background
+• icon
+• left border
+• same spacing and font treatment
+
+Behavior:
+When the viewer has received a counter, show:
+“Counter Offer Received. The listing owner has sent you a counter offer. Review and respond in Counter Bidding History below.”
+
+If the viewer is the party who sent the counter, use the sent version if the existing system already supports that pattern.
+Do NOT show the notice when no counter exists.
+
+IMPORTANT:
+If this notice currently exists in the wrong render path outside the correct private/modal flow, move it to the correct live location rather than duplicating it.
+
+-----------------------------------
+TASK 2 — BUYER FONT / FORMAT UNDER BROKER COMPENSATION & AGENCY AGREEMENT TERMS MUST MATCH TENANT
+-----------------------------------
+
+Current issue:
+Buyer counter terms formatting still does not match Tenant.
+
+Use TENANT as the exact reference for the FULL rendered section, not just the heading.
+
+Make Buyer match Tenant for:
+• wrapper structure
+• inner padding
+• row spacing
+• label/value alignment
+• subsection spacing
+• typography rhythm
+• changed badge placement
+• changed badge size
+• section label styling
+• line-height / spacing consistency
+
+Preserve Buyer-specific field labels and wording.
+Do NOT copy Tenant wording into Buyer where the labels differ by role.
+
+Patch only the live Buyer render path actually used when viewing counter terms / View Bid.
+
+-----------------------------------
+TASK 3 — ADD ACCEPT / REJECT / COUNTER BUTTONS AT BOTTOM OF THE BID FOR THE RESPONDING PARTY
+-----------------------------------
+
+Current issue:
+When viewing as the responding side, the Accept / Reject / Counter buttons are missing at the bottom of the bid in places they should appear.
+
+Audit the actual live rendered counter card / bid response area for all roles and ensure the responding party can see:
+• Accept
+• Reject
+• Counter
+
+Apply to:
+• Buyer
+• Seller
+• Landlord
+• Tenant if any parity gap exists
+
+Rules:
+1. Show the buttons only when the current viewer is allowed to respond to the latest counter / bid state.
+2. Do NOT show duplicate action rows.
+3. Do NOT leave buttons visible when a counter is already active if the viewer should not act yet.
+4. Use the normalized/effective state logic, not raw DB values that ignore counters.
+5. Match the working Seller/Tenant behavior, whichever is the correct live implementation for that specific context.
+
+IMPORTANT:
+The issue is not whether some button block exists somewhere in code.
+The issue is whether the buttons render in the actual live response area for the correct viewer.
+
+-----------------------------------
+TASK 4 — PRIVATE COMPENSATION & AGENCY AGREEMENT TERMS NOTICE + VIEW COUNTER TERMS
+-----------------------------------
+
+Current issue:
+On Buyer card, and also on Tenant and Landlord, the private area is missing:
+“Test User has submitted a counter offer.”
+plus
+“View Counter Terms”
+
+Seller is the correct reference here.
+
+Make Tenant, Buyer, and Landlord match Seller in the PRIVATE compensation / agency agreement terms area.
+
+When a counter exists, show:
+• notice text:
+  “[Name] has submitted a counter offer.”
+• button:
+  “View Counter Terms”
+
+Use the same placement Seller uses in the private modal/footer area.
+Do NOT just add a duplicate block somewhere else on the page.
+Use Seller’s private modal footer structure as the source of truth.
+
+IMPORTANT:
+If Tenant, Buyer, or Landlord currently render this notice outside the correct private modal footer, move/fix the logic so the private modal/footer becomes the correct single source of truth.
+
+-----------------------------------
+TASK 5 — BUYER “VIEW BID” MUST SHOW LATEST COUNTER TERMS LIKE TENANT
+-----------------------------------
+
+Current issue:
+On Buyer listings, when the agent clicks View Bid, it should show the latest counter terms like Tenant does, but it does not.
+
+Use TENANT as the source of truth.
+
+Audit and fix Buyer so View Bid uses the latest effective counter terms instead of the original bid when a newer counter exists.
+
+Must include:
+• latest effective counter selection
+• changed field highlighting
+• mismatch display
+• extra services offered
+• not offered by agent
+
+Do NOT invent Buyer-only comparison logic.
+Re-use the same logic pattern Tenant uses.
+
+Also verify the controller/query path for Buyer is loading the correct counter record and correct auction/bid relationship.
+Fix any wrong ID/query usage in the live Buyer path.
+
+-----------------------------------
+TASK 6 — FIX EFFECTIVE STATE LOGIC FOR BUYER / LANDLORD WHERE NEEDED
+-----------------------------------
+
+Current issue found in audit:
+Some views are using raw values like bidAccepted instead of the normalized/effective state, which causes action buttons to appear when they should not.
+Also Buyer counter state handling and Landlord counter filtering may be stale/wrong.
+
+Fix the live rendered logic so:
+• button visibility is based on the effective state
+• counters are treated correctly as active vs terminal
+• accepted/rejected counters do not keep acting like active counters
+• Buyer does not default to “active counter” forever due to missing raw status handling
+
+Do this in code only.
+Do NOT add DB fields.
+Do NOT change schema.
+
+-----------------------------------
+TASK 7 — REMOVE DUPLICATE OR WRONG COUNTER NOTICE BLOCKS
+-----------------------------------
+
+If Tenant, Buyer, or Landlord currently show counter notices in the wrong place outside the proper private modal/footer flow, remove or disable the duplicate/wrong-location block after the correct block is in place.
+
+Goal:
+One correct rendered counter notice path, not multiple confusing ones.
+
+Do NOT remove Seller’s working implementation.
+
+-----------------------------------
+FILES / PATHS
+-----------------------------------
+
+Use the audit findings and patch only the actual live rendered files/controllers for:
+
+• Tenant route view
+• Buyer route view
+• Seller route view
+• Landlord route view
+• Buyer counter terms controller/query path
+• Any directly used partial/helper in the live Buyer render path
+
+Do NOT patch unused legacy branches just because similar code exists there.
+
+-----------------------------------
+TESTING REQUIREMENTS
+-----------------------------------
+
+Manually verify all of the following after patching:
+
+1. Buyer listing
+• counter notice appears correctly
+• private area shows “[Name] has submitted a counter offer” + View Counter Terms
+• View Bid shows latest counter terms, not stale/original terms
+• Buyer Broker Compensation & Agency Agreement Terms section now visually matches Tenant structure
+• mismatch renders
+• extra services offered renders
+• not offered by agent renders
+• Accept / Reject / Counter buttons show only when the viewer should respond
+• buttons hide when effective state should block them
+
+2. Seller listing
+• counter received notice appears correctly
+• private area still works correctly
+• no regression
+• Accept / Reject / Counter buttons show correctly when applicable
+
+3. Landlord listing
+• counter received notice appears correctly
+• private area shows notice + View Counter Terms
+• stale/terminal counters do not behave like active counters
+• Accept / Reject / Counter buttons show/hide correctly
+
+4. Tenant listing
+• counter received notice appears correctly
+• private area shows notice + View Counter Terms if missing previously
+• no regression in existing working counter behavior
+
+5. Global checks
+• no duplicate counter notices
+• no duplicate action rows
+• no broken routes
+• no 403 errors
+• no schema changes
+• no unrelated UI changes
+
+-----------------------------------
+OUTPUT REQUIRED
+-----------------------------------
+
+After completing the patch, return:
+1. exact files changed
+2. exact line ranges modified
+3. what was fixed in each file
+4. which source of truth was used for each fix
+   • Seller-based
+   • Tenant-based
+5. confirmation that Buyer View Bid now follows latest-counter logic like Tenant
+6. confirmation that the private modal/footer is now the correct counter notice path for all roles where applicable
+7. any remaining gap that could not be matched exactly
+
+FINAL REMINDER
+This is a surgical parity fix.
+Do NOT do a broad redesign.
+Do NOT touch unrelated dashboards, forms, routes, or schema.
+Patch only the live rendering and state logic needed for these counterbid issues.

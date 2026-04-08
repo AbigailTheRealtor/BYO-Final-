@@ -605,7 +605,7 @@ class BuyerAgentAuctionBidController extends Controller
             ->first();
 
         $buyerCounter = BuyerCounterTerm::with('meta')
-            ->where('buyer_agent_auction_id', $bid_id)
+            ->where('buyer_agent_auction_id', $bid->buyer_agent_auction_id)
             ->where('user_id', $auction->user_id)
             ->orderBy('created_at', 'desc')
             ->first();
