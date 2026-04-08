@@ -205,11 +205,13 @@ public $additional_details_broker = '';
         $this->auctionId = $pab->buyer_agent_auction_id;
         $this->property_type = $auction ? ($auction->get->property_type ?? '') : '';
 
-        // EDIT MODE: Try load existing counter term for this buyer (current user) + specific bid
+        // EDIT MODE: Try load existing active counter term for this buyer (current user) + specific bid.
+        // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
         $existing = BuyerCounterTerm::with('meta')
             ->where('buyer_agent_auction_id', $this->auctionId)
             ->where('parent_counter_id', $this->bidId)
             ->where('user_id', Auth::id())
+            ->where('status', 1)
             ->latest()
             ->first();
 
@@ -353,6 +355,7 @@ public $additional_details_broker = '';
                 $counterTerm->update([
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->bidId,
+                    'status' => 1,
                 ]);
             } else {
                 // CREATE new record
@@ -361,6 +364,7 @@ public $additional_details_broker = '';
                     'buyer_agent_auction_id' => $this->auctionId,
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->bidId,
+                    'status' => 1,
                 ]);
                 $this->counterTermId = $counterTerm->id; // track after create
             }

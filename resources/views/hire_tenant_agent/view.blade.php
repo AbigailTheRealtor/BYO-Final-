@@ -1824,6 +1824,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $latestTenantCounter = \App\Models\TenantCounterTerm::with('meta')
                                 ->where('tenant_agent_auction_id', $bid->id)
                                 ->where('user_id', $listingOwnerUserId)
+                                ->where('status', 1)
                                 ->orderBy('created_at', 'desc')
                                 ->first();
                             

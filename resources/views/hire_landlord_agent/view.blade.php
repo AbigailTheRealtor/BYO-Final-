@@ -2434,6 +2434,13 @@ $auser = $auctionUser::find(@$auction->user_id);
                             // Use the most recently submitted non-terminal counter as the active baseline.
                             // Exclude accepted/rejected records so stale terminal counters are never used as baseline.
                             $latestActiveCounter = $counterBids->filter(fn($c) => !in_array((string)$c->status, ['accepted', 'rejected'], true))->first();
+                            // Detect whether the listing OWNER specifically submitted an active counter (status=1, owner-scoped).
+                            // This is used exclusively by the footer state machine to determine the 'countered' state.
+                            $latestOwnerCounter = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', data_get($bid, 'id'))
+                                ->where('user_id', data_get($auction, 'user_id'))
+                                ->where('status', 1)
+                                ->orderBy('created_at', 'desc')
+                                ->first();
                             if ($latestActiveCounter && $latestActiveCounter->meta->count()) {
                                 $counterBaselineData = $latestActiveCounter->meta->pluck('meta_value', 'meta_key')->toArray();
                                 $latestCounterScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
@@ -4146,10 +4153,10 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                 </div>
                                                 @php
-                                                    // Compute modal-footer state — $latestActiveCounter (loaded early ~line 2436) filters out accepted/rejected
+                                                    // Compute modal-footer state — uses $latestOwnerCounter (owner-scoped, status=1) for countered detection
                                                     $_mfRawL    = data_get($bid, 'accepted', '0');
                                                     $_mfTermL   = in_array((string)$_mfRawL, ['accepted', 'rejected'], true);
-                                                    $_mfActiveL = isset($latestActiveCounter) && $latestActiveCounter !== null;
+                                                    $_mfActiveL = isset($latestOwnerCounter) && $latestOwnerCounter !== null;
                                                     $mfStateL   = (!$_mfTermL && $_mfActiveL)
                                                         ? 'countered'
                                                         : (in_array($_mfRawL, [null, 0, '0'], true) ? '0' : (string)$_mfRawL);

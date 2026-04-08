@@ -4104,6 +4104,7 @@
                                                                             ::where('buyer_agent_auction_id', data_get($auction, 'id'))
                                                                             ->where('parent_counter_id', data_get($bid, 'id'))
                                                                             ->where('user_id', data_get($auction, 'user_id'))
+                                                                            ->where('status', 1)
                                                                             ->exists();
                                                                         $mfStateB   = $_mfCounterB
                                                                             ? 'countered'

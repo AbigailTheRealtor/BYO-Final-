@@ -432,12 +432,13 @@ class LandlordAgentAuctionCounterTerm extends Component
 
         $currentUserId = \Illuminate\Support\Facades\Auth::id();
 
-        // EDIT MODE: Look for a pending counter THIS USER already submitted for this bid.
+        // EDIT MODE: Look for an active counter (status=1) THIS USER already submitted for this bid.
         // NOTE: landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
+        // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
         $ownPending = LandlordCounterTerm::with('meta')
             ->where('landlord_agent_auction_id', $this->bidId)
             ->where('user_id', $currentUserId)
-            ->whereNotIn('status', ['accepted', 'rejected'])
+            ->where('status', 1)
             ->latest()
             ->first();
 
@@ -654,6 +655,7 @@ class LandlordAgentAuctionCounterTerm extends Component
                 $counterTerm->update([
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id ?: null,
+                    'status' => 1,
                 ]);
             } else {
                 // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
@@ -662,6 +664,7 @@ class LandlordAgentAuctionCounterTerm extends Component
                     'landlord_agent_auction_id' => $this->bidId,
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id ?: null,
+                    'status' => 1,
                 ]);
 
                 $this->counterTermId = $counterTerm->id; // track after create

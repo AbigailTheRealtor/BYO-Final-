@@ -194,10 +194,12 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->parentCounterId = $latestSellerCounter->id;
         }
 
-        // Check for existing counter by current user to determine EDIT mode
+        // Check for existing active counter by current user to determine EDIT mode.
+        // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
         $existing = SellerCounterTerm::with('meta')
             ->where('seller_agent_auction_bid_id', $this->pab->id)
             ->where('user_id', Auth::id())
+            ->where('status', 1)
             ->latest()
             ->first();
 
