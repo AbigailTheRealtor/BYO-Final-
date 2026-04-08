@@ -1,0 +1,304 @@
+We need a SELLER-ONLY audit and fix for countered bid rendering.
+
+This is a precise SELLER repair task.
+Do NOT touch Buyer, Tenant, or Landlord except to use Tenant as the source of truth.
+
+==================================================
+MASTER GOAL
+==================================================
+
+Make SELLER countered bid rendering match TENANT exactly in behavior, structure, ordering, and visual flow, while preserving Seller-specific field labels/content.
+
+This applies to SELLER listing counter-bid rendering in:
+- main bid card / expanded bid card
+- Counter Bidding History
+- Broker Compensation & Agency Agreement Terms counter rendering
+- Offered Services rendering
+- counter notice / banner
+- action buttons
+- View Counter Terms / Edit Counter Terms area
+- any related Seller countered bid detail section
+
+==================================================
+KNOWN CURRENT SELLER PROBLEMS
+==================================================
+
+1. COUNTER ACTION UI IS STILL WRONG / INCONSISTENT
+Seller currently has incorrect or conflicting counter action behavior.
+From the live screenshots, Seller is still mixing:
+- Accept / Reject / Counter buttons
+and/or
+- yellow banner + View Counter Terms
+without matching the full Tenant pattern consistently.
+
+IMPORTANT:
+Seller SHOULD match Tenant exactly and SHOULD show:
+- Accept
+- Reject
+- Counter
+AND ALSO
+- counter notice/banner
+- View Counter Terms
+- Edit Counter Terms
+where applicable
+
+These are NOT mutually exclusive.
+Do NOT remove one system and leave the other.
+Seller must mirror Tenant’s full counter UX.
+
+2. OFFERED SERVICES RENDERING IS STILL WRONG
+Seller services are still not fully correct:
+- incorrect order
+- incorrect grouping
+- incorrect section placement
+- services appearing under “Other Services” when they belong under a defined section
+- not guaranteed to match the canonical Seller services source of truth exactly
+
+3. BROKER COMPENSATION & AGENCY AGREEMENT TERMS NEED FULL AUDIT
+For SELLER countered bids, we need to verify:
+- every expected field renders
+- every field is in the correct section
+- every field is in the correct order
+- changed fields are marked correctly
+- unchanged fields stay in the right place
+- displayed output matches the canonical Seller form structure exactly
+
+==================================================
+SOURCE OF TRUTH
+==================================================
+
+TENANT is the source of truth for:
+- countered bid UI behavior
+- counter notice/banner placement
+- Accept / Reject / Counter button behavior and placement
+- View Counter Terms / Edit Counter Terms placement
+- counter history card structure
+- overall spacing and section flow
+
+SELLER source of truth is:
+- the live canonical Seller listing / counter form structure for:
+  - Broker Compensation & Agency Agreement Terms section order
+  - field order
+  - service category order
+  - exact service membership under each category
+
+Do NOT invent a new grouping.
+Do NOT use fallback grouping if canonical Seller config already exists.
+
+==================================================
+PHASE 1 — AUDIT FIRST (REQUIRED)
+==================================================
+
+Before editing, perform a structured SELLER audit and report exact findings.
+
+----------------------------------
+AUDIT A — COUNTER ACTION UI
+----------------------------------
+
+Trace the exact live files / sections that render Seller counter actions.
+
+Identify:
+- where Accept / Reject / Counter is rendering
+- where yellow counter notice is rendering
+- where View Counter Terms / Edit Counter Terms is rendering
+- whether any of these are incorrectly gated
+- whether duplicate or conflicting counter action systems exist
+
+IMPORTANT:
+Seller must match Tenant exactly and show BOTH:
+- counter notice/banner + View/Edit Counter Terms
+- Accept / Reject / Counter actions
+when appropriate
+
+For each current Seller action area, report:
+- file path
+- section / line range
+- what currently renders
+- how it differs from Tenant
+
+----------------------------------
+AUDIT B — BROKER COMPENSATION & AGENCY AGREEMENT TERMS
+----------------------------------
+
+Compare current Seller countered rendering against the actual canonical Seller section structure used by the live Seller form.
+
+Verify exact order for all sections and fields, including any applicable Seller-specific items such as:
+- broker compensation structure
+- purchase fee
+- lease terms
+- lease-option terms
+- legal terms
+- brokerage relationship
+- additional terms
+- additional details
+and any other Seller fields that should render
+
+For each field/section determine:
+- SHOULD RENDER?
+- IS RENDERING?
+- CORRECT SECTION?
+- CORRECT ORDER?
+- CHANGE FLAG CORRECT?
+
+----------------------------------
+AUDIT C — OFFERED SERVICES
+----------------------------------
+
+Use the canonical Seller services configuration/source of truth.
+
+Verify:
+- correct section order
+- correct category heading
+- correct service placement under each category
+- correct handling of additional services / other_services
+- correct handling of removed services
+- correct added/removed markers
+- no services incorrectly dumped into “Other Services”
+
+For each currently rendered service determine:
+- correct category?
+- correct order?
+- should be under Additional Services instead?
+- should be under a defined category instead?
+- added/removed state correct?
+
+==================================================
+PHASE 2 — FIX ONLY WHAT THE AUDIT PROVES IS WRONG
+==================================================
+
+After the audit, fix the confirmed Seller issues.
+
+----------------------------------
+FIX 1 — COUNTER ACTION UI
+----------------------------------
+
+Seller must match Tenant exactly.
+
+When a bid is countered and the user is allowed to respond, Seller must show the same action system as Tenant:
+
+- yellow counter notice/banner
+- View Counter Terms
+- Edit Counter Terms (where applicable)
+- Accept
+- Reject
+- Counter
+
+Do NOT remove Accept / Reject / Counter.
+Do NOT leave only the banner.
+Do NOT leave duplicate/conflicting action systems.
+
+Use Tenant’s actual render structure and gating logic as the behavioral source of truth, adapted only for Seller-specific routes/variables where necessary.
+
+----------------------------------
+FIX 2 — OFFERED SERVICES ORDER / SECTION MAPPING
+----------------------------------
+
+Replace any incorrect Seller services rendering with canonical Seller ordering.
+
+Requirements:
+- each service must render under the correct section
+- exact order must match Seller source of truth
+- Additional Services / other_services must only contain true additional services
+- no service should appear under “Other Services” if it belongs in a defined category
+- added/removed markers must remain correct
+- do not use an approximate fallback if canonical Seller config exists
+
+----------------------------------
+FIX 3 — COUNTERED TERMS ORDER / SECTION MAPPING
+----------------------------------
+
+Ensure countered Broker Compensation & Agency Agreement Terms render:
+- in the correct section
+- in the correct order
+- with correct changed highlighting
+- with no missing expected fields
+- with no misplaced fields
+- in the same structural flow as Tenant’s counter card pattern where applicable
+
+==================================================
+IMPLEMENTATION RULES
+==================================================
+
+1. SELLER ONLY
+Do not touch Buyer, Tenant, or Landlord except to use Tenant as the render/behavior reference.
+
+2. AUDIT BEFORE EDITING
+Do not skip the audit.
+Do not jump straight to implementation.
+
+3. EXACT MATCH TO TENANT FOR COUNTER UI
+Do not approximate Tenant behavior.
+Use Tenant’s actual render structure / classes / gating logic where possible and adapt only Seller-specific variables/routes.
+
+4. EXACT MATCH TO SELLER SOURCE OF TRUTH FOR TERMS + SERVICES
+Do not improvise grouping or ordering.
+Use canonical Seller config / form structure only.
+
+==================================================
+DO NOT CHANGE
+==================================================
+
+- scoring formulas
+- helper calculations unless audit proves mapping/order logic there is wrong
+- database schema
+- business logic unrelated to render/gating parity
+- Buyer
+- Tenant
+- Landlord
+- backup files
+
+==================================================
+REQUIRED OUTPUT BEFORE CHANGES
+==================================================
+
+Before making changes, provide a concise Seller audit report with:
+
+1. Exact Seller files controlling:
+- countered terms rendering
+- offered services rendering
+- counter action rendering
+
+2. Exact issues found:
+- misplaced services
+- wrong service order
+- wrong section mapping
+- missing or misplaced fields
+- incorrect action button gating
+- duplicated/conflicting action systems
+
+3. Exact fix plan
+
+Then implement.
+
+==================================================
+VERIFICATION REQUIRED AFTER FIX
+==================================================
+
+Provide screenshots and/or exact report notes proving:
+
+1. Seller countered terms are in the correct order
+2. Seller services are under the correct headings and in correct order
+3. “Other Services” only contains true additional services
+4. yellow counter notice/banner appears correctly
+5. View Counter Terms appears correctly
+6. Edit Counter Terms appears correctly where applicable
+7. Accept / Reject / Counter appears correctly and matches Tenant behavior
+8. no duplicate/conflicting counter action systems remain
+9. no Blade/PHP errors
+
+==================================================
+CRITICAL COMPLETION STANDARD
+==================================================
+
+Do NOT mark complete with:
+- “looks right”
+- “close enough”
+- “similar to Tenant”
+
+Completion requires:
+- exact audit
+- exact fixes
+- screenshot proof
+- correct order
+- correct section placement
+- correct Seller counter action behavior matching Tenant
