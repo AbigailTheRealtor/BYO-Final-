@@ -55,9 +55,17 @@
                         </div>
                     </div>
 
-                    @if($sellerCounter)
+                    @if($sellerCounter || $agentCounterBack)
                     @php
-                        $counterData = (array) $sellerCounter->get;
+                        // Determine which counter to display as the primary subject.
+                        // Agent views the seller's counter; seller views the agent's counter-back (or their own if no counter-back yet).
+                        if ($viewerRole === 'agent') {
+                            $activeCounter = $sellerCounter ?? $agentCounterBack;
+                        } else {
+                            $activeCounter = $agentCounterBack ?? $sellerCounter;
+                        }
+
+                        $counterData = $activeCounter ? (array) $activeCounter->get : [];
 
                         $fmtMoney = function($v) {
                             if ($v === null || $v === '') return null;
@@ -76,8 +84,7 @@
                             return implode(' + ', array_filter($parts)) ?: null;
                         };
 
-                        // Baseline: agent viewing seller's counter vs agent's original bid
-                        // Seller viewing: compare counter to original auction listing terms
+                        // Baseline for Original Match: agent's bid when agent views; listing terms when seller views.
                         if ($viewerRole === 'agent') {
                             $baselineData = (array) $bid->get;
                             $baselineLabel = 'Your Original Bid';
@@ -86,7 +93,6 @@
                             $baselineLabel = 'Your Original Listing Terms';
                         }
 
-                        // === MATCH SCORE using SellerBidMatchScoreHelper ===
                         $counterPropType = $auction->get->property_type ?? 'Residential Property';
                         $score = \App\Helpers\SellerBidMatchScoreHelper::calculate(
                             $baselineData,
@@ -95,19 +101,36 @@
                             $counterPropType
                         );
 
-                        $brokerScore     = $score['terms_match_percent'];
-                        $brokerMatched   = $score['terms_matched_count'];
-                        $brokerTotal     = $score['terms_baseline_total'];
-                        $brokerMismatches = $score['changed_terms'];
-                        $servicesScore   = $score['services_match_percent'];
-                        $servicesMatched = $score['services_matched_count'];
-                        $servicesTotal   = $score['services_baseline_total'];
-                        $servicesMissing = $score['missing_services'];
-                        $totalScore      = $score['overall_percent'];
+                        $brokerScore       = $score['terms_match_percent'];
+                        $brokerMatched     = $score['terms_matched_count'];
+                        $brokerTotal       = $score['terms_baseline_total'];
+                        $brokerMismatches  = $score['changed_terms'];
+                        $termsChangedCount = $score['terms_changed_count'];
+                        $termsAddedCount   = $score['terms_added_count'];
+                        $servicesScore     = $score['services_match_percent'];
+                        $servicesMatched   = $score['services_matched_count'];
+                        $servicesTotal     = $score['services_baseline_total'];
+                        $servicesMissingCount = $score['services_missing_count'];
+                        $servicesExtraCount   = $score['services_extra_count'];
+                        $servicesMissing   = $score['missing_services'];
+                        $totalScore        = $score['overall_percent'];
 
                         $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
                         $totalScoreColor = $getScoreColor($totalScore);
                         $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
+
+                        // Dual score: when seller views the agent's counter-back and has a prior counter, show Latest Counter Match too.
+                        $showDualScore      = false;
+                        $latestCounterScore = null;
+                        if ($viewerRole === 'seller' && $sellerCounter && $agentCounterBack) {
+                            $latestCounterScore = \App\Helpers\SellerBidMatchScoreHelper::calculate(
+                                (array) $sellerCounter->get,
+                                $counterData,
+                                null,
+                                $counterPropType
+                            );
+                            $showDualScore = true;
+                        }
 
                         $normalizeService = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s);
                         $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
@@ -152,42 +175,131 @@
 
                     {{-- Match Score Panel --}}
                     @if ($hasAnyBaseline)
-                    <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                <i class="fa fa-chart-pie me-2"></i>Match Score
-                            </h6>
-                            <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1.1rem; padding: 8px 16px;">
-                                {{ $totalScore }}% Match
+                    <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
+
+                        @if ($showDualScore && $latestCounterScore)
+                        {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
+                        <div class="mb-3">
+                            <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
+                                <i class="fas fa-chart-pie me-2"></i>Match Summary
                             </span>
                         </div>
                         <p class="small text-muted mb-3">
-                            Comparing counter terms to: <strong>{{ $baselineLabel }}</strong>
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Original Match</strong> compares this response to the Seller's original listing request.<br>
+                            <strong>Latest Counter Match</strong> compares this response to the Seller's most recent counteroffer.<br>
+                            Added services or terms are shown for transparency but do not increase either score.
                         </p>
-                        <div class="row g-3">
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="small fw-semibold">Broker Compensation</span>
-                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                        <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 0.95rem; padding: 4px 10px; color: white;">{{ $totalScore }}%</span>
                                     </div>
-                                    <div class="small text-muted mt-1">{{ $brokerTotal > 0 ? $brokerMatched.'/'.$brokerTotal.' fields match' : 'No terms provided' }}</div>
+                                    <div class="small text-muted">vs. {{ $baselineLabel }}</div>
+                                    <div class="row g-1 mt-2">
+                                        <div class="col-6">
+                                            <div class="small fw-semibold" style="color: {{ $getScoreColor($servicesScore) }};">Services {{ $servicesScore }}%</div>
+                                            <div class="small text-muted">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal : 'No services requested' }}</div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small fw-semibold" style="color: {{ $getScoreColor($brokerScore) }};">Terms {{ $brokerScore }}%</div>
+                                            <div class="small text-muted">{{ $brokerTotal > 0 ? $brokerMatched.'/'.$brokerTotal : 'No terms provided' }}</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+                            @php
+                                $lcSvcScore = $latestCounterScore['services_match_percent'];
+                                $lcTrmScore = $latestCounterScore['terms_match_percent'];
+                                $lcOverall  = $latestCounterScore['overall_percent'];
+                                $lcSvcMatch = $latestCounterScore['services_matched_count'];
+                                $lcSvcTotal = $latestCounterScore['services_baseline_total'];
+                                $lcTrmMatch = $latestCounterScore['terms_matched_count'];
+                                $lcTrmTotal = $latestCounterScore['terms_baseline_total'];
+                                $lcSvcExtra = $latestCounterScore['services_extra_count'];
+                                $lcSvcMiss  = $latestCounterScore['services_missing_count'];
+                                $lcTrmChg   = $latestCounterScore['terms_changed_count'];
+                                $lcTrmAdded = $latestCounterScore['terms_added_count'];
+                                $lcColor    = $getScoreColor($lcOverall);
+                            @endphp
                             <div class="col-md-6">
-                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="small fw-semibold">Offered Services</span>
-                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                <div class="p-3 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColor }};">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <span class="small fw-semibold" style="color: #1a3a5c;">Latest Counter Match</span>
+                                        <span class="badge" style="background: {{ $lcColor }}; font-size: 0.95rem; padding: 4px 10px; color: white;">{{ $lcOverall }}%</span>
                                     </div>
-                                    <div class="small text-muted mt-1">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal.' services match' : 'No services requested' }}</div>
+                                    <div class="small text-muted">vs. Seller's Most Recent Counter</div>
+                                    <div class="row g-1 mt-2">
+                                        <div class="col-6">
+                                            <div class="small fw-semibold" style="color: {{ $getScoreColor($lcSvcScore) }};">Services {{ $lcSvcScore }}%</div>
+                                            <div class="small text-muted">{{ $lcSvcTotal > 0 ? $lcSvcMatch.'/'.$lcSvcTotal : 'No services requested' }}</div>
+                                            @if($lcSvcTotal > 0 && $lcSvcExtra > 0)<div class="small" style="color: #6c757d;">+{{ $lcSvcExtra }} added</div>@endif
+                                            @if($lcSvcTotal > 0 && $lcSvcMiss > 0)<div class="small" style="color: #dc3545;">{{ $lcSvcMiss }} missing</div>@endif
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="small fw-semibold" style="color: {{ $getScoreColor($lcTrmScore) }};">Terms {{ $lcTrmScore }}%</div>
+                                            <div class="small text-muted">{{ $lcTrmTotal > 0 ? $lcTrmMatch.'/'.$lcTrmTotal : 'No terms provided' }}</div>
+                                            @if($lcTrmTotal > 0 && $lcTrmChg > 0)<div class="small" style="color: #dc3545;">{{ $lcTrmChg }} changed</div>@endif
+                                            @if($lcTrmTotal > 0 && $lcTrmAdded > 0)<div class="small" style="color: #6c757d;">+{{ $lcTrmAdded }} added</div>@endif
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        @else
+                        {{-- SINGLE SCORE: agent viewing seller's counter, or seller has no counter-back yet --}}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
+                                <i class="fas fa-chart-pie me-2"></i>Match Score
+                            </span>
+                            <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1.1rem; padding: 8px 16px; color: white;">
+                                {{ $totalScore }}%
+                            </span>
+                        </div>
+                        <p class="small text-muted mb-3">
+                            <i class="fas fa-info-circle me-1"></i>Match Score compares this counter only to the baseline. Added services or added terms are shown for transparency but do not increase the score.<br>
+                            Compared to: <strong>{{ $baselineLabel }}</strong>
+                        </p>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="p-2 rounded" style="background: #f8f9fa; border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small fw-semibold">Services Match</span>
+                                        <span style="color: {{ $getScoreColor($servicesScore) }}; font-weight: 600;">{{ $servicesScore }}%</span>
+                                    </div>
+                                    <div class="text-muted small mt-1">{{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}</div>
+                                    @if ($servicesTotal > 0 && $servicesExtraCount > 0)
+                                    <div class="small mt-1" style="color: #6c757d;">Extra (Added): {{ $servicesExtraCount }}</div>
+                                    @endif
+                                    @if ($servicesTotal > 0 && $servicesMissingCount > 0)
+                                    <div class="small mt-1" style="color: #dc3545;">Missing: {{ $servicesMissingCount }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded" style="background: #f8f9fa; border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small fw-semibold">Terms Match</span>
+                                        <span style="color: {{ $getScoreColor($brokerScore) }}; font-weight: 600;">{{ $brokerScore }}%</span>
+                                    </div>
+                                    <div class="text-muted small mt-1">{{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}</div>
+                                    @if ($brokerTotal > 0 && $termsChangedCount > 0)
+                                    <div class="small mt-1" style="color: #dc3545;">Changed: {{ $termsChangedCount }}</div>
+                                    @endif
+                                    @if ($brokerTotal > 0 && $termsAddedCount > 0)
+                                    <div class="small mt-1" style="color: #6c757d;">Added: {{ $termsAddedCount }}</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                     @else
                     <div class="alert alert-secondary mb-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
-                        <i class="fa fa-info-circle me-2"></i>No match score available — no requirements were provided in the baseline.
+                        <i class="fas fa-info-circle me-2"></i>No match score available — no requirements were provided in the baseline.
                     </div>
                     @endif
 
@@ -197,7 +309,7 @@
                             <i class="fa fa-handshake me-2"></i>Counter Terms Details
                         </h5>
                         <p class="text-muted small">
-                            Submitted: {{ $sellerCounter->created_at->format('M d, Y h:i A') }}
+                            Submitted: {{ $activeCounter?->created_at?->format('M d, Y h:i A') ?? 'N/A' }}
                         </p>
 
                         @php
@@ -490,7 +602,8 @@
                     @endif
 
                     {{-- Agent Counter-Back Section --}}
-                    @if($agentCounterBack)
+                    {{-- Only show for agent viewing (seller already sees agent counter-back as main panel above) --}}
+                    @if($agentCounterBack && $viewerRole === 'agent')
                     @php
                         $agentCounterData = (array) $agentCounterBack->get;
                         $agentPurchaseFeeType = data_get($agentCounterData, 'purchase_fee_type', '');
