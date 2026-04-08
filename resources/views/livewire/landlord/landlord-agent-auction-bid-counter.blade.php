@@ -46,7 +46,7 @@
         <form wire:submit.prevent="submit">
           @php
             $tabs = ['Broker Compensation and Agency Agreement','Additional Details'];
-            $user_type = "tenant";
+            $user_type = "landlord";
             $tabs[] = match (strtolower($user_type)) {
                 'tenant' => 'Offered Services',
                 'landlord' => 'Services the Landlord Requests from Their Agent',

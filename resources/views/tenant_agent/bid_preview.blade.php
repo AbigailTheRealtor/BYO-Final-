@@ -153,120 +153,53 @@
 
         <div class="bid-preview-body">
             @php
-                $bidData = (array) $bid->get;
-                $auctionData = (array) $auction->get;
-                
-                $normalizeForMatch = function($v) {
-                    if (is_null($v) || $v === '') return '';
-                    if (is_array($v) || is_object($v)) return json_encode($v);
-                    $v = trim((string) $v);
-                    return preg_replace('/[\s$,%]/', '', strtolower($v));
-                };
-                
-                $brokerFields = [
-                    'commission_structure', 'lease_fee_type', 'broker_fee_timing', 'broker_fee_days_from_rent',
-                    'interested_purchase_fee_type', 'purchase_fee_type', 'interested_lease_option_agreement',
-                    'lease_type', 'lease_value', 'purchase_type', 'purchase_value', 'protection_period',
-                    'early_termination_fee_option', 'early_termination_fee_amount', 'retainer_fee_option',
-                    'retainer_fee_amount', 'retainer_fee_application', 'agency_agreement_timeframe', 'brokerage_relationship',
-                    'lease_fee_flat', 'lease_fee_percentage', 'lease_fee_percentage_monthly_rent', 'lease_fee_percentage_monthly_number',
-                    'lease_fee_flat_combo', 'lease_fee_percentage_combo', 'lease_fee_percentage_net',
-                    'lease_fee_flat_combo_net', 'lease_fee_percentage_combo_net', 'lease_fee_other',
-                    'purchase_fee_flat', 'purchase_fee_percentage', 'purchase_fee_flat_combo', 'purchase_fee_percentage_combo', 'purchase_fee_other',
-                    'flat_fee_amount', 'percent_gross_lease', 'purchase_flat_fee_amount', 'purchase_percent_value',
-                ];
-                
-                $brokerMatched = 0;
-                $brokerTotal = 0;
-                $brokerMismatches = [];
-                
-                foreach ($brokerFields as $field) {
-                    $bidVal = $bidData[$field] ?? null;
-                    $auctionVal = $auctionData[$field] ?? null;
-                    if (!empty($bidVal) || !empty($auctionVal)) {
-                        $brokerTotal++;
-                        if ($normalizeForMatch($bidVal) === $normalizeForMatch($auctionVal)) {
-                            $brokerMatched++;
-                        } else {
-                            $brokerMismatches[$field] = ['bid' => $bidVal, 'listing' => $auctionVal];
-                        }
-                    }
+                $auctionBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
+                $bidData = json_decode(json_encode($bid->get ?? []), true) ?: [];
+                $propType = $auction->get->property_type ?? 'Residential Property';
+
+                // Remap legacy DB keys to canonical helper keys.
+                // DB stores broker_fee_timing; helper uses payment_timing.
+                if (($auctionBaselineData['payment_timing'] ?? '') === '') {
+                    $auctionBaselineData['payment_timing'] = $auctionBaselineData['broker_fee_timing'] ?? null;
                 }
-                
-                $brokerScore = $brokerTotal > 0 ? round(($brokerMatched / $brokerTotal) * 100) : 100;
-                
-                $normalizeService = function($s) {
-                    $s = preg_replace('/[\x{2018}\x{2019}]/u', "'", $s);
-                    $s = preg_replace('/[\x{201C}\x{201D}]/u', '"', $s);
-                    return strtolower(trim($s));
-                };
-                
-                $bidServices = $bidData['services'] ?? [];
-                if (is_string($bidServices)) $bidServices = json_decode($bidServices, true) ?? [];
-                $bidServices = is_array($bidServices) ? array_values(array_filter($bidServices)) : [];
-                
-                $bidOtherServices = $bidData['other_services'] ?? [];
-                if (is_string($bidOtherServices)) $bidOtherServices = json_decode($bidOtherServices, true) ?? [];
-                $bidOtherServices = is_array($bidOtherServices) ? array_values(array_filter($bidOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                $allBidServices = array_merge($bidServices, $bidOtherServices);
-                
-                $auctionServices = $auctionData['services'] ?? [];
-                if (is_string($auctionServices)) $auctionServices = json_decode($auctionServices, true) ?? [];
-                $auctionServices = is_array($auctionServices) ? array_values(array_filter($auctionServices)) : [];
-                
-                $auctionOtherServices = $auctionData['other_services'] ?? [];
-                if (is_string($auctionOtherServices)) $auctionOtherServices = json_decode($auctionOtherServices, true) ?? [];
-                $auctionOtherServices = is_array($auctionOtherServices) ? array_values(array_filter($auctionOtherServices, fn($s) => is_string($s) && !empty(trim($s)))) : [];
-                $allAuctionServices = array_merge($auctionServices, $auctionOtherServices);
-                
-                $bidNorm = array_map($normalizeService, $allBidServices);
-                $auctionNorm = array_map($normalizeService, $allAuctionServices);
-                
-                $allServicesUnion = array_unique(array_merge($bidNorm, $auctionNorm));
-                $servicesTotal = count($allServicesUnion);
-                $servicesMatched = 0;
-                $servicesMissing = [];
-                $servicesAdded = [];
-                $servicesMatchedList = [];
-                
-                foreach ($allServicesUnion as $svc) {
-                    $inBid = in_array($svc, $bidNorm);
-                    $inAuction = in_array($svc, $auctionNorm);
-                    if ($inBid && $inAuction) {
-                        $servicesMatched++;
-                        $servicesMatchedList[] = $svc;
-                    } elseif ($inBid && !$inAuction) {
-                        $servicesAdded[] = $svc;
-                    } elseif (!$inBid && $inAuction) {
-                        $servicesMissing[] = $svc;
-                    }
+                if (($auctionBaselineData['days_to_pay'] ?? '') === '') {
+                    $auctionBaselineData['days_to_pay'] = $auctionBaselineData['broker_fee_days_from_rent']
+                        ?? $auctionBaselineData['broker_fee_days_after_lease'] ?? null;
                 }
-                
-                $servicesScore = $servicesTotal > 0 ? round(($servicesMatched / $servicesTotal) * 100) : 100;
-                
-                $hasBroker = $brokerTotal > 0;
-                $hasServices = $servicesTotal > 0;
-                
-                if ($hasBroker && $hasServices) {
-                    $totalScore = round(($brokerScore + $servicesScore) / 2);
-                } elseif ($hasBroker) {
-                    $totalScore = $brokerScore;
-                } elseif ($hasServices) {
-                    $totalScore = $servicesScore;
-                } else {
-                    $totalScore = 100;
+                if (($bidData['payment_timing'] ?? '') === '') {
+                    $bidData['payment_timing'] = $bidData['broker_fee_timing'] ?? null;
                 }
-                
+                if (($bidData['days_to_pay'] ?? '') === '') {
+                    $bidData['days_to_pay'] = $bidData['broker_fee_days_from_rent']
+                        ?? $bidData['broker_fee_days_after_lease'] ?? null;
+                }
+
+                $matchScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
+                    $auctionBaselineData, $bidData, null, $propType
+                );
+
+                $totalScore      = $matchScore['overall_percent'];
+                $brokerScore     = $matchScore['terms_match_percent'];
+                $brokerMatched   = $matchScore['terms_matched_count'];
+                $brokerTotal     = $matchScore['terms_baseline_total'];
+                $brokerMismatches = $matchScore['changed_terms'];
+                $servicesScore   = $matchScore['services_match_percent'];
+                $servicesMatched = $matchScore['services_matched_count'];
+                $servicesTotal   = $matchScore['services_baseline_total'];
+                $servicesMissing = $matchScore['missing_services'] ?? [];
+                $servicesAdded   = $matchScore['extra_services'] ?? [];
+                $servicesMatchedList = $matchScore['matched_services'] ?? [];
+
                 $getScoreColor = function($score) {
                     if ($score >= 80) return '#28a745';
                     if ($score >= 50) return '#ffc107';
                     return '#dc3545';
                 };
-                
-                $totalScoreColor = $getScoreColor($totalScore);
-                $brokerScoreColor = $getScoreColor($brokerScore);
+
+                $totalScoreColor    = $getScoreColor($totalScore);
+                $brokerScoreColor   = $getScoreColor($brokerScore);
                 $servicesScoreColor = $getScoreColor($servicesScore);
-                
+
                 $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
                 $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
             @endphp
@@ -449,9 +382,9 @@
                             <span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}
                         </li>
                         @endif
-                        @if (data_get($bid, 'get.broker_fee_timing'))
-                        <li class="mb-1" style="{{ isset($brokerMismatches['broker_fee_timing']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.broker_fee_timing') }}{!! isset($brokerMismatches['broker_fee_timing']) ? $mismatchBadge : '' !!}
+                        @if (data_get($bid, 'get.broker_fee_timing') || data_get($bid, 'get.payment_timing'))
+                        <li class="mb-1" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') ?? data_get($bid, 'get.broker_fee_timing') }}{!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}
                         </li>
                         @endif
                     </ul>
