@@ -101,13 +101,6 @@
         margin-top: 0.75rem !important;
     }
 
-    /* Financing Details section - subsection headers */
-    .financing-subsection-header {
-        font-weight: 700 !important;
-        color: #374151 !important;
-        margin-bottom: 0;
-    }
-
     hr {
         margin-top: 1.25rem;
         margin-bottom: 0.5rem;
@@ -212,149 +205,128 @@
         font-weight: normal;
     }
 
-        /* Base button style */
-        .btn-custom {
-            width: 100% !important;
-            color: white;
-            border: none;
+    /* Service category title styling */
+    .service-category-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Base button style */
+    .btn-custom {
+        width: 100% !important;
+        color: white !important;
+        border: none;
+        padding: 10px 20px;
+        min-width: 120px;
+        font-weight: 500;
+        border-radius: 4px;
+        cursor: pointer;
+        text-align: center;
+        display: inline-block;
+    }
+
+    .biding-btn {
+        width: 31.5%;
+    }
+
+    /* Accept (green) - always solid green background */
+    .btn-accept {
+        background-color: #28a745 !important;
+        color: #ffffff !important;
+    }
+
+    .btn-accept:hover {
+        background-color: #218838 !important;
+    }
+
+    /* Reject (red) - always solid red background */
+    .btn-reject {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+    }
+
+    .btn-reject:hover {
+        background-color: #c82333 !important;
+    }
+
+    /* Counter (blue) - always solid blue background, same size as Reject */
+    .btn-counter {
+        background-color: #0d6efd !important;
+        color: #ffffff !important;
+    }
+
+    .btn-counter:hover {
+        background-color: #0b5ed7 !important;
+    }
+
+    .view-btn {
+        padding: 6px !important;
+    }
+
+    .services-offered {
+        padding: 23px !important;
+    }
+
+    /* Left column content - vertically centered with symmetrical padding */
+    .leftCol .card.description .card-body {
+        padding-top: 1.75rem;
+        padding-bottom: 1.75rem;
+    }
+
+    .leftCol .card.description {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
+    @media screen and (max-width: 800px) {
+        .accordion-body-padding {
+            padding: 7px !important;
         }
 
-        .biding-btn {
-            width: 31.5%;
+        .alert-font {
+            font-size: 10px;
         }
 
-        /* Accept (green) */
-        .btn-accept {
-            background-color: #28a745;
+        .counter-font {
+            font-size: 15px;
         }
+    }
 
-        .btn-accept:hover {
-            background-color: #218838;
-        }
+    /* Bid card accordion chevron rotation (custom JS toggle) */
+    .bid-accordion-header .bid-chevron {
+        transition: transform 0.3s ease;
+    }
+    .bid-accordion-header:hover {
+        background-color: #f8f9fa !important;
+    }
 
-        /* Reject (red) */
-        .btn-reject {
-            background-color: #dc3545;
-        }
+    /* Fix white space below bid cards - ensure collapse content uses natural height */
+    .card.higestBider .accordion-item > .card.mb-3 {
+        margin-bottom: 0.75rem;
+    }
+    .card.higestBider .accordion-item > .card.mb-3 > .collapse {
+        height: auto;
+    }
 
-        .btn-reject:hover {
-            background-color: #c82333;
-        }
-
-        /* Counter (orange) */
-        .btn-counter {
-            background-color: #f0ad4e;
-            color: #212529;
-            /* dark text for better contrast */
-        }
-
-        .btn-counter:hover {
-            background-color: #ec971f;
-        }
-
-        .view-btn {
-            padding: 6px !important;
-        }
-
-        .services-offered {
-            padding: 23px !important;
-        }
-
-        @media screen and (max-width: 800px) {
-            .accordion-body-padding {
-                padding: 7px !important;
-            }
-
-            .alert-font {
-                font-size: 10px;
-            }
-
-            .counter-font {
-                font-size: 15px;
-            }
-        }
-
-        /* Bid card accordion chevron rotation (custom JS toggle) */
-        .bid-accordion-header .bid-chevron {
-            transition: transform 0.3s ease;
-        }
-        .bid-accordion-header:hover {
-            background-color: #f8f9fa !important;
-        }
-
-        /* Bid action buttons - matched sizing for Edit bid */
-        .bid-action-btn {
-            min-width: 140px;
-            height: 38px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            border: none !important;
-            box-shadow: none;
-        }
-        .bid-action-btn:hover {
-            opacity: 0.9;
-        }
-
-        /* Service category title styling */
-        .service-category-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Base button style (matches Tenant) */
-        .btn-custom {
-            width: 100% !important;
-            color: white !important;
-            border: none;
-            padding: 10px 20px;
-            min-width: 120px;
-            font-weight: 500;
-            border-radius: 4px;
-            cursor: pointer;
-            text-align: center;
-            display: inline-block;
-        }
-
-        .biding-btn {
-            width: 31.5%;
-        }
-
-        /* Accept (green) */
-        .btn-accept {
-            background-color: #28a745 !important;
-            color: #ffffff !important;
-        }
-
-        .btn-accept:hover {
-            background-color: #218838 !important;
-        }
-
-        /* Reject (red) */
-        .btn-reject {
-            background-color: #dc3545 !important;
-            color: #ffffff !important;
-        }
-
-        .btn-reject:hover {
-            background-color: #c82333 !important;
-        }
-
-        /* Counter (blue) */
-        .btn-counter {
-            background-color: #0d6efd !important;
-            color: #ffffff !important;
-        }
-
-        .btn-counter:hover {
-            background-color: #0b5ed7 !important;
-        }
-    </style>
+    /* Bid action buttons - matched sizing for Edit bid */
+    .bid-action-btn {
+        min-width: 140px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none !important;
+        box-shadow: none;
+    }
+    .bid-action-btn:hover {
+        opacity: 0.9;
+    }
+</style>
 @endpush
 @section('content')
     @php
@@ -3244,26 +3216,6 @@
                                             <small class="text-muted">{{ optional($counterBid->created_at)->format('M j, Y g:i A') }}</small>
                                         </div>
 
-                                        {{-- Status badge --}}
-                                        @if (in_array((string)$scCounterState, ['accepted']))
-                                        <div class="mb-2">
-                                            <span class="badge bg-success">Accepted</span>
-                                            <small class="text-muted ms-2">by {{ $scActorFirst }} {{ $scActorLast }}</small>
-                                        </div>
-                                        @elseif (in_array((string)$scCounterState, ['rejected']))
-                                        <div class="mb-2">
-                                            <span class="badge bg-danger">Rejected</span>
-                                            <small class="text-muted ms-2">by {{ $scActorFirst }} {{ $scActorLast }}</small>
-                                        </div>
-                                        @elseif ($scCounterState === '0')
-                                        <div class="mb-2">
-                                            <span class="badge bg-warning text-dark">Pending Response</span>
-                                            @if (!$scShowCounterActions)
-                                            <small class="text-muted ms-2">Awaiting {{ $scIsCounterFromOwner ? $scAgentFirst.' '.$scAgentLast : $scOwnerFirst.' '.$scOwnerLast }}</small>
-                                            @endif
-                                        </div>
-                                        @endif
-
                                         {{-- Broker Compensation & Terms --}}
                                         @if (!empty($scAllMeta['purchase_fee_type']) || !empty($scAllMeta['commission_structure']))
                                         <div class="mb-3">
@@ -3382,32 +3334,33 @@
 
                                         {{-- Services Offered --}}
                                         @if (!empty($scCtrSvcsRaw))
-                                        <div style="margin-top: 12px;">
-                                            <label style="font-size: 13px; font-weight: 600; color: #049399; display: block; margin-bottom: 8px;">
-                                                G) Services Offered:
-                                            </label>
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                            </h6>
                                             @php
                                                 $scFlowKey = data_get($auction, 'get.property_type', 'Residential Property');
                                                 $scCounterOrderedServices = !empty($scCtrSvcsRaw)
                                                     ? \App\Support\ServicesFormatter::orderSelectedServices(array_values($scCtrSvcsRaw), $scFlowKey)
                                                     : [];
-                                                // Guard: orderSelectedServices returns a flat array when no catalog key matches.
-                                                // Only use the grouped (nested) rendering path if values are actually arrays.
                                                 $scSvcsIsGrouped = !empty($scCounterOrderedServices) && is_array(reset($scCounterOrderedServices));
                                             @endphp
                                             @if ($scSvcsIsGrouped)
                                                 @foreach ($scCounterOrderedServices as $catName => $catSrvs)
                                                     @if (!empty($catSrvs))
-                                                    <div class="mb-2">
-                                                        <strong style="font-size: 12px;">{{ $catName }}</strong>
-                                                        <ul class="services services-offered" style="margin-top: 4px;">
+                                                    <div class="mb-3">
+                                                        <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
+                                                        <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
                                                             @foreach ($catSrvs as $svc)
                                                                 @if ($svc !== 'Other')
                                                                     @php $scSvcIsNew = $scCtrSvcIsAdded((string)$svc); @endphp
-                                                                    <li style="font-size: 12px; {{ $scSvcIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
-                                                                        {{ $svc }}
-                                                                        @if ($scSvcIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                                    @if ($scSvcIsNew)
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
+                                                                        <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $svc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                     </li>
+                                                                    @else
+                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
+                                                                    @endif
                                                                 @endif
                                                             @endforeach
                                                         </ul>
@@ -3415,25 +3368,32 @@
                                                     @endif
                                                 @endforeach
                                             @elseif (!empty($scCtrSvcsRaw))
-                                                <ul class="services services-offered">
+                                                <ul class="services mb-0" style="padding-left: 1.2rem; list-style: none;">
                                                     @foreach ($scCtrSvcsRaw as $svc)
                                                         @if ($svc != 'Other')
                                                             @php $scSvcIsNew = $scCtrSvcIsAdded((string)$svc); @endphp
-                                                            <li style="font-size: 12px; {{ $scSvcIsNew ? 'color: #28a745; font-weight: 600;' : '' }}">
-                                                                {{ $svc }}
-                                                                @if ($scSvcIsNew) <span class="badge bg-success ms-1" style="font-size: 0.65rem;">Added</span> @endif
+                                                            @if ($scSvcIsNew)
+                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
+                                                                <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $svc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                             </li>
+                                                            @else
+                                                            <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
+                                                            @endif
                                                         @endif
                                                     @endforeach
                                                 </ul>
                                             @endif
                                             {{-- Removed Services --}}
                                             @if (!empty($scCtrRemovedSvcs))
-                                            <div class="mt-2 p-2" style="background: #fff3cd; border-radius: 6px; border: 1px solid #ffc107;">
-                                                <strong style="font-size: 12px; color: #856404;"><i class="fas fa-exclamation-triangle me-1"></i>Removed from Original Bid:</strong>
-                                                <ul class="services" style="margin-top: 4px;">
+                                            <div class="mb-3 mt-2 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
+                                                <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
+                                                    <i class="fa fa-minus-circle me-1"></i>Removed Services
+                                                </div>
+                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
                                                     @foreach ($scCtrRemovedSvcs as $svc)
-                                                    <li style="font-size: 12px; color: #856404;">{{ $svc }}</li>
+                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
+                                                        <i class="fa fa-times-circle me-1"></i>{{ $svc }}
+                                                    </li>
                                                     @endforeach
                                                 </ul>
                                             </div>
@@ -3441,55 +3401,73 @@
                                         </div>
                                         @endif
 
-                                        {{-- Counter Actions --}}
-                                        {{-- Show notice + buttons when this counter record is pending (status=1 normalized to '0') --}}
-                                        @if ($scCounterState === '0' && $scIsCounterFromOwner)
-                                        {{-- Owner submitted this counter; showing to both parties --}}
-                                        <div class="w-100 p-2 text-center mt-3" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                            <i class="fa fa-exchange-alt me-1"></i>
-                                            @if ($scIsOwner)
-                                                You have submitted a counter offer for this bid.
-                                            @else
-                                                {{ trim($scOwnerFirst . ' ' . $scOwnerLast) }} has submitted a counter offer.
-                                            @endif
-                                        </div>
-                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                            <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
-                                               class="btn btn-warning btn-sm text-dark">
-                                                <i class="fa fa-eye me-1"></i>View Counter Terms
-                                            </a>
-                                            @if ($scIsOwner)
-                                            <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}"
-                                               class="btn btn-outline-secondary btn-sm">
-                                                <i class="fa fa-edit me-1"></i>Edit Counter Terms
-                                            </a>
-                                            @endif
-                                        </div>
-                                        @elseif ($scCounterState === '0' && $scIsCounterFromAgent)
-                                        {{-- Agent submitted this counter-back; showing notice --}}
-                                        <div class="w-100 p-2 text-center mt-3" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                            <i class="fa fa-exchange-alt me-1"></i>
-                                            @if ($scIsOwner)
-                                                {{ trim($scCreatorFirst . ' ' . $scCreatorLast) }} has submitted a counter-back. Please review and respond.
-                                            @else
-                                                You have submitted a counter-back. Awaiting seller response.
-                                            @endif
-                                        </div>
-                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                            <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
-                                               class="btn btn-warning btn-sm text-dark">
-                                                <i class="fa fa-eye me-1"></i>View Counter Terms
-                                            </a>
+                                        {{-- Counter action banner + buttons (shown when recipient can respond) --}}
+                                        @if ($scShowCounterActions)
+                                        <div class="mt-3 pt-3 border-top">
+                                            <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                <i class="fa fa-exchange-alt me-1"></i>
+                                                @if ($scIsCounterFromOwner)
+                                                    {{ trim($scOwnerFirst . ' ' . $scOwnerLast) }} has submitted a counter offer.
+                                                @else
+                                                    {{ trim($scAgentFirst . ' ' . $scAgentLast) }} has submitted a counter offer.
+                                                @endif
+                                            </div>
+                                            <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
+                                                <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                </a>
+                                                @if ($scIsOwner)
+                                                <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                </a>
+                                                @endif
+                                            </div>
                                         </div>
                                         @endif
+
+                                        {{-- Counter footer status --}}
+                                        <div class="mt-3 pt-3 border-top">
+                                            @if ($scCounterState === 'accepted')
+                                            @if (Auth::id() == $scActorUserId)
+                                            <div class="alert alert-success mb-0 py-1 small">
+                                                ✅ This counter bid has been accepted.
+                                            </div>
+                                            @else
+                                            <div class="alert alert-success mb-0 py-1 small">
+                                                ✅ {{ trim($scActorFirst . ' ' . $scActorLast) }} accepted the counter bid.
+                                            </div>
+                                            @endif
+                                            @elseif ($scCounterState === 'rejected')
+                                            @if (Auth::id() == $scActorUserId)
+                                            <div class="alert alert-danger mb-0 py-1 small">
+                                                ❌ This counter bid has been rejected.
+                                            </div>
+                                            @else
+                                            <div class="alert alert-danger mb-0 py-1 alert-font">
+                                                ❌ {{ trim($scActorFirst . ' ' . $scActorLast) }} rejected the counter bid.
+                                            </div>
+                                            @endif
+                                            @elseif ($scCounterState === '0')
+                                            @if ($counterBid->user_id == Auth::id())
+                                            <div class="alert alert-secondary mb-0 py-1 small">
+                                                ⏳ Waiting for response from {{ $scIsCounterFromOwner ? trim($scAgentFirst . ' ' . $scAgentLast) : trim($scOwnerFirst . ' ' . $scOwnerLast) }}...
+                                            </div>
+                                            @else
+                                            <div class="alert alert-light mb-0 py-1 small" style="font-size:13px;">
+                                                ⏳ Counter bid from {{ trim($scCreatorFirst . ' ' . $scCreatorLast) }} is pending.
+                                            </div>
+                                            @endif
+                                            @endif
+                                        </div>
                                     </div>
                                     @endforeach
                                 </div>
                             </div>
                         </div>
                         @elseif (!$showSellerCounterBids && $sellerCounterBids->count() > 0)
-                        <div class="mt-3 p-2" style="background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6;">
-                            <small class="text-muted"><i class="fa fa-lock me-1"></i>Counter offer history is private and only visible to the listing owner and the bidding agent.</small>
+                        <div class="alert alert-info mt-3 p-2 small">
+                            <i class="fa fa-lock"></i> <strong>Private Counter Bids:</strong>
+                            Counter bidding history exists but is only visible to the listing owner and the bidding agent.
                         </div>
                         @endif
                         {{-- ===== END INLINE COUNTER BIDDING HISTORY ===== --}}
@@ -4938,11 +4916,17 @@
                                             @endif
                                         </div>
 
-                                        {{-- ── Pending state: agent viewing their own bid ── --}}
-                                        @elseif ($state === '0' && !$isOwnerRow && data_get($bid, 'user_id') == Auth::id())
-                                        <div class="alert alert-secondary w-100 mb-0 py-1 small text-center">
-                                            <i class="fa fa-eye me-2"></i> <strong>Your Private Terms:</strong> Waiting for a response from {{ trim($ownerFirst . ' ' . $ownerLast) }}.
+                                        {{-- ── Pending state ── --}}
+                                        @elseif ($state === '0')
+                                        @if (data_get($bid, 'user_id') == Auth::id())
+                                        <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
+                                            ⏳ Waiting for a response from {{ trim($ownerFirst . ' ' . $ownerLast) }}...
                                         </div>
+                                        @else
+                                        <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">
+                                            ⏳ Bid from {{ trim($agentFirst . ' ' . $agentLast) }} is pending.
+                                        </div>
+                                        @endif
                                         @endif
 
                                         {{-- ── Close button ── --}}
