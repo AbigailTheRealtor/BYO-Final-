@@ -32,141 +32,207 @@
 {{-- Hero --}}
 <div class="faq-hero">
     <div class="container">
-        <h1>We're here to help.</h1>
-        <p>BidYourAgent provides a transparent approach to hiring real estate agents. Find answers below, or reach out at <a href="mailto:admin@bidyouragent.com" class="text-white fw-semibold">admin@bidyouragent.com</a>.</p>
-        <a href="{{ route('register') }}"><button class="btn" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 28px;border-radius:6px;">Hire Agent — It's Free</button></a>
+        <h1>Frequently Asked Questions</h1>
+        <p>Find answers about how BidYourAgent works, who it's for, and how to get started. Still have questions? Reach us at <a href="mailto:admin@bidyouragent.com" class="text-white fw-semibold">admin@bidyouragent.com</a>.</p>
+        <a href="{{ route('register') }}"><button class="btn" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 28px;border-radius:6px;">Get Started</button></a>
     </div>
 </div>
 
 <div class="container py-5">
-    {{-- General --}}
-    <div class="faq-section-title">General</div>
-    <div class="accordion" id="faqGeneral">
+
+    {{-- How It Works --}}
+    <div class="faq-section-title">How It Works</div>
+    <div class="accordion" id="faqHowItWorks">
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq1" aria-expanded="true">
-                    Who can use BidYourAgent?
+                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fh1" aria-expanded="true">
+                    What is BidYourAgent?
                 </button>
             </div>
-            <div id="fq1" class="accordion-collapse collapse show" data-bs-parent="#faqGeneral">
-                <div class="accordion-body text-muted">Any licensed Realtor, Seller, Buyer, Landlord, or Tenant in Florida. Sellers, Buyers, Landlords, and Tenants post listings for free. Real estate agents bid on those listings to be hired.</div>
+            <div id="fh1" class="accordion-collapse collapse show" data-bs-parent="#faqHowItWorks">
+                <div class="accordion-body text-muted">BidYourAgent is a competitive agent-hiring marketplace. Sellers, Buyers, Landlords, and Tenants post a listing for free, and licensed real estate agents submit bids to be hired. Clients compare commissions, services, and presentations — then hire the agent who best fits their needs. All real estate services are handled by the licensed professional you select.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq2">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fh2">
+                    How does the hiring process work?
+                </button>
+            </div>
+            <div id="fh2" class="accordion-collapse collapse" data-bs-parent="#faqHowItWorks">
+                <div class="accordion-body text-muted">Post your listing for free — describe your property or buying criteria, your timeline, and the services you expect. Licensed agents then submit transparent bids that include their commission, marketing strategy, Buyer's Rebate offer, video presentation, and more. You compare bids side by side, accept, counter, or decline, and hire the best fit. With a traditional listing you can hire at any time; with an auction listing you select at the end of the auction period or whenever an agent meets your Hire Now Terms.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fh3">
                     Is BidYourAgent free for clients?
                 </button>
             </div>
-            <div id="fq2" class="accordion-collapse collapse" data-bs-parent="#faqGeneral">
-                <div class="accordion-body text-muted">Yes. Posting a listing as a Seller, Buyer, Landlord, or Tenant is completely free. BidYourAgent receives a referral fee from the hired agent upon closing — no upfront cost to you.</div>
+            <div id="fh3" class="accordion-collapse collapse" data-bs-parent="#faqHowItWorks">
+                <div class="accordion-body text-muted">Yes. Posting a listing as a Seller, Buyer, Landlord, or Tenant is completely free. BidYourAgent receives a referral fee from the agent you hire at closing — no upfront cost to you.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq3">
-                    Can I use the services of a real estate agent to assist me as a Buyer?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fh4">
+                    Can I invite a specific agent to bid?
                 </button>
             </div>
-            <div id="fq3" class="accordion-collapse collapse" data-bs-parent="#faqGeneral">
-                <div class="accordion-body text-muted">Yes. Buyers can use the agent they choose. If a Buyer is not being represented and would like to be, we can refer a Buyer's agent to represent them at no cost to the Buyer.</div>
-            </div>
-        </div>
-        <div class="accordion-item">
-            <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq4">
-                    Can I use the services of a real estate agent to assist me as a Seller?
-                </button>
-            </div>
-            <div id="fq4" class="accordion-collapse collapse" data-bs-parent="#faqGeneral">
-                <div class="accordion-body text-muted">Yes. We suggest using a real estate agent to ensure a successful auction on our platform. Your property will be professionally marketed and priced by a seasoned agent — critical to the auction's success.</div>
+            <div id="fh4" class="accordion-collapse collapse" data-bs-parent="#faqHowItWorks">
+                <div class="accordion-body text-muted">Yes. When creating your listing, you can enter a preferred agent's contact information. We'll notify them directly so they can submit a bid. You can also share your listing's QR code or link with any agent you choose.</div>
             </div>
         </div>
     </div>
 
-    {{-- Bidding --}}
-    <div class="faq-section-title">Bidding & Registration</div>
-    <div class="accordion" id="faqBidding">
+    {{-- Who It's For --}}
+    <div class="faq-section-title">Who It's For</div>
+    <div class="accordion" id="faqWhoItsFor">
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fb1">
-                    How do I register to bid?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fw1">
+                    Who can use BidYourAgent as a client?
                 </button>
             </div>
-            <div id="fb1" class="accordion-collapse collapse" data-bs-parent="#faqBidding">
-                <div class="accordion-body text-muted">Create an account under the "Register" tab and accept the Terms and Conditions. Buyers and Buyer's agents must also send proof of funds or a pre-approval letter and a valid ID to the Seller or Seller's agent before bidding, or their bid may be considered null and void.</div>
+            <div id="fw1" class="accordion-collapse collapse" data-bs-parent="#faqWhoItsFor">
+                <div class="accordion-body text-muted">BidYourAgent is built for Sellers, Buyers, Landlords, and Tenants in the real estate market. If you need a real estate agent to represent you in a sale, purchase, or rental transaction and you don't yet have one, you can post a listing for free and let agents compete to earn your business.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fb2">
-                    What do I need to provide to bid?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fw2">
+                    What property types are supported?
                 </button>
             </div>
-            <div id="fb2" class="accordion-collapse collapse" data-bs-parent="#faqBidding">
-                <div class="accordion-body text-muted">Before bidding on a property, Buyers and Buyer's agents must send their proof of funds or pre-approval letter and a valid ID to the Seller or Seller's agent, or the bid may be considered null and void.</div>
+            <div id="fw2" class="accordion-collapse collapse" data-bs-parent="#faqWhoItsFor">
+                <div class="accordion-body text-muted">For sale-side listings: Residential, Income, Commercial, Business Opportunity, and Vacant Land. For rental-side listings: Residential and Commercial. Agents specialize by property type, so your listing reaches the most relevant agents.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fb3">
-                    Do I need a sales contract before the auction?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fw3">
+                    Who can use BidYourAgent as an agent?
                 </button>
             </div>
-            <div id="fb3" class="accordion-collapse collapse" data-bs-parent="#faqBidding">
-                <div class="accordion-body text-muted">No. The Seller's Agent will provide the winning bid with an "AS IS" contract, all disclosures, and addendums. If the Seller is not represented by an agent, the Buyer's agent provides the documents. If no agents are involved, email admin@bidyouragent.com to request the documents. The Buyer must sign and return the contract within 48 hours or the winning offer may be considered null and void.</div>
+            <div id="fw3" class="accordion-collapse collapse" data-bs-parent="#faqWhoItsFor">
+                <div class="accordion-body text-muted">Any licensed real estate agent can register and bid on open client listings. Agents compete by submitting detailed bids that include their commission, marketing strategy, services, and video presentation. There is no upfront cost — agents pay a referral fee at closing only when they win and close a deal.</div>
             </div>
         </div>
     </div>
 
-    {{-- Fees --}}
-    <div class="faq-section-title">Fees & Premiums</div>
-    <div class="accordion" id="faqFees">
+    {{-- How Agents Bid --}}
+    <div class="faq-section-title">How Agents Bid</div>
+    <div class="accordion" id="faqAgentsBid">
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff1">
-                    What is a Buyer's Premium?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fab1">
+                    What does an agent's bid include?
                 </button>
             </div>
-            <div id="ff1" class="accordion-collapse collapse" data-bs-parent="#faqFees">
-                <div class="accordion-body text-muted">The Buyer's Premium is a charge to the Buyer in addition to the final sale price. It is added to the winning offer to arrive at the final contract price and goes to the Seller at closing. The amount varies per auction — check the Terms and Conditions of each listing.</div>
+            <div id="fab1" class="accordion-collapse collapse" data-bs-parent="#faqAgentsBid">
+                <div class="accordion-body text-muted">Each agent bid includes contact information, offered commission, offered Buyer's Rebate (if applicable), website, review link, social media profiles, "About Me" section, listing or buyer's agreement timeframe, why they should be hired, marketing strategy, services provided, a video listing or buyer's presentation, promotional materials, and a business card. For Seller listings, agents may also include a property value analysis.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff2">
-                    When is the Buyer's Premium due?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fab2">
+                    What is a Buyer's Rebate?
                 </button>
             </div>
-            <div id="ff2" class="accordion-collapse collapse" data-bs-parent="#faqFees">
-                <div class="accordion-body text-muted">The fee is only collected at closing. If the real estate contract falls through, the Buyer must promptly sign the cancellation agreement and send it to the Seller or Seller's agent.</div>
+            <div id="fab2" class="accordion-collapse collapse" data-bs-parent="#faqAgentsBid">
+                <div class="accordion-body text-muted">Agents can offer up to a 0.5% rebate of their commission back to the Buyer at closing. This credit can be applied toward the Buyer's closing costs or used to buy down their interest rate. For Sellers, hiring an agent who offers this rebate can make your property more attractive to potential buyers.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff3">
-                    How much does it cost to list on BidYourAgent?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fab3">
+                    Can I accept, counter, or decline any bid?
                 </button>
             </div>
-            <div id="ff3" class="accordion-collapse collapse" data-bs-parent="#faqFees">
-                <div class="accordion-body text-muted">Listing is completely free. At closing, BidYourAgent LLC collects a 1% success fee. The Seller determines who pays it. If the Seller is represented by an agent and the Seller or Buyer pay the 1% success fee, BidYourAgent splits 50% of the fee with the Seller's agent. There is no charge if the property does not close.</div>
+            <div id="fab3" class="accordion-collapse collapse" data-bs-parent="#faqAgentsBid">
+                <div class="accordion-body text-muted">Yes. You are in full control. Accept, counter, or decline any agent bid at any time. You can also negotiate directly with agents through the platform before making a final hiring decision.</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Match Score --}}
+    <div class="faq-section-title">Match Score</div>
+    <div class="accordion" id="faqMatchScore">
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fms1">
+                    What is Match Score?
+                </button>
+            </div>
+            <div id="fms1" class="accordion-collapse collapse" data-bs-parent="#faqMatchScore">
+                <div class="accordion-body text-muted">Match Score is BidYourAgent's ranking system that surfaces agents whose specialization best aligns with your listing. When you post a Residential sale listing, agents who specialize in Residential properties are ranked higher. The same applies to Income, Commercial, Business Opportunity, and rental listings. Match Score helps you find the most relevant, experienced agents for your specific needs.</div>
             </div>
         </div>
         <div class="accordion-item">
             <div class="accordion-header">
-                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff4">
-                    How do I list a property on BidYourAgent?
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fms2">
+                    Does a higher Match Score mean a better agent?
                 </button>
             </div>
-            <div id="ff4" class="accordion-collapse collapse" data-bs-parent="#faqFees">
-                <div class="accordion-body text-muted">Click "Hire Agent" on the homepage. You'll be asked to create an account and accept the Terms of Service. Sellers must sign an addendum agreeing to pay the 1% Success Fee at closing before listing. Sellers can add this fee to the auction and have the Buyer credit it at closing if they choose.</div>
+            <div id="fms2" class="accordion-collapse collapse" data-bs-parent="#faqMatchScore">
+                <div class="accordion-body text-muted">Match Score reflects specialization alignment, not overall quality. It's one signal among many. We encourage you to review each agent's full bid — their commission, experience, marketing strategy, and presentation — before making a hiring decision.</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Referrals --}}
+    <div class="faq-section-title">Referrals</div>
+    <div class="accordion" id="faqReferrals">
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fr1">
+                    How does the referral system work for agents?
+                </button>
+            </div>
+            <div id="fr1" class="accordion-collapse collapse" data-bs-parent="#faqReferrals">
+                <div class="accordion-body text-muted">Agents can refer clients to other agents on the platform and earn a referral fee when the transaction closes. Agents can also register specifically as referral agents — connecting clients with the right representation and earning income without managing the full transaction themselves.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fr2">
+                    Does BidYourAgent receive a referral fee?
+                </button>
+            </div>
+            <div id="fr2" class="accordion-collapse collapse" data-bs-parent="#faqReferrals">
+                <div class="accordion-body text-muted">Yes. BidYourAgent receives a referral fee from the hired agent at closing. This fee is paid by the agent — not the client. There is no upfront cost and no fee if the transaction does not close.</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Licensed Professionals --}}
+    <div class="faq-section-title">Licensed Professionals</div>
+    <div class="accordion" id="faqLicensed">
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fl1">
+                    Do I still need a licensed agent for my transaction?
+                </button>
+            </div>
+            <div id="fl1" class="accordion-collapse collapse" data-bs-parent="#faqLicensed">
+                <div class="accordion-body text-muted">Yes. BidYourAgent is a hiring marketplace — all actual real estate services, including listing, showing, negotiating, and closing, are performed by the licensed real estate professional you hire through the platform. BidYourAgent does not provide real estate services and is not a licensed brokerage.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fl2">
+                    Are all agents on the platform licensed?
+                </button>
+            </div>
+            <div id="fl2" class="accordion-collapse collapse" data-bs-parent="#faqLicensed">
+                <div class="accordion-body text-muted">Agents are required to be licensed real estate professionals to bid on client listings. We recommend reviewing each agent's credentials, profile, and reviews before making a hiring decision. If you have concerns about a specific agent, contact us at <a href="mailto:admin@bidyouragent.com">admin@bidyouragent.com</a>.</div>
             </div>
         </div>
     </div>
 
     <div class="text-center mt-5">
         <p class="text-muted">Have more questions? Email us at <a href="mailto:admin@bidyouragent.com">admin@bidyouragent.com</a></p>
-        <a href="{{ route('register') }}" class="btn btn-primary px-4">Get Started — Hire Agent</a>
+        <a href="{{ route('register') }}" class="btn btn-primary px-4">Hire Agent</a>
     </div>
 </div>
 @endsection

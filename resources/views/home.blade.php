@@ -161,26 +161,26 @@
 {{-- ===== HERO ===== --}}
 <section class="bya-hero">
     <div class="container">
-        <h1>Hire the Right Agent.<br>Agents Compete for Your Business.</h1>
+        <h1>Hire the Right Agent.<br>On Your Terms.</h1>
         <p>BidYourAgent lets Sellers, Buyers, Landlords, and Tenants post their needs — agents bid transparently to be hired. Compare commissions, services, and presentations before you decide.</p>
         <div>
             @if(auth()->check())
                 @php $ut = auth()->user()->user_type; @endphp
                 @if($ut === 'seller')
-                    <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn-hero-primary btn">Find Your Agent</button></a>
+                    <a href="{{ route('sellerAgentHireAuction') }}"><button class="btn-hero-primary btn">Hire Agent</button></a>
                 @elseif($ut === 'buyer')
-                    <a href="{{ route('buyer.add-auction') }}"><button class="btn-hero-primary btn">Find Your Agent</button></a>
+                    <a href="{{ route('buyer.add-auction') }}"><button class="btn-hero-primary btn">Hire Agent</button></a>
                 @elseif($ut === 'landlord')
-                    <a href="{{ route('landlord.hire.agent.auction') }}"><button class="btn-hero-primary btn">Find Your Agent</button></a>
+                    <a href="{{ route('landlord.hire.agent.auction') }}"><button class="btn-hero-primary btn">Hire Agent</button></a>
                 @elseif($ut === 'tenant')
-                    <a href="{{ route('hire.agent.auction', ['user_type'=>'tenant']) }}"><button class="btn-hero-primary btn">Find Your Agent</button></a>
+                    <a href="{{ route('hire.agent.auction', ['user_type'=>'tenant']) }}"><button class="btn-hero-primary btn">Hire Agent</button></a>
                 @else
                     <a href="{{ route('searchListing') }}"><button class="btn-hero-primary btn">Browse Listings</button></a>
                 @endif
             @else
-                <a href="{{ route('register') }}"><button class="btn-hero-primary btn">Find Your Agent</button></a>
+                <a href="{{ route('register') }}"><button class="btn-hero-primary btn">Get Started</button></a>
             @endif
-            <a href="{{ route('sellerWorksAgent') }}"><button class="btn-hero-secondary btn">Get More Clients</button></a>
+            <a href="{{ route('sellerWorksAgent') }}"><button class="btn-hero-secondary btn">Join as Agent</button></a>
         </div>
     </div>
 </section>
@@ -269,7 +269,7 @@
                 </div>
                 <div class="bya-benefit-item">
                     <i class="fa fa-check-circle bi-check"></i>
-                    <div><strong>Match Score.</strong> Our platform matches your expertise — residential, income, or commercial — to the right listing.</div>
+                    <div><strong>Match Score.</strong> Our platform matches your expertise — Residential, Income, Commercial, Business Opportunity, or Vacant Land — to the right listing.</div>
                 </div>
                 <div class="bya-benefit-item">
                     <i class="fa fa-check-circle bi-check"></i>
@@ -284,7 +284,7 @@
                     <div><strong>Video Presentations.</strong> Upload listing presentations, marketing materials, and business cards with every bid.</div>
                 </div>
                 <div class="mt-4">
-                    <a href="{{ route('sellerWorksAgent') }}" class="btn btn-primary px-4">See Agent Details</a>
+                    <a href="{{ route('sellerWorksAgent') }}" class="btn btn-primary px-4">Join as Agent</a>
                 </div>
             </div>
             <div class="col-md-6 text-center">
@@ -295,12 +295,12 @@
     </div>
 </section>
 
-{{-- ===== MATCH SCORE CALLOUT ===== --}}
+{{-- ===== MATCH SCORE ===== --}}
 <section class="bya-match">
     <div class="container text-center">
-        <h2>Transparent, Competitive Agent Hiring</h2>
+        <h2>Match Score: Find Your Best-Fit Agent</h2>
         <p class="mt-3 mb-4" style="max-width:640px;margin-left:auto;margin-right:auto;opacity:.9;">
-            Unlike traditional agent referrals, BidYourAgent shows you every agent's bid side by side — commission, rebate, marketing strategy, and more. You compare and decide with full information, not guesswork.
+            BidYourAgent's Match Score ranks agents by how well their specialization — Residential, Income, Commercial, Business Opportunity, or Vacant Land — aligns with your specific listing. You see every bid side by side, so you compare commissions, rebates, marketing strategies, and more. No guesswork, full information.
         </p>
         <div class="row g-4 mt-2">
             <div class="col-sm-4">
@@ -325,12 +325,12 @@
     </div>
 </section>
 
-{{-- ===== REFERRAL & HIRE ME LINK BENEFITS ===== --}}
+{{-- ===== AGENT TOOLS ===== --}}
 <section class="bya-referral">
     <div class="container">
         <div class="text-center mb-4">
-            <h2 class="bya-section-title">Referral & Hire Me Link Benefits</h2>
-            <p class="bya-section-sub">Agents grow their pipeline. Clients always know how to find you.</p>
+            <h2 class="bya-section-title">Agent Tools</h2>
+            <p class="bya-section-sub">Tools that help agents grow their pipeline and win more clients.</p>
         </div>
         <div class="row g-4">
             <div class="col-md-4">
@@ -361,7 +361,7 @@
         <h2>Ready to Hire the Right Agent?</h2>
         <p>Post your listing for free. Agents compete. You choose the best fit.</p>
         @if(!auth()->check())
-            <a href="{{ route('register') }}"><button class="btn-cta btn">Get Started — It's Free</button></a>
+            <a href="{{ route('register') }}"><button class="btn-cta btn">Get Started</button></a>
         @else
             <a href="{{ route('searchListing') }}"><button class="btn-cta btn">Browse Listings</button></a>
         @endif

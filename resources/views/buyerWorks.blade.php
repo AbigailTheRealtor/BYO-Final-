@@ -23,7 +23,7 @@
                 @if(auth()->check() && auth()->user()->user_type === 'buyer')
                     <a href="{{ route('buyer.add-auction') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Hire Agent</a>
                 @elseif(!auth()->check())
-                    <a href="{{ route('register') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Get Started Free</a>
+                    <a href="{{ route('register') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Get Started</a>
                 @endif
             </div>
             <div class="col-md-6 text-center">
@@ -40,15 +40,15 @@
 
         <div class="step-item">
             <div class="step-num">1</div>
-            <div><strong>Post your buying criteria.</strong> Tell agents what you're looking for: cities, counties, states of interest, property type, desired sales provisions, preferred property condition, budget, timeframe, number of bedrooms and bathrooms, desired Buyer's Rebate (up to 0.5% of the agent's commission), buyer's agreement timeframe, offered financing/currency, pre-approval status, and services you expect. You can also invite a preferred agent directly.</div>
+            <div><strong>Post your buying criteria.</strong> Tell agents what you're looking for: cities, counties, states of interest, property type (Residential, Income, Commercial, Business Opportunity), preferred property condition, budget, timeframe, number of bedrooms and bathrooms, desired Buyer's Rebate (up to 0.5% of the agent's commission), buyer's agreement timeframe, offered financing or pre-approval status, and the services you expect from your agent. You can also invite a preferred agent directly.</div>
         </div>
         <div class="step-item">
             <div class="step-num">2</div>
-            <div><strong>Agents bid to represent you.</strong> Each bid includes contact information, offered Buyer's Rebate (if applicable), website, review link, social media, "About Me", buyer's agreement timeframe, why they should be hired, what sets them apart, marketing strategy, services provided, a video buyer's presentation, promotional materials, and a business card.</div>
+            <div><strong>Agents compete to represent you.</strong> Each agent bid includes their contact information, offered Buyer's Rebate (if applicable), website, review link, social media profiles, "About Me" section, buyer's agreement timeframe, why they should be hired, what sets them apart, marketing strategy, services provided, a video buyer's presentation, promotional materials, and a business card.</div>
         </div>
         <div class="step-item">
             <div class="step-num">3</div>
-            <div><strong>Earn a Buyer's Rebate.</strong> Agents on BidYourAgent can offer up to a 0.5% rebate of their commission back to you at closing. Use it toward closing costs or to buy down your interest rate.</div>
+            <div><strong>Earn a Buyer's Rebate.</strong> Agents on BidYourAgent can offer up to a 0.5% rebate of their commission back to you at closing. Use it toward your closing costs or to buy down your interest rate — a real dollar benefit at no extra cost to you.</div>
         </div>
         <div class="step-item">
             <div class="step-num">4</div>
@@ -60,7 +60,7 @@
         </div>
         <div class="step-item">
             <div class="step-num">6</div>
-            <div><strong>Compare and hire.</strong> Once agents bid, you'll receive email notifications. Review each bid, then accept, reject, or counter at any time (traditional listing) or wait for the auction to end (auction listing). Hire the agent who best matches your needs.</div>
+            <div><strong>Compare and hire.</strong> Once agents bid, you'll receive email notifications. Review each bid, then accept, counter, or decline at any time. With a traditional listing you can hire whenever you're ready; with an auction listing you select at the end of the auction period or whenever an agent meets your Hire Now Terms.</div>
         </div>
         <div class="step-item">
             <div class="step-num">7</div>
@@ -77,7 +77,7 @@
 <section class="works-section" style="background:#f8f9fa;padding-top:40px;padding-bottom:50px;">
     <div class="container">
         <h2 class="fw-bold mb-2">Wide Range of Properties Supported</h2>
-        <p class="text-muted mb-4">Agents on our platform cover Residential, Income, and Commercial properties, including:</p>
+        <p class="text-muted mb-4">Agents on our platform cover Residential, Income, Commercial, Business Opportunity, and Vacant Land properties, including:</p>
         <div class="row g-3">
             <div class="col-md-4">
                 <ul class="list-unstyled text-muted small">
@@ -99,19 +99,47 @@
             </div>
             <div class="col-md-4">
                 <ul class="list-unstyled text-muted small">
+                    <li><i class="fa fa-check text-success me-2"></i>Business opportunities</li>
+                    <li><i class="fa fa-check text-success me-2"></i>Vacant land</li>
                     <li><i class="fa fa-check text-success me-2"></i>Pre-construction &amp; new construction</li>
                     <li><i class="fa fa-check text-success me-2"></i>REO/bank-owned properties</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Assignment (wholesale) contracts</li>
                     <li><i class="fa fa-check text-success me-2"></i>Short sales &amp; probate properties</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Dock-rackominiums &amp; garage condos</li>
                 </ul>
             </div>
         </div>
     </div>
 </section>
 
-{{-- Images --}}
+{{-- Why Use BidYourAgent --}}
 <section class="works-section">
+    <div class="container">
+        <h2 class="fw-bold mb-2">Why Use BidYourAgent?</h2>
+        <p class="text-muted mb-4">Stop guessing which agent is right for you. BidYourAgent puts every agent's bid in front of you — side by side — so you hire with confidence.</p>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="why-card">
+                    <h5 class="fw-bold"><i class="fa fa-eye text-primary me-2"></i>Full Transparency</h5>
+                    <p class="text-muted small mt-2 mb-0">Every agent bid is visible — commission, rebate, marketing strategy, and services. Compare side by side and make an informed decision.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="why-card">
+                    <h5 class="fw-bold"><i class="fa fa-handshake-o text-primary me-2"></i>Your Interests First</h5>
+                    <p class="text-muted small mt-2 mb-0">A dedicated Buyer's agent represents you — not the Seller. Hire an agent whose goals align with yours and who is competing to earn your business.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="why-card">
+                    <h5 class="fw-bold"><i class="fa fa-dollar text-primary me-2"></i>Free for Buyers</h5>
+                    <p class="text-muted small mt-2 mb-0">Posting is completely free. The Seller pays real estate commissions — you just pick the best agent for your needs and potentially earn a rebate at closing.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- Images --}}
+<section class="works-section" style="background:#f8f9fa;padding-top:30px;padding-bottom:40px;">
     <div class="container">
         <div class="text-center mb-4">
             <img class="img-fluid" src="{{ asset('assets/pictures/sellerWork/buyerOption.png') }}" alt="Buyer options" />

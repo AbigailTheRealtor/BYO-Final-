@@ -18,9 +18,9 @@
         <h1>How Buyer Listings Work</h1>
         <p class="mt-3">Everything you need to know about creating a listing and hiring a Buyer's agent on BidYourAgent.</p>
         @if(!auth()->check())
-            <a href="{{ route('register') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Get Started Free</a>
+            <a href="{{ route('register') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Get Started</a>
         @elseif(auth()->user()->user_type === 'buyer')
-            <a href="{{ route('buyer.add-auction') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Post a Listing</a>
+            <a href="{{ route('buyer.add-auction') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Create Listing</a>
         @endif
     </div>
 </div>
@@ -30,7 +30,7 @@
     <div class="container">
         <div class="step-item">
             <div class="step-num">1</div>
-            <div><strong>Information Provided by Buyers:</strong> To hire an agent, Buyers provide information on the cities, counties, and states of interest, property types they prefer, desired sales provisions, preferred property condition, budget, timeframe for purchasing, number of bedrooms (for residential properties) and bathrooms required, desired Buyer's Rebate (up to half a percent of the agent's commission), buyer's agreement timeframe, offered financing/currency, whether they are pre-approved for a loan, a cash buyer, or need lender recommendations, and services they request from their agent. Additionally, Buyers may request that their preferred agents be notified.</div>
+            <div><strong>Information Provided by Buyers:</strong> To hire an agent, Buyers provide details on the cities, counties, and states of interest; property type (Residential, Income, Commercial, Business Opportunity); desired sales provisions; preferred property condition; budget; timeframe for purchasing; number of bedrooms and bathrooms required; desired Buyer's Rebate (up to 0.5% of the agent's commission); buyer's agreement timeframe; offered financing or pre-approval status; and the services they request from their agent. Buyers may also invite a preferred agent directly from the listing form.</div>
         </div>
         <div class="step-item">
             <div class="step-num">2</div>
@@ -38,15 +38,15 @@
         </div>
         <div class="step-item">
             <div class="step-num">3</div>
-            <div><strong>Buyer Rebate:</strong> By utilizing this platform, Buyers can hire agents who offer a 0.5% rebate of a buyer's closing costs. This rebate will be credited to the Buyer at closing, and they can use it to help with their closing costs or to buy down their interest rate.</div>
+            <div><strong>Buyer's Rebate:</strong> By using this platform, Buyers can hire agents who offer up to a 0.5% rebate of the agent's commission. This rebate is credited to the Buyer at closing and can be used toward closing costs or to buy down their interest rate.</div>
         </div>
         <div class="step-item">
             <div class="step-num">4</div>
-            <div><strong>Auction Link:</strong> Buyers can enter their preferred agent's contact information when creating the listing, and we will notify that agent so they can bid to be the Buyer's agent. Additionally, the Buyer can share the auction link or QR code through various outlets, providing more opportunities for agents to compete to be their hired agent.</div>
+            <div><strong>Invite a Preferred Agent:</strong> Buyers can enter their preferred agent's contact information when creating the listing, and we will notify that agent so they can bid to be hired. Additionally, the Buyer can share the listing link or QR code with any other agents they want to hear from.</div>
         </div>
         <div class="step-item">
             <div class="step-num">5</div>
-            <div><strong>No Existing Agent:</strong> This service is exclusively for Buyers who are not currently working with an agent.</div>
+            <div><strong>No Existing Agent:</strong> This service is exclusively for Buyers who are not currently working with a real estate agent.</div>
         </div>
         <div class="step-item">
             <div class="step-num">6</div>
@@ -54,35 +54,35 @@
         </div>
         <div class="step-item">
             <div class="step-num">7</div>
-            <div><strong>Types of Agents:</strong> You can hire Residential, Income, and Commercial agents for this platform. Simply select your property type, and we will match you with an agent who specializes in your property type.</div>
+            <div><strong>Match Score:</strong> BidYourAgent's Match Score ranks agents by how well their specialization aligns with your property type. Simply post your listing with your property type and budget, and the platform surfaces the most relevant agents for your needs.</div>
         </div>
         <div class="step-item">
             <div class="step-num">8</div>
-            <div><strong>Selecting an Agent:</strong> Once an agent places a bid on your listing, you will receive an email notification. You can then log in to your account to review the bid and choose to accept, deny, reject, or counter any offers you receive at any time with a traditional listing. If you choose an auction listing, you will need to wait until the end of the auction to select your agent.</div>
+            <div><strong>Selecting an Agent:</strong> Once an agent bids on your listing, you will receive an email notification. Log in to review the bid and choose to accept, counter, or decline at any time with a traditional listing. If you choose an auction listing, you will wait until the end of the auction period to select your agent — unless an agent meets your Hire Now Terms, which lets you end the process early.</div>
         </div>
         <div class="step-item">
             <div class="step-num">9</div>
-            <div><strong>Special Sale Properties:</strong> We offer a wide range of properties, including regular sales, pre-construction properties, properties that are currently being built, new construction, REO/bank-owned properties, assignment contracts (wholesale properties), short sales, probate properties, and more!</div>
+            <div><strong>Wide Range of Properties:</strong> Agents on our platform cover a wide range of property types, including regular sales, pre-construction, new construction, REO/bank-owned, assignment contracts (wholesale), short sales, probate properties, and more.</div>
         </div>
         <div class="step-item">
             <div class="step-num">10</div>
-            <div><strong>Types of Properties:</strong> Agents on our platform offer Residential, Income, and Commercial properties, including single-family residences, townhouses, villas, condominiums, condo-hotels, half-duplexes, dock-rackominiums, farms, garage condos, manufactured homes, mobile homes, modular homes, duplexes, triplexes, quadplexes, and properties with five or more residential units, as well as agriculture, assembly building, business, properties with five or more commercial units, hotel/motel, industrial, mixed-use, office, restaurant, retail, unimproved land, and warehouse properties.</div>
+            <div><strong>Types of Properties:</strong> Agents on our platform specialize in Residential, Income, Commercial, and Business Opportunity properties, including single-family residences, townhouses, villas, condominiums, condo-hotels, duplexes, triplexes, quadplexes, manufactured homes, mobile homes, modular homes, dock-rackominiums, garage condos, farms, properties with five or more residential units, agriculture, office, industrial, retail, mixed-use, hotel/motel, restaurant, warehouse, and more.</div>
         </div>
         <div class="step-item">
             <div class="step-num">11</div>
-            <div><strong>Type of Listing:</strong> The Seller can choose between an auction (with a timer) or a traditional listing (without a timer). If the Seller opts for an auction, the listing will end at the predetermined time chosen by the Seller, and all offers on this platform will be shown excluding sensitive materials. After the auction ends, the Seller can select the best agent that meets their criteria. The only way an auction can end early is if an agent bids on the Hire Now Terms. On the other hand, if the Seller selects a traditional listing (without a timer), they can choose their agent at any time. Sellers also have the option to show or hide bids with traditional listings. The Seller has the right to accept, counter, or reject any bids, regardless of whether it is an auction or traditional listing.</div>
+            <div><strong>Listing Type:</strong> Buyers can choose between a traditional listing (no timer — hire at any time) or an auction listing (with a set time limit). With a traditional listing, you can select and hire an agent whenever you're ready. With an auction listing, bids are collected over the listing period and you choose the best agent at the end. Either way, you can accept, counter, or decline any bid.</div>
         </div>
         <div class="step-item">
             <div class="step-num">12</div>
-            <div><strong>Hire Now Terms:</strong> The Hire Now Terms refer to specific rebates, terms, and services Buyers offer to agents when bidding on a listing. These terms may include up to a 0.5% Buyer's Rebate, specific contractual conditions, and services requested by the Buyer. If an agent offers the "Hire Now Terms," the Buyer can choose to end an auction early and hire that agent immediately.</div>
+            <div><strong>Hire Now Terms:</strong> When creating a listing, Buyers can set Hire Now Terms — specific rebates, services, or conditions that would prompt them to hire immediately. If an agent meets those terms, the Buyer can end the listing early and hire that agent right away.</div>
         </div>
         <div class="step-item">
             <div class="step-num">13</div>
-            <div><strong>Free Property Value Analysis:</strong> Buyers can request a free property value analysis from the agent they hire for the property they are interested in purchasing.</div>
+            <div><strong>Free Property Value Analysis:</strong> Buyers can request a complimentary property value analysis from the agent they hire for any property they are considering purchasing.</div>
         </div>
         <div class="step-item">
             <div class="step-num">14</div>
-            <div><strong>Price:</strong> The service is free for Buyers. The Seller pays the real estate commission to their listing agent, who then splits the commission with the Buyer's agent. Going directly to the Seller's listing agent doesn't save Buyers money, as that agent is working with both parties. It's important to be represented by a Buyer's agent to keep the Buyer's best interests in mind. BidYourAgent will receive a referral fee from the hired agent at closing.</div>
+            <div><strong>Free for Buyers:</strong> This service is free for Buyers. The Seller pays the real estate commission to their listing agent, who then splits it with the Buyer's agent. Going directly to the Seller's listing agent does not save Buyers money — that agent represents both parties. A dedicated Buyer's agent keeps your best interests front and center. BidYourAgent receives a referral fee from the hired agent at closing.</div>
         </div>
     </div>
 </section>

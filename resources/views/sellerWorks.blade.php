@@ -19,11 +19,11 @@
         <div class="row align-items-center g-4">
             <div class="col-md-6">
                 <h1>How It Works for Sellers</h1>
-                <p class="mt-3"><b>Welcome to BidYourAgent!</b> Connect with top-performing real estate agents who specialize in Residential, Income, and Commercial properties. Agents compete to represent you — you pick the best fit.</p>
+                <p class="mt-3"><b>Welcome to BidYourAgent!</b> Connect with top-performing real estate agents who specialize in Residential, Income, Commercial, Business Opportunity, and Vacant Land properties. Agents compete to represent you — you pick the best fit.</p>
                 @if(auth()->check() && auth()->user()->user_type === 'seller')
                     <a href="{{ route('sellerAgentHireAuction') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Hire Agent</a>
                 @elseif(!auth()->check())
-                    <a href="{{ route('register') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Get Started Free</a>
+                    <a href="{{ route('register') }}" class="btn mt-3" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 24px;border-radius:6px;">Get Started</a>
                 @endif
             </div>
             <div class="col-md-6 text-center">
@@ -56,11 +56,11 @@
         </div>
         <div class="step-item">
             <div class="step-num">5</div>
-            <div><strong>Auction or Traditional listing.</strong> Choose a timed auction or a traditional listing (no timer). With auctions, all bids are visible — accept, reject, or counter at any time, or wait for the auction to end. With traditional listings, control bid visibility and accept, reject, or counter at any time. Include "Hire Now" terms with either option.</div>
+            <div><strong>Traditional or auction listing.</strong> Choose a traditional listing (no timer — hire whenever you're ready) or a timed auction listing. With a traditional listing, control bid visibility and accept, counter, or reject any bid at any time. With an auction listing, bids are collected over a set period and you choose the best agent at the end — or end early when an agent meets your Hire Now Terms. Both listing types support Hire Now Terms.</div>
         </div>
         <div class="step-item">
             <div class="step-num">6</div>
-            <div><strong>Free for Sellers.</strong> BidYourAgent receives a referral fee from the hired agent at closing. By hiring through our platform, sellers can also list their property for free on our sister platform, BidYourAgent.com. <a href="{{ route('sellerDetails') }}">Learn more <i class="fa fa-arrow-right"></i></a></div>
+            <div><strong>Free for Sellers.</strong> BidYourAgent receives a referral fee from the hired agent at closing — no upfront cost to you. <a href="{{ route('sellerDetails') }}">Learn more <i class="fa fa-arrow-right"></i></a></div>
         </div>
     </div>
 </section>
@@ -79,7 +79,7 @@
             <div class="col-md-4">
                 <div class="why-card">
                     <h5 class="fw-bold"><i class="fa fa-handshake-o text-primary me-2"></i>Trust & Fairness</h5>
-                    <p class="text-muted small mt-2 mb-0">BidYourAgent puts every party on the same playing field. Sellers can be confident they are seeing all offers fairly and in a timely manner.</p>
+                    <p class="text-muted small mt-2 mb-0">BidYourAgent puts every party on the same playing field. Sellers can be confident they are seeing all agent bids transparently and in a timely manner.</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -111,64 +111,63 @@
 <section class="works-section" style="background:#f8f9fa;padding-top:40px;padding-bottom:50px;">
     <div class="container">
         <h2 class="fw-bold mb-1">Frequently Asked Questions</h2>
-        <p class="text-muted mb-4">Seller-specific answers about fees, premiums, and the listing process.</p>
-        <p class="text-muted small"><em>Note: The 1% Success fee can be paid by the Buyer if the Seller chooses to have the Buyer credit the Seller at closing. Sellers can also add a "Buyer's Premium" to help cover closing costs — making it easy to get full-service representation without out-of-pocket expense.</em></p>
+        <p class="text-muted mb-4">Seller-specific answers about the agent-hiring process.</p>
 
         <div class="accordion mt-4" id="sellerFAQ">
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf1" aria-expanded="true"><h4 class="mb-0">What is a Success Fee?</h4></button>
+                    <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf1" aria-expanded="true"><h4 class="mb-0">Is BidYourAgent free for Sellers?</h4></button>
                 </div>
                 <div id="sf1" class="accordion-collapse collapse show" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">The success fee is 1% of the purchase price paid to BidYourAgent LLC at closing. It is added to the final sales price if paid by the Buyer, or deducted from the Seller's proceeds if paid by the Seller. If the property contract is canceled, the Seller or Seller's agent must submit a cancellation contract to admin@bidyouragent.com. The Success fee is only charged when the sale closes.</div>
+                    <div class="accordion-body text-muted">Yes. Posting a listing as a Seller is completely free. BidYourAgent receives a referral fee from the agent you hire at closing — no upfront cost to you.</div>
                 </div>
             </div>
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf2"><h4 class="mb-0">What is a Buyer's Premium?</h4></button>
+                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf2"><h4 class="mb-0">How do I post a listing?</h4></button>
                 </div>
                 <div id="sf2" class="accordion-collapse collapse" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">The Buyer's Premium is a charge to the Buyer added on top of the final sales price. It is credited to the Seller at closing and helps offset closing expenses — enabling Sellers to work with a full-service agent without paying full commission. The amount is determined by the Seller. Cancellations require a cancellation contract submitted to admin@bidyouragent.com.</div>
+                    <div class="accordion-body text-muted">Click "Hire Agent" on the homepage. Create an account and accept the Terms of Service. Fill in your property details, timeline, commission preferences, and the services you expect. Your listing goes live and agents begin submitting bids.</div>
                 </div>
             </div>
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf3"><h4 class="mb-0">What is a Seller's Premium?</h4></button>
+                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf3"><h4 class="mb-0">What is a Buyer's Rebate and how does it help me?</h4></button>
                 </div>
                 <div id="sf3" class="accordion-collapse collapse" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">The Seller can optionally include a "Seller's Premium" — a percentage of the purchase price paid by the Seller to the Buyer at closing. This reduces the Buyer's closing costs and makes the property more attractive, particularly useful in a buyer's market or for properties that need work.</div>
+                    <div class="accordion-body text-muted">A Buyer's Rebate is a credit of up to 0.5% of the agent's commission offered back to the Buyer at closing. As a Seller, hiring an agent who offers this rebate can make your property more attractive to buyers — helping it stand out in a competitive market.</div>
                 </div>
             </div>
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf4"><h4 class="mb-0">When are premiums and the success fee due?</h4></button>
+                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf4"><h4 class="mb-0">Can I invite a specific agent to bid?</h4></button>
                 </div>
                 <div id="sf4" class="accordion-collapse collapse" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">All fees are collected at closing only. If the contract falls through, the Seller or Seller's agent must promptly submit a release and cancellation agreement to admin@bidyouragent.com.</div>
+                    <div class="accordion-body text-muted">Yes. When creating your listing, you can enter a preferred agent's contact information. We'll notify them directly so they can submit a bid. You can also share your listing's QR code or link with any agent you choose.</div>
                 </div>
             </div>
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf5"><h4 class="mb-0">How do I list a property?</h4></button>
+                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf5"><h4 class="mb-0">How do I review and select an agent?</h4></button>
                 </div>
                 <div id="sf5" class="accordion-collapse collapse" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">Click "Hire Agent" on the homepage. Create an account and accept the Terms of Service. Sign an addendum agreeing to pay the 1% Success Fee at closing before your listing goes live. Sellers can add this fee to the auction and have the Buyer credit it at closing if they choose.</div>
+                    <div class="accordion-body text-muted">Once agents bid, you'll receive email notifications. Log in to compare bids side by side — commission, marketing strategy, services, and more. Accept, counter, or decline any bid at any time. With a traditional listing you can hire at any time; with an auction listing you can hire at the end of the auction period or whenever an agent matches your Hire Now Terms.</div>
                 </div>
             </div>
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf6"><h4 class="mb-0">How much does it cost to list my property?</h4></button>
+                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf6"><h4 class="mb-0">What property types are supported?</h4></button>
                 </div>
                 <div id="sf6" class="accordion-collapse collapse" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">Listing is completely free. At closing, BidYourAgent LLC receives a 1% success fee — which the Buyer can credit to the Seller to pay the fee. If listed by a Seller's agent, the agent receives half the success fee premium at closing for a successful auction.</div>
+                    <div class="accordion-body text-muted">BidYourAgent supports Residential, Income, Commercial, Business Opportunity, and Vacant Land listings for sale-side clients. Agents specialize by type, so your listing reaches the most relevant agents.</div>
                 </div>
             </div>
             <div class="accordion-item">
                 <div class="accordion-header">
-                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf7"><h4 class="mb-0">Do I need a sales contract ready before the auction?</h4></button>
+                    <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#sf7"><h4 class="mb-0">Do I need to already have an agent to use BidYourAgent?</h4></button>
                 </div>
                 <div id="sf7" class="accordion-collapse collapse" data-bs-parent="#sellerFAQ">
-                    <div class="accordion-body text-muted">No. The Seller's Agent will provide the winning bid with an "AS IS" contract, all disclosures, and addendums. If no agent is involved, email admin@bidyouragent.com to request the documents. The Buyer has 48 hours to sign and submit, or the offer may be considered null and void.</div>
+                    <div class="accordion-body text-muted">No. BidYourAgent is designed for Sellers who do not yet have a listing agent. Post your listing, let agents compete, and hire the best fit. All real estate services are handled by the licensed agent you select.</div>
                 </div>
             </div>
         </div>
