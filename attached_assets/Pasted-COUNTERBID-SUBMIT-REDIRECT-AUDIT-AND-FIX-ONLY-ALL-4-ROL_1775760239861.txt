@@ -1,0 +1,63 @@
+COUNTERBID SUBMIT REDIRECT AUDIT AND FIX ONLY — ALL 4 ROLES
+
+We found a post-submit redirect issue after submitting a counterbid.
+
+Current issue:
+After a counterbid is submitted, at least one flow is redirecting to the wrong page and causing a 500 error. Example seen on Buyer flow: after counter submit, it is redirecting to a list-type page instead of the correct listing detail page where the user should see their bid and counterbid history.
+
+GOAL
+For all 4 roles below, after a counterbid is submitted successfully, redirect the user to the correct role-specific listing detail page, not a generic list page.
+
+Audit these 4 role flows:
+1. Seller
+2. Buyer
+3. Landlord
+4. Tenant
+
+EXPECTED BEHAVIOR
+After counterbid submit:
+- save counter successfully
+- redirect to the correct listing detail/view page for that role
+- the destination page must be the page where the user can see bid history / counterbid history / statuses for that listing
+
+DO NOT CHANGE
+- counterbid business logic
+- bid matching logic
+- match score logic
+- accepted bid summary logic
+- notifications
+- route definitions unless absolutely required to fix a broken redirect reference already expected by the flow
+- database schema
+- controllers or files unrelated to post-submit redirect handling
+- any working Tenant behavior if Tenant is already correct
+
+TASKS
+1. Audit the counterbid submit handler and redirect destination for Seller, Buyer, Landlord, and Tenant.
+2. Identify the exact route currently used after successful counter submit in each role.
+3. Confirm whether each redirect goes to:
+   - a listing detail/view page
+   - or an incorrect list/index page
+4. Fix only the redirect target where needed so all 4 roles land on the correct listing detail page after counter submit.
+5. Preserve role-specific permissions and route parameters.
+6. Do not change page behavior beyond the redirect destination.
+7. If any role requires a different listing detail route helper than expected, use the existing correct route already used elsewhere in that role’s working listing flow.
+
+IMPORTANT
+Use the correct listing/detail page as the destination, not a list page.
+The destination should be the page where the user sees their bid/counter history.
+
+HARD SAFEGUARDS
+- Do not do a broad refactor
+- Do not touch add-bid pages unless necessary to trace the submit redirect
+- Do not modify view-counter pages unless they are directly involved in the post-submit redirect chain
+- Do not change route names globally
+- Do not “standardize” unrelated code
+- If one role is already correct, leave it alone
+
+WHAT I WANT BACK
+1. Exact files audited
+2. Exact roles that were broken
+3. Exact old redirect target for each broken role
+4. Exact new redirect target used
+5. Whether any 500 error was caused by wrong route, missing parameter, or bad route helper
+6. Confirmation that Seller, Buyer, Landlord, and Tenant now all redirect to the correct listing detail page after counter submit

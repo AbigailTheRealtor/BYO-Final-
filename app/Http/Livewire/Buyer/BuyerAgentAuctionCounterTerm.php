@@ -400,7 +400,7 @@ public $additional_details_broker = '';
             }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            return redirect()->route('buyer.agent.auctions.list');
+            return redirect()->route('buyer.view-auction', $this->auctionId);
             // Optional: reset form or redirect
             // $this->resetForm();
 
