@@ -1,0 +1,120 @@
+TENANT BUG STILL NOT FIXED — SECOND ACTION BLOCK STILL RENDERING
+
+This is a Tenant-only bug fix.
+Do not widen scope to Buyer or Landlord yet, even though separate audit findings may exist there.
+Finish the Tenant fix completely first.
+
+A previous Tenant fix removed one incorrect counter query filter, but the Tenant View Bid still renders a second incorrect response/action block lower in the view. This means the prior fix was only partial.
+
+Do not revisit Phase 1 or Phase 2 UI work.
+Do not redesign anything.
+
+ISSUE
+
+In Tenant Listing → Agent View → View Bid
+
+When a counter offer exists, the Tenant view still does not match Seller.
+
+Current wrong behavior
+
+Inside Tenant View Bid, there is still a lower section showing:
+
+Respond to this Counter Offer:
+
+Accept
+Reject
+Counter
+
+and a message like:
+
+“Counter bid from Test User is pending.”
+Expected behavior
+
+If counter terms exist for that bid, Tenant View Bid should match Seller:
+
+show counter notice
+show View Counter Terms
+do not show any Accept / Counter / Reject response block
+do not show “Respond to this Counter Offer”
+WHAT TO DO
+Inspect the working Seller View Bid again
+Inspect the Tenant View Bid again
+Find every place in Tenant View Bid where these render:
+Accept
+Counter
+Reject
+“Respond to this Counter Offer”
+“Counter bid from [user] is pending”
+Compare each Tenant action/rendering block against Seller
+LIKELY ROOT CAUSE
+
+There is likely:
+
+a second modal footer
+a second inline action block
+or a second later conditional branch
+
+that still does not correctly respect the counter-exists state.
+
+The previous one-line query fix was not enough because another Tenant rendering path is still active.
+
+REQUIRED FIX
+
+For Tenant listing → View Bid:
+
+If no counter exists
+
+Normal action buttons may appear if appropriate.
+
+If counter exists
+
+Do not render:
+
+Accept
+Counter
+Reject
+“Respond to this Counter Offer”
+
+Instead render the same Seller-style counter-state behavior:
+
+counter notice
+View Counter Terms
+HARD SAFEGUARDS
+
+Do not touch:
+
+listing creation
+bidding logic
+counter submission
+match score
+accepted summary
+routes
+controllers
+Livewire
+database
+SCOPE
+
+Tenant view only, unless a shared partial is definitively the root cause.
+
+QA AFTER FIX
+
+Test Tenant View Bid in all relevant states:
+
+No counter exists
+normal action buttons may appear if intended
+Counter exists
+Seller-style counter notice appears
+View Counter Terms appears
+no Accept / Counter / Reject block appears anywhere in the modal/view
+no “Respond to this Counter Offer” section appears
+No regression
+Seller remains unchanged
+OUTPUT REQUIRED
+
+Return:
+
+exact file(s) changed
+exact second rendering block or conditional branch that was still wrong
+why the first fix was incomplete
+confirmation Tenant now fully matches Seller
+confirmation no protected systems were touched

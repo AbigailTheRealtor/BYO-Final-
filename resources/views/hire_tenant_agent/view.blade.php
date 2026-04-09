@@ -4361,10 +4361,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                 : (string) $rawCounterState;
 
                                                 // Actions visibility (other party, both pending)
+                                                // Suppress entirely when the listing owner has active counter terms (TenantCounterTerm).
+                                                // In that state the agent responds via View Counter Terms, not these legacy buttons.
                                                 $showCounterActions = false;
                                                 if (
                                                 $bidState === '0' &&
-                                                $counterState === '0'
+                                                $counterState === '0' &&
+                                                !$_hasTenantOwnerCounter
                                                 ) {
                                                 if ($isOwner && $isCounterFromAgent) {
                                                 $showCounterActions = true;

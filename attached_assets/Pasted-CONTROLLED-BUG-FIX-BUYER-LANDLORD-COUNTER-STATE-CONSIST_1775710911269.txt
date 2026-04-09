@@ -1,0 +1,126 @@
+CONTROLLED BUG FIX — BUYER + LANDLORD COUNTER STATE CONSISTENCY
+
+This is a targeted bug fix only.
+
+Do not redesign anything.
+Do not revisit Phase 1, Phase 2, or Phase 3 UI work.
+Do not touch listing creation, listing edit, actual listing pages, bidding logic, counter submission logic, match score logic, accepted bid summary, notifications, routes, controllers, Livewire, or database schema.
+
+GOAL
+
+Apply the same counter-state consistency fix pattern already identified in the Tenant audit to:
+
+Buyer bid view
+Landlord bid view
+
+Use the working Seller reference as the standard.
+
+AUDIT RESULTS ALREADY FOUND
+Seller reference (working)
+
+Seller uses a counter lookup pattern based on the bid relationship and status, with no unnecessary user_id filter.
+
+Landlord issue found
+
+Landlord uses:
+
+$latestOwnerCounter = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', data_get($bid, 'id'))
+    ->where('user_id', data_get($auction, 'user_id'))
+    ->orderBy('created_at', 'desc')
+    ->first();
+
+The extra ->where('user_id', ...) can cause a valid counter to be ignored.
+
+Buyer issue found
+
+Buyer uses:
+
+$latestBuyerCounter = \App\Models\BuyerCounterTerm::with('meta')
+    ->where('buyer_agent_auction_id', $auction->id)
+    ->where('parent_counter_id', $bidId)
+    ->where('user_id', $auction->user_id)
+    ->orderBy('created_at', 'desc')
+    ->first();
+
+and also a separate modal-footer state query with the same extra ->where('user_id', ...).
+
+Those extra user_id filters can cause a valid counter to be ignored, leading the footer/action state to fall through incorrectly.
+
+REQUIRED TASK
+1. Landlord
+
+Fix the Landlord counter detection so a valid counter is not ignored due to the extra user_id filter.
+
+Then verify the counter-state UI behaves correctly:
+
+if counter exists, show the correct counter-state UI
+do not show incorrect default Accept / Counter / Reject state when it should be countered
+2. Buyer
+
+Fix both Buyer counter detection paths:
+
+the main $latestBuyerCounter query
+the separate modal-footer/per-bid counter existence query
+
+Then verify the counter-state UI behaves correctly:
+
+if counter exists, show the correct counter-state UI
+do not show incorrect default Accept / Counter / Reject state when it should be countered
+IMPORTANT
+
+Do not refactor globally.
+Do not rewrite the full files.
+Do not change variable naming everywhere.
+Keep the diff minimal.
+
+Use the Seller implementation as the exact reference pattern.
+
+If there are two separate Buyer rendering/state paths, fix both.
+If there are two separate Landlord rendering/state paths, fix both.
+
+HARD SAFEGUARDS
+
+Do not touch:
+
+listing creation
+bidding logic
+counter submission
+match score
+accepted summary
+notifications
+routes
+controllers
+Livewire
+database
+
+Scope is:
+
+Buyer bid view
+Landlord bid view
+only the minimal counter-state logic required
+QA REQUIRED
+Buyer
+No counter exists
+normal action buttons show only if intended
+Counter exists
+correct counter-state UI appears
+no incorrect Accept / Counter / Reject fallback branch appears
+Landlord
+No counter exists
+normal action buttons show only if intended
+Counter exists
+correct counter-state UI appears
+no incorrect Accept / Counter / Reject fallback branch appears
+Regression
+Seller remains unchanged
+Tenant remains unchanged after the prior fix
+OUTPUT REQUIRED
+
+Return:
+
+exact file(s) changed
+exact query/queries changed for Landlord
+exact query/queries changed for Buyer
+confirmation Seller was used as reference
+confirmation Buyer and Landlord now correctly detect counter state
+confirmation no protected systems were touched
