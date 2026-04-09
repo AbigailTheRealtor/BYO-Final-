@@ -2366,7 +2366,7 @@
                                         // === MATCH SCORE — baseline-driven (BuyerBidMatchScoreHelper) ===
                                         // $auction->meta reloaded before loop; $bid->get queries DB directly on each call.
                                         $auctionPropType = data_get($auction, 'get.property_type', '');
-                                        $baselineData = $auction->meta->pluck('meta_value', 'meta_key')->toArray();
+                                        $listingBaselineData = $auction->meta->pluck('meta_value', 'meta_key')->toArray();
                                         $currentBidData = (array) $bid->get;
 
                                         // Check for buyer-countered terms (BuyerCounterTerm) — buyer counters the agent.
@@ -2384,10 +2384,9 @@
                                             ->orderBy('created_at', 'desc')
                                             ->first();
 
-                                        // Determine active baseline (buyer's listing or latest buyer counter)
-                                        if ($latestBuyerCounter) {
-                                            $baselineData = $latestBuyerCounter->getAllMeta();
-                                        }
+                                        // Card score ALWAYS uses original listing baseline to ensure consistent
+                                        // denominator across all bids on the same listing.
+                                        $baselineData = $listingBaselineData;
 
                                         // Check if bid is in countered state
                                         $hasCounterBids = $latestBuyerCounter || $latestAgentCounter;
@@ -2409,9 +2408,7 @@
                                         $scoreColor       = \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$overallScore);
                                         $brokerMismatches = $score['changed_terms'] ?? [];
                                         $brokerAdded      = $score['added_terms'] ?? [];
-                                        $buyerBaselineLabel = $latestBuyerCounter
-                                            ? ($isListingOwner ? 'Your Counter Terms' : "Buyer's Counter Terms")
-                                            : ($isListingOwner ? 'Your Original Terms' : "Buyer's Original Request");
+                                        $buyerBaselineLabel = $isListingOwner ? 'Your Original Terms' : "Buyer's Original Request";
                                         $servicesExtraCount = $score['services_extra_count'] ?? 0;
                                         $matchedServices  = $score['matched_services'] ?? [];
                                         $missingServices  = $score['missing_services'] ?? [];
@@ -2448,17 +2445,15 @@
                                             $cardLatestCounterScore = null;
                                             $cardCounterLabel = 'vs. Latest Counter Terms';
                                             if ($latestBuyerCounter) {
-                                                // Re-compute original score against listing baseline (not buyer counter)
-                                                $listingBaselineData = (array) $auction->get;
-                                                $cardOriginalScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($listingBaselineData, $currentBidData, null, $auctionPropType);
-                                                $cardLatestCounterScore = $score;
+                                                // $score is already listing-based; compute counter comparison separately
+                                                $cardOriginalScore = $score;
+                                                $cardLatestCounterScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($latestBuyerCounter->getAllMeta(), $currentBidData, null, $auctionPropType);
                                                 $cardCounterLabel = $isListingOwner ? 'vs. Your Counter Terms' : "vs. Buyer's Counter Terms";
                                                 $cardShowDualScore = true;
                                             } elseif ($latestAgentCounter) {
                                                 // Listing owner has sent a counter offer via BuyerCounterBidding
                                                 // Left: bid vs original listing; Right: bid vs owner's counter offer terms
-                                                $listingBaselineData = $auction->meta->pluck('meta_value', 'meta_key')->toArray();
-                                                $cardOriginalScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($listingBaselineData, $currentBidData, null, $auctionPropType);
+                                                $cardOriginalScore = $score;
                                                 $agentCounterMeta = $latestAgentCounter->getAllMeta();
                                                 $cardLatestCounterScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($agentCounterMeta, $currentBidData, null, $auctionPropType);
                                                 $cardCounterLabel = $isListingOwner ? 'vs. Your Counter Offer' : "vs. Owner's Counter Offer";

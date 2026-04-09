@@ -1882,7 +1882,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             ];
 
                             if ($latestTenantCounter) {
-                                // Tenant has countered — counter terms become the "active" baseline
+                                // Counter exists — store counter baseline for dual-score comparison only
                                 $tenantBaselineData = $latestTenantCounter->getAllMeta();
                                 $tenantBaselineLabelForTenant = 'Your Latest Counter';
                                 $tenantBaselineLabelForAgent = "Tenant's Counter Terms";
@@ -1892,31 +1892,22 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 $tenantBaselineLabelForTenant = 'Your Original Terms';
                                 $tenantBaselineLabelForAgent = "Tenant's Original Terms";
                             }
-                            
+
                             // === BASELINE SELECTION BASED ON VIEWER ROLE ===
-                            if ($isListingOwner) {
-                                // Tenant viewing Agent\'s bid - compare to tenant's terms
-                                $baselineData = $tenantBaselineData;
-                                $baselineLabel = $tenantBaselineLabelForTenant;
-                            } elseif ($isBidOwner) {
-                                // Agent viewing their OWN bid - compare to tenant's terms (shows how well they match)
-                                $baselineData = $tenantBaselineData;
-                                $baselineLabel = $tenantBaselineLabelForAgent;
-                            } elseif ($isBiddingPeriodListing && $isAgentViewer && $userHasBid) {
-                                // Agent viewing ANOTHER agent\'s bid in Bidding Period - compare to viewer\'s own bid
+                            // Card score ALWAYS uses original listing baseline to ensure a consistent
+                            // denominator across all bids on the same listing. Counter comparison is
+                            // handled separately in the dual-score display (authorized users only).
+                            if ($isBiddingPeriodListing && $isAgentViewer && $userHasBid) {
+                                // Competing agent in Bidding Period — compare to their own bid
                                 $viewerBid = $auction->bids->where('user_id', $auth_id)->first();
-                                if ($viewerBid) {
-                                    $baselineData = (array) data_get($viewerBid, 'get', []);
-                                } else {
-                                    $baselineData = $tenantBaselineData; // Fallback to tenant terms
-                                }
+                                $baselineData = $viewerBid ? (array) data_get($viewerBid, 'get', []) : $originalListingBaselineData;
                                 $baselineLabel = 'Your Bid';
                             } else {
-                                // Fallback: compare to tenant's terms
-                                $baselineData = $tenantBaselineData;
-                                $baselineLabel = $tenantBaselineLabelForAgent;
+                                // All other viewers — always use original listing baseline
+                                $baselineData = $originalListingBaselineData;
+                                $baselineLabel = $isListingOwner ? 'Your Original Terms' : "Tenant's Original Terms";
                             }
-                            
+
                             // === MATCH SCORE — baseline-driven (TenantBidMatchScoreHelper) ===
                             $auctionPropType = $auction->get->property_type ?? 'Residential Property';
                             $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $currentBidData, null, $auctionPropType);
@@ -1956,12 +1947,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $latestCounterScore = null;
 
                             if ($isListingOwner || $isBidOwner) {
-                                $originalScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
-                                    $originalListingBaselineData, $currentBidData, null, $auctionPropType
-                                );
+                                // $score is already listing-based; reuse it as the original score
+                                $originalScore = $score;
                                 if ($latestTenantCounter) {
-                                    // $score = Latest Counter Match (counter was used as $baselineData above)
-                                    $latestCounterScore = $score;
+                                    // Compute counter comparison separately for the dual-score right column
+                                    $latestCounterScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
+                                        $tenantBaselineData, $currentBidData, null, $auctionPropType
+                                    );
                                     $showDualScore = true;
                                 }
                             }

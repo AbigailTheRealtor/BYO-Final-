@@ -2426,7 +2426,8 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                             // ── Match Score ────────────────────────────────────────────
                             $currentBidData = json_decode(json_encode(data_get($bid, 'get', [])), true) ?: [];
-                            // Always compute original score vs. landlord baseline
+                            // Card score ALWAYS uses original listing baseline to ensure a consistent
+                            // denominator across all bids on the same listing.
                             $originalScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
                                 $landlordBaselineData, $currentBidData, null, $auctionPropType
                             );
@@ -2445,12 +2446,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     $counterBaselineData, $currentBidData, null, $auctionPropType
                                 );
                                 $showDualScore = true;
-                                $matchScore = $latestCounterScore;
                             } else {
                                 $latestCounterScore = null;
                                 $showDualScore = false;
-                                $matchScore = $originalScore;
                             }
+                            // Card display always uses original listing baseline score
+                            $matchScore = $originalScore;
                             $totalScore       = $matchScore['overall_percent'];
                             $totalScoreColor  = $getScoreColor($totalScore);
                             $servicesScore    = $matchScore['services_match_percent'];

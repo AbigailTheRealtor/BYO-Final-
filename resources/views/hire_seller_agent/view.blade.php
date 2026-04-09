@@ -2809,13 +2809,10 @@
                             }
 
                             // === MATCH SCORE CALCULATION via SellerBidMatchScoreHelper ===
-                            // ── Seller Match Score Baseline (Verified) ─────────────────────────────────────────────
-                            // BASELINE POLICY: If the seller has submitted a counter offer (SellerCounterTerm, status=1),
-                            // the counter terms become the baseline for match score comparison.
-                            // Seller Livewire (SellerAgentAuctionCounterTerm) explicitly sets status=1 on every save,
-                            // so this filter correctly selects active/submitted counter terms.
-                            // If no active counter exists, the original auction listing terms are used as baseline.
-                            // This mirrors the same logic used by Tenant, Buyer, and Landlord roles.
+                            // ── Seller Match Score Baseline ─────────────────────────────────────────────────────────
+                            // BASELINE POLICY: Card score ALWAYS uses the original auction listing terms as baseline
+                            // to ensure a consistent denominator across all bids on the same listing.
+                            // Counter comparison is computed separately for the dual-score display (authorized only).
                             $latestCounter   = \App\Models\SellerCounterTerm::with('meta')
                                 ->where('seller_agent_auction_bid_id', $bid->id)
                                 ->where('status', 1)
@@ -2827,13 +2824,9 @@
                             $bidDataArr      = (array) data_get($bid, 'get', []);
                             $auctionDataArr  = (array) data_get($auction, 'get', []);
 
-                            if ($latestCounter && $latestCounter->meta->count()) {
-                                $baselineData  = $latestCounter->meta->pluck('meta_value', 'meta_key')->toArray();
-                                $baselineLabel = $isListingOwner ? 'Your Counter Terms' : "Seller's Counter Terms";
-                            } else {
-                                $baselineData  = $auctionDataArr;
-                                $baselineLabel = $isListingOwner ? 'Your Original Terms' : "Seller's Original Terms";
-                            }
+                            // Card score always uses original listing baseline
+                            $baselineData  = $auctionDataArr;
+                            $baselineLabel = $isListingOwner ? 'Your Original Terms' : "Seller's Original Terms";
 
                             $scoreResult     = \App\Helpers\SellerBidMatchScoreHelper::calculate($baselineData, $bidDataArr, null, $propertyType);
                             $totalScore      = $scoreResult['overall_percent'] ?? 100;
@@ -2863,10 +2856,13 @@
                              */
                             $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
 
-                            // Dual-score: always compute original score vs. auction data
-                            $originalScore = \App\Helpers\SellerBidMatchScoreHelper::calculate($auctionDataArr, $bidDataArr, null, $propertyType);
+                            // Dual-score: $scoreResult is already listing-based; compute counter score separately
+                            $originalScore = $scoreResult;
                             if ($latestCounter && $latestCounter->meta->count()) {
-                                $latestCounterScore = $scoreResult;
+                                $latestCounterScore = \App\Helpers\SellerBidMatchScoreHelper::calculate(
+                                    $latestCounter->meta->pluck('meta_value', 'meta_key')->toArray(),
+                                    $bidDataArr, null, $propertyType
+                                );
                                 $showDualScore = true;
                             } else {
                                 $latestCounterScore = null;
