@@ -5682,11 +5682,6 @@
             </div>
         </div>
 
-        @if ($auction->bids->count() > 0 && $auth_id)
-        <div class="alert alert-warning mt-3 p-2 small">
-            <strong>🛡️ Compliance Note:</strong> No Broker Compensation, Agency Agreement Terms, or Counter Offers are ever displayed publicly. These must remain private to avoid antitrust/commission advertising issues.
-        </div>
-        @endif
                 <button class="btn w-100 mt-0">
                     <span class="bid m-0"><i class="fa fa-user"></i> </span>
                 </button>

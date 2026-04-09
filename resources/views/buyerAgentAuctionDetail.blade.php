@@ -5514,14 +5514,6 @@
                                     {{-- End of card mb-3 --}}
                                 @endforeach
 
-                                @if ($auction->bids->count() > 0 && $auth_id)
-                                    <div class="alert alert-warning mt-3 p-2 small">
-                                        <strong> 🛡️ Compliance Note: </strong> No Broker Compensation, Agency Agreement
-                                        Terms,
-                                        or Counter Offers are ever displayed publicly. These must remain private to avoid
-                                        antitrust/commission advertising issues.
-                                    </div>
-                                @endif
                         </div>
                     </div>
                 </div>
