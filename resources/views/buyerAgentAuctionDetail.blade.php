@@ -2485,8 +2485,8 @@
                                         <div class="card-body" style="padding: 20px;">
                                             <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
 
-                                            {{-- Counter Offer Notice Banner — visible immediately on accordion expand --}}
-                                            @if ($latestAgentCounter || $latestBuyerCounter)
+                                            {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
+                                            @if (($latestAgentCounter || $latestBuyerCounter) && ($isListingOwner || $isBidOwner))
                                             <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                                  style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                                 <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
@@ -4241,25 +4241,6 @@
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    @else
-                                                        <!-- For non-owners, show appropriate message -->
-                                                        @if ($auth_id && data_get($bid, 'user_id') == $auth_id)
-                                                            <!-- Agent viewing their own bid -->
-                                                            <div class="alert alert-info mt-3 p-3 text-center"
-                                                                style="border-radius: 6px; background: #e8f4f5; color: #049399; border: none;">
-                                                                <i class="fa fa-eye me-2"></i> <strong>Your Private
-                                                                    Terms:</strong> You can see your full compensation terms
-                                                                and additional details in your bid management dashboard.
-                                                            </div>
-                                                        @else
-                                                            <!-- Public or other agents -->
-                                                            <div class="alert alert-warning mt-3 p-3 text-center"
-                                                                style="border-radius: 6px; background: #e8f4f5; color: #049399; border: none;">
-                                                                <i class="fa fa-lock me-2"></i> <strong>Private
-                                                                    Information:</strong> Broker compensation terms and
-                                                                additional details are only visible to the listing owner.
-                                                            </div>
-                                                        @endif
                                                     @endif
 
                                                     {{-- Limited Bid Modal: Bidding Period - Agents viewing competitor bids --}}

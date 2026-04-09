@@ -2895,8 +2895,8 @@
 
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
 
-                                {{-- Counter Offer Notice Banner — visible immediately on accordion expand --}}
-                                @if ($latestCounter)
+                                {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
+                                @if ($latestCounter && ($isListingOwner || $isBidOwner))
                                 <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                      style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                     <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
