@@ -1,0 +1,240 @@
+FINAL COUNTER BID CARDS — BROKER COMPENSATION, AGENCY TERMS, SERVICES AUDIT + FIX
+READ FULLY BEFORE MAKING ANY CHANGES
+
+This is a final audit and fix pass for the counter bid / counter terms cards for all 4 roles:
+1. Seller
+2. Buyer
+3. Landlord
+4. Tenant
+
+The goal is to make the final counter terms cards fully accurate, fully complete, and consistent across all 4 roles.
+
+CURRENT CONFIRMED ISSUES
+
+1. SELLER
+Seller counter terms still show structure labels instead of the actual entered values in some compensation fields.
+Example:
+- Buyer’s Broker Commission Type: Percentage of the Total Purchase Price
+This should show the actual entered value, not just the structure label.
+
+2. LANDLORD
+Landlord counter terms still show structure labels instead of actual entered values in some compensation fields.
+Examples:
+- Purchase Fee Type: Percentage of the Total Purchase Price + Flat Fee
+- Broker Lease Fee: Percentage of the Gross Rent
+These should show the actual numbers/percentages entered by the agent or user.
+
+There is also concern that Landlord broker compensation and agency agreement terms may still be missing some fields and may not be rendering the full set that was actually filled in.
+
+3. BUYER
+Buyer still has lowercase yes values in some legal terms fields.
+Examples:
+- Early Termination Fee: yes
+- Retainer Fee: yes
+These must display as:
+- Yes
+- No
+
+4. TENANT
+Tenant also still has lowercase yes/no issues in some places and needs to be audited the same way.
+
+PRIMARY GOAL
+
+The final counter bid / counter terms cards must show:
+- everything the agent or user actually filled in
+- the real values entered
+- all broker compensation and agency agreement terms that apply
+- all offered services that apply
+
+The cards must only visually highlight:
+- Added
+- Changed
+- Removed / Not Included
+
+The cards must NOT:
+- omit filled-in terms
+- show only structure labels where a real amount/value exists
+- use lowercase yes/no
+- carry old highlighting forward incorrectly from an earlier baseline
+- present incomplete compensation sections
+
+SCOPE
+
+Audit and fix only the final counter bid / counter terms display for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+This includes only the files directly responsible for rendering the final counter terms / counter bid cards and any directly related display-only helpers or variables used to build those cards.
+
+OUT OF SCOPE — DO NOT TOUCH
+
+Do not modify:
+- listing creation
+- listing edit
+- add-bid forms
+- bid submission logic
+- counter submission logic
+- accepted bid summary
+- notifications
+- route definitions
+- controllers unless absolutely required to trace display data already being passed
+- schema or migrations
+- unrelated listing detail templates
+- match score formulas unless a display variable is directly derived from that score payload and you are only fixing the display mapping
+
+If any required fix would need deeper business logic changes, stop and report it clearly instead of guessing.
+
+AUDIT + FIX REQUIREMENTS
+
+1. SHOW ACTUAL ENTERED VALUES, NOT JUST STRUCTURE LABELS
+
+For all 4 roles, audit every broker compensation and agency agreement terms field shown on the final counter terms cards.
+
+If a field currently shows only a structure label such as:
+- Percentage of the Total Purchase Price
+- Percentage of the Gross Rent
+- Percentage of the Total Purchase Price + Flat Fee
+- Flat Fee + Percentage of Gross Lease Value
+
+that is NOT sufficient if the user actually entered a real amount and/or percentage.
+
+The final display must show the actual entered value(s).
+
+Examples of correct target display:
+- $4,000
+- 5% of Total Purchase Price
+- $4,000 + 4% of Gross Lease Value
+- 23% of Gross Rent
+- $4,545 + 5% of Total Purchase Price
+- $333 if Purchase Option is Exercised
+- $100,000 for Lease-Option Agreement
+
+If helpful, the structure type may appear as a small secondary label, but the primary displayed line must show the actual entered values.
+
+Specifically audit and fix all compensation displays for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+2. LANDLORD — FULL BROKER COMPENSATION & AGENCY TERMS COMPLETENESS AUDIT
+
+Do a full completeness audit of Landlord broker compensation and agency agreement terms.
+
+Verify that every filled-in Landlord term that should appear on the final counter terms card is actually being rendered.
+
+This includes reviewing whether any of the following are missing if filled:
+- lease fee values
+- payment timing
+- lease-option details
+- purchase fee details
+- protection period
+- agency agreement timeframe
+- brokerage relationship
+- any other landlord broker compensation / agency agreement terms already supported in the listing and counter flow
+
+If any filled terms are missing from the final Landlord counter terms card, add them so the final card reflects the full submitted counter terms.
+
+3. YES / NO CAPITALIZATION
+
+Audit Buyer and Tenant fully for lowercase yes/no display.
+Also confirm Seller and Landlord are clean.
+
+Target display everywhere:
+- Yes
+- No
+
+Never:
+- yes
+- no
+
+4. FINAL COUNTER CARD MUST SHOW EVERYTHING FILLED IN
+
+For all 4 roles, verify the final counter bid / counter terms card shows the full set of:
+- offered broker compensation terms
+- agency agreement terms
+- offered services
+
+If the agent or user filled in a supported field and it should be part of the counter terms display, it must appear.
+
+Do not hide or drop valid filled-in fields.
+
+5. DIFF / HIGHLIGHT RULES
+
+Keep the current intended standard:
+Only highlight:
+- Added
+- Changed
+- Removed / Not Included
+
+Do not highlight unchanged items as active changes.
+
+Do not carry old changes forward incorrectly.
+
+The counter card should compare against the immediately previous version, not keep re-highlighting older differences unnecessarily.
+
+6. SERVICES AUDIT
+
+For all 4 roles, verify that offered services are fully accurate and complete.
+
+The final counter card must show:
+- all offered services that apply
+- added / removed / changed state correctly
+- unchanged items neutrally, without misleading green checkmark treatment
+
+If any role is still missing offered services that were actually selected, fix it.
+
+7. CONSISTENCY ACROSS ALL 4 ROLES
+
+Use the same display standards across:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+The roles can still render their correct role-specific fields, but the overall standards must match:
+- actual values shown
+- all valid fields shown
+- Yes/No capitalization
+- complete services
+- correct diff highlighting
+- no structure-label-only display when real values exist
+
+HARD SAFEGUARDS
+
+- Do not do a broad refactor
+- Do not rewrite unrelated templates
+- Do not change working counter submission logic
+- Do not change routes
+- Do not change business rules
+- Do not guess missing values
+- Only show values that were actually filled in and are already supported by the current flow
+- If a field is not rendering because the data is not being passed, report the exact file and variable source instead of inventing fallback logic
+- If one role is already correct in a given area, leave it alone and report it as already correct
+
+WHAT I WANT BACK
+
+Return all of the following:
+
+1. Exact files audited
+2. Exact files changed
+3. For Seller, Buyer, Landlord, and Tenant, report exactly:
+   - which compensation fields were still showing structure labels instead of actual values
+   - which yes/no fields were still lowercase
+   - whether any broker compensation / agency agreement terms were missing from the final counter card
+   - whether any offered services were missing or incorrect
+4. Exact display fixes made for each role
+5. Any remaining issues that would require protected logic changes outside the safe display layer
+6. Confirmation that the final counter bid / counter terms cards now show:
+   - the full filled-in broker compensation and agency agreement terms
+   - the full filled-in offered services
+   - actual entered values instead of structure-only labels
+   - only Added / Changed / Removed highlighting from the previous version
+
+FINAL RULE
+
+This is a final accuracy pass.
+Do not stop after fixing isolated fields.
+Audit the full final counter terms cards for all 4 roles and make sure they are 100% complete and accurate based on what was actually filled in.
