@@ -1,0 +1,96 @@
+Remove the public-facing notice boxes from the logged-out/public bid section across all four listing roles:
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+This task is ONLY for the logged-out/public view of the bid cards/listing bid area.
+
+==================================================
+GOAL
+==================================================
+
+For public not-signed-in users, remove these from the bid area:
+
+1. the yellow/orange Compliance Notice box
+2. the blue Private Counter Bids notice box
+
+Public logged-out bid cards should remain minimal and only show:
+- Agent header
+- Offered Services
+- Terms Match
+- gray private line if still used
+- nothing else notice-wise in the card area
+
+==================================================
+REQUIRED CHANGES
+==================================================
+
+1. Remove or suppress the yellow/orange Compliance Notice box
+across all four role views in the public bid section.
+
+2. Remove or suppress the blue "Private Counter Bids" notice
+from logged-out/public view across all four role views.
+
+3. Keep these notices available only where appropriate in private/authorized views if they are still needed there.
+Do NOT break owner/bidder private flows.
+
+4. Do NOT remove actual counter-bid functionality.
+This is display cleanup only.
+
+==================================================
+IMPORTANT SCOPE RULE
+==================================================
+
+This is PUBLIC VIEW cleanup only.
+
+If the logged-in listing owner or bidding agent still needs these notices somewhere in their private experience, leave that private logic intact.
+
+Just make sure:
+- logged-out users
+- unrelated viewers
+do NOT see:
+- Compliance Notice
+- Private Counter Bids notice
+
+==================================================
+FILES
+==================================================
+
+Audit the exact role detail Blade files first, then make the smallest necessary edits.
+Do not assume all four roles use the same structure.
+
+Likely role files include:
+- resources/views/hire_tenant_agent/view.blade.php
+- resources/views/buyerAgentAuctionDetail.blade.php
+- resources/views/hire_seller_agent/view.blade.php
+- resources/views/hire_landlord_agent/view.blade.php
+
+But confirm before editing.
+
+==================================================
+SAFEGUARDS
+==================================================
+
+- Do NOT change scoring logic
+- Do NOT change Terms Match logic
+- Do NOT change Services logic
+- Do NOT change routing
+- Do NOT change database schema
+- Do NOT remove actual counter history functionality
+- Do NOT move card layout around
+- Do NOT touch private modal/detail pages unless needed for public suppression logic
+- Do NOT remove the gray private line unless it is clearly part of the same public cleanup decision
+- Keep edits surgical and role-specific if needed
+
+==================================================
+OUTPUT REQUIRED
+==================================================
+
+Return:
+1. exact files changed
+2. exact public-view conditions added/updated
+3. confirmation that logged-out users no longer see:
+   - Compliance Notice
+   - Private Counter Bids notice
+4. confirmation that private/authorized flows were not broken

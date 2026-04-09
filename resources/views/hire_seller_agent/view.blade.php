@@ -4076,11 +4076,6 @@
                                 </div>
                             </div>
                         </div>
-                        @elseif (!$showSellerCounterBids && $sellerCounterBids->count() > 0)
-                        <div class="alert alert-info mt-3 p-2 small">
-                            <i class="fa fa-lock"></i> <strong>Private Counter Bids:</strong>
-                            Counter bidding history exists but is only visible to the listing owner and the bidding agent.
-                        </div>
                         @endif
                         {{-- ===== END INLINE COUNTER BIDDING HISTORY ===== --}}
 
@@ -5558,7 +5553,7 @@
             </div>
         </div>
 
-        @if ($auction->bids->count() > 0)
+        @if ($auction->bids->count() > 0 && $auth_id)
         <div class="alert alert-warning mt-3 p-2 small">
             <strong>🛡️ Compliance Note:</strong> No Broker Compensation, Agency Agreement Terms, or Counter Offers are ever displayed publicly. These must remain private to avoid antitrust/commission advertising issues.
         </div>

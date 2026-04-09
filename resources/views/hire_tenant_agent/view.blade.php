@@ -5176,14 +5176,6 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             </div>
                                         </div>
                                     </div>
-                                    @elseif (!$showCounterBids && $counterBids->count() > 0)
-                                    {{-- Show private message for non-authorized users --}}
-                                    <div class="alert alert-info mt-3 p-2 small">
-                                        <i class="fa fa-lock"></i> <strong>Private Counter
-                                            Bids:</strong>
-                                        Counter bidding history exists but is only visible to the
-                                        listing owner and the bidding agent.
-                                    </div>
                                     @endif
 
 
