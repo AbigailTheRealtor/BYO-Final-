@@ -2338,7 +2338,9 @@ $auser = $auctionUser::find(@$auction->user_id);
                         @php
                             $agentNumber = $agentNumberMap[$bid->id] ?? $loop->iteration;
                             $rawState = data_get($bid, 'accepted', '0');
-                            $state = in_array($rawState, [null, 0, '0'], true) ? '0' : (string) $rawState;
+                            // 'accepted' column stores 'no' for undecided bids. Treat anything non-terminal as '0'.
+                            $_isTerminalCard = in_array((string)$rawState, ['accepted', 'rejected'], true);
+                            $state = $_isTerminalCard ? (string) $rawState : '0';
                             $isOwnerRow = $isListingOwner;
                             $hasAcceptedCounterBid = false;
 
@@ -4178,9 +4180,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     $_mfRawL    = data_get($bid, 'accepted', '0');
                                                     $_mfTermL   = in_array((string)$_mfRawL, ['accepted', 'rejected'], true);
                                                     $_mfActiveL = isset($latestOwnerCounter) && $latestOwnerCounter !== null;
+                                                    // 'accepted' column stores 'no' for undecided bids (not false/'0'/null).
+                                                    // Treat anything that is not a terminal state as '0' (undecided).
                                                     $mfStateL   = (!$_mfTermL && $_mfActiveL)
                                                         ? 'countered'
-                                                        : (in_array($_mfRawL, [null, 0, '0', ''], true) ? '0' : (string)$_mfRawL);
+                                                        : ($_mfTermL ? (string)$_mfRawL : '0');
                                                     $mfOwnerIdL    = data_get($auction, 'user_id');
                                                     $mfOwnerFirstL = data_get($auction, 'user.first_name', '');
                                                     $mfOwnerLastL  = data_get($auction, 'user.last_name', '');
@@ -4241,9 +4245,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     $rawState = data_get($bid, 'accepted', '0');
                                     $_isTerminalLandlord = in_array((string)$rawState, ['accepted', 'rejected'], true);
                                     $_hasLandlordCounterRecords = $counterBids->count() > 0;
+                                    // 'accepted' column stores 'no' for undecided bids. Treat anything non-terminal as '0'.
                                     $state = (!$_isTerminalLandlord && $_hasLandlordCounterRecords)
                                         ? 'countered'
-                                        : (in_array($rawState, [null, 0, '0'], true) ? '0' : (string) $rawState);
+                                        : ($_isTerminalLandlord ? (string)$rawState : '0');
                                     $isOwnerRow = data_get($auction, 'user_id') == $auth_id;
 
                                     $ownerFirst = data_get($auction, 'user.first_name', '');
