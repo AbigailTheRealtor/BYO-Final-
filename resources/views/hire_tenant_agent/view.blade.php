@@ -1563,18 +1563,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @else
             <p class="mb-3">No one has bid on this auction.</p>
             @endif
-        @elseif (!$canSeeBidSummary)
-            {{-- Traditional listing - agents cannot see bid summary --}}
-            <p class="text-muted mb-3"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
         @endif
         
-        {{-- 🔹 Agent Visibility Info Messages --}}
+        {{-- 🔹 Agent Visibility Info Messages (Bidding Period only) --}}
         @if ($isAgentViewer && !$isListingOwner)
-            @if ($isTraditionalListing && $otherBidsExist)
-            <div class="alert alert-info small mb-3 py-2">
-                <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
-            </div>
-            @elseif ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
+            @if ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
             <div class="alert alert-warning small mb-3 py-2">
                 <i class="fa fa-info-circle me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view competing bids (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
             </div>

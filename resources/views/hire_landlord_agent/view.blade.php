@@ -2659,6 +2659,12 @@ $auser = $auctionUser::find(@$auction->user_id);
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
+                                @elseif ($isBiddingPeriodListing && $isAgent && !$isBidOwner)
+                                {{-- Bidding Period: Agent viewing another agent's bid - show limited view button --}}
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
+                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
+                                    View Full Services &amp; Broker Compensation Terms
+                                </a>
                                 @else
                                 <span style="color: #888; font-style: italic; font-size: 0.95rem;">
                                     <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
@@ -5169,6 +5175,140 @@ $auser = $auctionUser::find(@$auction->user_id);
                             </div>
                             </div>
                         </div>
+
+                        {{-- Limited Modal for Bidding Period: Agent viewing another agent's bid (Anonymous) --}}
+                        @if ($isBiddingPeriodListing && $isAgent && !$isBidOwner && !$isListingOwner)
+                        @php
+                            $limLandlordIsMismatch = fn($field) => isset($brokerMismatches[$field]);
+                            $limLandlordSvcsList  = is_array(data_get($bid,'get.services',[])) ? data_get($bid,'get.services',[]) : (json_decode(data_get($bid,'get.services','[]'),true) ?: []);
+                            $limLandlordOtherSvcs = is_array(data_get($bid,'get.other_services',[])) ? data_get($bid,'get.other_services',[]) : (json_decode(data_get($bid,'get.other_services','[]'),true) ?: []);
+                            $limLandlordSvcsFiltered = array_filter($limLandlordSvcsList, fn($s) => $s !== 'Other');
+                        @endphp
+                        <div class="modal fade" id="limitedBidModal{{ data_get($bid, 'id') }}" tabindex="-1"
+                             aria-labelledby="limitedBidModalLabel{{ data_get($bid, 'id') }}" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content" style="border-radius: 10px; border: none; position: relative; overflow: visible;">
+                                    <button type="button" data-bs-dismiss="modal" aria-label="Close"
+                                            style="position: absolute; right: 5px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                                        &times;
+                                    </button>
+                                    <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
+                                        <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
+                                            <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
+                                        </h5>
+                                    </div>
+                                    <div class="modal-body" style="background: #fafafa; padding: 25px;">
+
+                                        {{-- Anonymous Notice --}}
+                                        <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
+                                            <i class="fa fa-user-secret me-2"></i>
+                                            <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
+                                        </div>
+
+                                        {{-- Match Score Panel --}}
+                                        @if ($hasAnyBaseline)
+                                        <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                    <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                </h6>
+                                                <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                    {{ $totalScore }}% Match
+                                                </span>
+                                            </div>
+                                            <p class="small text-muted mb-3">Comparing to: <strong>{{ $baselineLabel }}</strong></p>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold">Services Match</span>
+                                                            <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
+                                                            @if ($servicesTotal > 0 && $servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
+                                                        </div>
+                                                        @if ($servicesExtraCount > 0)
+                                                        <div class="small mt-1" style="font-weight: 500; color: #856404;">&#11088; Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold">Terms Match</span>
+                                                            <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
+                                                            @if ($brokerTotal > 0 && $termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
+                                                            @if ($termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @else
+                                        <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
+                                            <i class="fa fa-info-circle me-1"></i>No match data available for this listing.
+                                        </div>
+                                        @endif
+
+                                        {{-- Section 1: A) Landlord's Broker Lease Fee --}}
+                                        @if ($landlordFeeDisplay !== '—' || data_get($bid,'get.commission_structure'))
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-handshake me-2"></i>A) Broker Compensation
+                                            </h6>
+                                            <ul class="list-unstyled ps-3 mb-0">
+                                                @if (data_get($bid,'get.commission_structure'))
+                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                    <span class="fw-semibold">Commission Structure:</span>
+                                                    <span style="{{ $limLandlordIsMismatch('commission_structure') ? $mismatchStyle : '' }}">
+                                                        {{ data_get($bid,'get.commission_structure') }}
+                                                        @if($limLandlordIsMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                    </span>
+                                                </li>
+                                                @endif
+                                                @if ($landlordFeeDisplay !== '—')
+                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                    <span class="fw-semibold">Landlord's Broker Lease Fee:</span>
+                                                    <span style="{{ $limLandlordIsMismatch('purchase_fee_type') ? $mismatchStyle : '' }}">
+                                                        {{ $landlordFeeDisplay }}
+                                                        @if($limLandlordIsMismatch('purchase_fee_type')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                    </span>
+                                                </li>
+                                                @endif
+                                            </ul>
+                                        </div>
+                                        @endif
+
+                                        {{-- Section 2: Offered Services --}}
+                                        @if (!empty($limLandlordSvcsFiltered) || !empty($limLandlordOtherSvcs))
+                                        <div class="mb-4">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-list me-2"></i>Offered Services
+                                            </h6>
+                                            <ul class="list-unstyled ps-3 mb-2">
+                                                @foreach($limLandlordSvcsFiltered as $svcItem)
+                                                <li class="mb-1 small"><i class="fa fa-check text-success me-2"></i>{{ $svcItem }}</li>
+                                                @endforeach
+                                                @foreach($limLandlordOtherSvcs as $svcOther)
+                                                <li class="mb-1 small"><i class="fa fa-star text-warning me-2"></i>{{ $svcOther }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                        @endif
+
+                                    </div>{{-- modal-body --}}
+                                    <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid #dee2e6; border-radius: 0 0 10px 10px; padding: 15px 20px;">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                     @endforeach
 
                     @if ($auction->bids->count() > 0 && $auth_id)

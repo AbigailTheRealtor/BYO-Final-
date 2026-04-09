@@ -1,0 +1,129 @@
+Task: Remove Compliance Notice From All Bid Views
+Target Notice (exact text to remove)
+Compliance Note: No Broker Compensation, Agency Agreement Terms, or Counter Offers are ever displayed publicly. These must remain private to avoid antitrust/commission advertising issues.
+Scope
+
+Remove this notice from ALL roles:
+
+Tenant
+Buyer
+Seller
+Landlord
+
+Remove from ALL contexts:
+
+Listing owner view
+Agent bidder view
+Public view (if present anywhere)
+Counter history sections
+Any shared partials or components
+🔍 Step 1 — Locate Source
+
+Search for:
+
+Compliance Note
+antitrust
+commission advertising
+No Broker Compensation
+
+Check:
+
+Blade files (most likely)
+Shared components / partials
+Any conditional blocks tied to listing type or role
+🔧 Step 2 — Remove UI Block Only
+
+You will likely find something like:
+
+<div class="...">
+    <strong>Compliance Note:</strong> ...
+</div>
+Action:
+Remove the entire block
+OR comment it out cleanly
+⚠️ DO NOT TOUCH
+
+Do NOT modify:
+
+Any @if conditions controlling permissions
+Any logic that hides broker compensation data
+Any backend privacy logic
+Any route or controller
+Any database fields
+
+This is UI-only removal
+
+🔁 Step 3 — Check Shared Partials
+
+Very important:
+
+If this notice is inside a shared file like:
+
+bid card partial
+match summary partial
+listing footer partial
+
+Then removing it there will fix all roles at once
+
+Preferred approach:
+
+Remove from shared source if safe
+Avoid duplicating changes across multiple files
+🧪 Step 4 — Verify in All Contexts
+
+Test:
+
+Tenant
+Owner view ✅
+Agent view ✅
+Landlord
+Owner view ✅
+Agent view ✅
+Seller
+Owner view ✅
+Agent view ✅
+Buyer
+Owner view ✅
+Agent view ✅
+
+Also check:
+
+Counter history section
+Any modal views
+Any expanded bid cards
+✅ Expected Result
+
+After removal:
+
+No compliance notice appears anywhere in bid UI
+Privacy is still enforced by system behavior
+UI looks cleaner and more premium
+No layout breaks
+🚫 Do Not Replace It
+
+Do NOT replace this with another message.
+
+You already have:
+
+Private badges
+Permission-based visibility
+Login gating
+
+That is enough.
+
+💡 Optional (Do NOT implement now)
+
+If needed later, this message belongs in:
+
+Legal page
+Footer
+Terms of Service
+
+NOT inside the bidding UI
+
+✅ Pass Conditions
+Compliance notice is fully removed from all views
+No UI spacing issues or empty containers remain
+No privacy logic is affected
+All roles still function correctly
+No duplicate hidden remnants remain in DOM

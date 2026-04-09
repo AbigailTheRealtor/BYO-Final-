@@ -2651,17 +2651,11 @@
             @else
             <p class="mb-3">No one has bid on this auction.</p>
             @endif
-        @elseif (!$canSeeBidSummary)
-            <p class="text-muted mb-3"><i class="fa fa-lock me-1"></i> Bid information is private for traditional listings.</p>
         @endif
 
-        {{-- Agent Visibility Info Messages --}}
+        {{-- Agent Visibility Info Messages (Bidding Period only) --}}
         @if ($isAgentViewer && !$isListingOwner)
-            @if ($isTraditionalListing && $otherBidsExist)
-            <div class="alert alert-info small mb-3 py-2">
-                <i class="fa fa-lock me-1"></i> <strong>Traditional Listing:</strong> You can only view your own bid. Other agents' bids remain private.
-            </div>
-            @elseif ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
+            @if ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
             <div class="alert alert-warning small mb-3 py-2">
                 <i class="fa fa-info-circle me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view competing bids (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
             </div>
@@ -5540,6 +5534,145 @@
                                 </div>{{-- End modal-content --}}
                             </div>{{-- End modal-dialog --}}
                         </div>{{-- End modal --}}
+                        @endif
+
+                        {{-- Limited Modal for Bidding Period: Agent viewing another agent's bid (Anonymous) --}}
+                        @if ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner && !$isListingOwner)
+                        @php
+                            $limIsMismatch = fn($field) => isset($brokerMismatches[$field]);
+                            $limCheckPurchaseFeeMatch = function() use ($brokerMismatches) {
+                                foreach (['purchase_fee_type','purchase_fee_flat','purchase_fee_percentage','purchase_fee_flat_combo','purchase_fee_percentage_combo','purchase_fee_other'] as $f) {
+                                    if (isset($brokerMismatches[$f])) return true;
+                                }
+                                return false;
+                            };
+                            $limSvcsList   = is_array(data_get($bid,'get.services',[])) ? data_get($bid,'get.services',[]) : (json_decode(data_get($bid,'get.services','[]'),true) ?: []);
+                            $limOtherSvcs  = is_array(data_get($bid,'get.other_services',[])) ? data_get($bid,'get.other_services',[]) : (json_decode(data_get($bid,'get.other_services','[]'),true) ?: []);
+                            $limSvcsFiltered = array_filter($limSvcsList, fn($s) => $s !== 'Other');
+                        @endphp
+                        <div class="modal fade" id="limitedBidModal{{ data_get($bid, 'id') }}" tabindex="-1"
+                             aria-labelledby="limitedBidModalLabel{{ data_get($bid, 'id') }}" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content" style="border-radius: 10px; border: none; position: relative; overflow: visible;">
+                                    <button type="button" data-bs-dismiss="modal" aria-label="Close"
+                                            style="position: absolute; right: 5px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                                        &times;
+                                    </button>
+                                    <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
+                                        <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
+                                            <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
+                                        </h5>
+                                    </div>
+                                    <div class="modal-body" style="background: #fafafa; padding: 25px;">
+
+                                        {{-- Anonymous Notice --}}
+                                        <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
+                                            <i class="fa fa-user-secret me-2"></i>
+                                            <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
+                                        </div>
+
+                                        {{-- Match Score Panel --}}
+                                        @if ($hasAnyBaseline)
+                                        <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
+                                                    <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                </h6>
+                                                <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
+                                                    {{ $totalScore }}% Match
+                                                </span>
+                                            </div>
+                                            <p class="small text-muted mb-3">Comparing to: <strong>{{ $baselineLabel }}</strong></p>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold">Services Match</span>
+                                                            <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
+                                                            @if ($servicesTotal > 0 && $servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
+                                                        </div>
+                                                        @if ($servicesExtraCount > 0)
+                                                        <div class="small mt-1" style="font-weight: 500; color: #856404;">&#11088; Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</div>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold">Terms Match</span>
+                                                            <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
+                                                        </div>
+                                                        <div class="small text-muted mt-1">
+                                                            {{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
+                                                            @if ($brokerTotal > 0 && $termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
+                                                            @if ($termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @else
+                                        <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
+                                            <i class="fa fa-info-circle me-1"></i>No match data available for this listing.
+                                        </div>
+                                        @endif
+
+                                        {{-- Section 1: A) Broker Compensation --}}
+                                        @if ($sellerCommStructure || $sellerPurchaseFeeDisplay !== '-')
+                                        <div class="mb-5">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-handshake me-2"></i>A) Broker Compensation
+                                            </h6>
+                                            <ul class="list-unstyled ps-3 mb-0">
+                                                @if ($sellerCommStructure)
+                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                    <span class="fw-semibold">Commission Structure:</span>
+                                                    <span style="{{ $limIsMismatch('commission_structure') ? $mismatchStyle : '' }}">
+                                                        {{ $sellerCommStructure }}
+                                                        @if($limIsMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                    </span>
+                                                </li>
+                                                @endif
+                                                @if ($sellerPurchaseFeeDisplay !== '-')
+                                                <li class="mb-1 d-flex justify-content-between align-items-start">
+                                                    <span class="fw-semibold">Purchase Fee:</span>
+                                                    <span style="{{ $limCheckPurchaseFeeMatch() ? $mismatchStyle : '' }}">
+                                                        {{ $sellerPurchaseFeeDisplay }}
+                                                        @if($limCheckPurchaseFeeMatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
+                                                    </span>
+                                                </li>
+                                                @endif
+                                            </ul>
+                                        </div>
+                                        @endif
+
+                                        {{-- Section 2: Offered Services --}}
+                                        @if (!empty($limSvcsFiltered) || !empty($limOtherSvcs))
+                                        <div class="mb-4">
+                                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                <i class="fa fa-list me-2"></i>Offered Services
+                                            </h6>
+                                            <ul class="list-unstyled ps-3 mb-2">
+                                                @foreach($limSvcsFiltered as $svcItem)
+                                                <li class="mb-1 small"><i class="fa fa-check text-success me-2"></i>{{ $svcItem }}</li>
+                                                @endforeach
+                                                @foreach($limOtherSvcs as $svcOther)
+                                                <li class="mb-1 small"><i class="fa fa-star text-warning me-2"></i>{{ $svcOther }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                        @endif
+
+                                    </div>{{-- modal-body --}}
+                                    <div class="modal-footer" style="background: #f8f9fa; border-top: 1px solid #dee2e6; border-radius: 0 0 10px 10px; padding: 15px 20px;">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         @endif
 
                         @endforeach
