@@ -378,8 +378,9 @@
                             <div class="mb-4">
                                 <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Lease Fee</h6>
                                 <ul class="list-unstyled ps-3 mb-0">
-                                    <li class="mb-2">
+                                    <li class="mb-2" style="{{ isset($brokerMismatches['interested_lease_option']) ? $mismatchStyle : '' }}">
                                         <span class="fw-semibold">Interested in a Lease Agreement:</span> {{ $counterData['interested_lease_option'] }}
+                                        {!! isset($brokerMismatches['interested_lease_option']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @if ($counterData['interested_lease_option'] === 'Yes' && !empty($counterData['lease_fee_type']))
                                     @php
@@ -485,7 +486,7 @@
                                     @php
                                         $agencyTimeframe = $counterData['agency_agreement_timeframe'] ?? '';
                                         $agencyCustom    = $counterData['agency_agreement_custom'] ?? '';
-                                        $agencyDisplay   = (strtolower(trim($agencyTimeframe)) === 'custom') ? ($agencyCustom ?: 'Custom') : $agencyTimeframe;
+                                        $agencyDisplay   = (strtolower(trim($agencyTimeframe)) === 'other') ? ($agencyCustom ?: 'Other') : $agencyTimeframe;
                                     @endphp
                                     <li class="mb-2" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
                                         <span class="fw-semibold">Agency Agreement Timeframe:</span> {{ $agencyDisplay }}

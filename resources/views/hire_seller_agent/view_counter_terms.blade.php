@@ -913,7 +913,8 @@
                                     @endif
                                     @if(strtolower($ctRetainerOpt) === 'yes' && $ctRetainerApp)
                                     <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Retainer Fee Application:</span> {{ $ctRetainerApp }}
+                                        <span class="fw-semibold">Retainer Fee Application:</span>
+                                        {{ $ctRetainerApp === 'applied' ? 'Applied toward final compensation' : 'Charged in addition to final compensation' }}
                                         {!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @elseif(strtolower($ctRetainerOpt) === 'yes' && isset($brokerMismatches['retainer_fee_application']))
