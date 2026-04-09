@@ -1,0 +1,140 @@
+Tighten this implementation now so we do not create future parity or maintenance issues later.
+
+Scope:
+Only touch the four bid/counter view files involved in the recent parity work.
+Do not change database schema.
+Do not change routes.
+Do not refactor unrelated logic.
+Do not alter working bid acceptance, rejection, or counter submission flows outside the target files.
+
+Goal:
+Harden the current View Counter Terms and match score guard implementation so all four roles stay consistent long term:
+Tenant
+Buyer
+Seller
+Landlord
+
+Required cleanup and hardening:
+
+1. Standardize the baseline guard variable name
+Across all four views, use one single variable name only:
+$hasAnyBaseline
+
+Do not keep Buyer on a different variable like $cardHasAnyBaseline.
+Use the same variable name everywhere the baseline guard is referenced in:
+- bid card / summary rendering
+- private modal match score rendering
+- any fallback “No match data available for this listing.” logic
+
+This is only a naming consistency cleanup. Do not change the scoring formulas.
+
+2. Harden bid status badge handling against case inconsistencies
+Wherever bid status badge color/class mapping is built, normalize the status before lookup so future DB casing changes do not silently break the badge.
+
+Use a normalized local value before mapping, such as title-cased status derived from $bid->bid_status.
+Then use that normalized value for:
+- badge label
+- status color map lookup
+
+The visible labels must still render exactly as:
+Active
+Countered
+Accepted
+Rejected
+
+Do not change business logic. This is only a defensive normalization step.
+
+3. Keep one shared action-area pattern across all four roles
+Re-check all four View Counter Terms pages and ensure they all follow the same structural pattern as Seller:
+
+- separate agent action block
+- separate owner action block
+- terminal-state suppression inside each role block
+- View Listing button rendered consistently after the role blocks
+
+Do not collapse back into merged if/elseif chains.
+Do not leave one file using a different structure.
+This is a structure consistency pass only.
+
+4. Verify terminal-state suppression in all four views
+Make sure Accepted and Rejected bids never show counter/accept/reject action buttons in any role view.
+Only resolved messaging may appear.
+This must be consistent in:
+Tenant
+Buyer
+Seller
+Landlord
+
+5. Keep the zero-baseline fallback fully aligned
+For listings with no baseline services and no baseline terms:
+- do not render percentages
+- do not render misleading match summary values
+- render only the neutral fallback:
+“No match data available for this listing.”
+
+Verify this is identical across:
+- visible bid card area if applicable
+- private modal match score panel
+
+Do not alter formulas for listings that do have baseline data.
+
+6. Do not add unused variables to Seller
+Seller does not currently use $servicesAdded in the relevant view.
+Do not add unused extraction lines or dead variables just for symmetry.
+Only keep variables that are actually used in that file.
+
+7. Final parity audit pass
+After cleanup, compare all four files side by side and confirm:
+- same shell/layout structure
+- same fallback behavior
+- same action-area pattern
+- same terminal suppression behavior
+- same status normalization approach
+- same baseline guard variable name
+
+Allowed differences:
+- correct role-specific labels
+- correct role-specific route names
+- correct property-type-specific fields/content
+
+Not allowed:
+- one file having a special-case structure without a real reason
+- one file using a different guard variable
+- one file using a different fallback pattern
+- one file showing actions in terminal states
+
+QA checklist:
+Test all four routes:
+- /landlord/hire/agent/auction/bid/{id}/view-counter
+- /buyer/hire/agent/auction/bid/{id}/view-counter
+- /hire/seller/agent/auction/bid/{id}/view-counter
+- /tenant/hire/agent/auction/bid/{id}/view-counter
+
+For each role, verify these cases:
+A. listing has baseline data
+- match panel renders normally
+
+B. listing has no baseline services and no baseline terms
+- no percentages shown
+- fallback message only
+
+C. bid status is Active
+- proper badge styling
+- correct action visibility based on role/state
+
+D. bid status is Countered
+- proper badge styling
+- correct side can respond
+
+E. bid status is Accepted
+- no action buttons
+
+F. bid status is Rejected
+- no action buttons
+
+Deliverable:
+Make only the minimal edits required in the existing files, then provide:
+1. exact files changed
+2. exact hardening changes made
+3. confirmation that no schema, route, or unrelated flow changes were made
+4. confirmation that all four views now use the same long-term-safe pattern

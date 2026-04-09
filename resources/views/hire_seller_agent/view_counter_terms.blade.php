@@ -34,7 +34,8 @@
                         <div class="col-md-6">
                             <h6 style="color: #049399; font-weight: 600;">Bid Information</h6>
                             @php
-                                $bidStatus = $bid->bid_status ?? 'Active';
+                                $bidStatus    = ucfirst(strtolower($bid->bid_status ?? 'active'));
+                                $bidIsTerminal = in_array($bidStatus, ['Accepted', 'Rejected'], true);
                                 $statusColors = [
                                     'Countered' => 'background-color: #ffc107; color: #000;',
                                     'Accepted'  => 'background-color: #28a745; color: #fff;',
@@ -1088,7 +1089,6 @@
                     @endif
 
                     {{-- Action area --}}
-                    @php $bidIsTerminal = in_array($bid->accepted ?? '', ['accepted', 'rejected'], true); @endphp
                     <div class="d-flex gap-2 flex-wrap mt-4">
 
                         {{-- AGENT ACTIONS --}}
@@ -1127,7 +1127,7 @@
                             @endif
                         @elseif($viewerRole === 'agent' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
-                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                            This bid has been {{ $bidStatus }}.
                         </div>
                         @endif
 
@@ -1173,7 +1173,7 @@
                             @endif
                         @elseif($viewerRole === 'seller' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
-                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                            This bid has been {{ $bidStatus }}.
                         </div>
                         @endif
 
@@ -1188,7 +1188,7 @@
                         <i class="fa fa-info-circle me-2"></i>
                         No counter terms have been submitted for this bid yet.
                     </div>
-                    @if($viewerRole === 'seller' && !in_array($bid->accepted ?? '', ['accepted', 'rejected'], true))
+                    @if($viewerRole === 'seller' && !$bidIsTerminal)
                     <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
                        class="btn mt-3 me-2" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
                         <i class="fa fa-edit me-2"></i>Submit Counter Terms

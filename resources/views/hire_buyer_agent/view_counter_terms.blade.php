@@ -34,7 +34,8 @@
                         <div class="col-md-6">
                             <h6 style="color: #049399; font-weight: 600;">Bid Information</h6>
                             @php
-                                $bidStatus = $bid->bid_status ?? 'Active';
+                                $bidStatus    = ucfirst(strtolower($bid->bid_status ?? 'active'));
+                                $bidIsTerminal = in_array($bidStatus, ['Accepted', 'Rejected'], true);
                                 $statusColors = [
                                     'Countered' => 'background-color: #ffc107; color: #000;',
                                     'Accepted'  => 'background-color: #28a745; color: #fff;',
@@ -593,7 +594,6 @@
                         @endif
                     </div>
 
-                    @php $bidIsTerminal = in_array($bid->accepted ?? '', ['accepted', 'rejected'], true); @endphp
                     <div class="d-flex gap-2 flex-wrap mt-4">
 
                         {{-- AGENT ACTIONS --}}
@@ -619,7 +619,7 @@
                         </form>
                         @elseif($viewerRole === 'agent' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
-                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                            This bid has been {{ $bidStatus }}.
                         </div>
                         @endif
 
@@ -652,7 +652,7 @@
                             @endif
                         @elseif($viewerRole === 'buyer' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
-                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                            This bid has been {{ $bidStatus }}.
                         </div>
                         @endif
 
