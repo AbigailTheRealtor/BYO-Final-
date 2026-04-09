@@ -3489,7 +3489,56 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <i class="fa fa-clock me-1"></i> Auction has expired - no further actions available
                                                     </div>
                                                     @endif
-                                                    
+
+                                                    {{-- ── Agent (bid owner): state-based footer — mirrors Seller reference ── --}}
+                                                    @if (!$isListingOwner && $isBidOwner)
+                                                        @if ($latestTenantCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                        {{-- Counter exists: agent sees notice + View Counter Terms --}}
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                            <i class="fa fa-exchange-alt me-1"></i>
+                                                            {{ trim(data_get($auction, 'user.first_name', '') . ' ' . data_get($auction, 'user.last_name', '')) }} has submitted a counter offer.
+                                                        </div>
+                                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
+                                                            <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            </a>
+                                                        </div>
+                                                        @elseif ($bidAccepted === 'accepted')
+                                                        {{-- Accepted: agent sees summary links --}}
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
+                                                            <i class="fa fa-check-circle me-1"></i> Your bid has been accepted.
+                                                        </div>
+                                                        @php $agentFooterBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+                                                        @if ($agentFooterBidSummary)
+                                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
+                                                            <a href="{{ route('accepted-bid-summary.view', $agentFooterBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
+                                                                <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                                                            </a>
+                                                            @if (!$agentFooterBidSummary->isAgentSigned())
+                                                            <a href="{{ route('accepted-bid-summary.sign-form', $agentFooterBidSummary->id) }}" class="btn btn-primary btn-sm">
+                                                                <i class="fa fa-signature me-1"></i> E-Sign Acknowledgement
+                                                            </a>
+                                                            @endif
+                                                            @if ($agentFooterBidSummary->isFullySigned())
+                                                            <a href="{{ route('accepted-bid-summary.download-pdf', $agentFooterBidSummary->id) }}" class="btn btn-success btn-sm">
+                                                                <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                            </a>
+                                                            @endif
+                                                        </div>
+                                                        @endif
+                                                        @elseif ($bidAccepted === 'rejected')
+                                                        {{-- Rejected --}}
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
+                                                            <i class="fa fa-times-circle me-1"></i> Your bid has been rejected.
+                                                        </div>
+                                                        @else
+                                                        {{-- Pending: no counter yet, agent waits --}}
+                                                        <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
+                                                            ⏳ Waiting for a response from {{ trim(data_get($auction, 'user.first_name', '') . ' ' . data_get($auction, 'user.last_name', '')) }}...
+                                                        </div>
+                                                        @endif
+                                                    @endif
+
                                                     <button type="button" class="btn btn-secondary"
                                                         data-bs-dismiss="modal"
                                                         style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">Close</button>
