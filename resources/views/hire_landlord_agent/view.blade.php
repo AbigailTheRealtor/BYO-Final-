@@ -2434,10 +2434,9 @@ $auser = $auctionUser::find(@$auction->user_id);
                             // Use the most recently submitted non-terminal counter as the active baseline.
                             // Exclude accepted/rejected records so stale terminal counters are never used as baseline.
                             $latestActiveCounter = $counterBids->filter(fn($c) => !in_array((string)$c->status, ['accepted', 'rejected'], true))->first();
-                            // Detect whether the listing OWNER specifically submitted any counter (owner-scoped).
+                            // Detect whether any counter exists for this bid (bid-scoped).
                             // This is used exclusively by the footer state machine to determine the 'countered' state.
                             $latestOwnerCounter = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', data_get($bid, 'id'))
-                                ->where('user_id', data_get($auction, 'user_id'))
                                 ->orderBy('created_at', 'desc')
                                 ->first();
                             if ($latestActiveCounter && $latestActiveCounter->meta->count()) {

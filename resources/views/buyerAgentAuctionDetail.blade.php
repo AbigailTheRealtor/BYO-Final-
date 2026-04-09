@@ -2374,7 +2374,6 @@
                                         $latestBuyerCounter = \App\Models\BuyerCounterTerm::with('meta')
                                             ->where('buyer_agent_auction_id', $auction->id)
                                             ->where('parent_counter_id', $bidId)
-                                            ->where('user_id', $auction->user_id)
                                             ->orderBy('created_at', 'desc')
                                             ->first();
 
@@ -4531,7 +4530,6 @@
                                                         // Per-bid counter check: buyer_agent_auction_id = auction ID, parent_counter_id = bid ID.
                                                         $_perBidBuyerCounterExists = !$_isTerminalBuyer && \App\Models\BuyerCounterTerm::where('buyer_agent_auction_id', data_get($auction, 'id'))
                                                             ->where('parent_counter_id', data_get($bid, 'id'))
-                                                            ->where('user_id', data_get($auction, 'user_id'))
                                                             ->exists();
                                                         $state = $_perBidBuyerCounterExists
                                                             ? 'countered'
