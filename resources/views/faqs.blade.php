@@ -12,8 +12,8 @@
         </div>
         <div class="col-sm-12 col-md-6 col-lg-6">
           <h1>We're here to help.</h1>
-          <p>Bid Your Offer provides a brand-new approach to real estate bidding. This platform allows consumers to enjoy full transparency when it comes to purchasing real estate properties.</p>
-          <a href="addListing.html"><button class="btn">Add Auction</button></a>
+          <p>BidYourAgent provides a brand-new approach to real estate bidding. This platform allows consumers to enjoy full transparency when it comes to purchasing real estate properties.</p>
+          <a href="{{ route('register') }}"><button class="btn">Hire Agent</button></a>
         </div>
       </div>
     </div>
@@ -22,7 +22,7 @@
 
     <div class="accordion" id="accordionPanelsStayOpenExample">
       <h2>Common FAQ</h2>
-      <p>For any additional questions email admin@bidyouroffer.com</p>
+      <p>For any additional questions email admin@bidyouragent.com</p>
       <div class="accordion-item">
         <div class="accordion-header" id="panelsStayOpen-headingOne">
           <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne"><h4>Can I Use the Services of a Real Estate Broker to Assist Me as A Buyer?</h4></button>
@@ -69,7 +69,7 @@
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse6th" aria-expanded="false" aria-controls="panelsStayOpen-collapse6th"><h4>Do I Need to Have a Sale Contract Typed Up Before the Auction?</h4></button>
         </div>
         <div id="panelsStayOpen-collapse6th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading6th">
-          <div class="accordion-body">No, the Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email admin@bidyouroffer.com to request an “AS IS’ contract, all the disclosures, and addendums. Once the Buyer receives the contract they will have 48 hours to sign and submit the contract to the Seller/Seller’s agent or their offer can be considered null and void.</div>
+          <div class="accordion-body">No, the Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email admin@bidyouragent.com to request an “AS IS’ contract, all the disclosures, and addendums. Once the Buyer receives the contract they will have 48 hours to sign and submit the contract to the Seller/Seller’s agent or their offer can be considered null and void.</div>
         </div>
       </div>
       <div class="accordion-item">
@@ -82,18 +82,18 @@
       </div>
       <div class="accordion-item">
         <div class="accordion-header" id="panelsStayOpen-heading8th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse8th" aria-expanded="false" aria-controls="panelsStayOpen-collapse8th"><h4>How Much Is It to List My Property on Bid Your Offer? (Seller’s And Listing Agents)</h4></button>
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse8th" aria-expanded="false" aria-controls="panelsStayOpen-collapse8th"><h4>How Much Is It to List My Property on BidYourAgent? (Seller’s And Listing Agents)</h4></button>
         </div>
         <div id="panelsStayOpen-collapse8th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading8th">
-          <div class="accordion-body">Adding your property to our real estate bidding site is completely free! At the time of closing, Bid Your Offer LLC a will collect a 1% success fee. The Seller determines who pays the success fee. If Seller is represented by an agent and the Seller or Buyer pay the 1% success fee we will split 50% of the success fee with the Seller’s agent. Additionally, the Seller’s agent can opt to pay the success fee with their commission for half a percentage (.50%.) There is no charge to Bid Your Offer if the property does not close!</div>
+          <div class="accordion-body">Adding your property to our real estate bidding site is completely free! At the time of closing, BidYourAgent LLC a will collect a 1% success fee. The Seller determines who pays the success fee. If Seller is represented by an agent and the Seller or Buyer pay the 1% success fee we will split 50% of the success fee with the Seller’s agent. Additionally, the Seller’s agent can opt to pay the success fee with their commission for half a percentage (.50%.) There is no charge to BidYourAgent if the property does not close!</div>
         </div>
       </div>
       <div class="accordion-item">
         <div class="accordion-header" id="panelsStayOpen-heading9th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse9th" aria-expanded="false" aria-controls="panelsStayOpen-collapse9th"><h4>How Do I List a Property on Bid Your Offer?</h4></button>
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse9th" aria-expanded="false" aria-controls="panelsStayOpen-collapse9th"><h4>How Do I List a Property on BidYourAgent?</h4></button>
         </div>
         <div id="panelsStayOpen-collapse9th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading9th">
-          <div class="accordion-body">On the home page you can click “Add a Listing.” The Seller will be required to create an account and accept the Terms of Service. Seller must sign an addendum prior to listing that they will pay the 1% Success Fee to Bid Your Offer LLC at closing before listing. If Seller is represented by an agent, the agent will get 50% of the success fee. Seller can add this Success Fee to the auction and have the Buyer credit the Seller this fee at closing, if Seller chooses. If seller chooses to have the Buyer pay the 1% Success fee the fee will be added to the winning bid to come up with the final sales price.</div>
+          <div class="accordion-body">On the home page you can click “Hire Agent.” The Seller will be required to create an account and accept the Terms of Service. Seller must sign an addendum prior to listing that they will pay the 1% Success Fee to BidYourAgent LLC at closing before listing. If Seller is represented by an agent, the agent will get 50% of the success fee. Seller can add this Success Fee to the auction and have the Buyer credit the Seller this fee at closing, if Seller chooses. If seller chooses to have the Buyer pay the 1% Success fee the fee will be added to the winning bid to come up with the final sales price.</div>
         </div>
       </div>
       <div class="accordion-item">

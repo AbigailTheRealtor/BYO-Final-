@@ -8,35 +8,46 @@
 </div>
 <div class="buyerOfferContentDetails">
     <div class="container">
-        <p><span><b>Explore</b></span> <span><i>{{$count}} results</i></span></p>
+              <div class="mb-3">
+        <h4 class="fw-bold">Buyer Criteria Listings</h4>
+        <p class="text-muted small">Buyers and tenants post their search criteria — agents bid to be hired as their representative.</p>
+        <p><span class="text-muted small">{{$count}} listings found</span></p>
+      </div>
       <div class="selectionRoom row">
         <div class="col-sm-12 col-md-3 col-lg-3">
           <div class="mb-3">
-            <select id="disabledSelect" class="form-select">
+            <select id="disabledSelect" class="form-select" disabled>
               <option>City, County, ZIP, Address...</option>
             </select>
           </div>
         </div>
         <div class="col-sm-12 col-md-3 col-lg-3">
           <div class="mb-3">
-            <select id="disabledSelect" class="form-select">
+            <select id="disabledSelect" class="form-select" disabled>
               <option>Bedrooms</option>
             </select>
           </div>
         </div>
         <div class="col-sm-12 col-md-3 col-lg-3">
           <div class="mb-3">
-            <select id="disabledSelect" class="form-select">
+            <select id="disabledSelect" class="form-select" disabled>
               <option>Bathrooms</option>
             </select>
           </div>
         </div>
         <div class="col-sm-12 col-md-3 col-lg-3">
           <div class="mb-3">
-            <select id="disabledSelect" class="form-select">
-              <option>Property Types</option>
+            <select id="disabledSelect" class="form-select" disabled>
+              <option value="">Property Type (Sale)</option>
+              <option>Residential</option>
+              <option>Income</option>
+              <option>Commercial</option>
+              <option>Business Opportunity</option>
+              <option>Vacant Land</option>
             </select>
           </div>
+        </div>
+      </div>
         </div>
       </div>
       <div class="buyerOfferSearchMenu d-flex justify-content-between flex-wrap text-center">

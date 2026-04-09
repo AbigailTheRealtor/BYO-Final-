@@ -56,7 +56,7 @@
             <div class="homeOffer">
                 <h2 class="text-center mt-5 p-0 mb-4">What do we offer?</h2>
                 <div class="content container">
-                    {{-- <p><b>Bid Your Offer</b> provides a brand-new approach to <b>real estate bidding</b>. It allows Sellers
+                    {{-- <p><b>BidYourAgent</b> provides a brand-new approach to <b>real estate bidding</b>. It allows Sellers
                         and Buyers to enjoy full transparency when it comes to purchasing <b>real estate properties</b>.
                         Instead of blindly bidding on a property, Buyers/Buyer’s agents can easily see what others are
                         proposing. As a result, they can bid accordingly and can acquire their desired property.</p>
@@ -75,7 +75,7 @@
 
                     {{-- new add data --}}
                     <p>
-                        <b>Bid Your Agent</b> is a real estate platform that simplifies the process of hiring a real estate
+                        <b>BidYourAgent</b> is a real estate platform that simplifies the process of hiring a real estate
                         agent for buyers, sellers, landlords, tenants, and agents. Our goal is to provide all the necessary
                         information to make an informed decision and hire the right agent for residential, income, and
                         commercial properties.
@@ -108,7 +108,7 @@
                     </p>
                     <p>
                         Agents who are hired on this platform can list properties for sellers and landlords, as well as
-                        buying and leasing criteria for buyers and tenants, on our platform BidYourOffer.com. This enables
+                        buying and leasing criteria for buyers and tenants, on our platform BidYourAgent.com. This enables
                         them to receive transparent bids from users that include not only the offered price, but also the
                         pertinent terms for the property listings or the buying and leasing criteria listings.
                     </p>
@@ -151,7 +151,7 @@
                     </div>
                     <div class="col-sm-12 col-md-4 col-lg-4">
                         <h2 class="p-0">Connecting Sellers, Buyers, & Agents</h2>
-                        <p class="text-center">Transparent Real Estate Bidding made possible through Bid Your Offer &
+                        <p class="text-center">Transparent Real Estate Bidding made possible through BidYourAgent &
                             Innovate Real Estate</p>
                         <div class="footer">
                             <img class="w-100" src="{{ asset('assets/pictures/home/connectingSeller.jpg') }}"

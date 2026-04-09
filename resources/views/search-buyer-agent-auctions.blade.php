@@ -7,7 +7,11 @@
     </div>
     <div class="buyerOfferContentDetails">
         <div class="container">
-            <p><span><b>Explore</b></span> <span><i>{{ $count }} results</i></span></p>
+            <div class="mb-3">
+                <h4 class="fw-bold">Hire a Buyer's Agent</h4>
+                <p class="text-muted small">Buyers posting their purchase criteria — agents bid to be hired as their buyer's representative.</p>
+                <p><span class="text-muted small">{{ $count }} listings found</span></p>
+            </div>
             <form action="" method="GET" class="search-form">
                 <div class="selectionRoom row">
                     <div class="col-sm-12 col-md-3 col-lg-3">
@@ -78,11 +82,11 @@
                     <div class="col-sm-12 col-md-3 col-lg-3">
                         @php
                             $property_types = [
-                                ['target' => '', 'name' => 'Residential'],
-                                ['target' => '', 'name' => 'Income'],
-                                ['target' => '', 'name' => 'Commercial'],
-                                ['target' => '', 'name' => 'Business'],
-                                ['target' => '', 'name' => 'Vacant Land'],
+                                ['target' => '', 'name' => 'Residential', 'label' => 'Residential'],
+                                ['target' => '', 'name' => 'Income', 'label' => 'Income'],
+                                ['target' => '', 'name' => 'Commercial', 'label' => 'Commercial'],
+                                ['target' => '', 'name' => 'Business', 'label' => 'Business Opportunity'],
+                                ['target' => '', 'name' => 'Vacant Land', 'label' => 'Vacant Land'],
                             ];
                         @endphp
                         <div class="mb-3">
@@ -92,7 +96,7 @@
                                 @foreach ($property_types as $item)
                                     <option value="{{ $item['name'] }}"
                                         {{ selected($item['name'], request()->property_type) }}>
-                                        {{ $item['name'] }}</option>
+                                        {{ $item['label'] ?? $item['name'] }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -129,7 +133,7 @@
             @php
                 $activeType = request()->property_type ?? '';
                 $typeBaseQuery = request()->except(['property_type', 'page']);
-                $pillTypes = ['All' => '', 'Residential' => 'Residential', 'Income' => 'Income', 'Commercial' => 'Commercial', 'Business' => 'Business', 'Vacant Land' => 'Vacant Land'];
+                $pillTypes = ['All' => '', 'Residential' => 'Residential', 'Income' => 'Income', 'Commercial' => 'Commercial', 'Business Opportunity' => 'Business', 'Vacant Land' => 'Vacant Land'];
             @endphp
             <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
                 @foreach ($pillTypes as $label => $typeValue)

@@ -7,7 +7,11 @@
 
 
         <div class="sellerWorkAuction">
-            {{-- <h2 class="mb-3">What Are The Auction Terms?</h2> --}}
+            <div class="mb-4">
+                <h2 class="fw-bold mb-1">How Seller Listings Work</h2>
+                <p class="text-muted">Everything you need to know about creating a listing and hiring a seller's agent on BidYourAgent.</p>
+                <hr>
+            </div>
             <div class="d-flex">
                 <div><i class="fa fa-circle"></i></div>
                 {{-- <div>The Seller sets the terms of the auction.</div> --}}

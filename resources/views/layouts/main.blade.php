@@ -183,7 +183,7 @@
         <a href="{{ route('home') }}"><img src="{{ asset('assets/pictures/footerLogo.png') }}" alt="footerLogo" /></a>
         <div class="footerNav">
             <a href="#">About Us</a>
-            <a href="{{ route('sellerWorks') }}">How it works Sellers</a>
+            <a href="{{ route('sellerWorks') }}">How It Works</a>
             <a href="#">Contact Us</a>
             <a href="{{ route('faqs') }}">Faq's</a>
         </div>

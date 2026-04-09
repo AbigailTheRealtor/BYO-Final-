@@ -96,7 +96,7 @@
                     @elseif(auth()->user() && auth()->user()->user_type == 'agent')
                         <span class="dropdown">
                             <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Add Listing <i class="fa fa-angle-down"></i></button>
+                                Hire Agent <i class="fa fa-angle-down"></i></button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
                                     <a style="color: #333;" class="dropdown-item"

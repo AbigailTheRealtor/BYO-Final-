@@ -24,7 +24,7 @@
                         their offer can be considered null and void. --}}
 
                         {{-- add new --}}
-                        <b> Welcome to Bid Your Agent!</b> Our platform is designed to connect sellers with top-performing
+                        <b> Welcome to BidYourAgent!</b> Our platform is designed to connect sellers with top-performing
                         real
                         estate agents who specialize in residential, income, and commercial properties. We simplify the
                         process of hiring a real estate agent and streamline the selling process for sellers by providing a
@@ -94,8 +94,8 @@
                 {{-- <div>The Seller has the option to add in the “Seller’s Premium”</div> --}}
                 <div>Our platform is a free service for sellers. We will receive a referral fee from the hired agent upon
                     closing. Moreover, by hiring an agent on our platform, sellers can list their property for free on our
-                    sister platform, BidYourOffer.com. To learn more about the benefits that BidYourOffer can offer for your
-                    property listing, please visit the buyer's section on BidYourOffer.com using the following link: ( <a href="{{ route('sellerDetails') }}"><i class="fa fa-arrow-right"></i></a> )</div>
+                    sister platform, BidYourAgent.com. To learn more about the benefits that BidYourAgent can offer for your
+                    property listing, please visit the buyer's section on BidYourAgent.com using the following link: ( <a href="{{ route('sellerDetails') }}"><i class="fa fa-arrow-right"></i></a> )</div>
             </div>
             {{-- <div class="d-flex">
                 <div><i class="fa fa-circle"></i></div>
@@ -106,7 +106,7 @@
                 <div>The Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the
                     disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide
                     Buyer the documents. If there are no Real Estate Agents involved, Seller can email
-                    admin@bidyouroffer.com to request an “AS IS’ contract, all the disclosures, and addendums.</div>
+                    admin@bidyouragent.com to request an “AS IS’ contract, all the disclosures, and addendums.</div>
             </div>
             <div class="d-flex">
                 <div><i class="fa fa-circle"></i></div>
@@ -123,10 +123,10 @@
         <!-- End -->
         <!-- Third Section  -->
         <div class="sellerWorkBid">
-            <h2 class="mb-3">Why Use Bid Your Offer?</h2>
-            <p>Bid Your Offer is a means for all parties to create transparency in every Real Estate transaction. The number
+            <h2 class="mb-3">Why Use BidYourAgent?</h2>
+            <p>BidYourAgent is a means for all parties to create transparency in every Real Estate transaction. The number
                 one quality Sellers and Buyers look for in a Real Estate Transaction is Trust. Sellers and Buyers can rely
-                on Bid Your Offer platform to provide all the important offering terms of a transaction by putting every
+                on BidYourAgent platform to provide all the important offering terms of a transaction by putting every
                 party on the same playing field.</p>
             <p>Seller’s can have confidence by utilizing this platform it creates Trust and Transparency for all parties and
                 ensures Seller’s will be presented with all offers fairly and timely. Buyers no longer have to be
@@ -134,7 +134,7 @@
                 offers. Agents can avoid going back and forth with negotiations of the contract terms and will only need to
                 complete the contract once the Seller selects the winning bid.</p>
             <p>Typically, numerous Buyers propose similar price/terms without putting up their best offer because they are
-                unaware of the other offering prices/terms. Bid Your Offer is a means for all parties to be more transparent
+                unaware of the other offering prices/terms. BidYourAgent is a means for all parties to be more transparent
                 because Buyers can now be aware of what other Buyers are offering instead of guessing. The results can be
                 numerous bids competing and Buyers putting their best offer forward. In many cases had a buyer known they
                 missed out on a property by only a few thousand dollars, they would have paid it.</p>
@@ -173,11 +173,11 @@
                 </div>
                 <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse show"
                     aria-labelledby="panelsStayOpen-headingOne">
-                    <div class="accordion-body">The success fee is 1% of the purchase price paid to Bid Your Offer LLC at
+                    <div class="accordion-body">The success fee is 1% of the purchase price paid to BidYourAgent LLC at
                         closing for the success of the auction. The success fee will be added to the final sales price if
                         paid by the Buyer. If paid by the Seller the fee will come out of the proceeds at closing. If the
                         property contract is canceled, the Seller or Seller’s agent must submit a cancellation contract to
-                        admin@bidyouroffer.com. The Success fee is only charged when the sale is closed.</div>
+                        admin@bidyouragent.com. The Success fee is only charged when the sale is closed.</div>
                 </div>
             </div>
             <div class="accordion-item">
@@ -197,7 +197,7 @@
                         work with a full-service realtor without paying a full commission. The amount of the Buyer’s Premium
                         varies from auction to auction and is determined by the Seller. If the property contract is
                         canceled, the Seller or Seller’s Agent must upload and submit a cancellation contract to
-                        admin@bidyouroffer.com.</div>
+                        admin@bidyouragent.com.</div>
                 </div>
             </div>
             <div class="accordion-item">
@@ -231,7 +231,7 @@
                     aria-labelledby="panelsStayOpen-heading4th">
                     <div class="accordion-body">We will only collect the fee at the time of closing. If the real estate
                         contract falls through, the Seller or Seller’s agent must promptly submit a release and cancellation
-                        agreement to admin@bidyouroffer.com.</div>
+                        agreement to admin@bidyouragent.com.</div>
                 </div>
             </div>
             <div class="accordion-item">
@@ -260,9 +260,9 @@
                 </div>
                 <div id="panelsStayOpen-collapse6th" class="accordion-collapse collapse"
                     aria-labelledby="panelsStayOpen-heading6th">
-                    <div class="accordion-body">On the home page you can click “Add a Listing.” The Seller will be required
+                    <div class="accordion-body">On the home page you can click “Hire Agent.” The Seller will be required
                         to create an account and accept the Terms of Service. Seller must sign an addendum prior to listing
-                        that they will pay the 1% Success Fee to Bid Your Offer LLC at closing before listing. Seller can
+                        that they will pay the 1% Success Fee to BidYourAgent LLC at closing before listing. Seller can
                         add this Success Fee to the auction and have the Buyer credit the Seller this fee at closing, if
                         Seller chooses. If seller chooses to have the Buyer pay the 1% Success fee the fee will be added to
                         the winning bid to come up with the final sales price.</div>
@@ -273,13 +273,13 @@
                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                         data-bs-target="#panelsStayOpen-collapse7th" aria-expanded="false"
                         aria-controls="panelsStayOpen-collapse7th">
-                        <h4>How Much Is It to List My Property on Bid Your Offer?</h4>
+                        <h4>How Much Is It to List My Property on BidYourAgent?</h4>
                     </button>
                 </div>
                 <div id="panelsStayOpen-collapse7th" class="accordion-collapse collapse"
                     aria-labelledby="panelsStayOpen-heading7th">
                     <div class="accordion-body">Adding your property to our real estate bidding site is completely free! At
-                        the time of closing, Bid Your Off LLC will receive a 1% success fee which the Buyer can credit to
+                        the time of closing, BidYourAgent LLC will receive a 1% success fee which the Buyer can credit to
                         the Seller to pay the fee. If listed by a Seller’s agent then Seller’s agent will get half of the
                         success fee premium at closing for a successful auction.</div>
                 </div>
@@ -297,7 +297,7 @@
                     <div class="accordion-body">No, the Seller’s Agent will provide the winning real estate bid with an “AS
                         IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the
                         Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller
-                        can email admin@bidyouroffer.com to request an “AS IS’ contract, all the disclosures, and addendums.
+                        can email admin@bidyouragent.com to request an “AS IS’ contract, all the disclosures, and addendums.
                         Once the Buyer receives the contract they will have 48 hours to sign and submit the contract to the
                         Seller/Seller’s agent or their offer can be considered null and void.</div>
                 </div>

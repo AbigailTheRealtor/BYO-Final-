@@ -76,7 +76,11 @@
 </div> --}}
 <div class="buyerOfferContentDetails">
     <div class="container">
-        <p><span><b>Explore</b></span> <span><i>{{$count}} results</i></span></p>
+        <div class="mb-3">
+            <h4 class="fw-bold">Browse Agents</h4>
+            <p class="text-muted small">Find qualified real estate agents available to bid for your business. Message any agent to start the conversation.</p>
+            <p><span class="text-muted small">{{$count}} agents found</span></p>
+        </div>
 
 
 

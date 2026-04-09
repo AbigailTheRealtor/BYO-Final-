@@ -8,7 +8,11 @@
 </div>
 <div class="buyerOfferContentDetails">
     <div class="container">
-        <p><span><b>Explore</b></span> <span><i>{{$count}} results</i></span></p>
+        <div class="mb-3">
+            <h4 class="fw-bold">Browse Property Listings</h4>
+            <p class="text-muted small">Properties where sellers are accepting competitive offers from buyers. Compare bids transparently.</p>
+            <p><span class="text-muted small">{{$count}} listings found</span></p>
+        </div>
       <div class="selectionRoom row">
         <div class="col-sm-12 col-md-3 col-lg-3">
           <div class="mb-3">

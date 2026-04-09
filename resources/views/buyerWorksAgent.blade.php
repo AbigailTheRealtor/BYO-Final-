@@ -51,7 +51,7 @@
       </div>
       <div class="d-flex">
         <div><i class="fa fa-circle"></i></div>
-        <div>The Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email <a href="">admin@bidyouroffer.com</a> to request an “AS IS’ contract, all the disclosures, and addendums.</div>
+        <div>The Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email <a href="">admin@bidyouragent.com</a> to request an “AS IS’ contract, all the disclosures, and addendums.</div>
       </div>
       <div class="d-flex">
         <div><i class="fa fa-circle"></i></div>
@@ -65,11 +65,11 @@
     <!-- End -->
     <!-- Third Section  -->
     <div class="buyerWorkAgentBid">
-      <h2 class="mb-3">Why Use Bid Your Offer?</h2>
-      <p>Bid Your Offer is a means for all parties to create transparency in every Real Estate transaction. The number one quality Sellers and Buyers look for in a Real Estate Transaction is Trust. Sellers, Buyers, and Realtors can rely on Bid Your Offer platform to provide all the important offering terms of a transaction by putting every party on the same playing field.</p>
+      <h2 class="mb-3">Why Use BidYourAgent?</h2>
+      <p>BidYourAgent is a means for all parties to create transparency in every Real Estate transaction. The number one quality Sellers and Buyers look for in a Real Estate Transaction is Trust. Sellers, Buyers, and Realtors can rely on BidYourAgent platform to provide all the important offering terms of a transaction by putting every party on the same playing field.</p>
       <p>Seller’s can have confidence by utilizing this platform it creates Trust and Transparency for all parties and ensures Seller’s will be presented with all offers fairly and timely. Buyers no longer have to be disappointed that their offer wasn’t selected because of the lack of transparency with the other competing offers. Sellers, Buyers, and Realtors can avoid going back and forth with negotiations of the contract terms and will only need to complete the contract once the Seller selects the winning bid.
       </p>
-      <p>Typically, numerous Buyers propose similar price/terms because they are unaware of the other offering prices/terms. Bid Your Offer is a means for all parties to be more transparent because Buyers can now be aware of what other Buyers are offering instead of guessing. In many cases had a buyer known they missed out on a property by only a few thousand dollars, they would have paid it.</p>
+      <p>Typically, numerous Buyers propose similar price/terms because they are unaware of the other offering prices/terms. BidYourAgent is a means for all parties to be more transparent because Buyers can now be aware of what other Buyers are offering instead of guessing. In many cases had a buyer known they missed out on a property by only a few thousand dollars, they would have paid it.</p>
     </div>
     <!-- End -->
     <!-- Fourth Section  -->
@@ -109,7 +109,7 @@
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse4th" aria-expanded="false" aria-controls="panelsStayOpen-collapse4th"><h4>Do I Need to Have a Sales Contract Typed Up Before the Auction?</h4></button>
         </div>
         <div id="panelsStayOpen-collapse4th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading4th">
-          <div class="accordion-body">No, the Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email admin@bidyouroffer.com to request an “AS IS’ contract, all the disclosures, and addendums. Once the Buyer receives the contract they will have 48 hours to sign and submit the contract to the Seller/Seller’s agent or their offer can be considered null and void. </div>
+          <div class="accordion-body">No, the Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email admin@bidyouragent.com to request an “AS IS’ contract, all the disclosures, and addendums. Once the Buyer receives the contract they will have 48 hours to sign and submit the contract to the Seller/Seller’s agent or their offer can be considered null and void. </div>
         </div>
       </div>
       <div class="accordion-item">
@@ -117,7 +117,7 @@
           <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse5th" aria-expanded="false" aria-controls="panelsStayOpen-collapse5th"><h4>What is a Success Fee?</h4></button>
         </div>
         <div id="panelsStayOpen-collapse5th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading5th">
-          <div class="accordion-body">The success fee is 1% of the purchase price paid to Bid Your Offer LLC at closing for the success of the auction. The success fee will be added to the final sales price if paid by the Buyer. The Seller determines who pays the success fee.  The Buyer’s agent must check the listing notes on the property to determine if the Buyer is responsible for paying the success fee.  The success fee is only charged when the sale is closed. </div>
+          <div class="accordion-body">The success fee is 1% of the purchase price paid to BidYourAgent LLC at closing for the success of the auction. The success fee will be added to the final sales price if paid by the Buyer. The Seller determines who pays the success fee.  The Buyer’s agent must check the listing notes on the property to determine if the Buyer is responsible for paying the success fee.  The success fee is only charged when the sale is closed. </div>
         </div>
       </div>
       <div class="accordion-item">
