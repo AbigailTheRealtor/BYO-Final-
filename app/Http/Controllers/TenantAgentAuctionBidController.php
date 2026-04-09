@@ -490,7 +490,7 @@ class TenantAgentAuctionBidController extends Controller
         }
         
         return view('hire_tenant_agent.counter-bid', [
-            'pab' => $bid,
+            'pab' => $auction,
             'bid_id' => $bid_id,
             'parent_counter_id' => $parentCounterId,
             'auction' => $auction,

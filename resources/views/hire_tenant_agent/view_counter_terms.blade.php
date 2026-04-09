@@ -745,7 +745,7 @@
                         {{-- TENANT ACTIONS --}}
                         @if($viewerRole === 'tenant' && !$bidIsTerminal)
                             @if(!$awaitingCounterResponse)
-                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                            <a href="{{ route('tenant.counter-terms', $bid->id) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
                                 <i class="fas fa-reply me-2"></i>Counter Back
                             </a>
                             <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
