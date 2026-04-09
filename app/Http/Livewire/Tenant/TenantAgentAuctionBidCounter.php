@@ -664,6 +664,11 @@ class TenantAgentAuctionBidCounter extends Component
             $this->other_services = is_string($otherServices) ? json_decode($otherServices, true) ?? [] : (array) $otherServices;
             $this->other_services_enabled = !empty($this->other_services);
         }
+
+        // Normalize flat-fee type props to '$' — the counter UI is $-only for flat fee inputs.
+        // This guards against any legacy '%' values that may have been stored in older records.
+        $this->lease_fee_flat_type    = '$';
+        $this->purchase_fee_flat_type = '$';
     }
 
     /**
@@ -800,6 +805,10 @@ class TenantAgentAuctionBidCounter extends Component
         $counterBid->saveMeta('other_lease_fee', $this->other_lease_fee);
         $counterBid->saveMeta('lease_fee_other', $this->lease_fee_other);
         $counterBid->saveMeta('lease_fee_months', $this->lease_fee_months);
+
+        // Normalize and persist flat-fee type keys so any legacy '%' values in meta are overwritten.
+        $counterBid->saveMeta('lease_fee_flat_type', '$');
+        $counterBid->saveMeta('purchase_fee_flat_type', '$');
 
         // Purchase Fee Structure
         $counterBid->saveMeta('interested_purchase_fee_type', $this->interested_purchase_fee_type);
