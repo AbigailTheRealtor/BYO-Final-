@@ -944,10 +944,16 @@ select {
 .flex-shrink {
   flex-shrink: 1;
 }
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
 .shrink-0 {
   flex-shrink: 0;
 }
 .flex-grow {
+  flex-grow: 1;
+}
+.grow {
   flex-grow: 1;
 }
 .border-collapse {
@@ -1177,6 +1183,10 @@ select {
   padding-top: 3rem;
   padding-bottom: 3rem;
 }
+.py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
 .px-5 {
   padding-left: 1.25rem;
   padding-right: 1.25rem;
@@ -1192,10 +1202,6 @@ select {
 .px-1 {
   padding-left: 0.25rem;
   padding-right: 0.25rem;
-}
-.py-5 {
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
 }
 .py-6 {
   padding-top: 1.5rem;
@@ -1248,9 +1254,6 @@ select {
 }
 .pb-1 {
   padding-bottom: 0.25rem;
-}
-.text-left {
-  text-align: left;
 }
 .text-center {
   text-align: center;
@@ -1382,6 +1385,9 @@ select {
 }
 .opacity-5 {
   opacity: 0.05;
+}
+.opacity-25 {
+  opacity: 0.25;
 }
 .opacity-80 {
   opacity: 0.8;
