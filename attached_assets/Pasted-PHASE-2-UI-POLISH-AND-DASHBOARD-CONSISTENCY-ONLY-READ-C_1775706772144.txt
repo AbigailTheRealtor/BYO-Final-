@@ -1,0 +1,256 @@
+PHASE 2 UI POLISH AND DASHBOARD CONSISTENCY ONLY — READ CAREFULLY BEFORE MAKING ANY CHANGES
+
+Phase 1 already handled safe shell cleanup.
+This Phase 2 pass is still UI only and must remain strictly non-destructive.
+
+Do not touch any hire-agent functionality, listing creation, actual listing pages, bidding, counteroffers, match score, accepted bid summary, notifications, routes, controllers, database schema, or backend logic.
+
+The goal of Phase 2 is to improve dashboard consistency, search clarity, homepage structure, and visual polish while keeping all working flows unchanged.
+
+HARD SAFEGUARDS
+Do not touch:
+any livewire/ files
+any listing creation files
+any listing detail files
+any add-bid files
+any counteroffer files
+any accepted bid summary files
+any route definitions
+any controllers
+any schema or migrations
+any business logic
+any protected hire-agent flows
+
+If any requested UI improvement would require touching a protected file, stop and report it instead.
+
+SAFE FILES ONLY
+
+Only edit these safe shell/UI files in Phase 2:
+
+resources/views/layouts/main.blade.php
+resources/views/layouts/partials/header.blade.php
+resources/views/layouts/partials/sidenav.blade.php
+resources/views/layouts/partials/dashboard_user_section.blade.php
+resources/views/dashboard.blade.php
+resources/views/home.blade.php
+resources/views/sellerWorks.blade.php
+resources/views/sellerWorksAgent.blade.php
+resources/views/buyerWorks.blade.php
+resources/views/buyerWorksAgent.blade.php
+resources/views/faqs.blade.php
+resources/views/buyerDetails.blade.php
+resources/views/sellerDetails.blade.php
+resources/views/search-agents.blade.php
+resources/views/search-buyer-agent-auctions.blade.php
+resources/views/search-seller-agent-auctions.blade.php
+resources/views/search-buyer-criteria-auctions.blade.php
+resources/views/pAuctionListing.blade.php
+
+Do not go outside this file list in Phase 2.
+
+PHASE 2 OBJECTIVES
+1. Make the dashboard feel like one platform for all user types
+
+The current experience still likely feels role-fragmented.
+
+Refine the safe dashboard UI so the platform feels like one marketplace with role-specific access, not multiple disconnected products.
+
+Improve:
+sidebar grouping consistency
+spacing and section hierarchy
+dashboard headings
+action button hierarchy
+visual consistency between agent and non-agent dashboards
+
+Do not change route behavior or access permissions.
+
+2. Improve the dashboard main content area
+
+Refine dashboard.blade.php and related safe shell partials so the center panel feels more launch-ready.
+
+Goal:
+
+Make it feel like a modern SaaS dashboard.
+
+Preferred sections if current data allows:
+Welcome / account summary
+Active Listings
+Active Bids
+Counter Offers Pending
+Accepted Deals
+Recent Activity
+Needs Attention
+Quick Actions
+
+Important:
+Only use existing data already available in the view.
+Do not add new queries or backend calculations.
+
+If some sections cannot be powered safely with current variables, use cleaner layout and stronger headings rather than inventing new logic.
+
+3. Improve “Quick Actions” and CTA consistency
+
+Make sure the shell presents one clear primary action:
+
+Primary CTA:
+
+Hire Agent
+
+Where appropriate in safe files, reinforce this as the main action.
+
+Also make sure dashboard and nav actions feel consistent across:
+
+desktop header
+dashboard top card
+mobile shell UI in safe files
+
+Again:
+
+labels and presentation only
+do not break current route behavior
+4. Improve homepage structure and conversion flow
+
+Refine the homepage so it better explains the product in a clean order.
+
+Preferred homepage structure:
+Hero section
+How it works in 3 steps
+Role-based value for Seller, Buyer, Landlord, Tenant
+Why agents benefit
+Match score / competitive hiring explanation
+Referral and Hire Me link benefits
+CTA section
+FAQ preview
+
+Use only existing Blade files and routes.
+
+Do not add new pages in Phase 2.
+
+Do not overcomplicate visuals if that would risk instability.
+
+5. Clarify agent benefits more strongly
+
+On safe marketing pages and homepage, strengthen the agent value proposition.
+
+Emphasize:
+Agents can bid on client-created listings
+Agents can compare their match scores
+Agents can negotiate transparently
+Agents can hire referral agents
+Agents can use Hire Me links, widgets, and QR codes
+Agents can market the platform and generate referral income
+
+Keep it professional and high-converting.
+
+Do not make unsupported claims.
+
+6. Improve search page clarity and card presentation
+
+Search pages should feel less cluttered and more unified.
+
+Improve:
+section titles
+filter grouping
+card spacing
+empty states
+role/property type clarity
+listing headers and badges if safe in these files
+Property type wording:
+
+For Seller/Buyer related UI:
+
+Residential
+Income
+Commercial
+Business Opportunity
+Vacant Land
+
+For Landlord/Tenant related UI:
+
+Residential
+Commercial
+
+Do not alter backend search logic.
+
+7. Improve empty states and dashboard messaging
+
+Where current safe views show generic or sparse content, improve the empty-state copy.
+
+Examples:
+
+no active listings
+no bids yet
+no recent activity
+no messages yet
+
+Make the copy feel polished and helpful.
+
+Do not add backend logic.
+
+8. Improve overall visual polish
+
+Use a consistent premium SaaS feel:
+
+cleaner cards
+improved spacing
+stronger headings
+better button hierarchy
+improved section separation
+cleaner icon alignment
+more readable dashboard layout
+
+Do not introduce new frameworks.
+Do not rebuild architecture.
+Do not change data flow.
+
+IMPORTANT COPY RULES
+Use:
+BidYourAgent
+Hire Agent
+Seller
+Buyer
+Landlord
+Tenant
+Business Opportunity
+Do not use in safe public UI:
+old BidYourOffer branding
+vague “Business” where property type should be “Business Opportunity”
+overly repetitive “auction” wording if cleaner wording like “listing” or “agent hiring listing” works better in the safe files
+
+Do not rename protected route names or backend concepts. This is display text only.
+
+MOBILE
+
+Refine mobile-safe shell presentation only where included in the safe files:
+
+button labels
+nav wording
+spacing
+hierarchy
+
+Do not change mobile logic or route behavior.
+
+WHAT I WANT BACK AFTER PHASE 2
+
+Return:
+
+exact files changed
+exact UI areas improved
+exact wording changes made
+any places that still need cleanup but would require touching protected files
+FINAL SAFETY REMINDER
+
+This phase must not modify:
+
+listing creation
+listing edit
+actual listing display
+bidding
+counterbidding
+accept/reject
+match score
+accepted bid summary
+notifications
+backend logic
+
+If any change would require touching those systems, stop and report instead.
