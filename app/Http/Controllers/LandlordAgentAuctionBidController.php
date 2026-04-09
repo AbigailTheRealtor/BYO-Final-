@@ -484,6 +484,43 @@ class LandlordAgentAuctionBidController extends Controller
     }
 
 
+    public function addCounterBid($id, $bid_id)
+    {
+        $auction = LandlordAgentAuction::with('user', 'meta')->find($id);
+        if (!$auction) {
+            abort(404, 'Auction not found');
+        }
+
+        $bid = LandlordAgentAuctionBid::with('meta', 'user')->find($bid_id);
+        if (!$bid) {
+            abort(404, 'Bid not found');
+        }
+
+        if ($bid->landlord_agent_auction_id != $auction->id) {
+            abort(404, 'Bid does not belong to this auction');
+        }
+
+        $userId = Auth::id();
+        $isListingOwner = ($auction->user_id === $userId);
+        $isBidOwner = ($bid->user_id === $userId);
+
+        if (!$isListingOwner && !$isBidOwner) {
+            return redirect()->back()->with('error', 'You are not authorized to counter this bid.');
+        }
+
+        $latestCounter = LandlordCounterTerm::where('landlord_agent_auction_id', $bid_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $parentCounterId = $latestCounter ? $latestCounter->id : null;
+
+        return view('hire_landlord_agent.counter-bid', [
+            'pab' => $auction,
+            'bid_id' => $bid_id,
+            'parent_counter_id' => $parentCounterId,
+        ]);
+    }
+
     public function view_counter_terms($bid_id)
     {
         $bid = LandlordAgentAuctionBid::with(['user', 'meta', 'counterTerms', 'auction.user', 'auction.meta'])->findOrFail($bid_id);

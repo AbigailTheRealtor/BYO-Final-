@@ -831,15 +831,9 @@
                         {{-- AGENT ACTIONS --}}
                         @if($viewerRole === 'agent' && !$bidIsTerminal)
                         {{-- Agent: counter back to landlord, or accept/reject landlord's counter --}}
-                        <form action="{{ route('landlord.agent.add.counter-bid') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                            <button type="submit" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                                <i class="fas fa-reply me-2"></i>Counter Back
-                            </button>
-                        </form>
+                        <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                            <i class="fas fa-reply me-2"></i>Counter Back
+                        </a>
                         <form action="{{ route('landlord.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
                             @csrf
                             <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
@@ -866,15 +860,9 @@
                         @if($viewerRole === 'landlord' && !$bidIsTerminal)
                             @if(!$awaitingCounterResponse)
                             {{-- Landlord: counter back to agent, or accept/reject the original bid --}}
-                            <form action="{{ route('landlord.agent.add.counter-bid') }}" method="POST" class="d-inline">
-                                @csrf
-                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                                <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                                <button type="submit" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                                    <i class="fas fa-reply me-2"></i>Counter Back
-                                </button>
-                            </form>
+                            <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
+                            </a>
                             <form action="{{ route('landlord.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
                                 @csrf
                                 <input type="hidden" name="bid_id" value="{{ $bid->id }}">

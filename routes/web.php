@@ -489,6 +489,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('hire/agent/auction/bid/reject', [LandlordAgentAuctionBidController::class, 'reject_bid'])->name('hire.agent.auction.bid.reject');
 
         Route::get('hire/agent/auction/bid/{bid_id}/view-counter', [LandlordAgentAuctionBidController::class, 'view_counter_terms'])->name('hire.agent.auction.bid.view-counter');
+        Route::get('agent/auction/counter-bid/{id}/{bid_id}', [LandlordAgentAuctionBidController::class, 'addCounterBid'])->name('agent.auction.counter-bid');
 
         Route::post('agent/auction/counter/bid', [LandlordAgentAuctionBidController::class, 'counter_bid'])->name('agent.add.counter-bid');
 
@@ -588,6 +589,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('tenant/agent/auction/bid/{auctionId}', TenantAgentAuctionBid::class)->name('tenant.agent.auction.bid');
             Route::get('buyer/agent/auction/bid/{auctionId}', BuyerAgentAuctionBid::class)->name('buyer.agent.auction.bid');
             Route::get('buyer/agent/auction/bid/{bid_id}/view-counter', [BuyerAgentAuctionBidController::class, 'view_counter_terms'])->name('buyer.agent.auction.bid.view-counter');
+            Route::get('buyer/hire/agent/auction/counter-bid/{id}/{bid_id}', [BuyerAgentAuctionBidController::class, 'add_counter_bid'])->name('buyer.hire.agent.auction.counter-bid');
             Route::get('landlord/agent/auction/bid/{auctionId}', LandlordAgentAuctionBid::class)->name('landlord.agent.auction.bid');
             
             // Default Bid Profiles
@@ -626,7 +628,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('hire/agent/seller/bid/reject', [SellerAgentAuctionController::class, 'rejectSABid'])->name('rejectSABid');
         Route::post('hire/agent/seller/destroy/counter/{id}', [SellerCounterBidController::class, 'destroyCounter'])->name('destroySellerCounter');
 
-        // Route::get('landlord/agent/auction/counter/bid/{bid_id}', [LandlordAgentAuctionBidController::class, 'addCounterBid'])->name('landlord.agent.add.counter-bid');
         // Route::post('/landlord/agent/auction/counter/bid/{bid_id}', [LandlordAgentAuctionBidController::class, 'saveCounterBid'])->name('landlord.agent.save.counter-bid');
 
         // Route::get('/landlord/auction/counter/bid/{bid_id}', [LandlordAuctionController::class, 'addCounterBid'])->name('landlord.add.counter-bid');

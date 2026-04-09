@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\BuyerCounterBidding;
+use App\Models\BuyerCounterTerm;
 use App\Helpers\BuyerBidMatchScoreHelper;
 use App\Notifications\CounterBidSubmittedNotification;
 use App\Models\User;
@@ -217,10 +218,11 @@ public $additional_details_broker = '';
 
         $sourceData = null;
 
-        // COUNTER BID PREFILL RULE (mirrors Tenant flow exactly):
-        // 1. Try the Buyer's latest counter for this specific bid thread
-        //    BuyerCounterBidding.buyer_agent_auction_bid_id = the agent bid ID
-        $buyerCounter = BuyerCounterBidding::where('buyer_agent_auction_bid_id', $bidId)
+        // COUNTER BID PREFILL RULE (mirrors Tenant flow):
+        // 1. First, try the Buyer's latest counter terms for this specific bid thread.
+        //    BuyerCounterTerm stores auction ID in buyer_agent_auction_id and bid ID in parent_counter_id.
+        $buyerCounter = BuyerCounterTerm::where('buyer_agent_auction_id', $pab->id)
+            ->where('parent_counter_id', $bidId)
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -228,7 +230,7 @@ public $additional_details_broker = '';
             $sourceData = $buyerCounter->get;
         }
 
-        // 2. If no prior counter exists, load the original agent bid terms
+        // 2. If no Buyer counter exists, fall back to the original agent bid terms
         if (!$sourceData) {
             $originalBid = BuyerAgentAuctionBid::find($bidId);
             if ($originalBid && $originalBid->get) {
@@ -236,8 +238,10 @@ public $additional_details_broker = '';
             }
         }
 
-        // NOTE: We NEVER fall back to $pab->get (the listing) — that would pre-fill
-        // with the buyer's own listing data instead of the agent's bid terms.
+        // 3. Final fallback: listing (auction) terms
+        if (!$sourceData && $pab->get) {
+            $sourceData = $pab->get;
+        }
 
         if ($sourceData) {
             $this->commission_structure = $sourceData->commission_structure ?? '';
