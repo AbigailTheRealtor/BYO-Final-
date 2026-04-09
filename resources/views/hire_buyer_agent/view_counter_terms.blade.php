@@ -61,12 +61,23 @@
                     </div>
 
                     @php
+                        $awaitingCounterResponse = false;
                         if ($viewerRole === 'agent') {
                             $activeCounter    = $buyerCounter;
                             $counterPartyName = 'Buyer';
                         } else {
-                            $activeCounter    = $agentCounter;
-                            $counterPartyName = 'Agent';
+                            if ($agentCounter) {
+                                $activeCounter    = $agentCounter;
+                                $counterPartyName = 'Agent';
+                            } elseif ($buyerCounter) {
+                                // Buyer submitted a counter but agent hasn't responded yet — show buyer's own counter
+                                $activeCounter    = $buyerCounter;
+                                $counterPartyName = 'Your Submitted';
+                                $awaitingCounterResponse = true;
+                            } else {
+                                $activeCounter    = null;
+                                $counterPartyName = '';
+                            }
                         }
                     @endphp
 
@@ -103,7 +114,7 @@
 
                         $showDualScore      = false;
                         $latestCounterScore = null;
-                        if ($viewerRole === 'buyer' && $buyerCounter) {
+                        if ($viewerRole === 'buyer' && $buyerCounter && !$awaitingCounterResponse) {
                             $latestCounterScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate(
                                 $buyerCounter->getAllMeta(), $counterData, null, $counterPropType
                             );
@@ -184,10 +195,21 @@
                     <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 style="color: #049399; font-weight: 600; margin: 0;">
-                                <i class="fas fa-file-contract me-2"></i>{{ $counterPartyName }}'s Counter Terms
+                                <i class="fas fa-file-contract me-2"></i>
+                                @if($awaitingCounterResponse)
+                                Your Submitted Counter Offer
+                                @else
+                                {{ $counterPartyName }}'s Counter Terms
+                                @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
                         </div>
+
+                        @if($awaitingCounterResponse)
+                        <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
+                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting the agent's response.
+                        </div>
+                        @endif
 
                         @if ($hasAnyBaseline)
                         <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
@@ -604,7 +626,7 @@
                                 <i class="fas fa-times me-2"></i>Reject Counter
                             </button>
                         </form>
-                        @else
+                        @elseif(!$awaitingCounterResponse)
                         <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-reply me-2"></i>Counter Back
                         </a>

@@ -23,7 +23,7 @@
                         @if($viewerRole === 'agent')
                         Seller's Counter Terms For Your Bid
                         @else
-                        Counter Terms For Agent's Bid
+                        Agent's Counter Terms
                         @endif
                     </h4>
                 </div>
@@ -58,6 +58,7 @@
 
                     @php
                         $counterPartyName = ($viewerRole === 'seller') ? 'Agent' : 'Seller';
+                        $awaitingCounterResponse = false;
                     @endphp
 
                     @if($sellerCounter || $agentCounterBack)
@@ -67,7 +68,13 @@
                         if ($viewerRole === 'agent') {
                             $activeCounter = $sellerCounter ?? $agentCounterBack;
                         } else {
-                            $activeCounter = $agentCounterBack ?? $sellerCounter;
+                            if ($agentCounterBack) {
+                                $activeCounter = $agentCounterBack;
+                            } else {
+                                // Seller submitted a counter but agent hasn't responded yet — show seller's own counter
+                                $activeCounter = $sellerCounter;
+                                $awaitingCounterResponse = true;
+                            }
                         }
 
                         $counterData = $activeCounter ? $activeCounter->getAllMeta() : [];
@@ -560,10 +567,21 @@
                     <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 style="color: #049399; font-weight: 600; margin: 0;">
-                                <i class="fas fa-file-contract me-2"></i>{{ $counterPartyName }}'s Counter Terms
+                                <i class="fas fa-file-contract me-2"></i>
+                                @if($awaitingCounterResponse)
+                                Your Submitted Counter Offer
+                                @else
+                                {{ $counterPartyName }}'s Counter Terms
+                                @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
                         </div>
+
+                        @if($awaitingCounterResponse)
+                        <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
+                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting the agent's response.
+                        </div>
+                        @endif
 
                         {{-- Match Score Panel --}}
                         @if ($hasAnyBaseline)

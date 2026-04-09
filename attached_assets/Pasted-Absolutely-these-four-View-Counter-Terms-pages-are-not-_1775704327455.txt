@@ -1,0 +1,410 @@
+Absolutely — these four **View Counter Terms** pages are not consistent right now, and the inconsistency is obvious:
+
+* some show only a blank notice
+* some show full sections
+* some show match score
+* some do not
+* labels differ
+* page titles differ
+* changed/added/removed treatment is inconsistent
+
+That page should feel like a true **counter snapshot / counter history detail page** for every role.
+
+Paste this into Replit:
+
+---
+
+## Replit Instructions With Safeguards
+
+**Task:** Standardize the **View Counter Terms** page across all four roles so every counter detail page shows a consistent, complete counter snapshot with match score, changed/additional/missing treatment, and the same structured layout.
+
+### Problem
+
+When the user clicks **View Counter Terms** from a bid, the destination pages are inconsistent across roles:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+Right now, some pages:
+
+* show only a generic “no counter terms submitted” message
+* do not render the actual counter snapshot
+* do not show consistent match score treatment
+* do not show changed / added / removed items consistently
+* use inconsistent titles and structure
+* do not match the richer counter presentation already seen elsewhere in the system
+
+This page should show a **complete, role-consistent counter detail view**.
+
+---
+
+# Goal
+
+For all four roles, the **View Counter Terms** page should use one consistent structure and content pattern, similar to the richer counter presentation already used elsewhere in the bidding flow.
+
+Each page should clearly show:
+
+1. Listing information
+2. Bid information
+3. Counter status / last updated
+4. Match score summary
+5. Broker Compensation & Agency Agreement Terms section
+6. Requested / Offered Services section
+7. Visual indication of what was:
+
+   * changed
+   * added
+   * removed / missing
+8. Correct empty-state only when no actual counter exists
+
+---
+
+# Scope
+
+Apply to all four roles:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+Apply specifically to the route/pages used when clicking:
+
+* `View Counter Terms`
+* role-specific `/bid/{id}/view-counter`
+
+This is **not** the main listing page bid card.
+This is the **dedicated counter detail page**.
+
+---
+
+# Source of Truth
+
+Use the richest existing working counter detail implementation already present in the system as the structural benchmark.
+
+From the screenshots, the stronger examples are the pages that already show:
+
+* match score panel
+* grouped terms sections
+* added/changed badges
+* requested services section with visual diff treatment
+
+Use that richer implementation as the basis for parity across all roles.
+
+Do not keep four different page styles.
+
+---
+
+# Safeguards
+
+## Do Not
+
+* do **not** change database schema
+* do **not** rename routes
+* do **not** change negotiation logic
+* do **not** change who can access the page
+* do **not** alter how counters are saved
+* do **not** rewrite match score formulas
+* do **not** change listing/bid permissions
+* do **not** change accepted/rejected/counter state machine
+* do **not** hardcode role-specific terms
+* do **not** remove existing data fields from richer pages
+
+## Preserve
+
+* existing route structure
+* existing counter records and history
+* existing match calculation helpers
+* existing role-specific term groupings
+* existing permission checks
+* existing data source for counter meta
+* existing counter timeline/history logic
+
+---
+
+# Required Outcome
+
+Every **View Counter Terms** page should have the same overall framework:
+
+## A. Header Area
+
+Consistent title, for example:
+
+* `Counter Terms`
+  or
+* `Agent’s Counter Terms`
+
+Use one consistent heading pattern across all four roles.
+
+Also show:
+
+* listing title
+* listing id if available
+* address if available
+* listing owner
+* bid status
+* agent name
+* submitted date / updated date
+
+---
+
+## B. Match Score Summary
+
+Show the same style of counter comparison summary across all four roles, when baseline data exists.
+
+This must include:
+
+* overall score
+* services match
+* terms match
+* compared-to label
+
+Use the correct baseline for this page’s intended purpose, consistent with your current counter-detail logic.
+
+Do not let some roles omit the score panel if score data exists.
+
+Only show the empty “no match score available” state when there truly is no comparable baseline.
+
+---
+
+## C. Broker Compensation & Agency Agreement Terms
+
+Render the actual counter terms in grouped sections consistently for all roles.
+
+Examples:
+
+* Purchase terms / compensation
+* Lease terms
+* Lease-option terms
+* Legal terms
+* Brokerage relationship
+* other role-specific grouped sections
+
+For each field/value, consistently indicate whether it is:
+
+* unchanged
+* changed
+* added
+* removed / missing if that view supports missing comparison
+
+Do not let some pages render raw values while others render diff-aware values.
+
+---
+
+## D. Requested / Offered Services Section
+
+Show services in a consistent diff-aware format across all roles.
+
+Each relevant service should clearly indicate:
+
+* matched / unchanged
+* added
+* missing / removed where appropriate
+
+Use the same visual treatment already used in the richer counter detail implementations.
+
+---
+
+## E. Empty State
+
+Only show a generic notice like:
+
+* `No counter terms have been submitted yet.`
+
+when there is truly no counter payload for that bid.
+
+Do not show this message on bids that actually have counter data.
+
+If counter data exists but some sections are empty, still render the page and show the sections that do exist.
+
+---
+
+# Main Problem To Investigate
+
+It appears some roles are loading:
+
+* actual latest counter meta / payload
+
+while other roles are loading:
+
+* original bid data
+* or no counter payload at all
+* or the wrong record/state branch
+
+Audit the controller / route / blade path for each role and identify:
+
+1. what record is being loaded for `/view-counter`
+2. whether it loads the latest counter for that bid
+3. whether it loads the diff baseline
+4. whether it passes counter score data into the view
+5. whether some roles still use an old lightweight view template
+
+---
+
+# Search Targets
+
+Inspect all role-specific files that power:
+
+* `view-counter`
+* counter detail page
+* counter terms blade
+* controller methods for `view-counter`
+* services/terms diff helpers used on this page
+* match score helpers used for counter pages
+
+Search for:
+
+* `view-counter`
+* `Counter Terms`
+* `No counter terms have been submitted`
+* `Match Score`
+* `changed`
+* `added`
+* `removed`
+* `last updated`
+* role-specific controller methods
+* role-specific blade templates
+* shared partials for diff rendering
+
+---
+
+# Likely Root Causes
+
+Check for these inconsistencies:
+
+* some roles use an old legacy blade for `view-counter`
+* some roles are not pulling latest counter meta correctly
+* some roles are checking wrong status before rendering counter content
+* some roles are missing the diff-builder / score-builder call
+* some roles only render page shell + no counter fallback
+* some roles load original bid instead of latest counter payload
+* some roles are missing shared partial include for terms/services diff blocks
+
+---
+
+# Standardization Requirements
+
+## 1. One consistent page shell
+
+Unify:
+
+* page heading
+* summary layout
+* info columns
+* section titles
+* padding / spacing / typography
+* badge treatment
+* score card styling
+
+## 2. One consistent counter snapshot structure
+
+For all four roles:
+
+* header info
+* score summary
+* terms diff
+* services diff
+* back button
+
+## 3. One consistent diff treatment
+
+Use the same labels/badges/colors for:
+
+* Changed
+* Added
+* Removed / Missing
+
+Do not allow Buyer to show one style, Seller another, Tenant none, Landlord blank state.
+
+## 4. Correct data loading
+
+The page must always load the actual latest counter record tied to that bid when one exists.
+
+## 5. Graceful empty state only when real
+
+Only show the empty state if there is truly no counter payload for that bid.
+
+---
+
+# Recommended Implementation Approach
+
+If there is already one strongest working implementation among the four, extract/reuse that structure as a shared partial or align the other three to it.
+
+Preferred approach:
+
+* shared counter detail partial for common layout
+* role-specific subsections only where fields actually differ
+
+Avoid maintaining four totally separate counter detail templates unless necessary.
+
+---
+
+# QA Requirements
+
+Test all four roles with real seeded or existing bids:
+
+## Tenant
+
+* bid with actual counter data
+* verify page shows full counter snapshot, not blank notice
+
+## Buyer
+
+* bid with counter data
+* verify grouped terms and services render correctly
+* verify score panel renders consistently
+
+## Seller
+
+* bid with counter data
+* verify changed/additional term markers display correctly
+
+## Landlord
+
+* bid with counter data
+* verify not falling into false empty state
+
+For each role verify:
+
+1. View Counter Terms opens the correct bid’s counter detail page
+2. Actual counter data loads when it exists
+3. Match Score panel renders when baseline exists
+4. Terms diff renders consistently
+5. Services diff renders consistently
+6. Changed / added / removed treatment is visible and accurate
+7. Empty-state message only appears when no real counter exists
+8. Back button still works
+
+---
+
+# Pass Conditions
+
+A fix is complete only if all are true:
+
+1. All four `view-counter` pages use a consistent structure
+2. Pages load actual counter data when it exists
+3. Match Score summary appears consistently when baseline is available
+4. Terms and services diff treatment is consistent across roles
+5. Empty state only appears for truly missing counter data
+6. No schema changes, route renames, or negotiation logic rewrites were introduced
+7. Back navigation and permissions still work correctly
+
+---
+
+# Important
+
+If one or more roles are currently routing to a legacy lightweight `view-counter` template, replace or align those pages with the current richer counter detail implementation rather than patching around the old blank-state template.
+
+If fixing this requires broader controller refactoring, stop and report before proceeding.
+
+---
+
+## Optional instruction to append
+
+Use the existing richer counter detail page as the visual and structural benchmark, and make the other roles match it as closely as possible while preserving role-specific fields.
+
+---
+
+This is definitely the right fix. That page should feel like a real negotiation record, not four different unfinished screens.

@@ -60,13 +60,21 @@
                     @php
                         $activeCounter = null;
                         $counterPartyName = '';
+                        $awaitingCounterResponse = false;
 
                         if ($viewerRole === 'agent') {
                             $activeCounter = $landlordCounter;
                             $counterPartyName = 'Landlord';
                         } else {
-                            $activeCounter = $agentCounter;
-                            $counterPartyName = 'Agent';
+                            if ($agentCounter) {
+                                $activeCounter = $agentCounter;
+                                $counterPartyName = 'Agent';
+                            } elseif ($landlordCounter) {
+                                // Landlord submitted a counter but agent hasn't responded yet — show landlord's own counter
+                                $activeCounter = $landlordCounter;
+                                $counterPartyName = 'Your Submitted';
+                                $awaitingCounterResponse = true;
+                            }
                         }
                     @endphp
 
@@ -137,7 +145,7 @@
                         // Dual score: if landlord viewing agent's counter and landlord also submitted a counter
                         $showDualScore      = false;
                         $latestCounterScore = null;
-                        if ($viewerRole === 'landlord' && $landlordCounter) {
+                        if ($viewerRole === 'landlord' && $landlordCounter && !$awaitingCounterResponse) {
                             $latestCounterScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
                                 $landlordCounter->getAllMeta(), $counterData, null, $counterPropType
                             );
@@ -371,10 +379,21 @@
                     <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 style="color: #049399; font-weight: 600; margin: 0;">
-                                <i class="fas fa-file-contract me-2"></i>{{ $counterPartyName }}'s Counter Terms
+                                <i class="fas fa-file-contract me-2"></i>
+                                @if($awaitingCounterResponse)
+                                Your Submitted Counter Offer
+                                @else
+                                {{ $counterPartyName }}'s Counter Terms
+                                @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
                         </div>
+
+                        @if($awaitingCounterResponse)
+                        <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
+                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting the agent's response.
+                        </div>
+                        @endif
 
                         @if ($hasAnyBaseline)
                         <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
@@ -785,7 +804,7 @@
                                 <i class="fas fa-times me-2"></i>Reject Counter
                             </button>
                         </form>
-                        @else
+                        @elseif(!$awaitingCounterResponse)
                         {{-- Landlord: counter back to agent, or accept/reject the original bid --}}
                         <form action="{{ route('landlord.agent.add.counter-bid') }}" method="POST" class="d-inline">
                             @csrf
