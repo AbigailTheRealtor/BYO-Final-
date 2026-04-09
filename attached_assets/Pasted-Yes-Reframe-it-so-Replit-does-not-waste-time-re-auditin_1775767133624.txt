@@ -1,0 +1,104 @@
+Yes. Reframe it so Replit does **not** waste time re-auditing what is already confirmed.
+
+That will make the fix tighter and reduce the chance it touches working Tenant and Seller flows.
+
+Use this framing instead:
+
+We now have a more specific scope for the counter-back audit.
+
+## Confirmed current status
+
+### Confirmed correct
+
+* **Tenant** counter-back flow is currently correct
+* **Seller** counter-back flow is currently correct
+
+Do **not** change Tenant or Seller unless, during targeted comparison, you find a clearly shared helper or route dependency that must be updated for Buyer or Landlord to work.
+
+### Confirmed wrong
+
+* **Buyer** counter-back flow is definitely wrong
+
+Observed Buyer bug:
+When the Agent clicks **Counter Back** from the Buyer counter view, it routes into the **original/full agent bid form** instead of the **counter-response form**.
+
+That is causing:
+
+* wrong preload source
+* wrong tabs/sections
+* incorrect counter state
+* incorrect counter history
+* mismatch / match-score drift
+
+### Not yet verified
+
+* **Landlord** counter-back flow still needs to be checked
+
+## New goal
+
+Do a **targeted counter-back audit** with this scope:
+
+1. **Fix Buyer**
+
+   * Treat Buyer as confirmed broken
+   * Trace the full Buyer counter-back route chain
+   * Make Buyer use the correct counter-response flow
+   * Make Buyer preload from the latest valid counter state
+
+2. **Check Landlord**
+
+   * Audit Landlord to determine whether it matches the correct Tenant/Seller behavior or the broken Buyer behavior
+   * Only change Landlord if it is actually wrong
+
+3. **Protect Tenant and Seller**
+
+   * Use Tenant and Seller as the working reference pattern
+   * Do not rewrite or refactor those working flows
+   * Only touch shared code if absolutely necessary and only if the change is backward-safe
+
+## Hard safeguards
+
+1. **Do not modify Tenant flow logic**
+   unless a shared helper absolutely must be adjusted, and even then verify Tenant still behaves exactly the same afterward.
+
+2. **Do not modify Seller flow logic**
+   unless a shared helper absolutely must be adjusted, and even then verify Seller still behaves exactly the same afterward.
+
+3. **Primary work is Buyer**
+   Buyer is the known-broken role and should be the main focus.
+
+4. **Secondary audit is Landlord**
+   Only fix Landlord if the audit proves it is broken.
+
+5. **Do not expand scope into full bid creation**
+   This is specifically about the **agent counter-back route, counter-response form, preload source, and counter history integrity**.
+
+## Expected behavior to match
+
+Buyer and Landlord should behave like the currently working pattern used by Tenant and Seller:
+
+* Agent opens counter view
+* Agent clicks **Counter Back**
+* Agent lands on the **counter-only response form**
+* Form is prefilled with the **latest counter state**
+* Counter save stays in the same bid chain
+* Counter history and match logic remain accurate
+
+## Deliverable back
+
+Please report back with:
+
+1. whether Landlord was correct or broken
+2. exact Buyer files changed
+3. exact Landlord files changed, if any
+4. whether Tenant or Seller required any shared-code touch
+5. confirmation that Tenant and Seller behavior remained unchanged
+
+That version is better because it tells Replit:
+
+* what is already known
+* what not to touch
+* what to use as the good reference
+* where to focus first
+
+So yes, I would absolutely reframe it.

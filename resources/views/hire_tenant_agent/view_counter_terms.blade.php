@@ -54,26 +54,32 @@
                     </div>
                     
                     @php
-                        // Determine which counter to show based on viewer role
-                        $activeCounter = null;
-                        $counterPartyName = '';
+                        // UNIFIED: both parties see the MOST RECENTLY SUBMITTED counter (by created_at).
+                        // previousCounter = the immediately preceding counter used as the unified baseline.
+                        $activeCounter          = null;
+                        $previousCounter        = null;
+                        $counterPartyName       = '';
                         $awaitingCounterResponse = false;
 
-                        if ($viewerRole === 'agent') {
-                            // Agent viewing - show tenant's counter
-                            $activeCounter = $tenantCounter;
-                            $counterPartyName = 'Tenant';
-                        } else {
-                            // Tenant viewing - prefer agent's counter, fall back to tenant's own pending counter
-                            if ($agentCounter) {
-                                $activeCounter = $agentCounter;
+                        if ($tenantCounter && $agentCounter) {
+                            if ($tenantCounter->created_at >= $agentCounter->created_at) {
+                                $activeCounter    = $tenantCounter;
+                                $previousCounter  = $agentCounter;
+                                $counterPartyName = 'Tenant';
+                            } else {
+                                $activeCounter    = $agentCounter;
+                                $previousCounter  = $tenantCounter;
                                 $counterPartyName = 'Agent';
-                            } elseif ($tenantCounter) {
-                                $activeCounter = $tenantCounter;
-                                $counterPartyName = 'Your Submitted';
-                                $awaitingCounterResponse = true;
                             }
+                        } elseif ($tenantCounter) {
+                            $activeCounter    = $tenantCounter;
+                            $counterPartyName = 'Tenant';
+                        } elseif ($agentCounter) {
+                            $activeCounter    = $agentCounter;
+                            $counterPartyName = 'Agent';
                         }
+                        // Awaiting response: the current user submitted the active counter.
+                        $awaitingCounterResponse = ($activeCounter && $activeCounter->user_id === Auth::id());
                     @endphp
 
                     @if($activeCounter)
@@ -97,13 +103,12 @@
                             return implode(' + ', array_filter($parts)) ?: null;
                         };
                         
-                        // Baseline data for comparison
-                        if ($viewerRole === 'agent') {
-                            // Agent comparing tenant's counter to agent's original bid
-                            $baselineData = (array) $bid->get;
-                            $baselineLabel = 'Your Original Bid';
+                        // UNIFIED baseline: immediately previous counter (same for both parties).
+                        // Fallback: listing owner's original terms (if this is the first counter in the chain).
+                        if (isset($previousCounter) && $previousCounter) {
+                            $baselineData  = $previousCounter->getAllMeta();
+                            $baselineLabel = 'Previous Counter Terms';
                         } else {
-                            // Tenant comparing agent's counter to tenant's original listing terms
                             $baselineData = [
                                 'commission_structure' => $auction->get->commission_structure ?? null,
                                 'lease_fee_type' => $auction->get->lease_fee_type ?? null,
@@ -129,24 +134,16 @@
                                 'services' => $auction->get->services ?? [],
                                 'other_services' => $auction->get->other_services ?? [],
                             ];
-                            $baselineLabel = 'Your Original Listing Terms';
+                            $baselineLabel = "Listing Owner's Original Terms";
                         }
                         
                         // === MATCH SCORE — baseline-driven (TenantBidMatchScoreHelper) ===
                         $counterPropType = $auction->get->property_type ?? 'Residential Property';
                         $score = \App\Helpers\TenantBidMatchScoreHelper::calculate($baselineData, $counterData, null, $counterPropType);
 
-                        // === DUAL SCORE: Latest Counter Match (tenant viewing agent's counter response) ===
-                        // $score above = "Original Match" (agent counter vs. original listing / agent's original bid)
-                        // $latestCounterScore = "Latest Counter Match" (agent counter vs. tenant's most recent counter)
+                        // Dual score removed — both parties now see identical score (unified baseline eliminates the need).
                         $showDualScore      = false;
                         $latestCounterScore = null;
-                        if ($viewerRole === 'tenant' && $tenantCounter && !$awaitingCounterResponse) {
-                            $latestCounterScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
-                                $tenantCounter->getAllMeta(), $counterData, null, $counterPropType
-                            );
-                            $showDualScore = true;
-                        }
 
                         $brokerScore          = $score['terms_match_percent'];
                         $brokerMatched        = $score['terms_matched_count'];
@@ -160,17 +157,9 @@
                         $servicesMissingCount = $score['services_missing_count'];
                         $servicesExtraCount   = $score['services_extra_count'];
 
-                        // === DIFF SCORE: field-level badges compare to IMMEDIATELY PREVIOUS counter (not always original) ===
-                        // First counter: previous = original bid/listing → same as $score
-                        // Second counter onward: previous = the other party's most recent counter
-                        if ($viewerRole === 'agent') {
-                            // Agent viewing tenant's counter → previous = agent's own counter-back (if any), else original bid
-                            $diffBaselineData = $agentCounter ? $agentCounter->getAllMeta() : $baselineData;
-                        } else {
-                            // Tenant viewing agent's counter-back → previous = tenant's own counter (if any), else original listing
-                            $diffBaselineData = $tenantCounter ? $tenantCounter->getAllMeta() : $baselineData;
-                        }
-                        $diffScore        = \App\Helpers\TenantBidMatchScoreHelper::calculate($diffBaselineData, $counterData, null, $counterPropType);
+                        // diffScore = primary score: baseline is already the immediately previous counter (unified).
+                        $diffBaselineData = $baselineData;
+                        $diffScore        = $score;
                         $brokerMismatches = $diffScore['changed_terms'];
                         $servicesMissing  = $diffScore['missing_services'];
                         $servicesAdded    = $diffScore['extra_services'];

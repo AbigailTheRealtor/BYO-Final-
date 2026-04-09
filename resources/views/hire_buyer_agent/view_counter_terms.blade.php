@@ -54,24 +54,32 @@
                     </div>
 
                     @php
+                        // UNIFIED: both parties see the MOST RECENTLY SUBMITTED counter (by created_at).
+                        // previousCounter = the immediately preceding counter used as the unified baseline.
+                        $activeCounter          = null;
+                        $previousCounter        = null;
+                        $counterPartyName       = '';
                         $awaitingCounterResponse = false;
-                        if ($viewerRole === 'agent') {
+
+                        if ($buyerCounter && $agentCounter) {
+                            if ($buyerCounter->created_at >= $agentCounter->created_at) {
+                                $activeCounter    = $buyerCounter;
+                                $previousCounter  = $agentCounter;
+                                $counterPartyName = 'Buyer';
+                            } else {
+                                $activeCounter    = $agentCounter;
+                                $previousCounter  = $buyerCounter;
+                                $counterPartyName = 'Agent';
+                            }
+                        } elseif ($buyerCounter) {
                             $activeCounter    = $buyerCounter;
                             $counterPartyName = 'Buyer';
-                        } else {
-                            if ($agentCounter) {
-                                $activeCounter    = $agentCounter;
-                                $counterPartyName = 'Agent';
-                            } elseif ($buyerCounter) {
-                                // Buyer submitted a counter but agent hasn't responded yet — show buyer's own counter
-                                $activeCounter    = $buyerCounter;
-                                $counterPartyName = 'Your Submitted';
-                                $awaitingCounterResponse = true;
-                            } else {
-                                $activeCounter    = null;
-                                $counterPartyName = '';
-                            }
+                        } elseif ($agentCounter) {
+                            $activeCounter    = $agentCounter;
+                            $counterPartyName = 'Agent';
                         }
+                        // Awaiting response: the current user submitted the active counter.
+                        $awaitingCounterResponse = ($activeCounter && $activeCounter->user_id === Auth::id());
                     @endphp
 
                     @if($activeCounter)
@@ -94,25 +102,22 @@
                             return implode(' + ', array_filter($parts)) ?: null;
                         };
 
-                        if ($viewerRole === 'agent') {
-                            $baselineData  = (array) $bid->get;
-                            $baselineLabel = 'Your Original Bid';
+                        // UNIFIED baseline: immediately previous counter (same for both parties).
+                        // Fallback: listing owner's original terms (if this is the first counter in the chain).
+                        if (isset($previousCounter) && $previousCounter) {
+                            $baselineData  = $previousCounter->getAllMeta();
+                            $baselineLabel = 'Previous Counter Terms';
                         } else {
-                            $baselineData = (array) $auction->get;
-                            $baselineLabel = 'Your Original Listing Terms';
+                            $baselineData  = (array) $auction->get;
+                            $baselineLabel = "Listing Owner's Original Terms";
                         }
 
                         $counterPropType = $auction->get->property_type ?? 'Residential Property';
                         $score = \App\Helpers\BuyerBidMatchScoreHelper::calculate($baselineData, $counterData, null, $counterPropType);
 
+                        // Dual score removed — both parties now see identical score (unified baseline eliminates the need).
                         $showDualScore      = false;
                         $latestCounterScore = null;
-                        if ($viewerRole === 'buyer' && $buyerCounter && !$awaitingCounterResponse) {
-                            $latestCounterScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate(
-                                $buyerCounter->getAllMeta(), $counterData, null, $counterPropType
-                            );
-                            $showDualScore = true;
-                        }
 
                         $brokerScore       = $score['broker_comp_percent'] ?? $score['terms_match_percent'] ?? 100;
                         $brokerMatched     = $score['broker_comp_matched'] ?? $score['terms_matched_count'] ?? 0;
@@ -126,15 +131,9 @@
                         $servicesMissingCount = $score['services_missing_count'] ?? 0;
                         $servicesExtraCount   = $score['services_extra_count'] ?? 0;
 
-                        // === DIFF SCORE: field-level badges compare to IMMEDIATELY PREVIOUS counter (not always original) ===
-                        if ($viewerRole === 'agent') {
-                            // Agent viewing buyer's counter → previous = agent's own counter-back (if any), else original bid
-                            $diffBaselineData = $agentCounter ? $agentCounter->getAllMeta() : $baselineData;
-                        } else {
-                            // Buyer viewing agent's counter-back → previous = buyer's own counter (if any), else original listing
-                            $diffBaselineData = $buyerCounter ? $buyerCounter->getAllMeta() : $baselineData;
-                        }
-                        $diffScore        = \App\Helpers\BuyerBidMatchScoreHelper::calculate($diffBaselineData, $counterData, null, $counterPropType);
+                        // diffScore = primary score: baseline is already the immediately previous counter (unified).
+                        $diffBaselineData = $baselineData;
+                        $diffScore        = $score;
                         $brokerMismatches = $diffScore['changed_terms'] ?? [];
                         $servicesMissing  = $diffScore['missing_services'] ?? [];
                         $servicesAdded    = $diffScore['extra_services'] ?? [];

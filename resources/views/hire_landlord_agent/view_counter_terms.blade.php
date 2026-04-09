@@ -55,24 +55,32 @@
                     </div>
 
                     @php
-                        $activeCounter = null;
-                        $counterPartyName = '';
+                        // UNIFIED: both parties see the MOST RECENTLY SUBMITTED counter (by created_at).
+                        // previousCounter = the immediately preceding counter used as the unified baseline.
+                        $activeCounter          = null;
+                        $previousCounter        = null;
+                        $counterPartyName       = '';
                         $awaitingCounterResponse = false;
 
-                        if ($viewerRole === 'agent') {
-                            $activeCounter = $landlordCounter;
-                            $counterPartyName = 'Landlord';
-                        } else {
-                            if ($agentCounter) {
-                                $activeCounter = $agentCounter;
+                        if ($landlordCounter && $agentCounter) {
+                            if ($landlordCounter->created_at >= $agentCounter->created_at) {
+                                $activeCounter    = $landlordCounter;
+                                $previousCounter  = $agentCounter;
+                                $counterPartyName = 'Landlord';
+                            } else {
+                                $activeCounter    = $agentCounter;
+                                $previousCounter  = $landlordCounter;
                                 $counterPartyName = 'Agent';
-                            } elseif ($landlordCounter) {
-                                // Landlord submitted a counter but agent hasn't responded yet — show landlord's own counter
-                                $activeCounter = $landlordCounter;
-                                $counterPartyName = 'Your Submitted';
-                                $awaitingCounterResponse = true;
                             }
+                        } elseif ($landlordCounter) {
+                            $activeCounter    = $landlordCounter;
+                            $counterPartyName = 'Landlord';
+                        } elseif ($agentCounter) {
+                            $activeCounter    = $agentCounter;
+                            $counterPartyName = 'Agent';
                         }
+                        // Awaiting response: the current user submitted the active counter.
+                        $awaitingCounterResponse = ($activeCounter && $activeCounter->user_id === Auth::id());
                     @endphp
 
                     @if($activeCounter)
@@ -96,13 +104,12 @@
                             return implode(' + ', array_filter($parts)) ?: null;
                         };
 
-                        // Baseline data for match score comparison
-                        if ($viewerRole === 'agent') {
-                            // Agent: compare landlord's counter to agent's original bid
-                            $baselineData = (array) $bid->get;
-                            $baselineLabel = 'Your Original Bid';
+                        // UNIFIED baseline: immediately previous counter (same for both parties).
+                        // Fallback: listing owner's original terms (if this is the first counter in the chain).
+                        if (isset($previousCounter) && $previousCounter) {
+                            $baselineData  = $previousCounter->getAllMeta();
+                            $baselineLabel = 'Previous Counter Terms';
                         } else {
-                            // Landlord: compare agent's counter to landlord's original listing terms
                             $baselineData = [
                                 'purchase_fee_type'                   => $auction->get->purchase_fee_type ?? null,
                                 'purchase_fee_flat'                   => $auction->get->purchase_fee_flat ?? null,
@@ -132,22 +139,16 @@
                                 'services'                            => $auction->get->services ?? [],
                                 'other_services'                      => $auction->get->other_services ?? [],
                             ];
-                            $baselineLabel = 'Your Original Listing Terms';
+                            $baselineLabel = "Listing Owner's Original Terms";
                         }
 
                         // Match Score
                         $counterPropType = $auction->get->property_type ?? 'Residential Property';
                         $score = \App\Helpers\LandlordBidMatchScoreHelper::calculate($baselineData, $counterData, null, $counterPropType);
 
-                        // Dual score: if landlord viewing agent's counter and landlord also submitted a counter
+                        // Dual score removed — both parties now see identical score (unified baseline eliminates the need).
                         $showDualScore      = false;
                         $latestCounterScore = null;
-                        if ($viewerRole === 'landlord' && $landlordCounter && !$awaitingCounterResponse) {
-                            $latestCounterScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
-                                $landlordCounter->getAllMeta(), $counterData, null, $counterPropType
-                            );
-                            $showDualScore = true;
-                        }
 
                         $brokerScore       = $score['terms_match_percent'];
                         $brokerMatched     = $score['terms_matched_count'];
@@ -161,13 +162,9 @@
                         $servicesMissingCount = $score['services_missing_count'];
                         $servicesExtraCount   = $score['services_extra_count'];
 
-                        // === DIFF SCORE: field-level badges compare to IMMEDIATELY PREVIOUS counter ===
-                        if ($viewerRole === 'agent') {
-                            $diffBaselineData = $agentCounter ? $agentCounter->getAllMeta() : $baselineData;
-                        } else {
-                            $diffBaselineData = $landlordCounter ? $landlordCounter->getAllMeta() : $baselineData;
-                        }
-                        $diffScore        = \App\Helpers\LandlordBidMatchScoreHelper::calculate($diffBaselineData, $counterData, null, $counterPropType);
+                        // diffScore = primary score: baseline is already the immediately previous counter (unified).
+                        $diffBaselineData = $baselineData;
+                        $diffScore        = $score;
                         $brokerMismatches = $diffScore['changed_terms'];
                         $servicesMissing  = $diffScore['missing_services'];
                         $servicesAdded    = $diffScore['extra_services'];
