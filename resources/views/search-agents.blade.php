@@ -1,131 +1,114 @@
 @extends('layouts.main')
 @push('styles')
 <style>
-    .userMain .userBlock{
-    /* box-shadow: 0px 0px 23px -3px #ccc; */
-    padding-bottom: 12px;
-    margin-bottom: 30px;
-    overflow: hidden;
-    background:#fff;
-    border:  1px solid #e0e0e0;
-    border-radius: 5px;
-}
-.userMain .userBlock .backgrounImg{
-    overflow: hidden;
-    height: 100px;
-}
-.userMain .userBlock .backgrounImg img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.userMain .userBlock .userImg{
-    text-align: center;
-    width: 80px;
-    height: 80px;
-    border-radius: 100%;
-    margin: auto;
-    overflow: hidden;
-    margin-top: -40px;
-}
-.userMain .userBlock .userImg img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.userMain .userBlock .userDescription{
-    text-align: center;
-}
-.userMain .userBlock .userDescription h5{
-    margin-bottom: 2px;
-    font-weight: 600;
-}
-.userMain .userBlock .userDescription p{
-    margin-bottom: 5px;
-}
-.userMain .userBlock .userDescription .btn{
-    /* padding: 0px 23px 0px 23px; */
-    /* height: 22px; */
-    border-radius: 4px;
-    /* font-size: 12px; */
-    /* background: #0198dd; */
-    color: #fff;
-}
-.userMain .userBlock .userDescription .btn:hover{
-
-    opacity:0.7;
-}
-
-.userMain .userBlock .followrs{
-    display: inline-flex;
-    margin-right: 10px;
-    border-right: 1px solid #ccc;
-    padding-right: 10px;
-}
-.userMain .userBlock .followrs .number{
-    font-size: 15px;
-    font-weight: bold;
-    margin-right: 5px;
-    margin-top: -1px;
-}
+    .userMain .userBlock {
+        padding-bottom: 12px;
+        margin-bottom: 30px;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        transition: box-shadow .2s;
+    }
+    .userMain .userBlock:hover {
+        box-shadow: 0 4px 18px rgba(0,0,0,.09);
+    }
+    .userMain .userBlock .backgrounImg {
+        overflow: hidden;
+        height: 100px;
+    }
+    .userMain .userBlock .backgrounImg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .userMain .userBlock .userImg {
+        text-align: center;
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        margin: auto;
+        overflow: hidden;
+        margin-top: -40px;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,.12);
+    }
+    .userMain .userBlock .userImg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .userMain .userBlock .userDescription {
+        text-align: center;
+        padding: 0 12px 4px;
+    }
+    .userMain .userBlock .userDescription h5 {
+        margin-bottom: 2px;
+        font-weight: 600;
+    }
+    .userMain .userBlock .userDescription p {
+        margin-bottom: 6px;
+        color: #6c757d;
+        font-size: .9rem;
+    }
+    .userMain .userBlock .userDescription .btn {
+        border-radius: 6px;
+        color: #fff;
+    }
+    .userMain .userBlock .userDescription .btn:hover {
+        opacity: .85;
+    }
 </style>
 @endpush
 @section('content')
-{{-- <div class="container">
-    @include('layouts.partials.search_menu')
-</div> --}}
 <div class="buyerOfferContentDetails">
     <div class="container">
-        <div class="mb-3">
+        <div class="mb-4">
             <h4 class="fw-bold">Browse Agents</h4>
-            <p class="text-muted small">Find qualified real estate agents available to bid for your business. Message any agent to start the conversation.</p>
-            <p><span class="text-muted small">{{$count}} agents found</span></p>
+            <p class="text-muted small">Find licensed real estate agents available to bid for your business. Message any agent to start the conversation.</p>
+            <p class="text-muted small mb-0"><strong>{{ $count }}</strong> agent{{ $count != 1 ? 's' : '' }} found</p>
         </div>
 
-
-
-      <div class="row userMain">
-
-        @inject('carbon', 'Carbon\Carbon')
-        @forelse ($agents as $agent)
-        <div class="col-md-3 col-sm-4">
-            <div class="userBlock">
-                <a href="{{route('author', $agent->id)}}">
-                <div class="backgrounImg">
-                    <img src="{{asset('images/cover/'.($agent->cover_photo?$agent->cover_photo:"3.jpg"))}}">
+        <div class="row userMain">
+            @inject('carbon', 'Carbon\Carbon')
+            @forelse ($agents as $agent)
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="userBlock">
+                    <a href="{{ route('author', $agent->id) }}">
+                        <div class="backgrounImg">
+                            <img src="{{ asset('images/cover/'.($agent->cover_photo ? $agent->cover_photo : '3.jpg')) }}" alt="Agent cover">
+                        </div>
+                        <div class="userImg">
+                            <img src="{{ asset('images/avatar/'.($agent->avatar ? $agent->avatar : '17.png')) }}" alt="{{ $agent->name }}">
+                        </div>
+                    </a>
+                    <div class="userDescription mt-2">
+                        <a href="{{ route('author', $agent->id) }}"><h5>{{ $agent->name }}</h5></a>
+                        <p>@if($agent->city) {{ $agent->city->name }} @else <em>Location not listed</em> @endif</p>
+                        <a href="{{ route('messages') }}"><button class="btn btn-success btn-sm"><i class="fa-regular fa-envelope me-1"></i>Message</button></a>
+                    </div>
                 </div>
-                <div class="userImg">
-                    <img src="{{asset('images/avatar/'.($agent->avatar?$agent->avatar:"17.png"))}}">
-                </div>
-                </a>
-                <div class="userDescription">
-                    <a href="{{route('author', $agent->id)}}"><h5>{{$agent->name}}</h5></a>
-                    <p>@if($agent->city) {{$agent->city->name}} @else Unknown City @endif</p>
-
-
-                     {{-- <div class="followrs">
-                        <span class="number">137</span>
-                         <span>Followers</span>
-                     </div> --}}
-                    {{-- <button class="btn">Follow</button> --}}
-                    <a href="#"><button class="btn btn-success"><i class="fa-regular fa-envelope"></i> Message Me</button></a>
-                </div>
-
             </div>
-        </div>
-        @empty
-        <div class="card p-4 text-center">
-            <h3>No Record Found!</h3>
-        </div>
-        @endforelse
-
+            @empty
+            <div class="col-12">
+                <div class="card border-0 bg-light rounded-3 p-5 text-center">
+                    <div class="text-muted">
+                        <i class="fa fa-users fa-3x mb-3 opacity-25"></i>
+                        <h5 class="fw-semibold">No agents found</h5>
+                        <p class="small mb-0">There are no agents matching your search yet. Check back soon or adjust your filters.</p>
+                    </div>
+                </div>
+            </div>
+            @endforelse
 
             {{ $agents->links('pagination.listing') }}
-      </div>
+        </div>
+
+        @if($count > 0)
+        <p class="text-center small text-muted mt-2 text-uppercase" style="letter-spacing:.05em;">{{ $count }} result{{ $count != 1 ? 's' : '' }} found</p>
+        @endif
     </div>
-    <p class="text-center small opacity-50 mt-n4 tiny text-uppercase"> {{$count}} RESULTS FOUND</p>
 </div>
 @endsection
 @push('scripts')
-
 @endpush

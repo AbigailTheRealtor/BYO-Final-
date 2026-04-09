@@ -357,8 +357,12 @@
                         </div>
                     </div>
                     @empty
-                        <div class="card p-4 text-center">
-                            <h3>No Record Found!</h3>
+                        <div class="card border-0 bg-light rounded-3 p-5 text-center">
+                            <div class="text-muted">
+                                <i class="fa fa-search fa-3x mb-3 opacity-25"></i>
+                                <h5 class="fw-semibold">No listings found</h5>
+                                <p class="small mb-0">No Buyers are currently looking for a buyer's agent in this category. Check back soon or broaden your search criteria.</p>
+                            </div>
                         </div>
                     @endforelse
 

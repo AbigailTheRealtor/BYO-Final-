@@ -1,110 +1,172 @@
 @extends('layouts.main')
 @push('styles')
-<link rel="stylesheet" href="assets/css/faq.css" />
+<link rel="stylesheet" href="{{ asset('assets/css/faq.css') }}" />
+<style>
+    .faq-hero {
+        background: linear-gradient(135deg, #006e9f 0%, #049399 100%);
+        color: #fff;
+        padding: 50px 0;
+        text-align: center;
+    }
+    .faq-hero h1 { font-weight: 700; font-size: 2rem; }
+    .faq-hero p { opacity: .9; max-width: 540px; margin: 12px auto 24px; }
+    .faq-section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 40px 0 12px;
+        color: #006e9f;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        font-size: .85rem;
+    }
+    .accordion-button:not(.collapsed) {
+        background-color: #f0f8ff;
+        color: #006e9f;
+    }
+    .accordion-button:focus { box-shadow: none; }
+    .accordion-item { border-radius: 8px !important; overflow: hidden; margin-bottom: 8px; }
+</style>
 @endpush
 @section('content')
-<div class="container">
-    <!-- First Section -->
-    <div class="faqContent">
-      <div class="row">
-        <div class="col-sm-12 col-md-6 col-lg-6 text-center">
-          <img class="w-100" src="assets/pictures/faq/faq.jpg" alt="faq" />
-        </div>
-        <div class="col-sm-12 col-md-6 col-lg-6">
-          <h1>We're here to help.</h1>
-          <p>BidYourAgent provides a brand-new approach to real estate bidding. This platform allows consumers to enjoy full transparency when it comes to purchasing real estate properties.</p>
-          <a href="{{ route('register') }}"><button class="btn">Hire Agent</button></a>
-        </div>
-      </div>
-    </div>
-    <!-- end -->
-    <!-- Second Section -->
 
-    <div class="accordion" id="accordionPanelsStayOpenExample">
-      <h2>Common FAQ</h2>
-      <p>For any additional questions email admin@bidyouragent.com</p>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-headingOne">
-          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne"><h4>Can I Use the Services of a Real Estate Broker to Assist Me as A Buyer?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse show" aria-labelledby="panelsStayOpen-headingOne">
-          <div class="accordion-body">Yes, Buyer’s can use the agent they choose. If Buyer is not being represented by a Buyer’s agent and the Buyer would like to be represented we can refer a Buyer’s agent to represent them at no cost to the Buyer.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-headingTwo">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo"><h4>How Do I Register to Bid on A Property (Buyers and Buyer’s Agents)?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingTwo">
-          <div class="accordion-body">Buyers/ Buyer’s agents will be required to create an account under the tab “Register” to bid on a property. Buyers/Buyer’s agents must accept the Terms and Conditions. Buyers/Buyer’s agent must send proof of funds or pre-approval letter and a valid ID to the Seller or Seller’s agent before bidding on a property or their bid can be considered null and void.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-headingThree">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree"><h4>Can I Use the Services of a Real Estate Broker to Assist Me as A Seller?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingThree">
-          <div class="accordion-body">Yes, we suggest using a real estate agent to ensure a successful auction on our real estate bidding platform. Your house will be professionally marketed and priced by a seasoned agent. This is critical to the auction’s success. Please contact us to get to get your property professionally listed and marketed.</div>
-        </div>
-      </div>
-
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading4th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse4th" aria-expanded="false" aria-controls="panelsStayOpen-collapse4th"><h4>What Do I Need to Provide So I Can Bid?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse4th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading4th">
-          <div class="accordion-body">Before bidding on a property the Buyer’s agents must send their Buyers proof of funds or pre approval letter and a valid ID to the Seller/Seller’s agent or their offer can be considered null and void.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading5th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse5th" aria-expanded="false" aria-controls="panelsStayOpen-collapse5th"><h4>What Is the Buyer's Premium?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse5th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading5th">
-          <div class="accordion-body">The Buyer’s Premium is a charge to the Buyer in addition to the final sales price. The premium is added to the winning offer to arrive at the final contract price paid by the Buyer for the property. This additional fee goes to the Seller at closing. The amount of the Buyer’s Premium varies from auction to auction. As a result, you’ll need to look at the Terms and Conditions of each auction to figure out how much you’ll be charged.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading6th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse6th" aria-expanded="false" aria-controls="panelsStayOpen-collapse6th"><h4>Do I Need to Have a Sale Contract Typed Up Before the Auction?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse6th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading6th">
-          <div class="accordion-body">No, the Seller’s Agent will provide the winning real estate bid with an “AS IS” contract, all the disclosures, and addendums. If Seller is not represented by an agent then the Buyer’s agent will provide Buyer the documents. If there are no Real Estate Agents involved, Seller can email admin@bidyouragent.com to request an “AS IS’ contract, all the disclosures, and addendums. Once the Buyer receives the contract they will have 48 hours to sign and submit the contract to the Seller/Seller’s agent or their offer can be considered null and void.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading7th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse7th" aria-expanded="false" aria-controls="panelsStayOpen-collapse7th"><h4>When Will Buyer’s Premium Be Due?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse7th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading7th">
-          <div class="accordion-body">We will only collect the fee at the time of closing. If the real estate contract falls through, the Buyer must promptly sign the cancellation agreement and send to the Seller/Seller’s agent.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading8th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse8th" aria-expanded="false" aria-controls="panelsStayOpen-collapse8th"><h4>How Much Is It to List My Property on BidYourAgent? (Seller’s And Listing Agents)</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse8th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading8th">
-          <div class="accordion-body">Adding your property to our real estate bidding site is completely free! At the time of closing, BidYourAgent LLC a will collect a 1% success fee. The Seller determines who pays the success fee. If Seller is represented by an agent and the Seller or Buyer pay the 1% success fee we will split 50% of the success fee with the Seller’s agent. Additionally, the Seller’s agent can opt to pay the success fee with their commission for half a percentage (.50%.) There is no charge to BidYourAgent if the property does not close!</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading9th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse9th" aria-expanded="false" aria-controls="panelsStayOpen-collapse9th"><h4>How Do I List a Property on BidYourAgent?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse9th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading9th">
-          <div class="accordion-body">On the home page you can click “Hire Agent.” The Seller will be required to create an account and accept the Terms of Service. Seller must sign an addendum prior to listing that they will pay the 1% Success Fee to BidYourAgent LLC at closing before listing. If Seller is represented by an agent, the agent will get 50% of the success fee. Seller can add this Success Fee to the auction and have the Buyer credit the Seller this fee at closing, if Seller chooses. If seller chooses to have the Buyer pay the 1% Success fee the fee will be added to the winning bid to come up with the final sales price.</div>
-        </div>
-      </div>
-      <div class="accordion-item">
-        <div class="accordion-header" id="panelsStayOpen-heading10th">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapse10th" aria-expanded="false" aria-controls="panelsStayOpen-collapse10th"><h4>Who Can Use This Platform?</h4></button>
-        </div>
-        <div id="panelsStayOpen-collapse10th" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-heading10th">
-          <div class="accordion-body">Any Licensed Realtor, Seller, or Buyer in the Florida.</div>
-        </div>
-      </div>
+{{-- Hero --}}
+<div class="faq-hero">
+    <div class="container">
+        <h1>We're here to help.</h1>
+        <p>BidYourAgent provides a transparent approach to hiring real estate agents. Find answers below, or reach out at <a href="mailto:admin@bidyouragent.com" class="text-white fw-semibold">admin@bidyouragent.com</a>.</p>
+        <a href="{{ route('register') }}"><button class="btn" style="background:#fff;color:#006e9f;font-weight:600;padding:10px 28px;border-radius:6px;">Hire Agent — It's Free</button></a>
     </div>
-    <!-- End  -->
-  </div>
+</div>
+
+<div class="container py-5">
+    {{-- General --}}
+    <div class="faq-section-title">General</div>
+    <div class="accordion" id="faqGeneral">
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq1" aria-expanded="true">
+                    Who can use BidYourAgent?
+                </button>
+            </div>
+            <div id="fq1" class="accordion-collapse collapse show" data-bs-parent="#faqGeneral">
+                <div class="accordion-body text-muted">Any licensed Realtor, Seller, Buyer, Landlord, or Tenant in Florida. Sellers, Buyers, Landlords, and Tenants post listings for free. Real estate agents bid on those listings to be hired.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq2">
+                    Is BidYourAgent free for clients?
+                </button>
+            </div>
+            <div id="fq2" class="accordion-collapse collapse" data-bs-parent="#faqGeneral">
+                <div class="accordion-body text-muted">Yes. Posting a listing as a Seller, Buyer, Landlord, or Tenant is completely free. BidYourAgent receives a referral fee from the hired agent upon closing — no upfront cost to you.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq3">
+                    Can I use the services of a real estate agent to assist me as a Buyer?
+                </button>
+            </div>
+            <div id="fq3" class="accordion-collapse collapse" data-bs-parent="#faqGeneral">
+                <div class="accordion-body text-muted">Yes. Buyers can use the agent they choose. If a Buyer is not being represented and would like to be, we can refer a Buyer's agent to represent them at no cost to the Buyer.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fq4">
+                    Can I use the services of a real estate agent to assist me as a Seller?
+                </button>
+            </div>
+            <div id="fq4" class="accordion-collapse collapse" data-bs-parent="#faqGeneral">
+                <div class="accordion-body text-muted">Yes. We suggest using a real estate agent to ensure a successful auction on our platform. Your property will be professionally marketed and priced by a seasoned agent — critical to the auction's success.</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Bidding --}}
+    <div class="faq-section-title">Bidding & Registration</div>
+    <div class="accordion" id="faqBidding">
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fb1">
+                    How do I register to bid?
+                </button>
+            </div>
+            <div id="fb1" class="accordion-collapse collapse" data-bs-parent="#faqBidding">
+                <div class="accordion-body text-muted">Create an account under the "Register" tab and accept the Terms and Conditions. Buyers and Buyer's agents must also send proof of funds or a pre-approval letter and a valid ID to the Seller or Seller's agent before bidding, or their bid may be considered null and void.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fb2">
+                    What do I need to provide to bid?
+                </button>
+            </div>
+            <div id="fb2" class="accordion-collapse collapse" data-bs-parent="#faqBidding">
+                <div class="accordion-body text-muted">Before bidding on a property, Buyers and Buyer's agents must send their proof of funds or pre-approval letter and a valid ID to the Seller or Seller's agent, or the bid may be considered null and void.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#fb3">
+                    Do I need a sales contract before the auction?
+                </button>
+            </div>
+            <div id="fb3" class="accordion-collapse collapse" data-bs-parent="#faqBidding">
+                <div class="accordion-body text-muted">No. The Seller's Agent will provide the winning bid with an "AS IS" contract, all disclosures, and addendums. If the Seller is not represented by an agent, the Buyer's agent provides the documents. If no agents are involved, email admin@bidyouragent.com to request the documents. The Buyer must sign and return the contract within 48 hours or the winning offer may be considered null and void.</div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Fees --}}
+    <div class="faq-section-title">Fees & Premiums</div>
+    <div class="accordion" id="faqFees">
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff1">
+                    What is a Buyer's Premium?
+                </button>
+            </div>
+            <div id="ff1" class="accordion-collapse collapse" data-bs-parent="#faqFees">
+                <div class="accordion-body text-muted">The Buyer's Premium is a charge to the Buyer in addition to the final sale price. It is added to the winning offer to arrive at the final contract price and goes to the Seller at closing. The amount varies per auction — check the Terms and Conditions of each listing.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff2">
+                    When is the Buyer's Premium due?
+                </button>
+            </div>
+            <div id="ff2" class="accordion-collapse collapse" data-bs-parent="#faqFees">
+                <div class="accordion-body text-muted">The fee is only collected at closing. If the real estate contract falls through, the Buyer must promptly sign the cancellation agreement and send it to the Seller or Seller's agent.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff3">
+                    How much does it cost to list on BidYourAgent?
+                </button>
+            </div>
+            <div id="ff3" class="accordion-collapse collapse" data-bs-parent="#faqFees">
+                <div class="accordion-body text-muted">Listing is completely free. At closing, BidYourAgent LLC collects a 1% success fee. The Seller determines who pays it. If the Seller is represented by an agent and the Seller or Buyer pay the 1% success fee, BidYourAgent splits 50% of the fee with the Seller's agent. There is no charge if the property does not close.</div>
+            </div>
+        </div>
+        <div class="accordion-item">
+            <div class="accordion-header">
+                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#ff4">
+                    How do I list a property on BidYourAgent?
+                </button>
+            </div>
+            <div id="ff4" class="accordion-collapse collapse" data-bs-parent="#faqFees">
+                <div class="accordion-body text-muted">Click "Hire Agent" on the homepage. You'll be asked to create an account and accept the Terms of Service. Sellers must sign an addendum agreeing to pay the 1% Success Fee at closing before listing. Sellers can add this fee to the auction and have the Buyer credit it at closing if they choose.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <p class="text-muted">Have more questions? Email us at <a href="mailto:admin@bidyouragent.com">admin@bidyouragent.com</a></p>
+        <a href="{{ route('register') }}" class="btn btn-primary px-4">Get Started — Hire Agent</a>
+    </div>
+</div>
 @endsection

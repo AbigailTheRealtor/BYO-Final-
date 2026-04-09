@@ -274,7 +274,7 @@
 
             @if (auth()->user() && in_array(auth()->user()->user_type, ['agent']))
                 <span class="dropdown">
-                    <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
+                    <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
                     <ul class="dropdown-menu" style="margin-top:0px;">
                         <li><a style="color: #333;" class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a></li>
                         <li><a style="color: #333;" class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a></li>
@@ -284,14 +284,14 @@
                     </ul>
                 </span>
             @elseif (auth()->user() && auth()->user()->user_type == 'seller')
-                <a class="item" href="{{ route('sellerAgentHireAuction') }}"><button class="btn">Hire Agent</button></a>
+                <a class="item" href="{{ route('sellerAgentHireAuction') }}"><button class="btn btn-primary">Hire Agent</button></a>
             @elseif (auth()->user() && auth()->user()->user_type == 'buyer')
-                <a class="item" href="{{ route('buyer.add-auction') }}"><button class="btn">Hire Agent</button></a>
+                <a class="item" href="{{ route('buyer.add-auction') }}"><button class="btn btn-primary">Hire Agent</button></a>
             @elseif (auth()->user() && auth()->user()->user_type == 'landlord')
-                <a class="item" href="{{ route('landlord.hire.agent.auction') }}"><button class="btn">Hire Agent</button></a>
+                <a class="item" href="{{ route('landlord.hire.agent.auction') }}"><button class="btn btn-primary">Hire Agent</button></a>
             @elseif (auth()->user() && auth()->user()->user_type == 'tenant')
                 <span class="dropdown">
-                    <button class="btn" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
+                    <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
                     <ul class="dropdown-menu" style="margin-top:0px;">
                         <li><a style="color: #333;" class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">Hire Tenant's Agent</a></li>
                         <li><a style="color: #333;" class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">Hire Landlord's Agent</a></li>
@@ -300,7 +300,7 @@
                     </ul>
                 </span>
             @elseif (!auth()->user())
-                <a class="item" href="{{ route('register') }}"><button class="btn">Hire Agent</button></a>
+                <a class="item" href="{{ route('register') }}"><button class="btn btn-primary">Hire Agent</button></a>
             @endif
         </nav>
     </div>

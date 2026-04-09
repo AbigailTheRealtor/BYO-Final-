@@ -6,6 +6,10 @@
         $user_type = 'Seller';
     } elseif ($user->user_type == 'agent') {
         $user_type = 'Real Estate Agent';
+    } elseif ($user->user_type == 'landlord') {
+        $user_type = 'Landlord';
+    } elseif ($user->user_type == 'tenant') {
+        $user_type = 'Tenant';
     } elseif ($user->user_type == 'admin') {
         $user_type = 'Admin';
     } else {
@@ -21,12 +25,12 @@
     .dropdown-menu .dropdown-divider {
         margin: 0;
     }
-    
+
     .right .dropdown {
         display: inline-block;
         position: relative;
     }
-    
+
     .right .dropdown .dropdown-menu {
         z-index: 1050;
         position: absolute;
@@ -34,110 +38,87 @@
         left: 0;
         min-width: 200px;
     }
-    
+
     .right .dropdown:hover .dropdown-menu {
         display: block;
     }
 </style>
 
-<div class="card">
-    <div class="card-body">
-        <!-- Review  -->
+<div class="card mb-0">
+    <div class="card-body py-3">
         <div class="review container">
-            <div class="card-body d-flex align-items-center justify-content-between flex-wrap">
-                <a href="{{ route('author', $user) }}">
-                    <div class="left d-flex align-items-center flex-wrap">
-                        <div class="position-relative image">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <a href="{{ route('author', $user) }}" class="text-decoration-none">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <div class="position-relative" style="width:56px;height:56px;border-radius:50%;overflow:hidden;flex-shrink:0;">
                             <img src="{{ $user->avatar ? $user->avatar : 'https://ppt1080.b-cdn.net/images/avatar/none.png' }}"
-                                alt="" />
+                                alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover;" />
                         </div>
-                        <div class="ms-2">
-                            <p class="mb-2">
-                                <span><b>{{ auth()->user()->name }}</b></span>
-                                <span class="star opacity-50" data-bs-container="body" tabindex="0"
-                                    data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top"
-                                    data-bs-content="0 stars based on 0 reviews.">
+                        <div>
+                            <div class="fw-bold text-dark mb-0">{{ auth()->user()->name }}</div>
+                            <div class="text-muted small">{{ $user_type }} &bull; {{ auth()->user()->email }}</div>
+                            <div class="mt-1">
+                                <span class="text-warning opacity-75" style="font-size:.75rem;">
                                     <i class="fa fa-star"></i>
                                     <i class="fa fa-star"></i>
                                     <i class="fa fa-star"></i>
                                     <i class="fa fa-star"></i>
                                     <i class="fa fa-star"></i>
                                 </span>
-                            </p>
-                            <span class="mb-0 opacity-50 text-sm-center sm">{{ $user_type }} •
-                                {{ auth()->user()->email }}</span>
+                            </div>
                         </div>
                     </div>
                 </a>
-                <div class="right text-center">
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     @if (auth()->user() && in_array(auth()->user()->user_type, ['buyer', 'landlord', 'tenant', 'seller']))
                         <span class="dropdown">
-                            <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Hire Agent <i class="fa fa-angle-down"></i></button>
+                            <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Hire Agent <i class="fa fa-angle-down ms-1"></i>
+                            </button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">Hire Tenant's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">Hire Tenant's Agent</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">Hire Landlord's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">Hire Landlord's Agent</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">Hire Buyer's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">Hire Buyer's Agent</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">Hire Seller's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">Hire Seller's Agent</a>
                                 </li>
                             </ul>
                         </span>
                     @elseif(auth()->user() && auth()->user()->user_type == 'agent')
                         <span class="dropdown">
-                            <button class="btn btn-lg" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Hire Agent <i class="fa fa-angle-down"></i></button>
+                            <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                Hire Agent <i class="fa fa-angle-down ms-1"></i>
+                            </button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('agent.landlord.auction.add') }}">Add
-                                        Property Listing (Rental)</a>
+                                    <a class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item" href="{{ route('add-listing') }}">Add
-                                        Property Listing
-                                        (Sale)</a>
+                                    <a class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('buyer_agent.auction.add') }}">Add Buyer
-                                        Criteria Listing</a>
+                                    <a class="dropdown-item" href="{{ route('buyer_agent.auction.add') }}">Add Buyer Criteria Listing</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('agent.tenant.criteria.auction.add') }}">Add Tenant Criteria
-                                        Listing</a>
+                                    <a class="dropdown-item" href="{{ route('agent.tenant.criteria.auction.add') }}">Add Tenant Criteria Listing</a>
                                 </li>
                                 <li>
-                                    <a style="color: #333;" class="dropdown-item"
-                                        href="{{ route('agent.service.auction.add') }}">Add
-                                        Service Auction</a>
+                                    <a class="dropdown-item" href="{{ route('agent.service.auction.add') }}">Add Service Auction</a>
                                 </li>
-                                {{-- <li>
-                        <a style="color: #333;" class="dropdown-item" href="{{ route('agent.service.auction.add') }}">Add Service Auction</a>
-                    </li> --}}
                             </ul>
                         </span>
-                        {{-- <a href="{{route('add-listing')}}"><button class="btn btn-lg">Add Property Listing</button></a>
-            <a href="{{route('add-listing')}}"><button class="btn btn-lg">Add Buyer Criteria</button></a>
-            <a href="{{route('add-listing')}}"><button class="btn btn-lg">Add Service Auction</button></a> --}}
                     @endif
 
-                    <button class="btn btn-lg" onclick="window.location = '{{ route('logout') }}';">Logout</button>
+                    <button class="btn btn-outline-secondary" onclick="window.location = '{{ route('logout') }}';">Logout</button>
                 </div>
             </div>
         </div>
-        <!-- End  -->
     </div>
 </div>
-

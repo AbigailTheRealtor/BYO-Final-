@@ -1,5 +1,31 @@
 <div class="col-sm-12 col-md-3 col-lg-3 leftCol">
 
+    {{-- ===== HIRE AGENT (Quick Action) ===== --}}
+    @if (in_array(auth()->user()->user_type, ['seller', 'buyer', 'landlord', 'tenant', 'agent']))
+    <div class="px-3 pt-3 pb-2">
+        @if (auth()->user()->user_type === 'seller')
+            <a href="{{ route('sellerAgentHireAuction') }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+        @elseif (auth()->user()->user_type === 'buyer')
+            <a href="{{ route('buyer.add-auction') }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+        @elseif (auth()->user()->user_type === 'landlord')
+            <a href="{{ route('landlord.hire.agent.auction') }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+        @elseif (auth()->user()->user_type === 'tenant')
+            <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+        @elseif (auth()->user()->user_type === 'agent')
+            <div class="dropdown">
+                <button class="btn btn-primary w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
+                <ul class="dropdown-menu w-100">
+                    <li><a class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('buyer_agent.auction.add') }}">Add Buyer Criteria Listing</a></li>
+                    <li><a class="dropdown-item" href="{{ route('agent.tenant.criteria.auction.add') }}">Add Tenant Criteria Listing</a></li>
+                    <li><a class="dropdown-item" href="{{ route('agent.service.auction.add') }}">Add Service Auction</a></li>
+                </ul>
+            </div>
+        @endif
+    </div>
+    @endif
+
     {{-- ===== DASHBOARD ===== --}}
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Dashboard</div>
     <a href="{{ route('dashboard') }}">
@@ -89,7 +115,7 @@
                     @php $my_saa_count = auth()->user()->seller_agent_auctions->count(); @endphp
                     @if ($my_saa_count)<span class="badge bg-danger ms-2">{{ $my_saa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a seller.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Seller.</div>
             </div>
         </div>
     </a>
@@ -104,7 +130,7 @@
                     @php $my_baa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
                     @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a buyer.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Buyer.</div>
             </div>
         </div>
     </a>
@@ -116,25 +142,26 @@
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Agent Listings</b>
-                    @php $my_baa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_laa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
+                    @if ($my_laa_count)<span class="badge bg-danger ms-2">{{ $my_laa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a landlord.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Landlord.</div>
             </div>
         </div>
     </a>
     @endif
 
     @if (in_array(auth()->user()->user_type, ['tenant']))
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-2 pb-1" style="letter-spacing:.07em;font-size:.68rem;">Hire Agent Listings</div>
     <a href="{{ route('tenant.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Tenant's Agent</b>
-                    @php $my_baa_count = auth()->user()->tenant_agent_auctions->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_taa_count = auth()->user()->tenant_agent_auctions->count(); @endphp
+                    @if ($my_taa_count)<span class="badge bg-danger ms-2">{{ $my_taa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a tenant.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Tenant.</div>
             </div>
         </div>
     </a>
@@ -143,10 +170,10 @@
             <div class="me-3"><i class="fa fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Landlord's Agent</b>
-                    @php $my_baa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_llaa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
+                    @if ($my_llaa_count)<span class="badge bg-danger ms-2">{{ $my_llaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to manage your property as a landlord.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to manage your property as a Landlord.</div>
             </div>
         </div>
     </a>
@@ -155,10 +182,10 @@
             <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
-                    @php $my_baa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_tbaa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
+                    @if ($my_tbaa_count)<span class="badge bg-danger ms-2">{{ $my_tbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a buyer.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Buyer.</div>
             </div>
         </div>
     </a>
@@ -167,10 +194,10 @@
             <div class="me-3"><i class="fa fa-sign-out" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Seller's Agent</b>
-                    @php $my_baa_count = auth()->user()->seller_agent_auctions->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_tsaa_count = auth()->user()->seller_agent_auctions->count(); @endphp
+                    @if ($my_tsaa_count)<span class="badge bg-danger ms-2">{{ $my_tsaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a seller.</div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Seller.</div>
             </div>
         </div>
     </a>
@@ -202,7 +229,7 @@
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Bids</b></div>
-                <div class="opacity-50 text-400 small">Any bids you have made or received can be found here.</div>
+                <div class="opacity-50 text-400 small">Bids you have made or received on your listings.</div>
             </div>
         </div>
     </a>
@@ -217,7 +244,7 @@
                     @php $my_baa_count = auth()->user()->tenant_agent_auction_bid->count(); @endphp
                     @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on tenant hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Tenant hire-agent listings.</div>
             </div>
         </div>
     </a>
@@ -226,10 +253,10 @@
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Landlord Agent Bids</b>
-                    @php $my_baa_count = auth()->user()->landlord_agent_auction_bid->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_lbaa_count = auth()->user()->landlord_agent_auction_bid->count(); @endphp
+                    @if ($my_lbaa_count)<span class="badge bg-danger ms-2">{{ $my_lbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on landlord hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Landlord hire-agent listings.</div>
             </div>
         </div>
     </a>
@@ -238,10 +265,10 @@
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Buyer Agent Bids</b>
-                    @php $my_baa_count = auth()->user()->buyer_agent_auction_bid->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_bbaa_count = auth()->user()->buyer_agent_auction_bid->count(); @endphp
+                    @if ($my_bbaa_count)<span class="badge bg-danger ms-2">{{ $my_bbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on buyer hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Buyer hire-agent listings.</div>
             </div>
         </div>
     </a>
@@ -250,10 +277,10 @@
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Seller Agent Bids</b>
-                    @php $my_baa_count = auth()->user()->seller_agent_auction_bid->count(); @endphp
-                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                    @php $my_sbaa_count = auth()->user()->seller_agent_auction_bid->count(); @endphp
+                    @if ($my_sbaa_count)<span class="badge bg-danger ms-2">{{ $my_sbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on seller hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Seller hire-agent listings.</div>
             </div>
         </div>
     </a>
