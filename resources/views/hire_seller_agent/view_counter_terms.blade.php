@@ -113,7 +113,6 @@
                         $brokerScore       = $score['terms_match_percent'];
                         $brokerMatched     = $score['terms_matched_count'];
                         $brokerTotal       = $score['terms_baseline_total'];
-                        $brokerMismatches  = $score['changed_terms'];
                         $termsChangedCount = $score['terms_changed_count'];
                         $termsAddedCount   = $score['terms_added_count'];
                         $servicesScore     = $score['services_match_percent'];
@@ -121,7 +120,6 @@
                         $servicesTotal     = $score['services_baseline_total'];
                         $servicesMissingCount = $score['services_missing_count'];
                         $servicesExtraCount   = $score['services_extra_count'];
-                        $servicesMissing   = $score['missing_services'];
                         $totalScore        = $score['overall_percent'];
 
                         $getScoreColor   = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::scoreColor((int)$s);
@@ -150,8 +148,22 @@
                             $showDualScore = true;
                         }
 
+                        // === DIFF SCORE: field-level badges compare to IMMEDIATELY PREVIOUS counter ===
+                        if ($viewerRole === 'agent') {
+                            // Agent viewing seller's counter → previous = agent's own counter-back (if any), else original bid
+                            $diffBaselineData = $agentCounterBack ? $agentCounterBack->getAllMeta() : $baselineData;
+                        } else {
+                            // Seller viewing agent's counter-back → previous = seller's own counter (if any), else original listing
+                            $diffBaselineData = $sellerCounter ? $sellerCounter->getAllMeta() : $baselineData;
+                        }
+                        $diffScore        = \App\Helpers\SellerBidMatchScoreHelper::calculate($diffBaselineData, $counterData, null, $counterPropType);
+                        $brokerMismatches = $diffScore['changed_terms'];
+                        $servicesMissing  = $diffScore['missing_services'];
+                        $servicesAdded    = $diffScore['extra_services'] ?? [];
+
                         $normalizeService = fn($s) => \App\Helpers\SellerBidMatchScoreHelper::normalizeService((string)$s);
-                        $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
+                        // baselineNorm uses diffScore so "Added" badges reflect diff vs previous counter
+                        $baselineNorm     = array_merge($diffScore['matched_services'], $diffScore['missing_services']);
                         $displayCatalog   = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($counterPropType);
 
                         $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
@@ -177,8 +189,8 @@
                             : [];
                         $allCounterServices = array_merge($ctSvcRaw, $ctOtherSvcRaw);
 
-                        // Baseline services for "Not Included" list
-                        $bsSvcRaw = $baselineData['services'] ?? [];
+                        // Baseline services for "Not Included" list — use diffBaselineData (diff vs previous counter)
+                        $bsSvcRaw = $diffBaselineData['services'] ?? [];
                         if (is_string($bsSvcRaw)) $bsSvcRaw = json_decode($bsSvcRaw, true) ?? [];
                         $bsSvcRaw = is_array($bsSvcRaw) ? array_values(array_filter($bsSvcRaw)) : [];
                         $bsSvcRaw = array_values(array_filter(
@@ -186,7 +198,7 @@
                             fn($s) => !empty(trim((string)$s)) && $s !== 'Other'
                                 && in_array($normalizeService((string)$s), $displayCatalog, true)
                         ));
-                        $bsOtherSvcRaw = $baselineData['other_services'] ?? [];
+                        $bsOtherSvcRaw = $diffBaselineData['other_services'] ?? [];
                         if (is_string($bsOtherSvcRaw)) $bsOtherSvcRaw = json_decode($bsOtherSvcRaw, true) ?? [];
                         $bsOtherSvcRaw = is_array($bsOtherSvcRaw)
                             ? array_values(array_filter($bsOtherSvcRaw, fn($s) => is_string($s) && !empty(trim($s))))
@@ -983,7 +995,12 @@
                                     <ul class="list-unstyled ps-3 mt-2">
                                         @foreach ($matchedServicesInCategory as $serviceData)
                                         <li class="mb-1" style="{{ !$serviceData['inBaseline'] ? $addedStyle : '' }}">
-                                            <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $serviceData['service'] }}
+                                            @if (!$serviceData['inBaseline'])
+                                                <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                            @else
+                                                <span class="me-2" style="color: #6c757d;">•</span>
+                                            @endif
+                                            {{ $serviceData['service'] }}
                                             @if (!$serviceData['inBaseline'])
                                             {!! $addedBadge !!}
                                             @endif
@@ -1003,7 +1020,12 @@
                                         $isInBaseline = in_array($normalizeService($otherService), $baselineNorm);
                                     @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                        <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $otherService }}
+                                        @if (!$isInBaseline)
+                                            <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                        @else
+                                            <span class="me-2" style="color: #6c757d;">•</span>
+                                        @endif
+                                        {{ $otherService }}
                                         @if (!$isInBaseline)
                                         {!! $addedBadge !!}
                                         @endif

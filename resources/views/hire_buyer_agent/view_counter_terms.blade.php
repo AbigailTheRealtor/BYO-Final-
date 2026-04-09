@@ -117,7 +117,6 @@
                         $brokerScore       = $score['broker_comp_percent'] ?? $score['terms_match_percent'] ?? 100;
                         $brokerMatched     = $score['broker_comp_matched'] ?? $score['terms_matched_count'] ?? 0;
                         $brokerTotal       = $score['broker_comp_total'] ?? $score['terms_baseline_total'] ?? 0;
-                        $brokerMismatches  = $score['changed_terms'] ?? [];
                         $termsChangedCount = $score['terms_changed_count'] ?? 0;
                         $termsAddedCount   = $score['terms_added_count'] ?? 0;
 
@@ -126,8 +125,19 @@
                         $servicesTotal        = $score['services_total'] ?? $score['services_baseline_total'] ?? 0;
                         $servicesMissingCount = $score['services_missing_count'] ?? 0;
                         $servicesExtraCount   = $score['services_extra_count'] ?? 0;
-                        $servicesMissing      = $score['missing_services'] ?? [];
-                        $servicesAdded        = $score['extra_services'] ?? [];
+
+                        // === DIFF SCORE: field-level badges compare to IMMEDIATELY PREVIOUS counter (not always original) ===
+                        if ($viewerRole === 'agent') {
+                            // Agent viewing buyer's counter → previous = agent's own counter-back (if any), else original bid
+                            $diffBaselineData = $agentCounter ? $agentCounter->getAllMeta() : $baselineData;
+                        } else {
+                            // Buyer viewing agent's counter-back → previous = buyer's own counter (if any), else original listing
+                            $diffBaselineData = $buyerCounter ? $buyerCounter->getAllMeta() : $baselineData;
+                        }
+                        $diffScore        = \App\Helpers\BuyerBidMatchScoreHelper::calculate($diffBaselineData, $counterData, null, $counterPropType);
+                        $brokerMismatches = $diffScore['changed_terms'] ?? [];
+                        $servicesMissing  = $diffScore['missing_services'] ?? [];
+                        $servicesAdded    = $diffScore['extra_services'] ?? [];
 
                         $totalScore      = $score['overall_percent'];
                         $getScoreColor   = fn($s) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$s);
@@ -144,7 +154,8 @@
                         $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
 
                         $normalizeService = fn($s) => \App\Helpers\BuyerBidMatchScoreHelper::normalizeService((string)$s);
-                        $baselineNorm     = array_merge($score['matched_services'] ?? [], $score['missing_services'] ?? []);
+                        // $baselineNorm uses diffScore so "Added" badge reflects diff vs previous counter
+                        $baselineNorm     = array_merge($diffScore['matched_services'] ?? [], $diffScore['missing_services'] ?? []);
                         $displayCatalog   = \App\Helpers\BuyerBidMatchScoreHelper::getCatalog($counterPropType);
 
                         $csRaw = $counterData['services'] ?? [];
@@ -160,14 +171,15 @@
                         $allCounterServices   = array_merge($csRaw, $counterOtherRaw);
                         $counterOtherServices = $counterOtherRaw;
 
-                        $bsRaw = $baselineData['services'] ?? [];
+                        // Use diffBaselineData for "Not Included" list (reflects diff vs previous counter)
+                        $bsRaw = $diffBaselineData['services'] ?? [];
                         if (is_string($bsRaw)) $bsRaw = json_decode($bsRaw, true) ?? [];
                         $bsRaw = is_array($bsRaw) ? array_values(array_filter($bsRaw)) : [];
                         $bsRaw = array_values(array_filter(
                             $bsRaw,
                             fn($s) => in_array($normalizeService((string)$s), $displayCatalog, true)
                         ));
-                        $bsOtherRaw = $baselineData['other_services'] ?? [];
+                        $bsOtherRaw = $diffBaselineData['other_services'] ?? [];
                         if (is_string($bsOtherRaw)) $bsOtherRaw = json_decode($bsOtherRaw, true) ?? [];
                         $bsOtherRaw          = is_array($bsOtherRaw) ? array_values(array_filter($bsOtherRaw, fn($s) => is_string($s) && !empty(trim($s)))) : [];
                         $allBaselineServices  = array_merge($bsRaw, $bsOtherRaw);
@@ -387,9 +399,29 @@
                                         $leaseFeeType = $counterData['lease_fee_type'] ?? '';
                                         $leaseFeeCombined = $leaseFeeType;
                                         if ($leaseFeeType === 'flat' && !empty($counterData['lease_fee_flat'])) {
-                                            $leaseFeeCombined = $fmtMoney($counterData['lease_fee_flat']);
+                                            $leaseFeeCombined = $fmtMoney($counterData['lease_fee_flat']) ?? '—';
                                         } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value' && !empty($counterData['lease_fee_percentage'])) {
                                             $leaseFeeCombined = $fmtPercent($counterData['lease_fee_percentage']) . ' of Gross Lease Value';
+                                        } elseif ($leaseFeeType === 'Percentage of Monthly Rent') {
+                                            $display = ($fmtPercent($counterData['lease_fee_percentage_monthly_rent'] ?? null) ?? '—') . ' of Monthly Rent';
+                                            if (!empty($counterData['lease_fee_percentage_monthly_number'])) {
+                                                $display .= ' x ' . $counterData['lease_fee_percentage_monthly_number'] . ' Months';
+                                            }
+                                            $leaseFeeCombined = $display;
+                                        } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                                            $leaseFeeCombined = $joinParts([
+                                                $fmtMoney($counterData['lease_fee_flat_combo'] ?? null),
+                                                !empty($counterData['lease_fee_percentage_combo']) ? ($fmtPercent($counterData['lease_fee_percentage_combo']) . ' of Gross Lease Value') : null,
+                                            ]) ?? '—';
+                                        } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent' && !empty($counterData['lease_fee_percentage_net'])) {
+                                            $leaseFeeCombined = $fmtPercent($counterData['lease_fee_percentage_net']) . ' of Net Aggregate Rent';
+                                        } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                                            $leaseFeeCombined = $joinParts([
+                                                $fmtMoney($counterData['lease_fee_flat_combo_net'] ?? null),
+                                                !empty($counterData['lease_fee_percentage_combo_net']) ? ($fmtPercent($counterData['lease_fee_percentage_combo_net']) . ' of Net Aggregate Rent') : null,
+                                            ]) ?? '—';
+                                        } elseif ($leaseFeeType === 'other' && !empty($counterData['lease_fee_other'])) {
+                                            $leaseFeeCombined = $counterData['lease_fee_other'];
                                         }
                                     @endphp
                                     <li class="mb-2" style="{{ isset($brokerMismatches['lease_fee_type']) ? $mismatchStyle : '' }}">
@@ -525,7 +557,12 @@
                                             @foreach ($categoryServices as $service)
                                             @php $isInBaseline = in_array($normalizeService($service), $baselineNorm); @endphp
                                             <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                                <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $service }}
+                                                @if (!$isInBaseline)
+                                                    <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                                @else
+                                                    <span class="me-2" style="color: #6c757d;">•</span>
+                                                @endif
+                                                {{ $service }}
                                                 @if (!$isInBaseline){!! $addedBadge !!}@endif
                                             </li>
                                             @endforeach
@@ -538,7 +575,12 @@
                                     @foreach ($allCounterServices as $service)
                                     @php $isInBaseline = in_array($normalizeService($service), $baselineNorm); @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                        <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $service }}
+                                        @if (!$isInBaseline)
+                                            <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                        @else
+                                            <span class="me-2" style="color: #6c757d;">•</span>
+                                        @endif
+                                        {{ $service }}
                                         @if (!$isInBaseline){!! $addedBadge !!}@endif
                                     </li>
                                     @endforeach
@@ -552,7 +594,12 @@
                                     @foreach ($counterOtherServices as $otherService)
                                     @php $isInBaseline = in_array($normalizeService($otherService), $baselineNorm); @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                        <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $otherService }}
+                                        @if (!$isInBaseline)
+                                            <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                        @else
+                                            <span class="me-2" style="color: #6c757d;">•</span>
+                                        @endif
+                                        {{ $otherService }}
                                         @if (!$isInBaseline){!! $addedBadge !!}@endif
                                     </li>
                                     @endforeach

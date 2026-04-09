@@ -152,7 +152,6 @@
                         $brokerScore       = $score['terms_match_percent'];
                         $brokerMatched     = $score['terms_matched_count'];
                         $brokerTotal       = $score['terms_baseline_total'];
-                        $brokerMismatches  = $score['changed_terms'];
                         $termsChangedCount = $score['terms_changed_count'];
                         $termsAddedCount   = $score['terms_added_count'];
 
@@ -161,8 +160,17 @@
                         $servicesTotal        = $score['services_baseline_total'];
                         $servicesMissingCount = $score['services_missing_count'];
                         $servicesExtraCount   = $score['services_extra_count'];
-                        $servicesMissing      = $score['missing_services'];
-                        $servicesAdded        = $score['extra_services'];
+
+                        // === DIFF SCORE: field-level badges compare to IMMEDIATELY PREVIOUS counter ===
+                        if ($viewerRole === 'agent') {
+                            $diffBaselineData = $agentCounter ? $agentCounter->getAllMeta() : $baselineData;
+                        } else {
+                            $diffBaselineData = $landlordCounter ? $landlordCounter->getAllMeta() : $baselineData;
+                        }
+                        $diffScore        = \App\Helpers\LandlordBidMatchScoreHelper::calculate($diffBaselineData, $counterData, null, $counterPropType);
+                        $brokerMismatches = $diffScore['changed_terms'];
+                        $servicesMissing  = $diffScore['missing_services'];
+                        $servicesAdded    = $diffScore['extra_services'];
 
                         $totalScore      = $score['overall_percent'];
                         $getScoreColor   = fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::scoreColor((int)$s);
@@ -179,7 +187,8 @@
                         $hasAnyBaseline  = ($brokerTotal > 0 || $servicesTotal > 0);
 
                         $normalizeService = fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::normalizeService((string)$s);
-                        $baselineNorm     = array_merge($score['matched_services'], $score['missing_services']);
+                        // baselineNorm uses diffScore so "Added" badges reflect diff vs previous counter
+                        $baselineNorm     = array_merge($diffScore['matched_services'], $diffScore['missing_services']);
                         $displayCatalog2  = \App\Helpers\LandlordBidMatchScoreHelper::getCatalog($counterPropType);
 
                         // Counter services
@@ -196,15 +205,15 @@
                         $allCounterServices  = array_merge($csRaw, $counterOtherRaw);
                         $counterOtherServices = $counterOtherRaw;
 
-                        // Baseline services
-                        $bsRaw2 = $baselineData['services'] ?? [];
+                        // Baseline services — use diffBaselineData so "Not Included" shows diff vs previous counter
+                        $bsRaw2 = $diffBaselineData['services'] ?? [];
                         if (is_string($bsRaw2)) $bsRaw2 = json_decode($bsRaw2, true) ?? [];
                         $bsRaw2 = is_array($bsRaw2) ? array_values(array_filter($bsRaw2)) : [];
                         $bsRaw2 = array_values(array_filter(
                             $bsRaw2,
                             fn($s) => in_array($normalizeService((string)$s), $displayCatalog2, true)
                         ));
-                        $bsOtherRaw2 = $baselineData['other_services'] ?? [];
+                        $bsOtherRaw2 = $diffBaselineData['other_services'] ?? [];
                         if (is_string($bsOtherRaw2)) $bsOtherRaw2 = json_decode($bsOtherRaw2, true) ?? [];
                         $bsOtherRaw2 = is_array($bsOtherRaw2) ? array_values(array_filter($bsOtherRaw2, fn($s) => is_string($s) && !empty(trim($s)))) : [];
                         $allBaselineServices = array_merge($bsRaw2, $bsOtherRaw2);
@@ -714,7 +723,12 @@
                                     <ul class="list-unstyled ps-3 mt-2">
                                         @foreach ($matchedServicesInCategory as $serviceData)
                                         <li class="mb-1" style="{{ !$serviceData['inBaseline'] ? $addedStyle : '' }}">
-                                            <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $serviceData['service'] }}
+                                            @if (!$serviceData['inBaseline'])
+                                                <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                            @else
+                                                <span class="me-2" style="color: #6c757d;">•</span>
+                                            @endif
+                                            {{ $serviceData['service'] }}
                                             @if (!$serviceData['inBaseline'])
                                             {!! $addedBadge !!}
                                             @endif
@@ -734,7 +748,12 @@
                                         $isInBaseline = in_array($normalizeService($otherService), $baselineNorm);
                                     @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                        <i class="fas fa-check-circle me-2" style="color: #049399;"></i>{{ $otherService }}
+                                        @if (!$isInBaseline)
+                                            <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                        @else
+                                            <span class="me-2" style="color: #6c757d;">•</span>
+                                        @endif
+                                        {{ $otherService }}
                                         @if (!$isInBaseline)
                                         {!! $addedBadge !!}
                                         @endif

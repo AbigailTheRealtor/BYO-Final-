@@ -1,0 +1,112 @@
+COUNTER TERMS AUDIT FOLLOW-UP — THE PRIOR PASS DID NOT COMPLETE THE REQUEST
+
+The last pass fixed only 3 narrow display issues, but it did NOT complete the actual counter terms audit requested.
+
+Do not stop at isolated field fixes.
+We still need a full audit and correction of the core counter terms display format across Seller, Buyer, Landlord, and Tenant.
+
+REMAINING REQUIRED AUDIT ITEMS
+
+1. YES / NO CAPITALIZATION
+Audit all 4 counter terms pages and fix any remaining yes/no values so they always display as:
+- Yes
+- No
+
+2. COMPENSATION DISPLAY MUST SHOW ACTUAL ENTERED VALUES
+This is a major unresolved item.
+
+Audit all compensation sections across Seller, Buyer, Landlord, and Tenant counter terms pages.
+
+If the page currently shows only a structure label such as:
+- Flat Fee + Percentage of Gross Lease Value
+
+that is NOT sufficient.
+
+The primary display must show the actual entered values, for example:
+- $4,000 + 4% of Gross Lease Value
+- 5% of Total Purchase Price
+- $2,500 flat fee
+- $1,000 Lease-Option Fee
+
+Audit all compensation fields and report exactly which ones still show only structure labels instead of actual entered values.
+Fix the display where safely possible in the counter terms view layer.
+
+3. REQUESTED SERVICES DISPLAY FORMAT
+Audit how requested services are shown in all 4 counter terms pages.
+
+If services are being displayed with checkmarks or form-style checklist presentation, that is NOT the correct format for negotiation comparison.
+
+Counter terms should not look like a form.
+They should look like a negotiation comparison.
+
+Target:
+- Added Services
+- Removed / Not Included
+- Changed Services if applicable
+
+Do not use checkmark-style presentation for counter comparison if it can be safely changed in the view layer.
+
+4. DIFF BASIS — THIS IS THE MOST IMPORTANT ITEM
+You must audit what each counter terms page is actually comparing against.
+
+For each of the 4 roles, confirm whether the current changed/added/removed highlighting is based on:
+- the original bid every time
+OR
+- the immediately previous counter / previous version
+
+We need an exact answer for Seller, Buyer, Landlord, and Tenant.
+
+Target behavior:
+- first counter compares to original bid
+- second counter compares to first counter
+- third counter compares to second counter
+
+We do NOT want old differences from the original bid to keep appearing as if they changed again in later counter rounds.
+
+5. ONLY HIGHLIGHT ACTIVE DIFFERENCES
+Audit whether unchanged fields are still being visually emphasized because old diff logic is carrying forward.
+
+Target:
+Only visually emphasize:
+- Changed
+- Added
+- Removed / Not Included
+
+Unchanged fields must not look like active changes.
+
+IMPORTANT
+If the current diff/highlight basis is controlled by deeper backend/business logic and cannot be safely fixed at the Blade display layer alone, do NOT guess and do NOT partially fake it in the UI.
+
+Instead, report:
+- exact file(s)
+- exact variable(s) or score/diff data source(s)
+- whether current logic compares against original bid or previous counter
+- what would need to change to make it compare to the immediately previous version
+
+HARD SAFEGUARDS
+- Do not do a broad refactor
+- Do not change counter submission logic
+- Do not change match score formulas unless the diff basis is directly tied to them and you are only auditing/reporting it
+- Do not change accepted bid summary
+- Do not change notifications
+- Do not change routes or controllers unless absolutely required to trace the diff source
+- Do not touch unrelated listing/detail pages
+- If one role is already correct in a given area, leave it alone and report it as correct
+
+WHAT I WANT BACK
+Return all of the following:
+
+1. Exact files audited
+2. Exact files changed
+3. For Seller, Buyer, Landlord, and Tenant:
+   - whether Yes/No formatting is now fully correct
+   - whether compensation sections now show actual entered values or still show structure labels
+   - whether services still use checkmarks/form-style display
+   - whether diff/highlight logic compares to original bid or previous counter
+   - whether unchanged items are still being highlighted incorrectly
+4. Exact remaining issues still unresolved
+5. Exact dependencies if previous-version diffing is controlled by deeper backend logic rather than the Blade views
+
+FINAL RULE
+Do not respond with only isolated field fixes.
+This follow-up requires a complete answer on the remaining unresolved audit items above.

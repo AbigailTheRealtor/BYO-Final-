@@ -1,0 +1,288 @@
+We need a full broker compensation, agency terms, and services parity audit across all 4 roles and all relevant property types.
+
+Core problem
+
+I found a clear mismatch already:
+
+In listing creation, the flat fee format is correct.
+Example:
+
+Flat Fee uses $ only
+
+But in at least one Tenant counter bid screen, Flat Fee is still rendering in the old incorrect format showing both:
+
+$
+%
+
+That means listing creation, bid forms, and counter forms are no longer fully aligned.
+
+This is dangerous because it can cause:
+
+false mismatches in match scoring
+incorrect saved values
+broken counter comparisons
+inconsistent UI between listing creation, agent bid entry, and counter bid entry
+confusion over whether a term actually changed
+Goal
+
+Perform a full parity audit and fix so that for each role and property type, the following all use the exact same field structure, option lists, input formats, and conditional logic:
+
+Listing creation
+Agent bid form
+Counter bid form
+Any related edit/preload logic needed so values display correctly after save
+
+This must apply across all 4 roles:
+
+Tenant
+Buyer
+Seller
+Landlord
+
+And across all applicable property types / transaction types inside each role, such as:
+
+Residential
+Commercial
+Income / multi unit where applicable
+Vacant land where applicable
+Lease
+Purchase
+Lease option where applicable
+Required parity standard
+
+For every role/property-type combination, the following must match exactly between listing creation, bid, and counter:
+
+A. Services
+same service labels
+same service order
+same checkboxes
+same nested options
+same “Other” behavior
+same custom text fields
+same save + preload behavior
+B. Broker Compensation & Agency Agreement Terms
+same field labels
+same field order
+same dropdown options
+same input type per option
+same placeholder logic
+same conditional rendering logic
+same legal note / relationship option lists where applicable
+same flat fee vs percentage vs hybrid formatting rules
+same prefilled display on edit / bid / counter
+C. Match score inputs
+
+The exact fields used for match calculations must be aligned so the match score engine compares like-for-like, not mismatched structures.
+
+If listing creation uses one field structure and bid/counter uses another, that is a bug and must be corrected.
+
+Critical flat fee rule
+
+Flat Fee must be treated consistently everywhere.
+
+Correct rule:
+Flat Fee = dollar amount only
+It must not render a percent input
+It must not show both $ and %
+It must not use percent placeholder text
+Wrong old format:
+% input shown when Flat Fee is selected
+$ + % shown together under Flat Fee
+percent placeholder under Flat Fee
+
+This specific issue must be audited everywhere, not just the one Tenant counter screen where it was noticed.
+
+Audit method required
+
+Do not do random one-off fixes.
+Do this as a structured audit.
+
+For each role:
+
+Tenant
+Buyer
+Seller
+Landlord
+
+And for each applicable property/transaction type inside that role:
+
+Step 1
+
+Identify the source of truth for the listing creation form in that role/property type.
+
+Step 2
+
+Compare the corresponding:
+
+agent bid form
+counter bid form
+
+against that source of truth.
+
+Step 3
+
+Document every mismatch found, including:
+
+missing field
+extra field
+wrong label
+wrong option list
+wrong order
+wrong input type
+wrong placeholder
+wrong nested conditional behavior
+wrong “Other” custom field behavior
+wrong preload behavior
+wrong save format
+Step 4
+
+Fix the mismatches so bid and counter match the listing creation structure for that exact role/property type.
+
+Very important scoping rule
+
+Do not force all 4 roles to use one universal field set if they are intentionally different.
+
+Instead:
+
+Tenant Residential must match Tenant Residential across create, bid, counter
+Tenant Commercial must match Tenant Commercial across create, bid, counter
+Buyer Residential must match Buyer Residential across create, bid, counter
+Seller Residential must match Seller Residential across create, bid, counter
+Seller Commercial must match Seller Commercial across create, bid, counter
+Landlord Residential must match Landlord Residential across create, bid, counter
+Landlord Commercial must match Landlord Commercial across create, bid, counter
+etc.
+
+In other words:
+same role + same property type = exact same field universe across all three surfaces
+
+Do not collapse intentionally different role-specific legal or compensation logic.
+
+Match score protection
+
+As part of this audit, verify that the match score logic is comparing the exact same field keys that are rendered in the forms.
+
+Examples of issues to catch:
+
+listing create stores flat fee in one key, counter reads another
+service exists on listing form but not bid form
+bid form has an outdated field not present on listing form
+“Other” custom text saved differently on listing vs counter
+term counted in score but not actually renderable on one side
+commercial fee structure compared using residential assumptions
+
+If needed, adjust the mapping layer so scoring only compares aligned fields.
+
+Hard safeguards
+Do not change database schema unless absolutely required
+no table renames
+no column deletions
+no destructive migrations
+Do not refactor globally unless necessary
+prefer surgical alignment
+do not rewrite unrelated flows
+Do not change working listing creation fields unless they are proven wrong
+listing creation is generally the source of truth here
+align bid and counter to it unless a listing field itself is incorrect
+Do not change visible labels casually
+preserve current approved wording where already correct
+Do not alter unrelated UI
+only touch services and broker compensation / agency agreement sections and the logic directly tied to them
+Do not break saved historical bids/counters
+if legacy values exist, keep backward-compatible display handling where needed
+Do not mix role logic
+no Tenant fix should accidentally alter Buyer, Seller, or Landlord unless intentionally auditing that role too
+Do not assume one file powers all roles
+trace the exact files/components per role before editing
+Preferred implementation approach
+
+Best approach:
+
+Phase 1: Audit only
+
+Create an internal audit list or report showing, by role/property type:
+
+source-of-truth create files
+bid files
+counter files
+mismatches found
+Phase 2: Fix parity
+
+Make only the necessary fixes so each role/property-type triplet matches:
+
+create
+bid
+counter
+Phase 3: Verify scoring
+
+Recheck that match summary, terms match, services match, and counter comparison are all using aligned fields.
+
+Specific areas to audit carefully
+
+Please pay special attention to these patterns:
+
+Services
+extra services offered
+missing services display
+“Other” options and custom text
+nested sub-options under selected services
+service order consistency
+Compensation structures
+Flat Fee
+Percentage
+Hybrid
+Retainer
+Early termination fee
+Protection period
+Buyer broker compensation
+Tenant broker lease fee
+Seller broker purchase / lease / lease option fee
+Landlord leasing fee structures
+Payment timing
+agency relationship types
+legal notices / relationship disclaimers where role-specific
+Input formatting
+$ only for flat fee
+% only for percentage fields
+no mixed formatting unless field is explicitly hybrid
+correct placeholders matching selected compensation type
+Counter behavior
+correct preloading from latest values
+correct display of changed values
+no fallback to old field type UI
+no role/property-type bleed
+QA checklist
+
+After fixes, verify for each role/property-type combination:
+
+Create listing form shows correct services + compensation fields
+Agent bid form shows the same field set and formatting
+Counter bid form shows the same field set and formatting
+Flat Fee displays as $ only everywhere
+Percentage displays as % only where appropriate
+Hybrid only appears where explicitly intended
+“Other” options show and save custom text correctly
+Saved values reload correctly in bid and counter
+Match score totals do not change because of form mismatch alone
+A term only mismatches when the actual value differs, not because the UI format differs
+Deliverable back to me
+
+Please report back with:
+
+the exact files audited by role
+each mismatch found
+which mismatches were fixed
+whether any legacy compatibility handling was needed
+whether any match score mappings had to be corrected
+confirmation that Flat Fee is now $ only everywhere it should be
+Stop rule
+
+If this turns out to require broad refactoring beyond safe surgical alignment, stop and report:
+
+where the form definitions are drifting from each other
+which files are acting as duplicate sources of truth
+whether we should centralize field definitions next
+
+Do not do a risky refactor without reporting first.
+
+One more recommendation: make Replit treat listing creation as the source of truth per role/property type, then align bid and counter to that. That will reduce future drift.
