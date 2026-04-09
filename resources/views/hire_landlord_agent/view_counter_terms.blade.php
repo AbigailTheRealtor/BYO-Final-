@@ -770,12 +770,11 @@
                         @endif
                     </div>
 
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('landlord.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
-                            <i class="fas fa-eye me-2"></i>View Listing
-                        </a>
+                    @php $bidIsTerminal = in_array($bid->accepted ?? '', ['accepted', 'rejected'], true); @endphp
+                    <div class="d-flex gap-2 flex-wrap mt-4">
 
-                        @if($viewerRole === 'agent')
+                        {{-- AGENT ACTIONS --}}
+                        @if($viewerRole === 'agent' && !$bidIsTerminal)
                         {{-- Agent: counter back to landlord, or accept/reject landlord's counter --}}
                         <form action="{{ route('landlord.agent.add.counter-bid') }}" method="POST" class="d-inline">
                             @csrf
@@ -802,47 +801,65 @@
                                 <i class="fas fa-times me-2"></i>Reject Counter
                             </button>
                         </form>
-                        @elseif(!$awaitingCounterResponse)
-                        {{-- Landlord: counter back to agent, or accept/reject the original bid --}}
-                        <form action="{{ route('landlord.agent.add.counter-bid') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                            <button type="submit" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                                <i class="fas fa-reply me-2"></i>Counter Back
-                            </button>
-                        </form>
-                        <form action="{{ route('landlord.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept this counter offer from the agent?')">
-                                <i class="fas fa-check me-2"></i>Accept
-                            </button>
-                        </form>
-                        <form action="{{ route('landlord.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject this counter offer from the agent?')">
-                                <i class="fas fa-times me-2"></i>Reject
-                            </button>
-                        </form>
+                        @elseif($viewerRole === 'agent' && $bidIsTerminal)
+                        <div class="alert alert-secondary mb-0">
+                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                        </div>
                         @endif
+
+                        {{-- LANDLORD ACTIONS --}}
+                        @if($viewerRole === 'landlord' && !$bidIsTerminal)
+                            @if(!$awaitingCounterResponse)
+                            {{-- Landlord: counter back to agent, or accept/reject the original bid --}}
+                            <form action="{{ route('landlord.agent.add.counter-bid') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                                <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
+                                <button type="submit" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                                    <i class="fas fa-reply me-2"></i>Counter Back
+                                </button>
+                            </form>
+                            <form action="{{ route('landlord.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept this counter offer from the agent?')">
+                                    <i class="fas fa-check me-2"></i>Accept
+                                </button>
+                            </form>
+                            <form action="{{ route('landlord.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject this counter offer from the agent?')">
+                                    <i class="fas fa-times me-2"></i>Reject
+                                </button>
+                            </form>
+                            @else
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-clock me-2"></i>Counter terms sent. Waiting for the agent to respond.
+                            </div>
+                            @endif
+                        @elseif($viewerRole === 'landlord' && $bidIsTerminal)
+                        <div class="alert alert-secondary mb-0">
+                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                        </div>
+                        @endif
+
+                        <a href="{{ route('landlord.agent.auction.view', $auction->id) }}"
+                           class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
+                            <i class="fas fa-eye me-2"></i>View Listing
+                        </a>
                     </div>
 
                     @else
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        @if($viewerRole === 'agent')
-                        No counter terms have been submitted by the landlord yet. Your bid is still active and awaiting a response.
-                        @else
-                        No counter terms have been submitted by the agent yet.
-                        @endif
+                        No counter terms have been submitted for this bid yet.
                     </div>
-                    <a href="{{ $viewerRole === 'agent' ? route('myBids', 'landlord-agent') : route('landlord.agent.auction.view', $auction->id) }}" class="btn" style="background-color: #049399; color: white; padding: 10px 20px; font-weight: 600;">
-                        <i class="fas fa-arrow-left me-2"></i>Back
+                    <a href="{{ route('landlord.agent.auction.view', $auction->id) }}" class="btn btn-outline-secondary mt-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Listing
                     </a>
                     @endif
                 </div>

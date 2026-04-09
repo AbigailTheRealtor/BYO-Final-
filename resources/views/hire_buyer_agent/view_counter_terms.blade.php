@@ -34,21 +34,17 @@
                         <div class="col-md-6">
                             <h6 style="color: #049399; font-weight: 600;">Bid Information</h6>
                             @php
-                                $bidStatusRaw = $bid->accepted ?? '0';
-                                $bidStatusLabel = match($bidStatusRaw) {
-                                    'accepted' => 'Accepted',
-                                    'rejected' => 'Rejected',
-                                    default => 'Active',
-                                };
+                                $bidStatus = $bid->bid_status ?? 'Active';
                                 $statusColors = [
-                                    'Active'    => 'background-color: #007bff; color: #fff;',
+                                    'Countered' => 'background-color: #ffc107; color: #000;',
                                     'Accepted'  => 'background-color: #28a745; color: #fff;',
                                     'Rejected'  => 'background-color: #dc3545; color: #fff;',
+                                    'Active'    => 'background-color: #007bff; color: #fff;',
                                 ];
                             @endphp
                             <p><strong>Status:</strong>
-                                <span class="badge" style="{{ $statusColors[$bidStatusLabel] ?? $statusColors['Active'] }} padding: 6px 12px; border-radius: 4px;">
-                                    {{ $bidStatusLabel }}
+                                <span class="badge" style="{{ $statusColors[$bidStatus] ?? $statusColors['Active'] }} padding: 6px 12px; border-radius: 4px;">
+                                    {{ $bidStatus }}
                                 </span>
                             </p>
                             <p><strong>Agent:</strong> {{ $bid->user->name ?? 'N/A' }}</p>
@@ -597,12 +593,11 @@
                         @endif
                     </div>
 
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
-                            <i class="fas fa-eye me-2"></i>View Listing
-                        </a>
+                    @php $bidIsTerminal = in_array($bid->accepted ?? '', ['accepted', 'rejected'], true); @endphp
+                    <div class="d-flex gap-2 flex-wrap mt-4">
 
-                        @if ($viewerRole === 'agent')
+                        {{-- AGENT ACTIONS --}}
+                        @if($viewerRole === 'agent' && !$bidIsTerminal)
                         <a href="{{ route('agent.buyer.agent.auction.bid', ['auctionId' => $auction->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
                             <i class="fas fa-reply me-2"></i>Counter Back
                         </a>
@@ -622,38 +617,56 @@
                                 <i class="fas fa-times me-2"></i>Reject Counter
                             </button>
                         </form>
-                        @elseif(!$awaitingCounterResponse)
-                        <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                            <i class="fas fa-reply me-2"></i>Counter Back
-                        </a>
-                        <form action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Accept this counter offer from the agent?')">
-                                <i class="fas fa-check me-2"></i>Accept
-                            </button>
-                        </form>
-                        <form action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Reject this counter offer from the agent?')">
-                                <i class="fas fa-times me-2"></i>Reject
-                            </button>
-                        </form>
+                        @elseif($viewerRole === 'agent' && $bidIsTerminal)
+                        <div class="alert alert-secondary mb-0">
+                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                        </div>
                         @endif
+
+                        {{-- BUYER ACTIONS --}}
+                        @if($viewerRole === 'buyer' && !$bidIsTerminal)
+                            @if(!$awaitingCounterResponse)
+                            <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
+                            </a>
+                            <form action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Accept this counter offer from the agent?')">
+                                    <i class="fas fa-check me-2"></i>Accept
+                                </button>
+                            </form>
+                            <form action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Reject this counter offer from the agent?')">
+                                    <i class="fas fa-times me-2"></i>Reject
+                                </button>
+                            </form>
+                            @else
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-clock me-2"></i>Counter terms sent. Waiting for the agent to respond.
+                            </div>
+                            @endif
+                        @elseif($viewerRole === 'buyer' && $bidIsTerminal)
+                        <div class="alert alert-secondary mb-0">
+                            This bid has been {{ ucfirst($bid->accepted ?? 'resolved') }}.
+                        </div>
+                        @endif
+
+                        <a href="{{ route('buyer.view-auction', $auction->id) }}"
+                           class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
+                            <i class="fas fa-eye me-2"></i>View Listing
+                        </a>
                     </div>
                     @else
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle me-2"></i>
-                        @if($viewerRole === 'agent')
-                        No counter terms have been submitted by the buyer yet. Your bid is still active and awaiting a response.
-                        @else
-                        No counter terms have been submitted by the agent yet.
-                        @endif
+                        No counter terms have been submitted for this bid yet.
                     </div>
-                    <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn" style="background-color: #049399; color: white; padding: 10px 20px; font-weight: 600;">
+                    <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn btn-outline-secondary mt-2">
                         <i class="fas fa-arrow-left me-2"></i>Back to Listing
                     </a>
                     @endif
