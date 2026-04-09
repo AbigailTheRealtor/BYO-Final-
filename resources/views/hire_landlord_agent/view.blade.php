@@ -2691,6 +2691,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 </div>
                                 @endif
                                     <!-- Private Data Section - visible to listing owner or bid owner -->
+                                    @php
+                                        $_laRaw     = data_get($bid, 'accepted');
+                                        $_laState   = (in_array((string)$_laRaw, ['accepted', 'rejected'], true)) ? (string)$_laRaw : ((!$_laRaw || $_laRaw === '0') ? '0' : (string)$_laRaw);
+                                        $_laIsOwner = ($auth_id == data_get($auction, 'user_id'));
+                                    @endphp
                                     @if ($isListingOwner || $isBidOwner)
                                     <!-- Private Data Modal -->
                                     <div class="modal fade"
@@ -4198,8 +4203,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     </div>
 
                                                     {{-- ── Listing owner: action buttons when bid is undecided ── --}}
-                                                    {{-- Use raw bid state ($_mfRawL), not counter-tainted $mfStateL, matching Seller benchmark --}}
-                                                    @if (in_array($_mfRawL, [null, 0, '0', ''], true) && $mfIsOwnerL && !$isSold && !$hasAcceptedCounterBid)
+                                                    @if ($_laState === '0' && $_laIsOwner && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true))
                                                         @if ($isTraditionalListing && $isExpired)
                                                         <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
