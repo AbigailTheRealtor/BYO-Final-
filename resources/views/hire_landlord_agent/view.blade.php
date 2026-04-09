@@ -2691,11 +2691,6 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 </div>
                                 @endif
                                     <!-- Private Data Section - visible to listing owner or bid owner -->
-                                    @php
-                                        $_laRaw     = data_get($bid, 'accepted');
-                                        $_laState   = (in_array((string)$_laRaw, ['accepted', 'rejected'], true)) ? (string)$_laRaw : ((!$_laRaw || $_laRaw === '0') ? '0' : (string)$_laRaw);
-                                        $_laIsOwner = ($auth_id == data_get($auction, 'user_id'));
-                                    @endphp
                                     @if ($isListingOwner || $isBidOwner)
                                     <!-- Private Data Modal -->
                                     <div class="modal fade"
@@ -4202,110 +4197,21 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         <strong>Confidential:</strong> This information is private and only visible to you.
                                                     </div>
 
-                                                    {{-- ── Listing owner: action buttons when bid is undecided ── --}}
-                                                    @if ($_laState === '0' && $_laIsOwner && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true))
-                                                        @if ($isTraditionalListing && $isExpired)
-                                                        <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
-                                                        </div>
-                                                        @else
-                                                        <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
-                                                            <form action="{{ route('agent.landlord.auction.bid.accept', ['id' => data_get($bid, 'id')]) }}" method="POST" style="margin: 0;"
-                                                                  onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
-                                                                @csrf
-                                                                <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-check me-1"></i> Accept Bid
-                                                                </button>
-                                                            </form>
-                                                            <a href="{{ route('landlord.counter-terms', ['id' => data_get($bid, 'id')]) }}"
-                                                               class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Bid
-                                                            </a>
-                                                            <form action="{{ route('agent.landlord.auction.bid.reject', ['id' => data_get($bid, 'id')]) }}" method="POST" style="margin: 0;"
-                                                                  onsubmit="return confirm('Are you sure you want to reject this bid?');">
-                                                                @csrf
-                                                                <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-times me-1"></i> Reject Bid
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                        @endif
-                                                    @endif
-
-                                                    {{-- ── Accepted state ── --}}
-                                                    @if ($mfStateL === 'accepted')
-                                                    <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-                                                        <i class="fa fa-check-circle me-1"></i>
-                                                        @if ($mfIsOwnerL) This bid has been accepted.
-                                                        @else {{ trim($mfOwnerFirstL . ' ' . $mfOwnerLastL) }} accepted this bid.
-                                                        @endif
-                                                    </div>
-                                                    @php $mfBidSummaryL = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
-                                                    @if ($mfBidSummaryL && ($mfIsOwnerL || data_get($bid, 'user_id') == Auth::id()))
-                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                                        <a href="{{ route('accepted-bid-summary.view', $mfBidSummaryL->id) }}" class="btn btn-outline-primary btn-sm">
-                                                            <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
-                                                        </a>
-                                                        @if (data_get($bid, 'user_id') == Auth::id() && !$mfBidSummaryL->isAgentSigned())
-                                                        <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryL->id) }}" class="btn btn-primary btn-sm">
-                                                            <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
-                                                        </a>
-                                                        @endif
-                                                        @if ($mfIsOwnerL && !$mfBidSummaryL->isTenantSigned())
-                                                        <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryL->id) }}" class="btn btn-primary btn-sm">
-                                                            <i class="fa fa-signature me-1"></i> Landlord: E-Sign Acknowledgement
-                                                        </a>
-                                                        @endif
-                                                        @if ($mfBidSummaryL->isFullySigned())
-                                                        <a href="{{ route('accepted-bid-summary.download-pdf', $mfBidSummaryL->id) }}" class="btn btn-success btn-sm">
-                                                            <i class="fa fa-download me-1"></i> Download Signed PDF
-                                                        </a>
-                                                        @endif
-                                                    </div>
-                                                    @endif
-
-                                                    {{-- ── Rejected state ── --}}
-                                                    @elseif ($mfStateL === 'rejected')
-                                                    <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-                                                        <i class="fa fa-times-circle me-1"></i>
-                                                        @if ($mfIsOwnerL) This bid has been rejected.
-                                                        @else {{ trim($mfOwnerFirstL . ' ' . $mfOwnerLastL) }} rejected this bid.
-                                                        @endif
-                                                    </div>
-
-                                                    {{-- ── Countered state ── --}}
-                                                    @elseif ($mfStateL === 'countered')
-                                                    <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-exchange-alt me-1"></i>
-                                                        @if ($mfIsOwnerL)
-                                                            You have submitted a counter offer for this bid.
-                                                        @else
-                                                            {{ trim($mfOwnerFirstL . ' ' . $mfOwnerLastL) }} has submitted a counter offer.
-                                                        @endif
-                                                    </div>
-                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                                        <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
-                                                        </a>
-                                                        @if ($mfIsOwnerL)
-                                                        <a href="{{ route('landlord.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
-                                                            <i class="fa fa-edit me-1"></i> Edit Counter Terms
-                                                        </a>
-                                                        @endif
-                                                    </div>
-
-                                                    {{-- ── Pending state ── --}}
-                                                    @elseif ($mfStateL === '0')
-                                                    @if (data_get($bid, 'user_id') == Auth::id())
-                                                    <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
-                                                        ⏳ Waiting for a response from {{ trim($mfOwnerFirstL . ' ' . $mfOwnerLastL) }}...
-                                                    </div>
-                                                    @else
-                                                    <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">
-                                                        ⏳ Bid from {{ trim($mfAgentFirstL . ' ' . $mfAgentLastL) }} is pending.
-                                                    </div>
-                                                    @endif
-                                                    @endif
+                                                    {{-- ── Bid action row (shared partial) ── --}}
+                                                    @include('hire_landlord_agent.partials.bid_action_row', [
+                                                        'bid'                  => $bid,
+                                                        'auction'              => $auction,
+                                                        'isOwner'              => $mfIsOwnerL,
+                                                        'state'                => $mfStateL,
+                                                        'isSold'               => in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true),
+                                                        'isExpired'            => $isExpired,
+                                                        'isTraditionalListing' => $isTraditionalListing,
+                                                        'latestOwnerCounter'   => $latestOwnerCounter,
+                                                        'ownerFirst'           => $mfOwnerFirstL,
+                                                        'ownerLast'            => $mfOwnerLastL,
+                                                        'agentFirst'           => $mfAgentFirstL,
+                                                        'agentLast'            => $mfAgentLastL,
+                                                    ])
 
                                                     {{-- ── Close button ── --}}
                                                     <div class="w-100 d-flex justify-content-end mt-2">
