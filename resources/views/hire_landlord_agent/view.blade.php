@@ -4198,7 +4198,8 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     </div>
 
                                                     {{-- ── Listing owner: action buttons when bid is undecided ── --}}
-                                                    @if ($mfStateL === '0' && $mfIsOwnerL && !$isSold && !$hasAcceptedCounterBid)
+                                                    {{-- Use raw bid state ($_mfRawL), not counter-tainted $mfStateL, matching Seller benchmark --}}
+                                                    @if (in_array($_mfRawL, [null, 0, '0', ''], true) && $mfIsOwnerL && !$isSold && !$hasAcceptedCounterBid)
                                                         @if ($isTraditionalListing && $isExpired)
                                                         <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
