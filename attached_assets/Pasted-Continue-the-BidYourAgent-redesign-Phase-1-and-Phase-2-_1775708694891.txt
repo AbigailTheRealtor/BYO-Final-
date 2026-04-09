@@ -1,0 +1,189 @@
+Continue the BidYourAgent redesign.
+
+Phase 1 and Phase 2 handled UI structure and dashboard cleanup.
+This phase is focused on public-facing messaging, clarity, and launch readiness only.
+
+🚨 HARD RULES (DO NOT BREAK)
+
+Do NOT modify:
+
+listing creation
+listing edit
+actual listing pages
+bidding system
+counteroffers
+match score logic
+accepted bid summary
+notifications
+Livewire components
+routes
+controllers
+database schema
+
+Do NOT edit:
+
+livewire/
+hire_*
+*_counter_terms/
+accepted_bid_summary/
+listing form or listing detail files
+
+If any requested change would require touching those → STOP and report.
+
+✅ SAFE FILES ONLY
+
+Only edit:
+
+resources/views/home.blade.php
+resources/views/sellerWorks.blade.php
+resources/views/sellerWorksAgent.blade.php
+resources/views/buyerWorks.blade.php
+resources/views/buyerWorksAgent.blade.php
+resources/views/faqs.blade.php
+resources/views/buyerDetails.blade.php
+resources/views/sellerDetails.blade.php
+resources/views/layouts/partials/header.blade.php
+resources/views/layouts/main.blade.php
+🎯 PHASE 3 OBJECTIVES
+1. CLEAR CORE MESSAGE (VERY IMPORTANT)
+
+Make the entire website clearly communicate:
+
+👉 BidYourAgent is a competitive agent hiring marketplace where clients set the terms and agents compete to be hired.
+
+This message must be consistent across all public pages.
+
+2. HOMEPAGE STRUCTURE (CLEAN + HIGH-CONVERTING)
+
+Refine homepage into this structure:
+
+1. Hero
+Headline:
+“Hire the Right Agent. On Your Terms.”
+Subtext:
+Clients define compensation, services, and terms. Agents compete. You choose.
+CTA:
+“Hire Agent”
+2. How It Works (3 steps)
+Create your listing and define your terms
+Agents submit competitive bids
+Compare using match scores and hire
+3. For Clients Section
+
+Explain:
+
+Sellers, Buyers, Landlords, Tenants can hire agents
+They control compensation, services, and terms
+They compare agents transparently
+4. For Agents Section
+
+Explain:
+
+Access real client opportunities
+Compete based on fit
+Compare match scores
+Negotiate directly
+5. Match Score Section
+
+Explain simply:
+
+platform compares agent bids to your ideal terms
+shows how closely each agent matches
+6. Agent Tools Section
+
+Highlight:
+
+Hire Me link
+widget
+QR code
+referral system
+7. CTA Section
+“Start Hiring the Right Agent”
+3. STRENGTHEN AGENT VALUE (IMPORTANT)
+
+Across agent-facing pages:
+
+Clearly communicate:
+
+agents receive inbound opportunities
+agents can negotiate terms transparently
+agents can earn referral income
+agents can market themselves using Hire Me link, widget, QR
+4. CLEAN ALL PUBLIC WORDING
+
+Replace in safe files only:
+
+BidYourOffer → BidYourAgent
+
+Use consistent terminology:
+
+Hire Agent
+Listing
+Match Score
+Seller, Buyer, Landlord, Tenant
+Business Opportunity
+
+Avoid:
+
+“auction” overload where unnecessary
+outdated or confusing phrasing
+5. IMPROVE CTA LANGUAGE
+
+Use stronger CTAs:
+
+Hire Agent
+Create Listing
+Browse Listings
+Join as Agent
+Get Started
+
+Do not create new routes — reuse existing links.
+
+6. FAQ CLEANUP
+
+Make FAQ clear and simple:
+
+Cover:
+
+how it works
+who it’s for
+how agents bid
+what match score means
+how referrals work (high level)
+that licensed professionals handle actual real estate services
+7. PREMIUM TONE
+
+All copy should feel:
+
+clean
+modern
+premium
+trustworthy
+easy to understand quickly
+8. PROPERTY TYPE WORDING
+
+Where mentioned publicly:
+
+Seller / Buyer:
+Residential
+Income
+Commercial
+Business Opportunity
+Vacant Land
+Landlord / Tenant:
+Residential
+Commercial
+📦 OUTPUT REQUIRED
+
+After completing Phase 3, return:
+
+files changed
+homepage changes
+messaging improvements made
+CTA updates
+anything not changed due to safety restrictions
+⚠️ FINAL REMINDER
+
+This phase is copy + presentation only.
+
+Do not modify any functional system.
