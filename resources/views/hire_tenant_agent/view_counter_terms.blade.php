@@ -581,10 +581,10 @@
                                     @endif
                                     @if (!empty($counterData['early_termination_fee_option']))
                                     <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Early Termination Fee:</span> {{ $counterData['early_termination_fee_option'] }}
+                                        <span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($counterData['early_termination_fee_option']) }}
                                         {!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}
                                     </li>
-                                    @if ($counterData['early_termination_fee_option'] === 'Yes' && !empty($counterData['early_termination_fee_amount']))
+                                    @if (strtolower($counterData['early_termination_fee_option'] ?? '') === 'yes' && !empty($counterData['early_termination_fee_amount']))
                                     <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}">
                                         <span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($counterData['early_termination_fee_amount']) }}
                                         {!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}
@@ -593,10 +593,10 @@
                                     @endif
                                     @if (!empty($counterData['retainer_fee_option']))
                                     <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Retainer Fee:</span> {{ $counterData['retainer_fee_option'] }}
+                                        <span class="fw-semibold">Retainer Fee:</span> {{ ucfirst($counterData['retainer_fee_option']) }}
                                         {!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}
                                     </li>
-                                    @if ($counterData['retainer_fee_option'] === 'Yes')
+                                    @if (strtolower($counterData['retainer_fee_option'] ?? '') === 'yes')
                                         @if (!empty($counterData['retainer_fee_amount']))
                                         <li class="mb-2" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}">
                                             <span class="fw-semibold">Retainer Fee Amount:</span> {{ $fmtMoney($counterData['retainer_fee_amount']) }}

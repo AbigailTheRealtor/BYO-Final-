@@ -752,6 +752,20 @@
 
                                 $ctCommStruct = data_get($counterData, 'commission_structure', '');
                                 $ctCommStructType = data_get($counterData, 'commission_structure_type', '');
+                                // Build full display value for Buyer's Broker Commission Type
+                                $ctCommStructTypeDisplay = $ctCommStructType;
+                                if ($ctCommStructType === 'Flat Fee' && data_get($counterData, 'commission_structure_type_fee_flat')) {
+                                    $ctCommStructTypeDisplay = ($fmtMoney(data_get($counterData, 'commission_structure_type_fee_flat')) ?? '-') . ' (Flat Fee)';
+                                } elseif ($ctCommStructType === 'Percentage of the Total Purchase Price' && data_get($counterData, 'commission_structure_type_fee_percentage')) {
+                                    $ctCommStructTypeDisplay = ($fmtPercent(data_get($counterData, 'commission_structure_type_fee_percentage')) ?? '-') . ' of Total Purchase Price';
+                                } elseif ($ctCommStructType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                    $ctCommStructTypeDisplay = $joinParts([
+                                        data_get($counterData, 'commission_structure_type_fee_percentage_combo') ? ($fmtPercent(data_get($counterData, 'commission_structure_type_fee_percentage_combo')) . ' of Total Purchase Price') : null,
+                                        $fmtMoney(data_get($counterData, 'commission_structure_type_fee_flat_combo')),
+                                    ]) ?? $ctCommStructType;
+                                } elseif ($ctCommStructType === 'other' && data_get($counterData, 'commission_structure_type_fee_other')) {
+                                    $ctCommStructTypeDisplay = data_get($counterData, 'commission_structure_type_fee_other');
+                                }
                                 $ctInterestedLease = data_get($counterData, 'interested_purchase_fee_type', '');
                                 $ctLeaseOption = data_get($counterData, 'interested_lease_option_agreement', '');
                                 $ctLeaseType = data_get($counterData, 'lease_type', '');
@@ -827,7 +841,7 @@
                                     @endif
                                     @if($ctCommStructType)
                                     <li class="mb-2" style="{{ isset($brokerMismatches['commission_structure_type']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Buyer's Broker Commission Type:</span> {{ $ctCommStructType }}
+                                        <span class="fw-semibold">Buyer's Broker Commission Type:</span> {{ $ctCommStructTypeDisplay }}
                                         {!! isset($brokerMismatches['commission_structure_type']) ? $mismatchBadge : '' !!}
                                     </li>
                                     @endif
@@ -1005,6 +1019,27 @@
                                             {!! $addedBadge !!}
                                             @endif
                                         </li>
+                                        @if (strtolower(trim($serviceData['service'])) === 'provide digital photo enhancements')
+                                        @php
+                                            $ctPhotoEnhRaw = $counterData['photo_enhancements'] ?? [];
+                                            if (is_string($ctPhotoEnhRaw)) $ctPhotoEnhRaw = json_decode($ctPhotoEnhRaw, true) ?: [];
+                                            $ctCustomEnh = $counterData['custom_enhancement'] ?? '';
+                                            $ctEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                        @endphp
+                                        @if (!empty($ctPhotoEnhRaw))
+                                        <ul style="padding-left: 1.5rem; margin: 4px 0 4px 0; list-style: disc;">
+                                            @foreach ($ctEnhOrder as $ctEnh)
+                                                @if (in_array($ctEnh, $ctPhotoEnhRaw))
+                                                    @if ($ctEnh === 'Other' && !empty($ctCustomEnh))
+                                                        <li style="font-size: 0.85rem;">{{ $ctCustomEnh }}</li>
+                                                    @elseif ($ctEnh !== 'Other')
+                                                        <li style="font-size: 0.85rem;">{{ $ctEnh }}</li>
+                                                    @endif
+                                                @endif
+                                            @endforeach
+                                        </ul>
+                                        @endif
+                                        @endif
                                         @endforeach
                                     </ul>
                                 </div>

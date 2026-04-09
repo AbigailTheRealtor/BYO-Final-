@@ -284,3 +284,27 @@ After deploying fixes, verify the following for the Tenant role:
 1. **Extract shared partials**: Consider extracting Tenant and Buyer broker compensation and services as shared partials (as Seller and Landlord do via `@include`) to eliminate future drift risk between listing, bid, and counter surfaces.
 2. **Clean up orphaned props**: `TenantAgentAuctionBidCounter.php` retains `lease_fee_flat_type` and `purchase_fee_flat_type` properties (default `'$'`) — now UI-unbound after the fix. Safe to remove in a follow-up task.
 3. **Landlord field naming**: `purchase_fee_type` is used for the primary leasing fee in Landlord components, which is semantically confusing. Consider renaming in a future refactor (requires DB migration and helper update).
+
+---
+
+## Task #53 — Counter Terms Display Fixes (2026-04-09)
+
+**Scope:** Display-layer only — `view_counter_terms.blade.php` for all four roles. No submission logic, schema, or non-display files modified.
+
+### Bugs Fixed
+
+| File | Location | Bug | Fix Applied |
+|------|----------|-----|-------------|
+| `hire_buyer_agent/view_counter_terms.blade.php` | D) Legal Terms | `early_termination_fee_option` and `retainer_fee_option` rendered as raw `yes`/`no` | Wrapped with `ucfirst()`; sub-field `=== 'Yes'` guard changed to `strtolower() === 'yes'` |
+| `hire_tenant_agent/view_counter_terms.blade.php` | D) Legal Terms | Same `yes`/`no` display issue for `early_termination_fee_option` and `retainer_fee_option` | Same fix applied |
+| `hire_landlord_agent/view_counter_terms.blade.php` | E) Legal Terms | `early_termination_fee_option` rendered as raw `yes`/`no` | Wrapped with `ucfirst()`; sub-field guard changed to `strtolower() === 'yes'` |
+| `hire_seller_agent/view_counter_terms.blade.php` | Services section | Photo enhancement sub-options (`photo_enhancements[]`, `custom_enhancement`) not shown under "Provide digital photo enhancements" | Added inline sub-list rendering after each matched service item, consistent with existing bid history display pattern |
+| `hire_landlord_agent/view_counter_terms.blade.php` | Services section | Same photo enhancement sub-options missing | Same fix applied |
+| `hire_seller_agent/view_counter_terms.blade.php` | A) Seller's Broker Compensation | `commission_structure_type` showed type label only (e.g., "Flat Fee") — no associated entered value | Added `$ctCommStructTypeDisplay` computation: composes full value string from associated sub-fields (`commission_structure_type_fee_flat`, `_fee_percentage`, `_fee_percentage_combo`, `_fee_flat_combo`, `_fee_other`) based on type; render target updated to `$ctCommStructTypeDisplay` |
+| `hire_landlord_agent/view_counter_terms.blade.php` | D) Purchase Fee Details | `interested_in_selling_type` showed type label only — no associated entered value | Added `$ctSellingTypeDisplay` computation via `@php` block: composes full value from `landlord_broker_purchase_price`, `landlord_broker_percentage_price`, `landlord_broker_dollar_price`, `landlord_broker_flate_fee`, `landlord_broker_other` based on type; render target updated to `$ctSellingTypeDisplay` |
+
+### Verified Not Broken
+
+- Seller `early_termination_fee_option` already used `ucfirst()` — no change needed.
+- Landlord `percentage_gross_lease` fee display uses `purchase_fee_rental_period` — this is correct per the Livewire component's property naming convention.
+- Buyer and Tenant services sections do not include "Provide digital photo enhancements" in their service catalogs — no photo enhancement sub-option display needed there.

@@ -628,6 +628,22 @@
 
                         {{-- ===== D) Purchase Fee (Interested in Selling) ===== --}}
                         @if (!empty($counterData['interested_in_selling']))
+                        @php
+                            $ctSellingType = $counterData['interested_in_selling_type'] ?? '';
+                            $ctSellingTypeDisplay = $ctSellingType;
+                            if ($ctSellingType === 'Percentage of the Total Purchase Price' && !empty($counterData['landlord_broker_purchase_price'])) {
+                                $ctSellingTypeDisplay = ($fmtPercent($counterData['landlord_broker_purchase_price']) ?? '-') . ' of Total Purchase Price';
+                            } elseif ($ctSellingType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                                $ctSellingTypeDisplay = $joinParts([
+                                    !empty($counterData['landlord_broker_percentage_price']) ? ($fmtPercent($counterData['landlord_broker_percentage_price']) . ' of Total Purchase Price') : null,
+                                    !empty($counterData['landlord_broker_dollar_price']) ? $fmtMoney($counterData['landlord_broker_dollar_price']) : null,
+                                ]) ?? $ctSellingType;
+                            } elseif ($ctSellingType === 'Flat Fee' && !empty($counterData['landlord_broker_flate_fee'])) {
+                                $ctSellingTypeDisplay = ($fmtMoney($counterData['landlord_broker_flate_fee']) ?? '-') . ' (Flat Fee)';
+                            } elseif ($ctSellingType === 'Other' && !empty($counterData['landlord_broker_other'])) {
+                                $ctSellingTypeDisplay = $counterData['landlord_broker_other'];
+                            }
+                        @endphp
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Purchase Fee Details</h6>
                             <ul class="list-unstyled ps-3 mb-0">
@@ -635,9 +651,9 @@
                                     <span class="fw-semibold">Interested in Selling the Property:</span> {{ $counterData['interested_in_selling'] }}
                                     {!! isset($brokerMismatches['interested_in_selling']) ? $mismatchBadge : '' !!}
                                 </li>
-                                @if (($counterData['interested_in_selling'] ?? '') === 'Yes' && !empty($counterData['interested_in_selling_type']))
+                                @if (($counterData['interested_in_selling'] ?? '') === 'Yes' && !empty($ctSellingType))
                                 <li class="mb-2" style="{{ isset($brokerMismatches['interested_in_selling_type']) ? $mismatchStyle : '' }}">
-                                    <span class="fw-semibold">Purchase Fee Type:</span> {{ $counterData['interested_in_selling_type'] }}
+                                    <span class="fw-semibold">Purchase Fee Type:</span> {{ $ctSellingTypeDisplay }}
                                     {!! isset($brokerMismatches['interested_in_selling_type']) ? $mismatchBadge : '' !!}
                                 </li>
                                 @endif
@@ -658,10 +674,10 @@
                                 @endif
                                 @if (!empty($counterData['early_termination_fee_option']))
                                 <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
-                                    <span class="fw-semibold">Early Termination Fee:</span> {{ $counterData['early_termination_fee_option'] }}
+                                    <span class="fw-semibold">Early Termination Fee:</span> {{ ucfirst($counterData['early_termination_fee_option']) }}
                                     {!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}
                                 </li>
-                                @if (($counterData['early_termination_fee_option'] ?? '') === 'Yes' && !empty($counterData['early_termination_fee_amount']))
+                                @if (strtolower($counterData['early_termination_fee_option'] ?? '') === 'yes' && !empty($counterData['early_termination_fee_amount']))
                                 <li class="mb-2" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}">
                                     <span class="fw-semibold">Termination Fee Amount:</span> {{ $fmtMoney($counterData['early_termination_fee_amount']) }}
                                     {!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}
@@ -733,6 +749,27 @@
                                             {!! $addedBadge !!}
                                             @endif
                                         </li>
+                                        @if (strtolower(trim($serviceData['service'])) === 'provide digital photo enhancements')
+                                        @php
+                                            $ctPhotoEnhRaw = $counterData['photo_enhancements'] ?? [];
+                                            if (is_string($ctPhotoEnhRaw)) $ctPhotoEnhRaw = json_decode($ctPhotoEnhRaw, true) ?: [];
+                                            $ctCustomEnh = $counterData['custom_enhancement'] ?? '';
+                                            $ctEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
+                                        @endphp
+                                        @if (!empty($ctPhotoEnhRaw))
+                                        <ul style="padding-left: 1.5rem; margin: 4px 0 4px 0; list-style: disc;">
+                                            @foreach ($ctEnhOrder as $ctEnh)
+                                                @if (in_array($ctEnh, $ctPhotoEnhRaw))
+                                                    @if ($ctEnh === 'Other' && !empty($ctCustomEnh))
+                                                        <li style="font-size: 0.85rem;">{{ $ctCustomEnh }}</li>
+                                                    @elseif ($ctEnh !== 'Other')
+                                                        <li style="font-size: 0.85rem;">{{ $ctEnh }}</li>
+                                                    @endif
+                                                @endif
+                                            @endforeach
+                                        </ul>
+                                        @endif
+                                        @endif
                                         @endforeach
                                     </ul>
                                 </div>
