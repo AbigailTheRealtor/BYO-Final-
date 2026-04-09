@@ -20,11 +20,7 @@
                 <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
                     <h4 class="mb-0">
                         <i class="fas fa-exchange-alt me-2"></i>
-                        @if($viewerRole === 'agent')
-                        Landlord's Counter Terms For Your Bid
-                        @else
                         Agent's Counter Terms
-                        @endif
                     </h4>
                 </div>
                 <div class="card-body">
@@ -383,7 +379,7 @@
                                 @if($awaitingCounterResponse)
                                 Your Submitted Counter Offer
                                 @else
-                                {{ $counterPartyName }}'s Counter Terms
+                                Agent's Counter Terms
                                 @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
@@ -692,6 +688,7 @@
                         @endif
 
                         {{-- ===== Services ===== --}}
+                        @if(!empty($allCounterServices) || !empty($allBaselineServices))
                         <div class="mb-4">
                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                 <i class="fas fa-list-check me-2"></i>Requested Services
@@ -761,6 +758,7 @@
                             </div>
                             @endif
                         </div>
+                        @endif
 
                         @if (!empty($counterData['additional_details']))
                         <div class="mb-4">

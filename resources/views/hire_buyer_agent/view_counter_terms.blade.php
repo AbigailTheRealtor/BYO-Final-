@@ -20,11 +20,7 @@
                 <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
                     <h4 class="mb-0">
                         <i class="fas fa-exchange-alt me-2"></i>
-                        @if($viewerRole === 'agent')
-                        Buyer's Counter Terms For Your Bid
-                        @else
                         Agent's Counter Terms
-                        @endif
                     </h4>
                 </div>
                 <div class="card-body">
@@ -199,7 +195,7 @@
                                 @if($awaitingCounterResponse)
                                 Your Submitted Counter Offer
                                 @else
-                                {{ $counterPartyName }}'s Counter Terms
+                                Agent's Counter Terms
                                 @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
@@ -553,7 +549,7 @@
 
                             @if (!empty($counterOtherServices))
                             <div class="mt-3">
-                                <strong>Additional Services</strong>
+                                <strong>✍️ Additional Services</strong>
                                 <ul class="list-unstyled ps-3 mt-2">
                                     @foreach ($counterOtherServices as $otherService)
                                     @php $isInBaseline = in_array($normalizeService($otherService), $baselineNorm); @endphp

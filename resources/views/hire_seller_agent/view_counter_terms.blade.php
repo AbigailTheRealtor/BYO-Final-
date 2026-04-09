@@ -20,11 +20,7 @@
                 <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
                     <h4 class="mb-0">
                         <i class="fas fa-exchange-alt me-2"></i>
-                        @if($viewerRole === 'agent')
-                        Seller's Counter Terms For Your Bid
-                        @else
                         Agent's Counter Terms
-                        @endif
                     </h4>
                 </div>
                 <div class="card-body">
@@ -571,7 +567,7 @@
                                 @if($awaitingCounterResponse)
                                 Your Submitted Counter Offer
                                 @else
-                                {{ $counterPartyName }}'s Counter Terms
+                                Agent's Counter Terms
                                 @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
