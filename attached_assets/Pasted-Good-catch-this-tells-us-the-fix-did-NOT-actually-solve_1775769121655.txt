@@ -1,0 +1,231 @@
+Good catch — this tells us **the fix did NOT actually solve the real issue**.
+
+What Replit fixed was likely the **wrong condition block**, not the one actually controlling your UI.
+
+---
+
+## 🔍 What’s actually happening
+
+You’re in:
+
+```
+/hire/agent/auction/view/56?view=bids
+```
+
+And you opened a **modal (View Full Bid)**
+
+👉 The buttons are missing inside the modal
+NOT necessarily on the main page
+
+---
+
+## ⚠️ Root issue (very likely)
+
+There are **TWO separate action-row systems**:
+
+### 1. Page-level bid card actions ✅ (what Replit likely fixed)
+
+### 2. Modal-level actions ❌ (what you're actually using)
+
+Replit fixed #1
+But your screenshot is clearly showing #2
+
+---
+
+## 💥 Why buttons are missing
+
+Inside the modal, the condition is likely:
+
+* using **different variables**
+* using **stricter comparison**
+* or missing ownership detection entirely
+
+So even though:
+✔ you ARE the listing owner
+❌ modal does not think you are
+
+---
+
+## ✅ What needs to be done
+
+You need a **targeted modal fix**, not a general one.
+
+---
+
+## 📌 Give Replit THIS instead
+
+Paste this exactly:
+
+---
+
+We need to fix the **View Full Bid MODAL action buttons for Landlord**, not the page-level bid cards.
+
+## Problem
+
+Inside the **View Full Bid modal**, the listing owner does NOT see:
+
+* Accept Bid
+* Counter Bid
+* Reject Bid
+
+Only:
+
+* Confidential notice
+* Close button
+
+However, this was already "fixed" at the page level — meaning the wrong location was updated.
+
+## Key clarification
+
+There are **two separate action systems**:
+
+1. Page-level bid cards (already modified — do not touch again)
+2. Modal-level "View Full Bid" actions (THIS is broken)
+
+We need to fix ONLY the modal.
+
+---
+
+## Goal
+
+Inside the **modal**, show:
+
+* Accept Bid
+* Counter Bid
+* Reject Bid
+
+ONLY when:
+
+* user is the listing owner
+* bid is active
+* listing is not sold
+* bid has not been accepted
+
+---
+
+## What to do
+
+### Step 1 — Find modal file
+
+Locate the Blade file that renders:
+
+"View Full Bid" modal for Landlord
+
+Search for:
+
+* "View Full Bid"
+* "Confidential: This information is private"
+* modal container
+
+---
+
+### Step 2 — Find action row inside modal
+
+Locate the section that should render:
+
+* Accept
+* Counter
+* Reject buttons
+
+---
+
+### Step 3 — FIX ownership logic
+
+Inside the modal, define NEW variables (do NOT reuse old ones):
+
+```php
+@php
+    $_modalState = (string) data_get($bid, 'status');
+    $_modalIsOwner = (string) data_get($auction, 'user_id') == (string) auth()->id();
+@endphp
+```
+
+---
+
+### Step 4 — Replace modal condition
+
+Replace the existing action-row condition with:
+
+```php
+@if(
+    $_modalState === '0'
+    && $_modalIsOwner
+    && !in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true)
+)
+```
+
+---
+
+### Step 5 — DO NOT TOUCH
+
+* Do NOT modify page-level bid card logic again
+* Do NOT modify Seller or Tenant
+* Do NOT change routes
+* Do NOT change database
+
+---
+
+## Why this works
+
+The previous fix:
+
+* used wrong variables
+* likely applied to wrong file
+* did not affect modal rendering
+
+This fix:
+
+* isolates modal logic
+* uses safe loose comparison (string == string)
+* matches working Seller pattern
+
+---
+
+## QA after fix
+
+Test EXACTLY this:
+
+1. Open Landlord listing
+
+2. Click View Full Bid
+
+3. Confirm modal shows:
+
+   * Accept
+   * Counter
+   * Reject
+
+4. Confirm NOT visible when:
+
+   * not owner
+   * bid accepted
+   * listing sold
+
+---
+
+## Deliver back
+
+1. exact file modified
+2. confirmation modal now shows buttons
+3. confirmation page-level logic unchanged
+
+---
+
+## 🧠 What just happened (so you understand)
+
+Replit:
+
+* fixed **a condition**
+* but not **the right rendering layer**
+
+You:
+
+* caught it immediately (good)
+
+This is a **classic Blade duplication issue**:
+👉 same logic exists in multiple places
+
+---
+
+If you want next step after this:
+I’d strongly recommend we **centralize action logic into one reusable partial** so this never happens again.

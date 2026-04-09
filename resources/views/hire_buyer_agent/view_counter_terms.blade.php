@@ -80,6 +80,8 @@
                         }
                         // Awaiting response: the current user submitted the active counter.
                         $awaitingCounterResponse = ($activeCounter && $activeCounter->user_id === Auth::id());
+                        // The party who must respond is the OTHER side.
+                        $awaitingParty = ($viewerRole === 'agent') ? "the buyer's" : "the agent's";
                     @endphp
 
                     @if($activeCounter)
@@ -211,7 +213,7 @@
 
                         @if($awaitingCounterResponse)
                         <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
-                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting the agent's response.
+                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting {{ $awaitingParty }} response.
                         </div>
                         @endif
 
