@@ -1662,7 +1662,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $bidState = data_get($bid, 'accepted', 'active');
                             // Check for counter bids from both sources (agent counters and tenant counters)
                             $hasAgentCounterBids = \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->exists();
-                            $hasTenantCounterBids = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', data_get($bid, 'id'))->exists();
+                            $hasTenantCounterBids = \App\Models\TenantCounterTerm::where('tenant_agent_auction_id', data_get($bid, 'id'))->where('status', 1)->exists();
                             $hasCounterBids = $hasAgentCounterBids || $hasTenantCounterBids;
                             $bidStatusLabel = match($bidState) {
                                 'accepted' => 'Accepted',
@@ -1815,7 +1815,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             // TenantCounterTerm.user_id is the listing owner (tenant) who submitted the counter.
                             $latestTenantCounter = \App\Models\TenantCounterTerm::with('meta')
                                 ->where('tenant_agent_auction_id', $bid->id)
-                                ->orderBy('created_at', 'desc')
+                                ->where('status', 1)
+                                ->latest('updated_at')
                                 ->first();
                             
                             // === CENTRALIZED TENANT BASELINE DATA ===
@@ -4264,6 +4265,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     // 2. TenantCounterTerm (tenant counter offers) - bid ID stored in tenant_agent_auction_id field
                                     $tenantCounterTerms = \App\Models\TenantCounterTerm::with('meta', 'user')
                                         ->where('tenant_agent_auction_id', data_get($bid, 'id'))
+                                        ->where('status', 1)
                                         ->get();
                                     
                                     // Merge and sort by created_at descending
