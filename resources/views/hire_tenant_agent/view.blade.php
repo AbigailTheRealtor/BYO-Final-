@@ -1534,16 +1534,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @endif
 
         @php
-            // Create anonymous agent mapping based on bid submission order
-            $bidsByOrder = $auction->bids->sortBy('created_at')->values();
-            $agentNumberMap = [];
-            foreach ($bidsByOrder as $index => $orderedBid) {
-                $agentNumberMap[$orderedBid->id] = $index + 1;
+            // Build a stable per-agent alias map keyed by user_id.
+            // Sort by created_at asc, then id asc, then user_id asc so the first bid ever placed
+            // by each unique agent determines that agent's alias number (Agent 1, Agent 2 …).
+            // Excludes the listing owner so alias numbers reflect only competing agents.
+            $bidsByOrder = $auction->bids
+                ->where('user_id', '!=', data_get($auction, 'user_id'))
+                ->sortBy([['created_at', 'asc'], ['id', 'asc'], ['user_id', 'asc']])
+                ->values();
+            $agentNumberMap = []; // keyed by user_id → alias number
+            foreach ($bidsByOrder as $orderedBid) {
+                if (!isset($agentNumberMap[$orderedBid->user_id])) {
+                    $agentNumberMap[$orderedBid->user_id] = count($agentNumberMap) + 1;
+                }
             }
             // Find the last bidder\'s anonymous number
             $lastBidderNumber = null;
             if ($lowest_bidder) {
-                $lastBidderNumber = $agentNumberMap[$lowest_bidder->id] ?? null;
+                $lastBidderNumber = $agentNumberMap[$lowest_bidder->user_id] ?? null;
             }
             // Check if current user is the listing owner
             $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
@@ -1658,7 +1666,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                         @foreach (@$auction->bids as $bid)
                         @php
-                            $agentNumber = $agentNumberMap[$bid->id] ?? $loop->iteration;
+                            $agentNumber = $agentNumberMap[$bid->user_id] ?? $loop->iteration;
                             $bidState = data_get($bid, 'accepted', 'active');
                             // Check for counter bids from both sources (agent counters and tenant counters)
                             $hasAgentCounterBids = \App\Models\TenantCounterBidding::where('tenant_agent_auction_bid_id', data_get($bid, 'id'))->exists();
@@ -1682,6 +1690,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $isBidOwner = (data_get($bid, 'user_id') == $auth_id);
                             $bidAccepted = data_get($bid, 'accepted');
                             $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
+                            $isOtherAgentsBid = !$isListingOwner && !$isBidOwner;
                             
                             // 🔹 Agent Bid Visibility Logic:
                             // - Traditional: Agents can ONLY see their own bids (not other agents' bids)
@@ -2008,7 +2017,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             <!-- Collapsible Content - Default collapsed (custom toggle, no Bootstrap) -->
                             <div class="bid-collapse-content" id="bidCollapse-{{ data_get($bid, 'id') }}" style="display: none;">
                             <div class="card-body" style="padding: 20px;">
-                                
+
+                                @if($isListingOwner || $isBidOwner)
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
 
                                 {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
@@ -2179,25 +2189,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 </div>
                                 @endif
                                 
-                                <!-- D) View Full Terms Link - visibility rules by listing type and user -->
-                                @if ($isListingOwner || $isBidOwner)
-                                {{-- Listing Owner or Bid Owner: Full access --}}
+                                <!-- D) View Full Terms Link -->
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
-                                @elseif ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner)
-                                {{-- Bidding Period: Agent viewing another agent\'s bid - show limited view button --}}
-                                <a href="#" data-bs-toggle="modal" data-bs-target="#limitedBidModal{{ data_get($bid, 'id') }}"
-                                   style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
-                                    View Full Services & Broker Compensation Terms
-                                </a>
-                                @else
-                                {{-- Default: Private message --}}
-                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                    <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
-                                </span>
-                                @endif
                                 
                                 <!-- Edit/Withdraw Actions for Bid Owner - Same row, matched sizing -->
                                 @if ($canEditWithdraw)
@@ -2251,6 +2247,66 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @endif
                                 </div>
                                 @endif
+
+                                @else
+                                {{-- ===== COMPETITOR SUMMARY (other agent viewing another agent's bid) ===== --}}
+                                <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
+                                <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Offered Services:</span>
+                                    <span style="color: #28a745; font-weight: 600;">{{ $servicesTotal > 0 ? $servicesMatched.'/'.$servicesTotal : 'No services requested' }}</span>{{ $servicesTotal > 0 ? ' matched' : '' }}
+                                </p>
+                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+                                @if ($hasAnyBaseline && $brokerTotal > 0)
+                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                    <span style="font-weight: 600;">Terms Match:</span>
+                                    <span style="color: #28a745; font-weight: 600;">{{ $brokerMatched }}/{{ $brokerTotal }} matched</span>
+                                </p>
+                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+                                @endif
+                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
+                                @if ($hasAnyBaseline)
+                                <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
+                                    <div class="mb-2">
+                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
+                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                        </span>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-6">
+                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                    <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $totalScore }}%</span>
+                                                </div>
+                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                    <div class="col-6" style="color: {{ $getScoreColor($servicesScore) }};">Services {{ $servicesScore }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($brokerScore) }};">Terms {{ $brokerScore }}%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @if($showDualScore && $originalScore && $latestCounterScore)
+                                        @php $lcColorComp = $getScoreColor($latestCounterScore['overall_percent']); @endphp
+                                        <div class="col-6">
+                                            <div class="p-2 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe; border-top: 3px solid {{ $lcColorComp }};">
+                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                    <span class="small fw-semibold" style="color: #1a3a5c;">Counter Match</span>
+                                                    <span class="badge" style="background: {{ $lcColorComp }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $latestCounterScore['overall_percent'] }}%</span>
+                                                </div>
+                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['services_match_percent']) }};">Services {{ $latestCounterScore['services_match_percent'] }}%</div>
+                                                    <div class="col-6" style="color: {{ $getScoreColor($latestCounterScore['terms_match_percent']) }};">Terms {{ $latestCounterScore['terms_match_percent'] }}%</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+                                    </div>
+                                    <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
+                                        <i class="fa fa-info-circle me-1"></i>Added services or terms do not increase either score.
+                                    </div>
+                                </div>
+                                @endif
+                                @endif
+                                {{-- End 3-branch card body --}}
                                 
                             </div>
                             </div> {{-- End of collapse div --}}
@@ -3588,761 +3644,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             </div>
                                         </div>
                                     </div>
-                                    @else
-                                    <!-- For non-owners, show appropriate message -->
-                                    @if ($auth_id && data_get($bid, 'user_id') == $auth_id)
-                                    <!-- Agent viewing their own bid -->
-                                    <div class="alert alert-info mt-3 p-3 text-center"
-                                        style="border-radius: 6px; background: #e8f4f5; color: #049399; border: none;">
-                                        <i class="fa fa-eye me-2"></i> <strong>Your Private
-                                            Terms:</strong> You can see your full compensation terms
-                                        and additional details in your bid management dashboard.
-                                    </div>
-                                    @endif
                                     @endif
 
-                                    {{-- Limited Modal for Bidding Period: Agent viewing another agent\'s bid (Anonymous) --}}
-                                    @if ($isBiddingPeriodListing && $isAgentViewer && !$isBidOwner && !$isListingOwner)
-                                    <div class="modal fade"
-                                        id="limitedBidModal{{ data_get($bid, 'id') }}"
-                                        tabindex="-1"
-                                        aria-labelledby="limitedBidModalLabel{{ data_get($bid, 'id') }}"
-                                        aria-hidden="true">
-                                        <div class="modal-dialog modal-lg">
-                                            <div class="modal-content" style="border-radius: 10px; border: none; position: relative; overflow: visible;">
-                                                <button type="button" data-bs-dismiss="modal" aria-label="Close" style="position: absolute; right: 5px; top: -12px; z-index: 1055; background: #333; border: 2px solid #fff; color: #fff; font-size: 1rem; line-height: 1; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-                                                    &times;
-                                                </button>
-                                                <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
-                                                    <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
-                                                        <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
-                                                    </h5>
-                                                </div>
-                                                <div class="modal-body" style="background: #fafafa; padding: 25px;">
-
-                                                    {{-- Anonymous Notice --}}
-                                                    <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
-                                                        <i class="fa fa-user-secret me-2"></i>
-                                                        <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
-                                                    </div>
-
-                                                    {{-- Match Score Panel for Limited View (Agent-to-Agent Comparison) --}}
-                                                    @if ($hasAnyBaseline)
-                                                    <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
-                                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                                            <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
-                                                            </h6>
-                                                            <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
-                                                                {{ $totalScore }}% Match
-                                                            </span>
-                                                        </div>
-                                                        <p class="small text-muted mb-3">
-                                                            Comparing to: <strong>{{ $baselineLabel }}</strong>
-                                                        </p>
-                                                        <div class="row g-3">
-                                                            <div class="col-md-6">
-                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($servicesScore) }};">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <span class="small fw-semibold">Services Match</span>
-                                                                        <span class="badge" style="background: {{ $getScoreColor($servicesScore) }};">{{ $servicesScore }}%</span>
-                                                                    </div>
-                                                                    <div class="small text-muted mt-1">
-                                                                        {{ $servicesTotal > 0 ? 'Matched: '.$servicesMatched.'/'.$servicesTotal : 'No services requested' }}
-                                                                        @if ($servicesTotal > 0 && $servicesMissingCount > 0) &bull; Missing: {{ $servicesMissingCount }}@endif
-                                                                    </div>
-                                                                    @if ($servicesExtraCount > 0)
-                                                                    <div class="small mt-1 d-flex align-items-center flex-wrap" style="gap: 3px 5px;" title="Extra services were included by the Agent beyond the Tenant&#39;s original request. These do not increase the match score but may provide additional value.">
-                                                                        <span>&#11088;</span>
-                                                                        <span style="font-weight: 500; color: #856404;">Extra Value Added: {{ $servicesExtraCount }} {{ $servicesExtraCount === 1 ? 'Service' : 'Services' }}</span>
-                                                                    </div>
-                                                                    @endif
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="p-2 bg-white rounded" style="border-left: 4px solid {{ $getScoreColor($brokerScore) }};">
-                                                                    <div class="d-flex justify-content-between align-items-center">
-                                                                        <span class="small fw-semibold">Terms Match</span>
-                                                                        <span class="badge" style="background: {{ $getScoreColor($brokerScore) }};">{{ $brokerScore }}%</span>
-                                                                    </div>
-                                                                    <div class="small text-muted mt-1">
-                                                                        {{ $brokerTotal > 0 ? 'Matched: '.$brokerMatched.'/'.$brokerTotal : 'No terms provided' }}
-                                                                        @if ($brokerTotal > 0 && $termsChangedCount > 0) &bull; Changed: {{ $termsChangedCount }}@endif
-                                                                        @if ($brokerTotal > 0 && $termsAddedCount > 0) &bull; Added: {{ $termsAddedCount }}@endif
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    @else
-                                                    <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-                                                        <i class="fa fa-info-circle me-1"></i>No match data available for this listing.
-                                                    </div>
-                                                    @endif
-
-                                                    {{-- Mismatch Highlighting Styles --}}
-                                                    @php
-                                                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 8px; border-radius: 4px; border-left: 3px solid #dc3545;';
-                                                        $matchStyle = 'background-color: #e6ffe6; padding: 2px 8px; border-radius: 4px; border-left: 3px solid #28a745;';
-                                                        
-                                                        // Defensive guard: ensure $brokerMismatches is defined
-                                                        $brokerMismatches = $brokerMismatches ?? [];
-                                                        
-                                                        $isMismatch = function($field) use ($brokerMismatches) {
-                                                            return isset($brokerMismatches[$field]);
-                                                        };
-                                                        
-                                                        $checkLeaseFeeFieldMismatch = function() use ($brokerMismatches) {
-                                                            $feeFields = ['lease_fee_type', 'lease_fee_flat', 'lease_fee_percentage', 
-                                                                'lease_fee_percentage_monthly_rent', 'lease_fee_percentage_monthly_number',
-                                                                'lease_fee_flat_combo', 'lease_fee_percentage_combo', 'lease_fee_percentage_net',
-                                                                'lease_fee_flat_combo_net', 'lease_fee_percentage_combo_net', 'lease_fee_other'];
-                                                            foreach ($feeFields as $f) {
-                                                                if (isset($brokerMismatches[$f])) return true;
-                                                            }
-                                                            return false;
-                                                        };
-                                                        
-                                                        $checkPurchaseFeeFieldMismatch = function() use ($brokerMismatches) {
-                                                            $feeFields = ['purchase_fee_type', 'purchase_fee_flat', 'purchase_fee_percentage',
-                                                                'purchase_fee_flat_combo', 'purchase_fee_percentage_combo', 'purchase_fee_other',
-                                                                'purchase_flat_fee_amount', 'purchase_percent_value'];
-                                                            foreach ($feeFields as $f) {
-                                                                if (isset($brokerMismatches[$f])) return true;
-                                                            }
-                                                            return false;
-                                                        };
-                                                    @endphp
-
-                                                    {{-- Section 1: Broker Compensation & Agency Agreement Terms --}}
-                                                    @if (data_get($bid, 'get.commission_structure') ||
-                                                    data_get($bid, 'get.lease_fee_type') ||
-                                                    data_get($bid, 'get.interested_purchase_fee_type') ||
-                                                    data_get($bid, 'get.interested_lease_option_agreement') ||
-                                                    data_get($bid, 'get.protection_period') ||
-                                                    data_get($bid, 'get.early_termination_fee_option') ||
-                                                    data_get($bid, 'get.retainer_fee_option') ||
-                                                    data_get($bid, 'get.agency_agreement_timeframe') ||
-                                                    data_get($bid, 'get.brokerage_relationship'))
-                                                    <div class="mb-5">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
-                                                        </h6>
-
-                                                        {{-- A) Tenant\'s Broker Compensation --}}
-                                                        @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
-                                                        <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @if (data_get($bid, 'get.commission_structure'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant's Broker Commission Structure:</span>
-                                                                    <span style="{{ $isMismatch('commission_structure') ? $mismatchStyle : '' }}">
-                                                                        {{ $bidCommissionDisplay }}
-                                                                        @if($isMismatch('commission_structure')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.lease_fee_type'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant's Broker Commission Fee:</span>
-                                                                    <span style="{{ $checkLeaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
-                                                                        {{ $commissionFeeDisplay }}
-                                                                        @if($checkLeaseFeeFieldMismatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.payment_timing'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Payment Timing for Broker Fees:</span>
-                                                                    <span style="{{ $isMismatch('payment_timing') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.payment_timing') }}
-                                                                        @if($isMismatch('payment_timing')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.days_to_pay'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Calendar Days To Pay:</span>
-                                                                    <span style="{{ $isMismatch('days_to_pay') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.days_to_pay') }}
-                                                                        @if($isMismatch('days_to_pay')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- B) Purchase Fee Details --}}
-                                                        @if (data_get($bid, 'get.interested_purchase_fee_type'))
-                                                        <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Interested in Purchasing a Property:</span>
-                                                                    <span style="{{ $isMismatch('interested_purchase_fee_type') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.interested_purchase_fee_type') }}
-                                                                        @if($isMismatch('interested_purchase_fee_type')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '-')
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Purchase Fee:</span>
-                                                                    <span style="{{ $checkPurchaseFeeFieldMismatch() ? $mismatchStyle : '' }}">
-                                                                        {{ $purchaseFeeDisplay }}
-                                                                        @if($checkPurchaseFeeFieldMismatch()) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- C) Lease-Option Details --}}
-                                                        @if (data_get($bid, 'get.interested_lease_option_agreement'))
-                                                        <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Interested in a Lease-Option Agreement:</span>
-                                                                    <span style="{{ $isMismatch('interested_lease_option_agreement') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.interested_lease_option_agreement') }}
-                                                                        @if($isMismatch('interested_lease_option_agreement')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
-                                                                    @if ($leaseOptionCreatedDisplay !== '-')
-                                                                    <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                        <span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span>
-                                                                        <span style="{{ $isMismatch('lease_value') ? $mismatchStyle : '' }}">
-                                                                            {{ $leaseOptionCreatedDisplay }}
-                                                                            @if($isMismatch('lease_value')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                        </span>
-                                                                    </li>
-                                                                    @endif
-                                                                    @if ($leaseOptionExercisedDisplay !== '-')
-                                                                    <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                        <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span>
-                                                                        <span style="{{ $isMismatch('purchase_value') ? $mismatchStyle : '' }}">
-                                                                            {{ $leaseOptionExercisedDisplay }}
-                                                                            @if($isMismatch('purchase_value')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                        </span>
-                                                                    </li>
-                                                                    @endif
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- D) Legal Terms --}}
-                                                        @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
-                                                        <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                @if (data_get($bid, 'get.protection_period'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Protection Period Timeframe:</span>
-                                                                    <span style="{{ $isMismatch('protection_period') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.protection_period') }} days
-                                                                        @if($isMismatch('protection_period')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                                @if (data_get($bid, 'get.early_termination_fee_option'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Early Termination Fee:</span>
-                                                                    <span style="{{ $isMismatch('early_termination_fee_option') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.early_termination_fee_option') }}
-                                                                        @if($isMismatch('early_termination_fee_option')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                    @if ($terminationFeeDisplay !== '-')
-                                                                    <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                        <span class="fw-semibold">Termination Fee Amount:</span>
-                                                                        <span style="{{ $isMismatch('early_termination_fee_amount') ? $mismatchStyle : '' }}">
-                                                                            {{ $terminationFeeDisplay }}
-                                                                            @if($isMismatch('early_termination_fee_amount')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                        </span>
-                                                                    </li>
-                                                                    @endif
-                                                                @endif
-                                                                @if (data_get($bid, 'get.retainer_fee_option'))
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Retainer Fee:</span>
-                                                                    <span style="{{ $isMismatch('retainer_fee_option') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.retainer_fee_option') }}
-                                                                        @if($isMismatch('retainer_fee_option')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                    @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
-                                                                        @if (data_get($bid, 'get.retainer_fee_amount'))
-                                                                        <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                            <span class="fw-semibold">Retainer Fee Amount:</span>
-                                                                            <span style="{{ $isMismatch('retainer_fee_amount') ? $mismatchStyle : '' }}">
-                                                                                ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}
-                                                                                @if($isMismatch('retainer_fee_amount')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                            </span>
-                                                                        </li>
-                                                                        @endif
-                                                                        @if (data_get($bid, 'get.retainer_fee_application'))
-                                                                        <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                            <span class="fw-semibold">Retainer Fee Application:</span>
-                                                                            <span style="{{ $isMismatch('retainer_fee_application') ? $mismatchStyle : '' }}">
-                                                                                @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
-                                                                                Applied toward final compensation
-                                                                                @else
-                                                                                Charged in addition to final compensation
-                                                                                @endif
-                                                                                @if($isMismatch('retainer_fee_application')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                            </span>
-                                                                        </li>
-                                                                        @endif
-                                                                    @endif
-                                                                @endif
-                                                                @if (data_get($bid, 'get.agency_agreement_timeframe'))
-                                                                @php
-                                                                    $limitedAgencyTimeframe = data_get($bid, 'get.agency_agreement_timeframe');
-                                                                    $limitedAgencyTimeframeCustom = data_get($bid, 'get.agency_agreement_custom');
-                                                                    $limitedIsOtherTimeframe = is_string($limitedAgencyTimeframe) && strtolower(trim($limitedAgencyTimeframe)) === 'other';
-                                                                    $limitedAgencyTimeframeDisplay = $limitedIsOtherTimeframe ? ($limitedAgencyTimeframeCustom ?: 'Other') : ($limitedAgencyTimeframe ?: '');
-                                                                @endphp
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Tenant Agency Agreement Timeframe:</span>
-                                                                    <span style="{{ $isMismatch('agency_agreement_timeframe') ? $mismatchStyle : '' }}">
-                                                                        {{ $limitedAgencyTimeframeDisplay }}
-                                                                        @if($isMismatch('agency_agreement_timeframe')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                                @endif
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-
-                                                        {{-- E) Brokerage Relationship --}}
-                                                        @if (data_get($bid, 'get.brokerage_relationship'))
-                                                        <div class="mb-4">
-                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
-                                                            <ul class="list-unstyled ps-3 mb-0">
-                                                                <li class="mb-1 d-flex justify-content-between align-items-start">
-                                                                    <span class="fw-semibold">Acceptable Brokerage Relationship:</span>
-                                                                    <span style="{{ $isMismatch('brokerage_relationship') ? $mismatchStyle : '' }}">
-                                                                        {{ data_get($bid, 'get.brokerage_relationship') }}
-                                                                        @if($isMismatch('brokerage_relationship')) <i class="fa fa-exclamation-triangle text-danger ms-1" title="Differs from baseline"></i> @endif
-                                                                    </span>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                        @endif
-                                                    </div>
-                                                    @endif
-
-                                                    {{-- Section 2: Offered Services --}}
-                                                    @php
-                                                    // Define service categories for limited modal
-                                                    $limitedPropType = @$auction->get->property_type ?? 'Residential Property';
-                                                    $limitedIsCommercial = $limitedPropType === 'Commercial Property';
-
-                                                    $limitedResidentialCategories = [
-                                                        "📢 Tenant Criteria Marketing & Promotion" => [
-                                                            "Create a branded flyer summarizing the Tenant\'s rental criteria",
-                                                            "Post the Tenant\'s rental criteria on Craigslist under the \"Real Estate Wanted\" section",
-                                                            "Share the Tenant\'s rental criteria on Nextdoor in Neighborhood or Community Groups",
-                                                            "Promote the Tenant\'s rental criteria on Facebook in Rental or Housing Groups",
-                                                            "Share the Tenant\'s rental criteria on Instagram using posts, stories, or reels",
-                                                            "Promote the Tenant\'s rental criteria on LinkedIn in Real Estate or Housing Groups",
-                                                            "Upload a TikTok video summarizing the Tenant\'s rental criteria",
-                                                            "Upload a YouTube video summarizing the Tenant\'s rental criteria",
-                                                            "Launch a mass email campaign promoting the Tenant\'s rental criteria",
-                                                            "Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods",
-                                                            "Launch hyperlocal digital ads targeting the Tenant\'s preferred rental areas",
-                                                        ],
-                                                        "🔍 Property Search, Alerts & Matching" => [
-                                                            "Send email alerts with new listings from the MLS that match the Tenant\'s rental criteria",
-                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria",
-                                                            "Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
-                                                            "Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit",
-                                                        ],
-                                                        "🏡 Property Showings & Virtual Tours" => [
-                                                            "Schedule and attend property showings with the Tenant",
-                                                            "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
-                                                            "Preview properties on behalf of the Tenant upon request",
-                                                            "Provide factual observations on property layout and condition",
-                                                        ],
-                                                        "📝 Tenant Application Support" => [
-                                                            "Provide the Tenant with application instructions or links to an online rental application platform",
-                                                            "Gather and organize required supporting documents (e.g., identification, income verification, reference letters)",
-                                                            "Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager for review",
-                                                            "Answer questions about the application process, screening timelines, and required documentation",
-                                                        ],
-                                                        "📃 Lease Preparation & Execution" => [
-                                                            "Review lease offers and assist the Tenant in preparing questions or requested changes",
-                                                            "Coordinate lease negotiation with the Landlord\'s Agent, Landlord, or Property Manager",
-                                                            "Assist with completing required lease disclosures and reviewing key lease terms",
-                                                            "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
-                                                        ],
-                                                        "🚚 Move-In Support & Coordination" => [
-                                                            "Coordinate move-in date and key handoff logistics with the Landlord\'s Agent, Landlord or Property Manager",
-                                                            "Confirm completion of any agreed-upon pre-move-in cleaning or repairs",
-                                                            "Provide a utility setup checklist and local provider resources",
-                                                            "Share a move-in checklist for documentation and property condition review",
-                                                            "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods",
-                                                        ],
-                                                        "💡 Leasing Strategy & Guidance" => [
-                                                            "Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions",
-                                                            "Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)",
-                                                            "Provide general guidance on Tenant rights and Landlord responsibilities under state law",
-                                                            "Provide general guidance on lease clauses, payment terms, and renewal options",
-                                                        ],
-                                                    ];
-
-                                                    $limitedCommercialCategories = [
-                                                        "📢 Tenant Criteria Marketing & Promotion" => [
-                                                            "Create a branded flyer summarizing the Tenant\'s leasing criteria",
-                                                            "Post the Tenant\'s leasing criteria on Craigslist under the \"Office/Commercial\" or \"Retail\" section",
-                                                            "Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups",
-                                                            "Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels",
-                                                            "Promote the Tenant\'s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups",
-                                                            "Upload a TikTok video summarizing the Tenant\'s leasing criteria",
-                                                            "Upload a YouTube video summarizing the Tenant\'s leasing criteria",
-                                                            "Launch a mass email campaign promoting the Tenant\'s leasing criteria",
-                                                            "Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods",
-                                                            "Launch hyperlocal digital ads targeting the Tenant\'s preferred leasing areas",
-                                                        ],
-                                                        "🔍 Property Search, Alerts & Matching" => [
-                                                            "Send listing alerts from real estate platforms that match the Tenant\'s leasing criteria.",
-                                                            "Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria",
-                                                            "Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions",
-                                                            "Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment",
-                                                        ],
-                                                        "🏢 Property Showings & Virtual Tours" => [
-                                                            "Schedule and attend property tours with the Tenant",
-                                                            "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
-                                                            "Preview properties on behalf of the Tenant upon request",
-                                                            "Provide factual notes on layout, access, parking, visibility, and other operational considerations",
-                                                        ],
-                                                        "📝 Tenant Application Support" => [
-                                                            "Provide the Tenant with application instructions or links to online platforms",
-                                                            "Gather and organize required supporting documents (e.g., business licenses, financials, references)",
-                                                            "Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager",
-                                                        ],
-                                                        "📃 Lease Preparation, LOI & Execution" => [
-                                                            "Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant\'s business needs and proposed terms",
-                                                            "Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)",
-                                                            "Coordinate with the Landlord\'s Agent, Landlord or Property Manager to finalize lease terms",
-                                                            "Review lease drafts and coordinate revisions through appropriate channels",
-                                                            "Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties",
-                                                            "Track required deposits, rent commencement, and key lease dates to ensure move-in readiness",
-                                                        ],
-                                                        "🚚 Move-In Support & Coordination" => [
-                                                            "Coordinate move-in date and key handoff logistics with the Landlord, Landlord\'s Agent, or Property Manager",
-                                                            "Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout",
-                                                            "Provide a utility setup checklist and local provider resources",
-                                                            "Share a move-in checklist for documentation and property condition review",
-                                                            "Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods",
-                                                        ],
-                                                        "💡 Leasing Strategy & Guidance" => [
-                                                            "Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends",
-                                                            "Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences",
-                                                            "Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law",
-                                                            "Provide general guidance on lease clauses, escalation terms, and space usage considerations",
-                                                        ],
-                                                    ];
-
-                                                    $limitedCategories = $limitedIsCommercial ? $limitedCommercialCategories : $limitedResidentialCategories;
-                                                    
-                                                    // Flatten function
-                                                    $flattenLtd = function($data) use (&$flattenLtd) {
-                                                        $result = [];
-                                                        if (is_array($data) || is_object($data)) {
-                                                            foreach ((array)$data as $value) {
-                                                                if (is_string($value) && !empty(trim($value)) && $value !== 'Other') {
-                                                                    $result[] = trim($value);
-                                                                } elseif (is_array($value) || is_object($value)) {
-                                                                    $result = array_merge($result, $flattenLtd($value));
-                                                                }
-                                                            }
-                                                        } elseif (is_string($data) && !empty(trim($data)) && $data !== 'Other') {
-                                                            $result[] = trim($data);
-                                                        }
-                                                        return $result;
-                                                    };
-                                                    
-                                                    // Parse services
-                                                    $rawLtdServices = data_get($bid, 'get.services', []);
-                                                    if (is_string($rawLtdServices) && !empty($rawLtdServices)) {
-                                                        $decoded = json_decode($rawLtdServices, true);
-                                                        $parsedLtdServices = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
-                                                    } elseif (is_array($rawLtdServices) || is_object($rawLtdServices)) {
-                                                        $parsedLtdServices = $rawLtdServices;
-                                                    } else {
-                                                        $parsedLtdServices = [];
-                                                    }
-                                                    $ltdAllServices = array_unique($flattenLtd($parsedLtdServices));
-                                                    
-                                                    // Parse other_services
-                                                    $rawLtdOther = data_get($bid, 'get.other_services', []);
-                                                    if (is_string($rawLtdOther) && !empty($rawLtdOther)) {
-                                                        $decoded = json_decode($rawLtdOther, true);
-                                                        $ltdOtherServices = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
-                                                    } elseif (is_array($rawLtdOther) || is_object($rawLtdOther)) {
-                                                        $ltdOtherServices = (array)$rawLtdOther;
-                                                    } else {
-                                                        $ltdOtherServices = [];
-                                                    }
-                                                    $ltdOtherServices = array_filter($ltdOtherServices, fn($s) => is_string($s) && !empty(trim($s)));
-                                                    $ltdOtherServices = array_values($ltdOtherServices);
-                                                    
-                                                    $hasLtdServices = !empty($ltdAllServices) || !empty($ltdOtherServices);
-                                                    @endphp
-                                                    
-                                                    @php
-                                                        // Service status indicators — use helper-computed normalized arrays already in scope
-                                                        // $baselineNorm, $normalizeService, and $score are set earlier in this bid loop iteration
-                                                        $ltdMissingCount = $score['services_missing_count'];
-
-                                                        // Normalized check helpers for per-service display coloring
-                                                        $isServiceMatched = fn($svc) => in_array(
-                                                            \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$svc),
-                                                            $baselineNorm
-                                                        );
-                                                        $isServiceExtra = fn($svc) => !in_array(
-                                                            \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$svc),
-                                                            $baselineNorm
-                                                        );
-                                                    @endphp
-
-                                                    <div class="mb-4">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
-                                                            @if($ltdMissingCount > 0)
-                                                            <span class="badge bg-danger ms-2" style="font-size: 0.7rem;">{{ $ltdMissingCount }} Missing</span>
-                                                            @endif
-                                                        </h6>
-                                                        
-                                                        {{-- Legend --}}
-                                                        <div class="mb-3 small">
-                                                            <span style="color: #28a745;"><i class="fa fa-check-circle me-1"></i>Matched</span>
-                                                            <span class="ms-3" style="color: #17a2b8;"><i class="fa fa-plus-circle me-1"></i>Extra (not in baseline)</span>
-                                                            <span class="ms-3" style="color: #dc3545;"><i class="fa fa-times-circle me-1"></i>Missing (in baseline but not offered)</span>
-                                                        </div>
-                                                        
-                                                        @if ($hasLtdServices)
-                                                            @foreach ($limitedCategories as $catName => $catServices)
-                                                                @php
-                                                                    $matchedSvcs = array_filter($ltdAllServices, function($svc) use ($catServices) {
-                                                                        return in_array($svc, $catServices);
-                                                                    });
-                                                                @endphp
-                                                                @if (!empty($matchedSvcs))
-                                                                <div class="mb-3">
-                                                                    <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
-                                                                        @foreach ($matchedSvcs as $svc)
-                                                                            @php $displaySvc = function_exists('normalize_service_text') ? normalize_service_text($svc) : $svc; @endphp
-                                                                            @if($isServiceMatched($svc))
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                                <i class="fa fa-check-circle me-1"></i>{{ $displaySvc }}
-                                                                            </li>
-                                                                            @else
-                                                                            <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                                <i class="fa fa-plus-circle me-1"></i>{{ $displaySvc }} <small>(extra)</small>
-                                                                            </li>
-                                                                            @endif
-                                                                        @endforeach
-                                                                    </ul>
-                                                                </div>
-                                                                @endif
-                                                            @endforeach
-
-                                                            @if (!empty($ltdOtherServices))
-                                                            <div class="mb-3">
-                                                                <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem; list-style: none;">
-                                                                    @foreach ($ltdOtherServices as $otherSvc)
-                                                                        @php $displayOtherSvc = function_exists('normalize_service_text') ? normalize_service_text($otherSvc) : $otherSvc; @endphp
-                                                                        @if($isServiceMatched($otherSvc))
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #28a745;">
-                                                                            <i class="fa fa-check-circle me-1"></i>{{ $displayOtherSvc }}
-                                                                        </li>
-                                                                        @else
-                                                                        <li style="font-size: 0.9rem; margin-bottom: 4px; color: #17a2b8;">
-                                                                            <i class="fa fa-plus-circle me-1"></i>{{ $displayOtherSvc }} <small>(extra)</small>
-                                                                        </li>
-                                                                        @endif
-                                                                    @endforeach
-                                                                </ul>
-                                                            </div>
-                                                            @endif
-                                                            
-                                                            {{-- Missing Services Section --}}
-                                                            @if (!empty($missingServices))
-                                                            <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
-                                                                <div class="fw-bold" style="color: #dc3545; font-size: 0.95rem;">
-                                                                    <i class="fa fa-exclamation-triangle me-1"></i>Missing Services (Not Offered)
-                                                                </div>
-                                                                <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
-                                                                    @foreach ($missingServices as $missingSvc)
-                                                                    @php $displayMissingSvc = function_exists('normalize_service_text') ? normalize_service_text($missingSvc) : $missingSvc; @endphp
-                                                                    <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa fa-times-circle me-1"></i>{{ $displayMissingSvc }}
-                                                                    </li>
-                                                                    @endforeach
-                                                                </ul>
-                                                            </div>
-                                                            @endif
-                                                        @else
-                                                        <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
-                                                        @endif
-                                                    </div>
-
-                                                </div>
-                                                @php
-                                                    // Compute modal-footer state before rendering — $latestTenantCounter is loaded early (line ~1824)
-                                                    $mfRawState    = data_get($bid, 'accepted', '0');
-                                                    $_mfIsTerminal = in_array((string)$mfRawState, ['accepted', 'rejected'], true);
-                                                    $_mfHasOwnerCounter = isset($latestTenantCounter) && $latestTenantCounter !== null;
-                                                    $mfState       = (!$_mfIsTerminal && $_mfHasOwnerCounter)
-                                                        ? 'countered'
-                                                        : (in_array($mfRawState, [null, 0, '0', ''], true) ? '0' : (string)$mfRawState);
-                                                    $mfOwnerId     = data_get($auction, 'user_id');
-                                                    $mfOwnerFirst  = data_get($auction, 'user.first_name', '');
-                                                    $mfOwnerLast   = data_get($auction, 'user.last_name', '');
-                                                    $mfAgentFirst  = data_get($bid, 'user.first_name', '');
-                                                    $mfAgentLast   = data_get($bid, 'user.last_name', '');
-                                                    $mfIsOwner     = ((int)$auth_id === (int)$mfOwnerId);
-                                                @endphp
-                                                <div class="modal-footer" style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px; flex-wrap: wrap; gap: 12px;">
-
-                                                    {{-- Confidential notice --}}
-                                                    <div class="w-100 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                                                        <i class="fa fa-shield-alt me-2"></i>
-                                                        <strong>Confidential:</strong> This information is private and only visible to you.
-                                                    </div>
-
-                                                    {{-- ── Listing owner: action buttons when bid is undecided ── --}}
-                                                    @if ($mfState === '0' && $mfIsOwner && !data_get($auction, 'is_sold'))
-                                                        @if ($isTraditionalListing && $isExpired)
-                                                        <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
-                                                        </div>
-                                                        @else
-                                                        {{-- Traditional (not expired) OR Bidding Period (any state): timer is informational --}}
-                                                        <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
-                                                            <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="post" style="margin: 0;"
-                                                                  onsubmit="return confirm('Are you sure you want to accept this bid? This will reject all other bids.');">
-                                                                @csrf
-                                                                <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                                <button type="submit" class="btn btn-success btn-accept" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-check me-1"></i> Accept Bid
-                                                                </button>
-                                                            </form>
-                                                            <a href="{{ route('tenant.counter-terms', data_get($bid, 'id')) }}"
-                                                               class="btn btn-primary btn-counter" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Bid
-                                                            </a>
-                                                            <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="post" style="margin: 0;"
-                                                                  onsubmit="return confirm('Are you sure you want to reject this bid?');">
-                                                                @csrf
-                                                                <input type="hidden" name="auction_id" value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                                                                <button type="submit" class="btn btn-danger btn-reject" style="padding: 10px 20px; font-size: 0.95rem; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-times me-1"></i> Reject Bid
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                        @endif
-                                                    @endif
-
-                                                    {{-- ── Accepted state ── --}}
-                                                    @if ($mfState === 'accepted')
-                                                    <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-                                                        <i class="fa fa-check-circle me-1"></i>
-                                                        @if ($mfIsOwner) This bid has been accepted.
-                                                        @else {{ trim($mfOwnerFirst . ' ' . $mfOwnerLast) }} accepted this bid.
-                                                        @endif
-                                                    </div>
-                                                    @php $mfBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
-                                                    @if ($mfBidSummary && ($mfIsOwner || data_get($bid, 'user_id') == Auth::id()))
-                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                                        <a href="{{ route('accepted-bid-summary.view', $mfBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
-                                                            <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
-                                                        </a>
-                                                        @if (data_get($bid, 'user_id') == Auth::id() && !$mfBidSummary->isAgentSigned())
-                                                        <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummary->id) }}" class="btn btn-primary btn-sm">
-                                                            <i class="fa fa-signature me-1"></i> E-Sign Acknowledgement
-                                                        </a>
-                                                        @endif
-                                                        @if ($mfIsOwner && !$mfBidSummary->isTenantSigned())
-                                                        <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummary->id) }}" class="btn btn-primary btn-sm">
-                                                            <i class="fa fa-signature me-1"></i> Tenant: E-Sign Acknowledgement
-                                                        </a>
-                                                        @endif
-                                                        @if ($mfBidSummary->isFullySigned())
-                                                        <a href="{{ route('accepted-bid-summary.download-pdf', $mfBidSummary->id) }}" class="btn btn-success btn-sm">
-                                                            <i class="fa fa-download me-1"></i> Download Signed PDF
-                                                        </a>
-                                                        @endif
-                                                    </div>
-                                                    @endif
-
-                                                    {{-- ── Rejected state ── --}}
-                                                    @elseif ($mfState === 'rejected')
-                                                    <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-                                                        <i class="fa fa-times-circle me-1"></i>
-                                                        @if ($mfIsOwner) This bid has been rejected.
-                                                        @else {{ trim($mfOwnerFirst . ' ' . $mfOwnerLast) }} rejected this bid.
-                                                        @endif
-                                                    </div>
-
-                                                    {{-- ── Countered state ── --}}
-                                                    @elseif ($mfState === 'countered')
-                                                    <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-exchange-alt me-1"></i>
-                                                        @if ($mfIsOwner)
-                                                            You have submitted a counter offer for this bid.
-                                                        @else
-                                                            {{ trim($mfOwnerFirst . ' ' . $mfOwnerLast) }} has submitted a counter offer.
-                                                        @endif
-                                                    </div>
-                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                                        <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
-                                                        </a>
-                                                        @if ($mfIsOwner)
-                                                        <a href="{{ route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
-                                                            <i class="fa fa-edit me-1"></i> Edit Counter Terms
-                                                        </a>
-                                                        @endif
-                                                    </div>
-
-                                                    {{-- ── Pending state ── --}}
-                                                    @elseif ($mfState === '0')
-                                                    @if (data_get($bid, 'user_id') == Auth::id())
-                                                    <div class="alert alert-secondary mt-2 w-100 mb-0 py-1 small">
-                                                        ⏳ Waiting for a response from {{ trim($mfOwnerFirst . ' ' . $mfOwnerLast) }}...
-                                                    </div>
-                                                    @else
-                                                    <div class="alert alert-light mt-2 w-100 mb-0 py-1 small">
-                                                        ⏳ Bid from {{ trim($mfAgentFirst . ' ' . $mfAgentLast) }} is pending.
-                                                    </div>
-                                                    @endif
-                                                    @endif
-
-                                                    {{-- ── Close button ── --}}
-                                                    <div class="w-100 d-flex justify-content-end mt-2">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                                                                style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">
-                                                            Close
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    @endif
-                                    {{-- End of Limited Modal for Bidding Period --}}
 
                                     <!-- Counter Bids -->
 

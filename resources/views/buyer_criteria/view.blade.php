@@ -1500,9 +1500,28 @@
                       @endif
                     </div>
                   @endif
+                    @php
+                        // Build stable per-agent alias map for buyer flow, keyed by user_id.
+                        // Sort by created_at asc, id asc, user_id asc; excludes listing owner.
+                        // Built here (before lowest-bidder text) so alias is available for anonymization.
+                        $buyerBidsByOrder = ($auction->bids ?? collect())
+                            ->where('user_id', '!=', $auction->user_id)
+                            ->sortBy([['created_at', 'asc'], ['id', 'asc'], ['user_id', 'asc']])
+                            ->values();
+                        $buyerAgentNumberMap = []; // user_id → alias number
+                        foreach ($buyerBidsByOrder as $_buyerBid) {
+                            if (!isset($buyerAgentNumberMap[$_buyerBid->user_id])) {
+                                $buyerAgentNumberMap[$_buyerBid->user_id] = count($buyerAgentNumberMap) + 1;
+                            }
+                        }
+                        $buyerPageIsListingOwner = isset($auth_id) && $auction->user_id == $auth_id;
+                    @endphp
                     <div class="card-body">
                         @if ($lowest_bidder)
-                            <p><b>{{ $lowest_bidder->user->name ?? '' }}</b> is the lowest bidder.</p>
+                            @php
+                                $lowestBidderAlias = 'Agent ' . ($buyerAgentNumberMap[$lowest_bidder->user_id] ?? '?');
+                            @endphp
+                            <p><b>{{ $buyerPageIsListingOwner ? ($lowest_bidder->user->name ?? '') : $lowestBidderAlias }}</b> is the lowest bidder.</p>
                         @else
                             <p>No one has bid on this auction.</p>
                         @endif
@@ -1510,6 +1529,14 @@
                             <div class="accordion-item border-0">
                                 @if ($auction->display_bids == 1 || $auction->user_id == auth()->user()->id)
                                     @foreach (@$auction->bids as $bid)
+                                        @php
+                                            $buyerIsListingOwner = isset($auth_id) && $auction->user_id == $auth_id;
+                                            $buyerIsBidOwner     = isset($auth_id) && $bid->user_id == $auth_id;
+                                            $buyerIsOtherAgentsBid = !$buyerIsListingOwner && !$buyerIsBidOwner;
+                                            $buyerAgentAlias = 'Agent ' . ($buyerAgentNumberMap[$bid->user_id] ?? $loop->iteration);
+                                            // When display_bids=0, skip competitor bids — but always show own bid to bid owner
+                                            if ($auction->display_bids != 1 && !$buyerIsListingOwner && !$buyerIsBidOwner) { continue; }
+                                        @endphp
                                         <!-- Item loop -->
                                         <div class="accordion" type="button" data-bs-toggle="collapse"
                                             data-bs-target="#item{{ $bid->id }}" aria-expanded="true"
@@ -1519,9 +1546,9 @@
                                                     <span class="badge">{{ $loop->iteration }}</span>
                                                 </div>
                                                 <div class="col-4">
-                                                    {{ $bid->user->name }} </div>
+                                                    {{ $buyerIsListingOwner || $buyerIsBidOwner ? $bid->user->name : $buyerAgentAlias }} </div>
                                                 <div class="col-4 text-right">
-                                                    {{ $bid->get->max_price }} </div>
+                                                    {{ ($buyerIsListingOwner || $buyerIsBidOwner) ? $bid->get->max_price : '—' }} </div>
                                                 <div class="col-2">
                                                     Terms↓
                                                 </div>
@@ -1531,6 +1558,7 @@
                                             aria-labelledby="headingOne" data-bs-parent="#accordionExample">
 
                                             <div class="accordion-body">
+                                                @if($buyerIsListingOwner || $buyerIsBidOwner)
                                                 <div id="bidding_history_data">
                                                     <div>
                                                         {{-- <p class="d-flex justify-content-between small">Cash or Financing Type:
@@ -1877,6 +1905,146 @@
                                                         @endauth
                                                     </div>
                                                 </div>
+                                                @else
+                                                {{-- Competitor summary: other agent viewing another agent's bid --}}
+                                                @php
+                                                    // === MATCH SCORE CALCULATION via BuyerBidMatchScoreHelper ===
+                                                    // Mirrors the Seller/Tenant/Landlord competitor-summary pattern exactly.
+                                                    // Baseline = original listing terms; compared = this bid's terms.
+                                                    $buyerPropertyType   = data_get($auction, 'get.property_type', '');
+                                                    $buyerAuctionDataArr = (array) data_get($auction, 'get', []);
+                                                    $buyerBidDataArr     = (array) data_get($bid, 'get', []);
+
+                                                    $buyerScoreResult   = \App\Helpers\BuyerBidMatchScoreHelper::calculate($buyerAuctionDataArr, $buyerBidDataArr, null, $buyerPropertyType);
+                                                    $buyerTotalScore    = $buyerScoreResult['overall_percent'] ?? 100;
+                                                    $buyerBrokerScore   = $buyerScoreResult['broker_comp_percent'] ?? 100;
+                                                    $buyerServicesScore = $buyerScoreResult['services_percent'] ?? 100;
+                                                    $buyerBrokerTotal   = $buyerScoreResult['broker_comp_total'] ?? 0;
+                                                    $buyerBrokerMatched = $buyerScoreResult['broker_comp_matched'] ?? 0;
+                                                    $buyerSvcTotal      = $buyerScoreResult['services_baseline_total'] ?? 0;
+                                                    $buyerSvcMatched    = $buyerScoreResult['services_matched_count'] ?? 0;
+                                                    $buyerSvcExtra      = $buyerScoreResult['services_extra_count'] ?? 0;
+                                                    $buyerSvcMissing    = $buyerScoreResult['services_missing_count'] ?? 0;
+                                                    $buyerTermsChanged  = $buyerScoreResult['terms_changed_count'] ?? 0;
+                                                    $buyerTermsAdded    = $buyerScoreResult['terms_added_count'] ?? 0;
+                                                    $buyerHasAnyBaseline = ($buyerBrokerTotal > 0 || $buyerSvcTotal > 0);
+                                                    $buyerGetScoreColor  = fn($s) => \App\Helpers\BuyerBidMatchScoreHelper::scoreColor((int)$s);
+                                                    $buyerTotalScoreColor = $buyerGetScoreColor($buyerTotalScore);
+                                                    // BuyerCriteria flow does not have a counter-terms table; no dual-score.
+                                                    $buyerLatestCounterScore = null;
+                                                    $buyerShowDualScore = false;
+                                                @endphp
+                                                <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
+                                                <!-- B) Offered Services Count -->
+                                                <p class="mb-0" style="font-size: 1.1rem; color: #1a3a5c;">
+                                                    <span style="font-weight: 600;">Offered Services:</span>
+                                                    <span style="color: #28a745; font-weight: 600;">{{ $buyerSvcTotal > 0 ? $buyerSvcMatched.'/'.$buyerSvcTotal : 'No services requested' }}</span>{{ $buyerSvcTotal > 0 ? ' matched' : '' }}
+                                                    @if ($buyerSvcTotal > 0 && $buyerSvcExtra > 0)
+                                                    <span class="text-muted ms-2">&bull; {{ $buyerSvcExtra }} extra</span>
+                                                    @endif
+                                                    @if ($buyerSvcTotal > 0 && $buyerSvcMissing > 0)
+                                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $buyerSvcMissing }} missing</span>
+                                                    @endif
+                                                </p>
+                                                @if ($buyerSvcExtra > 0)
+                                                <div class="mt-2 d-flex align-items-center flex-wrap" style="gap: 4px 6px;">
+                                                    <span style="font-size: 0.9rem; line-height: 1.4;">&#11088;</span>
+                                                    <span style="font-weight: 500; color: #856404; font-size: 0.95rem;">Extra Value Added: {{ $buyerSvcExtra }} {{ $buyerSvcExtra === 1 ? 'Service' : 'Services' }}</span>
+                                                    <span class="text-muted" style="font-size: 0.78rem; font-style: italic;">&mdash; does not affect match score</span>
+                                                </div>
+                                                @endif
+                                                <!-- Terms Match Row -->
+                                                @if ($buyerHasAnyBaseline && $buyerBrokerTotal > 0)
+                                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                                    <span style="font-weight: 600;">Terms Match:</span>
+                                                    <span style="color: #28a745; font-weight: 600;">{{ $buyerBrokerMatched }}/{{ $buyerBrokerTotal }} matched</span>
+                                                    @if ($buyerTermsChanged > 0)
+                                                    <span class="ms-2" style="color: #dc3545;">&bull; {{ $buyerTermsChanged }} changed</span>
+                                                    @endif
+                                                    @if ($buyerTermsAdded > 0)
+                                                    <span class="text-muted ms-2">&bull; {{ $buyerTermsAdded }} added</span>
+                                                    @endif
+                                                </p>
+                                                <div class="mt-1" style="font-size: 0.78rem; color: #6c757d; font-style: italic;">&mdash; affects match score</div>
+                                                @elseif ($buyerHasAnyBaseline && $buyerBrokerTotal === 0)
+                                                <p class="mb-0 mt-2" style="font-size: 1.1rem; color: #1a3a5c;">
+                                                    <span style="font-weight: 600;">Terms Match:</span>
+                                                    <span class="text-muted">&mdash;</span>
+                                                </p>
+                                                @endif
+                                                <hr style="margin: 15px 0; border-color: #e0e0e0;">
+                                                <!-- Match Score Summary -->
+                                                @if ($buyerHasAnyBaseline)
+                                                <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
+                                                    @if ($buyerShowDualScore && $buyerLatestCounterScore)
+                                                    {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
+                                                    <div class="mb-2">
+                                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
+                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                        </span>
+                                                    </div>
+                                                    <div class="row g-2 mb-2">
+                                                        @php $buyerOsColor = $buyerGetScoreColor($buyerScoreResult['overall_percent']); @endphp
+                                                        <div class="col-6">
+                                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #6c757d;">
+                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                    <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                                    <span class="badge" style="background: {{ $buyerOsColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $buyerScoreResult['overall_percent'] }}%</span>
+                                                                </div>
+                                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Buyer's Original Request</div>
+                                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                                    <div class="col-6" style="color: {{ $buyerGetScoreColor($buyerScoreResult['services_match_percent']) }};">Services {{ $buyerScoreResult['services_match_percent'] }}%</div>
+                                                                    <div class="col-6" style="color: {{ $buyerGetScoreColor($buyerScoreResult['terms_match_percent']) }};">Terms {{ $buyerScoreResult['terms_match_percent'] }}%</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        @php $buyerCsColor = $buyerGetScoreColor($buyerLatestCounterScore['overall_percent']); @endphp
+                                                        <div class="col-6">
+                                                            <div class="p-2 rounded" style="background: #fff; border: 1px solid #dee2e6; border-top: 3px solid #ffc107;">
+                                                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                                                    <span class="small fw-semibold" style="color: #6c757d;">Counter Match</span>
+                                                                    <span class="badge" style="background: {{ $buyerCsColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $buyerLatestCounterScore['overall_percent'] }}%</span>
+                                                                </div>
+                                                                <div style="font-size: 0.75rem; color: #6c757d;">vs. Latest Counter Terms</div>
+                                                                <div class="row g-0 mt-1" style="font-size: 0.75rem;">
+                                                                    <div class="col-6" style="color: {{ $buyerGetScoreColor($buyerLatestCounterScore['services_match_percent']) }};">Services {{ $buyerLatestCounterScore['services_match_percent'] }}%</div>
+                                                                    <div class="col-6" style="color: {{ $buyerGetScoreColor($buyerLatestCounterScore['terms_match_percent']) }};">Terms {{ $buyerLatestCounterScore['terms_match_percent'] }}%</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    @else
+                                                    {{-- SINGLE SCORE --}}
+                                                    <div class="mb-2">
+                                                        <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
+                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                        </span>
+                                                    </div>
+                                                    <div class="p-2 rounded mb-2" style="background: #fff; border: 1px solid #dee2e6;">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold" style="color: #6c757d;">Original Match</span>
+                                                            <span class="badge" style="background: {{ $buyerTotalScoreColor }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $buyerTotalScore }}%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="p-2 rounded mb-2" style="background: #fff; border: 1px solid #dee2e6;">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold" style="color: #6c757d;">Services %</span>
+                                                            <span class="badge" style="background: {{ $buyerGetScoreColor($buyerServicesScore) }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $buyerServicesScore }}%</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="p-2 rounded mb-2" style="background: #fff; border: 1px solid #dee2e6;">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <span class="small fw-semibold" style="color: #6c757d;">Terms %</span>
+                                                            <span class="badge" style="background: {{ $buyerGetScoreColor($buyerBrokerScore) }}; font-size: 0.8rem; padding: 3px 8px; color: white;">{{ $buyerBrokerScore }}%</span>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                    <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
+                                                        <i class="fa fa-info-circle me-1"></i>Added services or terms do not increase either score. Commission and fee details are not visible to competing agents.
+                                                    </div>
+                                                </div>
+                                                @endif
+                                                @endif
                                             </div>
                                         </div>
                                         <!-- End  -->
