@@ -20,7 +20,7 @@
                 <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
                     <h4 class="mb-0">
                         <i class="fas fa-exchange-alt me-2"></i>
-                        Agent's Counter Terms
+                        Counter Terms
                     </h4>
                 </div>
                 <div class="card-body">
@@ -284,9 +284,11 @@
                             <h5 style="color: #049399; font-weight: 600; margin: 0;">
                                 <i class="fas fa-file-contract me-2"></i>
                                 @if($awaitingCounterResponse)
-                                Your Submitted Counter Offer
+                                    Your Submitted Counter Offer
+                                @elseif($counterPartyName === 'Agent')
+                                    Agent's Counter Terms
                                 @else
-                                Agent's Counter Terms
+                                    Listing Owner's Counter Terms
                                 @endif
                             </h5>
                             <span class="text-muted small">Last updated: {{ $activeCounter->updated_at->format('M d, Y h:i A') }}</span>
@@ -732,25 +734,33 @@
 
                         {{-- AGENT ACTIONS --}}
                         @if($viewerRole === 'agent' && !$bidIsTerminal)
-                        <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                            <i class="fas fa-reply me-2"></i>Counter Back
-                        </a>
-                        <form action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
-                                <i class="fas fa-check me-2"></i>Accept Counter
-                            </button>
-                        </form>
-                        <form action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
-                                <i class="fas fa-times me-2"></i>Reject Counter
-                            </button>
-                        </form>
+                            @if(!$awaitingCounterResponse)
+                            {{-- The listing owner submitted the latest counter — agent can respond --}}
+                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
+                            </a>
+                            <form action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
+                                    <i class="fas fa-check me-2"></i>Accept Counter
+                                </button>
+                            </form>
+                            <form action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
+                                    <i class="fas fa-times me-2"></i>Reject Counter
+                                </button>
+                            </form>
+                            @else
+                            {{-- Agent submitted the latest counter — waiting for the listing owner to respond --}}
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-clock me-2"></i>Your counter offer has been submitted. Waiting for the listing owner to respond.
+                            </div>
+                            @endif
                         @elseif($viewerRole === 'agent' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
                             This bid has been {{ $bidStatus }}.

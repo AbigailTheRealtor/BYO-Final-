@@ -1819,6 +1819,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 ->latest('updated_at')
                                 ->first();
                             
+                            // Latest counter submitted by the AGENT (TenantCounterBidding)
+                            $latestAgentCounterBid = \App\Models\TenantCounterBidding::with('meta')
+                                ->where('tenant_agent_auction_bid_id', $bid->id)
+                                ->latest('created_at')
+                                ->first();
+                            
+                            // Determine which party submitted the most recent counter
+                            $latestCounterByAgent = $latestAgentCounterBid && (
+                                !$latestTenantCounter ||
+                                $latestAgentCounterBid->created_at > $latestTenantCounter->updated_at
+                            );
+                            $latestCounterByOwner = $latestTenantCounter && (
+                                !$latestAgentCounterBid ||
+                                $latestTenantCounter->updated_at >= $latestAgentCounterBid->created_at
+                            );
+                            $hasAnyCounter = !is_null($latestTenantCounter) || !is_null($latestAgentCounterBid);
+                            
                             // === CENTRALIZED TENANT BASELINE DATA ===
                             // This is used when comparing against the tenant's terms (original or counter)
                             $tenantBaselineData = [];
@@ -1995,17 +2012,23 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <hr style="margin: 0 0 15px 0; border-color: #e0e0e0;">
 
                                 {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
-                                @if ($latestTenantCounter && ($isListingOwner || $isBidOwner))
+                                @if ($hasAnyCounter && ($isListingOwner || $isBidOwner))
                                 <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                      style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                     <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
-                                        @if ($isListingOwner)
+                                        @if ($isListingOwner && $latestCounterByOwner)
                                             <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
                                             <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
-                                        @elseif ($isBidOwner)
+                                        @elseif ($isListingOwner && $latestCounterByAgent)
+                                            <strong>Counter Offer Received.</strong> The agent has responded to your counter offer.
+                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner && $latestCounterByOwner)
                                             <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
                                             <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner && $latestCounterByAgent)
+                                            <strong>Your Counter Offer Was Submitted.</strong> Waiting for the listing owner to respond.
+                                            <span class="text-muted ms-1">You can view it in <em>Counter Bidding History</em> below.</span>
                                         @endif
                                     </div>
                                 </div>
@@ -3443,10 +3466,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <i class="fa fa-clock me-1"></i> Listing has expired - no further actions available. You can extend the expiration date by editing the listing.
                                                         </div>
                                                         @endif
-                                                    @elseif ($isListingOwner && $latestTenantCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
-                                                    {{-- Counter submitted: owner already sent a counter offer --}}
+                                                    @elseif ($isListingOwner && $hasAnyCounter && $latestCounterByOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                    {{-- Owner submitted the latest counter — waiting for agent to respond --}}
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-exchange-alt me-1"></i> You have submitted a counter offer for this bid.
+                                                        <i class="fa fa-exchange-alt me-1"></i> You have submitted a counter offer for this bid. Waiting for the agent to respond.
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                         <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
@@ -3454,6 +3477,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </a>
                                                         <a href="{{ route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
                                                             <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                        </a>
+                                                    </div>
+                                                    @elseif ($isListingOwner && $hasAnyCounter && $latestCounterByAgent && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                    {{-- Agent replied to owner's counter — owner needs to respond in Counter Bidding History --}}
+                                                    <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                        <i class="fa fa-exchange-alt me-1"></i> The agent has responded to your counter offer. Review and respond in <em>Counter Bidding History</em> below.
+                                                    </div>
+                                                    <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
+                                                        <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
                                                         </a>
                                                     </div>
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
@@ -3492,12 +3525,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                                                     {{-- ── Agent (bid owner): state-based footer — mirrors Seller reference ── --}}
                                                     @if (!$isListingOwner && $isBidOwner)
-                                                        @if ($latestTenantCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
-                                                        {{-- Counter exists: agent sees notice + View Counter Terms --}}
+                                                        @if ($hasAnyCounter && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                                        {{-- Counter exists: show correct message based on who submitted most recently --}}
+                                                        @if ($latestCounterByOwner)
+                                                        {{-- Owner submitted the latest counter — agent should respond --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-exchange-alt me-1"></i>
                                                             {{ trim(data_get($auction, 'user.first_name', '') . ' ' . data_get($auction, 'user.last_name', '')) }} has submitted a counter offer.
                                                         </div>
+                                                        @elseif ($latestCounterByAgent)
+                                                        {{-- Agent submitted the latest counter — waiting for owner to respond --}}
+                                                        <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+                                                            <i class="fa fa-exchange-alt me-1"></i>
+                                                            Your counter offer has been submitted. Waiting for the listing owner to respond.
+                                                        </div>
+                                                        @endif
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                             <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
                                                                 <i class="fa fa-eye me-1"></i> View Counter Terms

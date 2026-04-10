@@ -1,0 +1,152 @@
+Pasted-TENANT-COUNTER-BID-FLOW-ROLE-STATUS-MESSAGE-ACTION-AUDI_1775786067656.txt
+TENANT COUNTER BID FLOW — ROLE / STATUS / MESSAGE / ACTION AUDIT + FIX
+READ FULLY BEFORE MAKING ANY CHANGES
+
+We have major inconsistencies in the Tenant counter bid flow for BOTH sides:
+1. Tenant / listing creator side
+2. Agent / bidder side
+
+This is not a one-line wording issue.
+This is a full role/state/message/action audit and correction for the Tenant counter bid flow.
+
+CURRENT CONFIRMED PROBLEMS
+
+Across the Tenant listing page, bid card, modal, and View Counter Terms pages, the system is showing contradictory or incorrect behavior such as:
+
+- “Agent submitted a counter bid” in one place
+- “Counter Offer Received” in another
+- “Test User has submitted a counter offer” in another
+- “Your counter offer has been submitted. Awaiting the tenant’s response.” even when the page/action state does not match
+- Agent-side page showing owner-side action buttons like:
+  - Counter Back
+  - Accept Counter
+  - Reject Counter
+  - View Listing
+  when those actions are not appropriate for that role/state
+
+This means the Tenant flow has role/state/message/action desync.
+
+GOAL
+
+Fix the Tenant counter bid flow so BOTH sides behave correctly and consistently:
+
+A. Listing creator / Tenant side
+B. Agent bidder side
+
+The system must correctly determine:
+- who submitted the latest counter
+- who is now expected to respond
+- what message should be shown
+- what action buttons should be shown
+- what message should NOT be shown
+
+We need the Tenant flow fully corrected first.
+After that, we will audit Seller / Buyer / Landlord for parity.
+
+IMPORTANT RULE
+
+Use the ACTUAL latest counter state and current viewer role as the source of truth.
+
+Do NOT rely on stale text, copied wording, or generic counter labels.
+
+For every Tenant counter bid page/state, the system should always answer these 3 questions correctly:
+
+1. Who submitted the latest counter?
+2. Who needs to respond now?
+3. What actions are allowed for the current viewer?
+
+SCOPE
+
+Audit and fix ONLY the Tenant counter bid flow first, including all directly related Tenant bid/counter UI surfaces that display:
+- bid status text
+- counter notices
+- “counter offer received” style banners
+- “your counter offer has been submitted” style banners
+- action buttons
+- View Bid / View Counter Terms / View Listing related state messaging
+- any Tenant-specific bid card / modal / view-counter page that participates in the current broken flow
+
+OUT OF SCOPE — DO NOT TOUCH YET
+
+Do not do broad parity work on Seller / Buyer / Landlord yet.
+Do not change:
+- counter submission logic itself unless a display/state variable is provably wrong
+- routes
+- schema or migrations
+- notifications system globally
+- accepted bid summary
+- unrelated listing creation/edit flows
+- global CSS / redesign
+- business logic outside Tenant counter role/state handling
+
+If a later cross-role audit is needed, report it separately after Tenant is corrected.
+
+TENANT FLOW — REQUIRED CORRECT BEHAVIOR
+
+We need the correct behavior for these two sides:
+
+==================================================
+1. TENANT / LISTING CREATOR VIEW
+==================================================
+
+If the AGENT submitted the latest counter:
+- Tenant should see a message equivalent to:
+  “Agent has submitted a counter offer.”
+  or
+  “Counter Offer Received.”
+
+- Tenant should be able to:
+  - Accept Counter
+  - Counter Back
+  - Reject Counter
+  - View Listing
+  as appropriate for the current active state
+
+Tenant should NOT see:
+- “Your counter offer has been submitted. Awaiting the tenant’s response.”
+because Tenant is not waiting on themself
+
+If the TENANT submitted the latest counter:
+- Tenant should see a waiting message equivalent to:
+  “Your counter offer has been submitted. Awaiting the agent’s response.”
+
+- Tenant should NOT see owner-side response buttons if they are waiting on the agent
+
+==================================================
+2. AGENT VIEW
+==================================================
+
+If the TENANT submitted the latest counter:
+- Agent should see:
+  “Counter Offer Received.”
+  or equivalent wording that clearly means the listing owner / tenant submitted the latest counter and the agent now must respond
+
+- Agent should be able to:
+  - Accept Counter
+  - Counter Back
+  - Reject Counter
+  - View Listing
+  as appropriate for the current active state
+
+Agent should NOT see:
+- “Your counter offer has been submitted. Awaiting the tenant’s response.”
+because in this case the tenant submitted the latest counter
+
+If the AGENT submitted the latest counter:
+- Agent should see:
+  “Your counter offer has been submitted. Awaiting the tenant’s response.”
+
+- Agent should NOT see response buttons while waiting on the tenant
+
+==================================================
+3. CORE ROLE / STATE RULE
+==================================================
+
+The latest counter submitter determines the waiting state.
+
+If latest counter user == current viewer:
+- show waiting message
+- hide response actions
+
+If latest counter user != current viewer:
+-...
