@@ -1,0 +1,480 @@
+Paste this into Replit exactly:
+
+---
+
+**CROSS AGENT BID VISIBILITY RULE — ALL 4 HIRE FLOWS**
+**SELLER / BUYER / LANDLORD / TENANT**
+**READ FULLY BEFORE MAKING ANY CHANGES**
+
+## Goal
+
+Apply one consistent privacy rule across all 4 Hire an Agent listing types:
+
+* Hire a Seller’s Agent
+* Hire a Buyer’s Agent
+* Hire a Landlord’s Agent
+* Hire a Tenant’s Agent
+
+### Final visibility rule
+
+#### Listing owner can:
+
+* see all agent bid cards
+* click **View Bid**
+* click **View Counter Terms**
+* see each agent’s full bid details
+* see each agent’s full counter history / counter terms
+
+#### Agents can:
+
+* fully view **their own** bid and own counter flow
+* see a **limited summary only** for other agents’ bids on that same listing
+
+### Limited summary agents may see for other agents
+
+Only this information may be visible from other agents’ bids:
+
+* **Offered Services: X/X matched**
+* **Terms Match: X/X matched**
+* **— affects match score**
+* **Match Summary**
+* **Original Match %**
+* **vs. Listing Owner’s Original Request**
+* **Services %**
+* **Terms %**
+* **Counter Match %**
+* **vs. Your Latest Counter**
+* **Services %**
+* **Terms %**
+* **Added services or terms do not increase either score**
+
+### Agents must NOT see from other agents
+
+* full offered service checklist
+* full terms content
+* full bid amounts / commission details / fee details
+* full counter terms
+* counter bid history
+* private notices intended for that bid owner
+* action buttons for another agent’s bid
+* View Bid button for another agent’s bid
+* View Counter Terms button for another agent’s bid
+* any full text of Additional Terms or custom text fields
+
+---
+
+## Also fix stable agent numbering
+
+For every listing page:
+
+* each actual bidding agent must keep one stable label:
+
+  * Agent 1
+  * Agent 2
+  * Agent 3
+* the same real agent must never become Agent 1 in one section and Agent 2 in another
+* the listing owner must never be labeled as Agent 1 / Agent 2
+
+This rule must apply consistently anywhere multiple bid cards are shown on the same listing page.
+
+---
+
+## Hard safeguards
+
+* Do **not** change database schema
+* Do **not** rename routes
+* Do **not** modify bid submission logic
+* Do **not** modify counter submission logic
+* Do **not** modify acceptance / rejection logic
+* Do **not** change match score formulas
+* Do **not** change service-count logic
+* Do **not** change terms-match formulas
+* Do **not** change notifications
+* Do **not** alter owner permissions
+* Do **not** expose new private bid data to agents
+* Do **not** remove owner ability to view full bid and counter terms
+* Do **not** break agent ability to fully view their own bid and own counter flow
+* Preserve existing CSS and card layout as much as possible
+* Stop and report if different roles use different partials or controllers and cannot safely be aligned without a second pass
+
+---
+
+# PART 1 — DEFINE THE PER CARD VIEWER MODE
+
+For each bid card on each listing page, determine one of these 3 modes:
+
+1. **listing_owner_viewing_any_bid**
+2. **agent_viewing_own_bid**
+3. **agent_viewing_other_agent_bid**
+
+Use actual variables from the page, but logic should be equivalent to:
+
+```php
+@php
+$isListingOwner = auth()->id() === $auction->user_id;
+$isOwnBid = auth()->id() === $bid->user_id;
+$isOtherAgentsBid = !$isListingOwner && !$isOwnBid;
+@endphp
+```
+
+Do not guess variable names. Use the real page variables.
+
+---
+
+# PART 2 — OWNER STILL SEES FULL BID + FULL COUNTER DATA
+
+If viewer is listing owner:
+
+* keep current full behavior
+* keep View Bid button
+* keep View Counter Terms button
+* keep full bid content
+* keep full counter details and history
+
+Do not reduce owner visibility.
+
+This is important:
+Only the user who created the listing should be able to click and fully inspect every agent’s full bid and counter terms.
+
+---
+
+# PART 3 — AGENT VIEW RULES
+
+## A. Agent viewing their own bid
+
+Preserve current own-bid visibility:
+
+* full offered services details
+* full terms details
+* full counter flow
+* own private notices
+* View Bid button
+* View Counter Terms button when applicable
+* full history/actions that already belong to that agent’s own bid
+
+Do not reduce own-bid access.
+
+---
+
+## B. Agent viewing another agent’s bid
+
+Do **not** show the full bid card body.
+
+Instead, show only a limited comparison summary block.
+
+### Allowed visible content for other agents’ bids
+
+Only render these sections:
+
+1. **Offered Services: X/X matched**
+2. **Terms Match: X/X matched**
+3. **— affects match score**
+4. **Match Summary**
+
+   * Original Match %
+   * vs. Listing Owner’s Original Request
+   * Services %
+   * Terms %
+   * Counter Match %
+   * vs. Your Latest Counter
+   * Services %
+   * Terms %
+   * Added services or terms do not increase either score
+
+### Must not render for other agents’ bids
+
+Remove or hide for `agent_viewing_other_agent_bid`:
+
+* full offered services checklist bullets
+* any private modal / private info box
+* full commission / compensation / fee details
+* full terms text
+* full counter terms text
+* counter history / counter timeline
+* Accept / Counter / Reject actions
+* View Bid button
+* View Counter Terms button
+* notices intended only for the bid owner
+* Additional Terms text
+* custom service text
+* any route/button that opens full details for another agent’s bid
+
+---
+
+# PART 4 — FIX THE BID CARD RENDER BRANCHING
+
+Find the bid-card rendering blocks for:
+
+* Tenant listing page
+* Buyer listing page
+* Seller listing page
+* Landlord listing page
+
+Likely these are separate Blade files or per-role view files.
+
+Do not assume one shared file. Confirm actual files first.
+
+For each card, convert the rendering into this structure:
+
+```php
+@if($isListingOwner)
+    {{-- full bid card for owner --}}
+@elseif($isOwnBid)
+    {{-- full bid card for logged-in agent's own bid --}}
+@else
+    {{-- limited other-agent comparison summary only --}}
+@endif
+```
+
+### Important
+
+Do not try to patch this by hiding single buttons only.
+The entire bid card body needs a clean role-based split.
+
+---
+
+# PART 5 — LIMITED OTHER AGENT SUMMARY BLOCK
+
+For `agent_viewing_other_agent_bid`, render a compact summary card using already-calculated values.
+
+Use the existing computed numbers already available on the card if possible:
+
+* offered services matched count
+* terms matched count
+* original match %
+* counter match %
+* services %
+* terms %
+
+Do not recalculate formulas unless absolutely necessary.
+Do not introduce new score logic.
+
+### Wording
+
+Use the same wording already used on your cards where possible, but make sure the summary only contains the allowed content.
+
+### Heading
+
+The card header should still identify the alias, for example:
+
+* Agent 1
+* Agent 2
+
+But it must not reveal full bid details.
+
+---
+
+# PART 6 — STABLE AGENT ALIAS MAP
+
+Build one stable alias map per listing page and reuse it everywhere on that page.
+
+## Rules
+
+* only actual agent bidders get aliases
+* exclude listing owner user_id
+* same real agent keeps same alias everywhere on that page
+* do not regenerate aliases per section, per accordion, or per modal
+
+Use actual collection names from the page, but logic should be equivalent to:
+
+```php
+@php
+$agentAliasMap = [];
+$agentIndex = 1;
+
+$uniqueAgentBidders = collect($bids)
+    ->filter(fn($b) => $b->user_id !== $auction->user_id)
+    ->sortBy([
+        ['created_at', 'asc'],
+        ['id', 'asc'],
+        ['user_id', 'asc'],
+    ])
+    ->pluck('user_id')
+    ->unique()
+    ->values();
+
+foreach ($uniqueAgentBidders as $agentUserId) {
+    $agentAliasMap[$agentUserId] = 'Agent ' . $agentIndex;
+    $agentIndex++;
+}
+@endphp
+```
+
+Then everywhere on that page that prints the bidder label, use:
+
+```php
+{{ $agentAliasMap[$bid->user_id] ?? 'Agent' }}
+```
+
+### Remove bad numbering sources
+
+Do not use:
+
+* `$loop->iteration`
+* per-section counters
+* numbering inside filtered subsections
+* independent alias maps in accordions / modals / counter history sections
+
+That is what causes the same real agent to become Agent 1 in one place and Agent 2 in another.
+
+---
+
+# PART 7 — BUTTON / ROUTE VISIBILITY RULES
+
+## Listing owner
+
+Keep:
+
+* View Bid
+* View Counter Terms
+* full bid inspection routes
+
+## Agent on own bid
+
+Keep:
+
+* View Bid
+* View Counter Terms if applicable
+* own actions and own notices
+
+## Agent on other agent bid
+
+Hide:
+
+* View Bid
+* View Counter Terms
+* Accept / Counter / Reject
+* any route/button exposing private details
+
+This is critical.
+
+Agents must only compare the score summary of competitors, not inspect their actual bid terms.
+
+---
+
+# PART 8 — COUNTER HISTORY PRIVACY
+
+For `agent_viewing_other_agent_bid`:
+
+* do not render counter bidding history
+* do not render latest counter terms text
+* do not render private counter notices intended for that agent’s own negotiation
+
+If there is currently a counter history accordion or section showing for other agents, suppress that whole section in other-agent mode.
+
+Owner still sees all of it.
+Own-bid agent still sees their own.
+
+---
+
+# PART 9 — MATCH SUMMARY TEXT
+
+Where the limited comparison card shows Match Summary, keep the explanation:
+
+* **Added services or terms do not increase either score**
+
+Preserve this wording if it already exists.
+Do not remove it from the limited competitor summary.
+
+---
+
+# PART 10 — APPLY TO ALL 4 HIRE FLOWS
+
+Implement the same visibility rule for:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+### Important
+
+You may need to edit separate role-specific view files.
+Do not stop after fixing only one role.
+
+But keep changes surgical:
+
+* only listing bid view pages / bid card partials
+* only alias map and visibility branching
+* no schema or controller refactor unless absolutely required
+
+---
+
+# QA CHECKLIST
+
+## A. Listing owner view, all 4 roles
+
+For Tenant, Buyer, Seller, Landlord listings:
+
+* owner sees all agent bids
+* owner can click View Bid for all bids
+* owner can click View Counter Terms where applicable
+* owner sees full bid details and full counter data
+
+## B. Agent own-bid view, all 4 roles
+
+For Tenant, Buyer, Seller, Landlord listings:
+
+* agent fully sees their own bid
+* agent fully sees their own counter flow
+* own View Bid button works
+* own View Counter Terms works when applicable
+
+## C. Agent other-agent view, all 4 roles
+
+For Tenant, Buyer, Seller, Landlord listings:
+
+* agent can see competitor card alias only
+* agent can see only:
+
+  * Offered Services matched count
+  * Terms Match count
+  * affects match score note
+  * Match Summary
+  * Original Match %
+  * Counter Match %
+  * Services %
+  * Terms %
+  * Added services or terms do not increase either score
+* agent cannot see:
+
+  * full bid details
+  * full terms
+  * compensation details
+  * counter history
+  * View Bid
+  * View Counter Terms
+  * actions
+
+## D. Stable alias test
+
+On each listing page with multiple bids:
+
+* same real agent stays the same alias everywhere on the page
+* Agent 1 does not become Agent 2 elsewhere
+* listing owner is never labeled as an agent
+
+## E. Regression
+
+Verify:
+
+* no PHP errors
+* no duplicate cards
+* accordions still work
+* own bid routes still work
+* owner routes still work
+* no privacy leakage
+
+---
+
+# Deliverable
+
+After the fix, report back with:
+
+1. exact files changed for each role
+2. where full competitor bid details were previously leaking or rendering
+3. how the limited other-agent summary branch was implemented
+4. where alias numbering was previously unstable
+5. QA results for owner view, own-bid agent view, other-agent limited view, and alias consistency across all 4 roles
+
+---
