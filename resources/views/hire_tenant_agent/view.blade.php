@@ -2037,8 +2037,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                             <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
                                             <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
                                         @elseif ($isBidOwner && $latestCounterByAgent)
-                                            <strong>Your counter offer has been submitted.</strong> Waiting for the listing owner to respond.
-                                            <span class="text-muted ms-1">You can view it in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
                                         @endif
                                     </div>
                                 </div>

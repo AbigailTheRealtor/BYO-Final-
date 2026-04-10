@@ -1093,54 +1093,6 @@
                     </div>
                     @endif
 
-                    {{-- Agent Counter-Back Section --}}
-                    {{-- Only show for agent viewing (seller already sees agent counter-back as main panel above) --}}
-                    @if($agentCounterBack && $viewerRole === 'agent')
-                    @php
-                        $agentCounterData = $agentCounterBack->getAllMeta();
-                        $agentPurchaseFeeType = data_get($agentCounterData, 'purchase_fee_type', '');
-                        $agentPurchaseFeeFlat = data_get($agentCounterData, 'purchase_fee_flat', '');
-                        $agentPurchaseFeePerc = data_get($agentCounterData, 'purchase_fee_percentage', '');
-                        $agentPurchaseFeePercCombo = data_get($agentCounterData, 'purchase_fee_percentage_combo', '');
-                        $agentPurchaseFeeFlatCombo = data_get($agentCounterData, 'purchase_fee_flat_combo', '');
-                        $agentPurchaseFeeOther = data_get($agentCounterData, 'purchase_fee_other', '');
-                        $agentPurchaseFeeDisplay = '-';
-                        if ($agentPurchaseFeeType === 'flat' && $agentPurchaseFeeFlat) {
-                            $agentPurchaseFeeDisplay = $fmtMoney($agentPurchaseFeeFlat) ?? '-';
-                        } elseif ($agentPurchaseFeeType === 'percentage' && $agentPurchaseFeePerc) {
-                            $agentPurchaseFeeDisplay = ($fmtPercent($agentPurchaseFeePerc) ?? '-') . ' of Total Purchase Price';
-                        } elseif ($agentPurchaseFeeType === 'combo') {
-                            $agentPurchaseFeeDisplay = $joinParts([
-                                $agentPurchaseFeePercCombo ? ($fmtPercent($agentPurchaseFeePercCombo) . ' of Total Purchase Price') : null,
-                                $fmtMoney($agentPurchaseFeeFlatCombo),
-                            ]) ?? '-';
-                        } elseif ($agentPurchaseFeeType === 'other' && $agentPurchaseFeeOther) {
-                            $agentPurchaseFeeDisplay = $agentPurchaseFeeOther;
-                        }
-                    @endphp
-                    <div class="mb-4 p-3" style="background: #fff8e1; border-left: 4px solid #ffc107; border-radius: 6px;">
-                        <h5 style="color: #7a5f00; font-weight: 600; margin-bottom: 8px;">
-                            <i class="fas fa-reply me-2"></i>Agent's Counter-Back
-                        </h5>
-                        <p class="text-muted small mb-2">Submitted: {{ $agentCounterBack->created_at->format('M d, Y h:i A') }}</p>
-                        @if($agentPurchaseFeeType)
-                        <p class="mb-1"><span class="fw-semibold">Seller's Broker Purchase Fee:</span> {{ $agentPurchaseFeeDisplay }}</p>
-                        @endif
-                        @if(data_get($agentCounterData, 'commission_structure'))
-                        <p class="mb-1"><span class="fw-semibold">Buyer's Broker Commission Structure:</span> {{ data_get($agentCounterData, 'commission_structure') }}</p>
-                        @endif
-                        @if(data_get($agentCounterData, 'brokerage_relationship'))
-                        <p class="mb-1"><span class="fw-semibold">Brokerage Relationship:</span> {{ data_get($agentCounterData, 'brokerage_relationship') }}</p>
-                        @endif
-                        @if(data_get($agentCounterData, 'agency_agreement_timeframe'))
-                        <p class="mb-1"><span class="fw-semibold">Agency Agreement Timeframe:</span> {{ data_get($agentCounterData, 'agency_agreement_timeframe') }}</p>
-                        @endif
-                        @if(data_get($agentCounterData, 'additional_details_broker'))
-                        <p class="mb-0"><span class="fw-semibold">Additional Terms:</span> {{ data_get($agentCounterData, 'additional_details_broker') }}</p>
-                        @endif
-                    </div>
-                    @endif
-
                     {{-- Action area --}}
                     <div class="d-flex gap-2 flex-wrap mt-4">
 
@@ -1193,19 +1145,19 @@
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $agentCounterBack->id }}">
                                 <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fas fa-check me-2"></i>Accept Counter-Back
+                                    <i class="fas fa-check me-2"></i>Accept Counter
                                 </button>
                             </form>
                             <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
-                               class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
-                                <i class="fa fa-edit me-2"></i>Edit/Revise Counter Terms
+                               class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:10px 20px;font-weight:600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
                             </a>
                             <form action="{{ route('hire.seller.agent.auction.counter.reject') }}" method="post"
                                   onsubmit="return confirm('Reject the agent\'s counter-back?');">
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $agentCounterBack->id }}">
                                 <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fas fa-times me-2"></i>Reject Counter-Back
+                                    <i class="fas fa-times me-2"></i>Reject Counter
                                 </button>
                             </form>
                             @elseif($activeStage === 'agent_needs_response')
