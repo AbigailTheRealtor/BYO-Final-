@@ -1,0 +1,285 @@
+Paste this into Replit exactly:
+
+---
+
+**BID CARD COUNTER NOTICE FIX — WRONG MESSAGE ON BOTH SIDES**
+**TENANT FLOW FIRST**
+**READ FULLY BEFORE MAKING ANY CHANGES**
+
+## Problem
+
+On the Tenant listing bid card, both sides are currently showing the same counter notice:
+
+* **“Counter Offer Received…”**
+
+That is wrong.
+
+From the live screenshots:
+
+### Current broken behavior
+
+* **Tenant / listing owner side**: shows “Counter Offer Received…”
+  This is correct when the agent submitted the latest counter-back.
+* **Agent side**: also shows “Counter Offer Received…”
+  This is wrong when the agent was the one who submitted the latest counter-back.
+
+### Correct behavior
+
+If the **agent submitted the most recent counter**:
+
+* **Agent view** should show a waiting message:
+
+  * `Your counter offer has been submitted. Waiting for the tenant to respond.`
+* **Tenant / listing owner view** should show a received message:
+
+  * `Counter Offer Received. The agent has responded to your counter offer...`
+
+If the **tenant submitted the most recent counter**:
+
+* **Tenant / listing owner view** should show a waiting message
+* **Agent view** should show a received message
+
+---
+
+## Scope
+
+Fix the **Tenant listing bid card counter notice only** first.
+
+### Allowed files
+
+Only inspect and edit the minimum Tenant files needed, likely:
+
+* `resources/views/hire_tenant_agent/view.blade.php`
+* any Tenant-only partial used by the bid card notice block
+
+Do **not** assume exact file names blindly. Confirm the actual render file first.
+
+---
+
+## Hard safeguards
+
+* Do **not** change database schema
+* Do **not** rename routes
+* Do **not** modify controllers unless absolutely required
+* Do **not** change View Counter Terms page logic
+* Do **not** change match score logic
+* Do **not** change offered services / terms blocks
+* Do **not** change action button logic in this pass
+* Do **not** touch Buyer, Seller, or Landlord yet
+* Do **not** remove any existing notice styling classes
+* Preserve current card layout and styling
+* Stop and report if the bid card does not have access to the latest counter submitter
+
+---
+
+# Goal
+
+Fix the **bid card counter notice** so it is based on:
+
+1. who is viewing
+2. who submitted the latest counter
+
+The bid card must stop using a generic “counter exists = Counter Offer Received” rule.
+
+---
+
+# Step 1 — Find the exact Tenant bid card notice block
+
+Search in the Tenant listing page / Tenant bid card render path for:
+
+* `Counter Offer Received`
+* `The listing owner has sent you a counter offer`
+* `The agent has responded to your counter offer`
+* `Counter Bidding History`
+
+You are looking for the yellow counter notice block on the bid card, not the View Counter Terms page.
+
+Do not edit the counter terms page in this pass.
+
+---
+
+# Step 2 — Confirm what variables already exist in the bid card context
+
+Before changing anything, confirm what the bid card already has access to, such as:
+
+* `$auction`
+* `$bid`
+* `$latestTenantCounter`
+* `$latestAgentCounterBid`
+* `$counterTerms`
+* any `submitted_by` or equivalent field
+* any existing owner / agent booleans
+
+Do not guess. Reuse the real variables that already exist if possible.
+
+---
+
+# Step 3 — Add unified viewer / latest-counter state above the bid-card notice block
+
+Using the real variables already available in the Tenant view, compute the state needed for the notice.
+
+Use this logic pattern, adapted to the real variable names:
+
+```php
+@php
+$isListingOwner = auth()->id() === $auction->user_id;
+$viewerRole = $isListingOwner ? 'tenant' : 'agent';
+
+/*
+Use the actual latest counter record already available in this page.
+Prefer the most recent counter object already being used by the page.
+Do not invent a new query if not needed.
+*/
+$latestCounter = $latestAgentCounterBid ?? $latestTenantCounter ?? null;
+
+$hasCounter = !empty($latestCounter);
+
+/*
+Use the actual stored submitted_by values.
+If the app stores 'agent' and 'tenant', use those.
+If it stores something else, match the real values exactly.
+*/
+$lastActionBy = $latestCounter->submitted_by ?? null;
+
+$awaitingResponse =
+    ($lastActionBy === 'agent' && $viewerRole === 'tenant') ||
+    ($lastActionBy === 'tenant' && $viewerRole === 'agent');
+
+$waitingOnOtherSide =
+    ($lastActionBy === 'agent' && $viewerRole === 'agent') ||
+    ($lastActionBy === 'tenant' && $viewerRole === 'tenant');
+@endphp
+```
+
+### Important
+
+If the page already has equivalent variables, reuse them.
+Do not create duplicate competing state variables unless necessary.
+
+---
+
+# Step 4 — Replace the broken generic bid-card notice with role-aware notice logic
+
+Right now the bid card is likely doing some version of:
+
+* if counter exists → show “Counter Offer Received”
+
+That is the bug.
+
+Replace the bid-card notice logic so it behaves like this:
+
+```php
+@if($hasCounter)
+    @if($waitingOnOtherSide)
+        <div class="...existing waiting/info classes if available...">
+            <strong>Your counter offer has been submitted.</strong>
+            Waiting for the {{ $viewerRole === 'agent' ? 'tenant' : 'agent' }} to respond.
+        </div>
+    @elseif($awaitingResponse)
+        <div class="...existing received notice classes...">
+            <strong>Counter Offer Received.</strong>
+            The {{ $viewerRole === 'agent' ? 'tenant' : 'agent' }} has sent you a counter offer on this bid.
+            Review and respond in <em>Counter Bidding History</em> below.
+        </div>
+    @endif
+@endif
+```
+
+### Wording requirements
+
+For Tenant flow, use the correct role wording:
+
+* tenant side receiving agent response:
+
+  * `The agent has responded to your counter offer...`
+* agent side receiving tenant counter:
+
+  * `The listing owner has sent you a counter offer...` or `The tenant has sent you a counter offer...`
+
+Use whichever wording already matches the rest of the Tenant UI, but it must be role-correct.
+
+### Most important rule
+
+If the **agent submitted the latest counter**, the **agent must NOT see “Counter Offer Received.”**
+
+---
+
+# Step 5 — Preserve styling and card structure
+
+Do not redesign the card.
+
+Keep:
+
+* same notice location
+* same yellow notice styling for received-state if currently used
+* same spacing
+* same accordion/card structure
+
+Only fix the message logic.
+
+---
+
+# Step 6 — Do not touch action buttons in this pass
+
+This task is only the bid-card notice message.
+
+Do not change:
+
+* Accept
+* Counter
+* Reject
+* View Bid
+* View Counter Terms
+
+Unless the notice block is directly coupled to those controls and cannot render without a tiny adjustment. If so, make the smallest possible change and report it.
+
+---
+
+# QA checklist
+
+Use the same Tenant bid/counter thread shown in the screenshots.
+
+## Scenario A — Agent submitted the latest counter-back
+
+Verify:
+
+* **Tenant / listing owner side** bid card shows:
+
+  * `Counter Offer Received...`
+* **Agent side** bid card shows:
+
+  * `Your counter offer has been submitted. Waiting for the tenant to respond.`
+* Agent side must **not** show `Counter Offer Received`
+
+## Scenario B — Tenant submits the next counter
+
+Verify:
+
+* **Tenant side** now shows waiting message
+* **Agent side** now shows received message
+
+## Scenario C — Regression check
+
+Verify:
+
+* View Counter Terms pages are unchanged
+* Bid card styling remains intact
+* no PHP errors
+* no duplicate notice blocks
+* no blank notice state when a counter exists
+
+---
+
+# Deliverable
+
+After the fix, report back with:
+
+1. exact file(s) changed
+2. what the old broken condition was
+3. what real variable was used to determine who submitted the latest counter
+4. results of Scenario A and Scenario B
+5. confirmation that View Counter Terms pages were not changed
+
+---
+
+Once Tenant is confirmed correct, then we will replicate the same notice logic to Buyer, Seller, and Landlord.
