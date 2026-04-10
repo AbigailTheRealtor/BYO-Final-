@@ -527,49 +527,78 @@
                         </div>
                         @endif
 
-                        {{-- ===== A) Broker Lease Fee (Landlord's commission from landlord) ===== --}}
-                        @if (!empty($counterData['purchase_fee_type']))
+                        {{-- ===== BROKER COMPENSATION & AGENCY AGREEMENT TERMS ===== --}}
+                        @php
+                            $pft = $counterData['purchase_fee_type'] ?? '';
+                            $hasBrokerCompSection = !empty($pft)
+                                || !empty($counterData['broker_fee_timing'])
+                                || !empty($counterData['renewal_fee_type'])
+                                || !empty($counterData['expansion_commission_percentage'])
+                                || !empty($counterData['tenant_broker_commission_structure'])
+                                || !empty($counterData['interested_in_property_management']);
+                        @endphp
+                        @if ($hasBrokerCompSection)
+                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                            <i class="fas fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                        </h6>
+                        @endif
+
+                        {{-- ===== A) Landlord's Broker Lease Fee ===== --}}
+                        @if (!empty($pft))
                         <div class="mb-4">
-                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                <i class="fas fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
-                            </h6>
-                            <div class="mb-4">
-                                <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Landlord's Broker Lease Fee</h6>
-                                <ul class="list-unstyled ps-3 mb-0">
-                                @php
-                                    $pft = $counterData['purchase_fee_type'] ?? '';
-                                    $pfDisplay = '—';
-                                    if ($pft === 'flat') {
-                                        $flatVal  = $counterData['purchase_fee_flat'] ?? null;
-                                        $flatType = $counterData['purchase_fee_flat_type'] ?? '$';
-                                        if ($flatType === '%') {
-                                            $pfDisplay = $fmtPercent($flatVal) ?? '—';
-                                        } else {
-                                            $pfDisplay = $fmtMoney($flatVal) ?? '—';
-                                        }
-                                        $period = $counterData['purchase_fee_rental_period'] ?? null;
-                                        if ($period) $pfDisplay .= ' (' . $period . ')';
-                                    } elseif ($pft === 'percentage_gross_lease') {
-                                        $pfDisplay = ($fmtPercent($counterData['purchase_fee_rental_period'] ?? null) ?? '—') . ' of Gross Lease Value';
-                                    } elseif ($pft === 'percentage_monthly_rent') {
-                                        $pfDisplay = ($fmtPercent($counterData['purchase_fee_rental_period'] ?? null) ?? '—') . ' of Monthly Rent';
-                                    } elseif ($pft === 'combo') {
-                                        $pfDisplay = $joinParts([
-                                            $fmtPercent($counterData['purchase_fee_percentage_combo'] ?? null),
-                                            $fmtMoney($counterData['purchase_fee_flat_combo'] ?? null),
-                                        ]) ?? '—';
-                                    } elseif ($pft === 'other') {
-                                        $pfDisplay = $counterData['purchase_fee_other'] ?? '—';
-                                    } else {
-                                        $pfDisplay = $pft;
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Landlord's Broker Lease Fee</h6>
+                            <ul class="list-unstyled ps-3 mb-0">
+                            @php
+                                // DB stores full human-readable labels — match them directly.
+                                $pfDisplay = $pft; // fallback: show type label
+                                if ($pft === 'Flat Fee') {
+                                    // Residential uses purchase_fee_flat; commercial uses purchase_fee_flat_commercial.
+                                    $flatVal = !empty($counterData['purchase_fee_flat'])
+                                        ? $counterData['purchase_fee_flat']
+                                        : ($counterData['purchase_fee_flat_commercial'] ?? null);
+                                    $pfDisplay = ($fmtMoney($flatVal) ?? '—') . ' Flat Fee';
+                                } elseif ($pft === 'Percentage of the Rent Due Each Rental Period') {
+                                    $pfDisplay = ($fmtPercent($counterData['purchase_fee_rental_period'] ?? null) ?? '—') . ' of Rent Due Each Rental Period';
+                                } elseif ($pft === 'Percentage of the Gross Lease Value') {
+                                    $pfDisplay = ($fmtPercent($counterData['purchase_fee_percentage_combo'] ?? null) ?? '—') . ' of Gross Lease Value';
+                                } elseif ($pft === "Percentage of the First Month's Rent") {
+                                    $pfDisplay = ($fmtPercent($counterData['purchase_fee_flat_combo'] ?? null) ?? '—') . " of First Month's Rent";
+                                } elseif ($pft === 'Percentage of the Net Aggregate Rent') {
+                                    $pfDisplay = ($fmtPercent($counterData['purchase_fee_net_aggregate'] ?? null) ?? '—') . ' of Net Aggregate Rent';
+                                } elseif ($pft === 'Percentage of the Gross Rent') {
+                                    $pfDisplay = ($fmtPercent($counterData['purchase_fee_gross_rent'] ?? null) ?? '—') . ' of Gross Rent';
+                                } elseif ($pft === "Percentage of Month's Rent") {
+                                    $_pctD = ($fmtPercent($counterData['purchase_fee_monthly_percentage'] ?? null) ?? '—') . " of Month's Rent";
+                                    if (!empty($counterData['purchase_fee_months'])) {
+                                        $_pctD .= ' × ' . $counterData['purchase_fee_months'] . ' Months';
                                     }
-                                @endphp
-                                    <li class="mb-2" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
-                                        <span class="fw-semibold">Broker Lease Fee:</span> {{ $pfDisplay }}
-                                        {!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}
-                                    </li>
-                                </ul>
-                            </div>
+                                    $pfDisplay = $_pctD;
+                                } elseif (strtolower($pft) === 'other') {
+                                    $pfDisplay = $counterData['purchase_fee_other'] ?? $counterData['purchase_fee_other_commercial'] ?? $pft;
+                                }
+                                // Sales Tax for Broker Lease Fee
+                                $_leaseTax = null;
+                                if ($pft === 'Percentage of the Gross Rent' && !empty($counterData['sales_tax_option_gross']) && $counterData['sales_tax_option_gross'] !== 'null') {
+                                    $_leaseTax = $counterData['sales_tax_option_gross'];
+                                } elseif ($pft === "Percentage of Month's Rent" && !empty($counterData['sales_tax_option_monthly']) && $counterData['sales_tax_option_monthly'] !== 'null') {
+                                    $_leaseTax = $counterData['sales_tax_option_monthly'];
+                                } elseif ($pft === 'Flat Fee' && !empty($counterData['sales_tax_option_flat']) && $counterData['sales_tax_option_flat'] !== 'null') {
+                                    $_leaseTax = $counterData['sales_tax_option_flat'];
+                                }
+                                $_leaseTaxDisplay = $_leaseTax
+                                    ? ($_leaseTax === 'including' ? 'Including Sales Tax' : ($_leaseTax === 'excluding' ? 'Excluding Sales Tax' : $_leaseTax))
+                                    : null;
+                            @endphp
+                                <li class="mb-2" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Broker Lease Fee:</span> {{ $pfDisplay }}
+                                    {!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @if ($_leaseTaxDisplay)
+                                <li class="mb-2">
+                                    <span class="fw-semibold">Sales Tax:</span> {{ $_leaseTaxDisplay }}
+                                </li>
+                                @endif
+                            </ul>
                         </div>
                         @endif
 
@@ -591,6 +620,155 @@
                                 <li class="mb-2">
                                     <span class="fw-semibold">Days After Lease Signing:</span> {{ $counterData['broker_fee_days_after_lease'] }}
                                 </li>
+                                @endif
+                            </ul>
+                        </div>
+                        @endif
+
+                        {{-- ===== B2) Renewal Fee ===== --}}
+                        @if (!empty($counterData['renewal_fee_type']))
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B2) Lease Renewal/Extension Fee</h6>
+                            <ul class="list-unstyled ps-3 mb-0">
+                            @php
+                                $rft = $counterData['renewal_fee_type'] ?? '';
+                                $rfDisplay = $rft;
+                                if ($rft === 'Flat Fee') {
+                                    $rfDisplay = ($fmtMoney($counterData['renewal_fee_flat_free'] ?? null) ?? '—') . ' Flat Fee';
+                                } elseif ($rft === 'Percentage of the Rent Due Each Rental Period') {
+                                    $rfDisplay = ($fmtPercent($counterData['renewal_fee_percentage'] ?? null) ?? '—') . ' of Rent Due Each Rental Period';
+                                } elseif ($rft === 'Percentage of the Net Aggregate Rent') {
+                                    $rfDisplay = ($fmtPercent($counterData['renewal_fee_percentage'] ?? null) ?? '—') . ' of Net Aggregate Rent';
+                                } elseif ($rft === 'Percentage of the Gross Lease Value') {
+                                    $rfDisplay = ($fmtPercent($counterData['renewal_fee_lease_value'] ?? null) ?? '—') . ' of Gross Lease Value';
+                                } elseif ($rft === 'Percentage of the Gross Rent') {
+                                    $rfDisplay = ($fmtPercent($counterData['renewal_fee_lease_value'] ?? null) ?? '—') . ' of Gross Rent';
+                                } elseif ($rft === "Percentage of the First Month's Rent") {
+                                    $rfDisplay = ($fmtPercent($counterData['renewal_fee_first_month'] ?? null) ?? '—') . " of First Month's Rent";
+                                } elseif ($rft === "Percentage of Month's Rent") {
+                                    $_rfD = ($fmtPercent($counterData['renewal_fee_first_month'] ?? null) ?? '—') . " of Month's Rent";
+                                    if (!empty($counterData['renewal_fee_no_of_months'])) {
+                                        $_rfD .= ' × ' . $counterData['renewal_fee_no_of_months'] . ' Months';
+                                    }
+                                    $rfDisplay = $_rfD;
+                                } elseif (in_array(strtolower($rft), ['other', 'custom / other'])) {
+                                    $rfDisplay = $counterData['renewal_fee_custom'] ?? $rft;
+                                }
+                                // Sales Tax for Renewal Fee
+                                $_renewTax = null;
+                                if (in_array($rft, ['Percentage of the Gross Lease Value', 'Percentage of the Gross Rent'])) {
+                                    $_renewTax = $counterData['renewal_fee_sales_tax_lease_value'] ?? null;
+                                } elseif (in_array($rft, ["Percentage of the First Month's Rent", "Percentage of Month's Rent"])) {
+                                    $_renewTax = $counterData['renewal_fee_sales_tax_first_month'] ?? null;
+                                } elseif ($rft === 'Flat Fee') {
+                                    $_renewTax = $counterData['renewal_fee_sales_tax_flat_fee'] ?? null;
+                                } else {
+                                    $_renewTax = $counterData['renewal_fee_sales_tax_lease_value']
+                                        ?? $counterData['renewal_fee_sales_tax_first_month']
+                                        ?? $counterData['renewal_fee_sales_tax_flat_fee']
+                                        ?? null;
+                                }
+                                $_renewTaxDisplay = (!empty($_renewTax) && $_renewTax !== 'null')
+                                    ? ($_renewTax === 'including' ? 'Including Sales Tax' : ($_renewTax === 'excluding' ? 'Excluding Sales Tax' : $_renewTax))
+                                    : null;
+                            @endphp
+                                <li class="mb-2" style="{{ isset($brokerMismatches['renewal_fee_type']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Renewal Fee:</span> {{ $rfDisplay }}
+                                    {!! isset($brokerMismatches['renewal_fee_type']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @if ($_renewTaxDisplay)
+                                <li class="mb-2">
+                                    <span class="fw-semibold">Sales Tax:</span> {{ $_renewTaxDisplay }}
+                                </li>
+                                @endif
+                            </ul>
+                        </div>
+                        @endif
+
+                        {{-- ===== B3) Expansion Commission ===== --}}
+                        @if (!empty($counterData['expansion_commission_percentage']))
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B3) Expansion Commission</h6>
+                            <ul class="list-unstyled ps-3 mb-0">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['expansion_commission_percentage']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Expansion Commission for Lease Amendment:</span>
+                                    {{ $fmtPercent($counterData['expansion_commission_percentage']) }} of original commission
+                                    {!! isset($brokerMismatches['expansion_commission_percentage']) ? $mismatchBadge : '' !!}
+                                </li>
+                            </ul>
+                        </div>
+                        @endif
+
+                        {{-- ===== B4) Tenant's Broker Compensation ===== --}}
+                        @if (!empty($counterData['tenant_broker_commission_structure']))
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B4) Tenant's Broker Compensation</h6>
+                            <ul class="list-unstyled ps-3 mb-0">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Tenant's Broker Commission Structure:</span>
+                                    {{ $counterData['tenant_broker_commission_structure'] }}
+                                    {!! isset($brokerMismatches['tenant_broker_commission_structure']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @if (($counterData['tenant_broker_commission_structure'] ?? '') !== "No Compensation Offered to the Tenant's Broker")
+                                @php
+                                    $tft = $counterData['tenant_broker_fee_structure'] ?? '';
+                                    $tfDisplay = '';
+                                    if ($tft === 'Flat Fee' && !empty($counterData['tenant_broker_flat_fee'])) {
+                                        $tfDisplay = $fmtMoney($counterData['tenant_broker_flat_fee']) . ' Flat Fee';
+                                    } elseif ($tft === 'Percentage of the Rent Due Each Rental Period' && !empty($counterData['tenant_broker_percentage'])) {
+                                        $tfDisplay = $fmtPercent($counterData['tenant_broker_percentage']) . ' of Rent Due Each Rental Period';
+                                    } elseif ($tft === 'Percentage of the Gross Lease Value' && !empty($counterData['tenant_broker_gross_lease'])) {
+                                        $tfDisplay = $fmtPercent($counterData['tenant_broker_gross_lease']) . ' of Gross Lease Value';
+                                    } elseif ($tft === "Percentage of the First Month's Rent" && !empty($counterData['tenant_broker_first_month_rent'])) {
+                                        $tfDisplay = $fmtPercent($counterData['tenant_broker_first_month_rent']) . " of First Month's Rent";
+                                    } elseif (strtolower($tft) === 'other' && !empty($counterData['tenant_broker_other'])) {
+                                        $tfDisplay = $counterData['tenant_broker_other'];
+                                    } elseif ($tft) {
+                                        $tfDisplay = $tft;
+                                    }
+                                @endphp
+                                @if (!empty($tfDisplay))
+                                <li class="mb-2" style="{{ isset($brokerMismatches['tenant_broker_fee_structure']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $tfDisplay }}
+                                    {!! isset($brokerMismatches['tenant_broker_fee_structure']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @endif
+                                @endif
+                            </ul>
+                        </div>
+                        @endif
+
+                        {{-- ===== B5) Property Management ===== --}}
+                        @if (!empty($counterData['interested_in_property_management']))
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">B5) Property Management</h6>
+                            <ul class="list-unstyled ps-3 mb-0">
+                                <li class="mb-2" style="{{ isset($brokerMismatches['interested_in_property_management']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Interested in Property Management:</span>
+                                    {{ $counterData['interested_in_property_management'] === 'yes' ? 'Yes' : 'No' }}
+                                    {!! isset($brokerMismatches['interested_in_property_management']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @if (($counterData['interested_in_property_management'] ?? '') === 'yes')
+                                @php
+                                    $pmft = $counterData['interested_in_property_management_fee'] ?? '';
+                                    $pmDisplay = '';
+                                    if ($pmft === 'Flat Fee' && !empty($counterData['interested_in_property_management_fee_flate_free'])) {
+                                        $pmDisplay = $fmtMoney($counterData['interested_in_property_management_fee_flate_free']) . ' Flat Fee';
+                                    } elseif ($pmft === 'Percentage of the Rent Due Each Rental Period' && !empty($counterData['interested_in_property_management_fee_rental_periord'])) {
+                                        $pmDisplay = $fmtPercent($counterData['interested_in_property_management_fee_rental_periord']) . ' of Rent Due Each Rental Period';
+                                    } elseif ($pmft === 'Percentage of the Gross Lease Value' && !empty($counterData['interested_in_property_management_fee_gross_lease'])) {
+                                        $pmDisplay = $fmtPercent($counterData['interested_in_property_management_fee_gross_lease']) . ' of Gross Lease Value';
+                                    } elseif (strtolower($pmft) === 'other' && !empty($counterData['interested_in_property_management_fee_other'])) {
+                                        $pmDisplay = $counterData['interested_in_property_management_fee_other'];
+                                    } elseif ($pmft) {
+                                        $pmDisplay = $pmft;
+                                    }
+                                @endphp
+                                @if (!empty($pmDisplay))
+                                <li class="mb-2">
+                                    <span class="fw-semibold">Property Management Fee:</span> {{ $pmDisplay }}
+                                </li>
+                                @endif
                                 @endif
                             </ul>
                         </div>

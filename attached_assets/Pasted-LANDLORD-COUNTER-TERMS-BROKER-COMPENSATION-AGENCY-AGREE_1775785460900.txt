@@ -1,0 +1,158 @@
+LANDLORD COUNTER TERMS — BROKER COMPENSATION & AGENCY AGREEMENT TERMS AUDIT + FIX
+READ FULLY BEFORE MAKING ANY CHANGES
+
+We found a specific accuracy issue on the Landlord View Counter Terms page.
+
+CURRENT CONFIRMED ISSUES
+
+1. BROKER LEASE FEE DISPLAY IS WRONG
+On the Landlord counter terms page, “Landlord’s Broker Lease Fee” is showing only:
+- Flat Fee
+
+This is incorrect.
+
+It must show the actual entered value, for example:
+- $6,000.00 Flat Fee
+or whatever number/value was actually entered
+
+This issue may affect other compensation fields that currently display only the structure/type label instead of the actual entered numeric value.
+
+2. MISSING BROKER COMPENSATION / AGENCY TERMS
+The Landlord counter terms page is missing fields compared to what appears in the bid card / source data.
+
+Based on the screenshots, the fuller set of Landlord Broker Compensation & Agency Agreement Terms includes items such as:
+- Landlord’s Broker Lease Fee
+- Payment Timing for Broker Fees
+- Lease Renewal/Extension Fee
+- Sales Tax (Renewal Fee)
+- Expansion Commission for Lease Amendment
+- Interested in Offering a Lease-Option Agreement
+- Compensation for Creating the Lease-Option Agreement
+- Compensation if Purchase Option is Exercised
+- Interested in Selling the Property
+- Purchase Fee
+- Protection Period Timeframe
+- Landlord Agency Agreement Timeframe
+- Interested in Property Management
+- Property Management Fee
+- Acceptable Brokerage Relationship
+- Additional Terms
+
+The View Counter Terms page must show all filled Landlord broker compensation and agency agreement terms that apply.
+
+GOAL
+Audit and fix the Landlord View Counter Terms page so that:
+1. All compensation fields show the actual entered values, not just structure/type labels
+2. All filled broker compensation and agency agreement terms are rendered
+3. Numeric/amount-based terms display as numeric values in the final output
+4. The View Counter Terms page matches the actual counter data submitted
+
+IMPORTANT CLARIFICATION
+When I say “number input instead of text input,” this is about the DISPLAY RESULT on the final counter terms page:
+- if a field is amount-based or percent-based, the final rendered value should reflect the actual numeric entry
+- it should not collapse to a generic type label like “Flat Fee”
+
+This is primarily a display/data-mapping audit for the Landlord View Counter Terms page.
+
+TARGET FLOW
+Landlord counter terms page, example route:
+- /landlord/hire/agent/auction/bid/{id}/view-counter
+
+SCOPE
+Only audit and fix the Landlord View Counter Terms rendering and any directly related display mapping needed to correctly show:
+- actual compensation values
+- complete broker compensation and agency agreement terms
+
+OUT OF SCOPE — DO NOT TOUCH
+Do not modify:
+- listing creation
+- listing edit
+- bid submission logic
+- counter submission logic
+- accepted bid summary
+- notifications
+- routes
+- schema or migrations
+- unrelated roles unless you must inspect them as a reference
+- broad global refactors
+
+If a missing field is not rendering because the data is not being passed into the Landlord counter terms view, identify the exact file and variable source instead of guessing.
+
+AUDIT TASKS
+
+1. LANDLORD BROKER LEASE FEE
+Audit why “Landlord’s Broker Lease Fee” on View Counter Terms is rendering only:
+- Flat Fee
+
+instead of the actual entered amount/value.
+
+Identify:
+- the exact stored source field(s)
+- the exact display logic currently used
+- the exact reason the value is collapsing to the type label only
+
+Fix it so the final display shows the actual entered value.
+
+Examples of correct output:
+- $6,000.00 Flat Fee
+- 5% of Net Aggregate Rent
+- $4,000.00 + 4% of Gross Rent
+- 100% of Month’s Rent × 3 months
+
+depending on what was actually entered.
+
+2. AUDIT ALL LANDLORD COMPENSATION FIELDS
+Audit all Landlord Broker Compensation & Agency Agreement Terms fields on the View Counter Terms page and identify any other fields that are currently showing only a structure/type label instead of the actual value.
+
+Fix all such cases in this Landlord View Counter Terms page.
+
+3. COMPLETENESS AUDIT
+Compare the Landlord View Counter Terms page against the actual filled counter/bid data and confirm whether any of these fields are missing from the rendered page when filled:
+- Payment Timing for Broker Fees
+- Lease Renewal/Extension Fee
+- Sales Tax (Renewal Fee)
+- Expansion Commission for Lease Amendment
+- Interested in Property Management
+- Property Management Fee
+- Additional Terms
+and any other supported Landlord broker compensation / agency terms
+
+If they are filled and supported, they must appear.
+
+4. DISPLAY STANDARD
+For Landlord View Counter Terms:
+- Show actual values
+- Show all filled terms
+- Preserve proper formatting for dollars, percentages, combo values, and Yes/No
+- Do not reduce fields to generic labels if numeric values exist
+
+5. SAFETY
+Do not guess values.
+If a field is missing because the value is not present in the current view data, report exactly which file/controller/variable would need to supply it.
+
+HARD SAFEGUARDS
+- Do not do a broad refactor
+- Do not touch Seller, Buyer, or Tenant behavior except as read-only reference
+- Do not alter counter logic or scoring logic
+- Do not change route behavior
+- Do not change submission/storage behavior unless absolutely necessary to display already-saved values
+- Keep this focused on Landlord View Counter Terms accuracy only
+
+WHAT I WANT BACK
+Return all of the following:
+
+1. Exact files audited
+2. Exact files changed
+3. Exact reason “Landlord’s Broker Lease Fee” was showing only “Flat Fee”
+4. Which other Landlord compensation fields had the same issue, if any
+5. Which Landlord broker compensation / agency agreement terms were missing from the View Counter Terms page
+6. Exact fixes made
+7. Confirmation that the Landlord View Counter Terms page now shows:
+   - actual entered values
+   - all filled broker compensation and agency agreement terms
+   - correct dollar / percent / combo formatting
+
+FINAL RULE
+This is a Landlord View Counter Terms accuracy pass.
+Do not stop after fixing only the first field.
+Audit the full Landlord Broker Compensation & Agency Agreement Terms section and make sure it is complete and correctly rendered.
