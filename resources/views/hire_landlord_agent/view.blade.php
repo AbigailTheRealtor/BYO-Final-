@@ -3350,7 +3350,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                 <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Landlord Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}</li>
                                                                 @endif
                                                                 @if (data_get($bid, 'get.interested_in_property_management'))
-                                                                <li class="mb-1"><span class="fw-semibold">Interested in Property Management:</span> {{ data_get($bid,'get.interested_in_property_management') === 'yes' ? 'Yes' : 'No' }}</li>
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['interested_in_property_management']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Interested in Property Management:</span> {{ data_get($bid,'get.interested_in_property_management') === 'yes' ? 'Yes' : 'No' }}{!! isset($brokerMismatches['interested_in_property_management']) ? $mismatchBadge : '' !!}</li>
                                                                 @if (data_get($bid, 'get.interested_in_property_management') === 'yes' && $pmFeeDisplay !== '-')
                                                                 <li class="mb-1"><span class="fw-semibold">Property Management Fee:</span> {{ $pmFeeDisplay }}</li>
                                                                 @endif

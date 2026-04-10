@@ -3956,7 +3956,7 @@
                                                                 @else
                                                                 <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $scServiceDisplay }}</li>
                                                                 @endif
-                                                                @if (strtolower(trim($scService)) === 'provide digital photo enhancements')
+                                                                @if (in_array(strtolower(trim($scService)), ['provide digital photo enhancements', 'provide digital enhancements to media assets']))
                                                                 @php
                                                                     $scCtrPhotoEnhRaw = $scAllMeta['photo_enhancements'] ?? [];
                                                                     if (is_string($scCtrPhotoEnhRaw)) $scCtrPhotoEnhRaw = json_decode($scCtrPhotoEnhRaw, true) ?: [];
