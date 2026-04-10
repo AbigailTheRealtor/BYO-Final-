@@ -1,0 +1,605 @@
+Paste this into Replit:
+
+We need a **targeted UI/logic audit and fix** across **Hire a Buyer, Hire a Seller, Hire a Landlord, and Hire a Tenant** listings for these surfaces only:
+
+* **bid cards on the listing page**
+* **View Bid / View Full Bid**
+* **View Counter Terms page**
+
+This is not a broad refactor. This is a parity and correctness pass across the 4 listing roles for bid display, counter messaging, counter actions, and term rendering.
+
+## Core goal
+
+Make the bid/counter experience consistent, role-correct, and history-correct across:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+using the same behavioral pattern where appropriate, while preserving role-specific field content.
+
+## Scope
+
+Audit and fix only these surfaces:
+
+1. **Bid cards on listing pages**
+2. **View Bid / View Full Bid**
+3. **View Counter Terms page**
+4. Related counter banners, action buttons, and rendered term/value display on those pages
+
+## Out of scope
+
+Do **not** touch unless absolutely necessary:
+
+* listing creation/edit flows
+* bid submission business logic
+* database schema
+* notifications system globally
+* accepted bid summary
+* public listing layout unrelated to bids
+* global redesign / CSS rewrite
+* major refactor / state engine rewrite
+
+If you discover a larger architecture issue, report it instead of doing a risky rewrite.
+
+---
+
+# PART 1 — AGENT SHOULD SEE ALL AGENTS’ BIDS ON THE LISTING
+
+## Problem
+
+From Agent View, the agent currently only sees **their own bid** on the listing page.
+
+Expected:
+Agents should be able to see **Agent 2, Agent 3, etc.** on the listing page, using the same public bid-card style / View Full Bid access pattern already intended for competitive bid viewing.
+
+This applies across:
+
+* Buyer listings
+* Seller listings
+* Landlord listings
+* Tenant listings
+
+## Required behavior
+
+On the listing page, from Agent View:
+
+* show all bids that should be visible in that listing’s competitive bid context
+* each bid card should be renderable consistently
+* agent should still clearly identify which bid is theirs where appropriate
+* **View Full Bid** should work from each visible bid card
+
+## Safeguard
+
+Do **not** expose private-only data that is not intended for peer-agent visibility.
+Reuse the same visibility rules already intended by the existing listing bid-card design.
+
+---
+
+# PART 2 — SAME AGENT SHOULD NOT APPEAR AS AGENT 1, AGENT 2, AGENT 3 IN BUYER LISTINGS
+
+## Problem
+
+On Buyer listings, even when the same agent made the bid, the UI is still labeling entries as Agent 1, Agent 2, Agent 3, etc. incorrectly.
+
+## Required behavior
+
+The same agent should maintain the same identity label within that listing context.
+
+If one agent submitted one bid chain, that same agent should not be re-labeled as multiple distinct agents.
+
+## Audit
+
+Trace how anonymous/numbered labels are assigned on Buyer listings and make sure:
+
+* numbering maps to unique agent identity per listing
+* the same agent is not duplicated into multiple labels unless there are truly separate agents
+
+## Safeguard
+
+Do not break intended anonymization for competitive viewing.
+Fix the identity mapping only.
+
+---
+
+# PART 3 — SELLER VIEW BID MUST SHOW DIGITAL PHOTO ENHANCEMENTS "OTHER" TEXT
+
+## Problem
+
+On Seller bid cards / View Bid, if the user selected **Provide digital photo enhancements** and filled in the **Other** input text, that text is missing.
+
+It already works correctly on Landlord side.
+
+## Required behavior
+
+Seller should render the same way as Landlord for this field:
+
+* if digital photo enhancements was selected
+* and an Other/custom text value was entered
+* show that custom text in View Bid / View Full Bid
+
+## Action
+
+Use the working Landlord implementation as the reference and align Seller to it.
+
+## Safeguard
+
+Do not change the underlying service list structure unless needed to render the already-saved value correctly.
+
+---
+
+# PART 4 — LANDLORD COUNTER TERMS PAGE TERM FORMATTING FIXES
+
+## Problem A
+
+On Landlord Counter Terms page, this currently renders like:
+
+* `Lease Renewal/Extension Fee: Renewal Fee: Percentage of Month’s Rent`
+
+But it should show the actual numeric value, for example:
+
+* `Lease Renewal/Extension Fee: 100% of Month's Rent`
+
+## Problem B
+
+For Property Management Fee, it currently shows:
+
+* `Property Management Fee: $6,000.00 Flat Fee`
+
+But it should render as:
+
+* `Property Management Fee: $6,000.00`
+
+Remove the redundant words **Flat Fee** from the rendered display.
+
+## Required behavior
+
+On the rendered Counter Terms page:
+
+* show the actual selected numeric/value-based term output
+* avoid redundant descriptor text when the money amount itself already communicates the term clearly
+
+## Safeguard
+
+This is a render/display fix, not a schema change.
+Do not alter how the value is saved unless necessary.
+
+---
+
+# PART 5 — PRIVATE COMPENSATION / TERMS CHANGE HIGHLIGHTING
+
+## Problem
+
+On private compensation and agency agreement terms inside View Bid, it may show:
+
+* `Terms 92%`
+* `12/13`
+* `1 changed`
+
+But it does **not** highlight what actually changed.
+
+## Required behavior
+
+If the UI says a term changed, the changed term(s) must be visibly identifiable.
+
+For example:
+
+* changed row highlighted
+* old vs new value visible
+* “changed from X to Y” style display
+* or the existing comparison style already used in Tenant if that is working
+
+## Action
+
+Audit the change-detection display logic and make sure the render layer actually marks the changed term(s), not just the summary count.
+
+## Safeguard
+
+Do not rewrite the full scoring engine.
+Fix the display so the detected change is visible.
+
+---
+
+# PART 6 — TENANT BID-CARD COUNTER MESSAGE SHOULD MATCH SELLER / BUYER / LANDLORD FORMAT
+
+## Problem
+
+When an agent has sent/submitted a counter offer, Tenant currently shows this wording on the bid card:
+
+* `Your counter offer has been submitted. Waiting for the listing owner to respond. You can view it in Counter Bidding History below.`
+
+While Seller / Buyer / Landlord use:
+
+* `Counter Offer Sent. You sent a counter offer on this bid. Review it in Counter Bidding History below.`
+
+## Required behavior
+
+Make Tenant match the same cleaner standardized bid-card format used by Seller / Buyer / Landlord:
+
+* `Counter Offer Sent. You sent a counter offer on this bid. Review it in Counter Bidding History below.`
+
+## Safeguard
+
+This is the **bid-card submitted/waiting copy**, not the View Counter Terms page copy.
+Do not confuse the two surfaces.
+
+---
+
+# PART 7 — STANDARDIZE VIEW COUNTER TERMS BUTTON LABELS TO TENANT FORMAT
+
+## Problem
+
+Tenant uses the cleaner button labels:
+
+* Counter Back
+* Accept
+* Reject
+* View Listing
+
+But Landlord currently shows:
+
+* Accept Counter-Back
+* Edit/Revise Counter-Terms
+* Reject Counter-Back
+* View Listing
+
+## Required behavior
+
+Standardize all 4 listing types to the cleaner Tenant format on the **View Counter Terms** page:
+
+* Counter Back
+* Accept
+* Reject
+* View Listing
+
+This applies where the viewer is the responding party and actions are appropriate.
+
+## Safeguard
+
+Change labels only where the action is functionally the same.
+Do not rename actions that truly behave differently.
+
+---
+
+# PART 8 — STANDARDIZE VIEW BID COUNTER STATUS MESSAGES ACROSS ALL 4 ROLES
+
+## Current inconsistency
+
+### Tenant View Bid currently says things like:
+
+* `Your counter offer has been submitted. Waiting for the listing owner to respond.`
+* `The agent has responded to your counter offer. Review and respond in Counter Bidding History below.`
+
+### Seller / Buyer / Landlord currently say things like:
+
+* `You have submitted a counter offer for this bid.`
+* `Test User has submitted a counter offer.`
+
+## Need decision + implementation
+
+We need one consistent format across all 4 roles.
+
+## Recommended standard
+
+Use the clearer, role-aware Tenant style as the universal standard:
+
+### If current viewer submitted the latest counter:
+
+* `Your counter offer has been submitted. Waiting for the other party to respond.`
+
+More specifically:
+
+* owner side waiting on agent:
+  `Your counter offer has been submitted. Waiting for the agent to respond.`
+* agent side waiting on listing owner:
+  `Your counter offer has been submitted. Waiting for the listing owner to respond.`
+
+### If the other party submitted the latest counter:
+
+* `The [agent / listing owner] has responded to your counter offer. Review and respond in Counter Bidding History below.`
+
+This is better than:
+
+* `You have submitted a counter offer for this bid.`
+* `Test User has submitted a counter offer.`
+
+because it is clearer about:
+
+* who submitted last
+* who is waiting
+* what to do next
+
+## Action
+
+Standardize the **View Bid** counter-state messages across:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+using this role-aware format.
+
+---
+
+# PART 9 — SELLER AGENT VIEW COUNTER TERMS EXTRA SUMMARY BLOCK
+
+## Problem
+
+On Seller listings, when the agent views counter bid terms page, it shows an extra summary block like:
+
+* Agent's Counter-Back
+* Submitted: date/time
+* Seller's Broker Purchase Fee: ...
+* Buyer's Broker Commission Structure: ...
+* Brokerage Relationship: ...
+* Agency Agreement Timeframe: ...
+* Additional Terms: ...
+
+Other listing types do not show this consistently, and Seller itself may not show it symmetrically on both sides.
+
+## Decision recommendation
+
+Remove this extra block for now rather than expanding it to all roles.
+
+Reason:
+
+* inconsistent across roles
+* adds more UI drift
+* can conflict with the main rendered counter-terms display
+* not necessary if the actual counter terms are already shown in the page
+
+## Required action
+
+Audit this extra Seller-only summary block and either:
+
+* remove it from Seller agent counter terms page
+  or
+* hide it behind the same rule everywhere if it is not truly universal
+
+## Recommendation
+
+**Remove it for now** for consistency.
+
+---
+
+# PART 10 — SELLER COUNTER FLOW DESYNC AUDIT
+
+## Confirmed problem
+
+Seller still has broken/desynced messaging across surfaces.
+
+Example:
+
+### Agent on bid card:
+
+* `Counter Offer Received. The listing owner has sent you a counter offer on this bid. Review and respond in Counter Bidding History below.`
+
+### Then agent clicks View Bid:
+
+* `Test User has submitted a counter offer.`
+
+### Then agent clicks View Counter Terms:
+
+* `Your counter offer has been submitted. Awaiting the seller's response.`
+
+That is contradictory.
+
+Also on seller side:
+
+### Seller on bid card:
+
+* `Counter Offer Sent. You sent a counter offer on this bid. Review it in Counter Bidding History below.`
+
+### Then seller clicks View Bid:
+
+* `You have submitted a counter offer for this bid.`
+
+### Then seller clicks View Counter Terms:
+
+* it shows Accept / Counter / Reject at the bottom even though seller supposedly submitted the latest counter
+
+## Required behavior
+
+For Seller, as with all roles, all 3 surfaces must agree:
+
+1. **Bid Card**
+2. **View Bid**
+3. **View Counter Terms**
+
+using the same source of truth:
+
+* who submitted latest counter
+* who is waiting
+* who can act now
+
+## Rule
+
+If latest counter submitter == current viewer:
+
+* show waiting message
+* hide response actions
+
+If latest counter submitter != current viewer:
+
+* show received/respond message
+* show response actions
+
+## Action
+
+Do a targeted Seller counter-flow audit and fix the desync across:
+
+* bid card
+* view bid
+* view counter terms
+
+Then apply the same audit pattern to Buyer, Landlord, and Tenant if needed.
+
+---
+
+# IMPLEMENTATION APPROACH
+
+## Phase 1 — Audit exact files and branches
+
+For each role:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+Identify the exact files for:
+
+* bid card state banner
+* View Bid / View Full Bid
+* View Counter Terms page
+* term rendering partials used in those places
+
+## Phase 2 — Fix message and action parity
+
+Make sure those surfaces all use the same current-state truth:
+
+* latest counter by owner?
+* latest counter by agent?
+* current viewer role?
+* waiting vs responding state?
+
+## Phase 3 — Fix rendering mismatches
+
+Correct:
+
+* hidden Other text fields
+* wrong fee formatting
+* redundant "Flat Fee" label
+* missing changed-term highlight
+* wrong anonymous agent numbering
+* inconsistent button labels
+
+## Phase 4 — Verify all 4 roles
+
+Run live QA with screenshots for:
+
+* owner side
+* agent side
+* latest counter by owner
+* latest counter by agent
+
+---
+
+# HARD SAFEGUARDS
+
+1. **Do not change database schema**
+
+   * no migrations
+   * no destructive column changes
+
+2. **Do not do a broad state-engine refactor**
+
+   * use current real fields
+   * keep this surgical
+
+3. **Do not change listing creation/edit logic**
+   unless required only to render already-saved values correctly
+
+4. **Do not break working Tenant/Seller/Landlord behavior while fixing Buyer**
+   and do not break working Buyer/Tenant behavior while fixing Seller, etc.
+
+5. **Do not rename routes or move pages**
+   unless absolutely necessary
+
+6. **Do not invent new fields**
+   use actual current models/fields only
+
+7. **Do not mark fixed without screenshot proof**
+   for each role/side/state tested
+
+---
+
+# QA CHECKLIST
+
+Please verify with screenshots:
+
+## Agent visibility / numbering
+
+1. Agent can see all intended bid cards on listing page
+2. Same agent is not mislabeled as Agent 1, Agent 2, Agent 3 on Buyer listings
+
+## Seller service rendering
+
+3. Seller View Bid shows digital photo enhancements Other text when entered
+
+## Landlord term rendering
+
+4. Lease Renewal/Extension Fee shows actual numeric/value format
+5. Property Management Fee does not append redundant "Flat Fee"
+
+## Changed term visibility
+
+6. If summary says `1 changed`, the changed term is visibly highlighted
+
+## Standardized messaging
+
+7. Tenant bid card submitted counter message matches the standard format
+8. View Counter Terms buttons use:
+
+   * Counter Back
+   * Accept
+   * Reject
+   * View Listing
+
+## View Bid parity
+
+9. Bid Card, View Bid, and View Counter Terms agree on who submitted latest counter and who can act
+
+## Seller desync specifically
+
+10. Seller agent side no longer shows contradictory messages across the 3 surfaces
+11. Seller owner side no longer shows action buttons when waiting on response
+
+---
+
+# DELIVERABLE BACK TO ME
+
+Please report back with:
+
+1. exact files changed by role
+2. which issues were fixed in Buyer
+3. which issues were fixed in Seller
+4. which issues were fixed in Landlord
+5. which issues were fixed in Tenant
+6. any issue you could not safely fix without a larger refactor
+7. screenshots proving the live UI for each corrected area
+
+## Stop rule
+
+If any issue turns out to be caused by duplicated conflicting state logic across multiple files and cannot be safely corrected surgically, stop and report:
+
+* exact duplicated files
+* exact conflicting variables/branches
+* safest next step
+
+Do not do a risky rewrite without reporting first.
+
+---
+
+## Recommended standard to use
+
+For all 4 roles, use this unified counter-state behavior:
+
+### If current viewer submitted latest counter
+
+* bid card / view bid should show a waiting message
+* view counter terms should not show response actions
+
+### If other party submitted latest counter
+
+* bid card / view bid should show received/respond message
+* view counter terms should show:
+
+  * Counter Back
+  * Accept
+  * Reject
+  * View Listing
+
+And use the cleaner message style, not the older vague text.
