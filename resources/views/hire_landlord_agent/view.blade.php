@@ -2508,16 +2508,23 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                 {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
                                 @if ($latestOwnerCounter && ($isListingOwner || $isBidOwner))
+                                @php $latestOwnerCounterFromLandlord = ($latestOwnerCounter->user_id == data_get($auction, 'user_id')); @endphp
                                 <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                      style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                     <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
-                                        @if ($isListingOwner)
+                                        @if ($isListingOwner && $latestOwnerCounterFromLandlord)
                                             <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
                                             <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
-                                        @elseif ($isBidOwner)
+                                        @elseif ($isListingOwner && !$latestOwnerCounterFromLandlord)
+                                            <strong>Counter Offer Received.</strong> The agent has sent you a counter offer.
+                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner && $latestOwnerCounterFromLandlord)
                                             <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
                                             <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner && !$latestOwnerCounterFromLandlord)
+                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
                                         @endif
                                     </div>
                                 </div>

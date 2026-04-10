@@ -4202,9 +4202,9 @@
                                                                         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                                             <i class="fa fa-exchange-alt me-1"></i>
                                                                             @if ($mfIsOwnerB)
-                                                                                You have submitted a counter offer for this bid.
+                                                                                Your counter offer has been submitted. Waiting for the agent to respond.
                                                                             @else
-                                                                                {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} has submitted a counter offer.
+                                                                                The listing owner has submitted a counter offer. Review and respond in Counter Bidding History below.
                                                                             @endif
                                                                         </div>
                                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">

@@ -1,0 +1,72 @@
+Yes — approve **Phase 2C** next.
+
+Phase 2B looks clean and well-scoped:
+
+* Buyer alias mapping now stays stable by agent identity
+* Landlord property management fee no longer appends “Flat Fee”
+
+Send this to Replit:
+
+Proceed with **Phase 2C only**.
+
+### Phase 2C scope
+
+1. **Part 10**
+   Fix the **Seller counter direction desync** across:
+
+   * bid card
+   * View Bid / View Full Bid
+   * View Counter Terms
+
+2. **Part 8**
+   Fix **message parity across roles** only where it directly overlaps with the current Seller/Buyer/Landlord/Tenant bid card, View Bid, and View Counter Terms counter-state messaging.
+
+### Required rule
+
+Use the same current-state truth on each surface:
+
+* who submitted the latest counter
+* who is viewing
+* who is waiting
+* who is allowed to act now
+
+### Behavioral standard
+
+If the **current viewer submitted the latest counter**:
+
+* show waiting/submitted message
+* hide response actions on View Counter Terms
+
+If the **other party submitted the latest counter**:
+
+* show received/respond message
+* show response actions on View Counter Terms
+
+### Hard safeguards
+
+* Do **not** start Phase 2D yet
+* Do **not** change database schema
+* Do **not** introduce a new state engine or large refactor
+* Use existing real variables already computed in the files when possible
+* Keep this surgical to the affected bid card, View Bid, and View Counter Terms surfaces
+* Do **not** alter unrelated listing creation/edit logic
+* Do **not** mark complete without checking both owner-side and agent-side states
+
+### Deliver back
+
+Please report:
+
+1. exact files changed
+2. exact branches/conditions corrected
+3. which roles were changed in Phase 2C
+4. before/after message behavior for each corrected role
+5. confirmation that View Counter Terms actions now match the latest-counter direction rule
+
+After Phase 2C, ask them for screenshots of:
+
+* Seller owner side
+* Seller agent side
+* one “viewer submitted last” state
+* one “other party submitted last” state
+
+That is the next important proof step.

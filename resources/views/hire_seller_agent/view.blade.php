@@ -2897,16 +2897,23 @@
 
                                 {{-- Counter Offer Notice Banner — visible immediately on accordion expand (owner/agent only) --}}
                                 @if ($latestCounter && ($isListingOwner || $isBidOwner))
+                                @php $scBidCardCounterFromOwner = ($latestCounter->user_id == data_get($auction, 'user_id')); @endphp
                                 <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                      style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                     <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
-                                        @if ($isListingOwner)
+                                        @if ($isListingOwner && $scBidCardCounterFromOwner)
                                             <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
                                             <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
-                                        @elseif ($isBidOwner)
+                                        @elseif ($isListingOwner && !$scBidCardCounterFromOwner)
+                                            <strong>Counter Offer Received.</strong> The agent has sent you a counter offer.
+                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner && $scBidCardCounterFromOwner)
                                             <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
                                             <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                        @elseif ($isBidOwner && !$scBidCardCounterFromOwner)
+                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
+                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
                                         @endif
                                     </div>
                                 </div>
@@ -5549,12 +5556,17 @@
 
                                         {{-- ── Countered state ── --}}
                                         @elseif ($state === 'countered')
+                                        @php $scFooterLatestFromOwner = $latestCounter && ($latestCounter->user_id == $ownerId); @endphp
                                         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                             <i class="fa fa-exchange-alt me-1"></i>
-                                            @if (Auth::id() == $ownerId)
-                                                You have submitted a counter offer for this bid.
+                                            @if ($scFooterLatestFromOwner && Auth::id() == $ownerId)
+                                                Your counter offer has been submitted. Waiting for the agent to respond.
+                                            @elseif ($scFooterLatestFromOwner)
+                                                The listing owner has submitted a counter offer. Review and respond in Counter Bidding History below.
+                                            @elseif (Auth::id() == $ownerId)
+                                                The agent has submitted a counter offer. Review and respond in Counter Bidding History below.
                                             @else
-                                                {{ trim($ownerFirst . ' ' . $ownerLast) }} has submitted a counter offer.
+                                                Your counter offer has been submitted. Waiting for the listing owner to respond.
                                             @endif
                                         </div>
                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
