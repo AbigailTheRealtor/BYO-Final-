@@ -753,7 +753,7 @@
                                     $pmft = $counterData['interested_in_property_management_fee'] ?? '';
                                     $pmDisplay = '';
                                     if ($pmft === 'Flat Fee' && !empty($counterData['interested_in_property_management_fee_flate_free'])) {
-                                        $pmDisplay = $fmtMoney($counterData['interested_in_property_management_fee_flate_free']) . ' Flat Fee';
+                                        $pmDisplay = $fmtMoney($counterData['interested_in_property_management_fee_flate_free']);
                                     } elseif ($pmft === 'Percentage of the Rent Due Each Rental Period' && !empty($counterData['interested_in_property_management_fee_rental_periord'])) {
                                         $pmDisplay = $fmtPercent($counterData['interested_in_property_management_fee_rental_periord']) . ' of Rent Due Each Rental Period';
                                     } elseif ($pmft === 'Percentage of the Gross Lease Value' && !empty($counterData['interested_in_property_management_fee_gross_lease'])) {

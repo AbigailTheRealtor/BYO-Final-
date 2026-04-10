@@ -2323,11 +2323,17 @@
         @php
             $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
             $bidsByOrder    = $auction->bids->sortBy('created_at');
-            $agentNumberMap = [];
-            $bidIdx         = 0;
+            // Key by user_id so the same agent always gets the same number.
+            $agentNumberMap     = [];  // bid_id  → agent number
+            $agentUserNumberMap = [];  // user_id → agent number
+            $agentIdx           = 0;
             foreach ($bidsByOrder as $orderedBid) {
-                $bidIdx++;
-                $agentNumberMap[$orderedBid->id] = $bidIdx;
+                $uid = data_get($orderedBid, 'user_id');
+                if (!isset($agentUserNumberMap[$uid])) {
+                    $agentIdx++;
+                    $agentUserNumberMap[$uid] = $agentIdx;
+                }
+                $agentNumberMap[$orderedBid->id] = $agentUserNumberMap[$uid];
             }
         @endphp
 
