@@ -816,3 +816,11 @@ Route::get('/test', function () {
         }
     }
 })->name('test');
+
+// TEMP DEV ONLY - auto-login by user ID for screenshot testing
+if (app()->environment('local', 'development')) {
+    Route::get('/dev-login/{id}', function ($id) {
+        Auth::loginUsingId($id);
+        return redirect('/dashboard');
+    })->name('dev.login');
+}

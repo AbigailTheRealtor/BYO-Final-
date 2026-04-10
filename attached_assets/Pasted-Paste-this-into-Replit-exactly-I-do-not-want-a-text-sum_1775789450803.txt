@@ -1,0 +1,125 @@
+Paste this into Replit exactly:
+
+---
+
+I do **not** want a text summary of what you think the code does.
+
+I want **visual proof from the live UI**.
+
+## Task
+
+Log in and show me the **actual current Tenant counter flow pages on both sides** with screenshots.
+
+### Required screenshots
+
+You must capture the live UI for the same Tenant bid / counter thread from:
+
+1. **Tenant / listing owner side**
+2. **Agent side**
+
+For each side, I need screenshots of the exact pages that currently render in the browser, not a description.
+
+---
+
+## What to capture
+
+Use the real existing Tenant test data that already has:
+
+* original bid
+* tenant counter
+* agent counter-back
+
+If Bid 2 / Auction 6 is the best dataset, use that.
+
+### Capture these exact screens
+
+For the **Tenant side**:
+
+1. Tenant listing page showing the bid card / counter state
+2. Tenant **View Bid** page
+3. Tenant **View Counter Terms** page
+
+For the **Agent side**:
+
+1. Agent listing page showing the bid card / counter state
+2. Agent **View Bid** page
+3. Agent **View Counter Terms** page
+
+That is **6 screenshots minimum**.
+
+If there are modals or accordions that show the state more clearly, open them before taking the screenshot.
+
+---
+
+## Requirements
+
+* Use the **actual live app**
+* Use the **actual current routes**
+* Log in as both users
+* Do **not** summarize what you expect the UI to show
+* Do **not** stop after code inspection
+* Do **not** give me only logs
+* Do **not** give me only a written explanation
+
+I need screenshots of the real rendered pages.
+
+---
+
+## Show the exact URL for each screenshot
+
+For every screenshot, provide:
+
+1. viewer role: Tenant or Agent
+2. exact URL visited
+3. screenshot image
+
+Example format:
+
+* Tenant — Listing Page
+  `https://...`
+  [screenshot]
+
+* Tenant — View Bid
+  `https://...`
+  [screenshot]
+
+* Tenant — View Counter Terms
+  `https://...`
+  [screenshot]
+
+Repeat for Agent.
+
+---
+
+## Important
+
+Before taking each screenshot:
+
+* fully wait for the page to load
+* expand any relevant accordion/card if needed
+* make sure the bid/counter state is visible
+* do not crop out the important state message, buttons, or match summary
+
+---
+
+## If login credentials are unknown
+
+You may temporarily set known passwords on the existing test accounts, but then:
+
+* tell me exactly which users you used
+* tell me which passwords were set
+* do not modify anything else
+
+---
+
+## Deliverable
+
+Return with:
+
+1. the exact bid ID and auction ID used
+2. the exact Tenant user ID used
+3. the exact Agent user ID used
+4. 6+ screenshots from the live UI
+5. the exact URL for each screenshot
+
+Again: I do **not** want a code summary. I want **visual proof of the live UI states**.
