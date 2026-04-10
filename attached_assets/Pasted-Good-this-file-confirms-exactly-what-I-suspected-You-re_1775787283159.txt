@@ -1,0 +1,340 @@
+Good — this file confirms exactly what I suspected. You’re **very close**, but the fixes Replit made are still **patch-based**, not enforcing the clean state model you defined.
+
+I’m going to give you **final, production-safe Replit instructions** that:
+
+* Fix Tenant flow completely
+* Remove all conflicting logic
+* Prevent this from breaking again when you replicate to Buyer/Seller/Landlord
+
+---
+
+# 🚨 WHAT’S STILL WRONG (BASED ON YOUR FILE)
+
+From your audit notes:
+
+### 1. Agent still sees buttons when they shouldn’t
+
+> “Agent sees Counter Back + Accept Counter + Reject Counter even when THEY submitted latest counter” 
+
+👉 This means:
+
+* `$awaitingCounterResponse` is **not consistently applied**
+* Logic is duplicated and drifting
+
+---
+
+### 2. Heading is wrong / misleading
+
+> “Heading always says Agent’s Counter Terms…” 
+
+👉 UI is not tied to **who actually submitted last**
+
+---
+
+### 3. Banner logic broken
+
+> Only tied to `$latestTenantCounter` 
+
+👉 Missing:
+
+* Agent-first counter
+* Multi-round counters
+
+---
+
+### 4. Modal footer logic broken
+
+> Not checking who submitted LAST 
+
+👉 This is the **core bug across your entire system**
+
+---
+
+# ✅ THE REAL FIX (NOT PATCHES)
+
+We are going to:
+
+### ❗ Replace ALL scattered logic with ONE source of truth
+
+---
+
+# 🔧 REPLIT INSTRUCTIONS (COPY EXACTLY)
+
+## ⚠️ SAFEGUARDS (DO NOT SKIP)
+
+* ONLY edit:
+
+  * `resources/views/hire_tenant_agent/view.blade.php`
+  * `resources/views/hire_tenant_agent/view_counter_terms.blade.php`
+* DO NOT touch database
+* DO NOT change routes
+* DO NOT modify Buyer/Seller/Landlord yet
+* DO NOT rename variables used elsewhere
+* STOP if any variable does not exist
+
+---
+
+# STEP 1 — DEFINE TRUE STATE (CRITICAL)
+
+### In BOTH files, at the TOP of the bid section add:
+
+```php
+@php
+$viewerRole = auth()->id() === $auction->user_id ? 'tenant' : 'agent';
+
+$latestCounter = $counterTerms ?? $latestTenantCounter ?? null;
+
+$hasCounter = !is_null($latestCounter);
+
+$lastActionBy = $latestCounter->submitted_by ?? 'agent';
+
+$isAccepted = $bid->status === 'accepted';
+$isRejected = $bid->status === 'rejected';
+
+$awaitingResponse = (
+    ($lastActionBy === 'agent' && $viewerRole === 'tenant') ||
+    ($lastActionBy === 'tenant' && $viewerRole === 'agent')
+);
+@endphp
+```
+
+---
+
+# STEP 2 — FIX MESSAGE SYSTEM (REMOVE ALL OLD TEXT)
+
+### ❌ DELETE ALL:
+
+* “Agent submitted…”
+* “Counter received…”
+* “Your counter…” (hardcoded)
+* Duplicate banners
+
+---
+
+### ✅ ADD SINGLE MESSAGE BLOCK:
+
+```php
+@php
+if ($isAccepted) {
+    $message = "Counter offer accepted. Agreement reached.";
+}
+elseif ($isRejected) {
+    $message = "Counter offer rejected.";
+}
+elseif (!$hasCounter) {
+    if ($viewerRole === 'tenant') {
+        $message = "Agent has submitted a bid.";
+    } else {
+        $message = "Your bid has been submitted. Awaiting the Tenant’s response.";
+    }
+}
+else {
+    if ($awaitingResponse) {
+        if ($viewerRole === 'tenant') {
+            $message = "Agent has submitted a counter offer.";
+        } else {
+            $message = "Tenant has submitted a counter offer.";
+        }
+    } else {
+        if ($viewerRole === 'tenant') {
+            $message = "Your counter offer has been submitted. Awaiting the Agent’s response.";
+        } else {
+            $message = "Your counter offer has been submitted. Awaiting the Tenant’s response.";
+        }
+    }
+}
+@endphp
+```
+
+---
+
+### DISPLAY IT (ONLY ONCE):
+
+```php
+<div class="alert alert-info">
+    {{ $message }}
+</div>
+```
+
+---
+
+# STEP 3 — FIX ACTION BUTTONS (CRITICAL)
+
+### ❌ DELETE ALL EXISTING BUTTON CONDITIONS
+
+---
+
+### ✅ ADD THIS:
+
+```php
+@php
+$canAct = (
+    !$isAccepted &&
+    !$isRejected &&
+    (
+        (!$hasCounter && $viewerRole === 'tenant') ||
+        ($hasCounter && $awaitingResponse)
+    )
+);
+@endphp
+```
+
+---
+
+### BUTTONS:
+
+```php
+@if($canAct)
+    <button>Accept</button>
+    <button>Counter</button>
+    <button>Reject</button>
+@endif
+```
+
+---
+
+# STEP 4 — FIX COUNTER TERMS HEADER
+
+### ❌ REMOVE:
+
+* “Agent’s Counter Terms”
+* “Listing Owner Counter Terms”
+
+---
+
+### ✅ REPLACE WITH:
+
+```php
+<h5>
+@if(!$hasCounter)
+    Original Bid Terms
+@else
+    Counter Terms
+@endif
+</h5>
+```
+
+---
+
+# STEP 5 — REMOVE BROKEN VARIABLES
+
+### ❌ REMOVE:
+
+* `$latestTenantCounter`
+* `$latestAgentCounterBid`
+* `$awaitingParty`
+* Any split logic like:
+
+  * owner vs agent blocks
+  * tenant vs agent duplicated sections
+
+👉 These are causing your inconsistency
+
+---
+
+# STEP 6 — FIX DUPLICATE RENDERING
+
+Search BOTH files for:
+
+```
+alert
+counter banner
+submitted counter
+```
+
+👉 Ensure:
+
+* Only ONE message block exists
+* Not inside modal AND outside
+
+---
+
+# STEP 7 — FIX REDIRECT BUG (CRITICAL)
+
+After counter submit:
+
+### ❌ REMOVE:
+
+* landlord routes
+* generic redirects
+
+---
+
+### ✅ USE:
+
+```php
+return redirect()->route('tenant.auction.bid.view', $bid->id);
+```
+
+---
+
+# 🧪 REQUIRED TESTS (DO NOT SKIP)
+
+### TEST 1 — Agent submits initial bid
+
+* Tenant sees buttons
+* Agent sees waiting message
+* No buttons for agent
+
+---
+
+### TEST 2 — Tenant counters
+
+* Tenant sees waiting message
+* Agent sees buttons
+
+---
+
+### TEST 3 — Agent counters back
+
+* Agent sees waiting
+* Tenant sees buttons
+
+---
+
+### TEST 4 — No duplicate messages
+
+* Only ONE banner visible
+
+---
+
+### TEST 5 — Buttons NEVER show when waiting
+
+---
+
+# 🔥 WHY THIS FIX WORKS
+
+This removes:
+
+* Role confusion
+* Duplicate logic paths
+* Hardcoded messaging
+* Broken “latest counter” assumptions
+
+And replaces it with:
+👉 ONE state engine
+👉 ONE message system
+👉 ONE action rule
+
+---
+
+# 🚀 NEXT STEP (IMPORTANT)
+
+After this is working perfectly:
+
+👉 We copy THIS EXACT ENGINE to:
+
+* Buyer
+* Seller
+* Landlord
+
+NOT before.
+
+---
+
+If you want next level after this, I can:
+
+* Lock this into a reusable Blade partial (so this never breaks again)
+* Or write the replication instructions for all 4 roles cleanly
+
+Just say 👍
