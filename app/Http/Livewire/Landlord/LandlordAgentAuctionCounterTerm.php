@@ -423,6 +423,9 @@ class LandlordAgentAuctionCounterTerm extends Component
             ? $pab->id
             : ($pab->landlord_agent_auction_id ?? null);
 
+        // Store auction ID so the post-save redirect can use it.
+        $this->auctionId = $auctionId;
+
         if ($auctionId) {
             $auc = \App\Models\LandlordAgentAuction::find($auctionId);
             $this->property_type = $auc ? ($auc->get->property_type ?? '') : '';
