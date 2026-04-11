@@ -583,7 +583,7 @@
 
                         @if($awaitingCounterResponse)
                         <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
-                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting {{ $awaitingParty }} response.
+                            <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                         </div>
                         @endif
 
@@ -1123,8 +1123,12 @@
                             @elseif($activeStage === 'seller_needs_response')
                             {{-- Agent already counter-backed; waiting on seller --}}
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i>Your counter-back has been submitted. Waiting for the seller to respond.
+                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
+                            <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
+                               class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
+                                <i class="fa fa-edit me-2"></i>Edit Counter Terms
+                            </a>
                             @else
                             <div class="alert alert-secondary mb-0">
                                 No counter terms to respond to yet.
@@ -1163,7 +1167,7 @@
                             @elseif($activeStage === 'agent_needs_response')
                             {{-- Seller already countered; agent hasn't responded yet --}}
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i>Counter terms sent. Waiting for the agent to respond.
+                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
                                class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">

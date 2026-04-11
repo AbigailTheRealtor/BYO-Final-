@@ -213,7 +213,7 @@
 
                         @if($awaitingCounterResponse)
                         <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
-                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting {{ $awaitingParty }} response.
+                            <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                         </div>
                         @endif
 
@@ -647,25 +647,36 @@
 
                         {{-- AGENT ACTIONS --}}
                         @if($viewerRole === 'agent' && !$bidIsTerminal)
-                        <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                            <i class="fas fa-reply me-2"></i>Counter Back
-                        </a>
-                        <form action="{{ route('buyer.hire.agent.auction.buyer.counter.term.accept') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
-                                <i class="fas fa-check me-2"></i>Accept Counter
-                            </button>
-                        </form>
-                        <form action="{{ route('buyer.hire.agent.auction.buyer.counter.term.reject') }}" method="POST" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
-                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                            <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
-                                <i class="fas fa-times me-2"></i>Reject Counter
-                            </button>
-                        </form>
+                            @if($awaitingCounterResponse)
+                            {{-- Agent submitted the latest counter — waiting for buyer to respond --}}
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
+                            </div>
+                            <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
+                                <i class="fa fa-edit me-2"></i>Edit Counter Terms
+                            </a>
+                            @else
+                            {{-- Buyer sent the latest counter — agent can respond --}}
+                            <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
+                            </a>
+                            <form action="{{ route('buyer.hire.agent.auction.buyer.counter.term.accept') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
+                                    <i class="fas fa-check me-2"></i>Accept Counter
+                                </button>
+                            </form>
+                            <form action="{{ route('buyer.hire.agent.auction.buyer.counter.term.reject') }}" method="POST" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
+                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
+                                    <i class="fas fa-times me-2"></i>Reject Counter
+                                </button>
+                            </form>
+                            @endif
                         @elseif($viewerRole === 'agent' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
                             This bid has been {{ $bidStatus }}.
@@ -696,8 +707,11 @@
                             </form>
                             @else
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i>Counter terms sent. Waiting for the agent to respond.
+                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
+                            <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
+                                <i class="fa fa-edit me-2"></i>Edit Counter Terms
+                            </a>
                             @endif
                         @elseif($viewerRole === 'buyer' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">

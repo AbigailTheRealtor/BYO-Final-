@@ -2514,19 +2514,67 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
                                         @if ($isListingOwner && $latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
-                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Sent.</strong>
                                         @elseif ($isListingOwner && !$latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Received.</strong> The agent has sent you a counter offer.
-                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Received.</strong>
                                         @elseif ($isBidOwner && $latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
-                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Received.</strong>
                                         @elseif ($isBidOwner && !$latestOwnerCounterFromLandlord)
-                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
-                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Sent.</strong>
                                         @endif
                                     </div>
+                                </div>
+                                @endif
+
+                                {{-- ── Counter action row — directly on bid card ── --}}
+                                @if ($latestOwnerCounter && ($isListingOwner || $isBidOwner) && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                @php $bidCardViewerSentLatestLandlord = ($isListingOwner && $latestOwnerCounterFromLandlord) || ($isBidOwner && !$latestOwnerCounterFromLandlord); @endphp
+                                <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                                    <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                    </a>
+                                    @if ($bidCardViewerSentLatestLandlord)
+                                    {{-- Viewer sent latest — waiting, show Edit --}}
+                                    @if ($isListingOwner)
+                                    <a href="{{ route('landlord.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                    </a>
+                                    @else
+                                    <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                    </a>
+                                    @endif
+                                    @elseif ($isListingOwner)
+                                    {{-- Landlord responding to agent's counter-back --}}
+                                    <form method="POST" action="{{ route('agent.landlord.auction.bid.accept', ['id' => data_get($bid, 'id')]) }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                    </form>
+                                    <a href="{{ route('landlord.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                    </a>
+                                    <form method="POST" action="{{ route('agent.landlord.auction.bid.reject', ['id' => data_get($bid, 'id')]) }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                    </form>
+                                    @else
+                                    {{-- Agent responding to landlord's counter --}}
+                                    <form method="POST" action="{{ route('landlord.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                        @csrf
+                                        <input type="hidden" name="counter_bid_id" value="{{ $latestOwnerCounter->id }}">
+                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                    </form>
+                                    <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                    </a>
+                                    <form method="POST" action="{{ route('landlord.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                        @csrf
+                                        <input type="hidden" name="counter_bid_id" value="{{ $latestOwnerCounter->id }}">
+                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                    </form>
+                                    @endif
                                 </div>
                                 @endif
 

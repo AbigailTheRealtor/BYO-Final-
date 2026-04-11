@@ -2491,16 +2491,81 @@
                                                  style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                                 <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                                 <div>
-                                                    @if ($isListingOwner && $latestAgentCounter)
-                                                        <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
-                                                        <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
-                                                    @elseif ($isBidOwner && $latestAgentCounter)
-                                                        <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
-                                                        <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
-                                                    @elseif ($latestBuyerCounter)
-                                                        <strong>Counter Terms Active.</strong> This bid is being evaluated against updated counter terms.
+                                                    @php
+                                                        // Determine direction: who sent the most recent counter?
+                                                        $_buyerCardLatestFromOwner = false;
+                                                        if ($latestAgentCounter && $latestBuyerCounter) {
+                                                            $_buyerCardLatestFromOwner = $latestAgentCounter->created_at >= $latestBuyerCounter->created_at;
+                                                        } elseif ($latestAgentCounter) {
+                                                            $_buyerCardLatestFromOwner = true;
+                                                        }
+                                                        // if only $latestBuyerCounter: $_buyerCardLatestFromOwner stays false (agent sent latest)
+                                                    @endphp
+                                                    @if ($_buyerCardLatestFromOwner && $isListingOwner)
+                                                        <strong>Counter Offer Sent.</strong>
+                                                    @elseif ($_buyerCardLatestFromOwner && $isBidOwner)
+                                                        <strong>Counter Offer Received.</strong>
+                                                    @elseif (!$_buyerCardLatestFromOwner && $isBidOwner)
+                                                        <strong>Counter Offer Sent.</strong>
+                                                    @elseif (!$_buyerCardLatestFromOwner && $isListingOwner)
+                                                        <strong>Counter Offer Received.</strong>
                                                     @endif
                                                 </div>
+                                            </div>
+                                            @endif
+
+                                            {{-- ── Counter action row — directly on bid card ── --}}
+                                            @if (($latestAgentCounter || $latestBuyerCounter) && ($isListingOwner || $isBidOwner) && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                            <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                                                <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                </a>
+                                                @if (($_buyerCardLatestFromOwner && $isListingOwner) || (!$_buyerCardLatestFromOwner && $isBidOwner))
+                                                {{-- Viewer sent latest counter — show Edit --}}
+                                                @if ($isListingOwner)
+                                                <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                </a>
+                                                @else
+                                                <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                </a>
+                                                @endif
+                                                @elseif ($isBidOwner && $latestAgentCounter)
+                                                {{-- Agent responding to owner's counter --}}
+                                                <form method="POST" action="{{ route('buyer.hire.agent.auction.buyer.counter.term.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                                    @csrf
+                                                    <input type="hidden" name="buyer_counter_term_id" value="{{ $latestAgentCounter->id }}">
+                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                    <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                </form>
+                                                <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                    <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                                </a>
+                                                <form method="POST" action="{{ route('buyer.hire.agent.auction.buyer.counter.term.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                                    @csrf
+                                                    <input type="hidden" name="buyer_counter_term_id" value="{{ $latestAgentCounter->id }}">
+                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                </form>
+                                                @elseif ($isListingOwner && $latestBuyerCounter)
+                                                {{-- Owner responding to agent's counter-back --}}
+                                                <form method="POST" action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                                    @csrf
+                                                    <input type="hidden" name="counter_bid_id" value="{{ $latestBuyerCounter->id }}">
+                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                    <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                </form>
+                                                <a href="{{ route('buyer.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                    <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                                </a>
+                                                <form method="POST" action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                                    @csrf
+                                                    <input type="hidden" name="counter_bid_id" value="{{ $latestBuyerCounter->id }}">
+                                                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                </form>
+                                                @endif
                                             </div>
                                             @endif
 
@@ -4199,12 +4264,13 @@
 
                                                                         {{-- ── Countered state ── --}}
                                                                         @elseif ($mfStateB === 'countered')
+                                                                        {{-- mfStateB='countered' only fires when listing owner sent a counter --}}
                                                                         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                                             <i class="fa fa-exchange-alt me-1"></i>
                                                                             @if ($mfIsOwnerB)
-                                                                                Your counter offer has been submitted. Waiting for the agent to respond.
+                                                                                <strong>Counter Offer Sent.</strong>
                                                                             @else
-                                                                                The listing owner has submitted a counter offer. Review and respond in Counter Bidding History below.
+                                                                                <strong>Counter Offer Received.</strong>
                                                                             @endif
                                                                         </div>
                                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
@@ -4212,9 +4278,27 @@
                                                                                 <i class="fa fa-eye me-1"></i> View Counter Terms
                                                                             </a>
                                                                             @if ($mfIsOwnerB)
+                                                                            {{-- Owner sent counter — waiting, show Edit --}}
                                                                             <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
                                                                                 <i class="fa fa-edit me-1"></i> Edit Counter Terms
                                                                             </a>
+                                                                            @elseif ($latestAgentCounter)
+                                                                            {{-- Agent responding to owner's counter --}}
+                                                                            <form method="POST" action="{{ route('buyer.hire.agent.auction.buyer.counter.term.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                                                                @csrf
+                                                                                <input type="hidden" name="buyer_counter_term_id" value="{{ $latestAgentCounter->id }}">
+                                                                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                                <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                                            </form>
+                                                                            <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                                                            </a>
+                                                                            <form method="POST" action="{{ route('buyer.hire.agent.auction.buyer.counter.term.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                                                                @csrf
+                                                                                <input type="hidden" name="buyer_counter_term_id" value="{{ $latestAgentCounter->id }}">
+                                                                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                                            </form>
                                                                             @endif
                                                                         </div>
 

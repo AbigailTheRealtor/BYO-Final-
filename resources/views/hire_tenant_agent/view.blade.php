@@ -2028,19 +2028,62 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
                                         @if ($isListingOwner && $latestCounterByOwner)
-                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
-                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Sent.</strong>
                                         @elseif ($isListingOwner && $latestCounterByAgent)
-                                            <strong>Counter Offer Received.</strong> The agent has responded to your counter offer.
-                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Received.</strong>
                                         @elseif ($isBidOwner && $latestCounterByOwner)
-                                            <strong>Counter Offer Received.</strong> The listing owner has sent you a counter offer on this bid.
-                                            <span class="text-muted ms-1">Review and respond in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Received.</strong>
                                         @elseif ($isBidOwner && $latestCounterByAgent)
-                                            <strong>Counter Offer Sent.</strong> You sent a counter offer on this bid.
-                                            <span class="text-muted ms-1">Review it in <em>Counter Bidding History</em> below.</span>
+                                            <strong>Counter Offer Sent.</strong>
                                         @endif
                                     </div>
+                                </div>
+                                @endif
+
+                                {{-- ── Counter action row — directly on bid card ── --}}
+                                @if ($hasAnyCounter && ($isListingOwner || $isBidOwner) && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
+                                @php $bidCardViewerSentLatest = ($isListingOwner && $latestCounterByOwner) || ($isBidOwner && $latestCounterByAgent); @endphp
+                                <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+                                    <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                    </a>
+                                    @if ($bidCardViewerSentLatest)
+                                    <a href="{{ $isListingOwner ? route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) : route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                    </a>
+                                    @elseif ($isListingOwner && $latestAgentCounterBid)
+                                    <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                        @csrf
+                                        <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                    </form>
+                                    <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                    </a>
+                                    <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                        @csrf
+                                        <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                    </form>
+                                    @elseif ($isBidOwner && $latestTenantCounter)
+                                    <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                        @csrf
+                                        <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
+                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                    </form>
+                                    <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                    </a>
+                                    <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                        @csrf
+                                        <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
+                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                    </form>
+                                    @endif
                                 </div>
                                 @endif
 
@@ -3531,7 +3574,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @elseif ($isListingOwner && $hasAnyCounter && $latestCounterByOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                                     {{-- Owner submitted the latest counter — waiting for agent to respond --}}
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-exchange-alt me-1"></i> You have submitted a counter offer for this bid. Waiting for the agent to respond.
+                                                        <i class="fa fa-exchange-alt me-1"></i> <strong>Counter Offer Sent.</strong>
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                         <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
@@ -3542,14 +3585,31 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </a>
                                                     </div>
                                                     @elseif ($isListingOwner && $hasAnyCounter && $latestCounterByAgent && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
-                                                    {{-- Agent replied to owner's counter — owner needs to respond in Counter Bidding History --}}
+                                                    {{-- Agent sent latest counter — owner responds --}}
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-exchange-alt me-1"></i> The agent has responded to your counter offer. Review and respond in <em>Counter Bidding History</em> below.
+                                                        <i class="fa fa-exchange-alt me-1"></i> <strong>Counter Offer Received.</strong>
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                         <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
                                                             <i class="fa fa-eye me-1"></i> View Counter Terms
                                                         </a>
+                                                        @if ($latestAgentCounterBid)
+                                                        <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                                            @csrf
+                                                            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                            <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                        </form>
+                                                        <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                            <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                                        </a>
+                                                        <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                                            @csrf
+                                                            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                            <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                        </form>
+                                                        @endif
                                                     </div>
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
@@ -3593,20 +3653,45 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         {{-- Owner submitted the latest counter — agent should respond --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-exchange-alt me-1"></i>
-                                                            {{ trim(data_get($auction, 'user.first_name', '') . ' ' . data_get($auction, 'user.last_name', '')) }} has submitted a counter offer.
+                                                            <strong>Counter Offer Received.</strong>
+                                                        </div>
+                                                        <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
+                                                            <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            </a>
+                                                            @if ($latestTenantCounter)
+                                                            <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
+                                                                @csrf
+                                                                <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
+                                                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                            </form>
+                                                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                                <i class="fa fa-exchange-alt me-1"></i> Counter Back
+                                                            </a>
+                                                            <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
+                                                                @csrf
+                                                                <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
+                                                                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                            </form>
+                                                            @endif
                                                         </div>
                                                         @elseif ($latestCounterByAgent)
                                                         {{-- Agent submitted the latest counter — waiting for owner to respond --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                             <i class="fa fa-exchange-alt me-1"></i>
-                                                            Your counter offer has been submitted. Waiting for the listing owner to respond.
+                                                            <strong>Counter Offer Sent.</strong>
                                                         </div>
-                                                        @endif
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                             <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
                                                                 <i class="fa fa-eye me-1"></i> View Counter Terms
                                                             </a>
+                                                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                                <i class="fa fa-edit me-1"></i> Edit Counter Terms
+                                                            </a>
                                                         </div>
+                                                        @endif
                                                         @elseif ($bidAccepted === 'accepted')
                                                         {{-- Accepted: agent sees summary links --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">

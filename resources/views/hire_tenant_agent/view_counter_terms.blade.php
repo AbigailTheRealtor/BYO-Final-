@@ -296,7 +296,7 @@
 
                         @if($awaitingCounterResponse)
                         <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
-                            <i class="fas fa-clock me-2"></i><strong>Your counter offer has been submitted.</strong> Awaiting {{ $awaitingParty }} response.
+                            <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                         </div>
                         @endif
 
@@ -758,8 +758,11 @@
                             @else
                             {{-- Agent submitted the latest counter — waiting for the listing owner to respond --}}
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i>Your counter offer has been submitted. Waiting for the listing owner to respond.
+                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
+                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
+                                <i class="fa fa-edit me-2"></i>Edit Counter Terms
+                            </a>
                             @endif
                         @elseif($viewerRole === 'agent' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">
@@ -789,8 +792,11 @@
                             </form>
                             @else
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i>Counter terms sent. Waiting for the agent to respond.
+                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
+                            <a href="{{ route('tenant.edit-counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
+                                <i class="fa fa-edit me-2"></i>Edit Counter Terms
+                            </a>
                             @endif
                         @elseif($viewerRole === 'tenant' && $bidIsTerminal)
                         <div class="alert alert-secondary mb-0">

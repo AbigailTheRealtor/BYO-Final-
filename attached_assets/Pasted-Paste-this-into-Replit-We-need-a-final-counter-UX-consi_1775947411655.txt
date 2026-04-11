@@ -1,0 +1,335 @@
+Paste this into Replit:
+
+We need a **final counter UX consistency pass** across all 4 listing types:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+This pass is based on live testing findings and should be treated as a **UI/action consistency fix**, not a logic rewrite.
+
+## Goal
+
+Standardize the counter experience across these 3 surfaces:
+
+1. **Bid Card**
+2. **View Bid / View Full Bid**
+3. **View Counter Terms**
+
+The counter direction logic is already mostly in place. Do **not** rewrite the logic engine. We only want to standardize:
+
+* message text
+* button placement
+* button labels
+* availability of counter actions directly on the bid card
+* consistency of View Counter Terms / Edit Counter Terms access
+
+---
+
+# FINAL MESSAGE STANDARD
+
+Use only these two messages everywhere counter state is shown:
+
+### If the viewer submitted the latest counter:
+
+**Counter Offer Sent.**
+
+### If the other party submitted the latest counter:
+
+**Counter Offer Received.**
+
+## Remove all other variants
+
+Remove or replace all versions of:
+
+* `Test User has submitted a counter offer.`
+* `You have submitted a counter offer for this bid.`
+* `Your counter offer has been submitted. Waiting for the listing owner to respond.`
+* `The agent has responded to your counter offer.`
+* `The agent has submitted a counter offer. Review and respond...`
+* `Awaiting the seller's response.`
+* `Awaiting the landlord's response.`
+* `Awaiting the tenant's response.`
+* `Awaiting the buyer's response.`
+* any mention of `Counter Bidding History below`
+* any `counter-back has been submitted` wording in status messages
+
+Do **not** change the button label **Counter Back**. Only remove `counter-back` from status sentences.
+
+---
+
+# FINAL ACTION STANDARD
+
+## Bid Card — when a counter exists
+
+### If the viewer submitted the latest counter:
+
+Show directly on the **bid card**:
+
+* **View Counter Terms**
+* **Edit Counter Terms**
+* keep **View Bid**
+
+Do **not** show:
+
+* Accept
+* Counter Back
+* Reject
+
+Because the viewer is waiting.
+
+---
+
+### If the other party submitted the latest counter:
+
+Show directly on the **bid card**:
+
+* **View Counter Terms**
+* **Accept**
+* **Counter Back**
+* **Reject**
+* keep **View Bid**
+
+Do **not** show:
+
+* Edit Counter Terms
+
+Because this is a response state.
+
+---
+
+# VIEW BID / VIEW FULL BID STANDARD
+
+When a counter exists, the View Bid / View Full Bid surface must use the same state text:
+
+* **Counter Offer Sent.**
+* **Counter Offer Received.**
+
+Also, this surface should consistently expose the same next-step action access as appropriate:
+
+### If viewer submitted the latest counter:
+
+* **View Counter Terms**
+* **Edit Counter Terms**
+
+### If other party submitted the latest counter:
+
+* **View Counter Terms**
+* **Accept**
+* **Counter Back**
+* **Reject**
+
+If these actions already exist elsewhere in View Bid, align them to this rule instead of duplicating conflicting controls.
+
+---
+
+# VIEW COUNTER TERMS STANDARD
+
+Keep the counter terms page itself consistent too.
+
+## Status text
+
+At the top or in the status area, use only:
+
+* **Counter Offer Sent.**
+* **Counter Offer Received.**
+
+## Buttons
+
+### If viewer submitted latest counter:
+
+Show:
+
+* **View Listing**
+* **Edit Counter Terms**
+
+Do **not** show:
+
+* Accept
+* Counter Back
+* Reject
+
+### If other party submitted latest counter:
+
+Show:
+
+* **View Listing**
+* **Accept**
+* **Counter Back**
+* **Reject**
+
+Do **not** show:
+
+* Edit Counter Terms
+
+---
+
+# IMPORTANT SELLER FIX
+
+Seller is still inconsistent.
+
+## Required Seller correction
+
+Audit and fix Seller so that these 3 surfaces all agree:
+
+* bid card
+* View Bid
+* View Counter Terms
+
+Right now Seller still has contradictory message/action states depending on which page is opened. Fix that so Seller follows the same exact rules as the other 3 roles.
+
+Also ensure Seller includes **Edit Counter Terms** anywhere the viewer submitted the latest counter and is currently waiting.
+
+---
+
+# IMPORTANT TENANT FIX
+
+Tenant is still using old wording in some surfaces.
+
+Replace old Tenant wording like:
+
+* `Your counter offer has been submitted. Waiting for the listing owner to respond.`
+* `The agent has responded to your counter offer...`
+
+with the final standard:
+
+* **Counter Offer Sent.**
+* **Counter Offer Received.**
+
+Also ensure Tenant bid cards expose direct counter actions on the card like the other listing types.
+
+---
+
+# IMPORTANT LANDLORD / BUYER / TENANT VIEW BID FIX
+
+Inside Landlord / Tenant / Buyer **View Bid**, old text still appears such as:
+
+* `Test User has submitted a counter offer.`
+* `You have submitted a counter offer for this bid.`
+
+Replace those with the final standard:
+
+* **Counter Offer Sent.**
+* **Counter Offer Received.**
+
+Also make sure **Edit Counter Terms** appears anywhere the viewer submitted the latest counter and is still waiting.
+
+---
+
+# PERMISSION RULES MUST STAY INTACT
+
+Do **not** break any of these:
+
+1. Agents can only use **View Full Bid** on their own bid
+2. Listing owners can use **View Full Bid** on all bids
+3. Competing agents can see competing bid cards, but not private full-bid details
+4. No private-only data should be exposed on competing bids
+
+---
+
+# IMPLEMENTATION RULE
+
+Use existing current-state logic already present in the files.
+
+Use the existing source of truth:
+
+* latest counter submitter
+* current viewer
+* current viewer role
+* current permission state
+
+Do **not** invent a new state engine.
+Do **not** add new database fields.
+Do **not** do a major refactor.
+
+---
+
+# HARD SAFEGUARDS
+
+1. **No schema changes**
+
+   * no migrations
+   * no DB changes
+
+2. **No state engine rewrite**
+
+   * use existing real variables and current latest-counter checks
+
+3. **No route changes**
+
+   * keep existing routes working
+
+4. **No permission regressions**
+
+   * do not expose full bid details to competing agents
+
+5. **No broad layout rewrite**
+
+   * only adjust message text and action placement/visibility
+
+6. **No duplicate controls**
+
+   * if adding direct bid-card actions, remove or suppress conflicting duplicate state controls on the same card where needed
+
+7. **Keep button labels consistent**
+   Final standard button labels should be:
+
+   * View Bid
+   * View Counter Terms
+   * Edit Counter Terms
+   * Accept
+   * Counter Back
+   * Reject
+   * View Listing
+
+---
+
+# FILES / SURFACES TO AUDIT
+
+Audit and update all affected role files for:
+
+* bid card banner/message
+* bid card counter action row
+* View Bid / View Full Bid counter message and action row
+* View Counter Terms status message and action row
+
+Apply across:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+---
+
+# DELIVER BACK
+
+After making the changes, report:
+
+1. exact files changed
+2. which roles were updated
+3. confirmation that all counter status messaging now uses only:
+
+   * `Counter Offer Sent.`
+   * `Counter Offer Received.`
+4. confirmation that bid cards now expose:
+
+   * View Counter Terms + Edit Counter Terms when viewer submitted latest counter
+   * View Counter Terms + Accept / Counter Back / Reject when the other party submitted latest counter
+5. confirmation that permissions were not broken
+6. any role/surface that could not be safely aligned without larger refactor
+
+---
+
+# STOP RULE
+
+If any one of these requires:
+
+* a broad refactor
+* new state architecture
+* permission changes that risk exposing private data
+
+STOP and report instead of forcing it.
+
+This is the final **consistency and action-placement pass**, not a rewrite.
