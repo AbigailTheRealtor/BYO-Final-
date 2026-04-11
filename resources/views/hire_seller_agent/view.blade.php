@@ -2929,23 +2929,8 @@
                                     </a>
                                 </div>
                                 @else
-                                {{-- RESPONSE: Row 1 = decision, Row 2 = View CT --}}
-                                <div class="d-flex gap-2 align-items-center mb-1">
-                                    <form method="POST" action="{{ route('hire.seller.agent.auction.counter.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
-                                        @csrf
-                                        <input type="hidden" name="counter_term_id" value="{{ $latestCounter->id }}">
-                                        <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
-                                    </form>
-                                    <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
-                                    </a>
-                                    <form method="POST" action="{{ route('hire.seller.agent.auction.counter.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
-                                        @csrf
-                                        <input type="hidden" name="counter_term_id" value="{{ $latestCounter->id }}">
-                                        <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
-                                    </form>
-                                </div>
-                                <div class="d-flex align-items-center mb-2" style="margin-top:8px;">
+                                {{-- RESPONSE: View CT only — Accept/Counter Back/Reject are on View Counter Terms page --}}
+                                <div class="d-flex align-items-center mb-2">
                                     <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                         <i class="fa fa-eye me-1"></i> View Counter Terms
                                     </a>
@@ -4077,7 +4062,7 @@
                                         </div>
                                         @endif
 
-                                        {{-- Counter action banner + buttons (shown when recipient can respond) --}}
+                                        {{-- Counter action banner (link to View Counter Terms page where actions live) --}}
                                         @if ($scShowCounterActions)
                                         <div class="mt-3 pt-3 border-top">
                                             <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
@@ -4089,45 +4074,13 @@
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                                <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                                <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                                     <i class="fa fa-eye me-1"></i> View Counter Terms
                                                 </a>
                                                 @if ($scIsOwner)
-                                                <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                                <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                                     <i class="fa fa-edit me-1"></i> Edit Counter Terms
                                                 </a>
-                                                @endif
-                                            </div>
-
-                                            {{-- Respond to this Counter Offer: Accept / Reject / Counter --}}
-                                            <div class="counter-response-buttons mt-3">
-                                                <h6>Respond to this Counter Offer:</h6>
-
-                                                @if ($isExpired)
-                                                <div class="alert alert-warning text-center mt-2 mb-0 p-2" style="font-size: 15px">
-                                                    <strong>Bidding/Counter Period Ended</strong>
-                                                </div>
-                                                @else
-                                                <div class="d-flex gap-3 flex-wrap justify-content-between">
-                                                    {{-- Accept --}}
-                                                    <form class="d-inline" action="{{ route('hire.seller.agent.auction.counter.accept') }}" method="post">
-                                                        @csrf
-                                                        <input type="hidden" name="counter_term_id" value="{{ data_get($counterBid, 'id') }}">
-                                                        <button type="submit" class="btn-custom btn-accept" style="font-size:16px">Accept</button>
-                                                    </form>
-
-                                                    {{-- Reject --}}
-                                                    <form class="d-inline" action="{{ route('hire.seller.agent.auction.counter.reject') }}" method="post">
-                                                        @csrf
-                                                        <input type="hidden" name="counter_term_id" value="{{ data_get($counterBid, 'id') }}">
-                                                        <button type="submit" class="btn-custom btn-reject" style="font-size:16px">Reject</button>
-                                                    </form>
-
-                                                    {{-- Counter --}}
-                                                    <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}"
-                                                       class="btn-custom btn-counter"
-                                                       style="font-size:16px; display:inline-block; text-decoration:none;">Counter</a>
-                                                </div>
                                                 @endif
                                             </div>
                                         </div>
@@ -5615,20 +5568,7 @@
                                                 <i class="fa fa-edit me-1"></i> Edit Counter Terms
                                             </a>
                                             @else
-                                            {{-- Other party sent latest: Accept → Counter Back → Reject → View CT --}}
-                                            <form method="POST" action="{{ route('hire.seller.agent.auction.counter.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
-                                                @csrf
-                                                <input type="hidden" name="counter_term_id" value="{{ $latestCounter->id }}">
-                                                <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
-                                            </form>
-                                            <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                <i class="fa fa-exchange-alt me-1"></i> Counter Back
-                                            </a>
-                                            <form method="POST" action="{{ route('hire.seller.agent.auction.counter.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
-                                                @csrf
-                                                <input type="hidden" name="counter_term_id" value="{{ $latestCounter->id }}">
-                                                <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
-                                            </form>
+                                            {{-- Other party sent latest: View CT only — actions on View Counter Terms page --}}
                                             <a href="{{ route('hire.seller.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                                 <i class="fa fa-eye me-1"></i> View Counter Terms
                                             </a>

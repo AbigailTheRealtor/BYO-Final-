@@ -2545,46 +2545,9 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     </a>
                                     @endif
                                 </div>
-                                @elseif ($isListingOwner)
-                                {{-- RESPONSE (landlord): Row 1 = decision, Row 2 = View CT --}}
-                                <div class="d-flex gap-2 align-items-center mb-1">
-                                    <form method="POST" action="{{ route('agent.landlord.auction.bid.accept', ['id' => data_get($bid, 'id')]) }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
-                                        @csrf
-                                        <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
-                                    </form>
-                                    <a href="{{ route('landlord.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
-                                    </a>
-                                    <form method="POST" action="{{ route('agent.landlord.auction.bid.reject', ['id' => data_get($bid, 'id')]) }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
-                                        @csrf
-                                        <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
-                                    </form>
-                                </div>
-                                <div class="d-flex align-items-center mb-2" style="margin-top:8px;">
-                                    <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-eye me-1"></i> View Counter Terms
-                                    </a>
-                                </div>
                                 @else
-                                {{-- RESPONSE (agent): Row 1 = decision, Row 2 = View CT --}}
-                                <div class="d-flex gap-2 align-items-center mb-1">
-                                    <form method="POST" action="{{ route('landlord.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
-                                        @csrf
-                                        <input type="hidden" name="counter_bid_id" value="{{ $latestOwnerCounter->id }}">
-                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                        <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
-                                    </form>
-                                    <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-exchange-alt me-1"></i> Counter Back
-                                    </a>
-                                    <form method="POST" action="{{ route('landlord.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
-                                        @csrf
-                                        <input type="hidden" name="counter_bid_id" value="{{ $latestOwnerCounter->id }}">
-                                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                        <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
-                                    </form>
-                                </div>
-                                <div class="d-flex align-items-center mb-2" style="margin-top:8px;">
+                                {{-- RESPONSE: View CT only — Accept/Counter Back/Reject are on View Counter Terms page --}}
+                                <div class="d-flex align-items-center mb-2">
                                     <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                         <i class="fa fa-eye me-1"></i> View Counter Terms
                                     </a>
@@ -5041,76 +5004,12 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                     {{-- Step 6: Display Actions or Expired Message --}}
                                                     @if ($showCounterActions)
-                                                    <div
-                                                        class="counter-response-buttons mt-3 pt-3 border-top">
-                                                        <h6>Respond to this Counter Offer:</h6>
-                                                        @if ($isExpired)
-                                                        {{-- 🔹 Show expired message if auction expired --}}
-                                                        <div class="alert alert-warning text-center mt-2 mb-0 p-2" style="font-size: 15px">
-                                                            <strong>Bidding/Counter Period Ended</strong>
-                                                        </div>
-                                                        @else
-
-                                                        <div
-                                                            class="d-flex gap-3 flex-wrap justify-content-between">
-
-                                                            <form class="d-inline"
-                                                                action="{{ route('landlord.hire.agent.auction.counter.bid.accept') }}"
-                                                                method="post">
-                                                                @csrf
-                                                                <input type="hidden"
-                                                                    name="auction_id"
-                                                                    value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden"
-                                                                    name="bid_id"
-                                                                    value="{{ data_get($bid, 'id') }}">
-                                                                <input type="hidden"
-                                                                    name="counter_bid_id"
-                                                                    value="{{ data_get($counterBid, 'id') }}">
-                                                                <button type="submit"
-                                                                    class="btn-custom btn-accept"
-                                                                    style="font-size:16px">Accept</button>
-                                                            </form>
-
-                                                            <form class="d-inline"
-                                                                action="{{ route('landlord.hire.agent.auction.counter.bid.reject') }}"
-                                                                method="post">
-                                                                @csrf
-                                                                <input type="hidden"
-                                                                    name="auction_id"
-                                                                    value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden"
-                                                                    name="bid_id"
-                                                                    value="{{ data_get($bid, 'id') }}">
-                                                                <input type="hidden"
-                                                                    name="counter_bid_id"
-                                                                    value="{{ data_get($counterBid, 'id') }}">
-                                                                <button type="submit"
-                                                                    class="btn-custom btn-reject"
-                                                                    style="font-size:16px">Reject</button>
-                                                            </form>
-
-                                                            <form class="d-inline"
-                                                                action="{{ route('landlord.agent.add.counter-bid') }}"
-                                                                method="post">
-                                                                @csrf
-                                                                <input type="hidden"
-                                                                    name="auction_id"
-                                                                    value="{{ data_get($auction, 'id') }}">
-                                                                <input type="hidden"
-                                                                    name="bid_id"
-                                                                    value="{{ data_get($bid, 'id') }}">
-                                                                <input type="hidden"
-                                                                    name="counter_bid_id"
-                                                                    value="{{ data_get($counterBid, 'id') }}">
-                                                                <button type="submit"
-                                                                    class="btn-custom btn-counter"
-                                                                    style="font-size:16px">Counter</button>
-                                                            </form>
-                                                        </div>
-                                                        @endif
+                                                    <div class="mt-3 pt-3 border-top">
+                                                        {{-- Actions are on View Counter Terms page only --}}
+                                                        <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                        </a>
                                                     </div>
-
                                                     @endif
 
                                                     <!-- Counter footer status -->
