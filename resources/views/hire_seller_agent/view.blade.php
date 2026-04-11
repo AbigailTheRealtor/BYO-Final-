@@ -2648,7 +2648,7 @@
             $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
             $isAgentViewer  = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
             // Traditional: agents cannot see other agents' bid info
-            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
+            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing || $isTraditionalListing;
             $otherBidsExist   = $auction->bids->where('user_id', '!=', $auth_id)->count() > 0;
         @endphp
 
@@ -2781,11 +2781,11 @@
                             $isOtherAgentsBid    = !$isListingOwner && !$isBidOwner;
 
                             // Seller Bid Visibility Logic (matches Tenant pattern):
-                            // - Traditional: Agents can ONLY see their own bids (not other agents' bids)
+                            // - Traditional: Agents see all bid cards but can only open View Full Bid on their own bid
                             // - Bidding Period: Agents can see anonymized bids ONLY if they submitted a bid first
                             // - Listing Owner: Always sees all bids
                             $isAgent    = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid);
+                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid) || ($isTraditionalListing && $isAgent);
                             if (!$canViewBid && $isAgent) { continue; }
 
                             // Build Seller purchase fee display for card body summary
@@ -3061,10 +3061,16 @@
                                 @endif
 
                                 <!-- D) View Full Bid link -->
+                                @if ($isListingOwner || $isBidOwner)
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
+                                @else
+                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-lock me-1"></i> Full bid details are private
+                                </span>
+                                @endif
 
                                 <!-- E) Edit Actions for Bid Owner -->
                                 @if ($canEditWithdraw)

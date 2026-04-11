@@ -2383,7 +2383,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                             $canEditWithdraw = $isBidOwner && !$isExpired && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected';
                             $isOtherAgentsBid = !$isListingOwner && !$isBidOwner;
                             $isAgent = $auth_id && auth()->user() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid);
+                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid) || ($isTraditionalListing && $isAgent);
                             if (!$canViewBid && $isAgent) { continue; }
 
                             // ── Resolved Landlord Broker Lease Fee display (matching Tenant's commissionFeeDisplay) ──
@@ -2670,10 +2670,16 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 @endif
 
                                 <!-- View Full Bid link -->
+                                @if ($isListingOwner || $isBidOwner)
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
+                                @else
+                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-lock me-1"></i> Full bid details are private
+                                </span>
+                                @endif
                                 <!-- Edit Bid button for bid owner -->
                                 @if ($canEditWithdraw)
                                 <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">

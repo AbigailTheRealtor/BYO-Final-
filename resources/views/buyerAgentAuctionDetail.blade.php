@@ -2358,7 +2358,7 @@
                                         $bidUser = data_get($bid, 'user_id');
                                         $isBidOwner = ($bidUser == $auth_id);
                                         $_isAgentViewer = $auth_id && auth()->check() && in_array(auth()->user()->user_type ?? '', ['agent']);
-                                        $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $_isAgentViewer && $userHasBid);
+                                        $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $_isAgentViewer && $userHasBid) || ($isTraditionalListing && $_isAgentViewer);
                                         if (!$canViewBid && $_isAgentViewer) { continue; }
                                         $agentNumber = $agentNumberMap[$bidId] ?? $loop->iteration;
                                         $bidAccepted = data_get($bid, 'accepted', '0');

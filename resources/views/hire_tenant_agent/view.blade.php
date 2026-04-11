@@ -1557,8 +1557,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
             // Check if current user is an agent
             $isAgentViewer = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-            // For Traditional listings, agents should not see other agents' bid info
-            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing;
+            // Traditional: agents can see bid cards but only open View Full Bid on their own bid
+            $canSeeBidSummary = $isListingOwner || !$isAgentViewer || $isBiddingPeriodListing || $isTraditionalListing;
         @endphp
         
         {{-- Last Bidder Info - Outside the card (Hidden for Bidding Period listings to avoid timing hints) --}}
@@ -1693,11 +1693,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                             $isOtherAgentsBid = !$isListingOwner && !$isBidOwner;
                             
                             // 🔹 Agent Bid Visibility Logic:
-                            // - Traditional: Agents can ONLY see their own bids (not other agents' bids)
-                            // - Bidding Period: Agents can see anonymous summaries of all bids ONLY if they have submitted a bid first (submit-to-view rule)
+                            // - Traditional: Agents see all bid cards but can only open View Full Bid on their own bid
+                            // - Bidding Period: Agents can see anonymized bid cards ONLY if they have submitted a bid first (submit-to-view rule)
                             // - Listing Owner: Always sees all bids
                             $isAgent = $auth_id && in_array(auth()->user()->user_type ?? '', ['agent']);
-                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid);
+                            $canViewBid = $isListingOwner || $isBidOwner || ($isBiddingPeriodListing && $isAgent && $userHasBid) || ($isTraditionalListing && $isAgent);
                             // Skip rendering this bid if agent cannot view it
                             if (!$canViewBid && $isAgent) {
                                 continue;
@@ -2190,10 +2190,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @endif
                                 
                                 <!-- D) View Full Terms Link -->
+                                @if ($isListingOwner || $isBidOwner)
                                 <a href="#" data-bs-toggle="modal" data-bs-target="#privateDataModal{{ data_get($bid, 'id') }}"
                                    style="color: #1a4a6e; text-decoration: none; font-size: 1rem; font-weight: 500;">
                                     View Full Bid
                                 </a>
+                                @else
+                                <span style="color: #888; font-style: italic; font-size: 0.95rem;">
+                                    <i class="fa fa-lock me-1"></i> Full bid details are private
+                                </span>
+                                @endif
                                 
                                 <!-- Edit/Withdraw Actions for Bid Owner - Same row, matched sizing -->
                                 @if ($canEditWithdraw)
