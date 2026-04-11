@@ -2043,46 +2043,55 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 {{-- ── Counter action row — directly on bid card ── --}}
                                 @if ($hasAnyCounter && ($isListingOwner || $isBidOwner) && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                 @php $bidCardViewerSentLatest = ($isListingOwner && $latestCounterByOwner) || ($isBidOwner && $latestCounterByAgent); @endphp
-                                <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-                                    <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
+                                <div class="d-flex gap-2 align-items-center mb-2" style="flex-wrap: wrap;">
+                                    @if ($bidCardViewerSentLatest)
+                                    {{-- Viewer sent latest — show View CT + Edit CT only --}}
+                                    <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                         <i class="fa fa-eye me-1"></i> View Counter Terms
                                     </a>
-                                    @if ($bidCardViewerSentLatest)
-                                    <a href="{{ $isListingOwner ? route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) : route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-outline-secondary btn-sm">
+                                    <a href="{{ $isListingOwner ? route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) : route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                         <i class="fa fa-edit me-1"></i> Edit Counter Terms
                                     </a>
                                     @elseif ($isListingOwner && $latestAgentCounterBid)
+                                    {{-- Owner responding to agent's counter: Accept → Counter Back → Reject → View CT --}}
                                     <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
                                         @csrf
                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                         <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                        <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
                                     </form>
-                                    <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                    <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                         <i class="fa fa-exchange-alt me-1"></i> Counter Back
                                     </a>
                                     <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
                                         @csrf
                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                         <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                        <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
                                     </form>
+                                    <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                    </a>
                                     @elseif ($isBidOwner && $latestTenantCounter)
+                                    {{-- Agent responding to owner's counter: Accept → Counter Back → Reject → View CT --}}
                                     <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
                                         @csrf
                                         <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
                                         <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                        <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                        <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
                                     </form>
-                                    <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                    <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                         <i class="fa fa-exchange-alt me-1"></i> Counter Back
                                     </a>
                                     <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
                                         @csrf
                                         <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
                                         <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                        <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
                                     </form>
+                                    <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                    </a>
                                     @endif
                                 </div>
                                 @endif
@@ -3590,26 +3599,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <i class="fa fa-exchange-alt me-1"></i> <strong>Counter Offer Received.</strong>
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
-                                                        <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
-                                                        </a>
                                                         @if ($latestAgentCounterBid)
                                                         <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
                                                             @csrf
                                                             <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                            <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                            <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
                                                         </form>
-                                                        <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                        <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                                             <i class="fa fa-exchange-alt me-1"></i> Counter Back
                                                         </a>
                                                         <form method="POST" action="{{ route('tenant.hire.agent.auction.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
                                                             @csrf
                                                             <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                            <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                            <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
                                                         </form>
                                                         @endif
+                                                        <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                        </a>
                                                     </div>
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
@@ -3656,26 +3665,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <strong>Counter Offer Received.</strong>
                                                         </div>
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
-                                                            <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn btn-warning btn-sm text-dark">
-                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
-                                                            </a>
                                                             @if ($latestTenantCounter)
                                                             <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.accept') }}" class="d-inline" onsubmit="return confirm('Accept this counter offer?');">
                                                                 @csrf
                                                                 <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                <button type="submit" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i> Accept</button>
+                                                                <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-check me-1"></i> Accept</button>
                                                             </form>
-                                                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn btn-counter btn-sm text-dark">
+                                                            <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                                                 <i class="fa fa-exchange-alt me-1"></i> Counter Back
                                                             </a>
                                                             <form method="POST" action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" class="d-inline" onsubmit="return confirm('Reject this counter offer?');">
                                                                 @csrf
                                                                 <input type="hidden" name="counter_bid_id" value="{{ $latestTenantCounter->id }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                                                                <button type="submit" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i> Reject</button>
+                                                                <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;"><i class="fa fa-times me-1"></i> Reject</button>
                                                             </form>
                                                             @endif
+                                                            <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            </a>
                                                         </div>
                                                         @elseif ($latestCounterByAgent)
                                                         {{-- Agent submitted the latest counter — waiting for owner to respond --}}
