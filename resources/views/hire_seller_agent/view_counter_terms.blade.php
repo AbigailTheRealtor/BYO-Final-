@@ -1100,24 +1100,24 @@
                         @if($viewerRole === 'agent' && !$bidIsTerminal)
                             @if($activeStage === 'agent_needs_response' && $sellerCounter)
                             {{-- Agent must respond to seller's counter --}}
+                            <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
+                               class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:10px 20px;font-weight:600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
+                            </a>
                             <form action="{{ route('hire.seller.agent.auction.counter.accept') }}" method="post"
                                   onsubmit="return confirm('Accept this counter offer? This will mark your bid as accepted.');">
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $sellerCounter->id }}">
                                 <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fas fa-check me-2"></i>Accept Counter
+                                    <i class="fas fa-check me-2"></i>Accept
                                 </button>
                             </form>
-                            <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
-                               class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:10px 20px;font-weight:600;">
-                                <i class="fas fa-reply me-2"></i>Counter Back
-                            </a>
                             <form action="{{ route('hire.seller.agent.auction.counter.reject') }}" method="post"
                                   onsubmit="return confirm('Reject this counter offer?');">
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $sellerCounter->id }}">
                                 <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fas fa-times me-2"></i>Reject Counter
+                                    <i class="fas fa-times me-2"></i>Reject
                                 </button>
                             </form>
                             @elseif($activeStage === 'seller_needs_response')
@@ -1144,24 +1144,24 @@
                         @if($viewerRole === 'seller' && !$bidIsTerminal)
                             @if($activeStage === 'seller_needs_response' && $agentCounterBack)
                             {{-- Agent counter-backed; seller can accept, counter back, or reject --}}
+                            <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
+                               class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:10px 20px;font-weight:600;">
+                                <i class="fas fa-reply me-2"></i>Counter Back
+                            </a>
                             <form action="{{ route('hire.seller.agent.auction.counter.accept') }}" method="post"
                                   onsubmit="return confirm('Accept the agent\'s counter-back? This will finalize the bid.');">
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $agentCounterBack->id }}">
                                 <button type="submit" class="btn" style="background-color:#28a745;border:2px solid #28a745;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fas fa-check me-2"></i>Accept Counter
+                                    <i class="fas fa-check me-2"></i>Accept
                                 </button>
                             </form>
-                            <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
-                               class="btn" style="background-color:#ffc107;border:2px solid #ffc107;color:#000;padding:10px 20px;font-weight:600;">
-                                <i class="fas fa-reply me-2"></i>Counter Back
-                            </a>
                             <form action="{{ route('hire.seller.agent.auction.counter.reject') }}" method="post"
                                   onsubmit="return confirm('Reject the agent\'s counter-back?');">
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $agentCounterBack->id }}">
                                 <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fas fa-times me-2"></i>Reject Counter
+                                    <i class="fas fa-times me-2"></i>Reject
                                 </button>
                             </form>
                             @elseif($activeStage === 'agent_needs_response')

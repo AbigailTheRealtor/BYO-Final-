@@ -744,7 +744,7 @@
                                 <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
-                                    <i class="fas fa-check me-2"></i>Accept Counter
+                                    <i class="fas fa-check me-2"></i>Accept
                                 </button>
                             </form>
                             <form action="{{ route('tenant.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
@@ -752,7 +752,7 @@
                                 <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
-                                    <i class="fas fa-times me-2"></i>Reject Counter
+                                    <i class="fas fa-times me-2"></i>Reject
                                 </button>
                             </form>
                             @else
