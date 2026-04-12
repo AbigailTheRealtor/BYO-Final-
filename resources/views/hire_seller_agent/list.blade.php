@@ -76,9 +76,9 @@
                             href="{{ route('seller.agent.auction.detail', @$auction->id) }}">{{ @$auction->title }}</a>
                         </td>
 
-                        <td>{{ $auction->get->counties[0] }}</td>
+                        <td>{{ $auction->get->counties[0] ?? '' }}</td>
 
-                        <td> {{$auction->get->cities[0]}}</td>
+                        <td>{{ $auction->get->cities[0] ?? '' }}</td>
                         <td>{{ @$auction->get->state }}</td>
 
 
@@ -114,7 +114,7 @@
                                 </li>
                               @endif
                               @php
-                                $counter = App\Models\SellerCounterTerm::where('seller_auction_id', $auction->id)->first();
+                                $counter = App\Models\SellerCounterTerm::where('seller_agent_auction_id', $auction->id)->first();
                               @endphp
                               @if (isset($counter))
                                 <a class="dropdown-item" href="{{ route('seller.edit-counter-terms', $auction->id) }}">

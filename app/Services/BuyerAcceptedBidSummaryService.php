@@ -346,6 +346,16 @@ class BuyerAcceptedBidSummaryService
             $html = $this->buildSummaryHtml($listing, $bid, $buyer, $agent, $sourceData, $acceptedCounter);
 
             $summary->summary_html = $html;
+
+            // Invalidate any cached PDF so the next download regenerates from the updated HTML.
+            if ($summary->summary_pdf_path) {
+                $oldPdfPath = storage_path('app/' . $summary->summary_pdf_path);
+                if (file_exists($oldPdfPath)) {
+                    @unlink($oldPdfPath);
+                }
+                $summary->summary_pdf_path = null;
+            }
+
             $summary->save();
 
             return true;

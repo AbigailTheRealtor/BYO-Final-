@@ -118,6 +118,10 @@ class BuyerAgentAuction extends Model
         $data = [];
         $metas = BuyerAgentAuctionMeta::where('buyer_agent_auction_id', $this->id)->get();
         foreach ($metas as $row) {
+            if ($row->meta_value === null) {
+                $data[$row->meta_key] = null;
+                continue;
+            }
             $decoded = json_decode($row->meta_value, true);
             if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
                 $value = $decoded;
