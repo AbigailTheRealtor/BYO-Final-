@@ -1,0 +1,89 @@
+**Task: Landlord Accepted Bid Summary — format Additional Services cleanly instead of showing raw array text**
+
+## Goal
+
+In the Landlord Accepted Bid Summary PDF, the **Additional Services** values are showing as a raw serialized array:
+
+`["Example 1","Example 2"]`
+
+Even if those values are correct test data, the rendering is not clean. It should display each item as its own line under Additional Services.
+
+## Scope
+
+* **Landlord Accepted Bid Summary only**
+* **Services section only**
+* **Additional Services rendering only**
+* No other summary changes
+
+## Hard safeguards
+
+1. **Do not change DB schema**
+2. **Do not change routes**
+3. **Do not change sign flow**
+4. **Do not change compensation formatting**
+5. **Do not change other categories unless the exact same shared helper requires a safe normalization fix**
+6. **Do not change the stored values**
+7. **Only change how Landlord Additional Services is rendered**
+8. **Audit first, edit second**
+
+---
+
+## Confirmed issue
+
+The PDF currently renders:
+
+`["Example 1","Example 2"]`
+
+It should render as clean lines such as:
+
+* Example 1
+* Example 2
+
+or equivalent line-by-line output consistent with the rest of the Services section.
+
+---
+
+## Read-only audit first
+
+Before editing, report:
+
+1. exact file and method rendering Landlord Accepted Bid Summary Services
+2. exact field/key used for Additional Services
+3. whether the value is stored as array, JSON, or stringified JSON
+4. minimal implementation plan
+
+---
+
+## Required fix
+
+If Additional Services is stored as:
+
+* array
+* JSON array
+* stringified JSON array
+
+normalize it and render each non-empty item as its own service line.
+
+If the value is plain text, preserve it as plain text.
+
+Do not show raw JSON/bracket/comma formatting in the PDF.
+
+---
+
+## QA
+
+1. regenerate Landlord Accepted Bid Summary PDF
+2. confirm Additional Services no longer shows raw array text
+3. confirm items render as separate clean lines
+4. confirm no regression in any other service category
+5. confirm no schema/routes/sign-flow changes
+
+---
+
+## Output required after coding
+
+1. exact files changed
+2. exact methods changed
+3. root cause
+4. how Additional Services now renders
+5. confirmation no other behavior changed

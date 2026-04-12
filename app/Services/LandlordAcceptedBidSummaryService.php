@@ -917,7 +917,16 @@ class LandlordAcceptedBidSummaryService
                     }
                 }
             } else {
-                $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($otherServices) . '</li>';
+                $decoded = is_string($otherServices) ? json_decode($otherServices, true) : null;
+                if (is_array($decoded)) {
+                    foreach ($decoded as $service) {
+                        if (!empty(trim((string) $service))) {
+                            $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e(trim((string) $service)) . '</li>';
+                        }
+                    }
+                } else {
+                    $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($otherServices) . '</li>';
+                }
             }
             $html .= '</ul></div>';
         }
