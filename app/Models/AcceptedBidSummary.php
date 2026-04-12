@@ -64,6 +64,11 @@ class AcceptedBidSummary extends Model
         return !empty($this->tenant_signature_name) && !empty($this->tenant_signed_at);
     }
 
+    public function isOwnerSigned()
+    {
+        return $this->isTenantSigned();
+    }
+
     public function isAgentSigned()
     {
         return !empty($this->agent_signature_name) && !empty($this->agent_signed_at);
