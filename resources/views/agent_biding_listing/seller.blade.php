@@ -177,9 +177,9 @@
                                                     <td><a
                                                          href="{{ route('seller.agent.auction.detail', @$auction->id) }}">{{ @$auction->title }}</a>
                                                     </td>
-                                                    <td>{{ $auction->get->counties[0] }}</td>
+                                                    <td>{{ $auction->get->counties[0] ?? '' }}</td>
 
-                                                    <td> {{ $auction->get->cities[0] }}</td>
+                                                    <td> {{ $auction->get->cities[0] ?? '' }}</td>
                                                     <td>{{ @$auction->get->state }}</td>
                                                     <td>{{ Carbon\Carbon::parse(@$auction->created_at)->format('M d, Y') }}
                                                     </td>
@@ -223,7 +223,7 @@
         $(function() {
             $('.auction-type').on('change', function() {
                 var val = $(this).val();
-                window.location.href = '{{ route('tenant.agent.auctions.list') }}?type=' + val;
+                window.location.href = '{{ route('seller.biding.auctions.list') }}?type=' + val;
             });
         });
     </script>

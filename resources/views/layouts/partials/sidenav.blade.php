@@ -122,7 +122,7 @@
     @endif
 
     @if (in_array(auth()->user()->user_type, ['buyer']))
-    <a href="{{ route('buyer.agent.auctions') }}">
+    <a href="{{ route('buyer.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
