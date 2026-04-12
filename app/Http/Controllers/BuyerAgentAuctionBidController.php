@@ -465,13 +465,14 @@ class BuyerAgentAuctionBidController extends Controller
             return redirect()->back()->with('error', 'Buyer counter term not found.');
         }
 
-        // buyer_agent_auction_id now stores the specific bid ID (per-bid architecture).
-        $originalBid = BuyerAgentAuctionBid::find($buyerCounterTerm->buyer_agent_auction_id);
+        // parent_counter_id stores the bid ID (the bid this counter term was created against).
+        // buyer_agent_auction_id stores the auction ID (real FK to buyer_agent_auctions).
+        $originalBid = BuyerAgentAuctionBid::find($buyerCounterTerm->parent_counter_id);
         if (!$originalBid) {
             return redirect()->back()->with('error', 'Original bid not found.');
         }
 
-        $auction = BuyerAgentAuction::find($originalBid->buyer_agent_auction_id);
+        $auction = BuyerAgentAuction::find($buyerCounterTerm->buyer_agent_auction_id);
         if (!$auction) {
             return redirect()->back()->with('error', 'Listing not found.');
         }
@@ -558,8 +559,8 @@ class BuyerAgentAuctionBidController extends Controller
             return redirect()->back()->with('error', 'Buyer counter term not found.');
         }
 
-        // buyer_agent_auction_id now stores the specific bid ID (per-bid architecture).
-        $originalBid = BuyerAgentAuctionBid::find($buyerCounterTerm->buyer_agent_auction_id);
+        // parent_counter_id stores the bid ID (the bid this counter term was created against).
+        $originalBid = BuyerAgentAuctionBid::find($buyerCounterTerm->parent_counter_id);
         if (!$originalBid) {
             return redirect()->back()->with('error', 'Original bid not found.');
         }

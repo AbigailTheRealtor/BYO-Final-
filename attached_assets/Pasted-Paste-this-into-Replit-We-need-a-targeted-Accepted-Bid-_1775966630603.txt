@@ -1,0 +1,237 @@
+Paste this into Replit:
+
+We need a **targeted Accepted Bid Summary fix** for **Seller** and **Buyer** only.
+
+## Current confirmed status
+
+### Correct — use as reference
+
+* **Tenant accepted flow is correct**
+* **Landlord accepted flow is correct**
+
+Use Tenant and Landlord as the reference implementation for:
+
+* accept action
+* accepted status update
+* accepted bid summary creation
+* accepted bid summary page rendering
+* field mapping / fallback logic
+
+### Broken
+
+* **Seller**
+
+  * Accepting a bid throws a database error:
+
+    * invalid input syntax for type boolean: `"accepted"`
+  * This means Seller is writing the wrong value type into a boolean column
+
+* **Buyer**
+
+  * Accepting a bid leads to:
+
+    * `Original bid not found.`
+  * This means Buyer is failing to resolve the correct accepted/original bid record or related accepted summary source
+
+---
+
+# Goal
+
+Make **Seller** and **Buyer** accept flow behave exactly like **Tenant** and **Landlord**:
+
+1. user clicks **Accept Bid**
+2. bid is accepted successfully
+3. accepted bid summary record/page loads successfully
+4. accepted summary uses the same visual structure and same field/logic pattern already working in Tenant/Landlord
+
+---
+
+# Scope
+
+Fix only:
+
+* **Seller accept flow**
+* **Buyer accept flow**
+* **Seller accepted summary generation / lookup**
+* **Buyer accepted summary generation / lookup**
+* **Seller accepted summary page field mapping if needed**
+* **Buyer accepted summary page field mapping if needed**
+
+Do **not** touch Tenant or Landlord except to read them as the source-of-truth reference.
+
+---
+
+# Problem 1 — Seller accept action
+
+## Confirmed error
+
+Seller accept is attempting to update a boolean column with the string:
+
+* `"accepted"`
+
+Error shown:
+
+* invalid input syntax for type boolean: `"accepted"`
+
+## Required fix
+
+Find the exact Seller accept action/controller/livewire method/model update that sets:
+
+* `accepted = 'accepted'`
+
+and make Seller use the **same accepted value logic** as the working Tenant/Landlord implementation.
+
+### Important
+
+Do not guess.
+Compare directly against Tenant/Landlord accept code and mirror the same data type and same field usage.
+
+Likely fix pattern:
+
+* if column is boolean → write `true` / `1`
+* if separate status field exists → update that field appropriately
+* do not stuff string `"accepted"` into a boolean column
+
+---
+
+# Problem 2 — Buyer accepted summary lookup
+
+## Confirmed error
+
+Buyer accept flow reaches:
+
+* `Original bid not found.`
+
+## Required fix
+
+Trace the Buyer accepted summary generation and retrieval flow and compare directly against working Tenant/Landlord.
+
+Find where Buyer is attempting to resolve:
+
+* original bid
+* accepted bid
+* accepted summary record
+* listing/auction relationship
+
+and fix it so Buyer uses the same successful record-resolution pattern as Tenant/Landlord.
+
+### Important
+
+This is likely one of these:
+
+* wrong model/table lookup
+* wrong foreign key
+* wrong bid id passed to summary route
+* wrong “original bid” assumption in Buyer only
+* using the wrong accepted-summary source record
+
+Do not rewrite broadly. Trace the exact Buyer path and align it to the working Tenant/Landlord pattern.
+
+---
+
+# Visual / data requirement
+
+Once fixed, **Buyer** and **Seller** accepted summary pages should match the same structure as Tenant/Landlord:
+
+* same overall layout
+* same document status area
+* same accepted bid summary header
+* same sections
+* same signature acknowledgement structure
+* same general field logic / population behavior
+
+Use the working Tenant/Landlord versions as the source of truth.
+
+---
+
+# Field mapping requirement
+
+Apply the same field/logic style already working in Tenant/Landlord, but mapped to the appropriate Buyer/Seller data.
+
+That means:
+
+* do **not** copy Tenant/Landlord labels blindly
+* do copy the **same summary architecture**
+* do use the correct Buyer/Seller field equivalents
+
+If any Buyer/Seller section is using different record lookup logic than Tenant/Landlord, align it safely.
+
+---
+
+# Hard safeguards
+
+1. **Do not touch Tenant**
+
+2. **Do not touch Landlord**
+
+3. **Do not change database schema**
+
+   * no migrations
+   * no column type changes unless you first prove schema itself is wrong and stop to report
+
+4. **Do not do a broad refactor**
+
+5. **Do not change unrelated bid/counter logic**
+
+6. **Do not change routes unless the route parameter being passed is provably wrong**
+
+7. **Do not invent new fields**
+
+8. **Use Tenant/Landlord as exact working references**
+
+---
+
+# Implementation approach
+
+## Step 1 — Seller
+
+Compare Seller accept action to Tenant/Landlord accept action.
+Fix the exact value assignment / field update causing the boolean error.
+
+## Step 2 — Buyer
+
+Compare Buyer accepted summary creation + lookup path to Tenant/Landlord.
+Fix the exact lookup/relationship/path issue causing `Original bid not found.`
+
+## Step 3 — Summary parity
+
+Verify Buyer and Seller summary pages use the same structure/pattern as Tenant/Landlord and populate correctly.
+
+---
+
+# Deliver back
+
+Please report:
+
+1. exact files changed for Seller
+2. exact files changed for Buyer
+3. exact Seller bug source found
+
+   * where `"accepted"` was being written into a boolean field
+4. exact Buyer bug source found
+
+   * why `Original bid not found.` was occurring
+5. confirmation that:
+
+   * Seller accept now works
+   * Buyer accept now works
+   * Buyer and Seller accepted summary pages load successfully
+   * Tenant and Landlord were not modified
+
+## Also include
+
+For both Seller and Buyer, tell me:
+
+* which working Tenant/Landlord file/method you used as the reference
+
+---
+
+# Stop rule
+
+If Seller or Buyer accepted summary is built on a fundamentally different data path than Tenant/Landlord and cannot be safely aligned surgically, stop and report:
+
+* exact conflicting files
+* exact mismatch in data path
+* safest next step
+
+Do not do a risky rewrite.
