@@ -3111,7 +3111,16 @@
                                         <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
                                     </span>
                                     @if($bidAccepted === 'accepted')
-                                    @php $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+                                    @php
+                                        $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('listing_id', $auction->id)
+                                            ->where('accepted_bid_id', data_get($bid, 'id'))
+                                            ->whereExists(function($q) use ($auction, $bid) {
+                                                $q->selectRaw(1)->from('seller_agent_auction_bids')
+                                                  ->whereColumn('id', 'accepted_bid_summaries.accepted_bid_id')
+                                                  ->where('seller_agent_auction_id', $auction->id);
+                                            })
+                                            ->orderByDesc('id')->first();
+                                    @endphp
                                     @if($bidOwnerSummary)
                                     <div class="d-flex gap-2 flex-wrap mt-2">
                                         <a href="{{ route('accepted-bid-summary.view', $bidOwnerSummary->id) }}" class="btn btn-outline-primary btn-sm">
@@ -5511,7 +5520,14 @@
                                             @endif
                                         </div>
                                         @php
-                                            $absFooterBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                            $absFooterBidSummary = \App\Models\AcceptedBidSummary::where('listing_id', $auction->id)
+                                                ->where('accepted_bid_id', data_get($bid, 'id'))
+                                                ->whereExists(function($q) use ($auction, $bid) {
+                                                    $q->selectRaw(1)->from('seller_agent_auction_bids')
+                                                      ->whereColumn('id', 'accepted_bid_summaries.accepted_bid_id')
+                                                      ->where('seller_agent_auction_id', $auction->id);
+                                                })
+                                                ->orderByDesc('id')->first();
                                         @endphp
                                         @if ($absFooterBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
