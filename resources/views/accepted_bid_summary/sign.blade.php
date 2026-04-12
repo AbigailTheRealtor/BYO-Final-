@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>{{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement</h2>
+                <h2>{{ $userRole === 'tenant' ? 'Listing Owner' : 'Agent' }}: E-Sign Acknowledgement</h2>
                 <a href="{{ route('accepted-bid-summary.view', $summary->id) }}" class="btn btn-secondary">Cancel</a>
             </div>
 
@@ -90,7 +90,7 @@
                                 </div>
 
                                 <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn" style="background-color: #0d6efd; border-color: #0d6efd; color: #ffffff;" disabled>
-                                    {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
+                                    {{ $userRole === 'tenant' ? 'Listing Owner' : 'Agent' }}: E-Sign Acknowledgement
                                 </button>
                             </form>
                         </div>

@@ -1,0 +1,222 @@
+Yes — Seller is still using the **old Accepted Bid Summary template**, while Tenant is using the **new structured template**.
+
+That is why Seller looks different even though the accept flow now works.
+
+## What needs to be fixed
+
+Seller should be rebuilt to match the **Tenant/Landlord Accepted Bid Summary format**, not just load successfully.
+
+From your screenshots, Seller is still wrong because it has:
+
+* old plain summary layout
+* old section structure
+* old table-like field presentation
+* old signature/acknowledgement layout
+* missing the same card-style section formatting Tenant uses
+* different spacing, headings, and document structure
+
+What you want is:
+
+### Seller and Buyer should match Tenant/Landlord in:
+
+* page layout
+* section order
+* section box/card styling
+* document status block
+* summary header
+* parties section
+* listing/details section
+* services section
+* agreed compensation & agency terms section
+* additional details section
+* important notice section
+* platform referral disclosure section
+* signature acknowledgement section
+* e-sign block layout
+
+But they should still use the **correct Seller/Buyer fields**, not Tenant labels.
+
+---
+
+## Paste this into Replit
+
+We need a **template parity fix** for **Seller and Buyer Accepted Bid Summary pages**.
+
+## Current status
+
+### Correct reference templates
+
+* **Tenant Accepted Bid Summary is correct**
+* **Landlord Accepted Bid Summary is correct**
+
+Use Tenant/Landlord as the source-of-truth for the **visual structure and template layout**.
+
+### Incorrect
+
+* **Seller Accepted Bid Summary still uses the old template**
+* **Buyer Accepted Bid Summary must be checked and aligned too**
+
+The accept flow may now work, but the summary page format is still inconsistent.
+
+---
+
+## Goal
+
+Make **Seller** and **Buyer** Accepted Bid Summary pages match the same **new structured format** already used by Tenant/Landlord.
+
+This is a **template/layout parity task**, not a new accept-flow task.
+
+---
+
+## Important rule
+
+Use the **Tenant/Landlord accepted summary template structure** as the visual/layout reference, but populate it with the correct **Seller** and **Buyer** field labels/data.
+
+Do **not** blindly copy Tenant labels.
+
+Example:
+
+* Seller page should still say Seller/Agent fields where appropriate
+* Buyer page should still say Buyer/Agent fields where appropriate
+
+---
+
+## What must match Tenant/Landlord
+
+Seller and Buyer summary pages must match Tenant/Landlord in:
+
+1. **Top page structure**
+
+   * Document Status block
+   * Pending Acknowledgement badge
+   * Sign Now / Download PDF / Back button placement
+
+2. **Summary Document wrapper**
+
+   * same centered heading style
+   * same accepted date placement
+   * same listing ID placement
+
+3. **Section structure / order**
+   Use the same section architecture as Tenant/Landlord:
+
+   * Parties
+   * Listing / Criteria Details
+   * Services
+   * Agreed Compensation & Agency Terms
+   * Additional Details
+   * Important Notice
+   * Platform Referral Disclosure
+   * Signature Acknowledgement
+
+4. **Section card styling**
+
+   * same bordered boxes
+   * same heading treatment
+   * same spacing and padding
+   * same row/value formatting style
+
+5. **Signature acknowledgement area**
+
+   * same card/block layout as Tenant/Landlord
+   * same Pending signature/date/IP format
+
+6. **Bottom e-sign area**
+
+   * same overall layout and structure as Tenant/Landlord
+   * correct party label for Seller/Buyer
+
+---
+
+## What not to change
+
+1. **Do not change Tenant**
+2. **Do not change Landlord**
+3. **Do not change accept-flow logic unless needed only to support the template**
+4. **Do not change database schema**
+5. **Do not change routes**
+6. **Do not rewrite the whole accepted summary system**
+7. **Do not remove correct Seller/Buyer field mappings**
+8. **Do not copy Tenant/Landlord data labels incorrectly into Seller/Buyer**
+
+---
+
+## Implementation guidance
+
+### Step 1
+
+Find the accepted summary Blade/template files used by:
+
+* Seller
+* Buyer
+
+### Step 2
+
+Compare them directly against the working:
+
+* Tenant accepted summary template
+* Landlord accepted summary template
+
+### Step 3
+
+Refactor Seller and Buyer templates so they use the same **new template structure** as Tenant/Landlord.
+
+### Step 4
+
+Map the correct Seller/Buyer data into that structure.
+
+---
+
+## Specific outcome expected
+
+### Seller
+
+Seller Accepted Bid Summary should visually match Tenant/Landlord, including:
+
+* modern card sections
+* same section numbering style
+* same notice / disclosure blocks
+* same signature acknowledgement layout
+* same e-sign section layout
+
+### Buyer
+
+Buyer Accepted Bid Summary should also match the same format.
+
+---
+
+## Deliver back
+
+Please report:
+
+1. exact accepted summary template files changed for Seller
+2. exact accepted summary template files changed for Buyer
+3. which Tenant/Landlord template was used as the reference
+4. confirmation that Seller now matches Tenant/Landlord format
+5. confirmation that Buyer now matches Tenant/Landlord format
+6. confirmation that Tenant and Landlord were not modified
+
+---
+
+## Stop rule
+
+If Seller and Buyer accepted summaries are built on a totally separate old rendering path and cannot be safely aligned by editing only the templates, stop and report:
+
+* exact files
+* exact difference in rendering path
+* safest next step
+
+Do not do a broad rewrite without reporting first.
+
+---
+
+## My short diagnosis
+
+The issue is no longer “accept is broken.”
+The issue is now:
+
+**Seller and possibly Buyer are still rendering the old accepted-summary template, while Tenant/Landlord are rendering the new one.**
+
+That is the exact problem to solve.
+
+If you want, after Replit replies, paste its response here and I’ll tell you whether the plan is safe before you let it change anything.
