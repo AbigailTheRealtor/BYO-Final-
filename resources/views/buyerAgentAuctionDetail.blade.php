@@ -2720,7 +2720,7 @@
                                                 </span>
                                                 @if($bidAccepted === 'accepted')
                                                 @php
-                                                    $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', $bidId)->first();
+                                                    $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', $bidId)->where('agent_user_id', data_get($bid, 'user_id'))->first();
                                                 @endphp
                                                 @if($bidOwnerSummary)
                                                 <div class="d-flex gap-2 flex-wrap mt-2">
@@ -4195,7 +4195,7 @@
                                                                             @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} accepted this bid.
                                                                             @endif
                                                                         </div>
-                                                                        @php $mfBidSummaryB = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+                                                                        @php $mfBidSummaryB = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first(); @endphp
                                                                         @if ($mfBidSummaryB && ($mfIsOwnerB || data_get($bid, 'user_id') == Auth::id()))
                                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
                                                                             <a href="{{ route('accepted-bid-summary.view', $mfBidSummaryB->id) }}" class="btn btn-outline-primary btn-sm">

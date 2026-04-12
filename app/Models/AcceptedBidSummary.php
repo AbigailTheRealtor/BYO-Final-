@@ -86,7 +86,7 @@ class AcceptedBidSummary extends Model
         } elseif ($this->isTenantSigned()) {
             return 'Awaiting Agent Acknowledgement';
         } elseif ($this->isAgentSigned()) {
-            return 'Awaiting Tenant Acknowledgement';
+            return 'Awaiting Listing Creator Acknowledgement';
         }
         return 'Pending Acknowledgement';
     }

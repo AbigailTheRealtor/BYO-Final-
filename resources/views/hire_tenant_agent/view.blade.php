@@ -2250,7 +2250,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     </span>
                                     @if($bidAccepted === 'accepted')
                                     @php
-                                        $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                        $bidOwnerSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first();
                                     @endphp
                                     @if($bidOwnerSummary)
                                     <div class="d-flex gap-2 flex-wrap mt-2">
@@ -3575,7 +3575,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <i class="fa fa-check-circle me-1"></i> This bid has been accepted
                                                     </div>
                                                     @php
-                                                        $acceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first();
+                                                        $acceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first();
                                                     @endphp
                                                     @if($acceptedBidSummary)
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center mt-2 mb-3">
@@ -3639,7 +3639,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
                                                             <i class="fa fa-check-circle me-1"></i> Your bid has been accepted.
                                                         </div>
-                                                        @php $agentFooterBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+                                                        @php $agentFooterBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first(); @endphp
                                                         @if ($agentFooterBidSummary)
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                             <a href="{{ route('accepted-bid-summary.view', $agentFooterBidSummary->id) }}" class="btn btn-outline-primary btn-sm">

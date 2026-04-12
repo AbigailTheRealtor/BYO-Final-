@@ -54,7 +54,7 @@
     @else {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted this bid.
     @endif
 </div>
-@php $__partialBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->first(); @endphp
+@php $__partialBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first(); @endphp
 @if ($__partialBidSummary && ($isOwner || data_get($bid, 'user_id') == Auth::id()))
 <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
     <a href="{{ route('accepted-bid-summary.view', $__partialBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
