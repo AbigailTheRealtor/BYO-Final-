@@ -1,0 +1,107 @@
+Yes — that means the fix did **not** touch the real formatting path.
+
+The output is still using the same raw-value renderer:
+
+* `Percentage of the Total Purchase Price`
+* `Percentage of Monthly Rent`
+* `custom`
+* `90`
+* `yes`
+
+So Replit likely patched the wrong file, or changed a formatter that the Accepted Bid Summary is **not actually calling**.
+
+Paste this back to Replit:
+
+---
+
+**The result is unchanged. The Buyer Accepted Bid Summary is still rendering raw/internal values instead of the human-readable Buyer bid display values. You did not fix the actual rendering path.**
+
+## What is still wrong
+
+Section 4 still shows:
+
+* `Percentage of the Total Purchase Price` instead of an actual composed value like `5% of Total Purchase Price`
+* `Percentage of Monthly Rent` instead of the actual entered/formatted lease fee display
+* `custom` instead of the actual custom agency timeframe text/value
+* `90` instead of `90 days`
+* `yes` instead of `Yes`
+
+So the Accepted Bid Summary is still using a **raw data path**, not the Buyer display formatter.
+
+## New instruction: do not guess, trace the exact render path
+
+**Read-only first. Do not edit yet.**
+I need you to trace the exact Buyer Accepted Bid Summary render chain from the controller/model/service all the way to the final HTML rows for Section 4.
+
+Report:
+
+1. exact file that builds Buyer Accepted Bid Summary HTML
+2. exact method that supplies Section 4 values
+3. whether those values are coming from:
+
+   * raw bid fields
+   * a generic shared summary array
+   * a Buyer-specific formatter
+4. exact Buyer view-bid formatter path that already renders the correct human-readable values
+5. why your prior change did not affect the final output
+
+## Hard requirement
+
+The Buyer Accepted Bid Summary must use the **same human-readable display values** as the Buyer View Bid card/private terms display.
+
+This is no longer a generic formatting request. It is now a **trace-and-rewire task**.
+
+## Likely issue
+
+There is probably one of these problems:
+
+* the accepted summary uses a separate array builder
+* the accepted summary uses a different service than the Buyer view bid card
+* your prior change was made in a helper that is not called by the accepted summary
+* a later transform overwrites your formatted values with raw fields
+
+## What to do next
+
+After the read-only trace, make the **smallest surgical fix** so that Section 4 rows are populated from display-ready Buyer values.
+
+### Acceptable implementation options
+
+1. **Best option:** rewire Accepted Summary Section 4 to consume the same Buyer display formatter already used by View Bid
+2. **Second-best option:** if View Bid formatting is embedded in Blade, extract it into a shared Buyer formatter and use it in both places
+3. **Not acceptable:** adding superficial string replacements in the template without fixing the real value source
+
+## Do not change
+
+* DB schema
+* routes
+* accept/counter/reject logic
+* overall summary layout
+* Seller/Tenant/Landlord logic unless required by a truly shared helper
+
+## Exact output I want from you before coding
+
+Reply with:
+
+* exact Buyer accepted summary file
+* exact method building Section 4
+* exact Buyer view-bid formatter file/method
+* one-sentence root cause of why the prior fix failed
+* minimal implementation plan
+
+Only after that, make the patch.
+
+## After patch QA
+
+Verify these exact before/after outcomes in Buyer Accepted Bid Summary:
+
+* `Percentage of the Total Purchase Price` → `5% of Total Purchase Price`
+* `Percentage of Monthly Rent` → actual composed lease fee display
+* `custom` → actual custom timeframe text/value
+* `90` → `90 days`
+* `yes` → `Yes`
+
+If any one of those still fails, stop and report the blocking file/method.
+
+---
+
+What you got back proves the first pass was cosmetic or hit the wrong formatter. This next prompt should force Replit to trace the real source before touching code.

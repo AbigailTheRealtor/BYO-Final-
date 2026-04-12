@@ -322,6 +322,42 @@ class BuyerAcceptedBidSummaryService
         }
     }
 
+    public function regenerateSummaryHtml(AcceptedBidSummary $summary): bool
+    {
+        try {
+            $bid = BuyerAgentAuctionBid::find($summary->accepted_bid_id);
+            if (!$bid) return false;
+
+            $listing = $bid->auction;
+            if (!$listing) return false;
+
+            $buyer = User::find($listing->user_id);
+            $agent = User::find($bid->user_id);
+            if (!$buyer || !$agent) return false;
+
+            $acceptedCounter = $summary->accepted_counter_id
+                ? BuyerCounterTerm::find($summary->accepted_counter_id)
+                : null;
+
+            $sourceData = $acceptedCounter
+                ? $this->getCounterData($acceptedCounter)
+                : $this->getBidData($bid);
+
+            $html = $this->buildSummaryHtml($listing, $bid, $buyer, $agent, $sourceData, $acceptedCounter);
+
+            $summary->summary_html = $html;
+            $summary->save();
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('[BuyerAcceptedBidSummaryService] Failed to regenerate summary html', [
+                'summary_id' => $summary->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
     public function getRenderedHtml(AcceptedBidSummary $summary): string
     {
         $html = $summary->summary_html ?? '';
