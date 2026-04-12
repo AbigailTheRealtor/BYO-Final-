@@ -2395,6 +2395,17 @@
 
                                         // Check if bid is in countered state
                                         $hasCounterBids = $latestBuyerCounter || $latestAgentCounter;
+
+                                        // Direction: true = listing OWNER sent the most recent counter.
+                                        // BuyerCounterTerm ($latestBuyerCounter) = owner's counter.
+                                        // BuyerCounterBidding ($latestAgentCounter) = bidding agent's counter-back.
+                                        $_buyerCardLatestFromOwner = false;
+                                        if ($latestBuyerCounter && $latestAgentCounter) {
+                                            $_buyerCardLatestFromOwner = $latestBuyerCounter->created_at >= $latestAgentCounter->created_at;
+                                        } elseif ($latestBuyerCounter) {
+                                            $_buyerCardLatestFromOwner = true; // only owner counter exists
+                                        }
+                                        // elseif only $latestAgentCounter → agent sent latest → remains false
                                         $bidStatusDisplay = match($bidAccepted) {
                                             'accepted' => 'Accepted',
                                             'rejected' => 'Rejected',
@@ -2491,16 +2502,6 @@
                                                  style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
                                                 <i class="fa fa-exchange-alt mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                                 <div>
-                                                    @php
-                                                        // Determine direction: who sent the most recent counter?
-                                                        $_buyerCardLatestFromOwner = false;
-                                                        if ($latestAgentCounter && $latestBuyerCounter) {
-                                                            $_buyerCardLatestFromOwner = $latestAgentCounter->created_at >= $latestBuyerCounter->created_at;
-                                                        } elseif ($latestAgentCounter) {
-                                                            $_buyerCardLatestFromOwner = true;
-                                                        }
-                                                        // if only $latestBuyerCounter: $_buyerCardLatestFromOwner stays false (agent sent latest)
-                                                    @endphp
                                                     @if ($_buyerCardLatestFromOwner && $isListingOwner)
                                                         <strong>Counter Offer Sent.</strong>
                                                     @elseif ($_buyerCardLatestFromOwner && $isBidOwner)
@@ -4130,17 +4131,9 @@
                                                                         // Compute modal-footer state — available variables: $bidAccepted, $auction, $bid, $auth_id
                                                                         $_mfRawB    = data_get($bid, 'accepted', '0');
                                                                         $_mfTermB   = in_array((string)$_mfRawB, ['accepted', 'rejected'], true);
-                                                                        $_mfCounterB = !$_mfTermB && (
-                                                                            \App\Models\BuyerCounterTerm
-                                                                                ::where('buyer_agent_auction_id', data_get($auction, 'id'))
-                                                                                ->where('parent_counter_id', data_get($bid, 'id'))
-                                                                                ->where('user_id', data_get($auction, 'user_id'))
-                                                                                ->exists() ||
-                                                                            \App\Models\BuyerCounterBidding
-                                                                                ::where('buyer_agent_auction_bid_id', data_get($bid, 'id'))
-                                                                                ->where('user_id', data_get($auction, 'user_id'))
-                                                                                ->exists()
-                                                                        );
+                                                                        // Use $hasCounterBids (computed in outer bid loop) — catches counters from
+                                                                        // either the listing owner (BuyerCounterTerm) or the bidding agent (BuyerCounterBidding).
+                                                                        $_mfCounterB = !$_mfTermB && $hasCounterBids;
                                                                         $mfStateB   = $_mfCounterB
                                                                             ? 'countered'
                                                                             : (in_array($_mfRawB, [null, 0, '0', ''], true) ? '0' : (string)$_mfRawB);
@@ -4237,18 +4230,22 @@
 
                                                                         {{-- ── Countered state ── --}}
                                                                         @elseif ($mfStateB === 'countered')
-                                                                        {{-- mfStateB='countered' only fires when listing owner sent a counter --}}
+                                                                        @php
+                                                                            // Viewer sent latest = owner viewer + owner sent latest, OR agent viewer + agent sent latest.
+                                                                            $_mfBuyerViewerSentLatest = ($isListingOwner && $_buyerCardLatestFromOwner)
+                                                                                                     || ($isBidOwner   && !$_buyerCardLatestFromOwner);
+                                                                        @endphp
                                                                         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
                                                                             <i class="fa fa-exchange-alt me-1"></i>
-                                                                            @if ($mfIsOwnerB)
+                                                                            @if ($_mfBuyerViewerSentLatest)
                                                                                 <strong>Counter Offer Sent.</strong>
                                                                             @else
                                                                                 <strong>Counter Offer Received.</strong>
                                                                             @endif
                                                                         </div>
                                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
-                                                                            @if ($mfIsOwnerB)
-                                                                            {{-- Owner sent latest counter — waiting: View CT + Edit CT --}}
+                                                                            @if ($_mfBuyerViewerSentLatest)
+                                                                            {{-- Viewer sent latest — waiting: View CT + Edit CT --}}
                                                                             <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
                                                                                 <i class="fa fa-eye me-1"></i> View Counter Terms
                                                                             </a>

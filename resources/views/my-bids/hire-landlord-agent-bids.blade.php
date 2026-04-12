@@ -143,30 +143,10 @@
                 <a href="{{ route('landlord.agent.auction.bid.view', $agentBid->id) }}" class="btn btn-sm" style="background: #fff; border: 1px solid #049399; color: #049399;">
                     <i class="fas fa-eye me-1"></i>View Bid
                 </a>
-                @if($bidStatus === 'Active')
-                    <form action="{{ route('landlord.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="bid_id" value="{{ $agentBid->id }}">
-                        <input type="hidden" name="auction_id" value="{{ $agentBid->auction->id }}">
-                        <button type="submit" class="btn btn-sm" style="background: #28a745; color: #fff; border: none;" onclick="return confirm('Accept this bid?')">
-                            <i class="fas fa-check me-1"></i>Accept
-                        </button>
-                    </form>
-                    <a href="{{ route('landlord.counter-terms', $agentBid->id) }}" class="btn btn-sm" style="background: #ffc107; color: #000; border: none;">
-                        <i class="fas fa-exchange-alt me-1"></i>Counter
+                @if($bidStatus === 'Countered')
+                    <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', $agentBid->id) }}" class="btn btn-sm" style="background:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                        <i class="fas fa-eye me-1"></i>View Counter Terms
                     </a>
-                    <form action="{{ route('landlord.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="bid_id" value="{{ $agentBid->id }}">
-                        <input type="hidden" name="auction_id" value="{{ $agentBid->auction->id }}">
-                        <button type="submit" class="btn btn-sm" style="background: #dc3545; color: #fff; border: none;" onclick="return confirm('Reject this bid?')">
-                            <i class="fas fa-times me-1"></i>Reject
-                        </button>
-                    </form>
-                @elseif($bidStatus === 'Countered')
-                    <span class="btn btn-sm" style="background: #fff3cd; color: #856404; border: 1px solid #ffc107;">
-                        <i class="fas fa-clock me-1"></i>Awaiting Response
-                    </span>
                 @elseif($bidStatus === 'Accepted')
                     <a href="{{ route('landlord.agent.auction.view', $agentBid->auction->id) }}" class="btn btn-sm" style="background: #28a745; color: #fff; border: none;">
                         <i class="fas fa-file-contract me-1"></i>View Summary
