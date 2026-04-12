@@ -368,16 +368,19 @@ class LandlordAcceptedBidSummaryService
     protected function getBidData(LandlordAgentAuctionBid $bid): array
     {
         $bidData = $bid->get;
+        $rawEnhancements = data_get($bidData, 'photo_enhancements', []);
         return $this->extractCompensationFields($bidData) + [
-            'services'        => $this->parseServices(data_get($bidData, 'services', [])),
-            'other_services'  => data_get($bidData, 'other_services', ''),
-            'agent_name'      => trim((data_get($bidData, 'first_name', '') ?? '') . ' ' . (data_get($bidData, 'last_name', '') ?? '')),
-            'agent_email'     => data_get($bidData, 'email'),
-            'agent_phone'     => data_get($bidData, 'phone'),
-            'agent_brokerage' => data_get($bidData, 'brokerage'),
-            'agent_license'   => data_get($bidData, 'license_no'),
-            'agent_nar_id'    => data_get($bidData, 'nar_id'),
-            'additional_details' => data_get($bidData, 'additional_details_broker') ?: data_get($bidData, 'additional_details'),
+            'services'            => $this->parseServices(data_get($bidData, 'services', [])),
+            'other_services'      => data_get($bidData, 'other_services', ''),
+            'photo_enhancements'  => is_string($rawEnhancements) ? (json_decode($rawEnhancements, true) ?? []) : (is_array($rawEnhancements) ? $rawEnhancements : []),
+            'custom_enhancement'  => (string) (data_get($bidData, 'custom_enhancement') ?? ''),
+            'agent_name'          => trim((data_get($bidData, 'first_name', '') ?? '') . ' ' . (data_get($bidData, 'last_name', '') ?? '')),
+            'agent_email'         => data_get($bidData, 'email'),
+            'agent_phone'         => data_get($bidData, 'phone'),
+            'agent_brokerage'     => data_get($bidData, 'brokerage'),
+            'agent_license'       => data_get($bidData, 'license_no'),
+            'agent_nar_id'        => data_get($bidData, 'nar_id'),
+            'additional_details'  => data_get($bidData, 'additional_details_broker') ?: data_get($bidData, 'additional_details'),
         ];
     }
 
@@ -385,17 +388,20 @@ class LandlordAcceptedBidSummaryService
     {
         $counterMeta = $counter->getAllMeta();
         $bidData = $bid->get;
+        $rawEnhancements = $counterMeta['photo_enhancements'] ?? [];
 
         return $this->extractCompensationFields($counterMeta) + [
-            'services'        => $this->parseServices($counterMeta['services'] ?? []),
-            'other_services'  => $counterMeta['other_services'] ?? '',
-            'agent_name'      => trim((data_get($bidData, 'first_name', '') ?? '') . ' ' . (data_get($bidData, 'last_name', '') ?? '')),
-            'agent_email'     => data_get($bidData, 'email'),
-            'agent_phone'     => data_get($bidData, 'phone'),
-            'agent_brokerage' => data_get($bidData, 'brokerage'),
-            'agent_license'   => data_get($bidData, 'license_no'),
-            'agent_nar_id'    => data_get($bidData, 'nar_id'),
-            'additional_details' => $counterMeta['additional_details_broker'] ?? $counterMeta['additional_details'] ?? null,
+            'services'            => $this->parseServices($counterMeta['services'] ?? []),
+            'other_services'      => $counterMeta['other_services'] ?? '',
+            'photo_enhancements'  => is_string($rawEnhancements) ? (json_decode($rawEnhancements, true) ?? []) : (is_array($rawEnhancements) ? $rawEnhancements : []),
+            'custom_enhancement'  => (string) ($counterMeta['custom_enhancement'] ?? ''),
+            'agent_name'          => trim((data_get($bidData, 'first_name', '') ?? '') . ' ' . (data_get($bidData, 'last_name', '') ?? '')),
+            'agent_email'         => data_get($bidData, 'email'),
+            'agent_phone'         => data_get($bidData, 'phone'),
+            'agent_brokerage'     => data_get($bidData, 'brokerage'),
+            'agent_license'       => data_get($bidData, 'license_no'),
+            'agent_nar_id'        => data_get($bidData, 'nar_id'),
+            'additional_details'  => $counterMeta['additional_details_broker'] ?? $counterMeta['additional_details'] ?? null,
         ];
     }
 
@@ -804,7 +810,11 @@ class LandlordAcceptedBidSummaryService
         $acceptedDateFormatted = $this->formatAcceptedDate($bid->accepted_date);
         $html = str_replace('{{accepted_date}}', e($acceptedDateFormatted), $html);
 
-        $servicesHtml = $this->buildServicesHtml($sourceData['services'], $sourceData['other_services'], $propertyType);
+        $photoOptions = [
+            'enhancements' => $sourceData['photo_enhancements'] ?? [],
+            'custom'       => $sourceData['custom_enhancement'] ?? '',
+        ];
+        $servicesHtml = $this->buildServicesHtml($sourceData['services'], $sourceData['other_services'], $propertyType, $photoOptions);
         $html = str_replace('{{services_grouped_by_category}}', $servicesHtml, $html);
 
         $compensationHtml = $this->buildCompensationHtml($sourceData);
@@ -838,7 +848,7 @@ class LandlordAcceptedBidSummaryService
         return implode(', ', array_filter($parts));
     }
 
-    protected function buildServicesHtml(array $services, $otherServices, string $propertyType): string
+    protected function buildServicesHtml(array $services, $otherServices, string $propertyType, array $photoOptions = []): string
     {
         if (empty($services) && empty($otherServices)) {
             return '<p><em>No services selected.</em></p>';
@@ -854,6 +864,9 @@ class LandlordAcceptedBidSummaryService
 
         $normalizedServices = array_map($normalizeStr, $services);
 
+        $photoEnhancements  = is_array($photoOptions['enhancements'] ?? null) ? $photoOptions['enhancements'] : [];
+        $customEnhancement  = trim((string) ($photoOptions['custom'] ?? ''));
+
         $html = '';
         foreach ($categories as $categoryName => $categoryServices) {
             $selectedInCategory = [];
@@ -868,6 +881,26 @@ class LandlordAcceptedBidSummaryService
                 $html .= '<ul style="margin: 0; padding-left: 25px; list-style-type: disc;">';
                 foreach ($selectedInCategory as $service) {
                     $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($service) . '</li>';
+                    if ($normalizeStr($service) === 'Provide digital photo enhancements' && !empty($photoEnhancements)) {
+                        $subItems = [];
+                        foreach ($photoEnhancements as $opt) {
+                            $opt = trim((string) $opt);
+                            if ($opt === '' || strtolower($opt) === 'other') {
+                                continue;
+                            }
+                            $subItems[] = $opt;
+                        }
+                        if (in_array('Other', $photoEnhancements) && $customEnhancement !== '') {
+                            $subItems[] = $customEnhancement;
+                        }
+                        if (!empty($subItems)) {
+                            $html .= '<ul style="margin: 4px 0 4px 0; padding-left: 22px; list-style-type: circle;">';
+                            foreach ($subItems as $sub) {
+                                $html .= '<li style="margin-bottom: 3px; list-style-type: circle;">' . e($sub) . '</li>';
+                            }
+                            $html .= '</ul>';
+                        }
+                    }
                 }
                 $html .= '</ul></div>';
             }

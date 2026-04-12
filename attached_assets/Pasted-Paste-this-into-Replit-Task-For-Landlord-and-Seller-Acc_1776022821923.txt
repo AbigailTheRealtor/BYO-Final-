@@ -1,0 +1,271 @@
+Paste this into Replit:
+
+---
+
+**Task: For Landlord and Seller Accepted Bid Summaries, if the selected service is “Provide digital photo enhancements,” also show the connected option selections under that service, including custom “Other” text. If the user entered custom text for Other, show only the custom text — not the word “Other.”**
+
+## Scope
+
+Fix this in **Accepted Bid Summary only** for:
+
+* **Landlord**
+* **Seller**
+
+This is for the **Services section** only.
+
+## Desired behavior
+
+When the selected service includes:
+
+**Provide digital photo enhancements**
+
+the Accepted Bid Summary should also display the selected enhancement options tied to that service.
+
+### Example
+
+If the user selected:
+
+* Brightness/contrast correction
+* Sky replacement
+* Object removal
+* Other → `remove power lines`
+
+Then the summary should show the service and the connected options under it, like:
+
+* Provide digital photo enhancements
+
+  * Brightness/contrast correction
+  * Sky replacement
+  * Object removal
+  * remove power lines
+
+### Critical rule
+
+If **Other** was selected and the user entered custom text:
+
+* show **only the custom text**
+* do **not** show `Other`
+* do **not** show `Other: remove power lines`
+
+Correct:
+
+* `remove power lines`
+
+Incorrect:
+
+* `Other`
+* `Other: remove power lines`
+
+---
+
+## Hard safeguards
+
+1. **Do not change DB schema**
+2. **Do not change routes**
+3. **Do not change accept/counter/reject flow**
+4. **Do not change the main bid card view unless required as a safe shared helper**
+5. **Do not change service selection logic**
+6. **Do not alter unrelated service categories**
+7. **Do not flatten all services into one list**
+8. **Make the smallest surgical change possible**
+9. **Landlord and Seller only**
+10. **Accepted Bid Summary only**
+
+---
+
+## Read-only audit first
+
+**Do not edit yet.**
+
+First identify and report:
+
+### A. Landlord accepted summary service rendering path
+
+Find:
+
+1. exact file/method that builds the **Landlord Accepted Bid Summary Services HTML**
+2. exact place where `Provide digital photo enhancements` is rendered
+3. exact fields/keys where the related enhancement options are stored
+
+### B. Seller accepted summary service rendering path
+
+Find:
+
+1. exact file/method that builds the **Seller Accepted Bid Summary Services HTML**
+2. exact place where `Provide digital photo enhancements` is rendered
+3. exact fields/keys where the related enhancement options are stored
+
+### C. Source-of-truth option fields
+
+Find the exact field names used for the connected digital photo enhancement options for Landlord and Seller, including:
+
+* selected preset options
+* the custom “Other” text field
+
+### D. Reuse opportunity
+
+If Landlord and Seller use the same enhancement-option parsing pattern, create one tiny shared helper only if it is truly safe. Otherwise keep the fixes role-specific.
+
+Report file names, methods, and field names before editing.
+
+---
+
+## Implementation requirements
+
+## 1) Detect when “Provide digital photo enhancements” is selected
+
+In the Accepted Bid Summary Services section for Seller and Landlord:
+
+* when this service is selected, render its child enhancement options immediately beneath it
+
+## 2) Render selected connected options
+
+Render only the options the user selected for that service.
+
+Examples might include things like:
+
+* brightness/color correction
+* virtual twilight
+* sky replacement
+* object removal
+* lawn enhancement
+* decluttering
+* etc.
+
+Use the exact stored labels/normalized labels already used by the platform.
+
+## 3) Handle “Other” correctly
+
+If the user selected **Other** and entered custom text:
+
+* render only the custom text as its own sub-item
+* suppress the literal word `Other`
+
+### Example
+
+Stored values:
+
+* selected options: `['Sky Replacement', 'Other']`
+* other text: `remove trash cans`
+
+Render:
+
+* Sky Replacement
+* remove trash cans
+
+Do **not** render:
+
+* Other
+* Other: remove trash cans
+
+## 4) Do not render empty shells
+
+If no connected options were selected, do not render an empty nested list under the service.
+
+## 5) Preserve existing service category grouping
+
+Keep the service inside its current correct category.
+Only add the connected sub-options beneath that one service item.
+
+---
+
+## Formatting expectations
+
+Use the existing Accepted Bid Summary service styling.
+
+Recommended structure:
+
+* main service bullet remains the parent line
+* connected enhancement options appear as indented sub-bullets beneath it
+
+Example:
+
+* Provide digital photo enhancements
+
+  * Sky replacement
+  * Virtual twilight
+  * remove power lines
+
+Do not create a new section for these.
+Do not move them out of their original category.
+
+---
+
+## Where to implement
+
+Most likely in:
+
+* `LandlordAcceptedBidSummaryService` → services HTML builder
+* `SellerAcceptedBidSummaryService` → services HTML builder
+
+If a shared service-item renderer exists and is safely reusable, you may patch there, but only if you are certain it will not break Buyer/Tenant.
+
+---
+
+## Do not do
+
+* do not change the parent service label text
+* do not show raw array/json strings
+* do not output the word `Other` when custom text exists
+* do not duplicate the same sub-option twice
+* do not add this behavior to unrelated services unless the code pattern is already generic and safe
+* do not touch compensation formatting in this task
+
+---
+
+## QA checklist
+
+### Landlord QA
+
+Test a Landlord accepted summary where:
+
+* `Provide digital photo enhancements` is selected
+* several preset enhancement options are selected
+* `Other` is selected with custom text
+
+Verify:
+
+1. parent service still appears
+2. selected connected options appear underneath
+3. custom Other text appears by itself
+4. literal `Other` does not appear when custom text exists
+5. no empty child list renders if nothing was selected
+
+### Seller QA
+
+Repeat the same QA for Seller.
+
+### Regression QA
+
+1. all other services still render normally
+2. service category grouping remains correct
+3. Buyer/Tenant accepted summaries unchanged
+4. no layout break in PDF/HTML accepted summary rendering
+
+---
+
+## Output required before coding
+
+Reply first with:
+
+1. exact Landlord file/method for services rendering
+2. exact Seller file/method for services rendering
+3. exact stored fields for digital photo enhancement options + Other text
+4. minimal implementation plan
+
+Then implement.
+
+## Output required after coding
+
+Report:
+
+1. exact files changed
+2. exact methods changed
+3. how Landlord now renders digital photo enhancement sub-options
+4. how Seller now renders digital photo enhancement sub-options
+5. confirmation that custom Other text suppresses the word `Other`
+6. confirmation no schema/routes/flow changed
+
+---
+
+If you want, I can also give you a **follow-up Replit prompt** for doing this same connected-option behavior across any other parent services that have child selections.

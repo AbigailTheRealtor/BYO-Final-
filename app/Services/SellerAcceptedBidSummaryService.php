@@ -533,7 +533,12 @@ class SellerAcceptedBidSummaryService
 
         $services      = is_array($sourceData['services']) ? $sourceData['services'] : [];
         $otherServices = is_array($sourceData['other_services']) ? $sourceData['other_services'] : [];
-        $servicesHtml  = $this->buildServicesHtml($services, $otherServices, $propertyType);
+        $rawPhotoEnh   = $sourceData['photo_enhancements'] ?? [];
+        $photoOptions  = [
+            'enhancements' => is_string($rawPhotoEnh) ? (json_decode($rawPhotoEnh, true) ?? []) : (is_array($rawPhotoEnh) ? $rawPhotoEnh : []),
+            'custom'       => trim((string) ($sourceData['custom_enhancement'] ?? '')),
+        ];
+        $servicesHtml  = $this->buildServicesHtml($services, $otherServices, $propertyType, $photoOptions);
         $html = str_replace('{{services_grouped_by_category}}', $servicesHtml, $html);
 
         $compensationHtml = $this->buildCompensationHtml($sourceData);
@@ -570,7 +575,7 @@ class SellerAcceptedBidSummaryService
         return implode(', ', array_filter($parts)) ?: 'N/A';
     }
 
-    protected function buildServicesHtml(array $services, $otherServices, string $propertyType): string
+    protected function buildServicesHtml(array $services, $otherServices, string $propertyType, array $photoOptions = []): string
     {
         $pt = strtolower($propertyType);
 
@@ -596,6 +601,9 @@ class SellerAcceptedBidSummaryService
 
         $normalizedServices = array_map($normalizeStr, $services);
 
+        $photoEnhancements = is_array($photoOptions['enhancements'] ?? null) ? $photoOptions['enhancements'] : [];
+        $customEnhancement = trim((string) ($photoOptions['custom'] ?? ''));
+
         $html = '';
         foreach ($categories as $categoryName => $categoryServices) {
             $selectedInCategory = [];
@@ -610,6 +618,26 @@ class SellerAcceptedBidSummaryService
                 $html .= '<ul style="margin: 0; padding-left: 25px; list-style-type: disc;">';
                 foreach ($selectedInCategory as $service) {
                     $html .= '<li style="margin-bottom: 4px; list-style-type: disc;">' . e($service) . '</li>';
+                    if ($normalizeStr($service) === 'Provide digital photo enhancements' && !empty($photoEnhancements)) {
+                        $subItems = [];
+                        foreach ($photoEnhancements as $opt) {
+                            $opt = trim((string) $opt);
+                            if ($opt === '' || strtolower($opt) === 'other') {
+                                continue;
+                            }
+                            $subItems[] = $opt;
+                        }
+                        if (in_array('Other', $photoEnhancements) && $customEnhancement !== '') {
+                            $subItems[] = $customEnhancement;
+                        }
+                        if (!empty($subItems)) {
+                            $html .= '<ul style="margin: 4px 0 4px 0; padding-left: 22px; list-style-type: circle;">';
+                            foreach ($subItems as $sub) {
+                                $html .= '<li style="margin-bottom: 3px; list-style-type: circle;">' . e($sub) . '</li>';
+                            }
+                            $html .= '</ul>';
+                        }
+                    }
                 }
                 $html .= '</ul></div>';
             }
