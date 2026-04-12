@@ -47,7 +47,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h6>Listing Owner Acknowledgement</h6>
+                            <h6>Listing Creator Acknowledgement</h6>
                             @if($summary->isTenantSigned())
                                 <p class="mb-1">
                                     <strong>Signature:</strong> {{ $summary->tenant_signature_name }}
@@ -102,7 +102,7 @@
             @if($canSign)
             <div class="card mt-4" id="esign-section">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">{{ $userRole === 'tenant' ? 'Listing Owner' : 'Agent' }}: E-Sign Acknowledgement</h5>
+                    <h5 class="mb-0">{{ $userRole === 'tenant' ? 'Listing Creator' : 'Agent' }}: E-Sign Acknowledgement</h5>
                 </div>
                 <div class="card-body">
                     @if(session('error'))
@@ -140,7 +140,7 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-lg w-100 esign-btn" id="submitBtn" disabled>
-                            {{ $userRole === 'tenant' ? 'Tenant' : 'Agent' }}: E-Sign Acknowledgement
+                            {{ $userRole === 'tenant' ? 'Listing Creator' : 'Agent' }}: E-Sign Acknowledgement
                         </button>
                     </form>
                 </div>
