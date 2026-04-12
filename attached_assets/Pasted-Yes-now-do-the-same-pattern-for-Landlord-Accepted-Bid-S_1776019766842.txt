@@ -1,0 +1,172 @@
+Yes — now do the same pattern for **Landlord Accepted Bid Summary**.
+
+Paste this into Replit:
+
+---
+
+**Task: Apply the same accepted-summary formatting fix to Landlord so Section 4 uses the same human-readable values shown on the Landlord View Bid card/private terms display**
+
+## Scope
+
+Fix the **Landlord Accepted Bid Summary** only, using the same approach that just worked for Buyer.
+
+Problem:
+The Landlord Accepted Bid Summary is still rendering raw/internal/generic values in Section 4 instead of the actual human-readable display values shown on the Landlord View Bid card.
+
+Examples from the current Landlord Accepted Summary that are still wrong:
+
+* `Percentage of the Gross Rent` instead of `5% of Net Aggregate Rent`
+* `Percentage of Month’s Rent` instead of `100% of Month's Rent x 3 months`
+* `Percentage of the Total Purchase Price + Flat Fee` instead of `4% of Total Purchase Price + $5,000`
+* `50` instead of `50 days`
+* `yes` instead of `Yes`
+
+The target is to make Landlord Accepted Summary Section 4 match the **same display-ready wording and composition** already shown on the Landlord View Bid card/private compensation section.
+
+## Safeguards
+
+1. **Do not change DB schema**
+2. **Do not change routes**
+3. **Do not change accept/counter/reject flow**
+4. **Do not redesign the accepted summary layout**
+5. **Do not touch Buyer/Seller/Tenant unless required by a truly shared helper**
+6. **Prefer the same implementation pattern that just worked for Buyer**
+7. **Do not invent new formatting logic if the Landlord view-bid formatter already exists**
+8. **Smallest surgical change only**
+
+---
+
+## Read-only first
+
+Before editing, trace the exact Landlord path:
+
+1. exact file/method building the **Landlord Accepted Bid Summary Section 4**
+2. exact file/method already producing the correct **Landlord View Bid/private terms** display
+3. confirm whether the Buyer fix introduced a reusable pattern/helper that can be mirrored safely for Landlord
+4. report the minimal implementation plan before editing
+
+If the accepted summary is still using raw fields or a generic summary array, rewire it to use the Landlord display-ready formatter path.
+
+---
+
+## Required result
+
+Landlord Accepted Bid Summary Section 4 must show display-ready values like the Landlord View Bid card.
+
+### Examples of expected behavior
+
+Use actual formatted values such as:
+
+* `5% of Net Aggregate Rent`
+* `50% due upon execution, 50% due upon commencement of agreement`
+* `100% of Month's Rent x 3 months`
+* `Including Sales Tax`
+* `50% of original commission`
+* `Yes`
+* `5% of Total Purchase Price`
+* `$4,545`
+* `4% of Total Purchase Price + $5,000`
+* `50 days`
+* `1 Year`
+* `Yes`
+* `$6,000.00 Flat Fee`
+* `Transaction Broker Representation`
+
+### Do not show raw/generic values like:
+
+* `Percentage of the Gross Rent`
+* `Percentage of Month’s Rent`
+* `Percentage of the Total Purchase Price + Flat Fee`
+* `50`
+* `yes`
+
+---
+
+## Implementation guidance
+
+Use the same strategy that worked for Buyer:
+
+### Preferred
+
+Reuse/extract the **Landlord view-bid display formatter** and make the Landlord Accepted Summary consume those display-ready values.
+
+### If the Landlord display logic is embedded in Blade
+
+Extract a shared Landlord formatting method/service and use it in:
+
+1. Landlord View Bid/private terms display
+2. Landlord Accepted Bid Summary Section 4
+
+### Do not do
+
+* superficial template replacements only
+* hardcoded string substitutions without fixing the source
+* layout changes
+
+---
+
+## Formatting rules to preserve
+
+* boolean-like values: `Yes` / `No`
+* day/unit values: `50 days`
+* currency values: `$4,545`, `$5,000`, `$6,000.00`
+* percentage values: `5%`, `4%`, `100%`
+* combined display strings should match the Landlord View Bid card wording
+
+---
+
+## QA checklist
+
+After patching, verify the Landlord Accepted Bid Summary updates these exact kinds of cases:
+
+1. **Listing lease fee**
+
+   * before: `Percentage of the Gross Rent`
+   * after: actual composed display like `5% of Net Aggregate Rent`
+
+2. **Lease renewal/extension fee**
+
+   * before: `Percentage of Month’s Rent`
+   * after: actual composed display like `100% of Month's Rent x 3 months`
+
+3. **Purchase fee**
+
+   * before: `Percentage of the Total Purchase Price + Flat Fee`
+   * after: actual composed display like `4% of Total Purchase Price + $5,000`
+
+4. **Protection period**
+
+   * before: `50`
+   * after: `50 days`
+
+5. **Boolean values**
+
+   * before: `yes`
+   * after: `Yes`
+
+6. **Property management fee**
+
+   * confirm it uses the same display wording as the Landlord View Bid card
+
+7. **No regressions**
+
+   * Landlord View Bid still renders correctly
+   * Accepted summary still generates
+   * Buyer fix remains intact
+   * no Seller/Tenant regressions
+
+---
+
+## Output required from you
+
+After changes, report:
+
+1. exact files changed
+2. exact methods changed
+3. one-sentence root cause
+4. how Landlord Accepted Summary now gets its display-ready values
+5. confirmation that no schema/routes/flow changed
+
+---
+
+If you want, I can also draft the **Seller version next** so you can queue that right after Landlord.

@@ -325,6 +325,42 @@ class LandlordAcceptedBidSummaryService
         }
     }
 
+    public function regenerateSummaryHtml(AcceptedBidSummary $summary): bool
+    {
+        try {
+            $bid = LandlordAgentAuctionBid::find($summary->accepted_bid_id);
+            if (!$bid) return false;
+
+            $listing  = $bid->auction;
+            if (!$listing) return false;
+
+            $landlord = User::find($listing->user_id);
+            $agent    = User::find($bid->user_id);
+            if (!$landlord || !$agent) return false;
+
+            $acceptedCounter = $summary->accepted_counter_id
+                ? LandlordCounterTerm::find($summary->accepted_counter_id)
+                : null;
+
+            $sourceData = $acceptedCounter
+                ? $this->getCounterData($acceptedCounter, $bid)
+                : $this->getBidData($bid);
+
+            $html = $this->buildSummaryHtml($listing, $bid, $landlord, $agent, $sourceData, $acceptedCounter);
+
+            $summary->summary_html = $html;
+            $summary->save();
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('[LandlordAcceptedBidSummaryService] Failed to regenerate summary html', [
+                'summary_id' => $summary->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Data extraction
     // ─────────────────────────────────────────────────────────────────────────
@@ -365,37 +401,39 @@ class LandlordAcceptedBidSummaryService
 
     protected function extractCompensationFields($data): array
     {
-        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+        $g     = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+        $yesNo = fn($v) => !empty($v) ? ucfirst(strtolower((string) $v)) : null;
+        $pct   = fn($v) => $v !== null && $v !== '' ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
 
-        // Listing Commission Fee
-        $purchaseFeeType   = $g('purchase_fee_type');
+        // Landlord's Broker Lease Fee (composed display)
         $purchaseFeeAmount = $this->resolveLandlordListingFeeDisplay($data);
 
-        // Payment Timing
-        $brokerFeeTiming = $g('broker_fee_timing');
-        $brokerFeeTimingResolved = $this->resolveBrokerFeeTimingDisplay($data);
+        // Payment Timing (resolved)
+        $brokerFeeTimingResolved = $this->resolveBrokerFeeTimingDisplay($data) ?: $g('broker_fee_timing');
 
-        // Renewal Commission
-        $renewalFeeType   = $g('renewal_fee_type');
+        // Lease Renewal/Extension Fee (composed display)
         $renewalFeeDisplay = $this->resolveRenewalFeeDisplay($data);
 
-        // Expansion Commission
-        $expansionCommission = $g('expansion_commission_percentage');
-        if ($expansionCommission !== null && $expansionCommission !== '') {
-            $expansionCommission = rtrim(rtrim(number_format((float) $expansionCommission, 2), '0'), '.') . '%';
+        // Sales Tax on Renewal Fee
+        $renewalSalesTax = $this->resolveRenewalSalesTaxDisplay($data);
+
+        // Expansion Commission — format as "X% of original commission"
+        $expansionPct = $g('expansion_commission_percentage');
+        $expansionDisplay = null;
+        if ($expansionPct !== null && $expansionPct !== '') {
+            $expansionDisplay = $pct($expansionPct) . ' of original commission';
         }
 
         // Tenant Broker Compensation
-        $tenantBrokerStructure = $g('tenant_broker_commission_structure');
-        $tenantBrokerDisplay   = $this->resolveTenantBrokerDisplay($data);
+        $tenantBrokerDisplay = $this->resolveTenantBrokerDisplay($data);
 
-        // Lease Option Agreement
-        $interestedLeaseOption = $g('interested_lease_option_agreement');
+        // Lease-Option Agreement
+        $interestedLeaseOption = $yesNo($g('interested_lease_option_agreement'));
         $leaseType  = $g('lease_type');
         $leaseValue = $g('lease_value');
         $leaseOptionDisplay = null;
         if ($leaseType === 'percent' && $leaseValue !== null && $leaseValue !== '') {
-            $leaseOptionDisplay = rtrim(rtrim(number_format((float) $leaseValue, 2), '0'), '.') . '% of Lease Value';
+            $leaseOptionDisplay = $pct($leaseValue) . ' of Total Purchase Price';
         } elseif ($leaseValue !== null && $leaseValue !== '') {
             $leaseOptionDisplay = '$' . number_format((float) str_replace(',', '', (string) $leaseValue), 0);
         }
@@ -403,23 +441,28 @@ class LandlordAcceptedBidSummaryService
         $purchaseValue = $g('purchase_value');
         $purchaseOptionDisplay = null;
         if ($purchaseType === 'percent' && $purchaseValue !== null && $purchaseValue !== '') {
-            $purchaseOptionDisplay = rtrim(rtrim(number_format((float) $purchaseValue, 2), '0'), '.') . '% of Purchase Price';
+            $purchaseOptionDisplay = $pct($purchaseValue) . ' of Purchase Price';
         } elseif ($purchaseValue !== null && $purchaseValue !== '') {
             $purchaseOptionDisplay = '$' . number_format((float) str_replace(',', '', (string) $purchaseValue), 0);
         }
 
-        // Interested in Selling
-        $interestedInSelling = $g('interested_in_selling');
-        $interestedInSellingType = $g('interested_in_selling_type');
+        // Interested in Selling + composed selling fee
+        $interestedInSelling  = $yesNo($g('interested_in_selling'));
+        $sellingFeeDisplay    = (strtolower((string) $g('interested_in_selling')) === 'yes')
+                                    ? $this->resolveSellingFeeDisplay($data)
+                                    : null;
 
-        // Protection Period
+        // Protection Period — append " days"
         $protectionPeriod = $g('protection_period');
+        if (!empty($protectionPeriod)) {
+            $protectionPeriod = $protectionPeriod . ' days';
+        }
 
         // Early Termination
         $earlyTermFeeOption = $g('early_termination_fee_option');
         $earlyTermFeeAmount = $g('early_termination_fee_amount');
 
-        // Agency Agreement
+        // Agency Agreement — resolve 'Other'/'other' to the custom text
         $agencyAgreementTimeframe = $g('agency_agreement_timeframe');
         if (strtolower((string) $agencyAgreementTimeframe) === 'other') {
             $agencyAgreementTimeframe = $g('agency_agreement_custom') ?: $agencyAgreementTimeframe;
@@ -428,36 +471,36 @@ class LandlordAcceptedBidSummaryService
         // Brokerage Relationship
         $brokerageRelationship = $g('brokerage_relationship');
 
-        // Property Management Interest
-        $interestedPropMgmt    = $g('interested_in_property_management');
-        $interestedPropMgmtFee = $g('interested_in_property_management_fee');
+        // Property Management
+        $interestedPropMgmt      = $yesNo($g('interested_in_property_management'));
+        $propMgmtFeeDisplay      = (strtolower((string) $g('interested_in_property_management')) === 'yes')
+                                        ? $this->resolvePropertyManagementFeeDisplay($data)
+                                        : null;
 
         // Additional Terms
         $additionalTerms = $g('additional_details_broker') ?: $g('additional_details');
 
         return [
-            'purchase_fee_type'                  => $purchaseFeeType,
-            'purchase_fee_amount'                => $purchaseFeeAmount,
-            'broker_fee_timing'                  => $brokerFeeTimingResolved ?: $brokerFeeTiming,
-            'renewal_fee_type'                   => $renewalFeeType,
-            'renewal_fee_amount'                 => $renewalFeeDisplay,
-            'expansion_commission_percentage'    => $expansionCommission,
-            'tenant_broker_commission_structure' => $tenantBrokerStructure,
-            'tenant_broker_amount'               => $tenantBrokerDisplay,
-            'interested_lease_option_agreement'  => $interestedLeaseOption,
-            'lease_option_fee_type'              => $leaseOptionDisplay,
-            'purchase_option_type'               => $purchaseOptionDisplay,
-            'interested_in_selling'              => $interestedInSelling,
-            'interested_in_selling_type'         => $interestedInSellingType,
-            'protection_period'                  => $protectionPeriod,
-            'early_termination_fee'              => $earlyTermFeeOption,
-            'early_termination_fee_amount'       => ($earlyTermFeeOption === 'Yes' && !empty($earlyTermFeeAmount))
+            'purchase_fee_amount'               => $purchaseFeeAmount,
+            'broker_fee_timing'                 => $brokerFeeTimingResolved,
+            'renewal_fee_amount'                => $renewalFeeDisplay,
+            'renewal_fee_sales_tax'             => $renewalSalesTax,
+            'expansion_commission_display'      => $expansionDisplay,
+            'tenant_broker_amount'              => $tenantBrokerDisplay,
+            'interested_lease_option_agreement' => $interestedLeaseOption,
+            'lease_option_fee_display'          => $leaseOptionDisplay,
+            'purchase_option_display'           => $purchaseOptionDisplay,
+            'interested_in_selling'             => $interestedInSelling,
+            'selling_fee_display'               => $sellingFeeDisplay,
+            'protection_period'                 => $protectionPeriod,
+            'early_termination_fee'             => $yesNo($earlyTermFeeOption),
+            'early_termination_fee_amount'      => (strtolower((string) $earlyTermFeeOption) === 'yes' && !empty($earlyTermFeeAmount))
                                                         ? $this->formatAsCurrency($earlyTermFeeAmount) : null,
-            'agency_agreement_timeframe'         => $agencyAgreementTimeframe,
-            'brokerage_relationship'             => $brokerageRelationship,
-            'interested_in_property_management'  => $interestedPropMgmt,
-            'property_management_fee'            => ($interestedPropMgmt === 'Yes') ? $interestedPropMgmtFee : null,
-            'additional_terms'                   => $additionalTerms,
+            'agency_agreement_timeframe'        => $agencyAgreementTimeframe,
+            'brokerage_relationship'            => $brokerageRelationship,
+            'interested_in_property_management' => $interestedPropMgmt,
+            'property_management_fee_display'   => $propMgmtFeeDisplay,
+            'additional_terms'                  => $additionalTerms,
         ];
     }
 
@@ -470,7 +513,7 @@ class LandlordAcceptedBidSummaryService
         $type = (string) ($g('purchase_fee_type') ?? '');
 
         if ($type === 'Flat Fee') {
-            return $money($g('purchase_fee_flat'));
+            return $money($g('purchase_fee_flat') ?: $g('purchase_fee_flat_commercial'));
         }
         if ($type === 'Percentage of the Rent Due Each Rental Period') {
             return $g('purchase_fee_gross_rent') ? ($percent($g('purchase_fee_gross_rent')) . ' of Gross Rent') : null;
@@ -550,28 +593,131 @@ class LandlordAcceptedBidSummaryService
         $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
 
         $type = (string) ($g('renewal_fee_type') ?? '');
+        // Normalize Unicode curly apostrophes to straight apostrophes (DB may store either)
+        $type = str_replace(["\u{2019}", "\u{2018}", "\u{0060}"], "'", $type);
         if (empty($type) || strtolower($type) === 'no renewal fee' || $type === 'None') return null;
 
-        if (str_contains(strtolower($type), 'percentage') || str_contains(strtolower($type), '%')) {
-            $pct   = $g('renewal_fee_percentage');
-            $basis = $g('renewal_fee_lease_value') ?: 'Gross Lease Value';
-            return $pct ? ($percent($pct) . ' of ' . $basis) : null;
-        }
-        if (str_contains(strtolower($type), 'first month')) {
-            $val = $g('renewal_fee_first_month');
-            return $val ? ('First month — ' . $val) : "First Month's Rent";
-        }
-        if (str_contains(strtolower($type), 'flat')) {
+        // Exact matches in the same order as the Landlord view blade (lines 1648-1667)
+        if ($type === 'Flat Fee') {
             return $money($g('renewal_fee_flat_free'));
         }
-        if (str_contains(strtolower($type), 'month')) {
-            $months = $g('renewal_fee_no_of_months');
-            return $months ? ($months . ' months of rent') : null;
+        if ($type === 'Percentage of the Rent Due Each Rental Period') {
+            $pct = $g('renewal_fee_percentage');
+            return $pct ? ($percent($pct) . ' of Rent') : null;
         }
-        $custom = $g('renewal_fee_custom');
-        if ($custom) return $custom;
+        if ($type === 'Percentage of the Gross Lease Value') {
+            $pct = $g('renewal_fee_lease_value');
+            return $pct ? ($percent($pct) . ' of Gross Lease Value') : null;
+        }
+        if ($type === "Percentage of the First Month's Rent") {
+            $pct = $g('renewal_fee_first_month');
+            return $pct ? ($percent($pct) . " of First Month's Rent") : "First Month's Rent";
+        }
+        if ($type === 'Percentage of the Net Aggregate Rent') {
+            $pct = $g('renewal_fee_percentage');
+            return $pct ? ($percent($pct) . ' of Net Aggregate Rent') : null;
+        }
+        if ($type === 'Percentage of the Gross Rent') {
+            $pct = $g('renewal_fee_lease_value');
+            return $pct ? ($percent($pct) . ' of Gross Rent') : null;
+        }
+        // "Percentage of Month's Rent" uses renewal_fee_first_month as the percentage field
+        if ($type === "Percentage of Month's Rent") {
+            $pct = $g('renewal_fee_first_month');
+            if (!$pct) return null;
+            $display = $percent($pct) . " of Month's Rent";
+            $months  = $g('renewal_fee_no_of_months');
+            if ($months) {
+                $display .= ' x ' . $months . ' Months';
+            }
+            return $display;
+        }
+        if (strtolower($type) === 'other') {
+            return $g('renewal_fee_custom') ?: null;
+        }
 
-        return $type;
+        return null;
+    }
+
+    protected function resolveRenewalSalesTaxDisplay($data): ?string
+    {
+        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+        $type = str_replace(["\u{2019}", "\u{2018}", "\u{0060}"], "'", (string) ($g('renewal_fee_type') ?? ''));
+
+        // Pick the relevant sales tax field based on fee type (mirrors the blade's conditionals)
+        if ($type === "Percentage of Month's Rent" || $type === "Percentage of the First Month's Rent") {
+            $raw = $g('renewal_fee_sales_tax_first_month');
+        } elseif ($type === 'Flat Fee') {
+            $raw = $g('renewal_fee_sales_tax_flat_fee');
+        } else {
+            $raw = $g('renewal_fee_sales_tax_lease_value')
+                ?? $g('renewal_fee_sales_tax_first_month')
+                ?? $g('renewal_fee_sales_tax_flat_fee');
+        }
+
+        if (empty($raw) || $raw === 'null') return null;
+        if ($raw === 'including') return 'Including Sales Tax';
+        if ($raw === 'excluding') return 'Excluding Sales Tax';
+        return (string) $raw;
+    }
+
+    protected function resolveSellingFeeDisplay($data): ?string
+    {
+        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+        $money   = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+
+        $type = (string) ($g('interested_in_selling_type') ?? '');
+        if (empty($type)) return null;
+
+        // Field names vary: bid form uses landlord_broker_purchase_price/landlord_broker_flate_fee
+        // Counter form may use landlord_broker_percentage_price/landlord_broker_dollar_price
+        $pctField  = $g('landlord_broker_purchase_price')   ?: $g('landlord_broker_percentage_price');
+        $flatField  = $g('landlord_broker_flate_fee')        ?: $g('landlord_broker_dollar_price');
+
+        if ($type === 'Flat Fee') {
+            return $money($flatField);
+        }
+        if ($type === 'Percentage of the Total Purchase Price') {
+            return $pctField ? ($percent($pctField) . ' of Total Purchase Price') : null;
+        }
+        if ($type === 'Percentage of the Total Purchase Price + Flat Fee') {
+            $parts = array_filter([
+                $pctField ? ($percent($pctField) . ' of Total Purchase Price') : null,
+                $money($flatField),
+            ]);
+            return $parts ? implode(' + ', $parts) : null;
+        }
+        return null;
+    }
+
+    protected function resolvePropertyManagementFeeDisplay($data): ?string
+    {
+        $g = fn(string $key) => is_object($data) ? ($data->$key ?? null) : ($data[$key] ?? null);
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+
+        $feeType = (string) ($g('interested_in_property_management_fee') ?? '');
+        if (empty($feeType)) return null;
+
+        if ($feeType === 'Flat Fee') {
+            $amt = $g('interested_in_property_management_fee_flate_free');
+            if (!$amt) return 'Flat Fee';
+            $num    = floatval(str_replace(',', '', (string) $amt));
+            $fmtAmt = ($num != floor($num)) ? '$' . number_format($num, 2) : '$' . number_format($num, 2);
+            return $fmtAmt . ' Flat Fee';
+        }
+        if ($feeType === 'Percentage of the Rent Due Each Rental Period') {
+            $pct = $g('interested_in_property_management_fee_rental_periord');
+            return $pct ? ($percent($pct) . ' of Monthly Rent') : null;
+        }
+        if ($feeType === 'Percentage of the Gross Lease Value') {
+            $pct = $g('interested_in_property_management_fee_gross_lease');
+            return $pct ? ($percent($pct) . ' of Gross Lease Value') : null;
+        }
+        if (strtolower($feeType) === 'other') {
+            return $g('interested_in_property_management_fee_other') ?: null;
+        }
+        return $feeType;
     }
 
     protected function resolveTenantBrokerDisplay($data): ?string
@@ -748,54 +894,62 @@ class LandlordAcceptedBidSummaryService
 
     protected function buildCompensationHtml(array $data): string
     {
-        $html = '<table style="width: 100%; border-collapse: collapse;">';
+        $row  = fn(string $label, ?string $value): string =>
+            (!empty($value) && $value !== 'N/A')
+                ? '<tr>'
+                  . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">' . e($label) . '</td>'
+                  . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($value) . '</td>'
+                  . '</tr>'
+                : '';
 
-        $fields = [
-            'purchase_fee_type'                  => 'Listing Commission Type',
-            'purchase_fee_amount'                => 'Listing Commission Fee',
-            'broker_fee_timing'                  => 'Payment Timing for Listing Fee',
-            'renewal_fee_type'                   => 'Renewal Commission Type',
-            'renewal_fee_amount'                 => 'Renewal Commission Fee',
-            'expansion_commission_percentage'    => 'Expansion Commission',
-            'tenant_broker_commission_structure' => 'Tenant Broker Compensation',
-            'tenant_broker_amount'               => 'Tenant Broker Fee',
-            'interested_lease_option_agreement'  => 'Interested in Lease-Option Agreement',
-            'lease_option_fee_type'              => 'Compensation for Lease-Option Agreement',
-            'purchase_option_type'               => 'Compensation if Purchase Option is Exercised',
-            'interested_in_selling'              => 'Interested in Selling the Property',
-            'interested_in_selling_type'         => 'Sale Commission Structure',
-            'protection_period'                  => 'Protection Period Timeframe',
-            'early_termination_fee'              => 'Early Termination Fee',
-            'early_termination_fee_amount'       => 'Early Termination Fee Amount',
-            'agency_agreement_timeframe'         => 'Agency Agreement Timeframe',
-            'brokerage_relationship'             => 'Acceptable Brokerage Relationship',
-            'interested_in_property_management'  => 'Interested in Property Management',
-            'property_management_fee'            => 'Property Management Fee',
-            'additional_terms'                   => 'Additional Terms',
-        ];
+        $rows = '';
 
-        $hasContent = false;
-        foreach ($fields as $key => $label) {
-            $value = $data[$key] ?? null;
-            if (!empty($value) && $value !== 'N/A') {
-                $displayValue = is_array($value) ? implode(', ', $value) : (string) $value;
-                if (!empty($displayValue)) {
-                    $hasContent = true;
-                    $html .= '<tr>';
-                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">' . e($label) . '</td>';
-                    $html .= '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayValue) . '</td>';
-                    $html .= '</tr>';
-                }
-            }
+        // A) Landlord's Broker Lease Fee
+        $rows .= $row("Landlord's Broker Lease Fee", $data['purchase_fee_amount'] ?? null);
+        $rows .= $row('Payment Timing for Broker Fees', $data['broker_fee_timing'] ?? null);
+        $rows .= $row('Lease Renewal/Extension Fee', $data['renewal_fee_amount'] ?? null);
+        $rows .= $row('Sales Tax (Renewal Fee)', $data['renewal_fee_sales_tax'] ?? null);
+        $rows .= $row('Expansion Commission for Lease Amendment', $data['expansion_commission_display'] ?? null);
+
+        // B) Tenant Broker Compensation
+        $rows .= $row("Tenant's Broker Compensation", $data['tenant_broker_amount'] ?? null);
+
+        // C) Lease-Option Details
+        $rows .= $row('Interested in Offering a Lease-Option Agreement', $data['interested_lease_option_agreement'] ?? null);
+        if (!empty($data['interested_lease_option_agreement']) && strtolower($data['interested_lease_option_agreement']) === 'yes') {
+            $rows .= $row('Compensation for Creating the Lease-Option Agreement', $data['lease_option_fee_display'] ?? null);
+            $rows .= $row('Compensation if Purchase Option is Exercised', $data['purchase_option_display'] ?? null);
         }
 
-        $html .= '</table>';
+        // D) Purchase Fee Details
+        $rows .= $row('Interested in Selling the Property', $data['interested_in_selling'] ?? null);
+        if (!empty($data['interested_in_selling']) && strtolower($data['interested_in_selling']) === 'yes') {
+            $rows .= $row('Purchase Fee', $data['selling_fee_display'] ?? null);
+        }
 
-        if (!$hasContent) {
+        // E) Legal Terms
+        $rows .= $row('Protection Period Timeframe', $data['protection_period'] ?? null);
+        $rows .= $row('Landlord Agency Agreement Timeframe', $data['agency_agreement_timeframe'] ?? null);
+        $rows .= $row('Early Termination Fee', $data['early_termination_fee'] ?? null);
+        if (!empty($data['early_termination_fee']) && strtolower($data['early_termination_fee']) === 'yes') {
+            $rows .= $row('Early Termination Fee Amount', $data['early_termination_fee_amount'] ?? null);
+        }
+        $rows .= $row('Interested in Property Management', $data['interested_in_property_management'] ?? null);
+        if (!empty($data['interested_in_property_management']) && strtolower($data['interested_in_property_management']) === 'yes') {
+            $rows .= $row('Property Management Fee', $data['property_management_fee_display'] ?? null);
+        }
+
+        // F) Brokerage Relationship
+        $rows .= $row('Acceptable Brokerage Relationship', $data['brokerage_relationship'] ?? null);
+
+        // G) Additional Terms
+        $rows .= $row('Additional Terms', $data['additional_terms'] ?? null);
+
+        if (empty($rows)) {
             return '<p><em>No broker compensation terms specified.</em></p>';
         }
 
-        return $html;
+        return '<table style="width: 100%; border-collapse: collapse;">' . $rows . '</table>';
     }
 
     protected function buildAdditionalDetailsHtml(array $sourceData, $listingData): string
