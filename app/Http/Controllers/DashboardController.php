@@ -19,6 +19,7 @@ use App\Models\PropertyType;
 use App\Models\SellerAgentAuction;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\State;
+use App\Models\AcceptedBidSummary;
 use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\TenantCriteriaAuctionBid;
@@ -32,9 +33,11 @@ class DashboardController extends Controller
 {
     public function dashboard()
     {
-        $user = Auth::user();
+        $user  = Auth::user();
+        $uid   = $user->id;
         $page_data['title'] = 'Dashboard';
-        
+
+        // ── Notifications (unchanged) ──────────────────────────────────────────
         $page_data['notifications'] = $user->unreadNotifications()
             ->whereIn('type', [
                 'App\Notifications\BidAcceptedNotification',
@@ -47,19 +50,55 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->take(20)
             ->get();
-        
-        $tenantAuctionIds = TenantAgentAuction::where('user_id', $user->id)->pluck('id');
-        
-        $page_data['pendingAgentBids'] = TenantAgentAuctionBid::with(['auction', 'user', 'meta', 'counterTerms', 'acceptedBidSummary'])
-            ->whereIn('tenant_agent_auction_id', $tenantAuctionIds)
-            ->orderBy('created_at', 'desc')
-            ->take(20)
-            ->get()
-            ->filter(function($bid) {
-                return in_array($bid->bid_status, ['Active', 'Countered']);
-            })
-            ->take(10);
-        
+
+        // ── Listing counts per role (read-only) ────────────────────────────────
+        $page_data['listingCounts'] = [
+            'tenant'   => TenantAgentAuction::where('user_id', $uid)->count(),
+            'landlord' => LandlordAgentAuction::where('user_id', $uid)->count(),
+            'buyer'    => BuyerAgentAuction::where('user_id', $uid)->count(),
+            'seller'   => SellerAgentAuction::where('user_id', $uid)->count(),
+        ];
+
+        // ── Pending bids on user's listings (awaiting owner decision) ──────────
+        // Uses the exact DB field names per role; no bid_status accessor needed.
+        $tenantAuctionIds   = TenantAgentAuction::where('user_id', $uid)->pluck('id');
+        $landlordAuctionIds = LandlordAgentAuction::where('user_id', $uid)->pluck('id');
+        $buyerAuctionIds    = BuyerAgentAuction::where('user_id', $uid)->pluck('id');
+        $sellerAuctionIds   = SellerAgentAuction::where('user_id', $uid)->pluck('id');
+
+        $page_data['pendingBidCounts'] = [
+            // Tenant: no accepted_date and no rejected_date = not yet decided
+            'tenant' => $tenantAuctionIds->isNotEmpty()
+                ? TenantAgentAuctionBid::whereIn('tenant_agent_auction_id', $tenantAuctionIds)
+                    ->whereNull('accepted_date')
+                    ->whereNull('rejected_date')
+                    ->count()
+                : 0,
+            // Landlord: accepted='no' = undecided
+            'landlord' => $landlordAuctionIds->isNotEmpty()
+                ? LandlordAgentAuctionBid::whereIn('landlord_agent_auction_id', $landlordAuctionIds)
+                    ->where('accepted', 'no')
+                    ->count()
+                : 0,
+            // Buyer: accepted='0' = undecided
+            'buyer' => $buyerAuctionIds->isNotEmpty()
+                ? BuyerAgentAuctionBid::whereIn('buyer_agent_auction_id', $buyerAuctionIds)
+                    ->where('accepted', '0')
+                    ->count()
+                : 0,
+            // Seller: accepted='0' = undecided
+            'seller' => $sellerAuctionIds->isNotEmpty()
+                ? SellerAgentAuctionBid::whereIn('seller_agent_auction_id', $sellerAuctionIds)
+                    ->where('accepted', '0')
+                    ->count()
+                : 0,
+        ];
+
+        // ── Accepted summaries awaiting the listing owner's signature ──────────
+        $page_data['unsignedSummariesCount'] = AcceptedBidSummary::where('tenant_user_id', $uid)
+            ->whereNull('tenant_signed_at')
+            ->count();
+
         return view('dashboard', $page_data);
     }
 
