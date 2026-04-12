@@ -1,0 +1,148 @@
+**Task: Dashboard behavior + routing alignment across Tenant, Buyer, Seller, and Landlord (post-500 fix)**
+
+## Goal
+
+Now that all dashboard pages load without errors, verify that the dashboard is:
+
+* fully wired to the latest bid/listing flow
+* consistent across all 4 roles
+* consistent between listing creator and agent dashboards
+* not using any legacy or outdated routes
+
+---
+
+## Important
+
+This is NOT a bug fix task first.
+
+This is a **behavior + routing audit**.
+
+Do NOT change anything yet.
+
+---
+
+## PHASE 1 — READ-ONLY AUDIT
+
+### A. Listing creator dashboard (client side)
+
+For each section:
+
+* Hire Tenant’s Agent
+* Hire Landlord’s Agent
+* Hire Buyer’s Agent
+* Hire Seller’s Agent
+
+Audit:
+
+1. what route is opened when clicking
+2. what controller/component handles it
+3. whether it uses:
+
+   * latest working flow ✅
+   * legacy flow ❌
+4. whether:
+
+   * bid cards are consistent
+   * action buttons (View, Accept, Counter, Reject) behave identically
+5. whether each role shows:
+
+   * correct bids
+   * correct match % / services / broker terms
+   * correct status
+
+---
+
+### B. Agent dashboard/profile
+
+Audit:
+
+1. where agent sees bids for each role
+2. whether:
+
+   * all 4 roles appear
+   * each opens correct bid view
+3. whether:
+
+   * counter / accepted / rejected states are consistent
+4. whether any role:
+
+   * still uses outdated views
+   * shows inconsistent formatting
+
+---
+
+### C. Cross-role comparison
+
+Compare:
+
+* Tenant vs Buyer vs Seller vs Landlord
+
+Identify:
+
+1. any role using outdated view
+2. any role missing features others have
+3. any mismatch in:
+
+   * bid card format
+   * buttons
+   * status display
+   * counter behavior
+4. any role still using old service rendering or compensation formatting
+
+---
+
+### D. Routing consistency
+
+Verify:
+
+1. all dashboard links point to:
+
+   * correct role-specific pages
+2. no routes:
+
+   * fallback to wrong role
+   * reuse incorrect controllers
+3. accepted summary links are correct per role
+4. no cross-role leakage possible
+
+---
+
+## PHASE 2 — REPORT BEFORE FIXES
+
+Return a structured report:
+
+### 1. Listing creator dashboard
+
+* Tenant: status
+* Buyer: status
+* Seller: status
+* Landlord: status
+
+### 2. Agent dashboard
+
+* Tenant: status
+* Buyer: status
+* Seller: status
+* Landlord: status
+
+### 3. Cross-role issues
+
+* list mismatches
+* list outdated flows
+* list inconsistencies
+
+### 4. Routing issues
+
+* incorrect routes
+* reused controllers
+* misaligned links
+
+### 5. Recommended fix order
+
+---
+
+## DO NOT CODE YET
+
+Only audit.
+
+We will fix AFTER the report.
