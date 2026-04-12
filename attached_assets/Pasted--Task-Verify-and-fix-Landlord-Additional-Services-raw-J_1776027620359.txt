@@ -1,0 +1,106 @@
+**Task: Verify and fix Landlord Additional Services raw JSON in the actual downloaded PDF/export path**
+
+## Problem
+
+I am still seeing:
+
+`["Example 1","Example 2"]`
+
+when the **agent downloads the PDF summary** for the Landlord flow.
+
+Your last fix appears to have patched:
+
+* `resources/views/hire_landlord_agent/view-bid.blade.php`
+
+That is the **live bid view path**, not necessarily the **downloaded PDF/export path**.
+
+So I need you to verify whether the downloaded PDF is using a separate render path and fix that exact path if it still renders raw JSON.
+
+## Hard safeguards
+
+1. **Do not change DB schema**
+2. **Do not change routes**
+3. **Do not change sign flow**
+4. **Do not change compensation formatting**
+5. **Do not touch unrelated service categories**
+6. **Do not undo the prior view-bid fix**
+7. **Smallest surgical fix only**
+8. **Audit first, edit second**
+
+---
+
+## Read-only audit first
+
+Do not edit yet.
+
+Report:
+
+1. exact file/method used to generate the **downloaded PDF summary** for the Landlord flow
+2. whether that PDF uses:
+
+   * stored accepted summary HTML
+   * a separate PDF Blade view
+   * the live `view-bid.blade.php`
+   * another render/export path
+3. exact field/key used for Landlord Additional Services in the PDF/export path
+4. whether that path is still rendering raw JSON/stringified array
+5. whether the prior fix in `view-bid.blade.php` affects the PDF at all
+6. minimal implementation plan
+
+---
+
+## Important
+
+I need you to distinguish clearly between these render paths:
+
+1. **Landlord view-bid page**
+2. **Landlord accepted summary HTML**
+3. **Landlord downloaded PDF/export output**
+
+Do not assume fixing one fixes the others.
+
+---
+
+## Required fix
+
+If the **downloaded PDF/export path** still renders:
+
+`["Example 1","Example 2"]`
+
+then normalize it there too:
+
+* array → iterate each item
+* JSON array string → decode and iterate
+* plain text → render plain text
+* no raw brackets/quotes in final PDF
+
+### Correct output
+
+* Example 1
+* Example 2
+
+### Incorrect output
+
+* `["Example 1","Example 2"]`
+
+---
+
+## QA after fix
+
+1. open Landlord bid view page and confirm it is fixed
+2. download the actual Landlord PDF summary/export
+3. confirm Additional Services in the PDF no longer shows raw JSON
+4. confirm each item renders separately
+5. confirm Accepted Bid Summary still works
+6. confirm no regressions in other roles
+
+---
+
+## Output required after coding
+
+1. exact files changed
+2. exact methods/views changed
+3. root cause for the PDF/export path
+4. whether the screenshot issue was from live page, PDF, or both
+5. confirmation that both paths are now fixed
+6. confirmation no schema/routes/sign-flow changes were made
