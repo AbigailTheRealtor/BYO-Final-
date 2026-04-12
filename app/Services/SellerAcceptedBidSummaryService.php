@@ -636,55 +636,119 @@ class SellerAcceptedBidSummaryService
 
     protected function buildCompensationHtml(array $data): string
     {
+        $g       = fn(string $key) => $data[$key] ?? null;
+        $money   = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+        $yesNo   = fn($v) => in_array(strtolower((string) $v), ['yes', '1', 'true']) ? 'Yes' : 'No';
+        $row     = fn(string $label, ?string $value): string =>
+            (!empty($value) && $value !== 'N/A')
+                ? '<tr>'
+                  . '<td style="padding:8px;border-bottom:1px solid #eee;font-weight:bold;width:40%;">' . e($label) . '</td>'
+                  . '<td style="padding:8px;border-bottom:1px solid #eee;">' . e($value) . '</td>'
+                  . '</tr>'
+                : '';
+
         $rows = '';
 
-        $commissionStructure = $data['commission_structure'] ?? null;
-        if (!empty($commissionStructure)) {
-            $rows .= $this->makeRow('Commission Structure', $commissionStructure);
+        // A) Commission Structure
+        $commStructureRaw = str_replace('"', '', (string) ($g('commission_structure') ?? ''));
+        $rows .= $row('Commission Structure', $commStructureRaw ?: null);
+
+        // B) Buyer's Broker Compensation (when Commission Structure is not "No Compensation")
+        $commStructureType = $g('commission_structure_type');
+        if (!empty($commStructureType) && !str_contains(strtolower($commStructureRaw), 'no compensation')) {
+            $buyerBrokerFee = null;
+            if ($commStructureType === 'Flat Fee' && $g('commission_structure_type_fee_flat')) {
+                $buyerBrokerFee = $money($g('commission_structure_type_fee_flat'));
+            } elseif ($commStructureType === 'Percentage of the Total Purchase Price' && $g('commission_structure_type_fee_percentage')) {
+                $buyerBrokerFee = $percent($g('commission_structure_type_fee_percentage')) . ' of Total Purchase Price';
+            } elseif ($commStructureType === 'Flat Fee + Percentage' && ($g('commission_structure_type_fee_flat_combo') || $g('commission_structure_type_fee_percentage_combo'))) {
+                $parts = array_filter([
+                    $g('commission_structure_type_fee_percentage_combo') ? ($percent($g('commission_structure_type_fee_percentage_combo')) . ' of Total Purchase Price') : null,
+                    $money($g('commission_structure_type_fee_flat_combo')),
+                ]);
+                $buyerBrokerFee = $parts ? implode(' + ', $parts) : null;
+            } elseif (strtolower($commStructureType) === 'other' && $g('commission_structure_type_fee_other')) {
+                $buyerBrokerFee = $g('commission_structure_type_fee_other');
+            }
+            $rows .= $row("Buyer's Broker Compensation", $buyerBrokerFee);
         }
 
-        $purchaseFeeType = $data['purchase_fee_type'] ?? null;
+        // C) Seller's Purchase Commission
+        $purchaseFeeType = (string) ($g('purchase_fee_type') ?? '');
         if (!empty($purchaseFeeType)) {
-            $typeLabel = $this->formatPurchaseFeeType($purchaseFeeType);
-            $rows .= $this->makeRow('Purchase Commission Type', $typeLabel);
-            $feeDisplay = $this->resolvePurchaseFeeDisplay($data, $purchaseFeeType);
-            if (!empty($feeDisplay)) {
-                $rows .= $this->makeRow('Purchase Commission Amount', $feeDisplay);
+            $purchaseFeeDisplay = $this->resolvePurchaseFeeDisplay($data, $purchaseFeeType);
+            if ($purchaseFeeDisplay) {
+                $rows .= $row("Seller's Purchase Commission", $purchaseFeeDisplay);
             }
         }
 
-        $agencyTimeframe = $data['agency_agreement_timeframe'] ?? null;
-        if (!empty($agencyTimeframe) && strtolower($agencyTimeframe) === 'other') {
-            $agencyTimeframe = $data['agency_agreement_custom'] ?? $agencyTimeframe;
-        }
-        if (!empty($agencyTimeframe)) {
-            $rows .= $this->makeRow('Agency Agreement Timeframe', $agencyTimeframe);
+        // D) Leasing Fee (if interested in leasing)
+        $interestedLeasing = $g('interested_purchase_fee_type');
+        if (!empty($interestedLeasing)) {
+            $rows .= $row('Interested in Offering a Lease Fee', $yesNo($interestedLeasing));
+            if (strtolower((string) $interestedLeasing) === 'yes') {
+                $leasingFeeDisplay = $this->resolveSellerLeasingFeeDisplay($data);
+                $rows .= $row("Seller's Broker Leasing Fee", $leasingFeeDisplay);
+            }
         }
 
-        $protectionPeriod = $data['protection_period'] ?? null;
+        // E) Lease-Option Terms
+        $interestedLeaseOption = $g('interested_lease_option_agreement');
+        if (!empty($interestedLeaseOption)) {
+            $rows .= $row('Interested in Offering a Lease-Option Agreement', $yesNo($interestedLeaseOption));
+            if (strtolower((string) $interestedLeaseOption) === 'yes') {
+                $leaseOptionDisplay = $this->resolveLeaseOptionCompDisplay($data, 'lease');
+                $rows .= $row('Compensation for Creating the Lease-Option Agreement', $leaseOptionDisplay);
+                $purchaseOptionDisplay = $this->resolveLeaseOptionCompDisplay($data, 'purchase');
+                $rows .= $row('Compensation if Purchase Option is Exercised', $purchaseOptionDisplay);
+            }
+        }
+
+        // F) Legal Terms
+        $protectionPeriod = $g('protection_period');
         if (!empty($protectionPeriod)) {
-            $rows .= $this->makeRow('Protection Period Timeframe', $protectionPeriod);
+            $rows .= $row('Protection Period Timeframe', $protectionPeriod . ' Days');
         }
 
-        $brokerageRelationship = $data['brokerage_relationship'] ?? null;
-        if (!empty($brokerageRelationship)) {
-            $rows .= $this->makeRow('Acceptable Brokerage Relationship', $brokerageRelationship);
+        $agencyTimeframe = (string) ($g('agency_agreement_timeframe') ?? '');
+        if (!empty($agencyTimeframe)) {
+            if (strtolower($agencyTimeframe) === 'other') {
+                $agencyTimeframe = (string) ($g('agency_agreement_custom') ?? $agencyTimeframe);
+            }
+            $rows .= $row('Seller Agency Agreement Timeframe', $agencyTimeframe);
         }
 
-        $earlyTermination = $data['early_termination_fee_option'] ?? null;
+        $earlyTermination = $g('early_termination_fee_option');
         if (!empty($earlyTermination)) {
-            $rows .= $this->makeRow('Early Termination Fee', $earlyTermination);
+            $rows .= $row('Early Termination Fee', $yesNo($earlyTermination));
+            if (strtolower((string) $earlyTermination) === 'yes' && $g('early_termination_fee_amount')) {
+                $rows .= $row('Early Termination Fee Amount', $money($g('early_termination_fee_amount')));
+            }
         }
 
-        $retainerFee = $data['retainer_fee_option'] ?? null;
+        $retainerFee = $g('retainer_fee_option');
         if (!empty($retainerFee)) {
-            $rows .= $this->makeRow('Retainer Fee', $retainerFee);
+            $rows .= $row('Retainer Fee', $yesNo($retainerFee));
+            if (strtolower((string) $retainerFee) === 'yes') {
+                if ($g('retainer_fee_amount')) {
+                    $rows .= $row('Retainer Fee Amount', $money($g('retainer_fee_amount')));
+                }
+                if (!empty($g('retainer_fee_application'))) {
+                    $rows .= $row('Retainer Fee Application', (string) $g('retainer_fee_application'));
+                }
+            }
         }
 
-        $additionalDetails = $data['additional_details'] ?? null;
-        if (!empty($additionalDetails)) {
-            $rows .= $this->makeRow('Additional Terms', $additionalDetails);
+        // G) Brokerage Relationship
+        $brokerageRelationship = $g('brokerage_relationship');
+        if (!empty($brokerageRelationship)) {
+            $rows .= $row('Acceptable Brokerage Relationship', (string) $brokerageRelationship);
         }
+
+        // H) Additional Terms (agent's broker notes, never additional_details which is listing owner's text)
+        $additionalTerms = $g('additional_details_broker') ?? $g('additional_terms') ?? null;
+        $rows .= $row('Additional Terms', $additionalTerms);
 
         if (empty($rows)) {
             return '<p><em>No compensation terms specified.</em></p>';
@@ -693,23 +757,88 @@ class SellerAcceptedBidSummaryService
         return '<table style="width: 100%; border-collapse: collapse;">' . $rows . '</table>';
     }
 
+    protected function resolveSellerLeasingFeeDisplay(array $data): ?string
+    {
+        $g       = fn(string $key) => $data[$key] ?? null;
+        $money   = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+
+        $type = (string) ($g('seller_leasing_fee_type') ?? '');
+        if (empty($type)) return null;
+
+        if ($type === 'Flat Fee' && $g('seller_leasing_gross_purchase_fee_flat_amount')) {
+            return $money($g('seller_leasing_gross_purchase_fee_flat_amount'));
+        }
+        if ($type === 'Percentage of the Gross Lease Value' && $g('seller_leasing_gross')) {
+            return $percent($g('seller_leasing_gross')) . ' of the Gross Lease Value';
+        }
+        if ($type === 'Percentage of the Rent Due Each Rental Period' && $g('seller_leasing_gross_rental')) {
+            return $percent($g('seller_leasing_gross_rental')) . ' of the Rent Due Each Rental Period';
+        }
+        if ($type === "Percentage of the First Month's Rent" && $g('seller_leasing_gross_month_rent')) {
+            return $percent($g('seller_leasing_gross_month_rent')) . " of the First Month's Rent";
+        }
+        if ($type === "Percentage of Month's Rent" && $g('seller_leasing_gross_month_rent')) {
+            $display = $percent($g('seller_leasing_gross_month_rent')) . " of Month's Rent";
+            $months  = $g('seller_leasing_gross_no_of_months');
+            if (!empty($months) && $months !== 'null') {
+                $display .= ' x ' . intval($months) . ' Months';
+            }
+            return $display;
+        }
+        if ($type === 'Percentage of Net Aggregate Rent' && $g('seller_leasing_gross_other')) {
+            return $percent($g('seller_leasing_gross_other')) . ' of Net Aggregate Rent';
+        }
+        if ($type === 'Percentage of Gross Rent') {
+            $val = $g('seller_leasing_gross_percentage') ?? $g('seller_leasing_gross_ross_percentage_rent');
+            return $val ? ($percent($val) . ' of Gross Rent') : null;
+        }
+        if ($type === 'Flat Fee + Percentage of the Gross Lease Value') {
+            $parts = array_filter([
+                $g('seller_leasing_gross_flat_combo') ? $money($g('seller_leasing_gross_flat_combo')) : null,
+                $g('seller_leasing_gross_percentage_combo') ? ($percent($g('seller_leasing_gross_percentage_combo')) . ' of Gross Lease Value') : null,
+            ]);
+            return $parts ? implode(' + ', $parts) : null;
+        }
+        if ($type === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+            $parts = array_filter([
+                $g('seller_leasing_gross_flat_net_combo') ? $money($g('seller_leasing_gross_flat_net_combo')) : null,
+                $g('seller_leasing_gross_percentage_net_combo') ? ($percent($g('seller_leasing_gross_percentage_net_combo')) . ' of Net Aggregate Rent') : null,
+            ]);
+            return $parts ? implode(' + ', $parts) : null;
+        }
+        if (strtolower($type) === 'other' && $g('seller_leasing_gross_purchase_fee_other')) {
+            return $g('seller_leasing_gross_purchase_fee_other');
+        }
+        return $type ?: null;
+    }
+
+    protected function resolveLeaseOptionCompDisplay(array $data, string $which): ?string
+    {
+        $g       = fn(string $key) => $data[$key] ?? null;
+        $money   = fn($v) => $v ? '$' . number_format((float) str_replace(',', '', (string) $v), 0) : null;
+        $percent = fn($v) => $v ? rtrim(rtrim(number_format((float) $v, 2), '0'), '.') . '%' : null;
+
+        $valueKey = $which === 'lease' ? 'lease_value' : 'purchase_value';
+        $typeKey  = $which === 'lease' ? 'lease_type'  : 'purchase_type';
+
+        $value = $g($valueKey);
+        $type  = (string) ($g($typeKey) ?? 'flat');
+
+        if (empty($value) || $value === 'null') return null;
+
+        if (in_array($type, ['%', 'percent']) || str_contains((string) $value, '%')) {
+            return str_replace('%', '', (string) $value) . '% of Total Purchase Price';
+        }
+        return $money($value);
+    }
+
     private function makeRow(string $label, string $value): string
     {
         return '<tr>'
             . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">' . e($label) . '</td>'
             . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($value) . '</td>'
             . '</tr>';
-    }
-
-    private function formatPurchaseFeeType(string $type): string
-    {
-        return match ($type) {
-            'flat'       => 'Flat Fee',
-            'percentage' => 'Percentage of Total Purchase Price',
-            'combo'      => 'Combo (Flat + Percentage)',
-            'other'      => 'Other',
-            default      => ucfirst($type),
-        };
     }
 
     private function resolvePurchaseFeeDisplay(array $data, string $type): ?string
@@ -735,6 +864,42 @@ class SellerAcceptedBidSummaryService
             return $data['purchase_fee_other'] ?? null;
         }
         return null;
+    }
+
+    public function regenerateSummaryHtml(AcceptedBidSummary $summary): bool
+    {
+        try {
+            $bid = SellerAgentAuctionBid::find($summary->accepted_bid_id);
+            if (!$bid) return false;
+
+            $listing = $bid->auction;
+            if (!$listing) return false;
+
+            $seller = User::find($listing->user_id);
+            $agent  = User::find($bid->user_id);
+            if (!$seller || !$agent) return false;
+
+            $acceptedCounter = $summary->accepted_counter_id
+                ? SellerCounterTerm::find($summary->accepted_counter_id)
+                : null;
+
+            $sourceData = $acceptedCounter
+                ? $this->getCounterData($acceptedCounter)
+                : $this->getBidData($bid);
+
+            $html = $this->buildSummaryHtml($listing, $bid, $seller, $agent, $sourceData, $acceptedCounter);
+
+            $summary->summary_html = $html;
+            $summary->save();
+
+            return true;
+        } catch (\Exception $e) {
+            Log::error('[SellerAcceptedBidSummaryService] Failed to regenerate summary html', [
+                'summary_id' => $summary->id,
+                'error'      => $e->getMessage(),
+            ]);
+            return false;
+        }
     }
 
     protected function buildAdditionalDetailsHtml(array $sourceData, $listingData): string
