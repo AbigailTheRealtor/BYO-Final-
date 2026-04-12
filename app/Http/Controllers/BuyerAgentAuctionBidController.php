@@ -266,7 +266,12 @@ class BuyerAgentAuctionBidController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Bid Accepted successfully!');
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Bid Accepted. You can now view and sign the summary.');
+            }
+            return redirect()->route('accepted-bid-summary.by-bid', $bid->id)
+                ->with('success', 'Bid Accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('accept_bid failed for buyer listing', ['error' => $e->getMessage()]);
@@ -422,7 +427,12 @@ class BuyerAgentAuctionBidController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Counter Bid Accepted successfully!');
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Counter Bid Accepted. You can now view and sign the summary.');
+            }
+            return redirect()->route('accepted-bid-summary.by-bid', $originalBid->id)
+                ->with('success', 'Counter Bid Accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('accept_counter_bid failed for buyer listing', ['error' => $e->getMessage()]);
@@ -486,7 +496,7 @@ class BuyerAgentAuctionBidController extends Controller
             DB::beginTransaction();
 
             // Mark buyer counter term accepted
-            $buyerCounterTerm->accepted = 'accepted';
+            $buyerCounterTerm->status = 'accepted';
             $buyerCounterTerm->accepted_date = date('Y-m-d H:i:s');
             $buyerCounterTerm->save();
 
@@ -544,7 +554,12 @@ class BuyerAgentAuctionBidController extends Controller
                 ]);
             }
 
-            return redirect()->back()->with('success', 'Buyer counter terms accepted successfully!');
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Buyer counter terms accepted. You can now view and sign the summary.');
+            }
+            return redirect()->route('accepted-bid-summary.by-bid', $originalBid->id)
+                ->with('success', 'Buyer counter terms accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('accept_buyer_counter_term failed', ['error' => $e->getMessage()]);
@@ -569,7 +584,7 @@ class BuyerAgentAuctionBidController extends Controller
             abort(403, 'You are not authorized to reject this buyer counter term.');
         }
 
-        $buyerCounterTerm->accepted = 'rejected';
+        $buyerCounterTerm->status = 'rejected';
         $buyerCounterTerm->accepted_date = date('Y-m-d H:i:s');
 
         if ($buyerCounterTerm->save()) {
