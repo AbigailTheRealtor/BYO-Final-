@@ -1,0 +1,104 @@
+**Task: Fix Landlord bid/view page Additional Services rendering — still showing raw JSON array text**
+
+## Confirmed issue
+
+The Landlord page is still displaying:
+
+`["Example 1","Example 2"]`
+
+under **Additional Services** as one raw string/bullet.
+
+That means the prior fix only corrected the **Accepted Bid Summary** rendering path, but the same issue still exists in the **Landlord bid/view renderer**.
+
+## Scope
+
+Fix this for the **Landlord bid/view rendering path** where Additional Services is still showing raw JSON.
+
+Do **not** touch anything else unless the exact same shared helper is causing it.
+
+## Hard safeguards
+
+1. **Do not change DB schema**
+2. **Do not change routes**
+3. **Do not change sign flow**
+4. **Do not change Accepted Bid Summary again unless the same exact shared helper requires it**
+5. **Do not change compensation formatting**
+6. **Do not change unrelated service categories**
+7. **Smallest surgical fix only**
+8. **Audit first, edit second**
+
+---
+
+## Read-only audit first
+
+**Do not edit yet.**
+
+Report before coding:
+
+1. exact file and method/blade rendering this Landlord **Additional Services** block on the page shown in the screenshot
+2. exact field/key being used for Additional Services
+3. whether the value is arriving as:
+
+   * array
+   * JSON array string
+   * stringified JSON
+4. why it is still rendering as raw array text after the prior Accepted Summary fix
+5. minimal implementation plan
+
+---
+
+## Required fix
+
+If Landlord Additional Services is stored/passed as:
+
+* array
+* JSON array
+* stringified JSON array
+
+normalize it before rendering and output each non-empty item separately.
+
+### Correct output
+
+* Example 1
+* Example 2
+
+### Incorrect output
+
+* `["Example 1","Example 2"]`
+
+If the value is plain text and not JSON, preserve it as plain text.
+
+---
+
+## Important
+
+There are now clearly **two separate render paths**:
+
+1. Accepted Bid Summary path
+2. Landlord bid/view page path
+
+You already fixed #1.
+Now fix #2.
+
+Do not assume the prior service change affects this view.
+
+---
+
+## QA after fix
+
+1. open the exact Landlord bid/view page from the screenshot
+2. confirm Additional Services no longer shows raw JSON
+3. confirm each item displays as its own clean bullet/line
+4. confirm no regression in any other Landlord service category
+5. confirm Accepted Bid Summary still works
+
+---
+
+## Output required after coding
+
+1. exact files changed
+2. exact methods/views changed
+3. root cause
+4. how Landlord view-page Additional Services is now normalized/rendered
+5. confirmation that Accepted Bid Summary fix remains intact
+6. confirmation no schema/routes/sign-flow changes were made

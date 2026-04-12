@@ -198,8 +198,23 @@
                     <div class="col-12 fw-bold"> <i class="fa-regular fa-check-square"></i>Select the included services that the agent will provide to the landlord:
                         <br>
                         @foreach ($bid->get->services as $item)
-                            <span class="removeBold">{{ $item !== 'Other' ? $item . ',' : $bid->get->other_services . ',' }}</span>
-                            <br>
+                            @if ($item !== 'Other')
+                                <span class="removeBold">{{ $item . ',' }}</span>
+                                <br>
+                            @else
+                                @php
+                                    $rawOther = $bid->get->other_services ?? [];
+                                    $parsedOther = is_array($rawOther)
+                                        ? $rawOther
+                                        : (is_string($rawOther) ? (json_decode($rawOther, true) ?: (strlen(trim($rawOther)) ? [$rawOther] : [])) : []);
+                                @endphp
+                                @foreach ($parsedOther as $otherItem)
+                                    @if (!empty(trim((string) $otherItem)))
+                                        <span class="removeBold">{{ trim((string) $otherItem) . ',' }}</span>
+                                        <br>
+                                    @endif
+                                @endforeach
+                            @endif
                         @endforeach
                     </div>
                 @endif
