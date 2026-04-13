@@ -1,0 +1,89 @@
+We need to redesign the 4 user-side listing list pages because the current table UX is still not right.
+
+## Apply to:
+
+* Hire Tenant’s Agent
+* Hire Landlord’s Agent
+* Hire Buyer’s Agent
+* Hire Seller’s Agent
+
+## Problem
+
+* “View Bids” currently routes to the listing page, which is misleading
+* “Action” is too vague
+* “Counter Status” is not a useful main-column UX
+* the table feels like old admin UI, not a listing decision/control page
+
+## Goal
+
+Turn these pages into proper **Listing Management / Bid Review** pages.
+
+## Recommendation
+
+Do a read-only audit first, then propose the best of these two options:
+
+### Option A — improved table
+
+Use columns like:
+
+* Listing
+* Location
+* Created
+* Active Bids
+* Status
+* Needs Attention
+* Actions
+
+Actions:
+
+* Review Bids
+* Open Listing
+* Edit Listing
+* View Accepted Summary (if applicable)
+
+### Option B — listing cards (preferred if safe)
+
+Each listing appears as a clean card showing:
+
+* title
+* location
+* date
+* bid count
+* status
+* pending action / needs attention
+* Review Bids button
+* Open Listing button
+* Edit Listing button
+
+## Critical UX rule
+
+If a button says **Review Bids** or **View Bids**, it must land on the actual bid-review experience, not a generic listing page unless that page opens directly into the bids section.
+
+If the current listing detail page is the bid-management page, rename the button accordingly or route directly into the bid section.
+
+## Remove / demote
+
+* generic “Action” wording
+* Counter Status as a primary column
+* any legacy tool-style options not needed for the current workflow
+
+## Safeguards
+
+Do NOT:
+
+* change listing creation logic
+* change bid logic
+* change counter logic
+* change accepted summary logic
+* change acknowledgement logic
+
+This is a UI/route/label restructuring for these 4 listing-management pages only.
+
+## Output required before coding
+
+1. which option you recommend (improved table or cards)
+2. exact files affected
+3. what route each primary CTA will go to
+4. how you will keep this dashboard/listing-management-only
+
+Then implement.

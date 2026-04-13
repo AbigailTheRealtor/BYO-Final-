@@ -160,78 +160,37 @@
 
 
 
-                <table class="table table-bordered data-table">
+                <table class="table table-hover data-table" style="border-collapse:separate;border-spacing:0;">
                   <thead>
-                    <tr>
-                      <th class="text-center">#</th>
-                      <th>Title</th>
-                      <th>County</th>
-                      <th>City</th>
-                      <th>State</th>
-                      <th>Creation Date</th>
-                      <th class="text-center">Bids</th>
-                      <th class="text-center">Action</th>
-                      <th class="text-center">Counter Status</th>
+                    <tr style="background:#049399;color:#fff;">
+                      <th style="border:none;">Listing</th>
+                      <th style="border:none;">Posted</th>
+                      <th class="text-center" style="border:none;">Bids</th>
+                      <th class="text-center" style="border:none;">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <div>
                     @foreach ($auctions as $auction)
                       @php
                         // $string = mb_strimwidth($string, 0, 100);
                         // $description = mb_strimwidth(@$auction->description, 0, 90, '...');
                       @endphp
+                      
                       <tr>
-                        <td class="text-center">{{ $loop->iteration }}</td>
-                        <td><a
-                            href="{{ route('buyer.view-auction', @$auction->id) }}">{{ @$auction->title }}</a>
-                        </td>
-                              <td>{{ $auction->get->counties[0] ?? '' }}</td>
-
-                        <td>{{ $auction->get->cities[0] ?? '' }}</td>
-                        <td>{{ @$auction->get->state }}</td>
-                        <td>{{ Carbon\Carbon::parse(@$auction->created_at)->format('M d, Y') }}
-                        </td>
-                        <td class="text-center">{{ @$auction->bids->count() }}</td>
-                        <td class="text-center">
-                          <a href="{{ route('buyer.view-auction', @$auction->id) }}"
-                             class="btn btn-sm d-block mb-1"
-                             style="background:#049399;color:#fff;font-size:13px;">View Bids</a>
-                          <div class="dropdown">
-                            <button class="btn btn-secondary dropdown-toggle btn-sm" type="button"
-                              data-bs-toggle="dropdown" aria-expanded="false">
-                              Action
-                            </button>
-                            <ul class="dropdown-menu">
-                              <li>
-                                <a class="dropdown-item"
-                                  href="{{ route('buyer.view-auction', @$auction->id) }}">
-                                  <i class="fa-solid fa-eye" style="font-size:14px;"></i>
-                                  <span style="font-size:14px;">View Listing</span>
-                                </a>
-                              </li>
-                              @if (!@$auction->is_approved)
-                            <li>
-                                   <a class="dropdown-item"
-                                 href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $auction->get->user_type]) }}">
-                                    <i class="fa-solid fa-pencil" style="font-size:14px;"></i>
-                                    <span style="font-size:14px;">Edit Listing</span>
-                                  </a>
-                                </li>
-                              @endif
-                              
-                            </ul>
+                        <td class="align-middle">
+                          <a href="{{ route('buyer.view-auction', @$auction->id) }}" class="fw-semibold text-decoration-none" style="color:#049399;">{{ @$auction->title }}</a>
+                          <div class="text-muted mt-1" style="font-size:12px;">
+                            {{ $auction->get->cities[0] ?? '' }}{{ ($auction->get->cities[0] ?? '') && (@$auction->get->state) ? ', ' : '' }}{{ @$auction->get->state }}
                           </div>
                         </td>
-                        <td>
-                          @if (isset($counter))
-                            @if (isset($counter) && $counter->status == '1')
-                              <span class="badge bg-success p-2">Active</span>
-                            @else
-                              <span class="badge bg-danger p-2">InActive</span>
-                            @endif
-                          @else
-                            <span class="badge bg-info p-2">No Terms</span>
+                        <td class="text-nowrap align-middle" style="font-size:13px;">{{ Carbon\Carbon::parse(@$auction->created_at)->format('M d, Y') }}</td>
+                        <td class="text-center align-middle">
+                          <span class="badge rounded-pill" style="background:#049399;color:#fff;font-size:13px;min-width:32px;">{{ @$auction->bids->count() }}</span>
+                        </td>
+                        <td class="align-middle" style="min-width:170px;">
+                          <a href="{{ route('buyer.view-auction', @$auction->id) }}" class="btn btn-sm d-block mb-1" style="background:#049399;color:#fff;">Review Bids</a>
+                          @if (!@$auction->is_approved)
+                            <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $auction->get->user_type]) }}" class="btn btn-sm btn-outline-secondary d-block mb-1">Edit Listing</a>
                           @endif
                         </td>
                       </tr>
