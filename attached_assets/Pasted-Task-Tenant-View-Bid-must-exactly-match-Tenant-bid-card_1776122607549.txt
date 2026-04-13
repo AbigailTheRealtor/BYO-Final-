@@ -1,0 +1,254 @@
+Task: Tenant “View Bid” must exactly match Tenant bid card/full-bid structure
+Objective
+
+Fix the Tenant dashboard → View Bid page so it renders the exact same bid content structure as the current Tenant bid card / full private bid source.
+
+This is a Tenant-only parity task first.
+Do not apply changes to Buyer, Seller, or Landlord yet.
+
+Non-negotiable rule
+
+The Tenant View Bid page must use the same canonical rendering structure as the Tenant bid card / private full bid view.
+
+It must not use:
+
+legacy compensation labels
+legacy compensation formatting
+old service rendering
+flattened service lists
+outdated section ordering
+older credential/contact rendering
+What to audit first before changing code
+1. Identify the two Tenant render paths
+
+Find the files/methods used for:
+
+Tenant dashboard → View Bid page
+Tenant bid card / full private bid modal/card content
+
+I need the exact source of both render outputs before any edits.
+
+Look for:
+
+tenant auction view blade
+tenant full bid detail blade
+tenant summary builder / HTML builder service
+tenant bid formatter / accepted summary / bid detail helper
+any partials for:
+compensation terms
+services
+credentials/contact info
+promotional materials
+reviews/links
+2. Compare the two outputs section-by-section
+
+Make a read-only diff for:
+
+Agent Overview & Qualifications
+Reviews / Website / Social links
+Broker Compensation & Agency Agreement Terms
+Additional Details
+Offered Services
+Agent Presentation & Promotional Materials
+Agent Credentials & Contact Information
+
+Document exactly which file currently controls each section in:
+
+bid card/full bid source
+dashboard View Bid page
+3. Find the canonical source
+
+Whichever Tenant rendering path currently matches the desired bid card structure is the canonical source.
+
+That canonical source should become the shared renderer or shared partial source for Tenant View Bid.
+
+Required output behavior after fix
+A. Reviews / links
+
+Render all existing review / website / social links exactly as in the canonical Tenant bid card.
+
+Requirements:
+
+links must display when data exists
+URLs must be clickable
+no missing Google/Zillow/Website/social items if present in bid data
+preserve ordering used in the canonical Tenant format
+B. Broker Compensation & Agency Agreement Terms
+
+Replace old wording/structure with the exact current Tenant bid-card structure.
+
+Do not render old style examples like:
+
+Out-of-Pocket Payment
+Flat Fee + Percentage of the Gross Lease Value
+
+Instead render the fully composed current values exactly like the canonical bid card, for example:
+
+Tenant Pays Out-of-Pocket
+$6,000 + 4% of Gross Lease Value
+
+Requirements:
+
+same section title
+same subsection lettering/titles
+same field labels
+same field order
+same conditional field visibility
+same phrasing
+same composed-value formatting
+no dropped fields
+
+This includes all applicable Tenant terms such as:
+
+tenant broker compensation
+purchase fee details if applicable
+lease-option details if applicable
+legal terms
+retainer fee
+retainer fee application
+protection period
+early termination
+timeframe
+brokerage relationship
+additional terms
+
+Do not simplify or summarize.
+Render the exact values the same way the canonical bid card does.
+
+C. Offered Services
+
+Render services exactly like canonical Tenant bid card structure:
+
+section titles
+grouped bullets
+same order
+same labels
+same service text
+no flattening
+no collapsing into generic blocks
+include custom/additional services where applicable
+D. Agent Credentials & Contact Information
+
+Ensure all expected fields render if present, including:
+
+first name
+last name
+phone
+email
+brokerage
+license #
+NAR Member ID
+any other canonical credential fields already supported
+E. Additional Details / Promotional Materials
+
+Must match canonical Tenant bid card structure and order.
+
+F. Do not change business logic
+
+Do not alter:
+
+bid state logic
+accept/counter/reject behavior
+permissions
+database schema
+buyer/seller/landlord files in this task
+
+This is a render-parity task only for Tenant.
+
+Preferred implementation approach
+Best approach
+
+Refactor Tenant so both of these use the same shared renderer:
+
+Tenant dashboard View Bid page
+Tenant canonical full bid/card content
+
+Use shared partials or a shared formatter layer for:
+
+links
+compensation/terms
+services
+credentials/contact
+promotional materials
+Avoid
+
+Do not copy-paste the canonical markup into a second independent template if avoidable.
+That creates future drift again.
+
+If a shared partial/service can be introduced safely, do that.
+
+Safeguards
+Safeguard 1
+
+Before editing, save a list of all Tenant files touched.
+
+Safeguard 2
+
+Do not rename database fields or change stored values.
+
+Safeguard 3
+
+Do not change Buyer, Seller, or Landlord files in this task.
+
+Safeguard 4
+
+Do not alter public bid card behavior or counter flow.
+
+Safeguard 5
+
+Do not regress currently correct Tenant bid card output while fixing View Bid.
+
+Safeguard 6
+
+If there are two competing Tenant formatters, remove drift by making one canonical and routing both outputs through it.
+
+QA checklist after implementation
+
+Use the same Tenant bid shown in the screenshots and confirm:
+
+Section parity
+ Agent Overview & Qualifications matches canonical source
+ Reviews links render and are clickable
+ Website link renders correctly
+ Social/media links render correctly
+ Broker Compensation & Agency Agreement Terms matches canonical source exactly
+ Additional Details matches
+ Offered Services matches with section titles and bullet groups
+ Agent Presentation & Promotional Materials matches
+ Agent Credentials & Contact Information matches
+ NAR Member ID appears when present
+Formatting parity
+ same section order
+ same headings
+ same field labels
+ same conditional sections
+ same value composition
+ same bullet structure
+ no old wording remains
+Regression safety
+ Tenant bid card still renders correctly
+ Tenant modal/full bid still renders correctly
+ Accept / Counter / Reject buttons unchanged
+ No route errors
+ No undefined variable errors
+ No duplicate sections
+Deliverable back to me
+
+After implementation, report back with:
+
+Files changed
+Which file is now the canonical Tenant full-bid renderer
+Whether View Bid now uses shared partials/shared formatter
+Any fields found in canonical source that were missing from View Bid before
+Confirmation that NAR Member ID now renders
+Confirmation that old compensation wording was fully removed from Tenant View Bid
+Important note for next phase
+
+Do not touch Buyer, Seller, or Landlord yet.
+Once Tenant is fully correct and stable, we will repeat the same parity method for:
+
+Buyer
+Seller
+Landlord
+
+using Tenant as the standard.

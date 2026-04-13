@@ -345,50 +345,125 @@
             </div>
 
             @php
-                $commissionFeeDisplay = '—';
-                $leaseFeeType = data_get($bid, 'get.lease_fee_type');
+                // ── Commission structure alias (stored legacy values → current wording) ────
+                $commissionStructure   = data_get($bid, 'get.commission_structure', '');
+                $bidCommissionDisplay  = match($commissionStructure) {
+                    'Out-of-Pocket Payment' => 'Tenant Pays Out-of-Pocket',
+                    'Included in Offer'     => 'Requested From Landlord in the Offer',
+                    default                  => $commissionStructure,
+                };
+
+                // ── Commission fee display (canonical DB fields) ──────────────────────────
+                $leaseFeeType = data_get($bid, 'get.lease_fee_type', '');
+                $commissionFeeDisplay = '-';
                 if ($leaseFeeType === 'Flat Fee') {
-                    $flatFee = $fmtMoney(data_get($bid, 'get.flat_fee_amount'));
-                    $commissionFeeDisplay = $flatFee ?? '—';
-                } elseif ($leaseFeeType === '% of Gross Lease Value') {
-                    $pct = $fmtPercent(data_get($bid, 'get.percent_gross_lease'));
-                    $commissionFeeDisplay = $pct ? $pct . ' of Gross Lease Value' : '—';
-                } elseif ($leaseFeeType === 'Flat Fee + % of Gross Lease Value') {
-                    $flatPart = $fmtMoney(data_get($bid, 'get.flat_fee_amount'));
-                    $pctPart = $fmtPercent(data_get($bid, 'get.percent_gross_lease'));
-                    $basisPart = $basisText('Gross Lease Value');
-                    $commissionFeeDisplay = $joinParts([$flatPart, $pctPart ? ($pctPart . ($basisPart ? " $basisPart" : '')) : null]) ?? '—';
-                } else {
-                    $commissionFeeDisplay = $leaseFeeType ?? '—';
+                    $commissionFeeDisplay = $fmtMoney(data_get($bid, 'get.lease_fee_flat')) ?? '-';
+                } elseif ($leaseFeeType === 'Percentage of the Gross Lease Value') {
+                    $pct = data_get($bid, 'get.lease_fee_percentage');
+                    $commissionFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Gross Lease Value') : '-';
+                } elseif ($leaseFeeType === 'Percentage of Monthly Rent') {
+                    $pct    = data_get($bid, 'get.lease_fee_percentage_monthly_rent');
+                    $months = data_get($bid, 'get.lease_fee_percentage_monthly_number');
+                    $disp   = $pct ? ($fmtPercent($pct) . ' of Monthly Rent') : null;
+                    if ($disp && $months) { $disp .= ' x ' . $months . ' Months'; }
+                    $commissionFeeDisplay = $disp ?? '-';
+                } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Gross Lease Value') {
+                    $commissionFeeDisplay = $joinParts([
+                        $fmtMoney(data_get($bid, 'get.lease_fee_flat_combo')),
+                        data_get($bid, 'get.lease_fee_percentage_combo')
+                            ? ($fmtPercent(data_get($bid, 'get.lease_fee_percentage_combo')) . ' of Gross Lease Value')
+                            : null,
+                    ]) ?? '-';
+                } elseif ($leaseFeeType === 'Percentage of the Net Aggregate Rent') {
+                    $pct = data_get($bid, 'get.lease_fee_percentage_net');
+                    $commissionFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Net Aggregate Rent') : '-';
+                } elseif ($leaseFeeType === 'Flat Fee + Percentage of the Net Aggregate Rent') {
+                    $commissionFeeDisplay = $joinParts([
+                        $fmtMoney(data_get($bid, 'get.lease_fee_flat_combo_net')),
+                        data_get($bid, 'get.lease_fee_percentage_combo_net')
+                            ? ($fmtPercent(data_get($bid, 'get.lease_fee_percentage_combo_net')) . ' of Net Aggregate Rent')
+                            : null,
+                    ]) ?? '-';
+                } elseif ($leaseFeeType === 'Other') {
+                    $commissionFeeDisplay = data_get($bid, 'get.lease_fee_other') ?? '-';
+                } elseif ($leaseFeeType) {
+                    $commissionFeeDisplay = $leaseFeeType;
                 }
-                
-                $purchaseFeeDisplay = '—';
-                $purchaseFeeType = data_get($bid, 'get.purchase_fee_type');
+
+                // ── Purchase fee display (canonical DB fields) ────────────────────────────
+                $purchaseFeeType    = data_get($bid, 'get.purchase_fee_type', '');
+                $purchaseFeeDisplay = '-';
                 if ($purchaseFeeType === 'Flat Fee') {
-                    $purchaseFeeDisplay = $fmtMoney(data_get($bid, 'get.purchase_flat_fee_amount')) ?? '—';
-                } elseif ($purchaseFeeType === '% of Purchase Price') {
-                    $pct = $fmtPercent(data_get($bid, 'get.purchase_percent_value'));
-                    $purchaseFeeDisplay = $pct ? $pct . ' of Purchase Price' : '—';
-                } elseif ($purchaseFeeType === 'Flat Fee + % of Purchase Price') {
-                    $flatPart = $fmtMoney(data_get($bid, 'get.purchase_flat_fee_amount'));
-                    $pctPart = $fmtPercent(data_get($bid, 'get.purchase_percent_value'));
-                    $purchaseFeeDisplay = $joinParts([$flatPart, $pctPart ? ($pctPart . ' of Purchase Price') : null]) ?? '—';
+                    $purchaseFeeDisplay = $fmtMoney(data_get($bid, 'get.purchase_fee_flat')) ?? '-';
+                } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price') {
+                    $pct = data_get($bid, 'get.purchase_fee_percentage');
+                    $purchaseFeeDisplay = $pct ? ($fmtPercent($pct) . ' of Total Purchase Price') : '-';
+                } elseif ($purchaseFeeType === 'Percentage of the Total Purchase Price + Flat Fee') {
+                    $purchaseFeeDisplay = $joinParts([
+                        $fmtMoney(data_get($bid, 'get.purchase_fee_flat_combo')),
+                        data_get($bid, 'get.purchase_fee_percentage_combo')
+                            ? ($fmtPercent(data_get($bid, 'get.purchase_fee_percentage_combo')) . ' of Total Purchase Price')
+                            : null,
+                    ]) ?? '-';
+                } elseif ($purchaseFeeType === 'other') {
+                    $purchaseFeeDisplay = data_get($bid, 'get.purchase_fee_other') ?? '-';
                 }
+
+                // ── Lease-Option display ──────────────────────────────────────────────────
+                $leaseOptionCreatedDisplay  = '-';
+                $leaseOptionExercisedDisplay = '-';
+                if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes') {
+                    $leaseType  = data_get($bid, 'get.lease_type');
+                    $leaseValue = data_get($bid, 'get.lease_value');
+                    if ($leaseType === 'percent' && $leaseValue) {
+                        $leaseOptionCreatedDisplay = $fmtPercent($leaseValue) . ' of Total Purchase Price';
+                    } elseif ($leaseValue) {
+                        $leaseOptionCreatedDisplay = $fmtMoney($leaseValue) ?? '-';
+                    }
+                    $purchaseType  = data_get($bid, 'get.purchase_type');
+                    $purchaseValue = data_get($bid, 'get.purchase_value');
+                    if ($purchaseType === 'percent' && $purchaseValue) {
+                        $leaseOptionExercisedDisplay = $fmtPercent($purchaseValue) . ' of Total Purchase Price';
+                    } elseif ($purchaseValue) {
+                        $leaseOptionExercisedDisplay = $fmtMoney($purchaseValue) ?? '-';
+                    }
+                }
+
+                // ── Termination fee display ───────────────────────────────────────────────
+                $terminationFeeDisplay = '-';
+                if (data_get($bid, 'get.early_termination_fee_option') === 'Yes') {
+                    $terminationFeeDisplay = $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) ?? '-';
+                }
+
+                // ── Agency agreement timeframe display ────────────────────────────────────
+                $agencyTimeframe       = data_get($bid, 'get.agency_agreement_timeframe', '');
+                $agencyTimeframeCustom = data_get($bid, 'get.agency_agreement_custom', '');
+                $isOtherTimeframe      = is_string($agencyTimeframe) && strtolower(trim($agencyTimeframe)) === 'other';
+                $agencyTimeframeDisplay = $isOtherTimeframe ? ($agencyTimeframeCustom ?: 'Other') : ($agencyTimeframe ?: '');
             @endphp
 
-            @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.interested_purchase_fee_type'))
+            @if (data_get($bid, 'get.commission_structure') ||
+                 data_get($bid, 'get.lease_fee_type') ||
+                 data_get($bid, 'get.interested_purchase_fee_type') ||
+                 data_get($bid, 'get.interested_lease_option_agreement') ||
+                 data_get($bid, 'get.protection_period') ||
+                 data_get($bid, 'get.early_termination_fee_option') ||
+                 data_get($bid, 'get.retainer_fee_option') ||
+                 data_get($bid, 'get.agency_agreement_timeframe') ||
+                 data_get($bid, 'get.brokerage_relationship'))
             <div class="mb-5">
                 <h6 class="section-header">
                     <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                 </h6>
 
-                @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type'))
+                {{-- A) Tenant's Broker Compensation --}}
+                @if (data_get($bid, 'get.commission_structure') || data_get($bid, 'get.lease_fee_type') || data_get($bid, 'get.payment_timing') || data_get($bid, 'get.days_to_pay'))
                 <div class="mb-4">
                     <h6 class="mb-2" style="color: #049399; font-weight: 600;">A) Tenant's Broker Compensation</h6>
                     <ul class="list-unstyled ps-3 mb-0">
                         @if (data_get($bid, 'get.commission_structure'))
                         <li class="mb-1" style="{{ isset($brokerMismatches['commission_structure']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ data_get($bid, 'get.commission_structure') }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}
+                            <span class="fw-semibold">Tenant's Broker Commission Structure:</span> {{ $bidCommissionDisplay }}{!! isset($brokerMismatches['commission_structure']) ? $mismatchBadge : '' !!}
                         </li>
                         @endif
                         @if (data_get($bid, 'get.lease_fee_type'))
@@ -396,15 +471,21 @@
                             <span class="fw-semibold">Tenant's Broker Commission Fee:</span> {{ $commissionFeeDisplay }}{!! isset($brokerMismatches['lease_fee_type']) ? $mismatchBadge : '' !!}
                         </li>
                         @endif
-                        @if (data_get($bid, 'get.broker_fee_timing') || data_get($bid, 'get.payment_timing'))
+                        @if (data_get($bid, 'get.payment_timing'))
                         <li class="mb-1" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') ?? data_get($bid, 'get.broker_fee_timing') }}{!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}
+                            <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ data_get($bid, 'get.payment_timing') }}{!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}
+                        </li>
+                        @endif
+                        @if (data_get($bid, 'get.days_to_pay'))
+                        <li class="mb-1" style="{{ isset($brokerMismatches['days_to_pay']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Calendar Days To Pay:</span> {{ data_get($bid, 'get.days_to_pay') }}{!! isset($brokerMismatches['days_to_pay']) ? $mismatchBadge : '' !!}
                         </li>
                         @endif
                     </ul>
                 </div>
                 @endif
 
+                {{-- B) Purchase Fee Details --}}
                 @if (data_get($bid, 'get.interested_purchase_fee_type'))
                 <div class="mb-4">
                     <h6 class="mb-2" style="color: #049399; font-weight: 600;">B) Purchase Fee Details</h6>
@@ -412,7 +493,7 @@
                         <li class="mb-1" style="{{ isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchStyle : '' }}">
                             <span class="fw-semibold">Interested in Purchasing a Property:</span> {{ data_get($bid, 'get.interested_purchase_fee_type') }}{!! isset($brokerMismatches['interested_purchase_fee_type']) ? $mismatchBadge : '' !!}
                         </li>
-                        @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '—')
+                        @if (data_get($bid, 'get.interested_purchase_fee_type') === 'Yes' && $purchaseFeeDisplay !== '-')
                         <li class="mb-1" style="{{ isset($brokerMismatches['purchase_fee_type']) ? $mismatchStyle : '' }}">
                             <span class="fw-semibold">Purchase Fee:</span> {{ $purchaseFeeDisplay }}{!! isset($brokerMismatches['purchase_fee_type']) ? $mismatchBadge : '' !!}
                         </li>
@@ -421,69 +502,101 @@
                 </div>
                 @endif
 
-                @if (data_get($bid, 'get.protection_period'))
+                {{-- C) Lease-Option Details --}}
+                @if (data_get($bid, 'get.interested_lease_option_agreement'))
                 <div class="mb-4">
-                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Protection Period</h6>
+                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">C) Lease-Option Details</h6>
                     <ul class="list-unstyled ps-3 mb-0">
-                        <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Protection Period:</span> {{ data_get($bid, 'get.protection_period') }}{!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}
+                        <li class="mb-1" style="{{ isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Interested in a Lease-Option Agreement:</span> {{ data_get($bid, 'get.interested_lease_option_agreement') }}{!! isset($brokerMismatches['interested_lease_option_agreement']) ? $mismatchBadge : '' !!}
                         </li>
+                        @if (data_get($bid, 'get.interested_lease_option_agreement') === 'Yes')
+                            @if ($leaseOptionCreatedDisplay !== '-')
+                            <li class="mb-1" style="{{ (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchStyle : '' }}">
+                                <span class="fw-semibold">Compensation for Creating the Lease-Option Agreement:</span> {{ $leaseOptionCreatedDisplay }}{!! (isset($brokerMismatches['lease_type']) || isset($brokerMismatches['lease_value'])) ? $mismatchBadge : '' !!}
+                            </li>
+                            @endif
+                            @if ($leaseOptionExercisedDisplay !== '-')
+                            <li class="mb-1" style="{{ (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchStyle : '' }}">
+                                <span class="fw-semibold">Compensation if Purchase Option is Exercised:</span> {{ $leaseOptionExercisedDisplay }}{!! (isset($brokerMismatches['purchase_type']) || isset($brokerMismatches['purchase_value'])) ? $mismatchBadge : '' !!}
+                            </li>
+                            @endif
+                        @endif
                     </ul>
                 </div>
                 @endif
 
-                @if (data_get($bid, 'get.early_termination_fee_option'))
+                {{-- D) Legal Terms (grouped: protection period + early termination + retainer + agency timeframe) --}}
+                @if (data_get($bid, 'get.protection_period') || data_get($bid, 'get.early_termination_fee_option') || data_get($bid, 'get.retainer_fee_option') || data_get($bid, 'get.agency_agreement_timeframe'))
                 <div class="mb-4">
-                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Early Termination Fee</h6>
+                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">D) Legal Terms</h6>
                     <ul class="list-unstyled ps-3 mb-0">
+                        @if (data_get($bid, 'get.protection_period'))
+                        <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Protection Period Timeframe:</span> {{ data_get($bid, 'get.protection_period') }} days{!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}
+                        </li>
+                        @endif
+                        @if (data_get($bid, 'get.early_termination_fee_option'))
                         <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_option']) ? $mismatchStyle : '' }}">
                             <span class="fw-semibold">Early Termination Fee:</span> {{ data_get($bid, 'get.early_termination_fee_option') }}{!! isset($brokerMismatches['early_termination_fee_option']) ? $mismatchBadge : '' !!}
                         </li>
-                        @if (data_get($bid, 'get.early_termination_fee_option') === 'Yes' && data_get($bid, 'get.early_termination_fee_amount'))
-                        <li class="mb-1">
-                            <span class="fw-semibold">Amount:</span> {{ $fmtMoney(data_get($bid, 'get.early_termination_fee_amount')) ?? data_get($bid, 'get.early_termination_fee_amount') }}
-                        </li>
+                            @if ($terminationFeeDisplay !== '-')
+                            <li class="mb-1" style="{{ isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchStyle : '' }}">
+                                <span class="fw-semibold">Termination Fee Amount:</span> {{ $terminationFeeDisplay }}{!! isset($brokerMismatches['early_termination_fee_amount']) ? $mismatchBadge : '' !!}
+                            </li>
+                            @endif
                         @endif
-                    </ul>
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.retainer_fee_option'))
-                <div class="mb-4">
-                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Retainer Fee</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
+                        @if (data_get($bid, 'get.retainer_fee_option'))
                         <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_option']) ? $mismatchStyle : '' }}">
                             <span class="fw-semibold">Retainer Fee:</span> {{ data_get($bid, 'get.retainer_fee_option') }}{!! isset($brokerMismatches['retainer_fee_option']) ? $mismatchBadge : '' !!}
                         </li>
-                        @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
-                            @if (data_get($bid, 'get.retainer_fee_amount'))
-                            <li class="mb-1"><span class="fw-semibold">Amount:</span> {{ $fmtMoney(data_get($bid, 'get.retainer_fee_amount')) ?? data_get($bid, 'get.retainer_fee_amount') }}</li>
+                            @if (data_get($bid, 'get.retainer_fee_option') === 'Yes')
+                                @if (data_get($bid, 'get.retainer_fee_amount'))
+                                <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_amount']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Retainer Fee Amount:</span> ${{ number_format((float)data_get($bid, 'get.retainer_fee_amount'), 2) }}{!! isset($brokerMismatches['retainer_fee_amount']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @endif
+                                @if (data_get($bid, 'get.retainer_fee_application'))
+                                <li class="mb-1" style="{{ isset($brokerMismatches['retainer_fee_application']) ? $mismatchStyle : '' }}">
+                                    <span class="fw-semibold">Retainer Fee Application:</span>
+                                    @if (data_get($bid, 'get.retainer_fee_application') === 'applied')
+                                    Applied toward final compensation
+                                    @else
+                                    Charged in addition to final compensation
+                                    @endif
+                                    {!! isset($brokerMismatches['retainer_fee_application']) ? $mismatchBadge : '' !!}
+                                </li>
+                                @endif
                             @endif
-                            @if (data_get($bid, 'get.retainer_fee_application'))
-                            <li class="mb-1"><span class="fw-semibold">Applied To:</span> {{ data_get($bid, 'get.retainer_fee_application') }}</li>
-                            @endif
+                        @endif
+                        @if ($agencyTimeframeDisplay)
+                        <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Tenant Agency Agreement Timeframe:</span> {{ $agencyTimeframeDisplay }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}
+                        </li>
                         @endif
                     </ul>
                 </div>
                 @endif
 
-                @if (data_get($bid, 'get.agency_agreement_timeframe'))
+                {{-- E) Brokerage Relationship --}}
+                @if (data_get($bid, 'get.brokerage_relationship'))
                 <div class="mb-4">
-                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Agency Agreement Timeframe</h6>
+                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">E) Brokerage Relationship</h6>
                     <ul class="list-unstyled ps-3 mb-0">
-                        <li class="mb-1" style="{{ isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Timeframe:</span> {{ data_get($bid, 'get.agency_agreement_timeframe') }}{!! isset($brokerMismatches['agency_agreement_timeframe']) ? $mismatchBadge : '' !!}
+                        <li class="mb-1" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Acceptable Brokerage Relationship:</span> {{ data_get($bid, 'get.brokerage_relationship') }}{!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}
                         </li>
                     </ul>
                 </div>
                 @endif
 
-                @if (data_get($bid, 'get.brokerage_relationship'))
+                {{-- F) Additional Terms --}}
+                @if (data_get($bid, 'get.additional_details_broker'))
                 <div class="mb-4">
-                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">H) Brokerage Relationship</h6>
+                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">F) Additional Terms</h6>
                     <ul class="list-unstyled ps-3 mb-0">
-                        <li class="mb-1" style="{{ isset($brokerMismatches['brokerage_relationship']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Relationship Type:</span> {{ data_get($bid, 'get.brokerage_relationship') }}{!! isset($brokerMismatches['brokerage_relationship']) ? $mismatchBadge : '' !!}
+                        <li class="mb-1" style="{{ isset($brokerMismatches['additional_details_broker']) ? $mismatchStyle : '' }}">
+                            <span class="fw-semibold">Additional Terms:</span> {{ data_get($bid, 'get.additional_details_broker') }}{!! isset($brokerMismatches['additional_details_broker']) ? $mismatchBadge : '' !!}
                         </li>
                     </ul>
                 </div>
@@ -500,51 +613,243 @@
             </div>
             @endif
 
+            @php
+                // ── Services: canonical category-grouped display (matches hire_tenant_agent/view.blade.php modal) ───
+                $normalizeService = fn($s) => \App\Helpers\TenantBidMatchScoreHelper::normalizeService((string)$s);
+
+                // Baseline services from the listing (auction)
+                $displayCatalog = \App\Helpers\TenantBidMatchScoreHelper::getCatalog($propType);
+                $bsRaw = $auctionBaselineData['services'] ?? [];
+                if (is_string($bsRaw)) $bsRaw = json_decode($bsRaw, true) ?? [];
+                $bsRaw = is_array($bsRaw) ? array_values(array_filter($bsRaw)) : [];
+                $bsRaw = array_values(array_filter($bsRaw, fn($s) => in_array($normalizeService((string)$s), $displayCatalog, true)));
+                $bsOtherRaw = $auctionBaselineData['other_services'] ?? [];
+                if (is_string($bsOtherRaw)) $bsOtherRaw = json_decode($bsOtherRaw, true) ?? [];
+                $bsOtherRaw = is_array($bsOtherRaw) ? array_values(array_filter($bsOtherRaw, fn($s) => is_string($s) && !empty(trim($s)))) : [];
+                $baselineServices = array_merge($bsRaw, $bsOtherRaw);
+
+                // Category definitions (residential vs commercial — same as canonical)
+                $bidIsCommercial = ($propType === 'Commercial Property');
+                $bidResidentialCategories = [
+                    '📢 Tenant Criteria Marketing & Promotion' => [
+                        'Create a branded flyer summarizing the Tenant\'s rental criteria',
+                        'Post the Tenant\'s rental criteria on Craigslist under the "Real Estate Wanted" section',
+                        'Share the Tenant\'s rental criteria on Nextdoor in Neighborhood or Community Groups',
+                        'Promote the Tenant\'s rental criteria on Facebook in Rental or Housing Groups',
+                        'Share the Tenant\'s rental criteria on Instagram using posts, stories, or reels',
+                        'Promote the Tenant\'s rental criteria on LinkedIn in Real Estate or Housing Groups',
+                        'Upload a TikTok video summarizing the Tenant\'s rental criteria',
+                        'Upload a YouTube video summarizing the Tenant\'s rental criteria',
+                        'Launch a mass email campaign promoting the Tenant\'s rental criteria',
+                        'Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods',
+                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred rental areas',
+                    ],
+                    '🔍 Property Search, Alerts & Matching' => [
+                        'Send email alerts with new listings from the MLS that match the Tenant\'s rental criteria',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria',
+                        'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                        'Evaluate properties with the Tenant and provide insights on pricing, lease terms, and overall fit',
+                    ],
+                    '🏡 Property Showings & Virtual Tours' => [
+                        'Schedule and attend property showings with the Tenant',
+                        'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                        'Preview properties on behalf of the Tenant upon request',
+                        'Provide factual observations on property layout and condition',
+                    ],
+                    '📝 Tenant Application Support' => [
+                        'Provide the Tenant with application instructions or links to an online rental application platform',
+                        'Gather and organize required supporting documents (e.g., identification, income verification, reference letters)',
+                        'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager for review',
+                        'Answer questions about the application process, screening timelines, and required documentation',
+                    ],
+                    '📃 Lease Preparation & Execution' => [
+                        'Review lease offers and assist the Tenant in preparing questions or requested changes',
+                        'Coordinate lease negotiation with the Landlord\'s Agent, Landlord, or Property Manager',
+                        'Assist with completing required lease disclosures and reviewing key lease terms',
+                        'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                    ],
+                    '🚚 Move-In Support & Coordination' => [
+                        'Coordinate move-in date and key handoff logistics with the Landlord\'s Agent, Landlord or Property Manager',
+                        'Confirm completion of any agreed-upon pre-move-in cleaning or repairs',
+                        'Provide a utility setup checklist and local provider resources',
+                        'Share a move-in checklist for documentation and property condition review',
+                        'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                    ],
+                    '💡 Leasing Strategy & Guidance' => [
+                        'Provide a Rental Market Analysis (RMA) with pricing insights based on comparable rentals, neighborhood trends, and current market conditions',
+                        'Advise on lease types and structures (e.g., month-to-month, annual, furnished, lease-option)',
+                        'Provide general guidance on Tenant rights and Landlord responsibilities under state law',
+                        'Provide general guidance on lease clauses, payment terms, and renewal options',
+                    ],
+                ];
+                $bidCommercialCategories = [
+                    '📢 Tenant Criteria Marketing & Promotion' => [
+                        'Create a branded flyer summarizing the Tenant\'s leasing criteria',
+                        'Post the Tenant\'s leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
+                        'Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups',
+                        'Share the Tenant\'s leasing criteria on LinkedIn in Real Estate or Commercial Property Groups',
+                        'Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels',
+                        'Launch a mass email campaign promoting the Tenant\'s leasing criteria',
+                        'Distribute branded postcards or flyers in the Tenant\'s preferred commercial areas',
+                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred commercial areas',
+                    ],
+                    '🔍 Property Search, Alerts & Matching' => [
+                        'Search for available commercial spaces in the Tenant\'s target area',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired commercial properties that meet the Tenant\'s leasing criteria',
+                        'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
+                        'Evaluate spaces with the Tenant and provide insights on pricing, lease terms, and overall fit',
+                    ],
+                    '🏢 Property Showings & Virtual Tours' => [
+                        'Schedule and attend property showings with the Tenant',
+                        'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
+                        'Preview properties on behalf of the Tenant upon request',
+                        'Provide factual observations on space layout and condition',
+                    ],
+                    '📝 Tenant Application Support' => [
+                        'Guide the Tenant through the landlord\'s application process and submission requirements',
+                        'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
+                        'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager',
+                    ],
+                    '📃 Lease Preparation, LOI & Execution' => [
+                        'Draft or assist with preparing a Letter of Intent (LOI) summarizing the Tenant\'s business needs and proposed terms',
+                        'Assist with negotiating rent, CAM, lease term, TI allowance, exclusivity clauses, renewal options, and other provisions (as permitted under the agency agreement)',
+                        'Coordinate with the Landlord\'s Agent, Landlord or Property Manager to finalize lease terms',
+                        'Review lease drafts and coordinate revisions through appropriate channels',
+                        'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties',
+                        'Track required deposits, rent commencement, and key lease dates to ensure move-in readiness',
+                    ],
+                    '🚚 Move-In Support & Coordination' => [
+                        'Coordinate move-in date and key handoff logistics with the Landlord, Landlord\'s Agent, or Property Manager',
+                        'Confirm completion of any agreed-upon pre-move-in repairs, cleaning, or buildout',
+                        'Provide a utility setup checklist and local provider resources',
+                        'Share a move-in checklist for documentation and property condition review',
+                        'Confirm required move-in payments and assist the Tenant with tracking amounts due, deadlines, and accepted payment methods',
+                    ],
+                    '💡 Leasing Strategy & Guidance' => [
+                        'Provide a Comparative Lease Market Analysis (CLMA) with pricing insights, comps, and vacancy trends',
+                        'Advise on lease types and structures (e.g., NNN, Modified Gross, Full Service) with general explanations of differences',
+                        'Provide general guidance on Tenant rights and Landlord responsibilities under commercial leasing law',
+                        'Provide general guidance on lease clauses, escalation terms, and space usage considerations',
+                    ],
+                ];
+                $bidCategories = $bidIsCommercial ? $bidCommercialCategories : $bidResidentialCategories;
+
+                // Flatten bid services
+                $flattenBidServices = function($data) use (&$flattenBidServices) {
+                    $result = [];
+                    if (is_array($data) || is_object($data)) {
+                        foreach ((array)$data as $value) {
+                            if (is_string($value) && !empty(trim($value)) && $value !== 'Other') {
+                                $result[] = trim($value);
+                            } elseif (is_array($value) || is_object($value)) {
+                                $result = array_merge($result, $flattenBidServices($value));
+                            }
+                        }
+                    } elseif (is_string($data) && !empty(trim($data)) && $data !== 'Other') {
+                        $result[] = trim($data);
+                    }
+                    return $result;
+                };
+                $rawBidSvcs = data_get($bid, 'get.services', []);
+                if (is_string($rawBidSvcs) && !empty($rawBidSvcs)) {
+                    $decoded = json_decode($rawBidSvcs, true);
+                    $parsedBidSvcs = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
+                } elseif (is_array($rawBidSvcs) || is_object($rawBidSvcs)) {
+                    $parsedBidSvcs = $rawBidSvcs;
+                } else {
+                    $parsedBidSvcs = [];
+                }
+                $normalizeApostrophes = fn($s) => str_replace(
+                    ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}"],
+                    ["'", "'", '"', '"'], $s
+                );
+                $bidAllServices = array_unique(array_map($normalizeApostrophes, $flattenBidServices($parsedBidSvcs)));
+                $rawBidOtherSvcs = data_get($bid, 'get.other_services', []);
+                if (is_string($rawBidOtherSvcs) && !empty($rawBidOtherSvcs)) {
+                    $decoded = json_decode($rawBidOtherSvcs, true);
+                    $bidOtherServices = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [];
+                } elseif (is_array($rawBidOtherSvcs) || is_object($rawBidOtherSvcs)) {
+                    $bidOtherServices = (array)$rawBidOtherSvcs;
+                } else {
+                    $bidOtherServices = [];
+                }
+                $bidOtherServices = array_values(array_filter($bidOtherServices, fn($s) => is_string($s) && !empty(trim($s))));
+                $hasAnyBidServices = !empty($bidAllServices) || !empty($bidOtherServices);
+
+                // Badge / style vars
+                $svcAddedStyle  = 'background-color: #d4edda; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                $svcAddedBadge  = '<span class="badge bg-success ms-2" style="font-size: 0.65rem; vertical-align: middle;">Extra Service Offered</span>';
+                $svcMissingStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545; text-decoration: line-through; color: #721c24;';
+                $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
+
+                // Full normalized sets for badge decisions
+                $baselineNormFull = array_unique(array_map($normalizeService, $baselineServices));
+                $bidNormFull = array_unique(array_map(
+                    $normalizeService,
+                    array_merge(array_values($bidAllServices), $bidOtherServices)
+                ));
+                $checkServiceInBaseline = fn($s) => in_array($normalizeService($s), $baselineNormFull, true);
+                $checkServiceInBid      = fn($s) => in_array($normalizeService($s), $bidNormFull, true);
+
+                // Services in baseline but not in bid
+                $svsMissingDisplay = [];
+                foreach ($baselineServices as $bSvc) {
+                    if (!$checkServiceInBid($bSvc)) {
+                        $svsMissingDisplay[] = $bSvc;
+                    }
+                }
+            @endphp
+
             <div class="mb-5">
                 <h6 class="section-header">
                     <i class="fa fa-list-check me-2"></i>Offered Services
                 </h6>
-                
-                <div class="row">
-                    @if (count($servicesMatchedList) > 0)
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 rounded" style="background: #e6f7e6; border: 1px solid #c3e6c3;">
-                            <h6 class="mb-2" style="color: #28a745;"><i class="fas fa-check-circle me-1"></i>Matched Services ({{ count($servicesMatchedList) }})</h6>
-                            <ul class="services-list mb-0">
-                                @foreach($servicesMatchedList as $svc)
-                                <li class="service-matched"><i class="fas fa-check me-1"></i>{{ ucfirst($svc) }}</li>
+
+                @if ($hasAnyBidServices)
+                    @foreach ($bidCategories as $bidCategoryName => $bidCategoryServices)
+                        @php
+                            $bidMatchedInCat = array_filter($bidAllServices, fn($s) => in_array($s, $bidCategoryServices));
+                        @endphp
+                        @if (!empty($bidMatchedInCat))
+                        <div class="mb-3">
+                            <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $bidCategoryName }}</div>
+                            <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                @foreach ($bidMatchedInCat as $bidSvc)
+                                    @php $svcInBaseline = $checkServiceInBaseline($bidSvc); @endphp
+                                    <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $bidSvc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
                                 @endforeach
                             </ul>
                         </div>
+                        @endif
+                    @endforeach
+
+                    @if (!empty($bidOtherServices))
+                    <div class="mb-3">
+                        <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
+                        <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                            @foreach ($bidOtherServices as $otherSvc)
+                                @php $svcInBaseline = $checkServiceInBaseline($otherSvc); @endphp
+                                <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $otherSvc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
+                            @endforeach
+                        </ul>
                     </div>
                     @endif
 
-                    @if (count($servicesAdded) > 0)
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 rounded" style="background: #e6f7ff; border: 1px solid #91d5ff;">
-                            <h6 class="mb-2" style="color: #17a2b8;"><i class="fas fa-plus-circle me-1"></i>Extra Services ({{ count($servicesAdded) }})</h6>
-                            <ul class="services-list mb-0">
-                                @foreach($servicesAdded as $svc)
-                                <li class="service-extra"><i class="fas fa-plus me-1"></i>{{ ucfirst($svc) }}</li>
-                                @endforeach
-                            </ul>
+                    @if (!empty($svsMissingDisplay))
+                    <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
+                        <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
+                            <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($svsMissingDisplay) }})
                         </div>
+                        <ul class="mb-0" style="padding-left: 1.2rem;">
+                            @foreach ($svsMissingDisplay as $missingSvc)
+                                <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $missingSvc }}{!! $svcMissingBadge !!}</li>
+                            @endforeach
+                        </ul>
                     </div>
                     @endif
-
-                    @if (count($servicesMissing) > 0)
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 rounded" style="background: #fff2e8; border: 1px solid #ffbb96;">
-                            <h6 class="mb-2" style="color: #dc3545;"><i class="fas fa-minus-circle me-1"></i>Not Offered ({{ count($servicesMissing) }})</h6>
-                            <ul class="services-list mb-0">
-                                @foreach($servicesMissing as $svc)
-                                <li class="service-missing"><i class="fas fa-times me-1"></i>{{ ucfirst($svc) }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                    @endif
-                </div>
+                @else
+                    <div class="text-muted" style="font-style: italic;">No services selected for this bid.</div>
+                @endif
             </div>
 
             @if (data_get($bid, 'get.presentation_link') || data_get($bid, 'get.video_upload') || data_get($bid, 'get.business_card_link') || data_get($bid, 'get.business_card') || data_get($bid, 'get.promoMaterials'))
@@ -730,16 +1035,23 @@
                     </div>
                     @endif
 
-                    @if (data_get($bid, 'get.license_number'))
+                    @if (data_get($bid, 'get.license_no'))
                     <div class="col-md-6 mb-2">
                         <div class="field-label" style="color: #049399;">License Number</div>
-                        <div class="field-value">{{ data_get($bid, 'get.license_number') }}</div>
+                        <div class="field-value">{{ data_get($bid, 'get.license_no') }}</div>
+                    </div>
+                    @endif
+
+                    @if (data_get($bid, 'get.nar_id'))
+                    <div class="col-md-6 mb-2">
+                        <div class="field-label" style="color: #049399;">NAR Member ID</div>
+                        <div class="field-value">{{ data_get($bid, 'get.nar_id') }}</div>
                     </div>
                     @endif
 
                     @if (data_get($bid, 'get.phone'))
                     <div class="col-md-6 mb-2">
-                        <div class="field-label" style="color: #049399;">Phone</div>
+                        <div class="field-label" style="color: #049399;">Phone Number</div>
                         <div class="field-value">{{ data_get($bid, 'get.phone') }}</div>
                     </div>
                     @endif
