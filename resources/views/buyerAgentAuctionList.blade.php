@@ -194,6 +194,9 @@
                         </td>
                         <td class="text-center">{{ @$auction->bids->count() }}</td>
                         <td class="text-center">
+                          <a href="{{ route('buyer.view-auction', @$auction->id) }}"
+                             class="btn btn-sm d-block mb-1"
+                             style="background:#049399;color:#fff;font-size:13px;">View Bids</a>
                           <div class="dropdown">
                             <button class="btn btn-secondary dropdown-toggle btn-sm" type="button"
                               data-bs-toggle="dropdown" aria-expanded="false">
@@ -204,7 +207,7 @@
                                 <a class="dropdown-item"
                                   href="{{ route('buyer.view-auction', @$auction->id) }}">
                                   <i class="fa-solid fa-eye" style="font-size:14px;"></i>
-                                  <span style="font-size:14px;">View</span>
+                                  <span style="font-size:14px;">View Listing</span>
                                 </a>
                               </li>
                               @if (!@$auction->is_approved)
@@ -212,18 +215,11 @@
                                    <a class="dropdown-item"
                                  href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $auction->get->user_type]) }}">
                                     <i class="fa-solid fa-pencil" style="font-size:14px;"></i>
-                                    <span style="font-size:14px;">Edit</span>
+                                    <span style="font-size:14px;">Edit Listing</span>
                                   </a>
                                 </li>
                               @endif
-                              <li>
-                                <a class="dropdown-item"
-                                  href="{{ route('manage.bot.questions', ['tenant-agent', $auction->id]) }}">
-                                  <i class="fa-solid fa-robot" style="font-size:14px;"></i>
-                                  <span style="font-size:14px;">Manage Chat Bot
-                                    Questions</span>
-                                </a>
-                              </li>
+                              
                             </ul>
                           </div>
                         </td>

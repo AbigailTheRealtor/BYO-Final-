@@ -39,8 +39,7 @@
     height: 32px;
 }
 .dashboardContentDetails .rightCol .notification {
-    min-height: 440px;
-    max-height: 450px;
+    /* height unconstrained — let content determine height */
 }
 @media screen and (max-width:992px) {
     .dashboardContentDetails .rightCol .userDetails {
