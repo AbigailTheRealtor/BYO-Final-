@@ -1,0 +1,108 @@
+**The CSS padding fix did not solve the actual issue. The black footer is still rendering in the middle of the dashboard, with content continuing below it. This is a layout structure/render-order bug, not just a spacing bug.**
+
+## What the screenshot proves
+
+The footer is not merely touching the bottom of the dashboard.
+
+It is appearing **between dashboard content blocks**, which means:
+
+* footer is being rendered too early in the DOM, or
+* footer is absolutely positioned relative to the wrong container, or
+* a wrapper/container is closing before all dashboard content is output
+
+Adding `.mainDashboard` padding does not fix that.
+
+---
+
+## New task: trace the real render structure
+
+**Read-only first. Do not edit yet.**
+
+I need you to inspect the actual layout hierarchy for the dashboard page and report:
+
+1. exact Blade layout used by `/dashboard`
+2. exact location where the black footer is rendered
+3. exact location where the dashboard content block begins and ends
+4. whether the footer is:
+
+   * inside the wrong wrapper
+   * outside the main content wrapper but positioned absolutely
+   * rendered before the final dashboard sections finish
+   * affected by an unclosed/mis-nested div
+5. whether the mobile fixed nav is a separate issue from the black footer
+
+---
+
+## Specifically inspect
+
+Please trace:
+
+* `main.blade.php`
+* dashboard layout wrapper
+* footer partial include
+* any content/yield/section wrappers
+* opening and closing `<div>` structure around the dashboard page
+
+I want the exact DOM/render order, not just CSS guesses.
+
+---
+
+## Important
+
+Do **not** give me another padding-only fix unless you can prove the footer is already after all content in the DOM.
+
+The screenshot strongly suggests the footer is being rendered **before the dashboard content ends**.
+
+---
+
+## Most likely real fixes
+
+Only after the audit, apply the minimal correct fix, which is likely one of these:
+
+### Option A
+
+Move the footer include so it renders **after** all dashboard content.
+
+### Option B
+
+Remove `position: absolute` from the black footer and let it sit in normal document flow.
+
+### Option C
+
+Fix a broken/unclosed wrapper so the footer is no longer inside the wrong parent.
+
+### Option D
+
+Handle the black footer and the mobile fixed bottom nav separately, since they are two different elements.
+
+---
+
+## Safeguards
+
+1. **Do not touch dashboard data queries**
+2. **Do not touch routes**
+3. **Do not touch listing/bid/summaries logic**
+4. **Only fix layout structure / footer render order / footer CSS**
+5. **Smallest correct fix only**
+
+---
+
+## Output required before coding
+
+Reply first with:
+
+1. exact root cause
+2. exact file(s) causing the footer to appear mid-page
+3. whether it is a DOM/render-order problem, a CSS positioning problem, or both
+4. minimal implementation plan
+
+Then fix it.
+
+---
+
+## Output required after coding
+
+1. exact files changed
+2. exact structural/CSS fix applied
+3. confirmation the footer now renders after all dashboard content
+4. confirmation no business logic was touched
