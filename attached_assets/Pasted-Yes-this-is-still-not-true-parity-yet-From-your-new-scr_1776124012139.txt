@@ -1,0 +1,289 @@
+Yes — this is still **not true parity yet**.
+
+From your new screenshots, I can see two remaining Tenant problems clearly:
+
+## Still broken
+
+### 1. Review links are still missing
+
+In the compact/full bid version, there is a **Review Links** item showing an actual URL, but in the dashboard **View Bid** page that review link block is not rendering the same way.
+
+So the page still is not using the same source/renderer for review links.
+
+### 2. Offered Services is still incomplete
+
+The **View Bid** page is still missing services that appear in the correct source version.
+
+That means one of these is happening:
+
+* the wrong service list source is being used
+* only a subset of selected services is being rendered
+* custom/additional services are not merged in correctly
+* section grouping logic is filtering out valid entries
+* one renderer is using a different catalog/key mapping than the other
+
+So this is now a **data/render mapping issue**, not just formatting.
+
+---
+
+# Replit instructions with safeguards
+
+Paste this exactly into Replit:
+
+---
+
+## Task: Finish Tenant View Bid parity — fix missing Review Links and missing Offered Services
+
+### Context
+
+The Tenant dashboard **View Bid** page was partially improved, but it still does **not** fully match the correct Tenant full-bid source.
+
+From QA screenshots, these issues remain:
+
+1. **Review Links** are still missing in the View Bid page even though they exist in the correct Tenant source.
+2. **Offered Services** is still incomplete — some services visible in the correct Tenant source are not appearing on the View Bid page.
+
+This task is **Tenant only**.
+Do **not** modify Buyer, Seller, or Landlord in this task.
+
+---
+
+## Goal
+
+Make the Tenant dashboard **View Bid** page match the correct Tenant source exactly for:
+
+* Review Links
+* Offered Services
+
+The Tenant View Bid page must render the exact same:
+
+* data
+* order
+* grouping
+* labels
+* bullets
+* section headings
+* conditional entries
+
+as the correct Tenant full-bid/card source.
+
+---
+
+## Important rule
+
+Do not “patch around” this by hardcoding missing links or manually appending services.
+
+Instead, identify why the View Bid renderer is still not consuming the same canonical data/render logic as the correct Tenant source.
+
+---
+
+## What to audit first
+
+### 1. Review Links
+
+Trace the exact source of the Review Links block in the correct Tenant renderer.
+
+Find:
+
+* where the review links array/fields are built
+* which fields are supported
+* how the correct renderer decides what to show
+* whether the View Bid page is using a different variable name, partial, or conditional guard
+
+Check for fields like:
+
+* review link
+* Google review link
+* Zillow review link
+* website
+* social links
+* generic review URL arrays
+* optional/nullable field guards
+
+I need the exact reason the review link appears in the correct source but not in View Bid.
+
+Possible causes to verify:
+
+* wrong variable passed into blade
+* wrong field key name
+* conditional `if` block excluding it
+* only social/website links being rendered while review URLs are omitted
+* canonical partial not being reused
+
+### 2. Offered Services
+
+Perform a strict diff between:
+
+* the correct Tenant source services output
+* the Tenant View Bid page services output
+
+Identify exactly which services are missing.
+
+Then trace:
+
+* where selected services are stored
+* where service catalog labels/text are resolved
+* where category grouping is built
+* where additional/custom services are merged
+* whether service filtering is accidentally excluding valid rows
+
+Possible causes to verify:
+
+* stale service catalog being used in View Bid
+* wrong property type/service type passed in
+* only first N services rendered
+* services grouped by wrong category keys
+* some section arrays not included in merged output
+* custom/additional services dropped
+* dedupe/filter logic removing valid entries
+
+---
+
+## Required implementation approach
+
+### A. Review Links
+
+Refactor View Bid so it uses the **same exact renderer/partial/helper** as the correct Tenant source for review/website/social links.
+
+Requirements:
+
+* if the correct source shows a review URL, View Bid must show it too
+* URLs must be clickable
+* preserve same order and labels
+* do not introduce duplicate website/social blocks
+* do not hardcode one link type only
+
+### B. Offered Services
+
+Refactor View Bid so it uses the **same exact services renderer/source mapping** as the correct Tenant source.
+
+Requirements:
+
+* same category headings
+* same bullet/service items
+* same order
+* same inclusion of additional/custom services
+* same commercial/residential branching if applicable
+* no flattening
+* no dropped sections
+
+If there are two separate service builders today, consolidate them so View Bid uses the canonical one.
+
+---
+
+## Non-negotiable safeguards
+
+### Safeguard 1
+
+Do not change database schema.
+
+### Safeguard 2
+
+Do not edit Buyer, Seller, or Landlord files in this task.
+
+### Safeguard 3
+
+Do not alter Accept / Counter / Reject logic.
+
+### Safeguard 4
+
+Do not hardcode missing services or links directly into the blade.
+
+### Safeguard 5
+
+Do not remove working sections just to make parity “look closer.”
+
+### Safeguard 6
+
+Do not create a second Tenant-specific manual list inside the View Bid file.
+Use shared renderer/helper/partial logic.
+
+### Safeguard 7
+
+Preserve the currently correct:
+
+* compensation structure
+* credentials/contact section
+* promotional materials section
+
+Only fix what is still mismatched unless a shared refactor safely improves parity.
+
+---
+
+## Preferred fix pattern
+
+### Best option
+
+Use one canonical shared source for:
+
+* Tenant links rendering
+* Tenant services rendering
+
+Then have both:
+
+* correct full-bid/card source
+* dashboard View Bid page
+
+consume that same shared source.
+
+### Avoid
+
+Do not leave two different Tenant render pipelines active.
+
+That is what caused drift in the first place.
+
+---
+
+## QA checklist after fix
+
+Use the exact same Tenant bid from the screenshots.
+
+### Review Links
+
+* [ ] Review Links now appears in View Bid if present in canonical source
+* [ ] URL is clickable
+* [ ] Same label/order as canonical source
+* [ ] No duplicate link sections
+
+### Offered Services
+
+* [ ] Every service shown in canonical Tenant source also appears in View Bid
+* [ ] Same section titles
+* [ ] Same service order
+* [ ] Same custom/additional services
+* [ ] No missing commercial services if this is a commercial tenant bid
+* [ ] No missing bullet items within populated categories
+
+### Regression safety
+
+* [ ] Tenant bid card/full source still renders correctly
+* [ ] Compensation section still matches canonical source
+* [ ] Credentials section still shows NAR Member ID
+* [ ] No undefined variable errors
+* [ ] No duplicate services or duplicate links
+* [ ] No layout break in mobile or desktop rendering
+
+---
+
+## Deliverable back to me
+
+Report back with:
+
+1. Files changed
+2. Exact cause of missing Review Links
+3. Exact cause of missing services
+4. Which canonical helper/partial now powers both outputs
+5. Confirmation that no services visible in canonical source are missing from View Bid anymore
+
+---
+
+## Additional note
+
+This is **not complete** until the View Bid page and the correct Tenant source are visually and content-wise identical for those sections.
+
+Do not mark this done just because “most” services appear.
+It must be **full parity**.
+
+---
+
+If you want, I can also make you a **more aggressive Replit prompt** that tells it to do a strict source-to-source diff and not stop until every missing service item is accounted for.

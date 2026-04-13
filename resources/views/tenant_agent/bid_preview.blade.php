@@ -276,16 +276,34 @@
                 </div>
                 @endif
 
-                @if (data_get($bid, 'get.reviews_links'))
+                @php
+                    // reviews_links may be stored as array-of-arrays OR array-of-objects; handle both
+                    $reviewLinksRaw = data_get($bid, 'get.reviews_links', []);
+                    if (!is_array($reviewLinksRaw) && !is_object($reviewLinksRaw)) { $reviewLinksRaw = []; }
+                    $hasAnyReviewUrl = !empty(array_filter((array) $reviewLinksRaw, function($rl) {
+                        $u = is_object($rl) ? ($rl->url ?? '') : ($rl['url'] ?? '');
+                        return !empty(trim((string)$u));
+                    }));
+                @endphp
+                @if ($hasAnyReviewUrl)
                 <div class="mb-3">
                     <div class="field-label" style="color: #049399;">Review Links:</div>
                     <div>
-                        @foreach (data_get($bid, 'get.reviews_links') as $reviewLink)
-                        @if (!empty($reviewLink->url))
+                        @foreach ((array) $reviewLinksRaw as $reviewLink)
+                        @php
+                            $rlUrl  = is_object($reviewLink) ? ($reviewLink->url  ?? '') : ($reviewLink['url']  ?? '');
+                            $rlText = is_object($reviewLink) ? ($reviewLink->text ?? '') : ($reviewLink['text'] ?? '');
+                            $rlUrl  = trim((string) $rlUrl);
+                        @endphp
+                        @if (!empty($rlUrl))
                         <div class="mb-1">
-                            <a href="https://{{ $reviewLink->url }}" target="_blank" class="text-primary text-decoration-none">
+                            @php
+                                $rlHref = (str_starts_with($rlUrl, 'http://') || str_starts_with($rlUrl, 'https://'))
+                                    ? $rlUrl : 'https://' . $rlUrl;
+                            @endphp
+                            <a href="{{ $rlHref }}" target="_blank" class="text-primary text-decoration-none">
                                 <i class="fa fa-external-link-alt me-1"></i>
-                                {{ !empty($reviewLink->text) ? $reviewLink->text : $reviewLink->url }}
+                                {{ !empty($rlText) ? $rlText : $rlUrl }}
                             </a>
                         </div>
                         @endif
@@ -682,31 +700,34 @@
                         'Provide general guidance on lease clauses, payment terms, and renewal options',
                     ],
                 ];
+                // ── Commercial categories: exact copy from hire_tenant_agent/view.blade.php (canonical source) ──
                 $bidCommercialCategories = [
                     '📢 Tenant Criteria Marketing & Promotion' => [
                         'Create a branded flyer summarizing the Tenant\'s leasing criteria',
                         'Post the Tenant\'s leasing criteria on Craigslist under the "Office/Commercial" or "Retail" section',
                         'Promote the Tenant\'s leasing criteria on Facebook in Commercial Leasing or Business Groups',
-                        'Share the Tenant\'s leasing criteria on LinkedIn in Real Estate or Commercial Property Groups',
                         'Share the Tenant\'s leasing criteria on Instagram using posts, stories, or reels',
+                        'Promote the Tenant\'s leasing criteria on LinkedIn in Professional, Real Estate, or Commercial Investment Groups',
+                        'Upload a TikTok video summarizing the Tenant\'s leasing criteria',
+                        'Upload a YouTube video summarizing the Tenant\'s leasing criteria',
                         'Launch a mass email campaign promoting the Tenant\'s leasing criteria',
-                        'Distribute branded postcards or flyers in the Tenant\'s preferred commercial areas',
-                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred commercial areas',
+                        'Distribute branded postcards or flyers in the Tenant\'s preferred neighborhoods',
+                        'Launch hyperlocal digital ads targeting the Tenant\'s preferred leasing areas',
                     ],
                     '🔍 Property Search, Alerts & Matching' => [
-                        'Search for available commercial spaces in the Tenant\'s target area',
-                        'Search for off-market, pre-market, withdrawn, canceled, or expired commercial properties that meet the Tenant\'s leasing criteria',
+                        'Send listing alerts from real estate platforms that match the Tenant\'s leasing criteria.',
+                        'Search for off-market, pre-market, withdrawn, canceled, or expired properties that meet the Tenant\'s rental criteria',
                         'Communicate with the Landlord\'s Agent, Landlord, or Property Manager to confirm availability, lease terms, and showing instructions',
-                        'Evaluate spaces with the Tenant and provide insights on pricing, lease terms, and overall fit',
+                        'Evaluate properties for layout efficiency, building specs, logistics, zoning fit, and operational alignment',
                     ],
                     '🏢 Property Showings & Virtual Tours' => [
-                        'Schedule and attend property showings with the Tenant',
+                        'Schedule and attend property tours with the Tenant',
                         'Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs',
                         'Preview properties on behalf of the Tenant upon request',
-                        'Provide factual observations on space layout and condition',
+                        'Provide factual notes on layout, access, parking, visibility, and other operational considerations',
                     ],
                     '📝 Tenant Application Support' => [
-                        'Guide the Tenant through the landlord\'s application process and submission requirements',
+                        'Provide the Tenant with application instructions or links to online platforms',
                         'Gather and organize required supporting documents (e.g., business licenses, financials, references)',
                         'Submit complete and organized application packages to the Landlord\'s Agent, Landlord, or Property Manager',
                     ],
