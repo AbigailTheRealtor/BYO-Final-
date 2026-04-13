@@ -1,5 +1,6 @@
 .mainDashboard {
     margin: 4rem auto;
+    padding-bottom: 3rem;
 }
 .mainDashboard button:not(.mainDashboard .choices__item button){
     border-radius: 5px;
@@ -252,3 +253,8 @@
         width: 100%;
     }
   }
+@media screen and (max-width: 576px) {
+    .mainDashboard {
+        padding-bottom: 7rem;
+    }
+}

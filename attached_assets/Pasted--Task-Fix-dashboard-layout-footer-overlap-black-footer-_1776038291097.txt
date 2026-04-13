@@ -1,0 +1,93 @@
+**Task: Fix dashboard layout/footer overlap — black footer is cutting into the user dashboard**
+
+## Problem
+
+On the rebuilt user dashboard, the black footer/bottom section is overlapping and cutting into the dashboard content area.
+
+This is a **layout/CSS/container issue only**.
+
+## Scope
+
+Fix the **dashboard page layout only** so the footer no longer overlays or cuts into the dashboard content.
+
+## Hard safeguards
+
+1. **Do not touch dashboard data queries**
+2. **Do not touch listing logic**
+3. **Do not touch bid/counter/summary logic**
+4. **Do not change routes**
+5. **Do not redesign the dashboard content**
+6. **Do not change any business logic**
+7. **Only fix layout/CSS/container structure**
+8. **Audit first, edit second**
+
+---
+
+## Read-only audit first
+
+Before editing, report:
+
+1. exact view/layout file that renders the black footer on this page
+2. exact dashboard view/layout/container file(s) controlling page height and spacing
+3. whether the issue is caused by:
+
+   * fixed footer
+   * absolute footer
+   * missing bottom padding/margin
+   * incorrect min-height/content wrapper
+   * z-index/positioning issue
+4. minimal implementation plan
+
+---
+
+## Required fix
+
+Make the dashboard page render cleanly with:
+
+* full dashboard content visible
+* footer below the content
+* no black overlap cutting through the page
+
+### Acceptable solutions
+
+* add proper bottom spacing to dashboard content wrapper
+* correct page min-height structure
+* change footer positioning if it is incorrectly fixed/absolute on this page
+* fix wrapper/container flow so footer sits after content naturally
+
+### Not acceptable
+
+* hiding the footer entirely
+* hacking with giant random margins unless truly necessary
+* changing dashboard functionality
+* touching listing/bid pages
+
+---
+
+## Preferred implementation scope
+
+Only modify the minimum files needed, likely one or more of:
+
+* main dashboard blade
+* shared layout blade
+* shared footer partial
+* dashboard container CSS classes
+
+---
+
+## QA after fix
+
+1. dashboard loads with no overlap
+2. footer appears below dashboard content
+3. full dashboard content remains visible
+4. no layout regression on other pages using the same layout
+5. no business logic changed
+
+---
+
+## Output required after coding
+
+1. exact files changed
+2. exact root cause
+3. exact layout fix applied
+4. confirmation that only layout was changed
