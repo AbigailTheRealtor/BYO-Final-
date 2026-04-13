@@ -834,7 +834,7 @@
                         @if (!empty($bidMatchedInCat))
                         <div class="mb-3">
                             <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $bidCategoryName }}</div>
-                            <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                            <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.5rem; list-style: disc;">
                                 @foreach ($bidMatchedInCat as $bidSvc)
                                     @php $svcInBaseline = $checkServiceInBaseline($bidSvc); @endphp
                                     <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $bidSvc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
@@ -847,7 +847,7 @@
                     @if (!empty($bidOtherServices))
                     <div class="mb-3">
                         <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                        <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                        <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.5rem; list-style: disc;">
                             @foreach ($bidOtherServices as $otherSvc)
                                 @php $svcInBaseline = $checkServiceInBaseline($otherSvc); @endphp
                                 <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $otherSvc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
@@ -861,7 +861,7 @@
                         <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
                             <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($svsMissingDisplay) }})
                         </div>
-                        <ul class="mb-0" style="padding-left: 1.2rem;">
+                        <ul class="mb-0" style="padding-left: 1.5rem; list-style: disc;">
                             @foreach ($svsMissingDisplay as $missingSvc)
                                 <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $missingSvc }}{!! $svcMissingBadge !!}</li>
                             @endforeach
