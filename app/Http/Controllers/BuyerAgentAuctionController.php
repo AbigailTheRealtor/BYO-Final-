@@ -594,7 +594,7 @@ class BuyerAgentAuctionController extends Controller
     public function bidDetail($bid_id)
     {
         $bid = BuyerAgentAuctionBid::with(['user', 'meta'])->findOrFail($bid_id);
-        $auction = $bid->auction()->with('user')->first();
+        $auction = $bid->auction()->with(['user', 'meta'])->first();
         if (!$auction) {
             abort(404, 'Listing not found.');
         }

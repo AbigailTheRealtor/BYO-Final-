@@ -170,7 +170,7 @@ class LandlordAgentAuctionBidController extends Controller
     public function view($bid_id)
     {
         $bid = LandlordAgentAuctionBid::with(['user', 'meta'])->findOrFail($bid_id);
-        $auction = $bid->auction()->with('user')->first();
+        $auction = $bid->auction()->with(['user', 'meta'])->first();
         if (!$auction) {
             abort(404, 'Listing not found.');
         }

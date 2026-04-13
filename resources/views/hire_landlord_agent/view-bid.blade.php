@@ -10,7 +10,9 @@
 @include('partials.bid_detail_styles')
 @endpush
 
+@section('content')
 @php
+  // ── Helper closures (mirrors hire_landlord_agent/view.blade.php top @php block) ──
   $fmtMoney = function($v) {
     if ($v === null || $v === '') return null;
     $raw = preg_replace('/[^0-9.]/', '', (string)$v);
@@ -24,9 +26,134 @@
     $num = (float)$raw;
     return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
   };
+  $rentalPeriodSuffix = 'of Rent Due Each Rental Period';
+  $joinParts = function($parts) {
+    $parts = array_values(array_filter($parts, fn($p) => $p !== null && $p !== ''));
+    return count($parts) ? implode(' + ', $parts) : null;
+  };
+  $basisText = function($basis) {
+    return $basis ? ('of ' . $basis) : null;
+  };
+  $canon = function($str) {
+    if (!is_string($str)) return $str;
+    return str_replace(["\xe2\x80\x99", "\xe2\x80\x98", "\xe2\x80\x9c", "\xe2\x80\x9d"], ["'", "'", '"', '"'], $str);
+  };
+
+  // ── Auth & ownership ──
+  $auth_id        = Auth::id();
+  $isListingOwner = ($auth_id == data_get($auction, 'user_id'));
+  $isBidOwner     = (data_get($bid, 'user_id') == $auth_id);
+  $bidAccepted    = data_get($bid, 'accepted');
+
+  // ── Listing state ──
+  $listingType          = strtolower(trim(data_get($auction, 'get.listing_type', '')));
+  $isTraditionalListing = ($listingType === 'traditional listing');
+  $isBiddingPeriodListing = ($listingType === 'bidding period');
+  $isSold = in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true);
+  $carbon = \Carbon\Carbon::class;
+  $expiration = data_get($auction, 'get.ends_at') ?? null;
+  $isExpired  = $expiration ? $carbon::now()->gte($carbon::parse($expiration)) : false;
+
+  // ── Property type (residential / commercial) ──
+  $propertyType  = strtolower(trim($auction->get->property_type ?? ''));
+  $isResidential = str_contains($propertyType, 'residential')
+                || str_contains($propertyType, 'single-family')
+                || str_contains($propertyType, 'single family')
+                || str_contains($propertyType, 'condo')
+                || str_contains($propertyType, 'townhouse')
+                || str_contains($propertyType, 'apartment');
+  $isCommercial  = str_contains($propertyType, 'commercial')
+                || str_contains($propertyType, 'industrial')
+                || str_contains($propertyType, 'office')
+                || str_contains($propertyType, 'retail')
+                || str_contains($propertyType, 'warehouse');
+  if (!$isResidential && !$isCommercial && !empty($propertyType)) {
+      $isResidential = true;
+  }
+
+  // ── Score helpers ──
+  $getScoreColor       = fn($s) => \App\Helpers\LandlordBidMatchScoreHelper::scoreColor((int)$s);
+  $auctionPropType     = $auction->get->property_type ?? '';
+  $landlordBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
+  $currentBidData      = json_decode(json_encode(data_get($bid, 'get', [])), true) ?: [];
+
+  // ── Original score ──
+  $originalScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
+      $landlordBaselineData, $currentBidData, null, $auctionPropType
+  );
+
+  // ── Counter terms ──
+  $counterBids = \App\Models\LandlordCounterTerm::with(['meta','user'])
+      ->where('landlord_agent_auction_id', data_get($bid, 'id'))
+      ->orderBy('created_at', 'desc')
+      ->get();
+
+  $latestOwnerCounter = \App\Models\LandlordCounterTerm::where('landlord_agent_auction_id', data_get($bid, 'id'))
+      ->orderBy('created_at', 'desc')
+      ->first();
+
+  $latestActiveCounter = $counterBids->filter(fn($c) => !in_array((string)$c->status, ['accepted','rejected'], true))->first();
+
+  if ($latestActiveCounter && $latestActiveCounter->meta->count()) {
+      $counterBaselineData = $latestActiveCounter->meta->pluck('meta_value', 'meta_key')->toArray();
+      $latestCounterScore  = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
+          $counterBaselineData, $currentBidData, null, $auctionPropType
+      );
+      $showDualScore = true;
+  } else {
+      $latestCounterScore = null;
+      $showDualScore      = false;
+  }
+
+  // ── Unpack match score ──
+  $matchScore         = $originalScore;
+  $totalScore         = $matchScore['overall_percent'];
+  $totalScoreColor    = $getScoreColor($totalScore);
+  $servicesScore      = $matchScore['services_match_percent'];
+  $servicesMatched    = $matchScore['services_matched_count'];
+  $servicesTotal      = $matchScore['services_baseline_total'];
+  $servicesMissingCount = $matchScore['services_missing_count'];
+  $servicesExtraCount = $matchScore['services_extra_count'];
+  $brokerScore        = $matchScore['terms_match_percent'];
+  $brokerMatched      = $matchScore['terms_matched_count'];
+  $brokerTotal        = $matchScore['terms_baseline_total'];
+  $brokerMismatches   = $matchScore['changed_terms'];
+  $termsChangedCount  = $matchScore['terms_changed_count'];
+  $termsAddedCount    = $matchScore['terms_added_count'];
+  $baselineLabel      = "Landlord's Original Listing";
+  $hasAnyBaseline     = ($brokerTotal > 0 || $servicesTotal > 0);
+
+  // ── Modal-footer state variables ──
+  $_mfRawL    = data_get($bid, 'accepted', '0');
+  $_mfTermL   = in_array((string)$_mfRawL, ['accepted', 'rejected'], true);
+  $_mfActiveL = isset($latestOwnerCounter) && $latestOwnerCounter !== null;
+  $mfStateL   = (!$_mfTermL && $_mfActiveL)
+      ? 'countered'
+      : ($_mfTermL ? (string)$_mfRawL : '0');
+  $mfOwnerIdL    = data_get($auction, 'user_id');
+  $mfOwnerFirstL = data_get($auction, 'user.first_name', '');
+  $mfOwnerLastL  = data_get($auction, 'user.last_name', '');
+  $mfAgentFirstL = data_get($bid, 'user.first_name', '');
+  $mfAgentLastL  = data_get($bid, 'user.last_name', '');
+  $mfIsOwnerL    = ((int)$auth_id === (int)$mfOwnerIdL);
+
+  // ── Bid status for header badge ──
+  $hasCounterBids = $counterBids->isNotEmpty();
+  $_isTerminalCard = in_array((string)data_get($bid,'accepted','0'), ['accepted','rejected'], true);
+  $_cardState = $_isTerminalCard ? (string)data_get($bid,'accepted') : '0';
+  $bidStatusLabel = match($_cardState) {
+      'accepted' => 'Accepted',
+      'rejected' => 'Rejected',
+      default    => $hasCounterBids ? 'Countered' : 'Active',
+  };
+  $bidStatusColor = match($bidStatusLabel) {
+      'Accepted' => '#28a745',
+      'Rejected' => '#dc3545',
+      'Countered'=> '#ffc107',
+      default    => '#1a4a6e',
+  };
 @endphp
 
-@section('content')
 <div class="container py-4">
     <div class="mb-3">
         <a href="{{ route('landlord.agent.auction.view', $auction->id) }}" class="back-link">
@@ -49,440 +176,51 @@
                     </div>
                 </div>
                 <div class="text-end mt-2 mt-md-0">
-                    @php
-                        $bidStatus = $bid->bid_status ?? 'Active';
-                        $statusStyles = [
-                            'Countered' => 'background-color:#ffc107;color:#000;',
-                            'Active'    => 'background-color:#007bff;color:#fff;',
-                            'Accepted'  => 'background-color:#28a745;color:#fff;',
-                            'Rejected'  => 'background-color:#dc3545;color:#fff;',
-                        ];
-                    @endphp
-                    <span class="status-badge" style="{{ $statusStyles[$bidStatus] ?? $statusStyles['Active'] }}">
-                        {{ $bidStatus }}
+                    <span class="status-badge"
+                          style="background-color:{{ $bidStatusColor }};color:{{ $bidStatusLabel === 'Countered' ? '#000' : '#fff' }};padding:6px 14px;border-radius:20px;font-weight:600;font-size:0.9rem;">
+                        {{ $bidStatusLabel }}
                     </span>
                 </div>
             </div>
         </div>
 
-        <div class="bid-preview-body">
-            @php
-                $auctionBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
-                $bidData             = json_decode(json_encode($bid->get ?? []), true) ?: [];
-                $propType            = $auction->get->property_type ?? 'Residential Property';
-
-                $matchScore = \App\Helpers\LandlordBidMatchScoreHelper::calculate(
-                    $auctionBaselineData, $bidData, null, $propType
-                );
-
-                $totalScore          = $matchScore['overall_percent'];
-                $brokerScore         = $matchScore['terms_match_percent'];
-                $brokerMatched       = $matchScore['terms_matched_count'];
-                $brokerTotal         = $matchScore['terms_baseline_total'];
-                $brokerMismatches    = $matchScore['changed_terms'] ?? [];
-                $servicesScore       = $matchScore['services_match_percent'] ?? 0;
-                $servicesMatched     = $matchScore['services_matched_count'] ?? 0;
-                $servicesTotal       = $matchScore['services_baseline_total'] ?? 0;
-                $servicesExtraCount  = $matchScore['services_extra_count'] ?? 0;
-                $servicesMatchedList = $matchScore['matched_services'] ?? [];
-                $servicesAdded       = $matchScore['extra_services'] ?? [];
-                $servicesMissing     = $matchScore['missing_services'] ?? [];
-
-                $getScoreColor = function($score) {
-                    if ($score >= 80) return '#28a745';
-                    if ($score >= 50) return '#ffc107';
-                    return '#dc3545';
-                };
-
-                $mismatchStyle = 'background-color:#ffe6e6;padding:2px 6px;border-radius:4px;border-left:3px solid #dc3545;';
-                $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size:0.7rem;vertical-align:middle;">Mismatch</span>';
-
-                $isListingOwner = Auth::id() === (int)$auction->user_id;
-                $hasAnyBaseline = ($brokerTotal > 0 || $servicesTotal > 0);
-            @endphp
-
-            {{-- Agent Summary Strip --}}
-            <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded" style="background:#f8f9fa;">
-                <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                     style="width:50px;height:50px;background:{{ $getScoreColor($totalScore) }};color:#fff;font-weight:700;font-size:1.1rem;flex-shrink:0;">
-                    {{ $totalScore }}%
-                </div>
-                <div>
-                    <div class="fw-bold">{{ $bid->user->name ?? 'Agent' }}</div>
-                    <small class="text-muted">{{ $bid->user->email ?? '' }}</small>
-                </div>
-                <div class="ms-auto d-flex gap-3">
-                    <div class="text-center">
-                        <small class="text-muted d-block">Broker Terms</small>
-                        <span style="color:{{ $getScoreColor($brokerScore) }};font-weight:600;">{{ $brokerScore }}%</span>
-                        <small class="text-muted">{{ $brokerTotal > 0 ? '('.$brokerMatched.'/'.$brokerTotal.')' : 'No terms' }}</small>
-                    </div>
-                    <div class="text-center">
-                        <small class="text-muted d-block">Services</small>
-                        <span style="color:{{ $getScoreColor($servicesScore) }};font-weight:600;">{{ $servicesScore }}%</span>
-                        <small class="text-muted">{{ $servicesTotal > 0 ? '('.$servicesMatched.'/'.$servicesTotal.')' : 'No services' }}</small>
-                    </div>
-                </div>
-            </div>
-            <p class="small text-muted mb-4">Comparing to: <strong>Your Listing Terms</strong></p>
-
-            {{-- ===== SECTION 1: AGENT OVERVIEW ===== --}}
-            <div class="mb-5">
-                <h6 class="section-header"><i class="fa fa-user-tie me-2"></i>Agent Overview &amp; Qualifications</h6>
-
-                @if (data_get($bid, 'get.bio'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">About Agent:</div>
-                    <div class="field-value">{{ data_get($bid, 'get.bio') }}</div>
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.why_hire_you'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Why Hire This Agent:</div>
-                    <div class="field-value">{{ data_get($bid, 'get.why_hire_you') }}</div>
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.what_sets_you_apart'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">What Sets This Agent Apart:</div>
-                    <div class="field-value">{{ data_get($bid, 'get.what_sets_you_apart') }}</div>
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.marketing_plan'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Marketing Strategy:</div>
-                    <div class="field-value">{{ data_get($bid, 'get.marketing_plan') }}</div>
-                </div>
-                @endif
-
-                @php
-                    $reviewLinks = data_get($bid, 'get.reviews_links', []);
-                    if (!is_array($reviewLinks)) { $reviewLinks = (array)$reviewLinks; }
-                    $hasReviewLinks = !empty(array_filter($reviewLinks, fn($rl) => !empty(is_object($rl) ? $rl->url : ($rl['url'] ?? ''))));
-                @endphp
-                @if ($hasReviewLinks)
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Review Links:</div>
-                    @foreach ($reviewLinks as $rl)
-                    @php $rlUrl = is_object($rl) ? $rl->url : ($rl['url'] ?? ''); $rlText = is_object($rl) ? ($rl->text ?? '') : ($rl['text'] ?? ''); @endphp
-                    @if (!empty($rlUrl))
-                    <div class="mb-1">
-                        @php if (!str_starts_with($rlUrl, 'http')) { $rlUrl = 'https://'.$rlUrl; } @endphp
-                        <a href="{{ $rlUrl }}" target="_blank" class="text-primary text-decoration-none"><i class="fa fa-external-link-alt me-1"></i>{{ $rlText ?: $rlUrl }}</a>
-                    </div>
-                    @endif
-                    @endforeach
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.website_link'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Website:</div>
-                    @php $wl = data_get($bid,'get.website_link'); if(!str_starts_with($wl,'http')){$wl='https://'.$wl;} @endphp
-                    <a href="{{ $wl }}" target="_blank" class="text-primary text-decoration-none"><i class="fa fa-globe me-1"></i>Visit Website</a>
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.social_media'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Social Media:</div>
-                    @foreach (data_get($bid, 'get.social_media') as $social)
-                    @php $sa=(array)$social; @endphp
-                    @if (!empty($sa['platform']) && !empty($sa['url']))
-                    <div class="mb-1">
-                        @php if(!str_starts_with($sa['url'],'http')){$sa['url']='https://'.$sa['url'];} @endphp
-                        <a href="{{ $sa['url'] }}" target="_blank" class="text-primary text-decoration-none">
-                            <i class="fab fa-{{ strtolower($sa['platform']) }} me-1"></i>{{ $sa['text'] ?? $sa['platform'] }}
-                        </a>
-                    </div>
-                    @endif
-                    @endforeach
-                </div>
-                @endif
-
-                @if (data_get($bid, 'get.year_licensed') ?? data_get($bid, 'get.licensed'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Year Licensed:</div>
-                    <div class="field-value">{{ data_get($bid, 'get.year_licensed') ?? data_get($bid, 'get.licensed') }}</div>
-                </div>
-                @endif
-            </div>
-
-            {{-- ===== SECTION 2: LANDLORD BROKER COMPENSATION ===== --}}
-            @php
-                $hasCompensation =
-                    data_get($bid, 'get.listing_terms') ||
-                    data_get($bid, 'get.broker_compensation') ||
-                    data_get($bid, 'get.handle_compensation') ||
-                    data_get($bid, 'get.compensation_amount') ||
-                    data_get($bid, 'get.payment_timing') ||
-                    data_get($bid, 'get.early_termination') ||
-                    data_get($bid, 'get.protection_period') ||
-                    data_get($bid, 'get.compensation_new_lease') ||
-                    data_get($bid, 'get.compensation_new_lease_percent');
-            @endphp
-            @if ($hasCompensation)
-            <div class="mb-5">
-                <h6 class="section-header"><i class="fa fa-handshake me-2"></i>Broker Compensation &amp; Agency Agreement Terms</h6>
-
-                {{-- A) Agency Agreement --}}
-                @if (data_get($bid, 'get.listing_terms'))
-                <div class="mb-4">
-                    <h6 class="subsection-heading">A) Agency Agreement</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
-                        @php
-                            $listingTermsVal = data_get($bid, 'get.listing_terms');
-                            $listingTermsDisplay = ($listingTermsVal !== 'Other')
-                                ? $listingTermsVal
-                                : (data_get($bid, 'get.custom_listing_terms') ?: 'Other');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['listing_terms']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Agency Agreement Timeframe:</span> {{ $listingTermsDisplay }}
-                            {!! isset($brokerMismatches['listing_terms']) ? $mismatchBadge : '' !!}
-                        </li>
-                    </ul>
-                </div>
-                @endif
-
-                {{-- B) Landlord Broker Compensation --}}
-                @if (data_get($bid, 'get.broker_compensation'))
-                <div class="mb-4">
-                    <h6 class="subsection-heading">B) Listing Broker Compensation</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
-                        @php
-                            $brokerComp    = data_get($bid, 'get.broker_compensation');
-                            $compPercent   = data_get($bid, 'get.compensation_percent');
-                            $compDisplay   = $brokerComp . ($compPercent ? ' (' . $compPercent . ')' : '');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['broker_compensation']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Broker Compensation:</span> {{ $compDisplay }}
-                            {!! isset($brokerMismatches['broker_compensation']) ? $mismatchBadge : '' !!}
-                        </li>
-                    </ul>
-                </div>
-                @endif
-
-                {{-- C) Tenant's Broker Compensation --}}
-                @if (data_get($bid, 'get.handle_compensation') || data_get($bid, 'get.compensation_amount'))
-                <div class="mb-4">
-                    <h6 class="subsection-heading">C) Tenant's Broker Compensation</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
-                        @if (data_get($bid, 'get.handle_compensation'))
-                        <li class="mb-1" style="{{ isset($brokerMismatches['handle_compensation']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Tenant Broker Compensation Handling:</span> {{ data_get($bid, 'get.handle_compensation') }}
-                            {!! isset($brokerMismatches['handle_compensation']) ? $mismatchBadge : '' !!}
-                        </li>
-                        @endif
-                        @if (data_get($bid, 'get.compensation_amount'))
-                        @php
-                            $compAmt = data_get($bid, 'get.compensation_amount');
-                            $compTenant = data_get($bid, 'get.compensation_tenant_broker');
-                            $compAmtDisplay = $compAmt . ($compTenant ? ' (' . $compTenant . ')' : '');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['compensation_amount']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Tenant Broker Compensation Offered:</span> {{ $compAmtDisplay }}
-                            {!! isset($brokerMismatches['compensation_amount']) ? $mismatchBadge : '' !!}
-                        </li>
-                        @endif
-                    </ul>
-                </div>
-                @endif
-
-                {{-- D) Payment Timing --}}
-                @if (data_get($bid, 'get.payment_timing'))
-                <div class="mb-4">
-                    <h6 class="subsection-heading">D) Payment Timing</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
-                        @php
-                            $paymentTiming = data_get($bid, 'get.payment_timing');
-                            $paymentDays   = data_get($bid, 'get.payment_timing_days');
-                            $payTimingDisplay = $paymentTiming . ($paymentDays ? ' (' . $paymentDays . ')' : '');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['payment_timing']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Payment Timing for Broker Fees:</span> {{ $payTimingDisplay }}
-                            {!! isset($brokerMismatches['payment_timing']) ? $mismatchBadge : '' !!}
-                        </li>
-                    </ul>
-                </div>
-                @endif
-
-                {{-- E) Legal Terms --}}
-                @if (data_get($bid, 'get.early_termination') || data_get($bid, 'get.protection_period'))
-                <div class="mb-4">
-                    <h6 class="subsection-heading">E) Legal Terms</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
-                        @if (data_get($bid, 'get.early_termination'))
-                        @php
-                            $earlyTerm    = data_get($bid, 'get.early_termination');
-                            $earlyTermAmt = data_get($bid, 'get.early_termination_amount');
-                            $earlyDisplay = $earlyTerm . ($earlyTermAmt ? ' (' . $fmtMoney($earlyTermAmt) . ')' : '');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['early_termination']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Early Termination:</span> {{ $earlyDisplay }}
-                            {!! isset($brokerMismatches['early_termination']) ? $mismatchBadge : '' !!}
-                        </li>
-                        @endif
-                        @if (data_get($bid, 'get.protection_period'))
-                        @php
-                            $protPeriod     = data_get($bid, 'get.protection_period');
-                            $protPeriodDays = data_get($bid, 'get.protection_period_days');
-                            $protDisplay    = $protPeriod . ($protPeriodDays ? ' (' . $protPeriodDays . ' days)' : '');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['protection_period']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Protection Period:</span> {{ $protDisplay }}
-                            {!! isset($brokerMismatches['protection_period']) ? $mismatchBadge : '' !!}
-                        </li>
-                        @endif
-                    </ul>
-                </div>
-                @endif
-
-                {{-- F) New Lease Compensation --}}
-                @if (data_get($bid, 'get.compensation_new_lease') || data_get($bid, 'get.compensation_new_lease_percent'))
-                <div class="mb-4">
-                    <h6 class="subsection-heading">F) Renewal / New Lease Compensation</h6>
-                    <ul class="list-unstyled ps-3 mb-0">
-                        @if (data_get($bid, 'get.compensation_new_lease'))
-                        <li class="mb-1" style="{{ isset($brokerMismatches['compensation_new_lease']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Compensation for New Lease / Renewal:</span> {{ data_get($bid, 'get.compensation_new_lease') }}
-                            {!! isset($brokerMismatches['compensation_new_lease']) ? $mismatchBadge : '' !!}
-                        </li>
-                        @endif
-                        @if (data_get($bid, 'get.compensation_new_lease_percent'))
-                        @php
-                            $newLeasePct = data_get($bid, 'get.compensation_new_lease_percent');
-                            $newLeaseAmt = data_get($bid, 'get.compensation_new_lease_amount');
-                            $newLeaseDisplay = $newLeasePct . ($newLeaseAmt ? ' (' . $fmtMoney($newLeaseAmt) . ')' : '');
-                        @endphp
-                        <li class="mb-1" style="{{ isset($brokerMismatches['compensation_new_lease_percent']) ? $mismatchStyle : '' }}">
-                            <span class="fw-semibold">Compensation Amount:</span> {{ $newLeaseDisplay }}
-                            {!! isset($brokerMismatches['compensation_new_lease_percent']) ? $mismatchBadge : '' !!}
-                        </li>
-                        @endif
-                    </ul>
-                </div>
-                @endif
-            </div>
-            @endif
-
-            {{-- ===== ADDITIONAL DETAILS ===== --}}
-            @if (data_get($bid, 'get.additional_details'))
-            <div class="mb-5">
-                <h6 class="section-header"><i class="fa fa-info-circle me-2"></i>Additional Details</h6>
-                <div class="field-value" style="font-style:italic;">{{ data_get($bid, 'get.additional_details') }}</div>
-            </div>
-            @endif
-
-            {{-- ===== SECTION 3: SERVICES ===== --}}
-            <div class="mb-5">
-                <h6 class="section-header"><i class="fa fa-list-check me-2"></i>Offered Services</h6>
-                @if (count($servicesMatchedList) === 0 && count($servicesAdded) === 0 && count($servicesMissing) === 0)
-                <p class="text-muted">No services data available.</p>
-                @else
-                <div class="row">
-                    @if (count($servicesMatchedList) > 0)
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 rounded" style="background:#e6f7e6;border:1px solid #c3e6c3;">
-                            <h6 class="mb-2" style="color:#28a745;"><i class="fas fa-check-circle me-1"></i>Matched ({{ count($servicesMatchedList) }})</h6>
-                            <ul class="services-list mb-0">
-                                @foreach($servicesMatchedList as $svc)
-                                <li class="service-matched"><i class="fas fa-check me-1"></i>{{ ucfirst($svc) }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                    @endif
-                    @if (count($servicesAdded) > 0)
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 rounded" style="background:#e6f7ff;border:1px solid #91d5ff;">
-                            <h6 class="mb-2" style="color:#17a2b8;"><i class="fas fa-plus-circle me-1"></i>Extra Added ({{ count($servicesAdded) }})</h6>
-                            <ul class="services-list mb-0">
-                                @foreach($servicesAdded as $svc)
-                                <li class="service-extra"><i class="fas fa-plus me-1"></i>{{ ucfirst($svc) }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                    @endif
-                    @if (count($servicesMissing) > 0)
-                    <div class="col-md-4 mb-3">
-                        <div class="p-3 rounded" style="background:#fff2e8;border:1px solid #ffbb96;">
-                            <h6 class="mb-2" style="color:#dc3545;"><i class="fas fa-minus-circle me-1"></i>Not Offered ({{ count($servicesMissing) }})</h6>
-                            <ul class="services-list mb-0">
-                                @foreach($servicesMissing as $svc)
-                                <li class="service-missing"><i class="fas fa-times me-1"></i>{{ ucfirst($svc) }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                    @endif
-                </div>
-                @endif
-            </div>
-
-            {{-- ===== PRESENTATION MATERIALS ===== --}}
-            @if (data_get($bid, 'get.presentation_link') || data_get($bid, 'get.video_upload') || data_get($bid, 'get.business_card_link') || data_get($bid, 'get.business_card'))
-            <div class="mb-5">
-                <h6 class="section-header"><i class="fa fa-photo-video me-2"></i>Agent Presentation &amp; Promotional Materials</h6>
-                @if (data_get($bid, 'get.presentation_link'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Video Presentation:</div>
-                    @php $pl=data_get($bid,'get.presentation_link'); if(!str_starts_with($pl,'http')){$pl='https://'.$pl;} @endphp
-                    <a href="{{ $pl }}" target="_blank" class="text-primary text-decoration-none"><i class="fa fa-external-link-alt me-1"></i>Watch Presentation</a>
-                </div>
-                @endif
-                @if (data_get($bid, 'get.business_card_link'))
-                <div class="mb-3">
-                    <div class="field-label" style="color:#049399;">Business Card:</div>
-                    @php $bcl=data_get($bid,'get.business_card_link'); if(!str_starts_with($bcl,'http')){$bcl='https://'.$bcl;} @endphp
-                    <a href="{{ $bcl }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fa fa-external-link-alt me-1"></i>View Business Card</a>
-                </div>
-                @endif
-            </div>
-            @endif
-
-        </div>{{-- end bid-preview-body --}}
-
-        {{-- ===== ACTION BUTTONS (listing owner only, active bids only) ===== --}}
-        @if ($isListingOwner && $bidStatus === 'Active')
-        <div class="action-buttons d-flex gap-2 flex-wrap">
-            <form action="{{ route('landlord.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
-                @csrf
-                <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                <button type="submit" class="btn" style="background:#28a745;color:#fff;border:none;" onclick="return confirm('Accept this bid? This will hire the agent.')">
-                    <i class="fas fa-check me-1"></i>Accept Bid
-                </button>
-            </form>
-            <a href="{{ route('landlord.agent.auction.counter-bid', [$auction->id, $bid->id]) }}" class="btn" style="background:#ffc107;color:#000;border:none;">
-                <i class="fas fa-exchange-alt me-1"></i>Counter Bid
-            </a>
-            <form action="{{ route('landlord.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
-                @csrf
-                <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                <button type="submit" class="btn" style="background:#dc3545;color:#fff;border:none;" onclick="return confirm('Reject this bid?')">
-                    <i class="fas fa-times me-1"></i>Reject Bid
-                </button>
-            </form>
+        {{-- ===== BODY — full modal content via shared partial ===== --}}
+        <div class="bid-preview-body" style="padding: 0;">
+            @include('partials.bid_detail_body.landlord')
         </div>
-        @elseif ($isListingOwner && $bidStatus === 'Countered')
-        <div class="action-buttons d-flex gap-2">
-            <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', $bid->id) }}" class="btn" style="background:#fff;border:2px solid #049399;color:#049399;">
-                <i class="fas fa-eye me-1"></i>View Counter Terms
-            </a>
-        </div>
-        @elseif ($isListingOwner && $bidStatus === 'Accepted')
-        <div class="action-buttons">
-            <a href="{{ route('landlord.agent.auction.view', $auction->id) }}" class="btn" style="background:#28a745;color:#fff;border:none;">
-                <i class="fas fa-file-contract me-1"></i>View Summary
-            </a>
-        </div>
-        @endif
 
-    </div>{{-- end bid-preview-card --}}
+        {{-- ===== ACTIONS (mirrors modal-footer) ===== --}}
+        <div style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px; display: flex; flex-wrap: wrap; gap: 12px;">
+
+            <div class="w-100 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
+                <i class="fa fa-shield-alt me-2"></i>
+                <strong>Confidential:</strong> This information is private and only visible to you.
+            </div>
+
+            @include('hire_landlord_agent.partials.bid_action_row', [
+                'bid'                  => $bid,
+                'auction'              => $auction,
+                'isOwner'              => $mfIsOwnerL,
+                'state'                => $mfStateL,
+                'isSold'               => $isSold,
+                'isExpired'            => $isExpired,
+                'isTraditionalListing' => $isTraditionalListing,
+                'latestOwnerCounter'   => $latestOwnerCounter,
+                'ownerFirst'           => $mfOwnerFirstL,
+                'ownerLast'            => $mfOwnerLastL,
+                'agentFirst'           => $mfAgentFirstL,
+                'agentLast'            => $mfAgentLastL,
+            ])
+
+            <div class="w-100 d-flex justify-content-end mt-2">
+                <a href="{{ route('landlord.agent.auction.view', $auction->id) }}"
+                   class="btn btn-secondary"
+                   style="background: #6c757d; border: none; border-radius: 6px; padding: 8px 20px;">
+                    Back to Listing
+                </a>
+            </div>
+        </div>
+
+    </div>
 </div>
 @endsection
