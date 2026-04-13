@@ -1,0 +1,283 @@
+**Task: Rebuild the 4 user-side “Hire Agent” listing pages into grouped bid cards by listing, reusing the existing “My Bids” card style — without touching backend bid logic**
+
+## Goal
+
+The current user-side listing pages still feel wrong because they are **listing-first tables**, but this product is really a **bid review / decision platform**.
+
+We need to rebuild these 4 user-side pages so they become:
+
+> **Bids on My Listings**, grouped by listing
+
+instead of generic listing-management tables.
+
+## Apply to these 4 user-side pages:
+
+* **Hire Tenant’s Agent**
+* **Hire Landlord’s Agent**
+* **Hire Buyer’s Agent**
+* **Hire Seller’s Agent**
+
+These are the logged-in user’s role-specific pages under **My Listings**.
+
+---
+
+## Critical design direction
+
+Use the visual structure and interaction pattern of the existing **My Bids** page as the UI reference.
+
+### Meaning:
+
+For each listing:
+
+* show the listing info at the top
+* then show the **agent bid cards directly underneath**
+* each bid card should have the same general look/feel/action area as the current My Bids bid cards
+
+This page should become a grouped view like:
+
+### Listing block
+
+* Listing title
+* location
+* posted/created date
+* listing status
+* number of bids
+
+### Under that listing
+
+* one bid card per agent bid
+* same style as My Bids page
+* actions directly on each bid card:
+
+  * **View Bid**
+  * **Accept**
+  * **Counter**
+  * **Reject**
+
+If a listing has no bids:
+
+* show a clean empty state under that listing like:
+
+  * “No bids yet”
+
+---
+
+## Hard safeguards
+
+1. **Do not touch listing creation logic**
+2. **Do not touch listing edit logic**
+3. **Do not touch bid creation/edit logic**
+4. **Do not touch counter logic**
+5. **Do not touch accept/reject business logic**
+6. **Do not touch accepted summary logic**
+7. **Do not touch acknowledgement/signature logic**
+8. **Do not change routes unless absolutely necessary for display linking**
+9. **Do not change models/database schema**
+10. **This is a display-layer rebuild only**
+11. **Read-only audit first, then implement**
+12. **Reuse existing bid-card UI patterns instead of inventing a new workflow**
+
+---
+
+# PHASE 1 — READ-ONLY AUDIT FIRST
+
+**Do not edit yet.**
+
+I need a full audit of the 4 role-specific user-side listing pages and the existing My Bids page.
+
+## A. Identify source files
+
+Report:
+
+1. exact file for each of the 4 role list pages
+2. exact file/partial used for the current **My Bids** bid-card layout
+3. whether there is a reusable partial/component for bid cards that can be safely reused
+4. whether each role already has all the data needed on the list page to render bid cards, or if read-only controller/view data additions are needed
+
+## B. Data availability audit
+
+For each of the 4 role list pages, report:
+
+1. how listings are currently loaded
+2. how bids tied to those listings can be loaded safely
+3. what accepted/pending/rejected/counter state fields are available
+4. what existing routes/pages the current action buttons already use for:
+
+   * View Bid
+   * Accept
+   * Counter
+   * Reject
+
+## C. Reuse audit
+
+Report whether the current **My Bids** card structure can be reused directly or partially for:
+
+* Tenant listings page
+* Landlord listings page
+* Buyer listings page
+* Seller listings page
+
+If direct reuse is not safe, explain the smallest safe adaptation.
+
+## D. Implementation recommendation
+
+Before coding, recommend the safest rebuild approach:
+
+* reuse exact partial
+* create one shared user-side bid-card partial
+* or adapt each role page separately while copying the My Bids visual structure
+
+**Do not code before giving this report.**
+
+---
+
+# PHASE 2 — IMPLEMENT THE REBUILD
+
+After the audit, rebuild the 4 role pages as grouped listing blocks with bid cards underneath.
+
+## Required final structure on all 4 pages
+
+### Per listing group:
+
+1. Listing header row/card with:
+
+   * title
+   * city/state or location
+   * created/posted date
+   * listing status
+   * bid count
+
+2. Under that, render:
+
+   * all bids for that listing as stacked bid cards
+
+3. If no bids:
+
+   * show a clean “No bids yet” state
+
+---
+
+## Required bid card content
+
+Use the My Bids pattern as closely as possible.
+
+Each bid card should show:
+
+* agent name
+* submitted date
+* broker terms score/summary if already available
+* services score/summary if already available
+* status badge if already available
+* any existing match % or compatibility score already supported
+
+### Required actions on each bid card:
+
+* **View Bid**
+* **Accept**
+* **Counter**
+* **Reject**
+
+These must use the existing working role-specific routes/business logic already in the system.
+
+Do not reimplement workflow logic.
+
+---
+
+## Remove from these 4 pages
+
+Remove the current table-first listing-management pattern:
+
+* generic listing table as primary UI
+* generic “Action” column/button
+* “Counter Status” column
+* any old “Edit Counter Terms” / “View Counter Terms” controls from the listing row level
+
+Counter-related actions should live at the **bid card level**, not as a separate main table concept.
+
+---
+
+## Important UX rule
+
+These pages should now be:
+
+> **Bids on My Listings**
+
+not:
+
+> **Listing admin tables**
+
+That means:
+
+* agent bid cards must be the central visual element
+* listing exists as the grouping header
+* decisions happen from the bid cards
+
+---
+
+## Scope boundaries
+
+### Allowed
+
+* role list page views
+* safe read-only controller/query additions to load grouped listings + their bids
+* shared partial creation if helpful
+* UI restructuring
+* route wiring to already-existing working endpoints
+
+### Not allowed
+
+* changes to bid submission flow
+* changes to counter creation flow
+* changes to acceptance/rejection logic
+* changes to summaries
+* changes to signatures
+* changes to listing forms
+
+---
+
+# QA AFTER REBUILD
+
+After implementing, verify for all 4 role pages:
+
+## Tenant page
+
+* listings render as grouped sections
+* bids show as cards under each listing
+* View Bid works
+* Accept/Counter/Reject work
+* empty-state listings show correctly
+
+## Landlord page
+
+* same checks
+
+## Buyer page
+
+* same checks
+
+## Seller page
+
+* same checks
+
+## Cross-role
+
+* no page still uses the old table as the primary UI
+* no route regressions
+* no logic regressions
+* no missing bid actions
+* no duplicated bid cards
+* no listings missing their bids
+
+---
+
+# OUTPUT REQUIRED AFTER CODING
+
+1. exact files changed
+2. exact new partials/components created
+3. how My Bids UI was reused/adapted
+4. how each of the 4 pages now groups listings with bid cards
+5. confirmation no core listing/bid/counter/summary logic was modified
+
+## Stop rule
+
+If building grouped bid cards would require changing business logic or controller behavior beyond safe read-only data loading, stop and report the blocker before proceeding.

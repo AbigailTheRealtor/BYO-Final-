@@ -370,9 +370,9 @@ class BuyerAgentAuctionController extends Controller
     {
         $page_data['title'] = 'Hire Buyer\'s Agent Auctions';
         $page_data['type'] = $type = $request->type ?? "2";
-        $pendingApprovalAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => false, 'is_draft' => false]);
-        $liveAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => false, 'is_draft' => false]);
-        $soldAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => true, 'is_draft' => false]);
+        $pendingApprovalAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => false, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
+        $liveAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => false, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
+        $soldAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => true, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
 
         if ($type == "1") {
             $auctions = $pendingApprovalAuctions->get();

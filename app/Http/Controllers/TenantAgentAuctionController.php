@@ -246,9 +246,9 @@ class TenantAgentAuctionController extends Controller
 
         $page_data['title'] = 'Hire Tenant\'s Agent Auctions';
         $page_data['type'] = $type = $request->type ?? "2";
-        $pendingApprovalAuctions = TenantAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => false, 'is_draft' => false]);
-        $liveAuctions = TenantAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => false, 'is_draft' => false]);
-        $soldAuctions = TenantAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => true, 'is_draft' => false]);
+        $pendingApprovalAuctions = TenantAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => false, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
+        $liveAuctions = TenantAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => false, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
+        $soldAuctions = TenantAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => true, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
         if ($type == "1") {
             $auctions = $pendingApprovalAuctions->get();
         } else if ($type == "2") {

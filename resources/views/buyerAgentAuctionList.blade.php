@@ -1,591 +1,304 @@
 @extends('layouts.main')
 @push('styles')
-
-  <style>
-    .modal {
-      --bs-modal-width: 70%;
-    }
-
-    .modal-content {
-      height: 100vh;
-    }
-
+<style>
     .services ul {
-      --icon-size: 1em;
-      --gutter: .5em;
-      padding: 0 0 0 calc(var(--icon-size) + 2em);
+        --icon-size: 1em;
+        --gutter: .5em;
+        padding: 0 0 0 calc(var(--icon-size) + 2em);
     }
-
     .services ul li {
-      padding-left: var(--gutter);
-      color: #34465c;
+        padding-left: var(--gutter);
+        color: #34465c;
     }
-
     .services ul li::marker {
-      content: "\f101";
-      /* FontAwesome Unicode */
-      font-family: FontAwesome;
-      font-size: var(--icon-size);
-      /* color: #006e9f; */
-      color: #11b7cf;
+        content: "\f101";
+        font-family: FontAwesome;
+        font-size: var(--icon-size);
+        color: #11b7cf;
     }
-
-    :root {
-      --switches-bg-color: #169499;
-      --switches-label-color: white;
-      --switch-bg-color: white;
-      --switch-text-color: #169499;
-    }
-
     body {
-      font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
     }
-
-
-
-    /* container for all of the switch elements
-                                  - adjust "width" to fit the content accordingly
-                              */
-    .switches-container {
-      width: 16rem;
-      position: relative;
-      display: flex;
-      padding: 0;
-      position: relative;
-      background: var(--switches-bg-color);
-      line-height: 3rem;
-      border-radius: 3rem;
-      margin-left: auto;
-      margin-right: auto;
+    .listing-group-card {
+        border: 2px solid #049399;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
     }
-
-    /* input (radio) for toggling. hidden - use labels for clicking on */
-    .switches-container input {
-      visibility: hidden;
-      position: absolute;
-      top: 0;
+    .listing-group-header {
+        background: #049399;
+        color: #fff;
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
     }
-
-    /* labels for the input (radio) boxes - something to click on */
-    .switches-container label {
-      width: 50%;
-      padding: 0;
-      margin: 0;
-      text-align: center;
-      cursor: pointer;
-      color: var(--switches-label-color);
+    .listing-group-actions {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 8px 16px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
     }
-
-    /* switch highlighters wrapper (sliding left / right)
-                                  - need wrapper to enable the even margins around the highlight box
-                              */
-    .switch-wrapper {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 50%;
-      padding: 0.15rem;
-      z-index: 3;
-      transition: transform .5s cubic-bezier(.77, 0, .175, 1);
-      /* transition: transform 1s; */
+    .bid-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 12px;
     }
-
-    /* switch box highlighter */
-    .switch {
-      border-radius: 3rem;
-      background: var(--switch-bg-color);
-      height: 100%;
+    .bid-card:last-child {
+        margin-bottom: 0;
     }
-
-    /* switch box labels
-                                  - default setup
-                                  - toggle afterwards based on radio:checked status
-                              */
-    .switch div {
-      width: 100%;
-      text-align: center;
-      opacity: 0;
-      display: block;
-      color: var(--switch-text-color);
-      transition: opacity .2s cubic-bezier(.77, 0, .175, 1) .125s;
-      will-change: opacity;
-      position: absolute;
-      top: 0;
-      left: 0;
+    .bids-area {
+        padding: 16px;
+        background: #fff;
     }
-
-    /* slide the switch box from right to left */
-    .switches-container input:nth-of-type(1):checked~.switch-wrapper {
-      transform: translateX(0%);
+    .no-bids-placeholder {
+        text-align: center;
+        padding: 24px 16px;
+        color: #6c757d;
     }
-
-    /* slide the switch box from left to right */
-    .switches-container input:nth-of-type(2):checked~.switch-wrapper {
-      transform: translateX(100%);
-    }
-
-    /* toggle the switch box labels - first checkbox:checked - show first switch div */
-    .switches-container input:nth-of-type(1):checked~.switch-wrapper .switch div:nth-of-type(1) {
-      opacity: 1;
-    }
-
-    /* toggle the switch box labels - second checkbox:checked - show second switch div */
-    .switches-container input:nth-of-type(2):checked~.switch-wrapper .switch div:nth-of-type(2) {
-      opacity: 1;
-    }
-  </style>
+</style>
 @endpush
+
 @section('content')
-  <div class="mainDashboard">
+<div class="mainDashboard">
     <div class="container">
-      @include('layouts.partials.dashboard_user_section')
-      <div class="dashboardContentDetails mt-3">
-        <div class="card">
-          <div class="row">
-            @include('layouts.partials.sidenav')
-            <div class="rightCol col-sm-12 col-md-9 col-lg-9">
-              <div class="container mt-5 myAuctions">
-                <h1>Hire Buyer's Agent Auctions</h1>
-                <!-- Section 1  -->
-                <select class="form-select mt-4 mb-3 w-25 auction-type">
-                  <option value="2" {{ $type == '2' ? 'selected' : '' }}>Live ({{ $liveCount }})</option>
-                  <option value="1" {{ $type == '1' ? 'selected' : '' }}>Pending Approval
-                    ({{ $pendingApprovalCount }})
-                  </option>
-                  <option value="3" {{ $type == '3' ? 'selected' : '' }}>Awarded ({{ $soldCount }})</option>
-                </select>
-                <!-- End  -->
+        @include('layouts.partials.dashboard_user_section')
+        <div class="dashboardContentDetails mt-3">
+            <div class="card">
+                <div class="row">
+                    @include('layouts.partials.sidenav')
+                    <div class="rightCol col-sm-12 col-md-9 col-lg-9">
+                        <div class="container mt-5 myAuctions">
+                            <h1>Hire Buyer's Agent Auctions</h1>
 
+                            <select class="form-select mt-4 mb-4 w-25 auction-type">
+                                <option value="2" {{ $type == '2' ? 'selected' : '' }}>Live ({{ $liveCount }})</option>
+                                <option value="1" {{ $type == '1' ? 'selected' : '' }}>Pending Approval ({{ $pendingApprovalCount }})</option>
+                                <option value="3" {{ $type == '3' ? 'selected' : '' }}>Awarded ({{ $soldCount }})</option>
+                            </select>
 
-
-
-
-                <table class="table table-hover data-table" style="border-collapse:separate;border-spacing:0;">
-                  <thead>
-                    <tr style="background:#049399;color:#fff;">
-                      <th style="border:none;">Listing</th>
-                      <th style="border:none;">Posted</th>
-                      <th class="text-center" style="border:none;">Bids</th>
-                      <th class="text-center" style="border:none;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @foreach ($auctions as $auction)
-                      @php
-                        // $string = mb_strimwidth($string, 0, 100);
-                        // $description = mb_strimwidth(@$auction->description, 0, 90, '...');
-                      @endphp
-                      
-                      <tr>
-                        <td class="align-middle">
-                          <a href="{{ route('buyer.view-auction', @$auction->id) }}" class="fw-semibold text-decoration-none" style="color:#049399;">{{ @$auction->title }}</a>
-                          <div class="text-muted mt-1" style="font-size:12px;">
-                            {{ $auction->get->cities[0] ?? '' }}{{ ($auction->get->cities[0] ?? '') && (@$auction->get->state) ? ', ' : '' }}{{ @$auction->get->state }}
-                          </div>
-                        </td>
-                        <td class="text-nowrap align-middle" style="font-size:13px;">{{ Carbon\Carbon::parse(@$auction->created_at)->format('M d, Y') }}</td>
-                        <td class="text-center align-middle">
-                          <span class="badge rounded-pill" style="background:#049399;color:#fff;font-size:13px;min-width:32px;">{{ @$auction->bids->count() }}</span>
-                        </td>
-                        <td class="align-middle" style="min-width:170px;">
-                          <a href="{{ route('buyer.view-auction', @$auction->id) }}" class="btn btn-sm d-block mb-1" style="background:#049399;color:#fff;">Review Bids</a>
-                          @if (!@$auction->is_approved)
-                            <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $auction->get->user_type]) }}" class="btn btn-sm btn-outline-secondary d-block mb-1">Edit Listing</a>
-                          @endif
-                        </td>
-                      </tr>
-                      <!-- Modal -->
-
-                      @php $counter = $counter ?? null; @endphp
-                      {{-- Counter terms modal (trigger removed — counter terms are now managed per-bid in auction detail) --}}
-                      @if($counter)
-                      <!-- Modal -->
-                                                <div class="modal fade" id="modal-{{ @$auction->id }}" tabindex="-1"
-                                                    aria-labelledby="modalLabel-{{ @$auction->id }}" aria-hidden="true">
-                                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                                                        <div class="modal-content">
-
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title"
-                                                                    id="modalLabel-{{ @$auction->id }}">
-                                                                    <i class="fa-solid fa-file-signature me-2"></i>Sellers's
-                                                                    Countered Terms
-                                                                </h5>
-                                                                <button type="button" class="btn-close"
-                                                                    data-bs-dismiss="modal" aria-label="Close">&times;</button>
-                                                            </div>
-
-                                                            <div class="modal-body">
-
-                                                                {{-- ===== Broker Compensation ===== --}}
-
-
-                                                                        <!-- Broker Compensation Section -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Broker Compensation</h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <!-- Commission Structure -->
-            @if (@$counter->get->commission_structure != null)
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Buyer's Broker Commission Structure</div>
-                    <span class="badge bg-secondary-subtle text-dark px-3 py-2">
-                        {{ $counter->get->commission_structure ?? '' }}
-                    </span>
-                </div>
-            @endif
-
-            <!-- Purchase Fee -->
-            @if (@$counter->get->purchase_fee_type != null)
-                <div class="col-12">
-                    <div class="text-muted small mb-1">Buyer's Broker Purchase Fee</div>
-                    <span class="badge bg-primary-subtle text-dark px-3 py-2 mb-2">
-                        {{ $counter->get->purchase_fee_type ?? '' }}
-                    </span>
-
-                    <!-- Purchase Fee Details -->
-                    <div class="mt-2">
-                        @if (@$counter->get->purchase_fee_type === 'Flat Fee' && @$counter->get->purchase_fee_flat != null)
-                            <div class="fw-semibold">${{ $counter->get->purchase_fee_flat }}</div>
-                        @elseif(@$counter->get->purchase_fee_type === 'Percentage of the Total Purchase Price' && @$counter->get->purchase_fee_percentage != null)
-                            <div class="fw-semibold">{{ $counter->get->purchase_fee_percentage }}%</div>
-                        @elseif(@$counter->get->purchase_fee_type === 'Percentage of the Total Purchase Price + Flat Fee')
-                            @if (@$counter->get->purchase_fee_percentage_combo || @$counter->get->purchase_fee_flat_combo)
-                                <div class="fw-semibold">
-                                    {{ $counter->get->purchase_fee_percentage_combo }}% + ${{ $counter->get->purchase_fee_flat_combo }}
+                            @if($auctions->isEmpty())
+                                <div class="text-center py-5">
+                                    <i class="fas fa-clipboard-list fa-3x text-muted mb-3"></i>
+                                    <h5 class="text-muted">No listings found</h5>
+                                    <p class="text-muted">You have no listings in this category yet.</p>
                                 </div>
-                            @endif
-                        @elseif(@$counter->get->purchase_fee_type === 'other' && @$counter->get->purchase_fee_other != null)
-                            <div class="fw-semibold">{{ $counter->get->purchase_fee_other }}</div>
-                        @endif
-                    </div>
-                </div>
-            @endif
+                            @else
+                                @foreach($auctions as $auction)
+                                <div class="listing-group-card" x-data="{ open: true }">
 
-            <!-- Lease Agreement Interest -->
-            @if (@$counter->get->interested_lease_option != null)
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Interested in Lease Agreement</div>
-                    <span class="badge {{ @$counter->get->interested_lease_option === 'Yes' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-dark' }} px-3 py-2">
-                        {{ $counter->get->interested_lease_option ?? '' }}
-                    </span>
-                </div>
-            @endif
+                                    {{-- Listing header --}}
+                                    <div class="listing-group-header" @click="open = !open">
+                                        <div>
+                                            <div class="fw-bold" style="font-size: 1rem;">{{ $auction->title }}</div>
+                                            <small style="opacity: 0.88;">
+                                                {{ $auction->get->cities[0] ?? '' }}{{ ($auction->get->cities[0] ?? '') && ($auction->get->state ?? '') ? ', ' : '' }}{{ $auction->get->state ?? '' }}
+                                            </small>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="text-end">
+                                                <div style="font-size: 12px; opacity: 0.85;">{{ \Carbon\Carbon::parse($auction->created_at)->format('M d, Y') }}</div>
+                                                <span class="badge" style="background: rgba(255,255,255,0.25); color: #fff; font-size: 12px;">
+                                                    {{ $auction->bids->count() }} Bid{{ $auction->bids->count() != 1 ? 's' : '' }}
+                                                </span>
+                                            </div>
+                                            <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                        </div>
+                                    </div>
 
-            <!-- Lease Option Agreement Interest -->
-            @if (@$counter->get->interested_lease_option_agreement != null)
-                <div class="col-md-6">
-                    <div class="text-muted small mb-1">Interested in Lease-Option Agreement</div>
-                    <span class="badge {{ @$counter->get->interested_lease_option_agreement === 'Yes' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-dark' }} px-3 py-2">
-                        {{ $counter->get->interested_lease_option_agreement ?? '' }}
-                    </span>
-                </div>
-            @endif
-        </div>
+                                    {{-- Listing action buttons --}}
+                                    <div class="listing-group-actions">
+                                        <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn btn-sm" style="background:#049399;color:#fff;border:none;">
+                                            <i class="fas fa-eye me-1"></i>View Listing
+                                        </a>
+                                        @if(!$auction->is_approved)
+                                        <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $auction->get->user_type ?? '']) }}" class="btn btn-sm" style="border:1px solid #6c757d;color:#6c757d;background:transparent;">
+                                            <i class="fas fa-pencil-alt me-1"></i>Edit Listing
+                                        </a>
+                                        @endif
+                                    </div>
 
-        <!-- Lease Fee Details (Only show if interested_lease_option is 'Yes') -->
-        @if (@$counter->get->interested_lease_option === 'Yes' && @$counter->get->lease_fee_type != null)
-            <div class="mt-4 pt-3 border-top">
-                <div class="text-muted small mb-2">Buyer's Broker Lease Fee</div>
-                <span class="badge bg-info-subtle text-dark px-3 py-2 mb-3">
-                    {{ $counter->get->lease_fee_type ?? '' }}
-                </span>
-
-                <!-- Lease Fee details by type -->
-                <div class="row g-2">
-                    @if (@$counter->get->lease_fee_type === 'flat' && @$counter->get->lease_fee_flat != null)
-                        <div class="col-12">
-                            <div class="fw-semibold">${{ $counter->get->lease_fee_flat }}</div>
-                        </div>
-                    @elseif(@$counter->get->lease_fee_type === 'Percentage of the Gross Lease Value' && @$counter->get->lease_fee_percentage != null)
-                        <div class="col-12">
-                            <div class="fw-semibold">{{ $counter->get->lease_fee_percentage }}% of Gross Lease Value</div>
-                        </div>
-                    @elseif(@$counter->get->lease_fee_type === 'Percentage of Monthly Rent' && @$counter->get->lease_fee_percentage_monthly_rent != null)
-                        <div class="col-12">
-                            <div class="fw-semibold">
-                                {{ $counter->get->lease_fee_percentage_monthly_rent }}% of Monthly Rent
-                                @if (@$counter->get->lease_fee_percentage_monthly_number)
-                                    for {{ $counter->get->lease_fee_percentage_monthly_number }} months
-                                @endif
-                            </div>
-                        </div>
-                    @elseif(@$counter->get->lease_fee_type === 'Flat Fee + Percentage of the Gross Lease Value')
-                        @if (@$counter->get->lease_fee_flat_combo || @$counter->get->lease_fee_percentage_combo)
-                            <div class="col-12">
-                                <div class="fw-semibold">
-                                    ${{ $counter->get->lease_fee_flat_combo }} + {{ $counter->get->lease_fee_percentage_combo }}% of Gross Lease Value
-                                </div>
-                            </div>
-                        @endif
-                    @elseif(@$counter->get->lease_fee_type === 'Percentage of the Net Aggregate Rent' && @$counter->get->lease_fee_percentage_net != null)
-                        <div class="col-12">
-                            <div class="fw-semibold">{{ $counter->get->lease_fee_percentage_net }}% of Net Aggregate Rent</div>
-                        </div>
-                    @elseif(@$counter->get->lease_fee_type === 'Flat Fee + Percentage of the Net Aggregate Rent')
-                        @if (@$counter->get->lease_fee_flat_combo_net || @$counter->get->lease_fee_percentage_combo_net)
-                            <div class="col-12">
-                                <div class="fw-semibold">
-                                    ${{ $counter->get->lease_fee_flat_combo_net }} + {{ $counter->get->lease_fee_percentage_combo_net }}% of Net Aggregate Rent
-                                </div>
-                            </div>
-                        @endif
-                    @elseif(@$counter->get->lease_fee_type === 'other' && @$counter->get->lease_fee_other != null)
-                        <div class="col-12">
-                            <div class="fw-semibold">{{ $counter->get->lease_fee_other }}</div>
-                        </div>
-                    @endif
-                </div>
-            </div>
-        @endif
-
-        <!-- Lease-Option Agreement Details (Only show if interested_lease_option_agreement is 'Yes') -->
-        @if (@$counter->get->interested_lease_option_agreement === 'Yes')
-            <div class="mt-4 pt-3 border-top">
-                <h6 class="text-muted mb-3">Lease-Option Agreement Compensation</h6>
-
-                <!-- Compensation for Creating Lease-Option Agreement -->
-                @if (@$counter->get->lease_value)
-                    <div class="row g-2 mb-2">
-                        <div class="col-md-6">
-                            <div class="text-muted small">For Creating Agreement</div>
-                            <div class="fw-semibold">
-                                {{ $counter->get->lease_value }}{{ @$counter->get->lease_type === 'percent' ? '%' : '$' }}
-                            </div>
-                        </div>
-                    </div>
-                @endif
-
-                <!-- Compensation if Purchase Option is Exercised -->
-                @if (@$counter->get->purchase_value)
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <div class="text-muted small">If Option Exercised</div>
-                            <div class="fw-semibold">
-                                {{ $counter->get->purchase_value }}{{ @$counter->get->purchase_type === 'percent' ? '%' : '$' }}
-                            </div>
-                        </div>
-                    </div>
-                @endif
-            </div>
-        @endif
-    </div>
-</div>
-
-<!-- Agreement Settings Section -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-light">
-        <h5 class="mb-0"><i class="fa-solid fa-shield-halved me-2"></i>Agreement Settings</h5>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <!-- Protection Period -->
-            @if (@$counter->get->protection_period != null)
-                <div class="col-md-6">
-                    <div class="text-muted small">Protection Period (Days)</div>
-                    <div class="fw-semibold">
-                        {{ $counter->get->protection_period ?? '' }}
-                    </div>
-                </div>
-            @endif
-
-            <!-- Early Termination Fee -->
-            @if (@$counter->get->early_termination_fee_option != null)
-                <div class="col-md-6">
-                    <div class="text-muted small">Early Termination Fee</div>
-                    <div>
-                        <span class="badge {{ @$counter->get->early_termination_fee_option === 'yes' ? 'bg-danger-subtle text-danger' : 'bg-secondary-subtle text-dark' }} px-3 py-2">
-                            {{ @$counter->get->early_termination_fee_option === 'yes' ? 'Yes' : 'No' }}
-                        </span>
-                    </div>
-                </div>
-            @endif
-
-            @if (@$counter->get->early_termination_fee_option === 'yes' && @$counter->get->early_termination_fee_amount != null)
-                <div class="col-12">
-                    <div class="text-muted small">Early Termination Fee Amount</div>
-                    <div class="fw-semibold">
-                        ${{ $counter->get->early_termination_fee_amount }}
-                    </div>
-                </div>
-            @endif
-
-            <!-- Retainer Fee -->
-            @if (@$counter->get->retainer_fee_option != null)
-                <div class="col-md-6">
-                    <div class="text-muted small">Retainer Fee</div>
-                    <div>
-                        <span class="badge {{ @$counter->get->retainer_fee_option === 'yes' ? 'bg-primary-subtle text-primary' : 'bg-secondary-subtle text-dark' }} px-3 py-2">
-                            {{ @$counter->get->retainer_fee_option === 'yes' ? 'Yes' : 'No' }}
-                        </span>
-                    </div>
-                </div>
-            @endif
-
-            @if (@$counter->get->retainer_fee_option === 'yes' && @$counter->get->retainer_fee_amount != null)
-                <div class="col-md-6">
-                    <div class="text-muted small">Retainer Fee Amount</div>
-                    <div class="fw-semibold">
-                        ${{ $counter->get->retainer_fee_amount ?? '' }}
-                    </div>
-                </div>
-            @endif
-
-            @if (@$counter->get->retainer_fee_option === 'yes' && @$counter->get->retainer_fee_application != null)
-                <div class="col-12">
-                    <div class="text-muted small">Retainer Fee Application</div>
-                    <div class="fw-semibold">
-                        {{ $counter->get->retainer_fee_application ?? '' }}
-                    </div>
-                </div>
-            @endif
-
-            <!-- Agency Agreement Timeframe -->
-            @if (@$counter->get->agency_agreement_timeframe != null)
-                <div class="col-md-6">
-                    <div class="text-muted small">Buyer Agency Agreement Timeframe</div>
-                    <div class="fw-semibold">
-                        {{ $counter->get->agency_agreement_timeframe ?? '' }}
-                    </div>
-                </div>
-            @endif
-
-            @if (@$counter->get->agency_agreement_timeframe === 'custom' && @$counter->get->agency_agreement_custom != null)
-                <div class="col-md-6">
-                    <div class="text-muted small">Custom Timeframe</div>
-                    <div class="fw-semibold">
-                        {{ $counter->get->agency_agreement_custom }}
-                    </div>
-                </div>
-            @endif
-
-            <!-- Brokerage Relationship -->
-            @if (@$counter->get->brokerage_relationship != null)
-                <div class="col-12">
-                    <div class="text-muted small">Acceptable Brokerage Relationship</div>
-                    <div class="fw-semibold">
-                        {{ $counter->get->brokerage_relationship ?? '' }}
-                    </div>
-                </div>
-            @endif
-        </div>
-    </div>
-</div>
-
-<!-- Additional Terms Section -->
-@if (@$counter->get->additional_details_broker != null)
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-light">
-            <h5 class="mb-0"><i class="fa-regular fa-note-sticky me-2"></i>Additional Terms</h5>
-        </div>
-        <div class="card-body">
-            <div class="fw-semibold">
-                {{ $counter->get->additional_details_broker ?? '' }}
-            </div>
-        </div>
-    </div>
-@endif
-
-                                                                {{-- ===== Services ===== --}}
-                                                                <div class="card border-0 shadow-sm mb-4">
-                                                                    <div class="card-header bg-light">
-                                                                        <h5 class="mb-0"><i
-                                                                                class="fa-solid fa-list-check me-2"></i>Services
-                                                                        </h5>
-                                                                    </div>
-                                                                    <div class="card-body">
-                                                                        <div class="text-muted small mb-2">Services the
-                                                                            Tenant Requests from Their Agent</div>
-                                                                        <ul class="list-group rounded">
-                                                                            @if (!empty($counter->get->services))
-                                                                                @foreach ($counter->get->services as $service)
-                                                                                    <li class="list-group-item">
-                                                                                        <i
-                                                                                            class="fa-regular fa-square-check me-2 text-success"></i>{{ $service }}
-                                                                                    </li>
-                                                                                @endforeach
-                                                                            @else
-                                                                                <li class="list-group-item text-muted">No
-                                                                                    services selected.</li>
-                                                                            @endif
-                                                                        </ul>
-
-                                                                        @if (@$counter->get->other_services != null)
-                                                                            <hr class="my-3">
-                                                                            <div class="text-muted small mb-2">Other
-                                                                                Services the Tenant Requests</div>
-                                                                            <ul class="list-group rounded">
-                                                                                @if (!empty($counter->get->other_services))
-                                                                                    @foreach ($counter->get->other_services as $other_service)
-                                                                                        <li class="list-group-item">
-                                                                                            <i
-                                                                                                class="fa-regular fa-square-check me-2 text-primary"></i>{{ $other_service }}
-                                                                                        </li>
-                                                                                    @endforeach
-                                                                                @else
-                                                                                    <li class="list-group-item text-muted">
-                                                                                        No other services listed.</li>
-                                                                                @endif
-                                                                            </ul>
-                                                                        @endif
-                                                                    </div>
-                                                                </div>
-
-                                                                {{-- ===== Additional Details ===== --}}
-                                                                @if (@$counter->get->additional_details != null)
-                                                                    <div class="card border-0 shadow-sm">
-                                                                        <div class="card-header bg-light">
-                                                                            <h5 class="mb-0"><i
-                                                                                    class="fa-regular fa-note-sticky me-2"></i>Additional
-                                                                                Details</h5>
-                                                                        </div>
-                                                                        <div class="card-body">
-                                                                            <div class="fw-semibold">
-                                                                                {{ $counter->get->additional_details ?? '' }}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                @endif
-
-                                                            </div> {{-- /modal-body --}}
-
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-outline-secondary"
-                                                                    data-bs-dismiss="modal">
-                                                                    <i class="fa-solid fa-xmark me-1"></i>Close
-                                                                </button>
-                                                                <a href="{{ route('buyer.edit-counter-terms', $auction->id) }}"
-                                                                    class="btn btn-primary">
-                                                                    <i class="fa-solid fa-pen-to-square me-1"></i>Edit
-                                                                    Terms
-                                                                </a>
-                                                            </div>
-
-                                                        </div>
+                                    {{-- Bid cards area --}}
+                                    <div x-show="open" x-transition class="bids-area">
+                                        @if($auction->bids->isEmpty())
+                                            <div class="no-bids-placeholder">
+                                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                                <p class="mb-0">No bids yet on this listing.</p>
+                                            </div>
+                                        @else
+                                            @foreach($auction->bids as $bid)
+                                            @php
+                                                $agentName  = $bid->user->name ?? 'Agent';
+                                                $agentEmail = $bid->user->email ?? '';
+                                                $bidStatus  = $bid->bid_status ?? 'Active';
+                                                $statusStyles = [
+                                                    'Active'    => 'background-color:#007bff;color:#fff;',
+                                                    'Countered' => 'background-color:#ffc107;color:#000;',
+                                                    'Accepted'  => 'background-color:#28a745;color:#fff;',
+                                                    'Rejected'  => 'background-color:#dc3545;color:#fff;',
+                                                ];
+                                                $auctionBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
+                                                $bidData    = json_decode(json_encode($bid->get ?? []), true) ?: [];
+                                                $propType   = $auction->get->property_type ?? 'Residential Property';
+                                                $matchScore = \App\Helpers\BuyerBidMatchScoreHelper::calculate($auctionBaselineData, $bidData, null, $propType);
+                                                $totalScore       = $matchScore['overall_percent'];
+                                                $brokerScore      = $matchScore['terms_match_percent'];
+                                                $brokerMatched    = $matchScore['terms_matched_count'];
+                                                $brokerTotal      = $matchScore['terms_baseline_total'];
+                                                $brokerMismatches = $matchScore['changed_terms'];
+                                                $servicesScore    = $matchScore['services_match_percent'];
+                                                $servicesMatched  = $matchScore['services_matched_count'];
+                                                $servicesTotal    = $matchScore['services_baseline_total'];
+                                                $servicesMissing  = $matchScore['missing_services'] ?? [];
+                                                $servicesAdded    = $matchScore['extra_services'] ?? [];
+                                                $getScoreColor    = function($s) {
+                                                    if ($s >= 80) return '#28a745';
+                                                    if ($s >= 50) return '#ffc107';
+                                                    return '#dc3545';
+                                                };
+                                                $totalScoreColor    = $getScoreColor($totalScore);
+                                                $brokerScoreColor   = $getScoreColor($brokerScore);
+                                                $servicesScoreColor = $getScoreColor($servicesScore);
+                                            @endphp
+                                            <div class="bid-card">
+                                                <div class="card-header d-flex justify-content-between align-items-center" style="background:#f8f9fa;border-bottom:1px solid #dee2e6;">
+                                                    <div>
+                                                        <span class="fw-bold">{{ $agentName }}</span>
+                                                        <small class="text-muted d-block">{{ $agentEmail }}</small>
+                                                    </div>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span class="badge" style="{{ $statusStyles[$bidStatus] ?? $statusStyles['Active'] }} padding:6px 12px;border-radius:4px;">{{ $bidStatus }}</span>
+                                                        <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;padding:6px 12px;border-radius:4px;">
+                                                            <i class="fas fa-chart-pie me-1"></i>{{ $totalScore }}% Match
+                                                        </span>
                                                     </div>
                                                 </div>
-                      @endif
+                                                <div class="card-body">
+                                                    <div class="row">
+                                                        <div class="col-md-4 mb-2">
+                                                            <small class="text-muted">Submitted</small>
+                                                            <div>{{ $bid->created_at->format('M d, Y') }}</div>
+                                                        </div>
+                                                        <div class="col-md-4 mb-2">
+                                                            <small class="text-muted d-block">Broker Terms</small>
+                                                            <span style="color:{{ $brokerScoreColor }};font-weight:600;">{{ $brokerScore }}%</span>
+                                                            <small class="text-muted">{{ $brokerTotal > 0 ? '('.$brokerMatched.'/'.$brokerTotal.')' : 'No terms provided' }}</small>
+                                                        </div>
+                                                        <div class="col-md-4 mb-2">
+                                                            <small class="text-muted d-block">Services</small>
+                                                            <span style="color:{{ $servicesScoreColor }};font-weight:600;">{{ $servicesScore }}%</span>
+                                                            <small class="text-muted">{{ $servicesTotal > 0 ? '('.$servicesMatched.'/'.$servicesTotal.')' : 'No services requested' }}</small>
+                                                        </div>
+                                                    </div>
+                                                    @if(count($brokerMismatches) > 0 || count($servicesAdded) > 0 || count($servicesMissing) > 0)
+                                                    <div class="mt-2 pt-2" style="border-top:1px solid #eee;">
+                                                        <div class="row">
+                                                            @if(count($brokerMismatches) > 0)
+                                                            <div class="col-md-4 mb-2">
+                                                                <small class="fw-semibold text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
+                                                                <div class="mt-1" style="max-height:80px;overflow-y:auto;">
+                                                                    @foreach(array_slice(array_keys($brokerMismatches), 0, 5) as $field)
+                                                                        <span class="badge me-1 mb-1" style="background:#ffe6e6;color:#dc3545;font-size:0.7rem;">{{ ucwords(str_replace('_', ' ', $field)) }}</span>
+                                                                    @endforeach
+                                                                    @if(count($brokerMismatches) > 5)
+                                                                        <span class="badge" style="background:#f8d7da;color:#721c24;font-size:0.7rem;">+{{ count($brokerMismatches) - 5 }} more</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            @endif
+                                                            @if(count($servicesAdded) > 0)
+                                                            <div class="col-md-4 mb-2">
+                                                                <small class="fw-semibold" style="color:#28a745;"><i class="fas fa-plus-circle me-1"></i>Extra Services ({{ count($servicesAdded) }})</small>
+                                                                <div class="mt-1" style="max-height:80px;overflow-y:auto;">
+                                                                    @foreach(array_slice($servicesAdded, 0, 3) as $svc)
+                                                                        <span class="badge me-1 mb-1" style="background:#e6ffe6;color:#28a745;font-size:0.7rem;">{{ Str::limit($svc, 30) }}</span>
+                                                                    @endforeach
+                                                                    @if(count($servicesAdded) > 3)
+                                                                        <span class="badge" style="background:#d4edda;color:#155724;font-size:0.7rem;">+{{ count($servicesAdded) - 3 }} more</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            @endif
+                                                            @if(count($servicesMissing) > 0)
+                                                            <div class="col-md-4 mb-2">
+                                                                <small class="fw-semibold" style="color:#ffc107;"><i class="fas fa-minus-circle me-1"></i>Not Offered ({{ count($servicesMissing) }})</small>
+                                                                <div class="mt-1" style="max-height:80px;overflow-y:auto;">
+                                                                    @foreach(array_slice($servicesMissing, 0, 3) as $svc)
+                                                                        <span class="badge me-1 mb-1" style="background:#fff3cd;color:#856404;font-size:0.7rem;">{{ Str::limit($svc, 30) }}</span>
+                                                                    @endforeach
+                                                                    @if(count($servicesMissing) > 3)
+                                                                        <span class="badge" style="background:#ffeeba;color:#856404;font-size:0.7rem;">+{{ count($servicesMissing) - 3 }} more</span>
+                                                                    @endif
+                                                                </div>
+                                                            </div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                </div>
+                                                <div class="card-footer d-flex justify-content-end gap-2" style="background:#f8f9fa;">
+                                                    <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn btn-sm" style="background:#fff;border:1px solid #049399;color:#049399;">
+                                                        <i class="fas fa-eye me-1"></i>View Bid
+                                                    </a>
+                                                    @if($bidStatus === 'Active')
+                                                        <form action="{{ route('buyer.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                            <button type="submit" class="btn btn-sm" style="background:#28a745;color:#fff;border:none;" onclick="return confirm('Accept this bid?')">
+                                                                <i class="fas fa-check me-1"></i>Accept
+                                                            </button>
+                                                        </form>
+                                                        <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', [$auction->id, $bid->id]) }}" class="btn btn-sm" style="background:#ffc107;color:#000;border:none;">
+                                                            <i class="fas fa-exchange-alt me-1"></i>Counter
+                                                        </a>
+                                                        <form action="{{ route('buyer.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
+                                                            @csrf
+                                                            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+                                                            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+                                                            <button type="submit" class="btn btn-sm" style="background:#dc3545;color:#fff;border:none;" onclick="return confirm('Reject this bid?')">
+                                                                <i class="fas fa-times me-1"></i>Reject
+                                                            </button>
+                                                        </form>
+                                                    @elseif($bidStatus === 'Countered')
+                                                        <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', $bid->id) }}" class="btn btn-sm" style="background:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
+                                                            <i class="fas fa-eye me-1"></i>View Counter Terms
+                                                        </a>
+                                                    @elseif($bidStatus === 'Accepted')
+                                                        <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn btn-sm" style="background:#28a745;color:#fff;border:none;">
+                                                            <i class="fas fa-file-contract me-1"></i>View Summary
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @endforeach
+                                        @endif
+                                    </div>
 
-                    @endforeach
-                  </tbody>
-                </table>
-              </div>
+                                </div>
+                                @endforeach
+                            @endif
+
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
+</div>
 @endsection
+
 @push('scripts')
-  <script>
+<script>
     $(function() {
-      $('.auction-type').on('change', function() {
-        var val = $(this).val();
-        window.location.href = '{{ route('buyer.agent.auctions.list') }}?type=' + val;
-      });
+        $('.auction-type').on('change', function() {
+            var val = $(this).val();
+            window.location.href = '{{ route('buyer.agent.auctions.list') }}?type=' + val;
+        });
     });
-  </script>
+</script>
 @endpush
