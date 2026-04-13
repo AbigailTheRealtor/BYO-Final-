@@ -1,0 +1,175 @@
+**Task: Full data-integrity audit for user-side role listing pages — Tenant, Buyer, Seller, Landlord**
+
+## Problem
+
+The user-side dashboard/listing pages are not showing the full set of listings for the logged-in user.
+
+Example:
+
+* On `tenant@exp.com`, the **Hire Buyer’s Agent** page is only showing 4 listings
+* But there are clearly more Buyer listings owned by this user
+
+This means we need a **full audit of the listing data source and query logic** for all 4 user-side role tabs.
+
+## Apply audit to these 4 user-side pages
+
+* Hire Tenant’s Agent
+* Hire Landlord’s Agent
+* Hire Buyer’s Agent
+* Hire Seller’s Agent
+
+These are the logged-in user pages under **My Listings**.
+
+---
+
+## Critical rule
+
+This is a **read-only audit first**.
+
+Do **not** start changing UI or business logic until you identify exactly why listings are missing.
+
+---
+
+## Hard safeguards
+
+1. **Do not touch listing creation logic**
+2. **Do not touch listing edit logic**
+3. **Do not touch bid/counter/accept/reject logic**
+4. **Do not touch summaries or signatures**
+5. **Do not change DB schema**
+6. **Do not change routes yet**
+7. **Audit first, code second**
+8. **If the issue is query/filter logic, fix only the minimal query/filter logic after reporting**
+
+---
+
+# PHASE 1 — READ-ONLY AUDIT FIRST
+
+For each of these 4 user-side role pages:
+
+* Hire Tenant’s Agent
+* Hire Landlord’s Agent
+* Hire Buyer’s Agent
+* Hire Seller’s Agent
+
+report all of the following:
+
+## A. Exact source files
+
+1. exact controller method used
+2. exact blade view used
+3. exact query used to load the listings
+4. exact pagination/filter logic used
+
+## B. Ownership logic
+
+For each role, report:
+
+1. which table/model stores the listings
+2. which user ownership field is used in the query
+3. whether the query is correctly filtering by the logged-in user
+4. whether any records owned by the user are being excluded incorrectly
+
+## C. Status/filter logic
+
+For each role, report:
+
+1. whether the page is filtering by Live / Draft / Expired / Accepted / etc.
+2. whether the default selected filter is excluding valid listings
+3. whether any hardcoded status filter is cutting records out
+4. whether pagination/search/DataTables is hiding records unexpectedly
+
+## D. True counts vs page counts
+
+For each role, report:
+
+1. actual count of listings owned by `tenant@exp.com`
+2. count returned by the page query
+3. difference between the two
+4. exact reason for any mismatch
+
+## E. Likely causes to check
+
+Check specifically for:
+
+* wrong ownership field
+* missing `orWhere` logic where needed
+* status filter excluding records
+* role misclassification
+* pagination/data-table truncation
+* old legacy query still being used
+* hidden approval logic excluding listings
+* joins/meta conditions dropping rows
+* duplicate suppression/grouping issue
+
+---
+
+# PHASE 2 — REPORT BEFORE CODING
+
+Before changing anything, return a structured report:
+
+## Tenant tab
+
+* actual owned count
+* page count
+* exact query
+* mismatch reason if any
+
+## Landlord tab
+
+* actual owned count
+* page count
+* exact query
+* mismatch reason if any
+
+## Buyer tab
+
+* actual owned count
+* page count
+* exact query
+* mismatch reason if any
+
+## Seller tab
+
+* actual owned count
+* page count
+* exact query
+* mismatch reason if any
+
+## Final summary
+
+1. which tabs are correct
+2. which tabs are missing records
+3. exact root cause for each broken tab
+4. minimal fix plan
+
+**Do not code before giving this report.**
+
+---
+
+# PHASE 3 — AFTER AUDIT, FIX ONLY THE DATA-SOURCE ISSUE
+
+Once the audit is complete, fix only the minimal query/filter logic needed so each page shows the full correct set of listings for the logged-in user.
+
+## Required result
+
+For all 4 role tabs:
+
+* all listings owned by the logged-in user appear
+* no valid listings are silently missing
+* no extra listings from other users appear
+* filters still work correctly
+* pagination still works correctly
+
+---
+
+## Output required after coding
+
+1. exact files changed
+2. exact query/filter fixes made
+3. before/after counts for all 4 roles
+4. confirmation no listing/bid business logic was changed
+
+## Stop rule
+
+If any missing listings are caused by deeper bad data or legacy architecture rather than a simple query/filter issue, stop and report that clearly before making broader changes.
