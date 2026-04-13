@@ -1192,4 +1192,18 @@ class SellerAgentAuctionController extends Controller
             'status' => '200',
         ]);
     }
+
+    public function bidDetail($bid_id)
+    {
+        $bid = SellerAgentAuctionBid::with(['user', 'meta'])->findOrFail($bid_id);
+        $auction = $bid->auction()->with('user')->first();
+        if (!$auction) {
+            abort(404, 'Listing not found.');
+        }
+        $authId = Auth::id();
+        if (!$authId || ((int)$authId !== (int)$auction->user_id && (int)$authId !== (int)$bid->user_id)) {
+            abort(403);
+        }
+        return view('hire_seller_agent.bid_detail', compact('bid', 'auction'));
+    }
 }

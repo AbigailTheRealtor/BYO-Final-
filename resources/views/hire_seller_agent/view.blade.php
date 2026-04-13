@@ -5658,15 +5658,6 @@
     </div>
 @endsection
 @push('scripts')
-    @if(request()->has('view_bid'))
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var bidId = {{ (int) request('view_bid') }};
-        var modalEl = document.getElementById('privateDataModal' + bidId);
-        if (modalEl) { new bootstrap.Modal(modalEl).show(); }
-    });
-    </script>
-    @endif
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous"
         referrerpolicy="no-referrer"></script>
     @if (@$auction->get->auction_length_days > 0)

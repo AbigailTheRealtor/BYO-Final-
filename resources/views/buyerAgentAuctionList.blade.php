@@ -241,7 +241,7 @@
                                                     @endif
                                                 </div>
                                                 <div class="card-footer d-flex justify-content-end gap-2" style="background:#f8f9fa;">
-                                                    <a href="{{ route('buyer.view-auction', $auction->id) . '?view_bid=' . $bid->id }}" class="btn btn-sm" style="background:#fff;border:1px solid #049399;color:#049399;">
+                                                    <a href="{{ route('buyer.agent.bid.detail', $bid->id) }}" class="btn btn-sm" style="background:#fff;border:1px solid #049399;color:#049399;">
                                                         <i class="fas fa-eye me-1"></i>View Bid
                                                     </a>
                                                     @if($bidStatus === 'Active')

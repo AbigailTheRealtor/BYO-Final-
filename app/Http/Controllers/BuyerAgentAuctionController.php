@@ -590,4 +590,18 @@ class BuyerAgentAuctionController extends Controller
         $counter->save();
         return redirect('buyer/hire/agent/auctions')->with('success', 'Countered Terms Added Successfully!');
     }
+
+    public function bidDetail($bid_id)
+    {
+        $bid = BuyerAgentAuctionBid::with(['user', 'meta'])->findOrFail($bid_id);
+        $auction = $bid->auction()->with('user')->first();
+        if (!$auction) {
+            abort(404, 'Listing not found.');
+        }
+        $authId = Auth::id();
+        if (!$authId || ((int)$authId !== (int)$auction->user_id && (int)$authId !== (int)$bid->user_id)) {
+            abort(403);
+        }
+        return view('hire_buyer_agent.bid_detail', compact('bid', 'auction'));
+    }
 }

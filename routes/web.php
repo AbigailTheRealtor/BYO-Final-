@@ -303,6 +303,8 @@ Route::get('/tenant/listings/{id}/download', [\App\Http\Controllers\ListingDownl
 
 Route::get('/seller/agent/auction/view/{id}', [SellerAgentAuctionController::class, 'viewDetail'])->name('seller.agent.auction.detail');
 Route::get('/buyer/agent/auction/view/{id}', [BuyerAgentAuctionController::class, 'viewAuctionDetails'])->name('buyer.view-auction');
+Route::get('/seller/agent/bid/{bid_id}', [SellerAgentAuctionController::class, 'bidDetail'])->name('seller.agent.bid.detail')->middleware('auth');
+Route::get('/buyer/agent/bid/{bid_id}', [BuyerAgentAuctionController::class, 'bidDetail'])->name('buyer.agent.bid.detail')->middleware('auth');
 Route::get('/tenant/agent/auction/view/{id}', [TenantAgentAuctionController::class, 'view'])->name('tenant.agent.view.auction.view');
 Route::get('/agent/service/auction/{id}', [AgentServiceAuctionController::class, 'view'])->name('agent.service.auction.view');
 Route::get('/criteria/view/{id}', [BuyerCriteriaAuctionController::class, 'view'])->name('buyer.criteria.view');

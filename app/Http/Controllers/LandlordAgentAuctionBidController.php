@@ -169,9 +169,18 @@ class LandlordAgentAuctionBidController extends Controller
 
     public function view($bid_id)
     {
-        $bid = LandlordAgentAuctionBid::findOrFail($bid_id);
-        $page_data['title'] = 'Landlord Agent Auction Bid';
-        $page_data['bid'] = $bid;
+        $bid = LandlordAgentAuctionBid::with(['user', 'meta'])->findOrFail($bid_id);
+        $auction = $bid->auction()->with('user')->first();
+        if (!$auction) {
+            abort(404, 'Listing not found.');
+        }
+        $authId = Auth::id();
+        if (!$authId || ((int)$authId !== (int)$auction->user_id && (int)$authId !== (int)$bid->user_id)) {
+            abort(403);
+        }
+        $page_data['title'] = 'Landlord Agent Bid Detail';
+        $page_data['bid']     = $bid;
+        $page_data['auction'] = $auction;
         return view('hire_landlord_agent.view-bid', $page_data);
     }
 
