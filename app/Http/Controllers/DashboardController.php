@@ -154,17 +154,21 @@ class DashboardController extends Controller
 
         // ── Password change (requires current password verification) ────────
         // Only attempt if current_password is explicitly provided (≥6 chars prevents autofill noise)
-        $newPass     = trim($request->input('password', ''));
-        $confirmPass = trim($request->input('confirm_password', ''));
-        $currentPass = trim($request->input('current_password', ''));
-        $passwordError = null;
-        if (strlen($currentPass) >= 6 && strlen($newPass) >= 6) {
+        $newPass          = trim($request->input('password', ''));
+        $confirmPass      = trim($request->input('confirm_password', ''));
+        $currentPass      = trim($request->input('current_password', ''));
+        $passwordAttempted = (strlen($currentPass) >= 6 && strlen($newPass) >= 6);
+        $passwordChanged  = false;
+        $passwordError    = null;
+
+        if ($passwordAttempted) {
             if ($newPass !== $confirmPass) {
-                $passwordError = 'New passwords do not match — password was not changed.';
+                $passwordError = 'The new passwords you entered do not match — your password was not updated.';
             } elseif (!Hash::check($currentPass, $user->password)) {
-                $passwordError = 'Current password is incorrect — password was not changed.';
+                $passwordError = 'The current password you entered is incorrect — your password was not updated.';
             } else {
                 $user->password = Hash::make($newPass);
+                $passwordChanged = true;
             }
         }
 
@@ -185,24 +189,31 @@ class DashboardController extends Controller
 
         $user->save();
 
-        if ($passwordError) {
-            return redirect()->back()
-                ->with('success', 'Settings saved successfully!')
-                ->with('error', $passwordError);
+        // Use 'profile_success' (not 'success') to avoid the Flasher package interceptor
+        $flash = ['profile_success' => 'Profile settings updated successfully.'];
+        if ($passwordChanged) {
+            $flash['password_success'] = 'Your password was also updated successfully.';
+        } elseif ($passwordError) {
+            $flash['password_error'] = $passwordError;
         }
 
-        return redirect()->back()->with('success', 'Settings saved successfully!');
+        return redirect()->back()->with($flash);
     }
 
     public function deleteAccount(Request $request)
     {
+        // Server-side guard: require typed "DELETE" confirmation
+        if (trim($request->input('delete_confirm', '')) !== 'DELETE') {
+            return redirect()->back()->with('error', 'Account not deleted — you must type DELETE exactly to confirm.');
+        }
+
         $user = User::findOrFail(Auth::user()->id);
         $user->is_deleted = 1;
         $user->save();
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return redirect('/')->with('success', 'Your account has been deleted.');
+        return redirect('/')->with('success', 'Your account has been deactivated.');
     }
 
     public function myBids($type = "seller-property")

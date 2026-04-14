@@ -17,14 +17,30 @@
                             <h4 class="mb-1" style="color: #1a3a5c; font-weight: 700;">Profile Settings</h4>
                             <p class="text-muted mb-4" style="font-size: 0.95rem;">Keep your account details up to date.</p>
 
-                            @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                            @if(session('profile_success'))
+                            <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
+                                <i class="fas fa-check-circle me-2"></i><strong>{{ session('profile_success') }}</strong>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
+
+                            @if(session('password_success'))
+                            <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
+                                <i class="fas fa-key me-2"></i>{{ session('password_success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            @endif
+
+                            @if(session('password_error'))
+                            <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert" style="border-left: 4px solid #e65c00;">
+                                <strong><i class="fas fa-exclamation-triangle me-2"></i>Password Not Updated</strong><br>
+                                <span style="font-size: 0.92rem;">{{ session('password_error') }}</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            @endif
+
                             @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                            <div class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
                                 <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
@@ -267,15 +283,28 @@
                                 <h6 style="color: #842029; font-weight: 700; margin-bottom: 0.5rem;">
                                     <i class="fas fa-trash-alt me-2"></i>Delete Account
                                 </h6>
-                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.5rem;">We're really sorry to see you go. Deleting your account is permanent and cannot be undone.</p>
-                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">All your listings, bids, and account data will be deactivated.</p>
-                                <form action="{{ route('settings.delete-account') }}" method="POST" id="delete-account-form" style="display: inline;">
+                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.25rem;">This action will deactivate your account and log you out. All your listings and bids will be deactivated.</p>
+                                <p style="color: #842029; font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem;">This cannot be undone. To confirm, type <code style="background:#fce4e4; padding: 1px 5px; border-radius:3px; color:#842029;">DELETE</code> below.</p>
+                                <form action="{{ route('settings.delete-account') }}" method="POST" id="delete-account-form">
                                     @csrf
-                                    <button type="button" id="btn-delete-account"
-                                            class="settings-delete-btn"
-                                            onclick="if(confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) { document.getElementById('delete-account-form').submit(); }">
-                                        <i class="fas fa-trash-alt me-2"></i>Delete My Account
-                                    </button>
+                                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                                        <input type="text"
+                                               id="delete-confirm-input"
+                                               name="delete_confirm"
+                                               class="form-control"
+                                               placeholder="Type DELETE to confirm"
+                                               autocomplete="off"
+                                               style="max-width: 220px; border-color: #f5c6cb; font-family: monospace; letter-spacing: 0.05em;">
+                                        <button type="submit"
+                                                id="btn-delete-account"
+                                                class="settings-delete-btn"
+                                                disabled>
+                                            <i class="fas fa-trash-alt me-2"></i>Delete My Account
+                                        </button>
+                                    </div>
+                                    <p id="delete-hint" style="color: #aaa; font-size: 0.8rem; margin-top: 0.4rem; display: none;">
+                                        Type <strong>DELETE</strong> exactly to enable the button.
+                                    </p>
                                 </form>
                             </div>
 
@@ -375,6 +404,30 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Typed DELETE confirmation for account deletion
+    var deleteInput  = document.getElementById('delete-confirm-input');
+    var deleteBtn    = document.getElementById('btn-delete-account');
+    var deleteHint   = document.getElementById('delete-hint');
+    if (deleteInput && deleteBtn) {
+        deleteInput.addEventListener('input', function () {
+            var matches = this.value === 'DELETE';
+            deleteBtn.disabled = !matches;
+            if (matches) {
+                deleteBtn.style.opacity = '1';
+                deleteBtn.style.cursor  = 'pointer';
+                if (deleteHint) deleteHint.style.display = 'none';
+            } else {
+                deleteBtn.style.opacity = '0.5';
+                deleteBtn.style.cursor  = 'not-allowed';
+                if (deleteHint && this.value.length > 0) deleteHint.style.display = 'block';
+                else if (deleteHint) deleteHint.style.display = 'none';
+            }
+        });
+        // Initial disabled style
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.cursor  = 'not-allowed';
+    }
 });
 </script>
 @endpush
