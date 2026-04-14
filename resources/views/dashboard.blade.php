@@ -91,15 +91,6 @@
                                                 <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ New Listing</a>
                                                 <a href="{{ route($cfg['listRoute']) }}" class="btn btn-outline-secondary btn-sm">My Listings</a>
                                             @endif
-                                            @if($user->user_type === 'tenant')
-                                                <a href="{{ route('myBids', 'agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>
-                                            @elseif($user->user_type === 'landlord')
-                                                <a href="{{ route('myBids', 'hire-landlord-agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>
-                                            @elseif($user->user_type === 'buyer')
-                                                <a href="{{ route('myBids', 'hire-buyer-agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>
-                                            @elseif($user->user_type === 'seller')
-                                                <a href="{{ route('myBids', 'hire-seller-agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>
-                                            @endif
                                         @endif
                                         <a href="{{ route('messages') }}" class="btn btn-outline-secondary btn-sm">Messages</a>
                                         <a href="{{ route('settings') }}" class="btn btn-outline-secondary btn-sm">Profile Settings</a>
@@ -179,7 +170,7 @@
                                                                     <span class="text-muted">({{ $roleCfg['label'] }})</span>
                                                                 </span>
                                                             </div>
-                                                            <a href="{{ route('myBids', $roleCfg['bidsRoute']) }}"
+                                                            <a href="{{ route($roleCfg['listRoute']) }}"
                                                                class="btn btn-sm flex-shrink-0 text-white"
                                                                style="background:{{ $roleCfg['color'] }};font-size:.75rem;white-space:nowrap;">
                                                                 Review &rarr;

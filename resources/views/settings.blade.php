@@ -60,7 +60,7 @@
                                                     class="accordion-button"
                                                     :class="openSection !== 'account' && 'collapsed'"
                                                     @click="openSection = openSection === 'account' ? null : 'account'"
-                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                    >
                                                 <i class="fas fa-user-circle me-2 text-muted"></i>Account Information
                                             </button>
                                         </h2>
@@ -97,7 +97,7 @@
                                                     class="accordion-button"
                                                     :class="openSection !== 'profile' && 'collapsed'"
                                                     @click="openSection = openSection === 'profile' ? null : 'profile'"
-                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                    >
                                                 <i class="fas fa-id-card me-2 text-muted"></i>Profile Details
                                             </button>
                                         </h2>
@@ -161,7 +161,7 @@
                                                     class="accordion-button"
                                                     :class="openSection !== 'prefs' && 'collapsed'"
                                                     @click="openSection = openSection === 'prefs' ? null : 'prefs'"
-                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                    >
                                                 <i class="fas fa-sliders-h me-2 text-muted"></i>Preferences
                                             </button>
                                         </h2>
@@ -224,7 +224,7 @@
                                                     class="accordion-button"
                                                     :class="openSection !== 'security' && 'collapsed'"
                                                     @click="openSection = openSection === 'security' ? null : 'security'"
-                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                    >
                                                 <i class="fas fa-lock me-2 text-muted"></i>Privacy &amp; Security
                                             </button>
                                         </h2>
@@ -306,16 +306,33 @@
 @push('styles')
 <style>
 /* Override global .mainDashboard button rules for settings accordion buttons */
-.mySettings .accordion-button,
 .mySettings .accordion-button:not(.collapsed) {
     background-color: #049399 !important;
     color: #fff !important;
     border: none !important;
-    padding: 1rem 1.25rem !important;
+    border-left: 4px solid #037277 !important;
+    padding: 1.1rem 1.25rem !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
 }
 .mySettings .accordion-button.collapsed {
-    background-color: #049399 !important;
-    color: #fff !important;
+    background-color: #f8f9fa !important;
+    color: #1a3a5c !important;
+    border: none !important;
+    border-left: 4px solid #049399 !important;
+    padding: 1.1rem 1.25rem !important;
+    font-size: 1.05rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+.mySettings .accordion-button.collapsed i {
+    color: #049399 !important;
+}
+.mySettings .accordion-button:not(.collapsed) i {
+    color: rgba(255,255,255,0.85) !important;
 }
 /* Delete My Account button */
 .settings-delete-btn {
@@ -344,9 +361,12 @@
 #deleteAccordion .accordion-body p {
     color: #495057 !important;
 }
-/* Accordion chevron color (white on teal) */
-.mySettings .accordion-button::after {
+/* Accordion chevron: white when expanded (teal bg), teal-tinted when collapsed (light bg) */
+.mySettings .accordion-button:not(.collapsed)::after {
     filter: brightness(0) invert(1);
+}
+.mySettings .accordion-button.collapsed::after {
+    filter: brightness(0) saturate(100%) invert(35%) sepia(60%) saturate(600%) hue-rotate(155deg);
 }
 #deleteAccordion .accordion-button::after {
     filter: none;
