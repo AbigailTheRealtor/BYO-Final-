@@ -1192,51 +1192,118 @@
             $("#status-options").removeClass("active");
         });
 
-        // Track the currently active chat token
-        var activeToken = '{{ $token ?? "" }}';
+        // ─── Polling / Live Refresh ───────────────────────────────────────────
+        var activeToken  = '{{ $token ?? "" }}';
+        var pollTimer    = null;
+        var POLL_MS      = 2500;
+        var BOTTOM_SLACK = 120; // px — consider "near bottom" within this distance
 
-        // Update activeToken when a contact is clicked
+        /** True when the messages pane is scrolled to (or within BOTTOM_SLACK of) the bottom. */
+        function isNearBottom() {
+            var $pane = $(".messages");
+            if (!$pane.length) return true;
+            return ($pane[0].scrollHeight - $pane.scrollTop() - $pane.outerHeight()) <= BOTTOM_SLACK;
+        }
+
+        /**
+         * Reload the active conversation from the server.
+         * @param {string} scrollMode  'always' | 'smart'
+         *   'always' — scroll regardless (used after the user sends a message)
+         *   'smart'  — scroll only when the pane was already near the bottom
+         */
+        function refreshMessages(scrollMode) {
+            var token = activeToken;
+            if (!token) return;
+
+            var snapToBottom = (scrollMode === 'always') || isNearBottom();
+
+            $.ajax({
+                type: "GET",
+                url: "{{ route('load_chat_messages', '') }}/" + token,
+                dataType: "json",
+                success: function(response) {
+                    if (response.success) {
+                        var $list = $('.chat-messages');
+                        // Only touch the DOM when content actually changed
+                        if ($list.html() !== response.data) {
+                            $list.html(response.data);
+                            if (snapToBottom) {
+                                scroll_bottom();
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function startPolling() {
+            stopPolling();
+            if (!activeToken) return;
+            pollTimer = setInterval(function() {
+                refreshMessages('smart');
+            }, POLL_MS);
+        }
+
+        function stopPolling() {
+            if (pollTimer) {
+                clearInterval(pollTimer);
+                pollTimer = null;
+            }
+        }
+
+        // Stop polling when the user leaves the page
+        $(window).on('beforeunload', stopPolling);
+
+        // Update activeToken and restart polling when a conversation is selected
         $(document).on('click', '.contact', function() {
             activeToken = $(this).data('token');
+            startPolling();
         });
 
+        // ─── Send a message ───────────────────────────────────────────────────
         function newMessage() {
             var message = $(".message-input input").val();
-            if ($.trim(message) == '') {
-                return false;
-            }
+            if ($.trim(message) === '') return false;
+
             var token = activeToken || $('.contact.active').data('token');
-            if (!token) {
-                return false;
-            }
-            var sent = `<li class="sent"><p>${message}</p></li>`;
+            if (!token) return false;
+
+            // Optimistic UI — show the bubble immediately
+            $('.chat-messages').append('<li class="sent"><p>' + $('<span>').text(message).html() + '</p></li>');
             $('.message-input input').val('');
-            $('.chat-messages').append(sent);
             scroll_bottom();
+
+            // Update sidebar preview text
+            $('.contact.active .preview').html('<span>You: </span>' + $('<span>').text(message).html());
 
             $.ajax({
                 type: "POST",
                 url: "{{ route('send-chat-message') }}",
                 data: {
                     _token: "{{ csrf_token() }}",
-                    token: token,
+                    token:   token,
                     message: message,
                 },
                 dataType: "json",
-                success: function(response) {
-                    // Message already shown optimistically in UI
+                success: function() {
+                    // Replace optimistic bubble(s) with authoritative server state
+                    refreshMessages('always');
                 },
                 error: function(xhr) {
-                    // Optionally show an error indicator
                     console.error('Send failed:', xhr.responseText);
                 }
             });
-        };
+        }
 
         function scroll_bottom() {
             $(".messages").animate({
                 scrollTop: $('.chat-cover').height()
             }, "fast");
+        }
+
+        // Kick off polling for the conversation that loaded with the page
+        if (activeToken) {
+            startPolling();
         }
 
         $('.submit').click(function() {

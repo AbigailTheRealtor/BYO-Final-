@@ -15,6 +15,8 @@ Edit forms feature a comprehensive validation strategy with "Save Draft" (allowi
 
 A bidding period timer is implemented for various listing views. Buyer agent search filters for approved, non-draft listings.
 
+The Dashboard Messaging system (`/messages`) uses Blade + jQuery AJAX (no Livewire). Messages are stored in `auction_chat` with `is_bot=0` for real user messages. Live updates are implemented via client-side polling: `setInterval` every 2500 ms calls `GET /load_chat_messages/{token}`, diffing against current DOM before replacing. After sending, an optimistic bubble is shown immediately, then replaced with authoritative server HTML on POST success. Scroll behaviour is smart — always scroll after send, only scroll on poll if user is within 120 px of the bottom. Polling restarts cleanly when switching conversations and stops on page unload. `POST /send-chat-message → AuctionChatController@sendMessage` saves the message with `is_bot=0` and touches the token's `updated_at`/`last_message`.
+
 Match score helpers (`TenantBidMatchScoreHelper`, `BuyerBidMatchScoreHelper`, `SellerBidMatchScoreHelper`, `LandlordBidMatchScoreHelper`) use a logical field group approach, defining 14-17 groups for terms matching. Key rules include cascade deactivation for child groups when a parent field is negative, and composite value generation for comparing database sub-fields.
 
 A Default Profile system allows agents to save and reuse bid profile data (bio, marketing plan, etc.) across all four bid forms. These profiles are stored in the `agent_default_profiles` table, with dedicated helper methods for retrieval and updates. All bid forms are Livewire components that auto-load matching default profiles on mount.
