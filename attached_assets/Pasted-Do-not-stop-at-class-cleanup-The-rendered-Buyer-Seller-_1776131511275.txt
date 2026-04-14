@@ -1,0 +1,128 @@
+Do not stop at class cleanup. The rendered Buyer, Seller, and Landlord pages must visually match the approved Tenant/Landlord hybrid layout in screenshots.
+
+Use this prompt:
+
+Task: true visual conversion to one universal bid detail layout
+
+The previous task was not sufficient.
+Do not do another CSS cleanup-only pass.
+
+The pages may be using shared classes now, but the rendered result still looks effectively the same. That means the true structural/layout conversion did not happen.
+
+What I need now
+
+I need a real visual layout conversion for all bid detail pages so they all use the same universal system:
+
+Landlord-style outer card shell
+Tenant-style inner spacing and readability
+
+This is not a footer cleanup task.
+This is not a class deduplication task.
+This is a rendered UI conversion task.
+
+Required final layout
+1. Outer shell for all 4 roles must match Landlord-style card structure
+
+Every role must have:
+
+back link above the card
+a single contained outer bid card
+teal top header bar inside the card
+status badge in the header area
+match score section visually contained inside the card
+main content inside the same card
+footer/action row inside the same card
+
+If any role still feels like a flat page instead of a contained bid card, it is not done.
+
+2. Inner content for all 4 roles must match Tenant readability
+
+Inside the card, all 4 roles must match Tenant for:
+
+line-height
+section spacing
+padding between blocks
+heading spacing
+label/value spacing
+bullet spacing
+credentials section spacing
+footer breathing room
+
+If Seller/Buyer/Landlord still look tighter or denser than Tenant, it is not done.
+
+3. Footer must be truly identical across all 4 roles
+
+Universal footer rule:
+
+left: Back button
+right: Accept / Counter / Reject
+same spacing
+same padding
+same visual containment
+
+Remove redundant status text like:
+
+“Bid from Abby S is pending”
+if the status already appears elsewhere.
+Important: do not mark complete from HTML inspection alone
+
+The last pass claimed success based on class inspection and HTTP 200 responses.
+That is not enough.
+
+This task is complete only if the rendered pages visually change.
+
+What to do before editing
+
+For each of the four pages, inspect and compare:
+
+outer wrapper/container
+top header block
+match score wrapper
+content padding
+footer wrapper
+overall card containment
+top and bottom spacing
+
+Identify which templates still have different outer structure, not just different classes.
+
+Implementation requirement
+
+Use shared partials/layout wrappers if needed for:
+
+bid detail outer shell
+bid detail header
+match score wrapper
+content container
+footer action row
+
+Do not just patch CSS on existing mismatched structures if the DOM structure is still different.
+
+Visual acceptance test
+
+After implementation, provide:
+
+screenshots of all 4 full pages
+side-by-side comparison screenshots
+confirmation of which shared wrapper/partial now controls the outer bid card shell
+confirmation of which shared wrapper/partial now controls the footer row
+
+Do not give me only a code report.
+I need confirmation from the rendered UI.
+
+Success criteria
+
+This is only done when:
+
+Tenant, Buyer, Seller, and Landlord all feel like the same component
+none of them feel like a flat page while another feels like a card
+spacing and readability are consistent
+footer placement is identical
+header and match score containment feel identical
+Safeguards
+do not change business logic
+do not change field order unless needed for parity
+do not change permissions
+do not change routes
+do not change database schema
+do not remove working content
+do not do another “minor cleanup only” pass

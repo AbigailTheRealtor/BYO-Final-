@@ -177,7 +177,7 @@
         </div>
 
         {{-- ===== BODY — full modal content via shared partial ===== --}}
-        <div class="bid-preview-body" style="padding: 0;">
+        <div class="bid-preview-body">
             @include('partials.bid_detail_body.seller')
         </div>
 
