@@ -125,8 +125,7 @@
 
                                                     <!-- 1. Agent Overview & Qualifications -->
                                                     <div class="mb-5">
-                                                        <h6 class="mb-3"
-                                                            style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                        <h6 class="section-header">
                                                             <i class="fa fa-user-tie me-2"></i>Agent
                                                             Overview & Qualifications
                                                         </h6>
@@ -293,7 +292,7 @@
                                                     data_get($bid, 'get.brokerage_relationship') ||
                                                     data_get($bid, 'get.additional_details_broker'))
                                                     <div class="mb-5">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                        <h6 class="section-header">
                                                             <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
@@ -666,7 +665,7 @@
                                                     <!-- Additional Details -->
                                                     @if (data_get($bid, 'get.additional_details'))
                                                     <div class="mb-5">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                        <h6 class="section-header">
                                                             <i class="fa fa-info-circle me-2"></i>Additional Details
                                                         </h6>
                                                         <div class="text-muted" style="font-style: italic;">
@@ -907,7 +906,7 @@
                                                     $svcMissingBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.65rem; vertical-align: middle;">Not Offered by Agent</span>';
                                                     @endphp
                                                     <div class="mb-5">
-                                                        <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                        <h6 class="section-header">
                                                             <i class="fa fa-clipboard-list me-2"></i>Offered Services
                                                         </h6>
 
@@ -920,7 +919,7 @@
                                                                 @if (!empty($matchedInCat))
                                                                 <div class="mb-3">
                                                                     <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">{{ $catName }}</div>
-                                                                    <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                    <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.5rem; list-style: disc;">
                                                                         @foreach ($matchedInCat as $svc)
                                                                             @php $svcInBaseline = $isModalSvcMatched($svc); @endphp
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $svc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
@@ -932,7 +931,7 @@
                                                                                     $modalEnhOrder = ['Basic edits (brightness, contrast, cropping)', 'Twilight conversion (convert daytime photo to sunset look)', 'Object removal (e.g., cars, trash cans, furniture, etc.)', 'Virtual twilight photography', 'Color correction or sky replacement', 'Other'];
                                                                                 @endphp
                                                                                 @if (!empty($modalPhotoEnhancements))
-                                                                                    <ul style="padding-left: 1.5rem; margin: 4px 0;">
+                                                                                    <ul style="padding-left: 1.5rem; margin: 4px 0; list-style: disc;">
                                                                                         @foreach ($modalEnhOrder as $enh)
                                                                                             @if (in_array($enh, $modalPhotoEnhancements))
                                                                                                 @if ($enh === 'Other' && !empty($modalCustomEnh))
@@ -954,7 +953,7 @@
                                                             @if (!empty($parsedModalOther))
                                                             <div class="mb-3">
                                                                 <div class="fw-bold" style="color: #34465c; font-size: 0.95rem;">✍️ Additional Services</div>
-                                                                <ul class="services mb-0" style="margin-top: 0.25rem; padding-left: 1.2rem;">
+                                                                <ul class="mb-0" style="margin-top: 0.25rem; padding-left: 1.5rem; list-style: disc;">
                                                                     @foreach ($parsedModalOther as $otherSvc)
                                                                         @php $svcInBaseline = $isModalSvcMatched($otherSvc); @endphp
                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; {{ !$svcInBaseline ? $svcAddedStyle : '' }}">{{ $otherSvc }}{!! !$svcInBaseline ? $svcAddedBadge : '' !!}</li>
@@ -969,7 +968,7 @@
                                                                 <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
                                                                     <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($modalMissingSvcs) }})
                                                                 </div>
-                                                                <ul class="mb-0" style="padding-left: 1.2rem;">
+                                                                <ul class="mb-0" style="padding-left: 1.5rem; list-style: disc;">
                                                                     @foreach ($modalMissingSvcs as $missingSvc)
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; {{ $svcMissingStyle }}">{{ $missingSvc }}{!! $svcMissingBadge !!}</li>
                                                                     @endforeach
@@ -988,8 +987,7 @@
                                                     data_get($bid, 'get.business_card') ||
                                                     data_get($bid, 'get.promoMaterials'))
                                                     <div class="mb-5">
-                                                        <h6 class="mb-3"
-                                                            style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                        <h6 class="section-header">
                                                             <i
                                                                 class="fa fa-chart-line me-2"></i>Agent
                                                             Presentation & Promotional Materials:
@@ -1364,8 +1362,7 @@
 
                                                     <!-- 5. Agent Information -->
                                                     <div class="mb-4">
-                                                        <h6 class="mb-3"
-                                                            style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                                        <h6 class="section-header">
                                                             <i
                                                                 class="fa fa-address-card me-2"></i>Agent
                                                             Information:
