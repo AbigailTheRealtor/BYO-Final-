@@ -35,6 +35,19 @@
         font-weight: 600;
         font-size: 0.9rem;
     }
+    .match-score-badge {
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: white;
+    }
+    .mismatch-highlight {
+        background-color: #ffe6e6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border-left: 3px solid #dc3545;
+    }
     .action-buttons {
         background: #f8f9fa;
         border-top: 1px solid #e9ecef;

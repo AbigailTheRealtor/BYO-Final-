@@ -1,0 +1,301 @@
+Paste this into Replit:
+
+---
+
+## Task: Standardize all bid detail pages to one universal hybrid layout
+
+### Decision
+
+We are locking in **one universal bid detail layout** for all four roles:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+### Universal standard
+
+Use:
+
+**1. Landlord-style outer card/container structure**
+
+* back link above card
+* teal top header bar
+* contained card body
+* consistent footer/action row
+
+**2. Tenant-style inner content spacing/typography**
+
+* section spacing
+* line-height
+* label/value spacing
+* list/bullet spacing
+* heading spacing
+* cleaner readability
+
+This hybrid layout is now the source of truth.
+
+---
+
+## Goal
+
+Make all four bid detail pages visually and structurally consistent by using:
+
+### Outer shell from Landlord
+
+* contained bid card look
+* top header bar
+* match score panel inside the card
+* footer action row inside the card
+
+### Inner content styling from Tenant
+
+* cleaner spacing
+* clearer typography
+* better section readability
+* better bullets and list spacing
+* more breathing room between sections
+
+---
+
+## Important rule
+
+Do **not** leave Tenant using one layout system and Landlord/Buyer/Seller using another.
+
+After this task, all 4 roles should feel like the same product and the same component system.
+
+---
+
+## What to standardize
+
+# 1. OUTER CARD STRUCTURE
+
+Use one shared layout structure for all 4 roles:
+
+### Top area
+
+* back link above the card
+* single outer card/container
+* teal header bar inside the card
+* listing ID line
+* status badge on the right
+
+### Match score section
+
+* same placement
+* same box styling
+* same spacing beneath header
+
+### Main content area
+
+* same inner padding
+* same section spacing
+* same section divider treatment
+
+### Footer area
+
+Use this exact structure across all 4 roles:
+
+**Left side:**
+Back to Agent Bids / Back to Listing
+
+**Right side:**
+Accept | Counter | Reject
+
+Do not center buttons on some roles and right-align them on others.
+
+---
+
+# 2. REMOVE LANDLORD-ONLY FOOTER DIFFERENCES
+
+Remove or standardize anything like:
+
+* centered action buttons
+* “Bid from Abby S is pending” footer text if redundant
+* separate status messaging that duplicates the badge/header state
+* oversized empty footer spacing
+
+The footer should be clean and consistent.
+
+---
+
+# 3. KEEP TENANT INNER SPACING AS THE STANDARD
+
+For all 4 roles, match Tenant’s inner content spacing for:
+
+### Typography
+
+* line-height
+* paragraph spacing
+* label/value spacing
+
+### Section spacing
+
+* top and bottom margin between sections
+* heading spacing
+* subsection spacing
+
+### Lists
+
+* bullets
+* indentation
+* spacing between list items
+* spacing between grouped service categories
+
+### Credentials/contact section
+
+* same spacing and layout grid
+* same label/value breathing room
+
+---
+
+# 4. STANDARDIZE COLORS
+
+Use the same color system across all roles:
+
+* teal header bar
+* green match badge / match highlights
+* green Accept
+* yellow Counter
+* red Reject
+
+Do not let one role have noticeably different button or header treatment unless it is intentional platform-wide styling.
+
+---
+
+# 5. DO NOT CHANGE CONTENT/LOGIC
+
+This is a layout/system standardization task.
+
+Do **not** change:
+
+* bid logic
+* match score logic
+* field order unless required for parity
+* role-specific content
+* permissions
+* action conditions
+* routes
+* database schema
+
+Only unify the layout/component system.
+
+---
+
+## Preferred implementation approach
+
+### Best option
+
+Create shared reusable layout wrappers / partials for:
+
+* bid detail outer card shell
+* bid detail header
+* match score wrapper
+* content container
+* footer action row
+
+Then make all 4 roles use those shared pieces.
+
+### Also create or reuse shared CSS classes
+
+For example:
+
+* shared outer card class
+* shared bid detail content class
+* shared section spacing class
+* shared footer action row class
+
+Avoid role-by-role CSS drift.
+
+---
+
+## Do NOT do this
+
+* do not manually tweak each role separately with random margin fixes
+* do not keep separate footer systems
+* do not keep Tenant as a page while others are cards
+* do not hardcode one role’s look into another without shared structure
+* do not duplicate entire templates if a shared partial can be used
+
+---
+
+## Exact visual target
+
+### Use Landlord as the outer structural reference for:
+
+* top card containment
+* header bar
+* match panel placement
+* footer/action containment
+
+### Use Tenant as the inner reading/reference standard for:
+
+* content spacing
+* section readability
+* bullets
+* typography
+* margins/padding within sections
+
+---
+
+## QA checklist
+
+After implementation, verify all 4 roles:
+
+### Structure
+
+* [ ] same outer card/container style
+* [ ] same teal top header bar style
+* [ ] same match score placement
+* [ ] same footer layout
+* [ ] same button alignment
+
+### Typography/spacing
+
+* [ ] same line-height
+* [ ] same section spacing
+* [ ] same heading spacing
+* [ ] same bullet spacing
+* [ ] same label/value spacing
+
+### Footer/actions
+
+* [ ] back button on left
+* [ ] Accept / Counter / Reject on right
+* [ ] no centered buttons on one role and right-aligned on another
+* [ ] no redundant footer text
+
+### Consistency
+
+* [ ] Tenant, Buyer, Seller, Landlord all feel like the same component system
+* [ ] no role looks more cramped than another
+* [ ] no role feels like a full-page doc while another feels like a card
+
+---
+
+## Deliverable back to me
+
+Report:
+
+1. files changed
+2. shared partials/layouts created or reused
+3. whether all 4 roles now use the same outer card shell
+4. whether all 4 roles now use the same footer action layout
+5. confirmation that Tenant spacing was preserved as the inner content standard
+
+---
+
+## Final instruction
+
+This is a **platform UI consistency task**, not a one-role tweak.
+
+The goal is to finish with **one universal bid detail component system** that all 4 roles share.
+
+---
+
+If you want, I can also give you a **Phase 2 cleanup prompt** right after this for:
+
+* match score card consistency
+* header wording consistency
+* back button label consistency
+* footer microcopy cleanup
