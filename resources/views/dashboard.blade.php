@@ -145,6 +145,7 @@
                                                     'landlord' => route('myBids', ['type' => 'hire-landlord-agent-bids']),
                                                     'buyer'    => route('myBids', ['type' => 'hire-buyer-agent-bids']),
                                                     'seller'   => route('myBids', ['type' => 'hire-seller-agent-bids']),
+                                                    'tenant'   => route('myBids', ['type' => 'agent-bids']),
                                                     default    => route($aRoleCfg['listRoute']),
                                                 };
                                                 $statusColor = $statusColors[$aStatus] ?? '#6c757d';

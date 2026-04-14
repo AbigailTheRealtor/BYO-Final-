@@ -153,9 +153,38 @@
 
     @else
 
-    {{-- Non-agent (tenant/buyer/seller/landlord): single "My Agent Request" entry --}}
+    {{-- Non-agent (tenant/buyer/seller/landlord): request-count-aware "My Agent Request" entry --}}
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Agent Request</div>
-    <a href="{{ route('dashboard') }}">
+    @php
+        $sidenavUser = auth()->user();
+        $sidenavTypeRoutes = [
+            'tenant'   => route('tenant.agent.auctions.list'),
+            'landlord' => route('landlord.agent.auctions.list'),
+            'buyer'    => route('buyer.agent.auctions.list'),
+            'seller'   => route('hireSellerAgentHireAuctions'),
+        ];
+        $sidenavCounts = [
+            'tenant'   => \App\Models\TenantAgentAuction::where('user_id', $sidenavUser->id)->count(),
+            'landlord' => \App\Models\LandlordAgentAuction::where('user_id', $sidenavUser->id)->count(),
+            'buyer'    => \App\Models\BuyerAgentAuction::where('user_id', $sidenavUser->id)->count(),
+            'seller'   => \App\Models\SellerAgentAuction::where('user_id', $sidenavUser->id)->count(),
+        ];
+        $sidenavTotalRequests = array_sum($sidenavCounts);
+        if ($sidenavTotalRequests === 1) {
+            // Exactly one request — route directly to its role-specific page
+            $sidenavRequestRoute = route('dashboard'); // fallback
+            foreach ($sidenavCounts as $sidenavRole => $sidenavCount) {
+                if ($sidenavCount > 0) {
+                    $sidenavRequestRoute = $sidenavTypeRoutes[$sidenavRole];
+                    break;
+                }
+            }
+        } else {
+            // Zero or multiple requests — route to dashboard (shows all or empty state)
+            $sidenavRequestRoute = route('dashboard');
+        }
+    @endphp
+    <a href="{{ $sidenavRequestRoute }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
