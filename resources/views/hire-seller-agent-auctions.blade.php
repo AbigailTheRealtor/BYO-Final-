@@ -11,7 +11,7 @@
                         @include('layouts.partials.sidenav')
                         <div class="rightCol col-sm-12 col-md-8 col-lg-8">
                             <div class="container mt-5 myAuctions">
-                                <h1>Hire Seller's Agent Auctions</h1>
+                                <h1>Hire Seller's Agent Listings</h1>
                                 <!-- Section 1  -->
                                 <select class="form-select mt-4 mb-3 w-25 auction-type">
                                     <option value="2" {{ $type == '2' ? 'selected' : '' }}>Live ({{ $liveCount }})

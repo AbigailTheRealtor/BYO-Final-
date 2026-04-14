@@ -367,7 +367,7 @@ class LandlordAgentAuctionController extends Controller
 
     public function list(Request $request)
     {
-        $page_data['title'] = 'Hire Landlord\'s Agent Auctions';
+        $page_data['title'] = 'Hire Landlord\'s Agent Listings';
         $page_data['type'] = $type = $request->type ?? "2";
         $pendingApprovalAuctions = LandlordAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => false, 'is_draft' => false])->with(['bids.user', 'bids.meta']);
         $liveAuctions = LandlordAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => false, 'is_draft' => false])->with(['bids.user', 'bids.meta']);

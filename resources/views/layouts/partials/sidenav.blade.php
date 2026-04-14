@@ -4,16 +4,16 @@
     @if (in_array(auth()->user()->user_type, ['seller', 'buyer', 'landlord', 'tenant', 'agent']))
     <div class="px-3 pt-3 pb-2">
         @if (auth()->user()->user_type === 'seller')
-            <a href="{{ route('sellerAgentHireAuction') }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+            <a href="{{ route('sellerAgentHireAuction') }}" class="btn w-100 fw-semibold" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Hire Agent</a>
         @elseif (auth()->user()->user_type === 'buyer')
-            <a href="{{ route('buyer.add-auction') }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+            <a href="{{ route('buyer.add-auction') }}" class="btn w-100 fw-semibold" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Hire Agent</a>
         @elseif (auth()->user()->user_type === 'landlord')
-            <a href="{{ route('landlord.hire.agent.auction') }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+            <a href="{{ route('landlord.hire.agent.auction') }}" class="btn w-100 fw-semibold" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Hire Agent</a>
         @elseif (auth()->user()->user_type === 'tenant')
-            <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}" class="btn btn-primary w-100 fw-semibold">+ Hire Agent</a>
+            <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}" class="btn w-100 fw-semibold" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Hire Agent</a>
         @elseif (auth()->user()->user_type === 'agent')
             <div class="dropdown">
-                <button class="btn btn-primary w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
+                <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">Hire Agent</button>
                 <ul class="dropdown-menu w-100">
                     <li><a class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a></li>
                     <li><a class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a></li>
