@@ -88,8 +88,8 @@
                                                 $cfg = $roleConfig[$primaryRole] ?? null;
                                             @endphp
                                             @if($cfg)
-                                                <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ New Listing</a>
-                                                <a href="{{ route($cfg['listRoute']) }}" class="btn btn-outline-secondary btn-sm">My Listings</a>
+                                                <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">Create New Listing</a>
+                                                <a href="{{ route($cfg['listRoute']) }}" class="btn btn-outline-secondary btn-sm">View My Listing</a>
                                             @endif
                                         @endif
                                         <a href="{{ route('messages') }}" class="btn btn-outline-secondary btn-sm">Messages</a>
@@ -100,42 +100,91 @@
                                 @if($user->user_type !== 'agent')
 
                                 {{-- ═══════════════════════════════════════════════
-                                     LISTINGS BY ROLE
+                                     MY LISTING
                                 ═══════════════════════════════════════════════ --}}
                                 <div class="mb-4">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">My Listings by Role</div>
-                                        @if($totalListings > 0)
-                                            <span class="badge bg-secondary">{{ $totalListings }} total</span>
+                                        <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">My Listing</div>
+                                        @if($activeListingData)
+                                            <a href="{{ route($roleConfig[$activeListingData['role']]['listRoute']) }}" class="small text-decoration-none" style="color:#049399;font-size:.75rem;">View Listing &rarr;</a>
                                         @endif
                                     </div>
-                                    <div class="row g-3">
-                                        @foreach($roleConfig as $roleKey => $roleCfg)
-                                        @php $cnt = $listingCounts[$roleKey] ?? 0; @endphp
-                                        <div class="col-6 col-md-3">
-                                            <div class="card h-100 border-0 rounded-3 p-3" style="background:#f8f9fa;">
-                                                <div class="d-flex align-items-center gap-2 mb-2" style="color:{{ $roleCfg['color'] }};">
-                                                    {!! $roleCfg['icon'] !!}
-                                                    <span class="small fw-semibold" style="font-size:.78rem;color:#444;">{{ $roleCfg['label'] }}</span>
+
+                                    @if($activeListingData)
+                                        @php
+                                            $aListing  = $activeListingData['listing'];
+                                            $aRole     = $activeListingData['role'];
+                                            $aRoleCfg  = $roleConfig[$aRole];
+                                            $aBidCount = $activeListingData['bidCount'];
+                                            $aPending  = $pendingBidCounts[$aRole] ?? 0;
+                                            $aStatus   = $aListing->is_draft ? 'Draft' : $aListing->status;
+                                            // "View Bids" destination: listing owners view received bids via myBids route
+                                            $aBidsUrl = match($aRole) {
+                                                'landlord' => route('myBids', ['type' => 'hire-landlord-agent-bids']),
+                                                'buyer'    => route('myBids', ['type' => 'hire-buyer-agent-bids']),
+                                                'seller'   => route('myBids', ['type' => 'hire-seller-agent-bids']),
+                                                default    => route($aRoleCfg['listRoute']),
+                                            };
+                                            $statusColors = [
+                                                'Active'      => '#198754',
+                                                'Draft'       => '#6c757d',
+                                                'Hired Agent' => '#0d6efd',
+                                                'Expired'     => '#dc3545',
+                                                'Pending'     => '#fd7e14',
+                                            ];
+                                            $statusColor = $statusColors[$aStatus] ?? '#6c757d';
+                                        @endphp
+                                        <div class="card border-0 rounded-3 overflow-hidden" style="border-left:4px solid {{ $aRoleCfg['color'] }} !important;box-shadow:0 1px 4px rgba(0,0,0,.07);">
+                                            <div class="card-body p-4">
+                                                <div class="d-flex align-items-start justify-content-between gap-3 mb-3">
+                                                    <div style="min-width:0;">
+                                                        <div class="d-flex align-items-center gap-2 mb-1" style="color:{{ $aRoleCfg['color'] }};">
+                                                            {!! $aRoleCfg['icon'] !!}
+                                                            <span class="small fw-semibold" style="font-size:.78rem;color:#666;">Hiring a {{ $aRoleCfg['label'] }}</span>
+                                                        </div>
+                                                        <div class="fw-bold text-truncate" style="font-size:1.05rem;color:#1a3a5c;max-width:340px;">{{ $aListing->title }}</div>
+                                                    </div>
+                                                    <span class="badge flex-shrink-0" style="background:{{ $statusColor }};color:#fff;font-size:.75rem;">{{ $aStatus }}</span>
                                                 </div>
-                                                <div class="fw-bold mb-2" style="font-size:1.6rem;color:{{ $cnt > 0 ? $roleCfg['color'] : '#adb5bd' }};">
-                                                    {{ $cnt }}
-                                                </div>
-                                                <div class="mt-auto d-flex gap-1 flex-wrap">
-                                                    @if($cnt > 0)
-                                                        <a href="{{ route($roleCfg['listRoute']) }}"
-                                                           class="btn btn-sm flex-fill text-white"
-                                                           style="background:{{ $roleCfg['color'] }};font-size:.75rem;">
-                                                            View All
-                                                        </a>
-                                                    @else
-                                                        <span class="small text-muted" style="font-size:.75rem;">No listings yet</span>
+                                                <div class="d-flex flex-wrap gap-3 mb-4 small">
+                                                    <span class="text-muted">ID: <span class="text-dark fw-semibold">#{{ $aListing->id }}</span></span>
+                                                    @if($aListing->created_at)
+                                                        <span class="text-muted">Created: <span class="text-dark fw-semibold">{{ $aListing->created_at->format('M j, Y') }}</span></span>
                                                     @endif
+                                                    <span class="text-muted">Bids: <span class="text-dark fw-semibold">{{ $aBidCount }}</span></span>
+                                                    @if($aBidCount === 0)
+                                                        <span class="text-muted fst-italic">No bids yet on this listing.</span>
+                                                    @endif
+                                                    @if($aPending > 0)
+                                                        <span class="fw-semibold" style="color:#dc3545;">
+                                                            {{ $aPending }} bid{{ $aPending != 1 ? 's' : '' }} awaiting your review
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    <a href="{{ route($aRoleCfg['listRoute']) }}"
+                                                       class="btn btn-sm text-white"
+                                                       style="background:{{ $aRoleCfg['color'] }};border:none;">View Listing</a>
+                                                    <a href="{{ $aBidsUrl }}"
+                                                       class="btn btn-sm btn-outline-secondary">View Bids</a>
                                                 </div>
                                             </div>
                                         </div>
-                                        @endforeach
-                                    </div>
+                                    @else
+                                        <div class="card border-0 bg-light rounded-3 p-4 text-center">
+                                            <div class="text-muted">
+                                                <svg xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;opacity:.3;" class="mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                </svg>
+                                                <p class="mb-1 fw-semibold">You have not created a listing yet.</p>
+                                                <p class="small mb-3">Post your first listing to start receiving agent bids.</p>
+                                                @php $cfg = $roleConfig[$user->user_type] ?? null; @endphp
+                                                @if($cfg)
+                                                    <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ Create New Listing</a>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 {{-- ═══════════════════════════════════════════════

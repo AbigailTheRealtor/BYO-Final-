@@ -1,0 +1,43 @@
+Finalize the main non-agent client dashboard for launch. This dashboard is shared by Tenant, Buyer, Seller, and Landlord users, but real usage is typically one user = one role = one listing. Do not alter listing creation, bid logic, routing logic, counter flows, accept/reject logic, or database schema. This is a dashboard UI/navigation cleanup only.
+
+Make these changes:
+
+1. Remove the “My Listings by Role” dashboard section entirely, including the 4 role summary cards (Tenant’s Agent, Landlord’s Agent, Buyer’s Agent, Seller’s Agent) and the total count display.
+2. Replace it with a single dashboard section titled “My Listing”.
+3. In “My Listing”, show one active/current listing summary card with:
+   - listing title
+   - active role label (Hiring a Tenant’s Agent / Landlord’s Agent / Buyer’s Agent / Seller’s Agent)
+   - listing ID
+   - status
+   - created date if available
+   - bid count
+   - items needing action if available
+   - actions: View Listing and View Bids
+4. Update Quick Actions to:
+   - Create New Listing
+   - View My Listing
+   - Messages
+   - Profile Settings
+5. Use singular language throughout the dashboard where appropriate:
+   - My Listing instead of My Listings
+   - View Listing instead of View All
+6. Keep all 4 role systems internally, but do not show all 4 role categories on the main dashboard homepage.
+7. Simplify the sidebar for the main client dashboard to:
+   - Dashboard
+   - My Listing
+   - Messages
+   - Profile Settings
+8. Make “My Listing” route dynamically to the correct underlying role-specific page based on the user’s active/current listing role.
+9. Keep a compact Needs Attention / Activity area below the listing summary if already supported, but make it secondary to My Listing.
+10. Preserve clean empty states:
+   - if no listing: “You have not created a listing yet” with Create New Listing
+   - if listing exists but no bids: show listing and “No bids yet on this listing”
+11. Keep previously requested readability improvements for Profile Settings.
+12. Do not reintroduce Connections or role summary cards.
+
+Acceptance criteria:
+- no 4-role summary cards on dashboard homepage
+- singular My Listing dashboard experience
+- dashboard reflects one active listing workflow
+- routing still respects Tenant/Buyer/Seller/Landlord role-specific pages
+- no breakage to underlying listing or bid logic
