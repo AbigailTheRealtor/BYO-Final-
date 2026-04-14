@@ -100,7 +100,8 @@
             </div>
 
             {{-- ── Row 2: Optional Document Sharing (listing owner only) ── --}}
-            @if($userRole === 'tenant')
+            {{-- Access = ownership (tenant_user_id), not role string. listing_type controls which fields appear. --}}
+            @if($canUploadAcknowledgementDocuments)
             <div class="row mt-2 mb-4">
                 <div class="col-12">
                     <div class="card border-0 shadow-sm" style="border-left: 4px solid #0d6efd !important; border-radius: 10px;">
@@ -225,9 +226,9 @@
                                     <div class="col-md-6">
                                         <div class="doc-upload-card p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
-                                                <i class="fas fa-link me-1 text-muted"></i> Property MLS / Public Record Link
+                                                <i class="fas fa-link me-1 text-muted"></i> Property Record Link
                                             </label>
-                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Link to the MLS listing, Zillow, or county property record page</p>
+                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Paste a public county property appraiser or property record link related to this property.</p>
                                             <input
                                                 type="url"
                                                 class="form-control form-control-sm"

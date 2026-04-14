@@ -62,11 +62,16 @@ class AcceptedBidSummaryController extends Controller
             ->where('user_id', $user->id)
             ->first();
 
+        // Access = ownership of the listing-side (tenant_user_id), not role string.
+        // All four flows (buyer, tenant, seller, landlord) store the listing owner in tenant_user_id.
+        $canUploadAcknowledgementDocuments = ($user->id === $summary->tenant_user_id);
+
         return view('accepted_bid_summary.sign', [
-            'summary'      => $summary,
-            'html'         => $html,
-            'userRole'     => $userRole,
-            'existingDocs' => $existingDocs,
+            'summary'                          => $summary,
+            'html'                             => $html,
+            'userRole'                         => $userRole,
+            'existingDocs'                     => $existingDocs,
+            'canUploadAcknowledgementDocuments' => $canUploadAcknowledgementDocuments,
         ]);
     }
 

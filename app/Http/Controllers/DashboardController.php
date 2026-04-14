@@ -172,7 +172,7 @@ class DashboardController extends Controller
             }
         }
 
-        // ── Avatar: file upload takes priority over default avatar picker ───
+        // ── Profile photo: uploaded file only ───────────────────────────────
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             if ($file && $file->isValid()) {
@@ -183,8 +183,6 @@ class DashboardController extends Controller
                     $user->avatar = $imageName;
                 }
             }
-        } elseif ($request->filled('myavatar')) {
-            $user->avatar = $request->myavatar;
         }
 
         $user->save();

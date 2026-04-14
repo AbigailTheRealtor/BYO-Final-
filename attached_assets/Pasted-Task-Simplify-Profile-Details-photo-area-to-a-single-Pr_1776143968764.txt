@@ -1,0 +1,148 @@
+Task: Simplify Profile Details photo area to a single Profile Photo upload only
+
+The Profile Details section is currently overbuilt and causing system/UI problems.
+
+We do not want:
+
+default avatar picker
+avatar background logic
+extra avatar options
+anything beyond a simple uploaded profile photo
+
+This page is for normal client users:
+
+Tenant
+Buyer
+Seller
+Landlord
+
+Keep it simple.
+
+Goal
+
+Replace the current Profile Photo area with a clean, basic profile image upload only.
+
+Final desired behavior
+
+In Profile Details, show only:
+
+current profile photo preview, if one exists
+one upload field to upload/replace the photo
+helper text for allowed file types and max size
+
+That’s it.
+
+Remove completely
+
+Remove all UI and logic related to:
+
+default avatar selection
+“choose a default avatar”
+avatar background
+background image
+cover photo
+any avatar grid/picker
+any fallback avatar selection UI
+any code trying to manage avatar presets/background states for this page
+
+These should no longer appear in the client Profile Settings page.
+
+Final UI structure for Profile Photo
+
+Inside Profile Details:
+
+Section label
+
+Profile Photo
+
+Show
+current photo thumbnail/preview if uploaded
+simple file input to upload/replace profile photo
+Helper text
+
+Use something like:
+
+JPG, PNG, or GIF. Max 2MB.
+
+If no photo exists, show a clean placeholder like:
+
+“No profile photo uploaded yet”
+or a simple empty preview circle
+
+Do not show avatar presets.
+
+Implementation requirements
+Frontend
+
+Update the settings view so the Profile Photo block only includes:
+
+preview
+upload input
+helper text
+
+Remove all avatar preset markup and related controls.
+
+Backend
+
+Preserve existing uploaded profile photo functionality.
+
+If there is logic for:
+
+saving uploaded profile photo path
+replacing uploaded photo
+displaying current profile photo
+
+keep that.
+
+Remove only the extra avatar/default/background logic that is no longer needed for this page.
+
+Important safeguard
+
+Do not broadly delete avatar/background logic from the whole codebase unless it is truly unused everywhere.
+
+This is a surgical cleanup for the client Profile Settings flow.
+
+Safe approach
+remove the avatar preset/background UI from this settings page
+remove controller handling only if it is specific to this page and no longer needed
+if shared code exists elsewhere, do not break it without checking usage first
+Also clean up related save logic
+
+Inspect the settings controller/save method and remove or ignore fields related to:
+
+selected default avatar
+avatar preset
+avatar background
+background image
+
+for this client settings page, if they are currently being submitted.
+
+Do not keep saving fields that the page no longer uses.
+
+QA checklist
+ Profile Details shows only one Profile Photo area
+ Current uploaded photo preview displays correctly if present
+ User can upload/replace profile photo
+ No default avatar picker appears
+ No avatar background logic appears
+ No cover/background image UI appears
+ Save still works correctly
+ Existing uploaded profile photo still displays
+ No broken layout or empty leftover avatar container remains
+Deliverable back to me
+
+Report:
+
+files changed
+what avatar/background UI was removed
+whether any save/controller logic was removed or ignored
+confirmation that only simple profile photo upload remains
+Final rule
+
+For this client settings page:
+
+Profile photo only. No avatar system. No background system.
+
+Keep it simple and stable.
+
+One more recommendation: after they remove that avatar junk, have them slightly tighten the spacing in that Profile Details section so the photo area feels cleaner and less stretched out.

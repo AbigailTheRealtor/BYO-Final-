@@ -119,44 +119,33 @@
                                                     </div>
                                                     <div class="col-md-12">
                                                         <label class="form-label fw-semibold">Profile Photo</label>
-                                                        <div class="d-flex align-items-start gap-4 mt-1 flex-wrap">
-                                                            {{-- Current photo preview --}}
-                                                            <div>
-                                                                @php
-                                                                    $defaultAvatars = array_map(fn($n) => "$n.png", range(1, 30));
-                                                                    $isDefaultAvatar = in_array($user->avatar, $defaultAvatars) || !$user->avatar;
-                                                                @endphp
-                                                                <img src="{{ asset('images/avatar/' . ($user->avatar ?: '1.png')) }}"
+                                                        @php
+                                                            $hasUploadedPhoto = $user->avatar && !preg_match('/^\d+\.png$/', $user->avatar);
+                                                        @endphp
+                                                        <div class="d-flex align-items-center gap-3 mt-2">
+                                                            {{-- Preview --}}
+                                                            @if($hasUploadedPhoto)
+                                                                <img src="{{ asset('images/avatar/' . $user->avatar) }}"
+                                                                     id="profile-photo-preview"
                                                                      class="rounded-circle border"
-                                                                     style="width: 80px; height: 80px; object-fit: cover;"
-                                                                     id="current-avatar-preview"
-                                                                     alt="Current photo">
-                                                                <div class="form-text text-center mt-1">Current</div>
-                                                            </div>
-                                                            {{-- Upload new photo --}}
+                                                                     style="width: 72px; height: 72px; object-fit: cover; flex-shrink: 0;"
+                                                                     alt="Current profile photo">
+                                                            @else
+                                                                <div class="rounded-circle border d-flex align-items-center justify-content-center bg-light"
+                                                                     style="width: 72px; height: 72px; flex-shrink: 0; position: relative; overflow: hidden;">
+                                                                    <i class="fas fa-user text-muted" style="font-size: 1.6rem;"></i>
+                                                                    <img id="profile-photo-preview" src="" alt=""
+                                                                         style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover;">
+                                                                </div>
+                                                            @endif
+                                                            {{-- Upload --}}
                                                             <div class="flex-grow-1">
-                                                                <label class="form-label text-muted small">Upload a new photo</label>
+                                                                <p class="mb-1 text-muted small">
+                                                                    {{ $hasUploadedPhoto ? 'Upload a new photo to replace the current one.' : 'No profile photo uploaded yet.' }}
+                                                                </p>
                                                                 <input type="file" name="avatar" class="form-control form-control-sm" id="avatarUpload"
                                                                        accept="image/jpeg,image/png,image/gif">
                                                                 <div class="form-text">JPG, PNG, or GIF. Max 2MB.</div>
-                                                            </div>
-                                                        </div>
-                                                        {{-- Default avatar picker --}}
-                                                        <div class="mt-3">
-                                                            <div class="form-text mb-2">Or choose a default avatar:</div>
-                                                            <div class="d-flex flex-wrap gap-2" style="max-height: 160px; overflow-y: auto;">
-                                                                @for ($i = 1; $i <= 30; $i++)
-                                                                <label for="av{{ $i }}" class="mb-0" title="Avatar {{ $i }}"
-                                                                       style="cursor: pointer; opacity: {{ ($i.'.png' == $user->avatar) ? '1' : '0.6' }}; transition: opacity 0.2s;"
-                                                                       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=this.querySelector('input').checked?'1':'0.6'">
-                                                                    <img src="{{ asset('/images/avatar/'.$i.'.png') }}"
-                                                                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 2px solid {{ ($i.'.png' == $user->avatar) ? '#049399' : 'transparent' }};"
-                                                                         alt="Avatar {{ $i }}">
-                                                                    <input class="user-avatar d-none" id="av{{ $i }}" type="radio"
-                                                                           value="{{ $i }}.png" name="myavatar"
-                                                                           {{ $i.'.png' == $user->avatar ? 'checked' : '' }}>
-                                                                </label>
-                                                                @endfor
                                                             </div>
                                                         </div>
                                                     </div>
@@ -375,32 +364,16 @@ document.addEventListener('DOMContentLoaded', function () {
             if (this.files && this.files[0]) {
                 var reader = new FileReader();
                 reader.onload = function (e) {
-                    var preview = document.getElementById('current-avatar-preview');
-                    if (preview) { preview.src = e.target.result; }
+                    var preview = document.getElementById('profile-photo-preview');
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
                 };
                 reader.readAsDataURL(this.files[0]);
-                // Deselect any chosen default avatar
-                document.querySelectorAll('.user-avatar').forEach(function(r) { r.checked = false; });
             }
         });
     }
-
-    // Highlight selected default avatar
-    document.querySelectorAll('.user-avatar').forEach(function (radio) {
-        radio.addEventListener('change', function () {
-            document.querySelectorAll('label[for^="av"]').forEach(function (lbl) {
-                var img = lbl.querySelector('img');
-                if (img) img.style.border = '2px solid transparent';
-                lbl.style.opacity = '0.6';
-            });
-            var selectedLabel = document.querySelector('label[for="' + radio.id + '"]');
-            if (selectedLabel) {
-                var img = selectedLabel.querySelector('img');
-                if (img) img.style.border = '2px solid #049399';
-                selectedLabel.style.opacity = '1';
-            }
-        });
-    });
 
     // Typed DELETE confirmation for account deletion
     var deleteInput  = document.getElementById('delete-confirm-input');
