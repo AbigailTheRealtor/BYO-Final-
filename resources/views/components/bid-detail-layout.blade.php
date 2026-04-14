@@ -29,9 +29,6 @@
                     <div class="opacity-75">
                         <span class="me-3"><i class="fas fa-home me-1"></i>{{ $roleLabel }}</span>
                         <span><i class="fas fa-tag me-1"></i>Listing #{{ $listingId }}</span>
-                        @if($address)
-                        <span class="ms-3"><i class="fas fa-map-marker-alt me-1"></i>{{ $address }}</span>
-                        @endif
                     </div>
                 </div>
                 <div class="text-end mt-2 mt-md-0">

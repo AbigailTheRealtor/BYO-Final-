@@ -1,0 +1,167 @@
+Good call — you want **one clean, consistent header**, and the address up there is just adding noise.
+
+Right now:
+
+* **Landlord = clean ✅**
+* **Seller = cluttered (extra address) ❌**
+
+👉 You’re making the right decision: **remove the address from Seller header**
+
+---
+
+# ✅ What the header SHOULD be (final standard)
+
+Across ALL roles:
+
+```
+Agent Bid Detail
+Hire a [Role]’s Agent   |   Listing #XXXXXXX
+[Status badge on right]
+```
+
+❌ NO address
+❌ NO extra location info
+❌ NO secondary line clutter
+
+👉 Keep it **clean + consistent**
+
+---
+
+# 🔧 Replit Instructions (clean + safe)
+
+Paste this:
+
+---
+
+## Task: Remove address from Seller bid detail header to match universal layout
+
+### Goal
+
+Standardize the header across all roles by removing the address from the Seller bid detail header.
+
+The header must match the Landlord version exactly in structure.
+
+---
+
+## What to change
+
+### File to inspect
+
+* `resources/views/components/bid-detail-layout.blade.php`
+* OR wherever the Seller header is injecting `address` into the layout
+
+---
+
+## Current issue
+
+Seller header currently shows:
+
+```
+Hire a Seller's Agent | Listing #SAA-TPYV90U3 | 104 163rd Ave
+```
+
+Landlord correctly shows:
+
+```
+Hire a Landlord's Agent | Listing #LAA-ASNYUZPZ
+```
+
+---
+
+## Required fix
+
+### Remove address from header display
+
+Find where `address` is being rendered in the header, likely something like:
+
+```php
+{{ $address }}
+```
+
+or
+
+```php
+@if($address)
+    <span>{{ $address }}</span>
+@endif
+```
+
+### Remove it entirely from the header output
+
+Do NOT:
+
+* hide with CSS
+* leave conditional rendering
+* keep empty spacing
+
+Completely remove the address element from the header.
+
+---
+
+## Important
+
+* Do NOT remove the `address` prop from the component if it’s used elsewhere
+* Only remove it from the **header display**
+* Address can still be shown elsewhere in the page if needed (but not in header)
+
+---
+
+## Final header structure (must match across all roles)
+
+```php
+Hire a Seller's Agent
+Listing #{{ $listingId }}
+```
+
+NO extra fields.
+
+---
+
+## QA checklist
+
+* [ ] Seller header no longer shows address
+* [ ] Landlord header unchanged
+* [ ] Buyer header does NOT include address (verify this too)
+* [ ] Tenant header unchanged
+* [ ] No extra spacing or empty gaps in header
+* [ ] Status badge still aligned correctly on right
+
+---
+
+## Do not change
+
+* do not change layout structure
+* do not change listing ID logic
+* do not change status badge
+* do not modify other roles beyond removing address if present
+
+---
+
+## Deliverable
+
+Confirm:
+
+1. file where address was removed
+2. that all roles now have identical header structure
+3. that no empty spacing remains where address was
+
+---
+
+# 💬 My take
+
+This is exactly the kind of decision that makes your product feel:
+👉 **intentional instead of stitched together**
+
+You’re moving in the right direction:
+
+* less clutter
+* more consistency
+* clearer hierarchy
+
+---
+
+If you want next micro-optimization after this, I’d tighten:
+👉 the spacing between “Hire a X Agent” and “Listing #”
+👉 and slightly bold the Listing ID for emphasis
+
+But this change is 100% the right move 👍
