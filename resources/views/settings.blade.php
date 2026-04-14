@@ -50,21 +50,21 @@
                             <form method="POST" action="{{ route('settings') }}" enctype="multipart/form-data">
                                 @csrf
 
-                                <div class="accordion" id="settingsAccordion">
+                                {{-- Alpine-only accordion — no Bootstrap collapse to avoid JS/CSS conflict --}}
+                                <div x-data="{ openSection: null }">
 
                                     {{-- ── 1. Account Information ── --}}
                                     <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
                                         <h2 class="accordion-header">
                                             <button type="button"
-                                                    class="accordion-button collapsed"
-                                                    data-bs-toggle="collapse"
-                                                    data-bs-target="#section-account"
-                                                    aria-expanded="false"
+                                                    class="accordion-button"
+                                                    :class="openSection !== 'account' && 'collapsed'"
+                                                    @click="openSection = openSection === 'account' ? null : 'account'"
                                                     style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
                                                 <i class="fas fa-user-circle me-2 text-muted"></i>Account Information
                                             </button>
                                         </h2>
-                                        <div id="section-account" class="accordion-collapse collapse">
+                                        <div x-show="openSection === 'account'" x-transition style="display:none;">
                                             <div class="accordion-body pt-2 pb-4">
                                                 <p class="text-muted small mb-3">Your login credentials. Email cannot be changed.</p>
                                                 <div class="row g-3">
@@ -94,15 +94,14 @@
                                     <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
                                         <h2 class="accordion-header">
                                             <button type="button"
-                                                    class="accordion-button collapsed"
-                                                    data-bs-toggle="collapse"
-                                                    data-bs-target="#section-profile"
-                                                    aria-expanded="false"
+                                                    class="accordion-button"
+                                                    :class="openSection !== 'profile' && 'collapsed'"
+                                                    @click="openSection = openSection === 'profile' ? null : 'profile'"
                                                     style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
                                                 <i class="fas fa-id-card me-2 text-muted"></i>Profile Details
                                             </button>
                                         </h2>
-                                        <div id="section-profile" class="accordion-collapse collapse">
+                                        <div x-show="openSection === 'profile'" x-transition style="display:none;">
                                             <div class="accordion-body pt-2 pb-4">
                                                 <p class="text-muted small mb-3">Your personal information and profile photo.</p>
                                                 <div class="row g-3">
@@ -170,15 +169,14 @@
                                     <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
                                         <h2 class="accordion-header">
                                             <button type="button"
-                                                    class="accordion-button collapsed"
-                                                    data-bs-toggle="collapse"
-                                                    data-bs-target="#section-prefs"
-                                                    aria-expanded="false"
+                                                    class="accordion-button"
+                                                    :class="openSection !== 'prefs' && 'collapsed'"
+                                                    @click="openSection = openSection === 'prefs' ? null : 'prefs'"
                                                     style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
                                                 <i class="fas fa-sliders-h me-2 text-muted"></i>Preferences
                                             </button>
                                         </h2>
-                                        <div id="section-prefs" class="accordion-collapse collapse">
+                                        <div x-show="openSection === 'prefs'" x-transition style="display:none;">
                                             <div class="accordion-body pt-2 pb-4">
                                                 <div class="row g-4">
                                                     <div class="col-md-6">
@@ -234,15 +232,14 @@
                                     <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
                                         <h2 class="accordion-header">
                                             <button type="button"
-                                                    class="accordion-button collapsed"
-                                                    data-bs-toggle="collapse"
-                                                    data-bs-target="#section-security"
-                                                    aria-expanded="false"
+                                                    class="accordion-button"
+                                                    :class="openSection !== 'security' && 'collapsed'"
+                                                    @click="openSection = openSection === 'security' ? null : 'security'"
                                                     style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
                                                 <i class="fas fa-lock me-2 text-muted"></i>Privacy &amp; Security
                                             </button>
                                         </h2>
-                                        <div id="section-security" class="accordion-collapse collapse">
+                                        <div x-show="openSection === 'security'" x-transition style="display:none;">
                                             <div class="accordion-body pt-2 pb-4">
                                                 <p class="text-muted small mb-3">Leave these fields blank if you do not want to change your password.</p>
                                                 <div class="row g-3">
@@ -266,7 +263,7 @@
                                         </div>
                                     </div>
 
-                                </div>{{-- end accordion --}}
+                                </div>{{-- end Alpine accordion --}}
 
                                 {{-- Save button --}}
                                 <div class="d-flex justify-content-end mt-2 mb-2">

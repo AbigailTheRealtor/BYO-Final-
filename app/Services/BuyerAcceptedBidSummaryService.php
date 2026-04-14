@@ -302,6 +302,7 @@ class BuyerAcceptedBidSummaryService
             $html = $this->buildSummaryHtml($listing, $bid, $buyer, $agent, $sourceData, $acceptedCounter);
 
             $summary = AcceptedBidSummary::create([
+                'listing_type'        => 'buyer',
                 'listing_id'          => $listing->id,
                 'accepted_bid_id'     => $bid->id,
                 'accepted_counter_id' => $acceptedCounter ? $acceptedCounter->id : null,

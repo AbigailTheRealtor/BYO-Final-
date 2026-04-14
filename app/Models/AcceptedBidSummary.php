@@ -10,6 +10,7 @@ class AcceptedBidSummary extends Model
     use HasFactory;
 
     protected $fillable = [
+        'listing_type',
         'listing_id',
         'accepted_bid_id',
         'accepted_counter_id',
@@ -57,6 +58,11 @@ class AcceptedBidSummary extends Model
     public function agent()
     {
         return $this->belongsTo(User::class, 'agent_user_id');
+    }
+
+    public function acknowledgementDocuments()
+    {
+        return $this->hasMany(AcknowledgementDocument::class, 'accepted_bid_summary_id');
     }
 
     public function isTenantSigned()

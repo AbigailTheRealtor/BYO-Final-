@@ -306,12 +306,13 @@ class LandlordAcceptedBidSummaryService
             $html = $this->buildSummaryHtml($listing, $bid, $landlord, $agent, $sourceData, $acceptedCounter);
 
             $summary = AcceptedBidSummary::create([
-                'listing_id'        => $listing->id,
-                'accepted_bid_id'   => $bid->id,
+                'listing_type'        => 'landlord',
+                'listing_id'          => $listing->id,
+                'accepted_bid_id'     => $bid->id,
                 'accepted_counter_id' => $acceptedCounter ? $acceptedCounter->id : null,
-                'tenant_user_id'    => $landlord->id,
-                'agent_user_id'     => $agent->id,
-                'summary_html'      => $html,
+                'tenant_user_id'      => $landlord->id,
+                'agent_user_id'       => $agent->id,
+                'summary_html'        => $html,
             ]);
 
             return $summary;

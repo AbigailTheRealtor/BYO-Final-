@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\AcceptedBidSummary;
+use App\Models\AcknowledgementDocument;
 use App\Services\AcceptedBidSummaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class AcceptedBidSummaryController extends Controller
@@ -55,10 +58,15 @@ class AcceptedBidSummaryController extends Controller
 
         $html = $this->summaryService->getRenderedHtml($summary);
 
+        $existingDocs = AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
+            ->where('user_id', $user->id)
+            ->first();
+
         return view('accepted_bid_summary.sign', [
-            'summary' => $summary,
-            'html' => $html,
-            'userRole' => $userRole,
+            'summary'      => $summary,
+            'html'         => $html,
+            'userRole'     => $userRole,
+            'existingDocs' => $existingDocs,
         ]);
     }
 
@@ -167,6 +175,61 @@ class AcceptedBidSummaryController extends Controller
             ]);
             throw $e;
         }
+    }
+
+    public function storeDocuments(Request $request, $id)
+    {
+        $summary = AcceptedBidSummary::findOrFail($id);
+        $user    = Auth::user();
+
+        if (!$this->canAccessSummary($summary, $user)) {
+            abort(403, 'You are not authorized to upload documents for this summary.');
+        }
+
+        // Only the listing owner (tenant_user_id) may upload documents
+        if ($user->id !== $summary->tenant_user_id) {
+            return redirect()->route('accepted-bid-summary.sign', $id)
+                ->with('error', 'Only the listing owner can upload documents.');
+        }
+
+        $uploadDir = storage_path('app/acknowledgement_documents');
+        if (!file_exists($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $doc = AcknowledgementDocument::firstOrNew([
+            'accepted_bid_summary_id' => $summary->id,
+            'user_id'                 => $user->id,
+        ]);
+        $doc->selected_agent_user_id = $summary->agent_user_id;
+
+        $fileFields = [
+            'id_document'         => 'id_document_path',
+            'proof_of_funds'      => 'proof_of_funds_path',
+            'pre_approval_letter' => 'pre_approval_letter_path',
+            'proof_of_income'     => 'proof_of_income_path',
+        ];
+
+        foreach ($fileFields as $inputName => $column) {
+            if ($request->hasFile($inputName) && $request->file($inputName)->isValid()) {
+                $file = $request->file($inputName);
+                $ext  = strtolower($file->getClientOriginalExtension());
+                if (in_array($ext, ['pdf', 'jpg', 'jpeg', 'png'])) {
+                    $filename = 'ack_doc_' . $summary->id . '_' . $user->id . '_' . Str::random(8) . '.' . $ext;
+                    $file->move($uploadDir, $filename);
+                    $doc->{$column} = 'acknowledgement_documents/' . $filename;
+                }
+            }
+        }
+
+        if ($request->filled('property_record_link')) {
+            $doc->property_record_link = $request->input('property_record_link');
+        }
+
+        $doc->save();
+
+        return redirect()->route('accepted-bid-summary.sign', $id)
+            ->with('doc_success', 'Your documents were saved. You can continue to review and sign below.');
     }
 
     protected function canAccessSummary(AcceptedBidSummary $summary, $user): bool
