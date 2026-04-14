@@ -153,18 +153,9 @@
 
     @else
 
-    {{-- Non-agent (tenant/buyer/seller/landlord): single "My Listing" entry --}}
-    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Listing</div>
-    @php
-        $myListingRoute = match(auth()->user()->user_type) {
-            'tenant'   => route('tenant.agent.auctions.list'),
-            'buyer'    => route('buyer.agent.auctions.list'),
-            'landlord' => route('landlord.agent.auctions.list'),
-            'seller'   => route('hireSellerAgentHireAuctions'),
-            default    => route('dashboard'),
-        };
-    @endphp
-    <a href="{{ $myListingRoute }}">
+    {{-- Non-agent (tenant/buyer/seller/landlord): single "My Agent Request" entry --}}
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Agent Request</div>
+    <a href="{{ route('dashboard') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -172,8 +163,8 @@
                 </svg>
             </div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>My Listing</b></div>
-                <div class="opacity-50 text-400 small">View and manage your active listing.</div>
+                <div class="text-600 mb-1"><b>My Agent Request</b></div>
+                <div class="opacity-50 text-400 small">View and manage all your agent requests.</div>
             </div>
         </div>
     </a>

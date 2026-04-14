@@ -99,8 +99,8 @@ class DashboardController extends Controller
             ->whereNull('tenant_signed_at')
             ->count();
 
-        // ── Active listing: most recent across primary role, then fallback ─────
-        $page_data['activeListingData'] = null;
+        // ── All agent requests across all four listing types (no role priority) ──
+        $page_data['allListings'] = [];
         if ($user->user_type !== 'agent') {
             $modelMap = [
                 'tenant'   => TenantAgentAuction::class,
@@ -108,23 +108,18 @@ class DashboardController extends Controller
                 'buyer'    => BuyerAgentAuction::class,
                 'seller'   => SellerAgentAuction::class,
             ];
-            // Primary role first, then others as fallback
-            $checkOrder = array_merge(
-                array_filter([$user->user_type], fn($r) => isset($modelMap[$r])),
-                array_diff(array_keys($modelMap), [$user->user_type])
-            );
-            foreach ($checkOrder as $roleKey) {
-                $model   = $modelMap[$roleKey];
-                $listing = $model::where('user_id', $uid)->latest()->first();
-                if ($listing) {
-                    $page_data['activeListingData'] = [
+            $collected = [];
+            foreach ($modelMap as $roleKey => $model) {
+                $listings = $model::where('user_id', $uid)->latest()->get();
+                foreach ($listings as $listing) {
+                    $collected[] = [
                         'listing'  => $listing,
                         'role'     => $roleKey,
                         'bidCount' => $listing->bids()->count(),
                     ];
-                    break;
                 }
             }
+            $page_data['allListings'] = $collected;
         }
 
         return view('dashboard', $page_data);

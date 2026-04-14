@@ -1,0 +1,345 @@
+Perfect — here is your **FINAL, CLEAN, SAFE, COPY-PASTE READY** Replit instruction set with:
+
+* ✅ correct dashboard logic
+* ✅ multi-listing handling
+* ✅ strict safeguards
+* ✅ zero risk to Tenant-based architecture
+* ✅ no accidental breaking of hire flows
+
+You can paste this exactly.
+
+---
+
+# 🧠 Replit Instructions — Final Main Client Dashboard (LAUNCH SAFE)
+
+## 🎯 Goal
+
+Refactor the **main shared client dashboard** to:
+
+* show a **single active Agent Request (listing + bids)** for normal users
+* show **ALL requests when multiple exist** (no hiding, no guessing)
+* remove confusing role-based dashboard behavior
+* keep all underlying **Tenant-based shared architecture and hire flows intact**
+
+---
+
+# 🚨 CRITICAL GLOBAL SAFEGUARD (DO NOT SKIP)
+
+```text
+CRITICAL SAFEGUARD — DO NOT MODIFY CORE SYSTEMS
+
+This task is strictly limited to dashboard UI, dashboard naming, and dashboard selection logic ONLY.
+
+DO NOT modify, refactor, rename, remove, or restructure any of the following:
+
+1. Listing Creation Flows (ALL TYPES)
+   - Hire a Tenant’s Agent
+   - Hire a Landlord’s Agent
+   - Hire a Buyer’s Agent
+   - Hire a Seller’s Agent
+   - All tabs, fields, labels, tooltips, placeholders, validation, and dynamic logic must remain unchanged
+
+2. Bid / Auction / Negotiation Logic
+   - Agent bid submission
+   - Accept / Counter / Reject
+   - Counter terms
+   - Bid state machine
+   - Match score logic
+   - Accepted Bid Summary
+   - Signature / acknowledgement flow
+
+3. Database Schema
+   - DO NOT rename tables
+   - DO NOT delete tables
+   - DO NOT rename columns
+   - DO NOT change relationships
+
+4. Tenant-Based Shared Architecture
+   - DO NOT remove or refactor existing user_type usage in backend logic
+   - DO NOT change how listings are stored or related internally
+   - The system may still rely on Tenant-based structure internally — DO NOT break this
+
+5. Role-Specific Pages
+   - Do not modify Tenant / Landlord / Buyer / Seller pages
+   - Dashboard may link to them, but must not change their behavior
+
+6. Messages System
+   - Do not modify messaging logic, routing, or polling
+
+IMPORTANT:
+All changes must be PRESENTATIONAL and ADDITIVE only.
+If any change risks breaking listing creation or bid logic, STOP and report.
+```
+
+---
+
+# 🔁 PART 1 — REMOVE user_type AS DASHBOARD SELECTOR (SAFE VERSION)
+
+```text
+Remove user_type as DASHBOARD request selector ONLY
+
+This applies ONLY to dashboard display logic.
+
+The dashboard must NOT use auth()->user()->user_type to:
+- decide which request to show
+- decide the dashboard badge
+- decide where “My Agent Request” routes
+
+DO NOT remove user_type from backend logic.
+DO NOT change how listings or bids rely on user_type internally.
+
+This change applies ONLY to:
+- dashboard request preview
+- dashboard labels
+- dashboard navigation behavior
+
+If modifying user_type outside the dashboard layer would affect listing creation or bids, STOP.
+```
+
+---
+
+# 🧩 PART 2 — RENAME SECTION
+
+Replace:
+
+* ❌ My Listing
+
+With:
+
+* ✅ Sidebar: **My Agent Request**
+* ✅ Section Title: **Your Active Agent Request**
+
+---
+
+# 🧩 PART 3 — REMOVE OLD ROLE DASHBOARD CARDS
+
+Remove completely:
+
+* Tenant card
+* Landlord card
+* Buyer card
+* Seller card
+* any role counts (14 / 56 / etc)
+
+❌ Do NOT bring this back
+
+---
+
+# 🧩 PART 4 — DASHBOARD REQUEST DISPLAY RULE (CRITICAL)
+
+```text
+Dashboard Request Display Logic
+
+The dashboard must behave based on the number of requests:
+
+1. If the user has exactly ONE request:
+   - Show that request directly
+   - Do NOT show a selector
+   - Do NOT use user_type
+
+2. If the user has MULTIPLE requests:
+   - Show ALL requests
+   - Do NOT auto-select
+   - Do NOT default to Tenant
+   - Do NOT default to latest()
+   - Do NOT hide any requests
+
+3. If the user has NO requests:
+   - Show empty state
+```
+
+---
+
+# 🧩 PART 5 — MULTIPLE REQUESTS (STRICT RULE)
+
+```text
+If user has MULTIPLE requests:
+
+The dashboard must show ALL requests created by the user.
+
+DO NOT:
+- auto-select a request
+- default to Tenant
+- default to auth()->user()->user_type
+- default to latest()->first()
+- hide other requests
+
+Each request must display:
+- request type (Tenant, Landlord, Buyer, Seller)
+- listing ID or title
+- status
+- bid count (if available)
+- action button: Open Request
+
+Only include requests that actually exist.
+Do not show empty role categories.
+```
+
+---
+
+# 🧩 PART 6 — SINGLE REQUEST VIEW
+
+```text
+If user has ONE request:
+
+Show:
+
+Your Active Agent Request
+
+Hiring a [Tenant / Landlord / Buyer / Seller] Agent
+Listing ID: XXXXX
+Status: Active
+X Bids Received
+
+[View Request]   [View Bids]
+```
+
+---
+
+# 🧩 PART 7 — REMOVE OLD SELECTION LOGIC
+
+### ❌ REMOVE:
+
+* user_type priority
+* tenant-first logic
+* fallback role loop
+* latest()->first() as decision
+
+---
+
+# 🧩 PART 8 — NEW SELECTION LOGIC (ONLY IF NEEDED)
+
+```text
+If ONE request → show it
+
+If MULTIPLE → show ALL
+
+No guessing, no fallback, no role priority
+```
+
+---
+
+# 🧩 PART 9 — SIDEBAR ROUTING
+
+### ❌ REMOVE:
+
+```php
+route based on user_type
+```
+
+### ✅ REPLACE:
+
+```text
+If ONE request:
+→ route directly to that request's page
+
+If MULTIPLE:
+→ route to request selector page
+```
+
+---
+
+# 🧩 PART 10 — HEADER BADGE
+
+### ❌ REMOVE:
+
+```php
+$user->user_type
+```
+
+### ✅ OPTION:
+
+* remove badge entirely (recommended)
+
+OR
+
+* show selected request type only
+
+---
+
+# 🧩 PART 11 — QUICK ACTIONS
+
+Update to:
+
+* Create New Request
+* View My Agent Request
+* Messages
+* Profile Settings
+
+---
+
+# 🧩 PART 12 — DASHBOARD STRUCTURE
+
+Final layout:
+
+1. Welcome header
+2. Quick Actions
+3. Your Active Agent Request
+4. Needs Attention
+5. Activity Feed
+
+---
+
+# 🧩 PART 13 — NEEDS ATTENTION
+
+Show:
+
+* bids received
+* counters pending
+* signatures pending
+
+---
+
+# 🧩 PART 14 — REQUEST TYPES RULE
+
+```text
+Tenant / Landlord / Buyer / Seller = REQUEST TYPES
+NOT dashboard identity roles
+```
+
+---
+
+# 🧩 PART 15 — KEEP SYSTEM INTACT
+
+DO NOT CHANGE:
+
+* listing creation flows
+* bid system
+* tenant-based architecture
+* database structure
+
+Dashboard = presentation layer only
+
+---
+
+# 🧩 FINAL ACCEPTANCE CRITERIA
+
+✔ Dashboard does NOT default to Tenant
+✔ user_type is NOT used for dashboard selection
+✔ ONE request = show it
+✔ MULTIPLE requests = show ALL
+✔ No hidden listings
+✔ No latest() fallback
+✔ Sidebar routes correctly
+✔ No changes to listing creation
+✔ No changes to bids
+✔ No database changes
+✔ No break in Tenant-based system
+
+---
+
+# 🧠 FINAL RESULT
+
+After this:
+
+👉 Test account (multiple listings) → sees ALL
+👉 Real users (1 listing) → see ONLY theirs
+👉 No guessing
+👉 No bugs
+👉 No broken flows
+
+---
+
+If you want next:
+
+👉 I can give you the **exact database query pattern to safely merge all 4 listing types** (this is the only tricky backend piece left)
