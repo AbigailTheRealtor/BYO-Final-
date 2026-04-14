@@ -203,39 +203,9 @@
     </a>
     @endif
 
-    {{-- ===== MY BIDS ===== --}}
+    {{-- ===== MY BIDS (agents only — non-agents access bids via their listing pages) ===== --}}
+    @if (auth()->user()->user_type === 'agent')
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Bids</div>
-
-    @if (in_array(auth()->user()->user_type, ['tenant']))
-    <a href="{{ route('myBids', 'agent-bids') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>My Bids</b>
-                    @php
-                        $pending_agent_bids_count = \App\Models\TenantAgentAuctionBid::whereHas('auction', function($q) {
-                            $q->where('user_id', auth()->id());
-                        })->whereIn('status', ['Active', 'Countered'])->count();
-                    @endphp
-                    @if ($pending_agent_bids_count)<span class="badge bg-danger ms-2">{{ $pending_agent_bids_count }}</span>@endif
-                </div>
-                <div class="opacity-50 text-400 small">View and respond to bids from agents on your listings.</div>
-            </div>
-        </div>
-    </a>
-    @else
-    <a href="{{ route('myBids') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>My Bids</b></div>
-                <div class="opacity-50 text-400 small">Bids you have made or received on your listings.</div>
-            </div>
-        </div>
-    </a>
-    @endif
-
-    @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('tenant.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -298,7 +268,8 @@
     </a>
     @endif
 
-    @if (in_array(auth()->user()->user_type, ['landlord']))
+    {{-- Landlord: agent bids received on their listings --}}
+    @if (auth()->user()->user_type === 'landlord')
     <a href="{{ route('myBids', 'hire-landlord-agent-bids') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -319,10 +290,10 @@
     </a>
     @endif
 
-    {{-- ===== ACTIVITY ===== --}}
+    {{-- ===== ACTIVITY (seller and buyer only) ===== --}}
+    @if (in_array(auth()->user()->user_type, ['seller', 'buyer']))
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Activity</div>
-
-    @if (in_array(auth()->user()->user_type, ['seller']))
+    @if (auth()->user()->user_type === 'seller')
     <a href="{{ route('seller.agents') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -333,8 +304,7 @@
         </div>
     </a>
     @endif
-
-    @if (in_array(auth()->user()->user_type, ['buyer']))
+    @if (auth()->user()->user_type === 'buyer')
     <a href="{{ route('buyer.agents') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -345,20 +315,9 @@
         </div>
     </a>
     @endif
+    @endif
 
-    <a href="{{ route('myFriends') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                </svg>
-            </div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>Connections</b></div>
-                <div class="opacity-50 text-400 small">Manage your network of connections and referrals.</div>
-            </div>
-        </div>
-    </a>
+    {{-- Connections removed --}}
 
     {{-- ===== MESSAGES ===== --}}
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Messages</div>
