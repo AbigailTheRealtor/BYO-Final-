@@ -1,0 +1,238 @@
+Then it’s almost certainly **not role-specific at all**.
+
+If it is missing on:
+
+* Buyer
+* Seller
+* Tenant
+* Landlord
+
+that means the issue is probably one of these shared problems:
+
+* the section is never rendering because `$canUploadAcknowledgementDocuments` is always false
+* the controller is not passing the variable correctly
+* the section is placed in the wrong part of the Blade and not actually visible
+* the sign page you are testing is not the one containing the new section
+* the section is hidden by CSS/layout
+
+Use this in Replit:
+
+---
+
+## Critical bug: Optional Document Sharing is not showing on Buyer, Seller, Tenant, or Landlord acknowledgement sign pages
+
+The **Optional Document Sharing (Recommended)** section is not showing on **any** acknowledgement sign page.
+
+I tested:
+
+* Buyer
+* Seller
+* Tenant
+* Landlord
+
+and I do not see the section on any of them.
+
+This means the issue is not role-specific.
+Treat this as a **shared sign-page rendering/access bug**.
+
+---
+
+## Expected behavior
+
+On the Acknowledgement Summary / sign page, the listing-side owner should see the Optional Document Sharing section.
+
+### Buyer should see:
+
+* Government-Issued ID
+* Proof of Funds
+* Pre-Approval Letter
+
+### Tenant should see:
+
+* Government-Issued ID
+* Proof of Income
+
+### Seller should see:
+
+* Government-Issued ID
+* Property Record Link
+
+### Landlord should see:
+
+* Government-Issued ID
+* Property Record Link
+
+---
+
+## Most likely root causes now
+
+Because it fails on all four roles, the likely issue is one of these shared problems:
+
+1. `$canUploadAcknowledgementDocuments` is always false
+2. `showSignForm()` is not passing the variable correctly into the Blade
+3. the Blade condition is wrong or wrapped inside another condition
+4. the section is on a different template than the actual sign page being used
+5. the section is rendering but hidden by CSS/layout/placement
+
+---
+
+## Required debugging steps
+
+### Step 1 — Verify the actual sign Blade being rendered
+
+Confirm the real route/controller/view chain for the page I am testing.
+
+Inspect:
+
+* route name
+* controller method
+* returned Blade file
+
+Make sure the page I am opening is actually using:
+
+* `AcceptedBidSummaryController@showSignForm`
+* `resources/views/accepted_bid_summary/sign.blade.php`
+
+Do not assume. Confirm with the actual route.
+
+---
+
+### Step 2 — Log/inspect the shared variables on one real failing page
+
+For one real accepted summary record, inspect and report:
+
+* summary id
+* authenticated user id
+* `$summary->tenant_user_id`
+* `$summary->listing_type`
+* computed `$canUploadAcknowledgementDocuments`
+* whether the Blade receives that variable
+
+Do this on a real failing page, not from code assumptions.
+
+---
+
+### Step 3 — Verify the Blade render condition
+
+Inspect `resources/views/accepted_bid_summary/sign.blade.php` and confirm:
+
+* the document-sharing section is present in the file
+* it is gated only by the correct boolean
+* it is not nested inside another condition that blocks it
+* it is not hidden behind the wrong role/user check
+* it is not placed inside a layout area that is never reached/rendered
+
+---
+
+### Step 4 — Check page placement / visibility
+
+If the section is present in HTML but still not visible:
+
+inspect whether it is:
+
+* below the fold and easy to miss
+* hidden by CSS
+* inside a collapsed container
+* inside a conditionally hidden column
+* behind another layer
+* white-on-white / invisible / clipped by overflow
+
+Because it is failing on all four roles, visual placement must be verified too.
+
+---
+
+## Required implementation rule
+
+Do not patch this by adding role-string exceptions.
+
+Do not do:
+
+```php
+$userRole === 'tenant'
+```
+
+or similar fallback hacks.
+
+Fix the real shared bug in:
+
+* controller variable computation
+* view passing
+* Blade condition
+* layout placement
+* CSS visibility
+
+---
+
+## Safeguards
+
+### Safeguard 1
+
+Do not change accepted bid logic, signature logic, or listing type logic unless required.
+
+### Safeguard 2
+
+Do not rewrite all services again unless actual data proves they are wrong.
+
+### Safeguard 3
+
+Do not assume `tenant_user_id` is wrong without checking one real summary record first.
+
+### Safeguard 4
+
+Do not mark complete based on code inspection only.
+
+You must visually confirm the section is visible on all 4 sign pages.
+
+---
+
+## Required QA checklist
+
+### Visibility
+
+* [ ] Buyer sign page visibly shows Optional Document Sharing
+* [ ] Seller sign page visibly shows Optional Document Sharing
+* [ ] Tenant sign page visibly shows Optional Document Sharing
+* [ ] Landlord sign page visibly shows Optional Document Sharing
+
+### Field correctness
+
+* [ ] Buyer fields correct
+* [ ] Seller fields correct
+* [ ] Tenant fields correct
+* [ ] Landlord fields correct
+
+### Access/security
+
+* [ ] only listing-side owner sees it
+* [ ] unauthorized user cannot see it
+* [ ] unauthorized POST still rejected
+
+---
+
+## Required deliverable back to me
+
+Report back with:
+
+1. exact route/controller/view being used for the tested sign page
+2. real values for:
+
+   * authenticated user id
+   * summary id
+   * tenant_user_id
+   * listing_type
+   * canUploadAcknowledgementDocuments
+3. whether the section was missing from HTML or just hidden
+4. files changed
+5. screenshots showing the section visibly present on Buyer, Seller, Tenant, and Landlord sign pages
+
+---
+
+## Final rule
+
+This is now a **shared rendering/access bug**, not a role bug.
+
+Treat it as one root-cause issue until proven otherwise.
+
+---
+
+That’s the right prompt now. The key is forcing them to stop assuming it’s data-only and confirm whether the section is even rendering on the actual page.

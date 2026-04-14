@@ -99,6 +99,148 @@
                 </div>
             </div>
 
+            {{-- ── Optional Document Sharing (listing owner only) ── --}}
+            {{-- Access = ownership (tenant_user_id). listing_type controls which fields appear. --}}
+            @if($canUploadAcknowledgementDocuments)
+            <div class="card border-0 shadow-sm mt-4" style="border-left: 4px solid #0d6efd !important; border-radius: 10px;">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9ecef; padding: 18px 24px;">
+                    <div>
+                        <h5 class="mb-1" style="color: #1a3a5c; font-weight: 700;">
+                            <i class="fas fa-file-upload me-2" style="color: #0d6efd;"></i>
+                            Optional Document Sharing
+                            <span class="badge ms-2" style="background: #e8f0fe; color: #0d6efd; font-size: 0.72rem; font-weight: 600; border-radius: 20px; padding: 3px 10px;">Recommended</span>
+                        </h5>
+                        <p class="mb-0 text-muted" style="font-size: 0.88rem;">
+                            Sharing supporting documents helps build trust and speeds up the process. All files are private and only shared with your matched agent.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card-body" style="padding: 24px;">
+
+                    @if(session('doc_success'))
+                    <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                        <i class="fas fa-check-circle me-2"></i>{{ session('doc_success') }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    @endif
+
+                    <form action="{{ route('accepted-bid-summary.store-documents', $summary->id) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+
+                        <div class="row g-4">
+
+                            {{-- Government-Issued ID (all roles) --}}
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                    <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
+                                        <i class="fas fa-id-card me-1 text-muted"></i> Government-Issued ID
+                                    </label>
+                                    <p class="text-muted mb-2" style="font-size: 0.8rem;">Driver's license, passport, or state ID (PDF, JPG, or PNG)</p>
+                                    @if(!empty($existingDocs?->id_document_path))
+                                    <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="text-success fw-semibold">File uploaded</span>
+                                        <span class="ms-auto text-muted">Replace below</span>
+                                    </div>
+                                    @endif
+                                    <input type="file" class="form-control form-control-sm" name="id_document" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+
+                            {{-- Buyer: Proof of Funds --}}
+                            @if($summary->listing_type === 'buyer')
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                    <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
+                                        <i class="fas fa-dollar-sign me-1 text-muted"></i> Proof of Funds
+                                    </label>
+                                    <p class="text-muted mb-2" style="font-size: 0.8rem;">Bank statement or asset account statement (PDF, JPG, or PNG)</p>
+                                    @if(!empty($existingDocs?->proof_of_funds_path))
+                                    <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="text-success fw-semibold">File uploaded</span>
+                                        <span class="ms-auto text-muted">Replace below</span>
+                                    </div>
+                                    @endif
+                                    <input type="file" class="form-control form-control-sm" name="proof_of_funds" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Buyer: Pre-Approval Letter --}}
+                            @if($summary->listing_type === 'buyer')
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                    <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
+                                        <i class="fas fa-file-signature me-1 text-muted"></i> Pre-Approval Letter
+                                    </label>
+                                    <p class="text-muted mb-2" style="font-size: 0.8rem;">Mortgage pre-approval from a lender (PDF, JPG, or PNG)</p>
+                                    @if(!empty($existingDocs?->pre_approval_letter_path))
+                                    <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="text-success fw-semibold">File uploaded</span>
+                                        <span class="ms-auto text-muted">Replace below</span>
+                                    </div>
+                                    @endif
+                                    <input type="file" class="form-control form-control-sm" name="pre_approval_letter" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Tenant: Proof of Income --}}
+                            @if($summary->listing_type === 'tenant')
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                    <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
+                                        <i class="fas fa-file-invoice-dollar me-1 text-muted"></i> Proof of Income
+                                    </label>
+                                    <p class="text-muted mb-2" style="font-size: 0.8rem;">Pay stub, offer letter, or bank statements (PDF, JPG, or PNG)</p>
+                                    @if(!empty($existingDocs?->proof_of_income_path))
+                                    <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <span class="text-success fw-semibold">File uploaded</span>
+                                        <span class="ms-auto text-muted">Replace below</span>
+                                    </div>
+                                    @endif
+                                    <input type="file" class="form-control form-control-sm" name="proof_of_income" accept=".pdf,.jpg,.jpeg,.png">
+                                </div>
+                            </div>
+                            @endif
+
+                            {{-- Seller / Landlord: Property Record Link --}}
+                            @if(in_array($summary->listing_type, ['seller', 'landlord']))
+                            <div class="col-md-6">
+                                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                                    <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
+                                        <i class="fas fa-link me-1 text-muted"></i> Property Record Link
+                                    </label>
+                                    <p class="text-muted mb-2" style="font-size: 0.8rem;">Paste a public county property appraiser or property record link related to this property.</p>
+                                    <input
+                                        type="url"
+                                        class="form-control form-control-sm"
+                                        name="property_record_link"
+                                        placeholder="https://..."
+                                        value="{{ $existingDocs?->property_record_link ?? '' }}"
+                                    >
+                                </div>
+                            </div>
+                            @endif
+
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary px-4" style="font-weight: 600;">
+                                <i class="fas fa-cloud-upload-alt me-2"></i>Save Documents
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+            @endif
+            {{-- ── end document sharing ── --}}
+
             @if($canSign)
             <div class="card mt-4" id="esign-section">
                 <div class="card-header bg-primary text-white">

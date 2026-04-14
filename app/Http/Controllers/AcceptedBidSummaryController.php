@@ -32,11 +32,21 @@ class AcceptedBidSummaryController extends Controller
 
         $html = $this->summaryService->getRenderedHtml($summary);
 
+        $canUploadAcknowledgementDocuments = ($user->id === $summary->tenant_user_id);
+
+        $existingDocs = $canUploadAcknowledgementDocuments
+            ? AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
+                ->where('user_id', $user->id)
+                ->first()
+            : null;
+
         return view('accepted_bid_summary.view', [
-            'summary' => $summary,
-            'html' => $html,
-            'canSign' => $this->canUserSign($summary, $user),
-            'userRole' => $this->getUserRole($summary, $user),
+            'summary'                           => $summary,
+            'html'                              => $html,
+            'canSign'                           => $this->canUserSign($summary, $user),
+            'userRole'                          => $this->getUserRole($summary, $user),
+            'canUploadAcknowledgementDocuments' => $canUploadAcknowledgementDocuments,
+            'existingDocs'                      => $existingDocs,
         ]);
     }
 
@@ -233,8 +243,8 @@ class AcceptedBidSummaryController extends Controller
 
         $doc->save();
 
-        return redirect()->route('accepted-bid-summary.sign', $id)
-            ->with('doc_success', 'Your documents were saved. You can continue to review and sign below.');
+        return redirect()->route('accepted-bid-summary.view', $id)
+            ->with('doc_success', 'Your documents were saved successfully.');
     }
 
     protected function canAccessSummary(AcceptedBidSummary $summary, $user): bool
