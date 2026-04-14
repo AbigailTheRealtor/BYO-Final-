@@ -1,0 +1,298 @@
+Paste this into Replit:
+
+---
+
+## Task: Revamp Profile Settings page for client users only
+
+This Profile Settings page is for:
+
+* Tenant
+* Buyer
+* Seller
+* Landlord
+
+The goal is to make it clean, simple, and stable for normal users.
+
+This is **not** an agent dashboard settings page.
+Keep it lightweight and easy to use.
+
+---
+
+## Part 1 — Fix the accordion bug first
+
+### Current problem
+
+When clicking a Profile Settings section, it flashes open and disappears.
+
+### Required behavior
+
+The settings sections must behave like a stable accordion:
+
+* click once = open
+* click again = close
+* no flashing
+* no disappearing
+* no immediate collapse after rerender
+
+### What to inspect
+
+Check whether this page is currently mixing:
+
+* Alpine
+* Livewire
+* Bootstrap collapse
+* duplicate click handlers
+
+### Implementation rule
+
+Use **one accordion system only**.
+
+### Preferred approach
+
+If this page is Livewire-driven:
+
+* use Alpine for the accordion open/close UI state
+* prevent Livewire rerenders from resetting the accordion state
+* use `wire:ignore`, `wire:key`, or component isolation where needed
+
+Do not leave multiple accordion systems fighting each other.
+
+---
+
+## Part 2 — Replace the current section structure
+
+### Remove these sections completely
+
+* Address
+* Background
+* Basic Details
+* Separate User Avatar section
+* Notification Settings / notification toggles
+
+These should not remain as separate sections.
+
+---
+
+## Part 3 — Final Profile Settings section structure
+
+Use this final structure:
+
+### 1. Account Information
+
+Fields:
+
+* Username
+* Email Address
+* Phone Number
+
+---
+
+### 2. Profile Details
+
+Fields:
+
+* First Name
+* Last Name
+* About Me
+* Profile Photo / Avatar
+
+Notes:
+
+* merge avatar into this section
+* do not keep avatar as its own standalone section
+* do not keep background/cover photo as its own section
+
+---
+
+### 3. Preferences
+
+Fields:
+
+* Preferred Contact Method
+
+  * Call
+  * Text
+  * Email
+
+* Best Time to Contact
+
+  * Morning
+  * Afternoon
+  * Evening
+  * Anytime
+
+Also add a small note in this section:
+
+> You will receive email notifications for important activity, including bids, counters, and listing updates.
+
+Important:
+
+* do **not** add notification toggles right now
+* all important activity should use email notifications by default for now
+
+---
+
+### 4. Privacy & Security
+
+Fields:
+
+* Current Password
+* New Password
+* Confirm New Password
+
+This section should handle password updates clearly and cleanly.
+
+---
+
+### 5. Delete Account
+
+Keep this as its own final danger section at the bottom.
+
+Requirements:
+
+* delete account button
+* confirmation modal or confirmation step required
+* preserve existing delete-account functionality
+
+---
+
+## Part 4 — Notification settings decision
+
+Do **not** build notification settings toggles yet.
+
+For now:
+
+* email notifications are enabled by default for all important activity
+* do not add:
+
+  * email toggle
+  * SMS toggle
+  * bid update toggle
+  * counter update toggle
+  * listing update toggle
+  * marketing toggle
+
+We may add a separate Notifications feature later, but not now.
+
+---
+
+## Part 5 — Data and save logic rules
+
+### Preserve existing data
+
+* do not delete existing user data
+* if old fields are already stored, remap them into the new grouped sections where appropriate
+
+### Add new fields only if needed
+
+If these do not already exist, add them safely as nullable fields or equivalent profile/meta storage:
+
+* preferred_contact_method
+* best_time_to_contact
+* first_name
+* last_name
+* about_me
+* profile_photo/avatar path if not already supported
+
+### Do not break working logic
+
+* preserve existing profile update behavior
+* preserve avatar upload behavior
+* preserve account deletion behavior
+* preserve password update functionality or add it safely if missing
+
+---
+
+## Part 6 — UX/UI rules
+
+This page should feel like a clean client settings page, not a developer accordion dump.
+
+### Requirements
+
+* clear section headings
+* good spacing between sections
+* readable form layout
+* no cramped fields
+* no unnecessary categories
+* simple, polished, client-friendly language
+
+### Naming rules
+
+Use these exact section labels:
+
+* Account Information
+* Profile Details
+* Preferences
+* Privacy & Security
+* Delete Account
+
+Do not use vague labels like:
+
+* Basic Details
+* Background
+
+---
+
+## Part 7 — QA checklist
+
+### Accordion behavior
+
+* [ ] clicking a section opens it and it stays open
+* [ ] clicking again closes it
+* [ ] no flashing
+* [ ] no disappearing
+* [ ] no rerender-related collapse
+
+### Final structure
+
+* [ ] Address removed
+* [ ] Background removed
+* [ ] Basic Details removed
+* [ ] Avatar merged into Profile Details
+* [ ] Notification toggles not included
+
+### Fields
+
+* [ ] Account Information includes username, email, phone
+* [ ] Profile Details includes first name, last name, about me, profile photo
+* [ ] Preferences includes preferred contact method and best time to contact
+* [ ] Preferences includes email notification note
+* [ ] Privacy & Security includes password change fields
+* [ ] Delete Account remains functional
+
+### Functionality
+
+* [ ] profile saves correctly
+* [ ] password change works
+* [ ] avatar upload works
+* [ ] delete account works
+
+---
+
+## Part 8 — Deliverable back to me
+
+Report back with:
+
+1. root cause of the accordion bug
+2. files changed
+3. any new fields added
+4. final Profile Settings section list
+5. confirmation that email notifications are now simply defaulted for important activity, with no toggle UI yet
+
+---
+
+## Final rule
+
+Keep this page lean.
+
+This settings page should answer:
+
+* who the user is
+* how to contact them
+* basic profile info
+* password/security
+* account deletion
+
+It should **not** try to manage listing criteria, address details, or advanced notification controls right now.
+
+---

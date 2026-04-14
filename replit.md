@@ -23,6 +23,10 @@ The Seller Agent Bid form is a 6-tab Livewire wizard with partials for different
 
 The Accepted Bid Summary System ensures consistent PDF cache invalidation across all four roles when summary HTML is regenerated.
 
+The shared `x-bid-detail-layout` Blade component owns the header/body/footer chrome for all four bid detail pages (Buyer, Seller, Landlord, Tenant), eliminating duplication. It resolves a `$ms_*` variable mapping for the Tenant match score panel and handles the `listing_id` fallback for display codes.
+
+The Profile Settings page (`/settings`) uses a clean 5-section Bootstrap accordion (proper `<button type="button">` triggers, no `data-bs-parent` for independent open/close). Sections: Account Information, Profile Details (with avatar picker), Preferences (contact method + best time to contact), Privacy & Security (password change with current-password verification). A permanently-visible Delete Account danger zone sits below the form with a `confirm()` dialog guard. The `saveSettings` controller uses `$request->has()` guards to prevent null-overwriting of fields not present in the submission. A `deleteAccount` controller method soft-deletes the user (`is_deleted=1`) and logs them out. Route: `POST /settings/delete-account` (name: `settings.delete-account`). CSS overrides scoped to `.mySettings` and pushed via `@stack('styles')` neutralize the global `myAccountGlobal.css` button rules. New meta fields: `preferred_contact_method`, `best_time_to_contact`.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database for data storage.
 - **TailwindCSS**: Utility-first CSS framework for styling.

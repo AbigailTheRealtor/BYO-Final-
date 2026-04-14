@@ -1,760 +1,380 @@
 @extends('layouts.main')
-@push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
-@endpush
 @section('content')
-    <div class="mainDashboard">
-        <form class="settings-for" method="POST" action="{{route('settings')}}" enctype="multipart/form-data">
-            @csrf
-            <div class="container">
+<div class="mainDashboard">
+    <div class="container">
 
-                @include('layouts.partials.dashboard_user_section')
+        @include('layouts.partials.dashboard_user_section')
 
-                <div class="dashboardContentDetails mt-3 mb-5">
-                    <div class="card">
-                        <div class="row">
+        <div class="dashboardContentDetails mt-3 mb-5">
+            <div class="card">
+                <div class="row">
 
-                            @include('layouts.partials.sidenav')
+                    @include('layouts.partials.sidenav')
 
-                            <div class="rightCol col-sm-12 col-md-8 col-lg-8">
-                                <div class="container mt-5 mySettings">
-                                    <h1>Profile Settings</h1>
-                                    <p>Please keep your account details updated.</p>
-                                    <hr>
-                                    <!-- Accordion Starrt Here -->
-                                    <div class="accordion accordion-flush" id="accordionFlushExample">
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapseOne"
-                                                    aria-expanded="false" aria-controls="flush-collapseOne">
-                                                    <b>Username</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapseOne" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">The username or email can be used
-                                                            to login.</div>
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                <div class="col-md-6 py-2">
-                                                                    <div class="d-flex justify-content-between">
-                                                                        <label>Username</label>
-                                                                        <svg data-bs-container="body" tabindex="0"
-                                                                            data-bs-toggle="popover"
-                                                                            data-bs-trigger="hover focus"
-                                                                            data-bs-placement="top"
-                                                                            data-bs-content="The username cannot be changed once created."
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                            class="h-6 w-6" fill="none"
-                                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path stroke-linecap="round"
-                                                                                stroke-linejoin="round" stroke-width="2"
-                                                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                                                            </path>
-                                                                        </svg>
-                                                                    </div>
+                    <div class="rightCol col-sm-12 col-md-8 col-lg-8">
+                        <div class="container mt-4 mb-5 mySettings">
 
-                                                                    <input class="form-control" name="username" data-type="username"
-                                                                        type="text" disabled="" value="{{$user->user_name}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <div class="d-flex justify-content-between">
-                                                                        <label>Display Name</label>
-                                                                        <svg data-bs-container="body" tabindex="0"
-                                                                            data-bs-toggle="popover"
-                                                                            data-bs-trigger="hover focus"
-                                                                            data-bs-placement="top"
-                                                                            data-bs-content="Where possible we will display this name instead of your username."
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                            class="h-6 w-6" fill="none"
-                                                                            viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path stroke-linecap="round"
-                                                                                stroke-linejoin="round" stroke-width="2"
-                                                                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
-                                                                            </path>
-                                                                        </svg>
-                                                                    </div>
-                                                                    <input type="text" data-required="1"
-                                                                        class="form-control setting-form-field" name="name" id="name" value="{{$user->name}}">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item d-none">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse2"
-                                                    aria-expanded="false" aria-controls="flush-collapse2">
-                                                    <b>Password</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse2" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">Only complete these fields if you
-                                                            wish to change the
-                                                            existing password.</div>
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Password</label>
-                                                                    <input class="form-control setting-form-field" name="password"
-                                                                        type="password" value="">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Password Re-type</label>
-                                                                    <input type="password" data-required="1" name="confirm_password"
-                                                                        class="form-control  setting-form-field" value="">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse3"
-                                                    aria-expanded="false" aria-controls="flush-collapse3">
-                                                    <b>Email & Phone</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse3" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">A valid email is required.</div>
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Email</label>
-                                                                    <input class="form-control" data-type="email" name="email"
-                                                                        type="email" readonly value="{{$user->email}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2 d-grid">
-                                                                    <label>Mobile Number</label>
-                                                                    <input type="phone" name="phone" type="tel"
-                                                                        class="form-control" value="{{$user->phone}}"
-                                                                        id="phone">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse4"
-                                                    aria-expanded="false" aria-controls="flush-collapse4">
-                                                    <b>About Me</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse4" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">This information will be
-                                                            displayed on your public profile.
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-12 textarea">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                {{-- @if(auth()->user()->user_type == 'agent') --}}
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Brokerage</label>
-                                                                    <input type="text" name="brokerage" class="form-control " value="{{$user->brokerage}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Real Estate License #</label>
-                                                                    <input type="text" name="license_no" class="form-control" value="{{$user->license_no}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Intro Video</label>
-                                                                    <input type="url" name="intro_video" class="form-control" value="{{$user->intro_video}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Promotional marketing material</label>
-                                                                    <input type="url" name="promotional_material" class="form-control" value="{{$user->promotional_material}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Business Card</label>
-                                                                    <input type="url" name="business_card" class="form-control" value="{{$user->business_card}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>My Website</label>
-                                                                    <input type="url" name="website" class="form-control" value="{{$user->website}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>My Review Link</label>
-                                                                    <input type="url" name="review" class="form-control" value="{{$user->review}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Facebook</label>
-                                                                    <input type="text" name="facebook" class="form-control" value="{{$user->facebook}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>YouTube</label>
-                                                                    <input type="text" name="youtube" class="form-control" value="{{$user->youtube}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Twitter</label>
-                                                                    <input type="text" name="twitter" class="form-control" value="{{$user->twitter}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Instagram</label>
-                                                                    <input type="text" name="instagram" class="form-control" value="{{$user->instagram}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>LinkedIn</label>
-                                                                    <input type="text" name="linkedin" class="form-control" value="{{$user->linkedin}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Contract Listing terms</label>
-                                                                    <input type="text" name="listing_term" class="form-control" value="{{$user->listing_term}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Why you should be hired as an agent</label>
-                                                                    <input type="text" name="hired_agent" class="form-control" value="{{$user->hired_agent}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>What sets you apart from other agents?</label>
-                                                                    <input type="text" name="apart_agent" class="form-control" value="{{$user->apart_agent}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Credit Offering</label>
-                                                                    <input type="text" name="credit_offered" class="form-control" value="{{$user->credit_offered}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Services Offering</label>
-                                                                    <select name="services[]" class="form-select muiSelect" multiple>
-                                                                        @foreach ($services as $service)
-                                                                        <option value="{{$service->name}}" @if($user->services) {{in_array($service->name, json_decode($user->services))?"selected":""}}  @endif >{{$service->name}}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                {{-- @endif --}}
-                                                                <div class="col-md-12 py-2">
-                                                                    <label>Marketing Plan</label>
-                                                                    <textarea style="min-height:120px;" class="form-control " name="marketing_plan">{{$user->marketing_plan}}</textarea>
-                                                                </div>
-                                                                <div class="col-md-12 py-2">
-                                                                    <label>Additional Details</label>
-                                                                    <textarea style="min-height:120px;" class="form-control " name="description">{{$user->description}}</textarea>
-                                                                </div>
-                                                                <div class="col-md-12 py-2">
-                                                                    <label>Bio</label>
-                                                                    <textarea style="min-height:120px;" class="form-control " name="bio">{{$user->bio}}</textarea>
-                                                                </div>
+                            <h4 class="mb-1" style="color: #1a3a5c; font-weight: 700;">Profile Settings</h4>
+                            <p class="text-muted mb-4" style="font-size: 0.95rem;">Keep your account details up to date.</p>
 
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse5"
-                                                    aria-expanded="false" aria-controls="flush-collapse5">
-                                                    <b>Preferences</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse5" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">Where possible we will only show
-                                                            content related to your
-                                                            preferences.</div>
-                                                    </div>
-                                                    <div class="col-md-12 textarea">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                <div class="col-md-12 py-2">
-                                                                    <label>Show Me</label>
-                                                                    <select class="form-select muiSelec" name="search_preferences[]" id="choices-multiple-remove-button" placeholder="Select Property Type" multiple>
-                                                                        @foreach ($property_types as $property_type)
-                                                                            <option value="{{$property_type->id}}" {{(@in_array($property_type->id, @json_decode($user->search_preferences) ?? []))?"selected":""}} >{{$property_type->name}}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse6"
-                                                    aria-expanded="false" aria-controls="flush-collapse6">
-                                                    <b>Basic Details</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse6" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">This information is not displayed
-                                                            on your profile.</div>
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>First Name</label>
-                                                                    <input class="form-control" data-required="1" name="first_name"
-                                                                        type="text" value="{{$user->first_name}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Last Name</label>
-                                                                    <input type="text" data-required="1" name="last_name"
-                                                                        class="form-control " value="{{$user->last_name}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>MY Languages</label>
-                                                                    <select name="language" class="form-select"
-                                                                        id="user-language">
-                                                                        <option value="en_US" {{$user->language=="en_US"?"selected":""}} >English</option>
-                                                                        <option value="es_ES" {{$user->language=="es_ES"?"selected":""}}>Spanish</option>
-                                                                        <option value="fr_FR" {{$user->language=="fr_FR"?"selected":""}}>French</option>
-                                                                        <option value="zh_CN" {{$user->language=="zh_CN"?"selected":""}}>Chinese</option>
-                                                                        <option value="de_DE" {{$user->language=="de_DE"?"selected":""}}>German</option>
-                                                                        <option value="ru_RU" {{$user->language=="ru_RU"?"selected":""}}>Russian</option>
-                                                                        <option value="ar" {{$user->language=="ar"?"selected":""}}>Arabic</option>
-                                                                        <option value="ja" {{$user->language=="ja"?"selected":""}}>Japanese</option>
-                                                                        <option value="ko_KR" {{$user->language=="ko_KR"?"selected":""}}>Korean</option>
-                                                                        <option value="it_IT" {{$user->language=="it_IT"?"selected":""}}>Italian</option>
-                                                                        <option value="nl_NL" {{$user->language=="nl_NL"?"selected":""}}>Dutch</option>
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-md-6 py-2 d-none">
-                                                                    <label>Pick your account type</label>
-                                                                    <input type="text" data-required="1"
-                                                                        class="form-control " value="">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse7"
-                                                    aria-expanded="false" aria-controls="flush-collapse7">
-                                                    <b>Address</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse7" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <div class="fs-7 mt-3 opacity-50">Displayed on invoices and
-                                                            purchase reciepts.</div>
-                                                    </div>
-                                                    <div class="col-md-12">
-                                                        <div class="py-3">
-                                                            <div class="row">
-                                                                <div class="col-md-6 py-2 d-none">
-                                                                    <label>My Location</label>
-                                                                    <select name="country_id" id="country_id" class="form-select">
-                                                                        {{-- <option value="">Select Location</option> --}}
-                                                                        @foreach ($countries as $country)
-                                                                        <option value="{{$country->id}}" {{ ($country->id==$user->country_id)?"selected":"" }} >{{ucwords($country->name)}}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>State</label>
-                                                                    <select class="form-select" name="state_id" id="state_id" tabindex="7">
-                                                                        @foreach ($states as $state)
-                                                                        <option value="{{$state->id}}" {{$user->state_id==$state->id?"selected":""}}>
-                                                                            {{ucfirst($state->name)}}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>City</label>
-                                                                    <select class="form-select" name="city_id" id="city_id" tabindex="7">
-                                                                        @foreach ($cities as $city)
-                                                                        <option value="{{$city->id}}" {{$user->city_id==$city->id?"selected":""}}>
-                                                                            {{$city->name}}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>County</label>
-                                                                    <select class="form-select" name="county_id" id="county_id" tabindex="7">
-                                                                        @foreach ($counties as $county)
-                                                                        <option value="{{$county->id}}" {{$user->county_id==$county->id?"selected":""}}>
-                                                                            {{$county->name}}</option>
-                                                                        @endforeach
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Address 1</label>
-                                                                    <input class="form-control" name="address1" type="text" value="{{$user->address1}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Address 2</label>
-                                                                    <input type="text" name="address2" data-required="1" class="form-control " value="{{$user->address2}}">
-                                                                </div>
-
-                                                                <div class="col-md-6 py-2 d-none">
-                                                                    <label>Town</label>
-                                                                    <input class="form-control"
-                                                                        type="text" name="town" value="{{$user->town}}">
-                                                                </div>
-                                                                <div class="col-md-6 py-2">
-                                                                    <label>Zipcode</label>
-                                                                    <input type="text" name="zip" data-required="1"
-                                                                        class="form-control " value="{{$user->zip}}">
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-17"
-                                                    aria-expanded="false" aria-controls="flush-17">
-                                                    <b>User Avatar</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-17" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-6 py-2">
-                                                        <div>
-                                                            <label>Avatar</label>
-                                                        </div>
-                                                        <div class="row">
-                                                            @php
-                                                                $j=1;
-                                                            @endphp
-                                                            @for ($i=1; $i<=30; $i++)
-                                                            <div class="col-4 col-md-2 text-center px-0">
-                                                                <label for="av{{$i}}">
-                                                                    <img alt="img" class="lazy img-fluid ppt-lazy"
-                                                                        src="{{asset('/images/avatar/'.$i.'.png')}}">
-                                                                </label>
-                                                                <input class="user-avatar" id="av{{$i}}" type="radio" value="{{$i.'.png'}}" {{$i.'.png'==$user->avatar?"checked":""}} name="myavatar">
-                                                            </div>
-                                                            @endfor
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6 py-2">
-                                                        <div class="d-flex justify-content-between">
-                                                            <label>Photo</label>
-                                                        </div>
-                                                        <div class="shadow-sm border slimPic" style="position: relative;" >
-                                                            <input type="file" class="avatar-picker" name="avatar"
-                                                                    accept="image/jpeg,image/png,image/gif,image/bmp"
-                                                                    style="margin-bottom: 100%;position:absolute; top:0;left:0; width:100%; height:100%; z-index:99; opacity: 0;" id="imageFile1">
-                                                            <div class="subDiv" style="z-index: 89;">
-                                                                <label class="pic-label" for="">
-                                                                    <i class="fa fa-upload opacity-50 mb-3"></i>
-                                                                    <span class="small fw-bold opacity-50">Select Photo
-                                                                    </span>
-                                                                </label>
-                                                            </div>
-                                                            <img src="{{asset('images/avatar/'.$user->avatar)}}" class="avatar-image {{(in_array($user->avatar,['1.png','2.png','3.png','4.png','5.png','6.png','7.png','8.png','9.png','10.png','11.png','12.png','13.png','14.png','15.png','16.png','17.png','18.png','19.png','20.png','21.png','22.png','23.png','24.png','25.png','26.png','27.png','28.png','29.png','30.png']) || !$user->avatar)?"d-none":""}}" style="position: absolute; top:0;left:0;width:100%; height:100%; object-fit: cover; z-index: 90;" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse8"
-                                                    aria-expanded="false" aria-controls="flush-collapse8">
-                                                    <b>Background</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse8" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12">
-                                                        <p class="fs-7 mt-3 mb-3 opacity-50">The background image is
-                                                            displayed on your public
-                                                            profile
-                                                            page.
-                                                        </p>
-                                                        <p class="mb-0"><b>Background Image</b></p>
-                                                        <p class="small">Upload your own artwork (1300px / 200px)</p>
-                                                    </div>
-                                                    <div class="col-md-12 py-2 w-100 ">
-                                                        <div class="shadow-sm border slimPic mb-4" style="height: 12rem; position: relative;">
-                                                            <input type="file" class="cover-picker" name="cover_photo"
-                                                                    accept="image/jpeg,image/png,image/gif,image/bmp"
-                                                                    style="position:absolute; top:0;left:0; width:100%; height:100%; z-index:99; opacity: 10; opacity:0;" id="imageFile">
-                                                            <div class="subDiv" style="left:40%">
-                                                                <label class="pic-label">
-                                                                    <i class="fa fa-upload opacity-50 mb-3"></i>
-                                                                    <span class="small fw-bold opacity-50">Select Photo
-                                                                    </span>
-                                                                </label>
-                                                            </div>
-                                                            <img src="{{asset('images/cover/'.$user->cover_photo)}}" class="user-cover-image {{(in_array($user->cover_photo,['1.jpg','2.jpg','3.jpg','4.jpg','5.jpg','6.jpg','7.jpg','8.jpg','9.jpg','10.jpg','11.jpg','12.jpg','13.jpg','14.jpg']) || !$user->cover_photo)?"d-none":""}}" style="position: absolute; top:0;left:0;width:100%; height:100%; object-fit: cover; z-index: 90;" />
-                                                        </div>
-                                                        <p class="small mb-3">
-                                                            or select a default display image.</p>
-                                                    </div>
-                                                    @for ($i=1; $i<=14; $i++)
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic{{$i}}">
-                                                            <img src="{{asset("/images/cover/$i.jpg")}}" alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic{{$i}}" type="radio" value="{{"$i.jpg"}}" {{("$i.jpg"==$user->cover_photo)?"checked":""}} name="mycover">
-                                                    </div>
-                                                    @endfor
-                                                    {{-- <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic1">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/1.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" checked id="pic1" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/1.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic2">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/2.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic2" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/2.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic3">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/3.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic3" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/3.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic4">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/4.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic4" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/4.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic5">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/5.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic5" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/5.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic6">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/6.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic6" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/6.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic7">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/7.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic7" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/7.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic8">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/8.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic8" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/8.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic9">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/9.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic9" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/9.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic10">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/10.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic10" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/10.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic11">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/11.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic11" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/11.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic12">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/12.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic12" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/12.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic13">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/13.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic13" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/13.jpg" name="mycover">
-                                                    </div>
-                                                    <div class="col-md-6 col-lg-4 text-center p-2">
-                                                        <label for="pic14">
-                                                            <img src="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/14.jpg"
-                                                                alt="img" class="img-fluid">
-                                                        </label>
-                                                        <input class="mt-3 cover-photo" id="pic14" type="radio"
-                                                            value="https://premiumpress1063.b-cdn.net/_demoimagesv10/backgroundimages/14.jpg" name="mycover">
-                                                    </div> --}}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="flush-headingOne">
-                                                <div class="accordion-button collapsed ps-0 pe-0"
-                                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse9"
-                                                    aria-expanded="false" aria-controls="flush-collapse9">
-                                                    <b>Delete Account</b>
-                                                </div>
-                                            </h2>
-                                            <div id="flush-collapse9" class="accordion-collapse collapse"
-                                                aria-labelledby="flush-headingOne"
-                                                data-bs-parent="#accordionFlushExample">
-                                                <div class="row">
-                                                    <div class="col-md-12 py-2 card">
-                                                        <div class="p-3">
-                                                            <p>We're really sad to see you go, but we understand that
-                                                                situations change. </p>
-                                                            <p>Click to 'delete account' button below to confirm you wish to
-                                                                delete your account.</p>
-                                                            <p>Once processed, you must logout and remain logged out for 30
-                                                                days.</p>
-                                                            <button type="button">Delete Account</button>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button class="btn btn-lg mt-4 w-25 mb-4 change" type="submit">Save Changes</button>
-                                    </div>
-                                </div>
+                            @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
-                        </div>
-                    </div>
+                            @endif
+                            @if(session('error'))
+                            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                            @endif
+
+                            {{-- ===== MAIN SETTINGS FORM ===== --}}
+                            <form method="POST" action="{{ route('settings') }}" enctype="multipart/form-data">
+                                @csrf
+
+                                <div class="accordion" id="settingsAccordion">
+
+                                    {{-- ── 1. Account Information ── --}}
+                                    <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
+                                        <h2 class="accordion-header">
+                                            <button type="button"
+                                                    class="accordion-button collapsed"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#section-account"
+                                                    aria-expanded="false"
+                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                <i class="fas fa-user-circle me-2 text-muted"></i>Account Information
+                                            </button>
+                                        </h2>
+                                        <div id="section-account" class="accordion-collapse collapse">
+                                            <div class="accordion-body pt-2 pb-4">
+                                                <p class="text-muted small mb-3">Your login credentials. Email cannot be changed.</p>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Username</label>
+                                                        <input type="text" class="form-control bg-light" value="{{ $user->user_name }}" disabled>
+                                                        <div class="form-text">Username cannot be changed.</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Email Address</label>
+                                                        <input type="email" name="email" class="form-control bg-light" value="{{ $user->email }}" readonly>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Phone Number</label>
+                                                        <input type="tel" name="phone" class="form-control" value="{{ $user->phone }}" placeholder="e.g. (555) 123-4567">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Display Name</label>
+                                                        <input type="text" name="name" class="form-control" value="{{ $user->name }}" placeholder="How you appear on the platform">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- ── 2. Profile Details ── --}}
+                                    <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
+                                        <h2 class="accordion-header">
+                                            <button type="button"
+                                                    class="accordion-button collapsed"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#section-profile"
+                                                    aria-expanded="false"
+                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                <i class="fas fa-id-card me-2 text-muted"></i>Profile Details
+                                            </button>
+                                        </h2>
+                                        <div id="section-profile" class="accordion-collapse collapse">
+                                            <div class="accordion-body pt-2 pb-4">
+                                                <p class="text-muted small mb-3">Your personal information and profile photo.</p>
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">First Name</label>
+                                                        <input type="text" name="first_name" class="form-control" value="{{ $user->first_name }}" placeholder="First name">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Last Name</label>
+                                                        <input type="text" name="last_name" class="form-control" value="{{ $user->last_name }}" placeholder="Last name">
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label fw-semibold">About Me</label>
+                                                        <textarea name="bio" class="form-control" rows="4" placeholder="Tell others a little about yourself...">{{ $user->bio }}</textarea>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <label class="form-label fw-semibold">Profile Photo</label>
+                                                        <div class="d-flex align-items-start gap-4 mt-1 flex-wrap">
+                                                            {{-- Current photo preview --}}
+                                                            <div>
+                                                                @php
+                                                                    $defaultAvatars = array_map(fn($n) => "$n.png", range(1, 30));
+                                                                    $isDefaultAvatar = in_array($user->avatar, $defaultAvatars) || !$user->avatar;
+                                                                @endphp
+                                                                <img src="{{ asset('images/avatar/' . ($user->avatar ?: '1.png')) }}"
+                                                                     class="rounded-circle border"
+                                                                     style="width: 80px; height: 80px; object-fit: cover;"
+                                                                     id="current-avatar-preview"
+                                                                     alt="Current photo">
+                                                                <div class="form-text text-center mt-1">Current</div>
+                                                            </div>
+                                                            {{-- Upload new photo --}}
+                                                            <div class="flex-grow-1">
+                                                                <label class="form-label text-muted small">Upload a new photo</label>
+                                                                <input type="file" name="avatar" class="form-control form-control-sm" id="avatarUpload"
+                                                                       accept="image/jpeg,image/png,image/gif">
+                                                                <div class="form-text">JPG, PNG, or GIF. Max 2MB.</div>
+                                                            </div>
+                                                        </div>
+                                                        {{-- Default avatar picker --}}
+                                                        <div class="mt-3">
+                                                            <div class="form-text mb-2">Or choose a default avatar:</div>
+                                                            <div class="d-flex flex-wrap gap-2" style="max-height: 160px; overflow-y: auto;">
+                                                                @for ($i = 1; $i <= 30; $i++)
+                                                                <label for="av{{ $i }}" class="mb-0" title="Avatar {{ $i }}"
+                                                                       style="cursor: pointer; opacity: {{ ($i.'.png' == $user->avatar) ? '1' : '0.6' }}; transition: opacity 0.2s;"
+                                                                       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=this.querySelector('input').checked?'1':'0.6'">
+                                                                    <img src="{{ asset('/images/avatar/'.$i.'.png') }}"
+                                                                         style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%; border: 2px solid {{ ($i.'.png' == $user->avatar) ? '#049399' : 'transparent' }};"
+                                                                         alt="Avatar {{ $i }}">
+                                                                    <input class="user-avatar d-none" id="av{{ $i }}" type="radio"
+                                                                           value="{{ $i }}.png" name="myavatar"
+                                                                           {{ $i.'.png' == $user->avatar ? 'checked' : '' }}>
+                                                                </label>
+                                                                @endfor
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- ── 3. Preferences ── --}}
+                                    <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
+                                        <h2 class="accordion-header">
+                                            <button type="button"
+                                                    class="accordion-button collapsed"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#section-prefs"
+                                                    aria-expanded="false"
+                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                <i class="fas fa-sliders-h me-2 text-muted"></i>Preferences
+                                            </button>
+                                        </h2>
+                                        <div id="section-prefs" class="accordion-collapse collapse">
+                                            <div class="accordion-body pt-2 pb-4">
+                                                <div class="row g-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Preferred Contact Method</label>
+                                                        @php $prefContact = $user->preferred_contact_method; @endphp
+                                                        <div class="d-flex flex-column gap-2 mt-1">
+                                                            @foreach(['Call' => 'fas fa-phone', 'Text' => 'fas fa-sms', 'Email' => 'fas fa-envelope'] as $method => $icon)
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio"
+                                                                       name="preferred_contact_method"
+                                                                       id="contact_{{ strtolower($method) }}"
+                                                                       value="{{ $method }}"
+                                                                       {{ $prefContact === $method ? 'checked' : '' }}>
+                                                                <label class="form-check-label" for="contact_{{ strtolower($method) }}">
+                                                                    <i class="{{ $icon }} me-1 text-muted"></i>{{ $method }}
+                                                                </label>
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Best Time to Contact</label>
+                                                        @php $bestTime = $user->best_time_to_contact; @endphp
+                                                        <div class="d-flex flex-column gap-2 mt-1">
+                                                            @foreach(['Morning', 'Afternoon', 'Evening', 'Anytime'] as $time)
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio"
+                                                                       name="best_time_to_contact"
+                                                                       id="time_{{ strtolower($time) }}"
+                                                                       value="{{ $time }}"
+                                                                       {{ $bestTime === $time ? 'checked' : '' }}>
+                                                                <label class="form-check-label" for="time_{{ strtolower($time) }}">{{ $time }}</label>
+                                                            </div>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="p-3 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe;">
+                                                            <i class="fas fa-bell me-2" style="color: #049399;"></i>
+                                                            <strong style="color: #1a3a5c;">Email Notifications</strong>
+                                                            <p class="mb-0 mt-1 text-muted small">
+                                                                You will receive email notifications for important activity,
+                                                                including bids, counters, and listing updates.
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- ── 4. Privacy & Security ── --}}
+                                    <div class="accordion-item border mb-3 rounded" style="border-radius: 10px !important; overflow: hidden;">
+                                        <h2 class="accordion-header">
+                                            <button type="button"
+                                                    class="accordion-button collapsed"
+                                                    data-bs-toggle="collapse"
+                                                    data-bs-target="#section-security"
+                                                    aria-expanded="false"
+                                                    style="font-weight: 600; font-size: 1rem; color: #1a3a5c;">
+                                                <i class="fas fa-lock me-2 text-muted"></i>Privacy &amp; Security
+                                            </button>
+                                        </h2>
+                                        <div id="section-security" class="accordion-collapse collapse">
+                                            <div class="accordion-body pt-2 pb-4">
+                                                <p class="text-muted small mb-3">Leave these fields blank if you do not want to change your password.</p>
+                                                <div class="row g-3">
+                                                    <div class="col-md-12">
+                                                        <label class="form-label fw-semibold">Current Password</label>
+                                                        <input type="password" name="current_password" class="form-control"
+                                                               placeholder="Enter your current password to change it" autocomplete="current-password">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">New Password</label>
+                                                        <input type="password" name="password" class="form-control"
+                                                               placeholder="New password" autocomplete="new-password">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-semibold">Confirm New Password</label>
+                                                        <input type="password" name="confirm_password" class="form-control"
+                                                               placeholder="Re-enter new password" autocomplete="new-password">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>{{-- end accordion --}}
+
+                                {{-- Save button --}}
+                                <div class="d-flex justify-content-end mt-2 mb-2">
+                                    <button type="submit" class="btn btn-lg px-5"
+                                            style="background: #049399; color: #fff; border: none; border-radius: 8px; font-weight: 600;">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
+                                </div>
+
+                            </form>{{-- end main form --}}
+
+                            {{-- ── 5. Delete Account (always-visible danger zone) ── --}}
+                            <div class="settings-danger-zone mt-2 mb-4 p-4" style="border: 1px solid #f5c6cb; border-radius: 10px; background: #fff5f5;">
+                                <h6 style="color: #842029; font-weight: 700; margin-bottom: 0.5rem;">
+                                    <i class="fas fa-trash-alt me-2"></i>Delete Account
+                                </h6>
+                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.5rem;">We're really sorry to see you go. Deleting your account is permanent and cannot be undone.</p>
+                                <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 1rem;">All your listings, bids, and account data will be deactivated.</p>
+                                <form action="{{ route('settings.delete-account') }}" method="POST" id="delete-account-form" style="display: inline;">
+                                    @csrf
+                                    <button type="button" id="btn-delete-account"
+                                            class="settings-delete-btn"
+                                            onclick="if(confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) { document.getElementById('delete-account-form').submit(); }">
+                                        <i class="fas fa-trash-alt me-2"></i>Delete My Account
+                                    </button>
+                                </form>
+                            </div>
+
+                        </div>{{-- end .mySettings --}}
+                    </div>{{-- end .rightCol --}}
                 </div>
             </div>
-        </form>
+        </div>
     </div>
+</div>
+
 @endsection
+@push('styles')
+<style>
+/* Override global .mainDashboard button rules for settings accordion buttons */
+.mySettings .accordion-button,
+.mySettings .accordion-button:not(.collapsed) {
+    background-color: #049399 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 1rem 1.25rem !important;
+}
+.mySettings .accordion-button.collapsed {
+    background-color: #049399 !important;
+    color: #fff !important;
+}
+/* Delete My Account button */
+.settings-delete-btn {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+    border: 1px solid #dc3545 !important;
+    border-radius: 5px !important;
+    padding: 8px 24px !important;
+    font-size: 0.95rem !important;
+    cursor: pointer !important;
+}
+.settings-delete-btn:hover {
+    background-color: #bb2d3b !important;
+    border-color: #bb2d3b !important;
+    color: #fff !important;
+}
+/* Save Changes button */
+.mySettings .btn[type="submit"] {
+    background: #049399 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 0.6rem 2rem !important;
+}
+/* Ensure accordion body text is always visible */
+.mySettings .accordion-body p,
+#deleteAccordion .accordion-body p {
+    color: #495057 !important;
+}
+/* Accordion chevron color (white on teal) */
+.mySettings .accordion-button::after {
+    filter: brightness(0) invert(1);
+}
+#deleteAccordion .accordion-button::after {
+    filter: none;
+}
+</style>
+@endpush
+
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.js"></script>
-<script src="{{asset('assets/js/custom.js')}}"></script>
 <script>
-    $(function () {
-        $('#country_id').on('change', function () {
-            var country_id = $(this).val();
-            $.ajax({
-                type: "GET",
-                url: "{{route('getStates')}}",
-                data: {country_id},
-                dataType: "json",
-                success: function (response) {
-                    if(response.success){
-                        $('#state_id').html('');
-                        var option = `<option value="">Select Region</option>`;
-                            $('#state_id').append(option);
-                        $.map(response.states, function (state, index) {
-                            var option = `<option value="${state.id}">${state.name}</option>`;
-                            $('#state_id').append(option);
-                        });
-                    }
-                },
-                error: function (error) {
-                    console.log("Error: ", error);
-                }
+document.addEventListener('DOMContentLoaded', function () {
+    // Preview uploaded photo immediately
+    var avatarInput = document.getElementById('avatarUpload');
+    if (avatarInput) {
+        avatarInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var preview = document.getElementById('current-avatar-preview');
+                    if (preview) { preview.src = e.target.result; }
+                };
+                reader.readAsDataURL(this.files[0]);
+                // Deselect any chosen default avatar
+                document.querySelectorAll('.user-avatar').forEach(function(r) { r.checked = false; });
+            }
+        });
+    }
+
+    // Highlight selected default avatar
+    document.querySelectorAll('.user-avatar').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            document.querySelectorAll('label[for^="av"]').forEach(function (lbl) {
+                var img = lbl.querySelector('img');
+                if (img) img.style.border = '2px solid transparent';
+                lbl.style.opacity = '0.6';
             });
+            var selectedLabel = document.querySelector('label[for="' + radio.id + '"]');
+            if (selectedLabel) {
+                var img = selectedLabel.querySelector('img');
+                if (img) img.style.border = '2px solid #049399';
+                selectedLabel.style.opacity = '1';
+            }
         });
-
-
-        $('.avatar-picker').on('change', function () {
-            // alert('ok');
-            $('.user-avatar').attr("checked" , false );
-            var uri = window.URL.createObjectURL(this.files[0]);
-            $('.avatar-image').attr('src', uri);
-            $('.avatar-image').removeClass('d-none');
-            // alert('ok');
-        });
-
-        $('.cover-picker').on('change', function () {
-            $('.cover-photo').attr("checked" , false );
-            var uri = window.URL.createObjectURL(this.files[0]);
-            $('.user-cover-image').attr('src', uri);
-            $('.user-cover-image').removeClass('d-none');
-        });
-
     });
-    //  ////////////////MultiSelect Tabs  //////////////////////////
-    $(document).ready(function () {
-      var multipleCancelButton = new Choices('.muiSelect', {
-        removeItemButton: true,
-        // maxItemCount:5,
-        // searchResultLimit: 5,
-        // renderChoiceLimit: 5
-
-      });
-      var multipleCancelButton = new Choices('.muiSelec', {
-        removeItemButton: true,
-      });
-
-    });
+});
 </script>
 @endpush

@@ -134,112 +134,75 @@ class DashboardController extends Controller
     public function saveSettings(Request $request)
     {
         $user = User::findOrFail(Auth::user()->id);
-        $user->saveMeta('username', $request->username);
-        $user->saveMeta('name', $request->name);
-        $user->saveMeta('password', $request->password);
-        $user->saveMeta('confirm_password', $request->confirm_password);
-        $user->saveMeta('email', $request->email);
-        $user->saveMeta('phone', $request->phone);
-        $user->saveMeta('brokerage', $request->brokerage);
-        $user->saveMeta('license_no', $request->license_no);
-        $user->saveMeta('intro_video', $request->intro_video);
-        $user->saveMeta('promotional_material', $request->promotional_material);
-        $user->saveMeta('business_card', $request->business_card);
-        $user->saveMeta('website', $request->website);
-        $user->saveMeta('review', $request->review);
-        $user->saveMeta('facebook', $request->facebook);
-        $user->saveMeta('youtube', $request->youtube);
-        $user->saveMeta('twitter', $request->twitter);
-        $user->saveMeta('instagram', $request->instagram);
-        $user->saveMeta('linkedin', $request->linkedin);
-        $user->saveMeta('listing_term', $request->listing_term);
-        $user->saveMeta('hired_agent', $request->hired_agent);
-        $user->saveMeta('apart_agent', $request->apart_agent);
-        $user->saveMeta('credit_offered', $request->credit_offered);
-        $user->saveMeta('services', json_encode($request->services));
-        $user->saveMeta('marketing_plan', $request->marketing_plan);
-        $user->saveMeta('description', $request->description);
-        $user->saveMeta('bio', $request->bio);
-        $user->saveMeta('search_preferences', json_encode($request->search_preferences));
-        $user->saveMeta('first_name', $request->first_name);
-        $user->saveMeta('last_name', $request->last_name);
-        $user->saveMeta('language', $request->language);
-        $user->saveMeta('country_id', $request->country_id);
-        $user->saveMeta('state_id', $request->state_id);
-        $user->saveMeta('city_id', $request->city_id);
-        $user->saveMeta('county_id', $request->county_id);
-        $user->saveMeta('address1', $request->address1);
-        $user->saveMeta('address2', $request->address2);
-        $user->saveMeta('town', $request->town);
-        $user->saveMeta('zip', $request->zip);
-        $user->saveMeta('myavatar', $request->myavatar);
-        $user->saveMeta('avatar', $request->avatar);
-        $user->saveMeta('cover_photo', $request->cover_photo);
-        $user->saveMeta('mycover', $request->mycover);
-        // $user->user_name = $request->username;
-        $user->name = $request->name;
-        if ($request->password != "" && $request->password == $request->confirm_password) {
-            $user->password = Hash::make($request->password);
+
+        // ── Account Information ─────────────────────────────────────────────
+        if ($request->has('name'))  { $user->name  = $request->name; }
+        if ($request->has('phone')) { $user->phone = $request->phone; }
+
+        // ── Profile Details ─────────────────────────────────────────────────
+        if ($request->has('first_name')) { $user->first_name = $request->first_name; }
+        if ($request->has('last_name'))  { $user->last_name  = $request->last_name; }
+        if ($request->has('bio'))        { $user->saveMeta('bio', $request->bio); }
+
+        // ── Preferences ─────────────────────────────────────────────────────
+        if ($request->has('preferred_contact_method')) {
+            $user->saveMeta('preferred_contact_method', $request->preferred_contact_method);
         }
-        $user->email = $request->email;
-        $user->phone = $request->phone;
-        $user->description = $request->description;
-        // if (Auth::user()->user_type == 'agent') {
-        //     $user->website = $request->website;
-        //     $user->brokerage = $request->brokerage;
-        //     $user->license_no = $request->license_no;
-        //     $user->intro_video = $request->intro_video;
-        //     $user->credit_offered = $request->credit_offered;
-        //     $user->services = json_encode($request->services);
-        // }
-        // $user->search_preferences = json_encode($request->search_preferences);
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        // $user->language = $request->language;
-        // $user->country_id = $request->country_id;
-        // $user->state_id = $request->state_id;
-        // $user->city_id = $request->city_id;
-        // $user->county_id = $request->county_id;
-        // $user->address1 = $request->address1;
-        // $user->address2 = $request->address2;
-        // // $user->town = $request->town;
-        // $user->zip = $request->zip;
-        if ($request->myavatar != "") {
+        if ($request->has('best_time_to_contact')) {
+            $user->saveMeta('best_time_to_contact', $request->best_time_to_contact);
+        }
+
+        // ── Password change (requires current password verification) ────────
+        // Only attempt if current_password is explicitly provided (≥6 chars prevents autofill noise)
+        $newPass     = trim($request->input('password', ''));
+        $confirmPass = trim($request->input('confirm_password', ''));
+        $currentPass = trim($request->input('current_password', ''));
+        $passwordError = null;
+        if (strlen($currentPass) >= 6 && strlen($newPass) >= 6) {
+            if ($newPass !== $confirmPass) {
+                $passwordError = 'New passwords do not match — password was not changed.';
+            } elseif (!Hash::check($currentPass, $user->password)) {
+                $passwordError = 'Current password is incorrect — password was not changed.';
+            } else {
+                $user->password = Hash::make($newPass);
+            }
+        }
+
+        // ── Avatar: file upload takes priority over default avatar picker ───
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            if ($file && $file->isValid()) {
+                $ext = strtolower($file->getClientOriginalExtension());
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                    $imageName = (string) Str::uuid() . '.' . $ext;
+                    $file->move(public_path('images/avatar'), $imageName);
+                    $user->avatar = $imageName;
+                }
+            }
+        } elseif ($request->filled('myavatar')) {
             $user->avatar = $request->myavatar;
         }
-        if ($request->mycover != "") {
-            $user->cover_photo = $request->mycover;
-        }
+
         $user->save();
 
-        // $user2 = User::whereId(Auth::user()->id)->first();
-        if ($request->avatar != "") {
-            $ext = $request->avatar->extension();
-            if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif', 'svg'])) {
-                $uuid = (string) Str::uuid();
-                $imageName = $uuid . '.' . $ext;
-                $request->avatar->move(public_path('images/avatar'), $imageName);
-                $user = User::whereId(Auth::user()->id)->first();
-                $user->avatar = $imageName;
-                $user->save();
-            }
+        if ($passwordError) {
+            return redirect()->back()
+                ->with('success', 'Settings saved successfully!')
+                ->with('error', $passwordError);
         }
 
-        if ($request->cover_photo != "") {
-            $ext = $request->cover_photo->extension();
-            if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'gif', 'svg'])) {
-                $uuid = (string) Str::uuid();
-                $imageName = $uuid . '.' . $ext;
-                $request->cover_photo->move(public_path('images/cover'), $imageName);
-                $user = User::whereId(Auth::user()->id)->first();
-                $user->cover_photo = $imageName;
-                $user->save();
-            }
-        }
+        return redirect()->back()->with('success', 'Settings saved successfully!');
+    }
 
-        // $request->avatar
-        // $request->cover_photo
-        return redirect()->back()->with('success', 'Settings Saved Successfully!');
+    public function deleteAccount(Request $request)
+    {
+        $user = User::findOrFail(Auth::user()->id);
+        $user->is_deleted = 1;
+        $user->save();
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/')->with('success', 'Your account has been deleted.');
     }
 
     public function myBids($type = "seller-property")

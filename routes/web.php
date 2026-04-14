@@ -334,6 +334,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
         Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
         Route::post('/settings', [DashboardController::class, 'saveSettings']);
+        Route::post('/settings/delete-account', [DashboardController::class, 'deleteAccount'])->name('settings.delete-account');
         Route::get('/my-bids/{type?}', [DashboardController::class, 'myBids'])->name('myBids');
         Route::get('/seller-property-auctions', [PropertyAuctionController::class, 'list'])->name('myAuctions');
         Route::get('/start-chat/{type}/{id}', [AuctionChatController::class, 'new'])->name('auction-chat');
