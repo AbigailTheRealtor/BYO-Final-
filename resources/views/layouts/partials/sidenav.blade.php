@@ -42,24 +42,31 @@
         </div>
     </a>
 
-    {{-- ===== MY LISTINGS / MY LISTING ===== --}}
-    @if(auth()->user()->user_type === 'agent')
-
-    {{-- Agent: full multi-listing navigation --}}
+    {{-- ===== MY LISTINGS ===== --}}
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Listings</div>
 
+    @if (in_array(auth()->user()->user_type, ['agent', 'seller']))
     <a href="{{ route('myAuctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Property Listings</b>
-                    @php $my_pac = auth()->user()->property_auctions->count(); @endphp
+                    @php
+                        if (auth()->user()->user_type == 'agent') {
+                            $my_pac = auth()->user()->property_auctions->count();
+                        } elseif (auth()->user()->user_type == 'seller') {
+                            $my_pac = auth()->user()->seller_properties->count();
+                        } else { $my_pac = 0; }
+                    @endphp
                     @if ($my_pac)<span class="badge bg-danger ms-2">{{ $my_pac }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">View and manage your active property listings.</div>
             </div>
         </div>
     </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('agent.landlord.auctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -69,12 +76,19 @@
             </div>
         </div>
     </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('buyer.criteria.auctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-search" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Buyer Criteria Listings</b>
-                    @php $my_bca_count = auth()->user()->criteria_auctions->count(); @endphp
+                    @php
+                        $my_bca_count = auth()->user()->user_type == 'agent'
+                            ? auth()->user()->criteria_auctions->count()
+                            : auth()->user()->buyer_criteria_auctions->count();
+                    @endphp
                     @if ($my_bca_count)<span class="badge bg-danger ms-2">{{ $my_bca_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where buyers define criteria for agent bids.</div>
@@ -90,6 +104,138 @@
             </div>
         </div>
     </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['seller']))
+    <a href="{{ route('hireSellerAgentHireAuctions') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Agent Listings</b>
+                    @php $my_saa_count = auth()->user()->seller_agent_auctions->count(); @endphp
+                    @if ($my_saa_count)<span class="badge bg-danger ms-2">{{ $my_saa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Seller.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['buyer']))
+    <a href="{{ route('buyer.agent.auctions.list') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Agent Listings</b>
+                    @php $my_baa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
+                    @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Buyer.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['landlord']))
+    <a href="{{ route('landlord.agent.auctions.list') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Agent Listings</b>
+                    @php $my_laa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
+                    @if ($my_laa_count)<span class="badge bg-danger ms-2">{{ $my_laa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Landlord.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['tenant']))
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-2 pb-1" style="letter-spacing:.07em;font-size:.68rem;">Hire Agent Listings</div>
+    <a href="{{ route('tenant.agent.auctions.list') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Tenant's Agent</b>
+                    @php $my_taa_count = auth()->user()->tenant_agent_auctions->count(); @endphp
+                    @if ($my_taa_count)<span class="badge bg-danger ms-2">{{ $my_taa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Tenant.</div>
+            </div>
+        </div>
+    </a>
+    <a href="{{ route('landlord.agent.auctions.list') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Landlord's Agent</b>
+                    @php $my_llaa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
+                    @if ($my_llaa_count)<span class="badge bg-danger ms-2">{{ $my_llaa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to manage your property as a Landlord.</div>
+            </div>
+        </div>
+    </a>
+    <a href="{{ route('buyer.agent.auctions.list') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
+                    @php $my_tbaa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
+                    @if ($my_tbaa_count)<span class="badge bg-danger ms-2">{{ $my_tbaa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Buyer.</div>
+            </div>
+        </div>
+    </a>
+    <a href="{{ route('hireSellerAgentHireAuctions') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-sign-out" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Hire Seller's Agent</b>
+                    @php $my_tsaa_count = auth()->user()->seller_agent_auctions->count(); @endphp
+                    @if ($my_tsaa_count)<span class="badge bg-danger ms-2">{{ $my_tsaa_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Seller.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    {{-- ===== MY BIDS ===== --}}
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Bids</div>
+
+    @if (in_array(auth()->user()->user_type, ['tenant']))
+    <a href="{{ route('myBids', 'agent-bids') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>My Bids</b>
+                    @php
+                        $pending_agent_bids_count = \App\Models\TenantAgentAuctionBid::whereHas('auction', function($q) {
+                            $q->where('user_id', auth()->id());
+                        })->whereIn('status', ['Active', 'Countered'])->count();
+                    @endphp
+                    @if ($pending_agent_bids_count)<span class="badge bg-danger ms-2">{{ $pending_agent_bids_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">View and respond to bids from agents on your listings.</div>
+            </div>
+        </div>
+    </a>
+    @else
+    <a href="{{ route('myBids') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>My Bids</b></div>
+                <div class="opacity-50 text-400 small">Bids you have made or received on your listings.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('tenant.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -150,58 +296,72 @@
             </div>
         </div>
     </a>
+    @endif
 
-    @else
+    @if (in_array(auth()->user()->user_type, ['landlord']))
+    <a href="{{ route('myBids', 'hire-landlord-agent-bids') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>Agent Bids Received</b>
+                    @php
+                        $pending_landlord_agent_bids_count = \App\Models\LandlordAgentAuctionBid::whereHas('auction', function($q) {
+                            $q->where('user_id', auth()->id());
+                        })->get()->filter(function($bid) {
+                            return in_array($bid->bid_status, ['Active', 'Countered']);
+                        })->count();
+                    @endphp
+                    @if ($pending_landlord_agent_bids_count)<span class="badge bg-danger ms-2">{{ $pending_landlord_agent_bids_count }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">View and manage bids from agents on your listings.</div>
+            </div>
+        </div>
+    </a>
+    @endif
 
-    {{-- Non-agent (tenant/buyer/seller/landlord): request-count-aware "My Agent Request" entry --}}
-    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Agent Request</div>
-    @php
-        $sidenavUser = auth()->user();
-        $sidenavTypeRoutes = [
-            'tenant'   => route('tenant.agent.auctions.list'),
-            'landlord' => route('landlord.agent.auctions.list'),
-            'buyer'    => route('buyer.agent.auctions.list'),
-            'seller'   => route('hireSellerAgentHireAuctions'),
-        ];
-        $sidenavCounts = [
-            'tenant'   => \App\Models\TenantAgentAuction::where('user_id', $sidenavUser->id)->count(),
-            'landlord' => \App\Models\LandlordAgentAuction::where('user_id', $sidenavUser->id)->count(),
-            'buyer'    => \App\Models\BuyerAgentAuction::where('user_id', $sidenavUser->id)->count(),
-            'seller'   => \App\Models\SellerAgentAuction::where('user_id', $sidenavUser->id)->count(),
-        ];
-        $sidenavTotalRequests = array_sum($sidenavCounts);
-        if ($sidenavTotalRequests === 1) {
-            // Exactly one request — route directly to its role-specific page
-            $sidenavRequestRoute = route('dashboard'); // fallback
-            foreach ($sidenavCounts as $sidenavRole => $sidenavCount) {
-                if ($sidenavCount > 0) {
-                    $sidenavRequestRoute = $sidenavTypeRoutes[$sidenavRole];
-                    break;
-                }
-            }
-        } else {
-            // Zero or multiple requests — route to dashboard (shows all or empty state)
-            $sidenavRequestRoute = route('dashboard');
-        }
-    @endphp
-    <a href="{{ $sidenavRequestRoute }}">
+    {{-- ===== ACTIVITY ===== --}}
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Activity</div>
+
+    @if (in_array(auth()->user()->user_type, ['seller']))
+    <a href="{{ route('seller.agents') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>My Agents</b></div>
+                <div class="opacity-50 text-400 small">View and communicate with your hired agents.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['buyer']))
+    <a href="{{ route('buyer.agents') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>My Agents</b></div>
+                <div class="opacity-50 text-400 small">View and communicate with your hired agents.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    <a href="{{ route('myFriends') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
             </div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>My Agent Request</b></div>
-                <div class="opacity-50 text-400 small">View and manage all your agent requests.</div>
+                <div class="text-600 mb-1"><b>Connections</b></div>
+                <div class="opacity-50 text-400 small">Manage your network of connections and referrals.</div>
             </div>
         </div>
     </a>
 
-    @endif
-
-    {{-- ===== COMMUNICATION ===== --}}
-    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Communication</div>
+    {{-- ===== MESSAGES ===== --}}
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Messages</div>
 
     <a href="{{ route('messages') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
@@ -212,12 +372,12 @@
             </div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Messages</b></div>
-                <div class="opacity-50 text-400 small">Send and receive messages with agents and connections.</div>
+                <div class="opacity-50 text-400 small">Private messaging with clients, agents, and connections.</div>
             </div>
         </div>
     </a>
 
-    {{-- ===== REFERRAL DASHBOARD (Agents only) ===== --}}
+    {{-- ===== QR CODE SETTINGS (Agents only) ===== --}}
     @if (in_array(auth()->user()->user_type, ['agent']))
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Referral Dashboard</div>
 
@@ -232,8 +392,8 @@
     </a>
     @endif
 
-    {{-- ===== ACCOUNT ===== --}}
-    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Account</div>
+    {{-- ===== PROFILE / SETTINGS ===== --}}
+    <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">Profile &amp; Settings</div>
 
     <a href="{{ route('settings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">

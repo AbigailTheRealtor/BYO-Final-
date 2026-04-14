@@ -99,29 +99,6 @@ class DashboardController extends Controller
             ->whereNull('tenant_signed_at')
             ->count();
 
-        // ── All agent requests across all four listing types (no role priority) ──
-        $page_data['allListings'] = [];
-        if ($user->user_type !== 'agent') {
-            $modelMap = [
-                'tenant'   => TenantAgentAuction::class,
-                'landlord' => LandlordAgentAuction::class,
-                'buyer'    => BuyerAgentAuction::class,
-                'seller'   => SellerAgentAuction::class,
-            ];
-            $collected = [];
-            foreach ($modelMap as $roleKey => $model) {
-                $listings = $model::where('user_id', $uid)->latest()->get();
-                foreach ($listings as $listing) {
-                    $collected[] = [
-                        'listing'  => $listing,
-                        'role'     => $roleKey,
-                        'bidCount' => $listing->bids()->count(),
-                    ];
-                }
-            }
-            $page_data['allListings'] = $collected;
-        }
-
         return view('dashboard', $page_data);
     }
 
