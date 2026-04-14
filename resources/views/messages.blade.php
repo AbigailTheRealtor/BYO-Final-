@@ -971,7 +971,6 @@
 
                                                 </div>
                                             </li>
-                                            @break
                                         @endforeach
                                         @endif
                                         {{-- {{ dd('ok'); }} --}}
@@ -1067,24 +1066,12 @@
                                                 @endforeach --}}
 
 
-                                                @foreach ($current_token->chats as $item)
+                                                @foreach ($current_token->chats->where('is_bot', 0) as $item)
                                                     @php
-                                                        if ($item->user_id == auth()->id()) {
-                                                            $class = 'sent';
-                                                        } else {
-                                                            $class = 'replies';
-                                                        }
+                                                        $class = ($item->user_id == auth()->id()) ? 'sent' : 'replies';
                                                     @endphp
-                                                    {{-- @dump($item->is_bot==0);
-                                                    @dd($item->where([]))
                                                     <li class="{{ $class }}">
-                                                        <p class="ms-2">{{ $item::select() }}</p>
-                                                    </li> --}}
-                                                    <li class="send">
-                                                        <p class="ms-2 question_listing">{{ $item->message }}</p>
-                                                    </li>
-                                                    <li class="replies">
-                                                        <p class="ms-2">{{ $item->answer }}</p>
+                                                        <p class="ms-2">{{ $item->message }}</p>
                                                     </li>
                                                 @endforeach
 
@@ -1205,68 +1192,46 @@
             $("#status-options").removeClass("active");
         });
 
+        // Track the currently active chat token
+        var activeToken = '{{ $token ?? "" }}';
+
+        // Update activeToken when a contact is clicked
+        $(document).on('click', '.contact', function() {
+            activeToken = $(this).data('token');
+        });
+
         function newMessage() {
-            message = $(".message-input input").val();
+            var message = $(".message-input input").val();
             if ($.trim(message) == '') {
                 return false;
             }
-            var sent =
-                `<li class="sent"><!--<img src="http://emilcarlsson.se/assets/mikeross.png" alt="" /> --><p>${message}</p></li>`;
-            var reply = `<li class="replies"><p>${message}</p></li>`;
-            /* $('<li class="sent"><!--<img src="http://emilcarlsson.se/assets/mikeross.png" alt="" /> --><p>' + message + '</p></li>')
-                .appendTo($('.messages ul')); */
-            $('.message-input input').val(null);
-            // $('.contact.active .preview').html('<span>You: </span>' + message);
+            var token = activeToken || $('.contact.active').data('token');
+            if (!token) {
+                return false;
+            }
+            var sent = `<li class="sent"><p>${message}</p></li>`;
+            $('.message-input input').val('');
             $('.chat-messages').append(sent);
-            // $(".messages").scrollTop($('.chat-cover').height());
-            /* $(".messages").animate({
-                scrollTop: $('.chat-cover').height()
-            }, "fast"); */
             scroll_bottom();
-            chat_reply(message);
 
-
-            /* setTimeout(() => {
-                $('.chat-messages').append(reply);
-                scroll_bottom();
-            }, 1000); */
-        };
-
-
-        function chat_reply(message) {
-            var token = $('.contact.active').data('token');
             $.ajax({
-                type: "GET",
-                url: "{{ route('chat_bot_reply', '') }}/" + token,
+                type: "POST",
+                url: "{{ route('send-chat-message') }}",
                 data: {
-                    message
+                    _token: "{{ csrf_token() }}",
+                    token: token,
+                    message: message,
                 },
                 dataType: "json",
                 success: function(response) {
-                    if (response.success) {
-                        setTimeout(() => {
-                            if (response.isMulti) {
-                                var reply = '';
-                                jQuery.each(response.message.slice(0, 5), function(index, value) {
-
-                                    reply =
-                                        `${reply} <li class="sent" id="sending_auto" ><p class="sending_para">${value}</p></li>`;
-
-
-                                });
-                                //    reply = `${reply} <li class="sent" ><p class="sending_para">please choose one...</p></li>`;
-                                $('.chat-messages').append(reply);
-                            } else {
-                                var reply = `<li class="replies"><p>${response.message}</p></li>`;
-                                $('.chat-messages').append(reply);
-                            }
-
-                            scroll_bottom();
-                        }, 1000);
-                    }
+                    // Message already shown optimistically in UI
+                },
+                error: function(xhr) {
+                    // Optionally show an error indicator
+                    console.error('Send failed:', xhr.responseText);
                 }
             });
-        }
+        };
 
         function scroll_bottom() {
             $(".messages").animate({

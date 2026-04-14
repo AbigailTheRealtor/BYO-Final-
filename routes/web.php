@@ -340,6 +340,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/seller-property-auctions', [PropertyAuctionController::class, 'list'])->name('myAuctions');
         Route::get('/start-chat/{type}/{id}', [AuctionChatController::class, 'new'])->name('auction-chat');
         Route::post('/message2', [AuctionChatController::class, 'new1'])->name('auction-chat1');
+        Route::post('/send-chat-message', [AuctionChatController::class, 'sendMessage'])->name('send-chat-message');
 
         // Old route commented by waqas on 26 may 2023
         // Route::get('/messages/{token?}', [AuctionChatController::class, 'messages'])->name('messages');

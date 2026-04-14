@@ -98,13 +98,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('1');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -128,7 +129,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('2');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -147,13 +147,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('3');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -177,7 +178,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('4');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -196,13 +196,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('5');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -226,7 +227,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('6');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -245,13 +245,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('7');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -275,7 +276,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('8');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -294,13 +294,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('9');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -324,7 +325,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('10');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -343,13 +343,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('11');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -373,7 +374,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('12');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -392,13 +392,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('13');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -422,7 +423,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('14');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -441,13 +441,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('15');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -471,7 +472,6 @@ class AuctionChatController extends Controller
                     })->first();
                     $chat_token = $auction->chat_tokens->first();
                     $route = route('messages', $chat_token->token);
-                    dd('16');
                     return redirect()->to($route);
                     // dd($chat_token->token);
                     // return 'exists';
@@ -490,13 +490,14 @@ class AuctionChatController extends Controller
                         $chat_user->auction_chat_token_id = $chat_token->id;
                         $chat_user->user_id = $user->id;
                         $chat_user->save();
-                        $chat_user2 = new AuctionChatUser();
-                        $chat_user2->auction_chat_token_id = $chat_token->id;
-                        $chat_user2->user_id = $auction->user->id;
-                        $chat_user2->save();
+                        if ($auction->user->id !== $user->id) {
+                            $chat_user2 = new AuctionChatUser();
+                            $chat_user2->auction_chat_token_id = $chat_token->id;
+                            $chat_user2->user_id = $auction->user->id;
+                            $chat_user2->save();
+                        }
                         DB::commit();
                         $route = route('messages', $chat_token->token);
-                        dd('17');
                         return redirect()->to($route);
                     } catch (\Exception $e) {
                         //throw $e;
@@ -504,7 +505,6 @@ class AuctionChatController extends Controller
                         return 'error';
                     }
                 }
-                dd(uniqid());
             }
 
 
@@ -966,6 +966,49 @@ class AuctionChatController extends Controller
         // dd($chat_tokens->toArray());
         $page_data['title'] = 'Messages';
         return view('messages', $page_data);
+    }
+
+    public function sendMessage(Request $request)
+    {
+        $user  = Auth::user();
+        $token = trim($request->input('token', ''));
+        $body  = trim($request->input('message', ''));
+
+        if ($body === '' || $token === '') {
+            return response()->json(['success' => false, 'error' => 'Empty message or token'], 422);
+        }
+
+        $chat_token = AuctionChatToken::whereToken($token)->first();
+        if (!$chat_token) {
+            return response()->json(['success' => false, 'error' => 'Invalid token'], 404);
+        }
+
+        // Verify the authenticated user is a participant in this thread
+        $isParticipant = $chat_token->chat_users()->where('user_id', $user->id)->exists();
+        if (!$isParticipant) {
+            return response()->json(['success' => false, 'error' => 'Unauthorized'], 403);
+        }
+
+        $chat = new AuctionChat();
+        $chat->auction_chat_token_id = $chat_token->id;
+        $chat->user_id               = $user->id;
+        $chat->message               = $body;
+        $chat->answer                = null;
+        $chat->message_type          = 'text';
+        $chat->is_bot                = 0;
+        $chat->save();
+
+        $chat_token->last_message = $body;
+        $chat_token->touch();
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'      => $chat->id,
+                'user_id' => $chat->user_id,
+                'message' => $chat->message,
+            ],
+        ]);
     }
 
     public function load_chat_messages($token)
