@@ -46,92 +46,73 @@
 @endpush
 
 @section('content')
-<div class="container py-4">
-    <div class="mb-3">
-        <a href="{{ route('myBids') }}" class="back-link">
-            <i class="fas fa-arrow-left me-2"></i>Back to Agent Bids
-        </a>
-    </div>
+@php
+    $bidStatus = $bid->bid_status ?? 'Active';
+    $bidStatusColorForLayout = match($bidStatus) {
+        'Countered' => '#ffc107',
+        'Accepted'  => '#28a745',
+        'Rejected'  => '#dc3545',
+        default     => '#1a4a6e',
+    };
+    $auctionBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
+    $bidData = json_decode(json_encode($bid->get ?? []), true) ?: [];
+    $propType = $auction->get->property_type ?? 'Residential Property';
 
-    <div class="bid-preview-card">
-        <div class="bid-preview-header">
-            <div class="d-flex justify-content-between align-items-start flex-wrap">
-                <div>
-                    <h4 class="mb-2"><i class="fas fa-user-tie me-2"></i>Full Agent Bid Preview</h4>
-                    <div class="opacity-75">
-                        <span class="me-3"><i class="fas fa-home me-1"></i>Hire a Tenant's Agent</span>
-                        <span><i class="fas fa-tag me-1"></i>Listing ID: {{ $listingId }}</span>
-                    </div>
-                </div>
-                <div class="text-end mt-2 mt-md-0">
-                    @php
-                        $bidStatus = $bid->bid_status ?? 'Active';
-                        $statusStyles = [
-                            'Countered' => 'background-color: #ffc107; color: #000;',
-                            'Active' => 'background-color: #007bff; color: #fff;',
-                            'Accepted' => 'background-color: #28a745; color: #fff;',
-                            'Rejected' => 'background-color: #dc3545; color: #fff;',
-                        ];
-                    @endphp
-                    <span class="status-badge" style="{{ $statusStyles[$bidStatus] ?? $statusStyles['Active'] }}">
-                        {{ $bidStatus }}
-                    </span>
-                </div>
-            </div>
-        </div>
+    // Remap legacy DB keys to canonical helper keys.
+    // DB stores broker_fee_timing; helper uses payment_timing.
+    if (($auctionBaselineData['payment_timing'] ?? '') === '') {
+        $auctionBaselineData['payment_timing'] = $auctionBaselineData['broker_fee_timing'] ?? null;
+    }
+    if (($auctionBaselineData['days_to_pay'] ?? '') === '') {
+        $auctionBaselineData['days_to_pay'] = $auctionBaselineData['broker_fee_days_from_rent']
+            ?? $auctionBaselineData['broker_fee_days_after_lease'] ?? null;
+    }
+    if (($bidData['payment_timing'] ?? '') === '') {
+        $bidData['payment_timing'] = $bidData['broker_fee_timing'] ?? null;
+    }
+    if (($bidData['days_to_pay'] ?? '') === '') {
+        $bidData['days_to_pay'] = $bidData['broker_fee_days_from_rent']
+            ?? $bidData['broker_fee_days_after_lease'] ?? null;
+    }
 
-        <div class="bid-preview-body">
-            @php
-                $auctionBaselineData = json_decode(json_encode($auction->get ?? []), true) ?: [];
-                $bidData = json_decode(json_encode($bid->get ?? []), true) ?: [];
-                $propType = $auction->get->property_type ?? 'Residential Property';
+    $matchScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
+        $auctionBaselineData, $bidData, null, $propType
+    );
 
-                // Remap legacy DB keys to canonical helper keys.
-                // DB stores broker_fee_timing; helper uses payment_timing.
-                if (($auctionBaselineData['payment_timing'] ?? '') === '') {
-                    $auctionBaselineData['payment_timing'] = $auctionBaselineData['broker_fee_timing'] ?? null;
-                }
-                if (($auctionBaselineData['days_to_pay'] ?? '') === '') {
-                    $auctionBaselineData['days_to_pay'] = $auctionBaselineData['broker_fee_days_from_rent']
-                        ?? $auctionBaselineData['broker_fee_days_after_lease'] ?? null;
-                }
-                if (($bidData['payment_timing'] ?? '') === '') {
-                    $bidData['payment_timing'] = $bidData['broker_fee_timing'] ?? null;
-                }
-                if (($bidData['days_to_pay'] ?? '') === '') {
-                    $bidData['days_to_pay'] = $bidData['broker_fee_days_from_rent']
-                        ?? $bidData['broker_fee_days_after_lease'] ?? null;
-                }
+    $totalScore      = $matchScore['overall_percent'];
+    $brokerScore     = $matchScore['terms_match_percent'];
+    $brokerMatched   = $matchScore['terms_matched_count'];
+    $brokerTotal     = $matchScore['terms_baseline_total'];
+    $brokerMismatches = $matchScore['changed_terms'];
+    $servicesScore   = $matchScore['services_match_percent'];
+    $servicesMatched = $matchScore['services_matched_count'];
+    $servicesTotal   = $matchScore['services_baseline_total'];
+    $servicesMissing = $matchScore['missing_services'] ?? [];
+    $servicesAdded   = $matchScore['extra_services'] ?? [];
+    $servicesMatchedList = $matchScore['matched_services'] ?? [];
 
-                $matchScore = \App\Helpers\TenantBidMatchScoreHelper::calculate(
-                    $auctionBaselineData, $bidData, null, $propType
-                );
+    $getScoreColor = function($score) {
+        if ($score >= 80) return '#28a745';
+        if ($score >= 50) return '#ffc107';
+        return '#dc3545';
+    };
 
-                $totalScore      = $matchScore['overall_percent'];
-                $brokerScore     = $matchScore['terms_match_percent'];
-                $brokerMatched   = $matchScore['terms_matched_count'];
-                $brokerTotal     = $matchScore['terms_baseline_total'];
-                $brokerMismatches = $matchScore['changed_terms'];
-                $servicesScore   = $matchScore['services_match_percent'];
-                $servicesMatched = $matchScore['services_matched_count'];
-                $servicesTotal   = $matchScore['services_baseline_total'];
-                $servicesMissing = $matchScore['missing_services'] ?? [];
-                $servicesAdded   = $matchScore['extra_services'] ?? [];
-                $servicesMatchedList = $matchScore['matched_services'] ?? [];
+    $totalScoreColor    = $getScoreColor($totalScore);
+    $brokerScoreColor   = $getScoreColor($brokerScore);
+    $servicesScoreColor = $getScoreColor($servicesScore);
 
-                $getScoreColor = function($score) {
-                    if ($score >= 80) return '#28a745';
-                    if ($score >= 50) return '#ffc107';
-                    return '#dc3545';
-                };
+    $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+    $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
+@endphp
 
-                $totalScoreColor    = $getScoreColor($totalScore);
-                $brokerScoreColor   = $getScoreColor($brokerScore);
-                $servicesScoreColor = $getScoreColor($servicesScore);
-
-                $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
-                $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
-            @endphp
+<x-bid-detail-layout
+    :backUrl="route('myBids')"
+    backLabel="Back to Agent Bids"
+    roleLabel="Hire a Tenant's Agent"
+    :listingId="$listingId"
+    headerTitle="Full Agent Bid Preview"
+    :bidStatus="$bidStatus"
+    :bidStatusColor="$bidStatusColorForLayout">
 
             <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded" style="background: #f8f9fa;">
                 <div class="d-flex align-items-center">
@@ -1008,45 +989,43 @@
                 </div>
             </div>
 
-        </div>
 
-        <div class="action-buttons d-flex flex-wrap justify-content-between align-items-center gap-2">
-            <a href="{{ route('myBids') }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Back to Agent Bids
-            </a>
-            
-            <div class="d-flex gap-2 flex-wrap">
-                @if($bidStatus === 'Active')
-                    <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                        <button type="submit" class="btn" style="background: #28a745; color: #fff; border: none;" onclick="return confirm('Accept this bid?')">
-                            <i class="fas fa-check me-1"></i>Accept
-                        </button>
-                    </form>
-                    <a href="{{ route('tenant.counter-terms', $bid->id) }}" class="btn" style="background: #ffc107; color: #000; border: none;">
-                        <i class="fas fa-exchange-alt me-1"></i>Counter
-                    </a>
-                    <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="bid_id" value="{{ $bid->id }}">
-                        <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                        <button type="submit" class="btn" style="background: #dc3545; color: #fff; border: none;" onclick="return confirm('Reject this bid?')">
-                            <i class="fas fa-times me-1"></i>Reject
-                        </button>
-                    </form>
-                @elseif($bidStatus === 'Countered')
-                    <span class="btn" style="background: #fff3cd; color: #856404; border: 1px solid #ffc107;">
-                        <i class="fas fa-clock me-1"></i>Awaiting Response
-                    </span>
-                @elseif($bidStatus === 'Accepted')
-                    <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn" style="background: #28a745; color: #fff; border: none;">
-                        <i class="fas fa-file-contract me-1"></i>View Summary
-                    </a>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
+    <x-slot name="footerActions">
+        @if($bidStatus === 'Active')
+        <form action="{{ route('tenant.hire.agent.auction.bid.accept') }}" method="POST" class="d-inline">
+            @csrf
+            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+            <button type="submit" class="btn btn-success"
+                    style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;"
+                    onclick="return confirm('Accept this bid?')">
+                <i class="fas fa-check me-1"></i>Accept Bid
+            </button>
+        </form>
+        <a href="{{ route('tenant.counter-terms', $bid->id) }}" class="btn btn-primary"
+           style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+            <i class="fas fa-exchange-alt me-1"></i>Counter Bid
+        </a>
+        <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
+            @csrf
+            <input type="hidden" name="bid_id" value="{{ $bid->id }}">
+            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+            <button type="submit" class="btn btn-danger"
+                    style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;"
+                    onclick="return confirm('Reject this bid?')">
+                <i class="fas fa-times me-1"></i>Reject Bid
+            </button>
+        </form>
+        @elseif($bidStatus === 'Countered')
+        <span class="btn" style="background: #fff3cd; color: #856404; border: 1px solid #ffc107;">
+            <i class="fas fa-clock me-1"></i>Awaiting Response
+        </span>
+        @elseif($bidStatus === 'Accepted')
+        <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-success">
+            <i class="fas fa-file-contract me-1"></i>View Summary
+        </a>
+        @endif
+    </x-slot>
+
+</x-bid-detail-layout>
 @endsection

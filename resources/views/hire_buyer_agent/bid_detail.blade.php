@@ -151,176 +151,142 @@
       default     => '#1a4a6e',
   };
 @endphp
+@php
+    $_mfBuyerViewerSentLatest = ($isListingOwner && $_buyerCardLatestFromOwner)
+                             || ($isBidOwner   && !$_buyerCardLatestFromOwner);
+    $mfBidSummaryB = ($mfStateB === 'accepted')
+        ? \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))
+            ->where('agent_user_id', data_get($bid, 'user_id'))->first()
+        : null;
+@endphp
 
-<div class="container py-4">
-    <div class="mb-3">
-        <a href="{{ route('buyer.view-auction', $auction->id) }}" class="back-link">
-            <i class="fas fa-arrow-left me-2"></i>Back to Listing
-        </a>
-    </div>
+<x-bid-detail-layout
+    :backUrl="route('buyer.view-auction', $auction->id)"
+    backLabel="Back to Listing"
+    roleLabel="Hire a Buyer's Agent"
+    :listingId="$auction->id"
+    :address="$auction->address ?? null"
+    :bidStatus="$bidStatusDisplay"
+    :bidStatusColor="$bidStatusColor">
 
-    <div class="bid-preview-card">
-        {{-- ===== HEADER ===== --}}
-        <div class="bid-preview-header">
-            <div class="d-flex justify-content-between align-items-start flex-wrap">
-                <div>
-                    <h4 class="mb-2"><i class="fas fa-user-tie me-2"></i>Agent Bid Detail</h4>
-                    <div class="opacity-75">
-                        <span class="me-3"><i class="fas fa-home me-1"></i>Hire a Buyer's Agent</span>
-                        <span><i class="fas fa-tag me-1"></i>Listing #{{ $auction->id }}</span>
-                        @if($auction->address)
-                        <span class="ms-3"><i class="fas fa-map-marker-alt me-1"></i>{{ $auction->address }}</span>
-                        @endif
-                    </div>
-                </div>
-                <div class="text-end mt-2 mt-md-0">
-                    <span class="status-badge"
-                          style="background-color:{{ $bidStatusColor }};color:{{ $bidStatusDisplay === 'Countered' ? '#000' : '#fff' }};padding:6px 14px;border-radius:20px;font-weight:600;font-size:0.9rem;">
-                        {{ $bidStatusDisplay }}
-                    </span>
-                </div>
-            </div>
+    {{-- ===== BODY ===== --}}
+    @include('partials.bid_detail_body.buyer')
+
+    {{-- ===== FOOTER BANNERS (w-100 status rows) ===== --}}
+    <x-slot name="footerBanners">
+        {{-- Expired notice --}}
+        @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold && $isTraditionalListing && $isExpired)
+        <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
+            <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available.
         </div>
+        @endif
 
-        {{-- ===== BODY — full modal content via shared partial ===== --}}
-        <div class="bid-preview-body">
-            @include('partials.bid_detail_body.buyer')
+        {{-- Accepted: banner + summary links --}}
+        @if ($mfStateB === 'accepted')
+        <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
+            <i class="fa fa-check-circle me-1"></i>
+            @if ($mfIsOwnerB) This bid has been accepted.
+            @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} accepted this bid.
+            @endif
         </div>
-
-        {{-- ===== FOOTER ===== --}}
-        @php
-            $_mfBuyerViewerSentLatest = ($isListingOwner && $_buyerCardLatestFromOwner)
-                                     || ($isBidOwner   && !$_buyerCardLatestFromOwner);
-            $mfBidSummaryB = ($mfStateB === 'accepted')
-                ? \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))
-                    ->where('agent_user_id', data_get($bid, 'user_id'))->first()
-                : null;
-        @endphp
-        <div class="action-buttons d-flex flex-wrap justify-content-between align-items-center gap-2">
-
-            {{-- Confidential notice (full width) --}}
-            <div class="w-100 p-2 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                <i class="fa fa-shield-alt me-2"></i>
-                <strong>Confidential:</strong> This information is private and only visible to you.
-            </div>
-
-            {{-- Expired notice (full width) --}}
-            @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold && $isTraditionalListing && $isExpired)
-            <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available.
-            </div>
-            @endif
-
-            {{-- Accepted: status banner + summary links --}}
-            @if ($mfStateB === 'accepted')
-            <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-                <i class="fa fa-check-circle me-1"></i>
-                @if ($mfIsOwnerB) This bid has been accepted.
-                @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} accepted this bid.
-                @endif
-            </div>
-            @if ($mfBidSummaryB && ($mfIsOwnerB || data_get($bid, 'user_id') == Auth::id()))
-            <div class="w-100 d-flex gap-2 flex-wrap justify-content-center">
-                <a href="{{ route('accepted-bid-summary.view', $mfBidSummaryB->id) }}" class="btn btn-outline-primary btn-sm">
-                    <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
-                </a>
-                @if (data_get($bid, 'user_id') == Auth::id() && !$mfBidSummaryB->isAgentSigned())
-                <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
-                    <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
-                </a>
-                @endif
-                @if ($mfIsOwnerB && !$mfBidSummaryB->isTenantSigned())
-                <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
-                    <i class="fa fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
-                </a>
-                @endif
-                @if ($mfBidSummaryB->isFullySigned())
-                <a href="{{ route('accepted-bid-summary.download-pdf', $mfBidSummaryB->id) }}" class="btn btn-success btn-sm">
-                    <i class="fa fa-download me-1"></i> Download Signed PDF
-                </a>
-                @endif
-            </div>
-            @endif
-
-            {{-- Rejected: status banner --}}
-            @elseif ($mfStateB === 'rejected')
-            <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-                <i class="fa fa-times-circle me-1"></i>
-                @if ($mfIsOwnerB) This bid has been rejected.
-                @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} rejected this bid.
-                @endif
-            </div>
-
-            {{-- Countered: status banner --}}
-            @elseif ($mfStateB === 'countered')
-            <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                <i class="fa fa-exchange-alt me-1"></i>
-                @if ($_mfBuyerViewerSentLatest) <strong>Counter Offer Sent.</strong>
-                @else <strong>Counter Offer Received.</strong>
-                @endif
-            </div>
-
-            {{-- Pending: waiting message --}}
-            @elseif ($mfStateB === '0')
-            @if (data_get($bid, 'user_id') == Auth::id())
-            <div class="w-100 alert alert-secondary mb-0 py-1 small">
-                ⏳ Waiting for a response from {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }}...
-            </div>
-            @elseif (!$mfIsOwnerB)
-            <div class="w-100 alert alert-light mb-0 py-1 small">
-                ⏳ Bid from {{ trim($mfAgentFirstB . ' ' . $mfAgentLastB) }} is pending.
-            </div>
-            @endif
-            @endif
-
-            {{-- ── Main action row: Back (LEFT) — Buttons (RIGHT) ── --}}
-            <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>Back to Listing
+        @if ($mfBidSummaryB && ($mfIsOwnerB || data_get($bid, 'user_id') == Auth::id()))
+        <div class="w-100 d-flex gap-2 flex-wrap justify-content-center">
+            <a href="{{ route('accepted-bid-summary.view', $mfBidSummaryB->id) }}" class="btn btn-outline-primary btn-sm">
+                <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
             </a>
-            <div class="d-flex gap-2 flex-wrap align-items-center">
-                {{-- Active + owner: Accept / Counter / Reject --}}
-                @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold && !($isTraditionalListing && $isExpired))
-                <form action="{{ route('buyer.hire.agent.auction.bid.accept') }}" method="POST" class="m-0"
-                      onsubmit="return confirm('Accept this bid? This will reject all other bids.');">
-                    @csrf
-                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                    <button type="submit" class="btn btn-success"
-                            style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
-                        <i class="fa fa-check me-1"></i> Accept Bid
-                    </button>
-                </form>
-                <a href="{{ route('buyer.counter-terms', data_get($bid, 'id')) }}" class="btn btn-primary"
-                   style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-                    <i class="fa fa-exchange-alt me-1"></i> Counter Bid
-                </a>
-                <form action="{{ route('buyer.hire.agent.auction.bid.reject') }}" method="POST" class="m-0"
-                      onsubmit="return confirm('Reject this bid?');">
-                    @csrf
-                    <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
-                    <input type="hidden" name="auction_id" value="{{ $auction->id }}">
-                    <button type="submit" class="btn btn-danger"
-                            style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
-                        <i class="fa fa-times me-1"></i> Reject Bid
-                    </button>
-                </form>
-                @endif
-                {{-- Countered: View / Edit counter terms --}}
-                @if ($mfStateB === 'countered')
-                <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
-                   class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 14px;font-weight:600;font-size:0.85rem;">
-                    <i class="fa fa-eye me-1"></i> View Counter Terms
-                </a>
-                @if ($_mfBuyerViewerSentLatest)
-                <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}"
-                   class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 14px;font-weight:600;font-size:0.85rem;">
-                    <i class="fa fa-edit me-1"></i> Edit Counter Terms
-                </a>
-                @endif
-                @endif
-            </div>
+            @if (data_get($bid, 'user_id') == Auth::id() && !$mfBidSummaryB->isAgentSigned())
+            <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
+                <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+            </a>
+            @endif
+            @if ($mfIsOwnerB && !$mfBidSummaryB->isTenantSigned())
+            <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
+                <i class="fa fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
+            </a>
+            @endif
+            @if ($mfBidSummaryB->isFullySigned())
+            <a href="{{ route('accepted-bid-summary.download-pdf', $mfBidSummaryB->id) }}" class="btn btn-success btn-sm">
+                <i class="fa fa-download me-1"></i> Download Signed PDF
+            </a>
+            @endif
+        </div>
+        @endif
+
+        {{-- Rejected --}}
+        @elseif ($mfStateB === 'rejected')
+        <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
+            <i class="fa fa-times-circle me-1"></i>
+            @if ($mfIsOwnerB) This bid has been rejected.
+            @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} rejected this bid.
+            @endif
         </div>
 
-    </div>
-</div>
+        {{-- Countered --}}
+        @elseif ($mfStateB === 'countered')
+        <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
+            <i class="fa fa-exchange-alt me-1"></i>
+            @if ($_mfBuyerViewerSentLatest) <strong>Counter Offer Sent.</strong>
+            @else <strong>Counter Offer Received.</strong>
+            @endif
+        </div>
+
+        {{-- Pending --}}
+        @elseif ($mfStateB === '0')
+        @if (data_get($bid, 'user_id') == Auth::id())
+        <div class="w-100 alert alert-secondary mb-0 py-1 small">
+            ⏳ Waiting for a response from {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }}...
+        </div>
+        @elseif (!$mfIsOwnerB)
+        <div class="w-100 alert alert-light mb-0 py-1 small">
+            ⏳ Bid from {{ trim($mfAgentFirstB . ' ' . $mfAgentLastB) }} is pending.
+        </div>
+        @endif
+        @endif
+    </x-slot>
+
+    {{-- ===== FOOTER ACTIONS (right-side buttons) ===== --}}
+    <x-slot name="footerActions">
+        {{-- Active + owner: Accept / Counter / Reject --}}
+        @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold && !($isTraditionalListing && $isExpired))
+        <form action="{{ route('buyer.hire.agent.auction.bid.accept') }}" method="POST" class="m-0"
+              onsubmit="return confirm('Accept this bid? This will reject all other bids.');">
+            @csrf
+            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+            <button type="submit" class="btn btn-success"
+                    style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
+                <i class="fa fa-check me-1"></i> Accept Bid
+            </button>
+        </form>
+        <a href="{{ route('buyer.counter-terms', data_get($bid, 'id')) }}" class="btn btn-primary"
+           style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+            <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+        </a>
+        <form action="{{ route('buyer.hire.agent.auction.bid.reject') }}" method="POST" class="m-0"
+              onsubmit="return confirm('Reject this bid?');">
+            @csrf
+            <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
+            <input type="hidden" name="auction_id" value="{{ $auction->id }}">
+            <button type="submit" class="btn btn-danger"
+                    style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
+                <i class="fa fa-times me-1"></i> Reject Bid
+            </button>
+        </form>
+        @endif
+        {{-- Countered: View / Edit counter terms --}}
+        @if ($mfStateB === 'countered')
+        <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
+           class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 14px;font-weight:600;font-size:0.85rem;">
+            <i class="fa fa-eye me-1"></i> View Counter Terms
+        </a>
+        @if ($_mfBuyerViewerSentLatest)
+        <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}"
+           class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 14px;font-weight:600;font-size:0.85rem;">
+            <i class="fa fa-edit me-1"></i> Edit Counter Terms
+        </a>
+        @endif
+        @endif
+    </x-slot>
+
+</x-bid-detail-layout>
 @endsection
