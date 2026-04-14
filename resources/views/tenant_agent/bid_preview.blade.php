@@ -103,6 +103,24 @@
 
     $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
     $mismatchBadge = '<span class="badge bg-danger ms-2" style="font-size: 0.7rem; vertical-align: middle;">Mismatch</span>';
+
+    // ── Shared match_score_panel variables ─────────────────────────────────
+    $ms_has_baseline           = ($servicesTotal > 0 || $brokerTotal > 0);
+    $ms_overall_pct            = $totalScore;
+    $ms_overall_color          = $totalScoreColor;
+    $ms_services_pct           = $servicesScore;
+    $ms_services_color         = $servicesScoreColor;
+    $ms_services_total         = $servicesTotal;
+    $ms_services_matched       = $servicesMatched;
+    $ms_services_extra_count   = count($servicesAdded);
+    $ms_services_missing_count = count($servicesMissing);
+    $ms_terms_pct              = $brokerScore;
+    $ms_terms_color            = $brokerScoreColor;
+    $ms_terms_total            = $brokerTotal;
+    $ms_terms_matched          = $brokerMatched;
+    $ms_terms_changed_count    = count($brokerMismatches);
+    $ms_terms_added_count      = 0;
+    $ms_baseline_label         = 'Your Listing Terms';
 @endphp
 
 <x-bid-detail-layout
@@ -114,30 +132,7 @@
     :bidStatus="$bidStatus"
     :bidStatusColor="$bidStatusColorForLayout">
 
-            <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded" style="background: #f8f9fa;">
-                <div class="d-flex align-items-center">
-                    <div class="rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px; background: {{ $totalScoreColor }}; color: white; font-weight: 700; font-size: 1.1rem;">
-                        {{ $totalScore }}%
-                    </div>
-                    <div>
-                        <div class="fw-bold">{{ $bid->user->name ?? 'Agent' }}</div>
-                        <small class="text-muted">{{ $bid->user->email ?? '' }}</small>
-                    </div>
-                </div>
-                <div class="ms-auto d-flex gap-3">
-                    <div class="text-center">
-                        <small class="text-muted d-block">Broker Terms</small>
-                        <span style="color: {{ $brokerScoreColor }}; font-weight: 600;">{{ $brokerScore }}%</span>
-                        <small class="text-muted">{{ $brokerTotal > 0 ? '('.$brokerMatched.'/'.$brokerTotal.')' : 'No terms provided' }}</small>
-                    </div>
-                    <div class="text-center">
-                        <small class="text-muted d-block">Services</small>
-                        <span style="color: {{ $servicesScoreColor }}; font-weight: 600;">{{ $servicesScore }}%</span>
-                        <small class="text-muted">{{ $servicesTotal > 0 ? '('.$servicesMatched.'/'.$servicesTotal.')' : 'No services requested' }}</small>
-                    </div>
-                </div>
-            </div>
-            <p class="small text-muted mb-4">Comparing to: <strong>Your Listing Terms</strong></p>
+            @include('partials.bid_detail_body.match_score_panel')
 
             <div class="mb-5">
                 <h6 class="section-header">

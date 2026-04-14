@@ -164,7 +164,7 @@
     :backUrl="route('buyer.view-auction', $auction->id)"
     backLabel="Back to Listing"
     roleLabel="Hire a Buyer's Agent"
-    :listingId="$auction->id"
+    :listingId="$auction->listing_id ?? $auction->id"
     :address="$auction->address ?? null"
     :bidStatus="$bidStatusDisplay"
     :bidStatusColor="$bidStatusColor">

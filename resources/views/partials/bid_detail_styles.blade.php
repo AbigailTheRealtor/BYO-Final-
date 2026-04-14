@@ -54,6 +54,24 @@
         padding: 20px 30px;
         border-radius: 0 0 12px 12px;
     }
+    .action-buttons .btn-success,
+    .action-buttons .btn-success:hover {
+        background-color: #198754 !important;
+        border-color: #198754 !important;
+        color: #ffffff !important;
+    }
+    .action-buttons .btn-danger,
+    .action-buttons .btn-danger:hover {
+        background-color: #dc3545 !important;
+        border-color: #dc3545 !important;
+        color: #ffffff !important;
+    }
+    .action-buttons .btn-primary,
+    .action-buttons .btn-primary:hover {
+        background-color: #0d6efd !important;
+        border-color: #0d6efd !important;
+        color: #ffffff !important;
+    }
     .back-link {
         color: #049399;
         text-decoration: none;

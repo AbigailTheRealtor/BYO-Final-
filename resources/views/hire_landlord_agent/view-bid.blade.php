@@ -166,7 +166,7 @@
     :backUrl="route('landlord.agent.auction.view', $auction->id)"
     backLabel="Back to Listing"
     roleLabel="Hire a Landlord's Agent"
-    :listingId="$auction->id"
+    :listingId="$auction->listing_id ?? $auction->id"
     :address="$auction->address ?? null"
     :bidStatus="$bidStatusLabel"
     :bidStatusColor="$bidStatusColor">
