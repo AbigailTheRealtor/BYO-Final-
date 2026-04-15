@@ -130,14 +130,17 @@ class BuyerAgentAuctionBidController extends Controller
                 }
             }
 
-            // Increment 1 day by adding one bid
+            // Increment 1 day by adding one bid — Bidding Period listings only
             $buyer_auction = BuyerAgentAuction::with('meta')->find($request->auction_id);
-            $date = new DateTime($buyer_auction->get->expiration_date);
-            $date->modify('+1 day');
-            $date->setTime(0, 0, 0);
-            BuyerAgentAuctionMeta::where('meta_key', 'expiration_date')
-                ->where('buyer_agent_auction_id', $request->auction_id)
-                ->update(['meta_value' => $date->format('Y-m-d H:i:s')]);
+            $buyerAuctionTypeMeta = strtolower(trim($buyer_auction->get->auction_type ?? ''));
+            if (in_array($buyerAuctionTypeMeta, ['bidding period', 'auction (timer)'])) {
+                $date = new DateTime($buyer_auction->get->expiration_date);
+                $date->modify('+1 day');
+                $date->setTime(0, 0, 0);
+                BuyerAgentAuctionMeta::where('meta_key', 'expiration_date')
+                    ->where('buyer_agent_auction_id', $request->auction_id)
+                    ->update(['meta_value' => $date->format('Y-m-d H:i:s')]);
+            }
 
             DB::commit();
 
@@ -195,6 +198,12 @@ class BuyerAgentAuctionBidController extends Controller
 
         if ($bid->accepted === 'accepted') {
             return redirect()->back()->with('error', 'This bid has already been accepted.');
+        }
+
+        // Expiry guard: prevent accept/reject on expired listings via direct POST
+        $expiryDate = $auction->get->expiration_date ?? null;
+        if ($expiryDate && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryDate))) {
+            return redirect()->back()->with('error', 'This listing is expired and can no longer accept or reject bids.');
         }
 
         try {
@@ -291,6 +300,12 @@ class BuyerAgentAuctionBidController extends Controller
         // Authorization: only the listing owner (buyer) can reject a bid
         if (!$auction || $auction->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
+        }
+
+        // Expiry guard: prevent accept/reject on expired listings via direct POST
+        $expiryDate = $auction->get->expiration_date ?? null;
+        if ($expiryDate && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryDate))) {
+            return redirect()->back()->with('error', 'This listing is expired and can no longer accept or reject bids.');
         }
 
         $bid->accepted = 'rejected';

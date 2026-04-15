@@ -47,8 +47,9 @@
 
   // ── Listing state ──
   $listingType          = strtolower(trim(data_get($auction, 'get.listing_type', '')));
-  $isTraditionalListing = ($listingType === 'traditional listing');
-  $isBiddingPeriodListing = ($listingType === 'bidding period');
+  $auctionType          = strtolower(trim(data_get($auction, 'get.auction_type', '')));
+  $isTraditionalListing = ($auctionType === 'traditional');
+  $isBiddingPeriodListing = in_array($auctionType, ['bidding period', 'auction (timer)']);
   $isSold = in_array(data_get($auction, 'is_sold'), [true,'true',1,'1'], true);
   $carbon = \Carbon\Carbon::class;
   $expiration = data_get($auction, 'get.ends_at') ?? null;

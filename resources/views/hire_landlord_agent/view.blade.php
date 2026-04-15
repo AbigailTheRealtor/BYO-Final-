@@ -2161,7 +2161,7 @@ $auser = $auctionUser::find(@$auction->user_id);
     // 🔹 Determine listing type: Traditional vs Bidding Period
     $listingType = trim($auction->get->auction_type ?? '');
     $isTraditionalListing = (strtolower($listingType) === 'traditional' || empty($listingType));
-    $isBiddingPeriodListing = (strtolower($listingType) === 'bidding period');
+    $isBiddingPeriodListing = in_array(strtolower($listingType), ['bidding period', 'auction (timer)']);
 
     // 🕒 Auction start time (when auction began)
     $start_time = $auction->get->created_at ?? $auction->created_at ?? $carbon::now();
@@ -3737,19 +3737,19 @@ $auser = $auctionUser::find(@$auction->user_id);
     </div>
     <div class="card-social">
         <ul class="icons">
-            <a href="">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('landlord.agent.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-facebook-f"></i>
             </a>
-            <a href="">
+            <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('landlord.agent.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-twitter"></i>
             </a>
             <a href="">
                 <i class="fab fa-instagram"></i>
             </a>
-            <a href="">
+            <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(route('landlord.agent.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-pinterest"></i>
             </a>
-            <a href="">
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode(route('landlord.agent.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-linkedin"></i>
             </a>
         </ul>
@@ -3757,7 +3757,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         <div class="field">
             <i class="fa fa-link"></i>
             <input type="text" readonly="" id="copylink"
-                value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
+                value="{{ route('landlord.agent.auction.view', $auction->id) }}">
             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"
                 style="min-width:60px;">Copy</button>
         </div>

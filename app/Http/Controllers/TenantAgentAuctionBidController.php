@@ -153,6 +153,12 @@ class TenantAgentAuctionBidController extends Controller
             return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
         }
 
+        // Expiry guard: prevent accept/reject on expired listings via direct POST
+        $expiryDate = $pa->get->expiration_date ?? null;
+        if ($expiryDate && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryDate))) {
+            return redirect()->back()->with('error', 'This listing is expired and can no longer accept or reject bids.');
+        }
+
         try {
             DB::beginTransaction();
             
@@ -257,6 +263,12 @@ class TenantAgentAuctionBidController extends Controller
         
         if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
             return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
+
+        // Expiry guard: prevent accept/reject on expired listings via direct POST
+        $expiryDate = $pa->get->expiration_date ?? null;
+        if ($expiryDate && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryDate))) {
+            return redirect()->back()->with('error', 'This listing is expired and can no longer accept or reject bids.');
         }
         
         $pab->accepted = "rejected";

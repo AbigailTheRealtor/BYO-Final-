@@ -4623,19 +4623,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     </div>
     <div class="card-social">
         <ul class="icons">
-            <a href="">
+            <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-facebook-f"></i>
             </a>
-            <a href="">
+            <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-twitter"></i>
             </a>
             <a href="">
                 <i class="fab fa-instagram"></i>
             </a>
-            <a href="">
+            <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-pinterest"></i>
             </a>
-            <a href="">
+            <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
                 <i class="fab fa-linkedin"></i>
             </a>
         </ul>
@@ -4643,7 +4643,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="field">
             <i class="fa fa-link"></i>
             <input type="text" readonly="" id="copylink"
-                value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
+                value="{{ route('tenant.agent.view.auction.view', $auction->id) }}">
             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"
                 style="min-width:60px;">Copy</button>
         </div>

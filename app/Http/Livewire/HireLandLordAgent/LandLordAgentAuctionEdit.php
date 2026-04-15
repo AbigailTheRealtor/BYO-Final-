@@ -1804,7 +1804,8 @@ class LandLordAgentAuctionEdit extends Component
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
-        $auction->saveMeta('auction_type', $this->auction_type);
+        // LOCKED: auction_type cannot be changed after listing creation — read-only in edit flow
+        // $auction->saveMeta('auction_type', $this->auction_type);
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);

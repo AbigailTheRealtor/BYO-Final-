@@ -1,0 +1,195 @@
+TASK: Hire Agent audit fixes — apply surgically with safeguards.
+
+GOAL
+Fix the critical Hire Agent audit findings first, then the medium issues, without changing Tenant’s gold-standard behavior or altering any unrelated flows/UI.
+
+HARD SAFEGUARDS
+1. Do NOT refactor, rename, reformat broadly, or “clean up” files.
+2. Do NOT change routes, DB schema, field names, existing tooltips, or dashboard layout.
+3. Do NOT touch Tenant logic unless explicitly listed below.
+4. Use minimal edits only in the exact files/areas described.
+5. Preserve all current Accept/Counter/Reject behavior except for the explicit expiry guard below.
+6. After edits, provide a diff-style summary of exactly what changed by file.
+
+-----------------------------------
+PHASE 1 — CRITICAL FIXES
+-----------------------------------
+
+A) LOCK auction_type in edit flows for Buyer / Landlord / Seller
+Problem:
+BuyerAgentAuctionEdit.php, LandLordAgentAuctionEdit.php, and SellerAgentAuctionEdit.php still write:
+$auction->saveMeta('auction_type', $this->auction_type)
+This can silently change listing mode during edit.
+
+Required fix:
+Copy the Tenant pattern exactly in spirit:
+- Do NOT allow edit flow to overwrite auction_type once listing exists.
+- Remove or comment out ONLY the saveMeta('auction_type', ...) write in:
+  1. BuyerAgentAuctionEdit.php
+  2. LandLordAgentAuctionEdit.php
+  3. SellerAgentAuctionEdit.php
+- Keep loading/displaying the existing auction_type from DB so edit screens still show the stored mode correctly.
+- Do NOT change create flow behavior.
+- Do NOT add new DB columns or migrations.
+
+Verification:
+- Existing Bidding Period listing remains Bidding Period after edit/save.
+- Existing Traditional listing remains Traditional after edit/save.
+- No regression to Tenant edit flow.
+
+B) FIX hardcoded share link in all 4 detail views
+Problem:
+All four detail views contain a hardcoded copy-link value pointing to one unrelated property URL.
+
+Required fix:
+Replace the hardcoded value with the correct dynamic route for the current auction id in each file:
+
+1. buyerAgentAuctionDetail.blade.php
+2. hire_seller_agent/view.blade.php
+3. hire_landlord_agent/view.blade.php
+4. hire_tenant_agent/view.blade.php
+
+Rules:
+- Use the same route already used by that role’s QR/share/view logic in the file or role flow.
+- Only replace the copy-link value/input text.
+- Do NOT alter surrounding modal/layout/share styling.
+- Do NOT change route names globally.
+
+Verification:
+- Copy link now copies current listing URL, not the old static property URL.
+- Buyer/Seller/Landlord/Tenant all generate their own correct listing URLs.
+
+-----------------------------------
+PHASE 2 — MEDIUM FIXES
+-----------------------------------
+
+C) HANDLE legacy "Auction (Timer)" as Bidding Period in Buyer / Seller / Landlord detail blades
+Problem:
+Tenant accepts both "Bidding Period" and "Auction (Timer)".
+Buyer/Seller/Landlord currently only treat strtolower($auction_type) === 'bidding period' as BP.
+
+Required fix:
+In the Buyer, Seller, and Landlord detail blade files only, update the $isBiddingPeriodListing logic so it returns true for BOTH:
+- "Bidding Period"
+- "Auction (Timer)"
+
+Implementation preference:
+Use a safe normalized check like:
+$normalizedAuctionType = strtolower(trim((string) $auction_type));
+$isBiddingPeriodListing = in_array($normalizedAuctionType, ['bidding period', 'auction (timer)']);
+
+Rules:
+- Do NOT modify Tenant’s existing helper unless necessary.
+- Do NOT change stored DB values.
+- Do NOT run a migration.
+
+Verification:
+- Existing "Bidding Period" records still behave exactly the same.
+- Legacy "Auction (Timer)" records now show BP timer/status logic in Buyer/Seller/Landlord views.
+
+D) STOP extending expiration_date on new bid for Traditional Buyer/Seller listings
+Problem:
+Buyer and Seller bid submission logic adds +1 day to expiration_date on every new bid, even for Traditional listings.
+
+Required fix:
+In the Buyer and Seller bid submission controllers/services where expiration_date is extended:
+- Wrap the +1 day extension in a guard so it only runs for Bidding Period listings.
+- If listing is Traditional, do not modify expiration_date.
+
+Rules:
+- Minimal edit only around the increment logic.
+- Reuse the same normalized listing-mode detection used elsewhere.
+- Do NOT change bid creation behavior itself.
+
+Verification:
+- New bid on Bidding Period listing can still extend if that is current intended behavior.
+- New bid on Traditional listing does NOT alter expiration_date.
+
+E) ADD server-side expiry guard to accept/reject actions for all 4 roles
+Problem:
+UI hides actions on soft-expired listings, but direct POST could still accept/reject if listing is not sold yet.
+
+Required fix:
+Before accept/reject logic executes in all four role controllers/actions:
+- If expiration_date exists AND now() is past expiration_date
+- AND listing is not already sold/finalized
+- abort/return with validation-style error response (422 or redirect with error message, consistent with current flow)
+
+Important nuance:
+- Only block actions when the listing is truly expired for action purposes.
+- Do NOT break active Bidding Period logic before expiry.
+- Keep existing ownership and double-accept guards intact.
+
+Suggested error copy:
+“This listing is expired and can no longer accept or reject bids.”
+
+Verification:
+- Active listings still allow accept/reject.
+- Expired listings cannot be accepted/rejected via direct POST.
+- Existing ownership/double-accept guards still work.
+
+F) FIX dead "traditional listing" comparison in Landlord bid detail
+Problem:
+Landlord view-bid has a comparison against "traditional listing" which never matches current stored values.
+
+Required fix:
+In hire_landlord_agent/view-bid.blade.php near the comparison noted in audit:
+- Replace the dead comparison with normalized detection for "traditional"
+- Keep logic otherwise unchanged
+
+Safe pattern:
+$normalizedAuctionType = strtolower(trim((string) $auction_type));
+$isTraditionalListing = ($normalizedAuctionType === 'traditional');
+
+Verification:
+- Any conditional block tied to traditional mode now works for actual Traditional listings.
+- No other Landlord bid-detail behavior changes.
+
+-----------------------------------
+PHASE 3 — OPTIONAL SMALL CLEANUP
+-----------------------------------
+
+G) SOCIAL SHARE ICONS
+Problem:
+Some social share href values are blank.
+Only do this if quick and low risk:
+- Either wire them to proper encoded share URLs based on the same dynamic listing URL
+- OR hide/remove the non-functional icons
+Do NOT spend time refactoring this if it risks regressions.
+
+-----------------------------------
+TEST CHECKLIST — MUST RUN AFTER CHANGES
+-----------------------------------
+
+1. Edit flow tests
+- Edit existing Buyer Bidding Period listing -> save -> mode unchanged
+- Edit existing Buyer Traditional listing -> save -> mode unchanged
+- Repeat for Landlord and Seller
+
+2. Share link tests
+- Buyer detail copy link = current Buyer listing URL
+- Seller detail copy link = current Seller listing URL
+- Landlord detail copy link = current Landlord listing URL
+- Tenant detail copy link = current Tenant listing URL
+
+3. Legacy mode detection tests
+- A record with auction_type = "Auction (Timer)" behaves as Bidding Period in Buyer/Seller/Landlord detail views
+
+4. Expiration date tests
+- New bid on Buyer Traditional -> expiration_date unchanged
+- New bid on Seller Traditional -> expiration_date unchanged
+
+5. Expiry action guard tests
+- Direct POST accept on expired listing -> blocked with error
+- Direct POST reject on expired listing -> blocked with error
+- Active listing still works normally
+
+6. Landlord traditional detection test
+- Traditional Landlord bid detail renders the branch previously gated by "traditional listing"
+
+OUTPUT FORMAT
+When done, respond with:
+1. Files changed
+2. Exact logic changed in each file
+3. Any places where the current codebase prevented a perfect fix
+4. Confirmation that no unrelated flows were modified

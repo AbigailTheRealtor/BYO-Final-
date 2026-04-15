@@ -641,17 +641,19 @@ class SellerAgentAuctionController extends Controller
                 $bid->saveMeta('note', json_encode($uploadedFiles));
             }
 
-            // Increasment 1 day by adding one bid
+            // Increment 1 day by adding one bid — Bidding Period listings only
             $bid_count = SellerAgentAuctionBid::where('seller_agent_auction_id', $request->auction_id)->count();
             $seller_auction = SellerAgentAuction::with('meta')->find($request->auction_id);
-            $date = new DateTime($seller_auction->get->expiration_date); // Your initial date
-            $date->modify('+1 day'); // Adding 1 day
-            $date->setTime(0, 0, 0); // Setting the time to 00:00:00
-            $increase_day = $date->format('Y-m-d H:i:s');;
-            SellerAgentAuctionMeta::where('meta_key', 'expiration_date')
-                ->where('seller_agent_auction_id', $request->auction_id) // Adjust this condition based on your requirement
-                ->update(['meta_value' => $increase_day]); // Replace $increase_day with the new value
-            // Increasment 1 day by adding one bid
+            $sellerAuctionTypeMeta = strtolower(trim($seller_auction->get->auction_type ?? ''));
+            if (in_array($sellerAuctionTypeMeta, ['bidding period', 'auction (timer)'])) {
+                $date = new DateTime($seller_auction->get->expiration_date);
+                $date->modify('+1 day');
+                $date->setTime(0, 0, 0);
+                $increase_day = $date->format('Y-m-d H:i:s');
+                SellerAgentAuctionMeta::where('meta_key', 'expiration_date')
+                    ->where('seller_agent_auction_id', $request->auction_id)
+                    ->update(['meta_value' => $increase_day]);
+            }
 
             DB::commit();
             $route = route('seller.agent.auction.detail', $request->auction_id);
@@ -718,6 +720,12 @@ class SellerAgentAuctionController extends Controller
 
         if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
             return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
+
+        // Expiry guard: prevent accept/reject on expired listings via direct POST
+        $expiryDate = $pa->get->expiration_date ?? null;
+        if ($expiryDate && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryDate))) {
+            return redirect()->back()->with('error', 'This listing is expired and can no longer accept or reject bids.');
         }
 
         try {
@@ -814,6 +822,12 @@ class SellerAgentAuctionController extends Controller
 
         if ($pab->accepted === 'accepted' || $pab->accepted === 'rejected') {
             return redirect()->back()->with('error', 'This bid has already been ' . $pab->accepted . '.');
+        }
+
+        // Expiry guard: prevent accept/reject on expired listings via direct POST
+        $expiryDate = $pa->get->expiration_date ?? null;
+        if ($expiryDate && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryDate))) {
+            return redirect()->back()->with('error', 'This listing is expired and can no longer accept or reject bids.');
         }
 
         $pab->accepted = 'rejected';
