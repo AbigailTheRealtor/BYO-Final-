@@ -1,0 +1,53 @@
+Fix listing status badge consistency across all 4 Hire Agent listing detail pages.
+
+Current issue:
+Some listings clearly show as expired based on date/timer logic, and the page may show an expired or bidding-ended banner, but the status badge still says Active or Pending.
+This is confusing and inconsistent.
+
+Required behavior:
+If a listing is expired, the visible status badge on the listing detail page must display “Expired” across all four listing types:
+- Tenant
+- Landlord
+- Buyer
+- Seller
+
+IMPORTANT:
+This should be implemented as a safe display-layer fix first.
+Do not redesign the whole status system unless necessary.
+
+Preferred fix:
+1. Audit how each listing detail page currently derives:
+   - status badge
+   - expired state
+   - bidding-ended state
+2. Create a single consistent display-status rule for the listing detail page.
+3. If the page logic already determines the listing is expired, override the displayed badge label/style to “Expired”.
+4. Apply this consistently to all four listing detail views.
+
+Status display priority should be:
+1. Hired Agent / Sold / Finalized
+2. Pending
+3. Expired
+4. Active
+5. Draft
+
+Expected result examples:
+- Traditional listing past expiration date → badge shows Expired
+- Bidding Period listing with ended/expired state → badge shows Expired if listing is no longer active
+- Pending listing should only remain Pending if that is intentionally higher priority than Expired in your actual business rule; otherwise audit and report conflicts before changing
+- Do not allow a page to simultaneously communicate “expired” and display an Active badge
+
+CRITICAL SAFEGUARD:
+- Do not modify listing creation flows
+- Do not modify bid submission, counter, accept/reject, match score, or Accepted Bid Summary logic
+- Do not change database schema
+- Do not mass-update DB status values unless absolutely necessary
+- Prefer a display-layer/status-badge fix rather than a persistence-layer redesign
+
+Also audit whether there are any places outside the detail pages where expired listings still display as Active, and report them separately if found.
+
+OUTPUT REQUIRED:
+1. exact files changed
+2. exact display-status rule implemented
+3. confirmation that all 4 listing detail pages now show Expired when the listing is expired
+4. note whether DB status values were left untouched or not

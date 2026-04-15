@@ -2049,10 +2049,42 @@ $auser = $auctionUser::find(@$auction->user_id);
                 'Hired Agent'  => 'fa-user',
                 'Expired'      => 'fa-times-circle',
             ];
-            $_statusStyle = $_statusStyles[$auction->status] ?? 'background-color:#6b7280;color:#fff;';
-            $_statusIcon  = $_statusIcons[$auction->status] ?? 'fa-circle';
+            $_statusStyle        = $_statusStyles[$auction->status] ?? 'background-color:#6b7280;color:#fff;';
+            $_statusIcon         = $_statusIcons[$auction->status] ?? 'fa-circle';
+            $_displayStatusLabel = $auction->status; // separate label var — never touches the model
+
+            // ── Display-layer expiry override (badge only, no DB change) ──────────
+            if (!in_array($auction->status, ['Hired Agent', 'Pending', 'Draft'], true)) {
+                $_badgeNow  = \Carbon\Carbon::now();
+                $_badgeType = strtolower(trim($auction->get->auction_type ?? ''));
+                $_badgeExp  = null;
+                if ($_badgeType === 'bidding period') {
+                    $_badgeStart = $auction->get->created_at ?? $auction->created_at ?? $_badgeNow;
+                    $_badgeTime  = trim($auction->get->auction_time ?? '');
+                    if (!empty($_badgeTime) && strtolower($_badgeTime) !== 'null') {
+                        $_bp = explode(' ', $_badgeTime);
+                        $_bv = (int)($_bp[0] ?? 0);
+                        $_bu = strtolower($_bp[1] ?? 'days');
+                        $_badgeExp = match(true) {
+                            in_array($_bu, ['hour','hours'])     => \Carbon\Carbon::parse($_badgeStart)->addHours($_bv),
+                            in_array($_bu, ['week','weeks'])     => \Carbon\Carbon::parse($_badgeStart)->addWeeks($_bv),
+                            in_array($_bu, ['minute','minutes']) => \Carbon\Carbon::parse($_badgeStart)->addMinutes($_bv),
+                            default                              => \Carbon\Carbon::parse($_badgeStart)->addDays($_bv),
+                        };
+                    }
+                } else {
+                    if (!empty($auction->get->expiration_date)) {
+                        $_badgeExp = \Carbon\Carbon::parse($auction->get->expiration_date);
+                    }
+                }
+                if ($_badgeExp && $_badgeNow->gte($_badgeExp)) {
+                    $_statusStyle        = $_statusStyles['Expired'];
+                    $_statusIcon         = $_statusIcons['Expired'];
+                    $_displayStatusLabel = 'Expired'; // display only — model not mutated
+                }
+            }
         @endphp
-        <span class="badge" style="{{ $_statusStyle }} font-size:0.875rem;border-radius:9999px;padding:0.25rem 0.75rem;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.05);"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $auction->status }}</span>
+        <span class="badge" style="{{ $_statusStyle }} font-size:0.875rem;border-radius:9999px;padding:0.25rem 0.75rem;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.05);"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
     </div>
     @endif
 
