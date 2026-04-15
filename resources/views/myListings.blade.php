@@ -55,10 +55,10 @@
     .ml-table tr:hover td {
         background: #f9fffe;
     }
-    .badge-live    { background:#198754; color:#fff; }
-    .badge-pending { background:#ffc107; color:#333; }
-    .badge-sold    { background:#dc3545; color:#fff; }
-    .badge-draft   { background:#6c757d; color:#fff; }
+    .badge-live    { background:#28a745; color:#fff; }
+    .badge-pending { background:#f0ad4e; color:#fff; }
+    .badge-sold    { background:#e9ecef; color:#333; border:1px solid #ddd; }
+    .badge-draft   { background:#adb5bd; color:#fff; }
     .ml-badge {
         display: inline-block;
         padding: 2px 9px;

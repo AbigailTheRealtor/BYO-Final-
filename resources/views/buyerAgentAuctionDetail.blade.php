@@ -2142,8 +2142,15 @@
                                 $_displayStatusLabel = 'Expired'; // display only — model not mutated
                             }
                         }
+                        $_statusPillClass = match($_displayStatusLabel) {
+                            'Active'      => 'status-active',
+                            'Pending'     => 'status-pending',
+                            'Expired'     => 'status-expired',
+                            'Hired Agent' => 'status-hired',
+                            default       => 'status-expired',
+                        };
                     @endphp
-                    <span class="badge" style="{{ $_statusStyle }} font-size:0.875rem;border-radius:9999px;padding:0.25rem 0.75rem;font-weight:500;box-shadow:0 1px 2px rgba(0,0,0,.05);"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
+                    <span class="status-pill {{ $_statusPillClass }}"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
                 </div>
                 @endif
 
@@ -2274,8 +2281,8 @@
                 </div>
             </div>
             @else
-            <div class="alert alert-warning text-center mt-2 mb-0 p-2">
-                <strong>Bidding Ended</strong>
+            <div class="text-center mt-2 mb-0">
+                <span class="status-pill status-ended w-100 d-flex justify-content-center">Bidding Ended</span>
             </div>
             @endif
         {{-- Traditional listings: No timer displayed --}}
@@ -2297,10 +2304,10 @@
         <div class="alert alert-info text-center mb-2">
             <i class="fa fa-check-circle"></i> You have already placed a bid
         </div>
-        <button class="btn w-100 btn-secondary" disabled>
-            <span class="bid">Bid Already Placed</span>
-            <span class="badge bg-light float-end text-dark">${{ @$auction->get->budget }}</span>
-        </button>
+        <div class="status-pill status-disabled w-100 d-flex justify-content-between">
+            <span>Bid Already Placed</span>
+            <span style="font-weight:normal;font-size:.85em;">${{ @$auction->get->budget }}</span>
+        </div>
 
         {{-- Optional: Allow editing their bid --}}
         <!-- <button class="btn w-100 btn-outline-primary mt-2"
@@ -2320,16 +2327,16 @@
         <div class="alert alert-success text-center mb-2">
             <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
         </div>
-        <button class="btn w-100 btn-success" disabled>
-            <span class="bid">Hired Agent</span>
-        </button>
+        <div class="status-pill status-hired w-100 d-flex justify-content-center">
+            <i class="fa fa-trophy me-2"></i>Hired Agent
+        </div>
         @elseif($auction->status === 'Pending')
         <div class="alert alert-warning text-center mb-2">
             <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
         </div>
-        <button class="btn w-100 btn-warning" disabled>
-            <span class="bid">Pending</span>
-        </button>
+        <div class="status-pill status-pending w-100 d-flex justify-content-center">
+            <i class="fa fa-pause-circle me-2"></i>Pending
+        </div>
         @else
         {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
         @if ($isBiddingPeriodListing)
@@ -2342,7 +2349,7 @@
         @endif
 
         @if (@$auction->sold)
-        <span class="badge bg-danger w-100 mt-2">Sold</span>
+        <span class="status-pill status-ended w-100 d-flex justify-content-center mt-2">Sold</span>
         @endif
         @elseif(!$auth_id)
         <a href="{{ route('login') }}">
@@ -4429,10 +4436,10 @@
 
         function onTimerEnd() {
             $('.timer-d, .timer-h, .timer-m, .timer-s').timer('remove');
-            $('.time').html("<div class='w-100 text-center text-danger fw-bold'>Bidding Ended</div>");
+            $('.time').html("<span class='status-pill status-ended w-100 d-flex justify-content-center'>Bidding Ended</span>");
             $('.bid-btn').fadeOut(300, function() {
                 $(this).after(
-                    "<div class='alert alert-warning text-center mt-2 mb-0 p-2'><strong>Bidding Ended</div>"
+                    "<div class='text-center mt-2 mb-0'><span class='status-pill status-ended w-100 d-flex justify-content-center'>Bidding Ended</span></div>"
                 );
             });
         }

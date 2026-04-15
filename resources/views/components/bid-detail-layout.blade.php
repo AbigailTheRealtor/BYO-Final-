@@ -10,6 +10,13 @@
 ])
 @php
     $statusTextColor = ($bidStatus === 'Countered') ? '#000' : '#fff';
+    $bidStatusPillClass = match($bidStatus) {
+        'Active'    => 'status-active',
+        'Countered' => 'status-pending',
+        'Accepted'  => 'status-hired',
+        'Rejected'  => 'status-expired',
+        default     => 'status-expired',
+    };
 @endphp
 
 <div class="container py-4">
@@ -32,8 +39,7 @@
                     </div>
                 </div>
                 <div class="text-end mt-2 mt-md-0">
-                    <span class="status-badge"
-                          style="background-color:{{ $bidStatusColor }};color:{{ $statusTextColor }};padding:6px 14px;border-radius:20px;font-weight:600;font-size:0.9rem;">
+                    <span class="status-pill {{ $bidStatusPillClass }}">
                         {{ $bidStatus }}
                     </span>
                 </div>

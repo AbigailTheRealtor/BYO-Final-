@@ -1,0 +1,69 @@
+Standardize status badges across the platform using a reusable CSS system.
+
+IMPORTANT:
+This is a UI-only change. Do NOT modify logic, routes, or button behavior.
+
+----------------------------------
+STEP 1 — Add base CSS
+----------------------------------
+
+Add this to the main stylesheet:
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 38px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+----------------------------------
+STEP 2 — Add status variants
+----------------------------------
+
+.status-active { background-color: #28a745; color: #fff; }
+.status-pending { background-color: #f0ad4e; color: #fff; }
+.status-expired { background-color: #6c757d; color: #fff; }
+.status-hired { background-color: #17a2b8; color: #fff; }
+.status-ended { background-color: #e9ecef; color: #333; border: 1px solid #ddd; }
+.status-disabled { background-color: #adb5bd; color: #fff; cursor: not-allowed; }
+
+----------------------------------
+STEP 3 — APPLY ONLY TO STATUS ELEMENTS
+----------------------------------
+
+Update ONLY elements that are:
+- status labels (Active, Pending, Expired, Hired Agent)
+- informational banners (Bidding Ended, Bid Already Placed)
+- non-clickable or disabled state buttons
+
+Replace their classes with:
+status-pill + appropriate status-* class
+
+----------------------------------
+STEP 4 — DO NOT TOUCH
+----------------------------------
+
+DO NOT modify:
+- primary action buttons (Accept, Counter, Reject)
+- navigation buttons
+- form submit buttons
+- anything with click handlers tied to business logic
+
+----------------------------------
+STEP 5 — VERIFY
+----------------------------------
+
+After applying:
+- All status labels are centered (vertical + horizontal)
+- Same height across pages
+- Colors match meaning consistently
+- No buttons lost functionality
+
+Expected result:
+A clean, consistent status system across all listing pages, bids, and dashboard elements without affecting functionality.
