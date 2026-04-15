@@ -1,0 +1,258 @@
+Fix the Accepted Bid Summary document upload flow end-to-end so:
+
+1. uploads do not fail silently on large files
+2. users see clear validation feedback before submit
+3. successfully uploaded files are actually saved
+4. uploaded files appear on BOTH sides:
+   - client / listing owner side
+   - hired agent side
+
+This is a document-upload / retrieval fix only.
+
+CRITICAL SAFEGUARD:
+- Do not modify listing creation flows
+- Do not modify bid submission, counter, accept/reject, match score, or Accepted Bid Summary core business logic
+- Do not redesign the whole summary system
+- Do not change database schema unless absolutely necessary and only if the current schema cannot support proper document linkage
+- Reuse the existing Accepted Bid Summary / hired agent relationship if possible
+- Preserve privacy: uploaded documents must only be visible to the correct matched parties
+
+==================================================
+PART 1 — AUDIT CURRENT DOCUMENT FLOW FIRST
+==================================================
+
+Before changing anything, inspect and report:
+
+1. Where Accepted Bid Summary document uploads are submitted from
+   - route
+   - controller / Livewire component
+   - request validation
+
+2. Where uploaded files are currently intended to be stored
+   - filesystem disk
+   - folder path
+   - database table / columns used to save file metadata
+
+3. How the client-side Accepted Bid Summary page currently loads uploaded documents
+
+4. How the hired agent side currently attempts to load uploaded documents
+   - route
+   - controller / Blade / Livewire component
+   - which relationship or query is used
+
+5. Why uploaded documents are not appearing on the agent side
+   Possible causes to verify:
+   - files are not being saved at all
+   - DB record is not created
+   - wrong accepted_bid_summary_id linkage
+   - wrong user/agent permission query
+   - wrong disk/path
+   - view not querying documents
+   - route/controller not passing documents to the agent page
+
+Return the exact files/methods involved before or alongside the fix summary.
+
+==================================================
+PART 2 — FIX FILE SIZE / POST TOO LARGE FAILURE
+==================================================
+
+Current issue:
+Uploading larger documents triggers PostTooLargeException before Laravel can process the request.
+
+Required fixes:
+
+1. Increase PHP upload limits to a safe launch-ready size
+   Target minimum:
+   - upload_max_filesize = 20M
+   - post_max_size = 25M
+
+   If the environment already supports higher safe values, that is acceptable.
+
+2. Confirm Laravel validation also allows the same intended size
+   Example target:
+   - PDF / JPG / PNG allowed
+   - max 20MB per file
+
+3. Ensure oversized uploads do NOT fail silently
+   Add graceful validation or user-facing error handling:
+   - “File exceeds 20MB limit”
+   - no blank page / no raw exception page in normal UX
+
+4. If the stack needs a custom handler for PostTooLargeException, add one so users see a normal validation-style error instead of a framework exception page.
+
+IMPORTANT:
+Do not set tiny limits like 2MB or 5MB unless there is a hard technical reason.
+The launch-ready experience should support normal PDFs and images.
+
+==================================================
+PART 3 — ADD CLIENT-SIDE FILE VALIDATION
+==================================================
+
+Before form submit, validate selected files in the browser:
+
+1. Allowed types:
+   - PDF
+   - JPG / JPEG
+   - PNG
+
+2. Size:
+   - max 20MB
+
+3. Show a clear message if invalid:
+   - unsupported file type
+   - file too large
+
+4. Prevent submit when file is invalid
+
+5. Add helper text below the upload fields:
+   - “Accepted formats: PDF, JPG, PNG”
+   - “Max file size: 20MB”
+
+This should apply to all Accepted Bid Summary document upload inputs.
+
+==================================================
+PART 4 — ENSURE FILES ARE ACTUALLY SAVED CORRECTLY
+==================================================
+
+For each uploaded file, confirm the system does ALL of the following:
+
+1. Save the file to the correct storage disk/path
+2. Save a database record or metadata entry linked to the correct Accepted Bid Summary
+3. Store:
+   - accepted_bid_summary_id
+   - file category / document type (e.g. Government ID, Proof of Income)
+   - original filename if useful
+   - stored path
+   - mime type / extension if useful
+   - uploaded_by user id if useful
+4. Ensure repeated uploads don’t overwrite unrelated files unless that is explicitly intended
+5. If replacement uploads are intended, old file handling should be clear and consistent
+
+Do not leave uploads only on disk with no DB linkage if the UI depends on DB records to render them.
+
+==================================================
+PART 5 — FIX AGENT-SIDE DOCUMENT VISIBILITY
+==================================================
+
+Current issue:
+Even when upload succeeds, documents are not appearing on the agent side.
+
+Required fix:
+
+1. Find the agent-side page where the hired agent should see uploaded Accepted Bid Summary documents
+
+2. Make sure that page queries the same document records linked to the correct Accepted Bid Summary
+
+3. Pass those document records into the agent-side view/component
+
+4. Render the uploaded documents cleanly on the agent side, including:
+   - document type / label
+   - file name
+   - view/download action if allowed
+
+5. Restrict visibility correctly:
+   Documents should be visible only to:
+   - the listing owner / client
+   - the matched hired agent tied to that Accepted Bid Summary
+   - optionally admins if already supported
+
+6. Do NOT expose documents to:
+   - other agents
+   - public users
+   - unrelated listings or summaries
+
+7. Confirm the same uploaded files appear on both sides for the same accepted relationship
+
+==================================================
+PART 6 — PERMISSION / RELATIONSHIP CHECK
+==================================================
+
+Verify and fix permission logic if needed.
+
+Agent-side access should be based on the actual accepted relationship, not generic user role assumptions.
+
+Confirm:
+1. The Accepted Bid Summary is tied to the correct listing and hired agent
+2. The hired agent user ID is correctly associated
+3. The document query is filtered by the correct accepted_bid_summary_id and authorized agent relationship
+4. The client-side and agent-side are looking at the same summary record
+
+If the agent page is currently missing documents because it queries by the wrong ID or wrong relationship, fix that query rather than creating a parallel document system.
+
+==================================================
+PART 7 — UI / UX FOR DOCUMENTS
+==================================================
+
+Improve the Accepted Bid Summary document area so it is clear and stable:
+
+1. If no document uploaded for a category, show a clear empty state
+2. If document uploaded successfully, show:
+   - uploaded file name
+   - document type
+   - replace/remove option only if already intended for the owner side
+3. On the agent side, show:
+   - document type
+   - file name
+   - open/download button
+4. Do not leave “Save Documents” looking broken or inactive without explanation
+5. If upload succeeds, show success confirmation
+
+==================================================
+PART 8 — ERROR HANDLING
+==================================================
+
+Handle these cases gracefully:
+
+1. file too large
+2. invalid file type
+3. upload storage failure
+4. missing DB record
+5. file exists in DB but missing from disk
+6. unauthorized access attempt
+
+Users should see normal app errors/messages, not raw framework exception pages.
+
+==================================================
+PART 9 — TEST CASES TO RUN
+==================================================
+
+After fixes, test all of these:
+
+1. Upload a valid JPG under limit
+   - saves successfully
+   - visible on client side
+   - visible on correct agent side
+
+2. Upload a valid PDF under limit
+   - saves successfully
+   - visible on client side
+   - visible on correct agent side
+
+3. Upload a file over the limit
+   - blocked with friendly message
+   - no framework exception page
+
+4. Upload an invalid type
+   - blocked with friendly message
+
+5. Confirm files do not appear to unrelated agents
+
+6. Confirm files still appear after page refresh
+
+7. Confirm view/download works from agent side
+
+==================================================
+OUTPUT REQUIRED
+==================================================
+
+Return:
+1. exact files changed
+2. where files are stored after upload
+3. what DB table / columns or relationships are used
+4. how agent-side retrieval was fixed
+5. what validation/error handling was added
+6. confirmation that:
+   - large uploads no longer fail silently
+   - accepted uploads save correctly
+   - documents appear on both client and hired agent side
+   - no unrelated users can access the files

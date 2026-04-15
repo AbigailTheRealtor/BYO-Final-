@@ -141,7 +141,7 @@
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
                                                 <i class="fas fa-id-card me-1 text-muted"></i> Government-Issued ID
                                             </label>
-                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Driver's license, passport, or state ID (PDF, JPG, or PNG)</p>
+                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Driver's license, passport, or state ID</p>
 
                                             @if(!empty($existingDocs?->id_document_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
@@ -151,7 +151,9 @@
                                             </div>
                                             @endif
 
-                                            <input type="file" class="form-control form-control-sm" name="id_document" accept=".pdf,.jpg,.jpeg,.png">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" name="id_document" accept=".pdf,.jpg,.jpeg,.png">
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
 
@@ -162,7 +164,7 @@
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
                                                 <i class="fas fa-dollar-sign me-1 text-muted"></i> Proof of Funds
                                             </label>
-                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Bank statement or asset account statement (PDF, JPG, or PNG)</p>
+                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Bank statement or asset account statement</p>
 
                                             @if(!empty($existingDocs?->proof_of_funds_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
@@ -172,7 +174,9 @@
                                             </div>
                                             @endif
 
-                                            <input type="file" class="form-control form-control-sm" name="proof_of_funds" accept=".pdf,.jpg,.jpeg,.png">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" name="proof_of_funds" accept=".pdf,.jpg,.jpeg,.png">
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
                                     @endif
@@ -184,7 +188,7 @@
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
                                                 <i class="fas fa-file-signature me-1 text-muted"></i> Pre-Approval Letter
                                             </label>
-                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Mortgage pre-approval from a lender (PDF, JPG, or PNG)</p>
+                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Mortgage pre-approval from a lender</p>
 
                                             @if(!empty($existingDocs?->pre_approval_letter_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
@@ -194,7 +198,9 @@
                                             </div>
                                             @endif
 
-                                            <input type="file" class="form-control form-control-sm" name="pre_approval_letter" accept=".pdf,.jpg,.jpeg,.png">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" name="pre_approval_letter" accept=".pdf,.jpg,.jpeg,.png">
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
                                     @endif
@@ -206,7 +212,7 @@
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
                                                 <i class="fas fa-file-invoice-dollar me-1 text-muted"></i> Proof of Income
                                             </label>
-                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Pay stub, offer letter, or bank statements (PDF, JPG, or PNG)</p>
+                                            <p class="text-muted mb-2" style="font-size: 0.8rem;">Pay stub, offer letter, or bank statements</p>
 
                                             @if(!empty($existingDocs?->proof_of_income_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
@@ -216,7 +222,9 @@
                                             </div>
                                             @endif
 
-                                            <input type="file" class="form-control form-control-sm" name="proof_of_income" accept=".pdf,.jpg,.jpeg,.png">
+                                            <input type="file" class="form-control form-control-sm doc-file-input" name="proof_of_income" accept=".pdf,.jpg,.jpeg,.png">
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
                                     @endif
@@ -231,7 +239,7 @@
                                             <p class="text-muted mb-2" style="font-size: 0.8rem;">Paste a public county property appraiser or property record link related to this property.</p>
                                             <input
                                                 type="url"
-                                                class="form-control form-control-sm"
+                                                class="form-control form-control-sm doc-url-input"
                                                 name="property_record_link"
                                                 placeholder="https://..."
                                                 value="{{ $existingDocs?->property_record_link ?? '' }}"
@@ -242,11 +250,14 @@
 
                                 </div>{{-- /row.g-4 --}}
 
-                                <div class="d-flex align-items-center mt-4 gap-3">
-                                    <button type="submit" class="btn btn-primary px-4" style="font-weight: 600;">
+                                <div class="d-flex align-items-center mt-4 gap-3 flex-wrap">
+                                    <button type="submit" class="btn btn-primary px-4" id="signSaveDocsBtn" style="font-weight: 600;" disabled>
                                         <i class="fas fa-cloud-upload-alt me-2"></i>Save Documents
                                     </button>
-                                    <a href="#signatureSection" class="btn btn-link text-muted p-0" style="font-size: 0.9rem; text-decoration: none;">
+                                    <span class="text-muted" id="signSaveDocsBtnHint" style="font-size: 0.82rem;">
+                                        Select at least one file to enable saving.
+                                    </span>
+                                    <a href="#signatureSection" class="btn btn-link text-muted p-0 ms-auto" style="font-size: 0.9rem; text-decoration: none;">
                                         Skip for now — go to signature &darr;
                                     </a>
                                 </div>
@@ -280,6 +291,87 @@
         border-color: #0d6efd !important;
     }
 </style>
+
+@if($canUploadAcknowledgementDocuments)
+<script>
+(function () {
+    var MAX_BYTES   = 20 * 1024 * 1024;
+    var ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png'];
+    var form        = document.getElementById('docForm');
+    if (!form) return;
+
+    var saveBtn  = document.getElementById('signSaveDocsBtn');
+    var hintSpan = document.getElementById('signSaveDocsBtnHint');
+
+    function getExt(filename) {
+        return filename.split('.').pop().toLowerCase();
+    }
+
+    function validateAndSync() {
+        var hasValidFile = false;
+        var hasError     = false;
+
+        form.querySelectorAll('input.doc-file-input').forEach(function (input) {
+            var errEl = input.parentElement.querySelector('.doc-file-error');
+            if (!errEl) return;
+
+            if (input.files && input.files.length > 0) {
+                var file = input.files[0];
+                var ext  = getExt(file.name);
+
+                if (!ALLOWED_EXT.includes(ext)) {
+                    errEl.textContent = '\u26a0 Unsupported file type. Please upload a PDF, JPG, or PNG.';
+                    errEl.classList.remove('d-none');
+                    hasError = true;
+                } else if (file.size > MAX_BYTES) {
+                    errEl.textContent = '\u26a0 File exceeds the 20 MB limit. Please choose a smaller file.';
+                    errEl.classList.remove('d-none');
+                    hasError = true;
+                } else {
+                    errEl.textContent = '';
+                    errEl.classList.add('d-none');
+                    hasValidFile = true;
+                }
+            } else {
+                errEl.textContent = '';
+                errEl.classList.add('d-none');
+            }
+        });
+
+        var urlInput = form.querySelector('input.doc-url-input');
+        if (urlInput && urlInput.value.trim() !== '') {
+            hasValidFile = true;
+        }
+
+        var canSave = hasValidFile && !hasError;
+        saveBtn.disabled = !canSave;
+        if (hintSpan) {
+            hintSpan.textContent = canSave
+                ? ''
+                : (hasError ? 'Please fix the error above before saving.' : 'Select at least one file to enable saving.');
+        }
+    }
+
+    form.querySelectorAll('input.doc-file-input').forEach(function (input) {
+        input.addEventListener('change', validateAndSync);
+    });
+
+    var urlInput = form.querySelector('input.doc-url-input');
+    if (urlInput) {
+        urlInput.addEventListener('input', validateAndSync);
+        if (urlInput.value.trim() !== '') {
+            saveBtn.disabled = false;
+            if (hintSpan) hintSpan.textContent = '';
+        }
+    }
+
+    form.addEventListener('submit', function () {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving\u2026';
+    });
+})();
+</script>
+@endif
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
