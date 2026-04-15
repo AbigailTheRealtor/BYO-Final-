@@ -1,0 +1,293 @@
+Perfect — this is the right moment to do a **true final end-to-end audit** of the full Hire Agent system before you reuse anything on the agent side.
+
+Use this exact Replit prompt:
+
+```text
+Run a FINAL full-system audit of the complete Hire Agent flow before any of this is reused or mirrored on the agent dashboard.
+
+This is an AUDIT ONLY first.
+Do not modify code unless a specific issue is identified and approved afterward.
+
+Goal:
+Verify that the full Hire Agent system is now correct, consistent, and safe across:
+- creation
+- edit
+- draft
+- listing visibility
+- bids
+- counter flow
+- accept/reject
+- accepted summary
+- document upload
+- timer / status behavior
+- dashboard integration
+
+Audit all four flows separately and comparatively:
+1. Hire Tenant’s Agent
+2. Hire Landlord’s Agent
+3. Hire Buyer’s Agent
+4. Hire Seller’s Agent
+
+CRITICAL SAFEGUARD:
+- Do not modify code during this audit
+- Do not change schema
+- Do not refactor working architecture
+- This is report-only
+
+IMPORTANT CONTEXT:
+The following areas were already fixed and must be VERIFIED, not reworked blindly:
+- dashboard counts / labels / routing
+- status badge expiry override
+- traditional vs bidding-period expired banner logic
+- Buyer/Seller traditional detection bug
+- Landlord QR route
+- legacy Seller edit redirect
+- Accepted Bid Summary hired-agent dashboard section
+- document upload validation / storage / visibility improvements
+- Bidding Period / Traditional wording alignment
+
+==================================================
+PART 1 — CREATE FLOW AUDIT
+==================================================
+
+For each of the 4 Hire Agent creation flows, verify:
+
+1. Route opens correctly
+2. All tabs load correctly
+3. Required fields behave correctly
+4. Labels / tooltips / helper text are accurate
+5. Dynamic show/hide logic works correctly
+6. Save/create works correctly
+7. Listing is stored correctly
+8. Listing type selection (Bidding Period vs Traditional) works correctly
+9. Draft save behavior works correctly if supported
+
+Flag:
+- broken validation
+- missing fields
+- wrong copy
+- incorrect dynamic logic
+- role-specific inconsistencies
+
+==================================================
+PART 2 — EDIT FLOW AUDIT
+==================================================
+
+For each of the 4 flows, verify:
+
+1. Existing listing can be edited through the current supported edit path
+2. Correct values load into the edit form
+3. Saving edits preserves correct normalized values
+4. No legacy edit path still writes incompatible auction_type / listing-type values
+5. Edited listings still render correctly afterward
+
+Specifically verify:
+- no path can still save values like:
+  - "traditional listing"
+  - "Auction (Timer)"
+  - "Traditional (No Timer)"
+  - "Normal (Timer)"
+unless those are intentionally normalized before save
+
+==================================================
+PART 3 — DRAFT / LIVE / EXPIRED / PENDING / HIRED STATUS AUDIT
+==================================================
+
+For each role flow, verify:
+
+1. Draft listings display correctly
+2. Active listings display correctly
+3. Pending listings display correctly
+4. Hired Agent listings display correctly
+5. Expired listings display correctly
+6. Status badge matches actual listing state
+7. Status badge does not conflict with banners or action state
+
+Verify final display priority:
+- Hired Agent / Finalized
+- Pending
+- Expired
+- Active
+- Draft
+
+Check for contradictions like:
+- Active badge + expired message
+- Traditional listing showing bidding-period banner
+- duplicate ended banners
+- expired listing still allowing actions incorrectly
+
+==================================================
+PART 4 — TIMER / BIDDING PERIOD / TRADITIONAL AUDIT
+==================================================
+
+For each role flow, verify:
+
+1. Traditional listings:
+   - no bidding-period banner appears
+   - expiration works correctly
+   - actions are hidden when expired
+
+2. Bidding Period listings:
+   - countdown shows correctly before end
+   - ended banner shows correctly after end
+   - no duplicate ended banners
+   - action/edit state is consistent with current intended behavior
+
+3. User-facing tooltip/help text:
+   - Listing Type tooltip
+   - Bidding Period Length tooltip
+   - blue info box text
+   all match actual behavior
+
+Report whether any remaining wording still overstates restrictions or hidden-bid behavior.
+
+==================================================
+PART 5 — LISTING VISIBILITY / DASHBOARD / MY LISTINGS
+==================================================
+
+Verify:
+
+1. New listings appear in correct role sections
+2. Dashboard role counts match destination pages
+3. Sidebar role counts match destination pages
+4. My Listings / all-listings hub behavior works correctly
+5. No listing types are hidden unexpectedly
+6. Role-specific listing tabs load the right records
+7. Empty states are correct
+
+==================================================
+PART 6 — BID APPEARANCE / MATCH / DETAIL AUDIT
+==================================================
+
+For each role flow, verify:
+
+1. Agent bids appear on the correct listing
+2. No cross-listing leakage
+3. Match score displays correctly
+4. Services / terms counts display correctly
+5. View Bid opens correct detail page
+6. Bid detail page uses correct listing-type logic
+7. Expired Traditional Buyer/Seller listings no longer incorrectly show active buttons
+
+==================================================
+PART 7 — BID ACTION FLOW AUDIT
+==================================================
+
+For each role flow, verify:
+
+1. Accept works
+2. Counter works
+3. Reject works
+4. Awaiting response state is correct
+5. Buttons appear only when appropriate
+6. Bidding-ended / expired listings do not allow invalid actions
+7. Counter history / changed terms / added / removed display correctly
+8. Notifications and dashboard update correctly after actions
+
+==================================================
+PART 8 — ACCEPTED BID SUMMARY / ACKNOWLEDGEMENT AUDIT
+==================================================
+
+Verify for all role flows:
+
+1. Accepted Bid Summary is created correctly
+2. Correct listing / agent / terms data appears
+3. Acknowledgement states are correct
+4. View Summary works
+5. Download PDF works if available
+6. Dashboard “Your Hired Agent” section reflects the same accepted relationship correctly
+7. Hired Agent cards group correctly into:
+   - Needs Action
+   - Completed
+8. Show more / show less behavior is clean when many records exist
+
+==================================================
+PART 9 — DOCUMENT UPLOAD AUDIT
+==================================================
+
+Verify the optional document sharing flow end-to-end:
+
+1. Valid file upload works
+2. Oversized file shows friendly validation
+3. Invalid type shows friendly validation
+4. Save Documents button:
+   - visible label
+   - correct enabled/disabled state
+   - not blank / white / broken
+5. Uploaded files save correctly
+6. Uploaded files appear on client side
+7. Uploaded files appear on matched hired agent side
+8. Uploaded files do NOT appear to unrelated users
+9. File storage path + DB linkage are correct
+
+==================================================
+PART 10 — MESSAGES / CONTACT ENTRY POINTS
+==================================================
+
+Verify:
+
+1. Send Message buttons open working message flow
+2. Message Agent from dashboard/hired-agent section works
+3. No dead links
+4. General inbox behavior is acceptable even if not deep-linked
+
+==================================================
+PART 11 — QR / SHARE / PUBLIC LINK AUDIT
+==================================================
+
+Verify across all 4 flows:
+
+1. QR code points to correct role/detail page
+2. Share link opens the correct listing
+3. No role misrouting
+4. No tenant/landlord/seller/buyer mismatch remains
+
+==================================================
+PART 12 — CROSS-FLOW PARITY AUDIT
+==================================================
+
+Compare Tenant / Landlord / Buyer / Seller side-by-side and identify:
+
+1. Which flow is now strongest
+2. Which flow is weakest
+3. Any remaining parity gaps that would matter before reusing this on agent dashboard
+4. Any residual legacy path that could still corrupt values or misroute users
+
+==================================================
+PART 13 — REGRESSION CHECK OF PREVIOUS FIXES
+==================================================
+
+Explicitly verify that previously fixed issues remain fixed:
+
+1. Buyer/Seller traditional detection bug
+2. Landlord QR route bug
+3. Seller legacy edit redirect
+4. Dashboard count mismatches
+5. Status badge expired override
+6. Traditional listings no longer show bidding-period banners
+7. Duplicate ended banners removed
+8. Accepted summary document upload behavior
+9. Save Documents button rendering
+10. Dashboard hired-agent section grouping
+
+==================================================
+OUTPUT REQUIRED
+==================================================
+
+Return a structured report with:
+
+1. Critical issues
+   - breaks flow, data correctness, or access control
+2. Medium issues
+   - confusing UX, wrong routing, wrong state handling
+3. Minor issues
+   - wording, spacing, cosmetic inconsistency
+4. Exact files / locations involved
+5. Recommended fix for each issue
+6. Final verdict:
+   - “Safe to transfer/reuse on agent dashboard”
+   - or
+   - “Fix these remaining issues first”
+```
+
+Once you get that audit back, send it over and I’ll help you decide what truly must be fixed before you mirror anything onto the agent dashboard.
