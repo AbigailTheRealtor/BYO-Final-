@@ -3416,6 +3416,19 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     ));
 
                                                     $hasCtSvcs = !empty($ctSvcsParsed) || !empty($ctOtherParsed);
+
+                                                    // Normalizer for category-membership matching (handles smart quotes / Unicode escapes)
+                                                    $normForCat = function(string $s): string {
+                                                        $s = mb_strtolower(trim($s));
+                                                        $s = str_replace(["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}"], ["'", "'", '"', '"'], $s);
+                                                        $s = str_replace(['\\u2019', '\\u2018', '\\u201c', '\\u201d', '\\u201C', '\\u201D'], ["'", "'", '"', '"', '"', '"'], $s);
+                                                        $s = str_replace(["\u{2014}", '\\u2014'], ['-', '-'], $s);
+                                                        $s = preg_replace('/\s+/', ' ', $s);
+                                                        return trim($s);
+                                                    };
+
+                                                    // Category map for grouping services — mirrors the bid-detail partial
+                                                    $modalCats = $isCommercial ? $landlordCommercialCategories : $landlordResidentialCategories;
                                                     @endphp
 
                                                     <div class="mb-4" style="margin-top: 20px;">
