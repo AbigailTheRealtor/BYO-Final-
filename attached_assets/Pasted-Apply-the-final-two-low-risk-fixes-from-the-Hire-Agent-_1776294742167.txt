@@ -1,0 +1,79 @@
+Apply the final two low-risk fixes from the Hire Agent confirmation audit.
+
+IMPORTANT:
+These are minor, surgical fixes only.
+Do NOT modify core logic, routing, schema, or working architecture.
+
+CRITICAL SAFEGUARD:
+- No schema changes
+- No route changes
+- No creation flow redesign
+- No bid logic changes
+- No Accepted Bid Summary logic changes
+- No dashboard logic changes
+
+==================================================
+FIX 1 — TENANT LEGACY 'Auction (Timer)' SUPPORT
+==================================================
+
+Problem:
+Tenant view currently detects Bidding Period using only:
+- 'Bidding Period'
+
+But legacy value:
+- 'Auction (Timer)'
+is not included in the Tenant listing detail view logic.
+
+Current impact:
+- No live data is affected right now
+- But if an old Tenant record with auction_type = 'Auction (Timer)' is ever restored or reused, it would be treated like Traditional incorrectly
+
+Required fix:
+Update the Tenant listing detail view’s Bidding Period detection so it accepts BOTH:
+- 'Bidding Period'
+- 'Auction (Timer)'
+
+Use normalized lowercase comparison, matching the pattern already used in Buyer / Landlord / Seller after the previous fix.
+
+File:
+- resources/views/hire_tenant_agent/view.blade.php
+
+Goal:
+Legacy Tenant records with 'Auction (Timer)' should behave as Bidding Period listings.
+
+==================================================
+FIX 2 — BUYER EMPTY-STATE MESSAGE
+==================================================
+
+Problem:
+Buyer listing detail page currently shows nothing when there are zero bids.
+Tenant / Landlord / Seller already show a clear empty-state message:
+- “No agents have submitted a bid yet.”
+
+Required fix:
+Add the same user-facing empty-state message to the Buyer listing detail page when no bids exist.
+
+File:
+- resources/views/buyerAgentAuctionDetail.blade.php
+
+Requirements:
+1. Match the wording already used in the other flows:
+   - “No agents have submitted a bid yet.”
+2. Style it consistently with the existing empty-state pattern used in the other role views
+3. Do not change bid query logic
+4. Do not change any surrounding flow logic
+
+Goal:
+Buyer flow should match Tenant / Landlord / Seller and not leave a blank section when no bids exist.
+
+==================================================
+OUTPUT REQUIRED
+==================================================
+
+After making changes, return:
+1. exact files changed
+2. exact lines/logic updated
+3. confirmation that:
+   - Tenant now supports legacy 'Auction (Timer)' in detail view
+   - Buyer now shows the no-bids empty-state message
+4. confirmation that no unrelated logic was changed

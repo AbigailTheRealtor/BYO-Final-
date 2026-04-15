@@ -1391,7 +1391,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     // 🔹 Determine listing type: Traditional vs Bidding Period
     $listingType = trim($auction->get->auction_type ?? '');
     $isTraditionalListing = (strtolower($listingType) === 'traditional' || empty($listingType));
-    $isBiddingPeriodListing = (strtolower($listingType) === 'bidding period');
+    $isBiddingPeriodListing = in_array(strtolower($listingType), ['bidding period', 'auction (timer)']);
     
     // 🕒 Auction start time (when auction began)
     $start_time = $auction->get->created_at ?? $auction->created_at ?? $carbon::now();

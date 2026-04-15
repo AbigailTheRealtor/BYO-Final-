@@ -2385,7 +2385,7 @@
         @if ($lowest_bidder)
             <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->id] ?? '?' }}</b> was the last bidder.</p>
         @else
-            <p class="mb-3">No one has bid on this auction.</p>
+            <p class="mb-3">No agents have submitted a bid yet.</p>
         @endif
 
         <div class="card higestBider" id="bids-section">
@@ -2395,6 +2395,10 @@
                                 // Reload meta once before bid loop to guarantee fresh listing baseline from DB.
                                 $auction->load('meta');
                                 @endphp
+
+                                @if ($auction->bids->isEmpty())
+                                    <p class="mb-3">No agents have submitted a bid yet.</p>
+                                @endif
 
                                 @foreach (@$auction->bids as $bid)
                                     @php
