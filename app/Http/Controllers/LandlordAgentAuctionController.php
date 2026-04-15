@@ -17,7 +17,7 @@ class LandlordAgentAuctionController extends Controller
 {
     public function index(Request $request)
     {
-        $page_data['title'] = 'Hire Landlord Agent';
+        $page_data['title'] = 'Hire Landlord\'s Agent';
         $page_data['financings'] = Financing::orderBy('sort', 'asc')->get();
         return view('hire_landlord_agent.add', $page_data);
     }
@@ -208,7 +208,7 @@ class LandlordAgentAuctionController extends Controller
     public function edit($id, Request $request)
     {
         $page_data['auction'] = LandlordAgentAuction::findOrFail($id);
-        $page_data['title'] = 'Edit Hire Landlord Agent';
+        $page_data['title'] = 'Edit Hire Landlord\'s Agent';
         $page_data['financings'] = Financing::orderBy('sort', 'asc')->get();
         return view('hire_landlord_agent.edit', $page_data);
     }

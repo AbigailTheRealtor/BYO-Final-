@@ -1,0 +1,161 @@
+Apply the Hire Agent flow fixes identified in the audit, but do this in a surgical, low-risk way.
+
+IMPORTANT:
+This is a fix pass, but DO NOT redesign flows, DO NOT refactor working architecture, and DO NOT change database schema unless absolutely necessary. Preserve the current Tenant/Landlord/Buyer/Seller role-based structure.
+
+CRITICAL SAFEGUARD:
+- Do not modify listing creation flow structure beyond the specific issues listed below
+- Do not modify bid submission, counter, accept/reject, match score, Accepted Bid Summary generation, or messaging logic unless directly required by one of the approved fixes below
+- Do not rename routes, tables, columns, controllers, or models unless explicitly required
+- Do not replace working pages with new architecture
+- Fix only the audited issues listed here
+
+----------------------------------
+PASS 1A — CRITICAL FIXES
+----------------------------------
+
+1. Fix Buyer and Seller traditional listing detection in bid_detail views
+
+Problem:
+The files currently check:
+strtolower($listingType) === 'traditional listing'
+but actual stored values are 'Traditional' / normalized 'traditional'
+
+Fix:
+Change detection to match the actual stored value:
+strtolower($listingType) === 'traditional'
+
+Files:
+- resources/views/hire_buyer_agent/bid_detail.blade.php
+- resources/views/hire_seller_agent/bid_detail.blade.php
+
+Goal:
+Expired Traditional Buyer/Seller listings must not incorrectly show active action buttons.
+
+2. Fix Landlord QR code route
+
+Problem:
+Landlord listing QR code currently points to the Tenant route.
+
+Fix:
+Update the QR code route in the Landlord view so it points to the correct Landlord listing detail route, not the Tenant route.
+
+File:
+- resources/views/hire_landlord_agent/view.blade.php
+
+Goal:
+Scanning the Landlord QR code should open the correct Landlord listing page.
+
+3. Fix / disable legacy Seller edit route that stores wrong auction_type values
+
+Problem:
+The old Seller edit route/form can store:
+- Auction (Timer)
+- Traditional (No Timer)
+which do not match the normalized values expected elsewhere.
+
+Preferred fix:
+If this legacy route is no longer needed, disable direct access safely (404 or redirect to the correct modern edit route).
+
+If it must remain active:
+normalize saved values so they store the correct expected values:
+- Bidding Period
+- Traditional
+
+Files / route involved:
+- resources/views/hire_seller_agent/edit.blade.php
+- any controller/route handling editSellerAgentHireAuction
+
+Goal:
+No path in the app should be able to save incompatible auction_type values.
+
+----------------------------------
+PASS 1B — MEDIUM FIXES THAT AFFECT CONSISTENCY
+----------------------------------
+
+4. Audit and standardize Agent Bid Visibility behavior
+
+Problem:
+Agent Bid Visibility field is inconsistent across flows:
+- active in Landlord
+- missing in Buyer and Seller
+- old commented version exists in Tenant but active form differs
+
+Required action:
+Do NOT add brand-new business logic.
+Instead, determine the intended current behavior and make the forms consistent with that decision.
+
+If the intended product behavior is now transparency by default:
+- remove/retire dead references and ensure flows do not depend on this field being set manually
+- do not introduce hidden/conditional behavior unexpectedly
+
+If the field is still intended to be user-configurable:
+- surface it consistently in all four relevant creation/edit forms
+
+Goal:
+No flow should silently depend on a field that only some listing types collect.
+
+5. Resolve Tenant creation form structural mismatch
+
+Problem:
+Tenant has a commented-out older block with different tooltip/copy and the active section differs from Landlord.
+
+Fix:
+Clean up the active Tenant creation form so it reflects the actual current intended structure only.
+Do not resurrect old commented code.
+Remove dead commented-out block if safe, or clearly isolate it so it cannot accidentally be restored.
+
+File:
+- resources/views/livewire/tenant-agent-auction-tabs/commission-based/listing-details.blade.php
+
+Goal:
+Tenant active form should be the single source of truth.
+
+6. Fix Buyer controller inconsistency for list/default filter behavior
+
+Problem:
+Buyer has two controller methods with different default tabs / filter behavior.
+
+Fix:
+Make Buyer list behavior consistent with the page you actually use in the dashboard/sidebar, and ensure default counts/filter logic align with visible default page behavior.
+
+File:
+- app/Http/Controllers/BuyerAgentAuctionController.php
+
+Goal:
+Buyer listing counts and page defaults should not diverge depending on method.
+
+7. Review competing bids experience for parity
+
+Problem:
+Competing bids UX differs across flows.
+
+Fix:
+Do not redesign this feature if not needed before launch.
+Instead, make sure there is no broken or misleading path.
+If transparency is now the intended product direction, remove misleading hidden-bid language and ensure no flow implies unavailable competing-bid behavior that doesn’t exist.
+
+Goal:
+Parity enough to avoid confusion, without large new feature work.
+
+8. Fix Landlord auction-chat route maintenance inconsistency if needed
+
+Problem:
+Landlord view uses a raw string parameter pattern that is inconsistent.
+
+Fix:
+Only standardize this if it is low-risk and does not alter functionality.
+Do not change behavior if it is already working.
+
+Goal:
+Consistency without regression.
+
+----------------------------------
+PASS 1 OUTPUT REQUIRED
+----------------------------------
+
+After making changes, return:
+1. exact files changed
+2. exact issue addressed per file
+3. whether any audited issue was intentionally deferred and why
+4. confirmation that no listing creation flow, bid logic, accepted summary logic, or schema was broadly altered

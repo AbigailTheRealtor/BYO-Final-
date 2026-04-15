@@ -36,7 +36,7 @@ class SellerAgentAuctionController extends Controller
 {
     public function sellerAgentHireAuction(Request $request)
     {
-        $page_data['title'] = 'Auction to Hire Seller\'s Agent';
+        $page_data['title'] = 'Hire Seller\'s Agent';
         $page_data['cities'] = City::where('state_id', '3930')->get();
         $page_data['states'] = State::where('country_id', '231')->where('id', '3930')->get();
         $page_data['counties'] = County::all();
@@ -308,7 +308,7 @@ class SellerAgentAuctionController extends Controller
 
     public function editSellerAgentHireAuction($id)
     {
-        return redirect("/hire/agent/auction/seller/{$id}");
+        return redirect()->route('hire.agent.auction.edit', ['auctionId' => $id, 'user_type' => 'seller']);
     }
 
     public function updateSellerAgentHireAuction(Request $request)

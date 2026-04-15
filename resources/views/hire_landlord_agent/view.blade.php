@@ -2328,7 +2328,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                 @if ($lowest_bidder)
                 <p class="mb-3"><b>Agent {{ $agentNumberMap[$lowest_bidder->user_id] ?? '?' }}</b> was the last bidder.</p>
                 @else
-                <p>No one has bid on this auction.</p>
+                <p>No agents have submitted a bid yet.</p>
                 @endif
                 @php
                     // ── Match Score Baseline (Landlord listing request as the reference) ──────
@@ -3676,7 +3676,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 <div class="p-4 card">
     <p class="text-600">Share this link via</p>
     <div class="qr-code" style="width: 100%; height:200px;">
-        {{ qr_code(route('tenant.agent.view.auction.view', @$auction->id), 200) }}
+        {{ qr_code(route('landlord.agent.auction.view', @$auction->id), 200) }}
     </div>
     <div class="card-social">
         <ul class="icons">

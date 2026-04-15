@@ -259,10 +259,22 @@ class BuyerAgentAuctionController extends Controller
 
 
         $page_data['title'] = 'Hire Buyer\'s Agent Auctions';
-        $page_data['type'] = $type = $request->type ?? "1";
-        $pendingApprovalAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => false, 'is_draft' => false]);
-        $liveAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => false, 'is_draft' => false]);
-        $soldAuctions = BuyerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => true, 'is_draft' => false]);
+        $page_data['type'] = $type = $request->type ?? "2";
+        // is_approved and is_sold are varchar columns with mixed stored values ('true'/'false' or '1'/'0').
+        // whereIn is required to capture all variations consistently.
+        $uid = Auth::user()->id;
+        $pendingApprovalAuctions = BuyerAgentAuction::where('user_id', $uid)
+            ->whereIn('is_approved', ['false', '0', false])
+            ->whereIn('is_sold',     ['false', '0', false])
+            ->where('is_draft', false);
+        $liveAuctions = BuyerAgentAuction::where('user_id', $uid)
+            ->whereIn('is_approved', ['true', '1', true])
+            ->whereIn('is_sold',     ['false', '0', false])
+            ->where('is_draft', false);
+        $soldAuctions = BuyerAgentAuction::where('user_id', $uid)
+            ->whereIn('is_approved', ['true', '1', true])
+            ->whereIn('is_sold',     ['true', '1', true])
+            ->where('is_draft', false);
 
         if ($type == "1") {
             $auctions = $pendingApprovalAuctions->get();

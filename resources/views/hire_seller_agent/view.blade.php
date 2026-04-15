@@ -2657,7 +2657,7 @@
             @if ($lowest_bidder && $lastBidderNumber)
             <p class="mb-3"><b>Agent {{ $lastBidderNumber }}</b> was the last bidder.</p>
             @else
-            <p class="mb-3">No one has bid on this auction.</p>
+            <p class="mb-3">No agents have submitted a bid yet.</p>
             @endif
         @endif
 
