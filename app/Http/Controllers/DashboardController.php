@@ -102,6 +102,33 @@ class DashboardController extends Controller
             ->whereNull('tenant_signed_at')
             ->count();
 
+        // ── "Your Hired Agent" dashboard block — all accepted summaries for this user ──
+        // Fetch summaries with the agent user eager-loaded, then bulk-resolve listing
+        // address/display-id from each role's table to avoid N+1 queries.
+        $rawSummaries = AcceptedBidSummary::where('tenant_user_id', $uid)
+            ->with('agent')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $listingModelMap = [
+            'tenant'   => TenantAgentAuction::class,
+            'landlord' => LandlordAgentAuction::class,
+            'buyer'    => BuyerAgentAuction::class,
+            'seller'   => SellerAgentAuction::class,
+        ];
+        $listingCache = [];
+        foreach ($rawSummaries->groupBy('listing_type') as $type => $group) {
+            if (isset($listingModelMap[$type])) {
+                $listingCache[$type] = $listingModelMap[$type]::whereIn('id', $group->pluck('listing_id'))
+                    ->get(['id', 'address', 'listing_id', 'title'])
+                    ->keyBy('id');
+            }
+        }
+        $page_data['acceptedSummaries'] = $rawSummaries->map(function ($s) use ($listingCache) {
+            $s->listingSnapshot = $listingCache[$s->listing_type][$s->listing_id] ?? null;
+            return $s;
+        });
+
         return view('dashboard', $page_data);
     }
 

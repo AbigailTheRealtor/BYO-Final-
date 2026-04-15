@@ -1,0 +1,60 @@
+Add one conditional “Hired Agent / Accepted Bid Summary” section to the main client dashboard. This should be a small dashboard shortcut block only, not a redesign of the page.
+
+Goal:
+When a client has accepted/hired an agent on one of their listings, the dashboard should surface that relationship clearly and give quick access to the accepted summary and the agent’s contact details.
+
+Required behavior:
+
+1. Show this section ONLY when there is an accepted/hired agent for at least one of the client’s listings.
+2. If there is no accepted/hired agent, do not show the section at all.
+3. Keep the section compact and dashboard-friendly.
+
+Section title:
+- Preferred: “Your Hired Agent”
+- Acceptable: “Accepted Agent Details”
+
+Each visible hired-agent block should include:
+- agent name
+- brokerage name if available
+- phone number if available
+- email address if available
+- listing title and/or listing ID tied to that accepted relationship
+- current status if useful (example: Accepted / Awaiting Acknowledgement / Finalized)
+
+Buttons / actions:
+- View Accepted Bid Summary
+- Message Agent
+- Download Summary / PDF only if that feature already exists and is already wired
+
+Placement:
+- Put this near the top of the dashboard content area
+- Best placement: below Quick Actions and above Needs Attention
+- If there are multiple accepted/hired agent relationships, show one compact card per accepted relationship
+
+Important:
+This section is a shortcut/summary only.
+Do NOT dump full legal text, compensation terms, or full agreement content onto the dashboard.
+
+CRITICAL SAFEGUARD:
+- Do not modify listing creation flows
+- Do not modify bid submission logic
+- Do not modify counter / accept / reject logic
+- Do not modify match score logic
+- Do not modify Accepted Bid Summary generation or structure
+- Do not modify messaging logic
+- Do not modify database schema unless absolutely necessary and only if no existing accepted-bid relationships can be queried cleanly
+- This task is dashboard display only, using existing accepted/hired data if already available
+
+Implementation guidance:
+- Reuse existing accepted bid / summary / hired-agent data sources if they already exist
+- Reuse existing routes for summary view, agent message page, and PDF download if already available
+- Do not create a second accepted-summary system
+- Do not invent new business logic; just surface existing accepted/hired outcomes on the dashboard
+
+Acceptance criteria:
+- if client has no hired/accepted agent, no section appears
+- if client has a hired/accepted agent, dashboard shows a compact hired-agent card
+- card includes agent contact info if available
+- card links to existing Accepted Bid Summary
+- card links to existing messaging flow
+- no core listing, bidding, or summary logic is changed
