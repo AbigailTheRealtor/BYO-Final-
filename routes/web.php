@@ -154,6 +154,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/accepted-bid-summary/{id}/sign', [AcceptedBidSummaryController::class, 'sign'])->name('accepted-bid-summary.sign');
     Route::post('/accepted-bid-summary/{id}/documents', [AcceptedBidSummaryController::class, 'storeDocuments'])->name('accepted-bid-summary.store-documents');
     Route::get('/accepted-bid-summary/{id}/download-pdf', [AcceptedBidSummaryController::class, 'downloadPdf'])->name('accepted-bid-summary.download-pdf');
+    Route::get('/accepted-bid-summary/{id}/document/{type}', [AcceptedBidSummaryController::class, 'downloadDocument'])->name('accepted-bid-summary.download-document');
     Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
 });
 

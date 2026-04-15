@@ -252,6 +252,88 @@
             @endif
             {{-- ── end document sharing ── --}}
 
+            {{-- ── Shared Documents (agent view) ── --}}
+            @if($userRole === 'agent')
+            @php
+                $docTypes = [
+                    'id_document'         => ['label' => 'Government-Issued ID',  'icon' => 'fas fa-id-card'],
+                    'proof_of_funds'      => ['label' => 'Proof of Funds',         'icon' => 'fas fa-dollar-sign'],
+                    'pre_approval_letter' => ['label' => 'Pre-Approval Letter',    'icon' => 'fas fa-file-signature'],
+                    'proof_of_income'     => ['label' => 'Proof of Income',        'icon' => 'fas fa-file-invoice-dollar'],
+                ];
+                $pathMap = [
+                    'id_document'         => 'id_document_path',
+                    'proof_of_funds'      => 'proof_of_funds_path',
+                    'pre_approval_letter' => 'pre_approval_letter_path',
+                    'proof_of_income'     => 'proof_of_income_path',
+                ];
+                $hasAnyDoc = false;
+                if ($sharedDocs) {
+                    foreach ($pathMap as $col) {
+                        if (!empty($sharedDocs->{$col})) { $hasAnyDoc = true; break; }
+                    }
+                    if (!$hasAnyDoc && !empty($sharedDocs->property_record_link)) {
+                        $hasAnyDoc = true;
+                    }
+                }
+            @endphp
+            <div class="card border-0 shadow-sm mt-4" style="border-left: 4px solid #198754 !important; border-radius: 10px;">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9ecef; padding: 18px 24px;">
+                    <div>
+                        <h5 class="mb-1" style="color: #1a3a5c; font-weight: 700;">
+                            <i class="fas fa-folder-open me-2" style="color: #198754;"></i>
+                            Shared Documents
+                        </h5>
+                        <p class="mb-0 text-muted" style="font-size: 0.88rem;">
+                            Documents shared by the listing owner for this engagement.
+                        </p>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 24px;">
+                    @if(!$sharedDocs || !$hasAnyDoc)
+                        <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i> No documents have been shared yet.</p>
+                    @else
+                        <div class="row g-3">
+                            @foreach($docTypes as $typeKey => $meta)
+                                @php $col = $pathMap[$typeKey]; $filePath = $sharedDocs->{$col} ?? null; @endphp
+                                @if(!empty($filePath))
+                                <div class="col-md-6">
+                                    <div class="p-3 rounded d-flex align-items-center gap-3" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                                        <i class="{{ $meta['icon'] }} fa-lg text-success"></i>
+                                        <div class="flex-grow-1 overflow-hidden">
+                                            <div class="fw-semibold" style="font-size: 0.9rem;">{{ $meta['label'] }}</div>
+                                            <div class="text-muted text-truncate" style="font-size: 0.78rem;">{{ basename($filePath) }}</div>
+                                        </div>
+                                        <a href="{{ route('accepted-bid-summary.download-document', ['id' => $summary->id, 'type' => $typeKey]) }}"
+                                           target="_blank"
+                                           class="btn btn-sm btn-outline-success flex-shrink-0">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </div>
+                                </div>
+                                @endif
+                            @endforeach
+                            @if(!empty($sharedDocs->property_record_link))
+                            <div class="col-md-6">
+                                <div class="p-3 rounded d-flex align-items-center gap-3" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                                    <i class="fas fa-link fa-lg text-success"></i>
+                                    <div class="flex-grow-1 overflow-hidden">
+                                        <div class="fw-semibold" style="font-size: 0.9rem;">Property Record Link</div>
+                                        <a href="{{ $sharedDocs->property_record_link }}" target="_blank" rel="noopener" class="text-truncate d-block" style="font-size: 0.78rem;">{{ $sharedDocs->property_record_link }}</a>
+                                    </div>
+                                    <a href="{{ $sharedDocs->property_record_link }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success flex-shrink-0">
+                                        <i class="fas fa-external-link-alt me-1"></i>Open
+                                    </a>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+            {{-- ── end shared documents ── --}}
+
             @if($canSign)
             <div class="card mt-4" id="esign-section">
                 <div class="card-header bg-primary text-white">

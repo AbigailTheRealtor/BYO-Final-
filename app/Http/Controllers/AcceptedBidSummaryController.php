@@ -40,6 +40,10 @@ class AcceptedBidSummaryController extends Controller
                 ->first()
             : null;
 
+        $sharedDocs = AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
+            ->where('user_id', $summary->tenant_user_id)
+            ->first();
+
         return view('accepted_bid_summary.view', [
             'summary'                           => $summary,
             'html'                              => $html,
@@ -47,6 +51,7 @@ class AcceptedBidSummaryController extends Controller
             'userRole'                          => $this->getUserRole($summary, $user),
             'canUploadAcknowledgementDocuments' => $canUploadAcknowledgementDocuments,
             'existingDocs'                      => $existingDocs,
+            'sharedDocs'                        => $sharedDocs,
         ]);
     }
 
@@ -68,19 +73,24 @@ class AcceptedBidSummaryController extends Controller
 
         $html = $this->summaryService->getRenderedHtml($summary);
 
-        $existingDocs = AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        // Access = ownership of the listing-side (tenant_user_id), not role string.
-        // All four flows (buyer, tenant, seller, landlord) store the listing owner in tenant_user_id.
         $canUploadAcknowledgementDocuments = ($user->id === $summary->tenant_user_id);
+
+        $existingDocs = $canUploadAcknowledgementDocuments
+            ? AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
+                ->where('user_id', $user->id)
+                ->first()
+            : null;
+
+        $sharedDocs = AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
+            ->where('user_id', $summary->tenant_user_id)
+            ->first();
 
         return view('accepted_bid_summary.sign', [
             'summary'                          => $summary,
             'html'                             => $html,
             'userRole'                         => $userRole,
             'existingDocs'                     => $existingDocs,
+            'sharedDocs'                       => $sharedDocs,
             'canUploadAcknowledgementDocuments' => $canUploadAcknowledgementDocuments,
         ]);
     }
@@ -245,6 +255,52 @@ class AcceptedBidSummaryController extends Controller
 
         return redirect()->route('accepted-bid-summary.view', $id)
             ->with('doc_success', 'Your documents were saved successfully.');
+    }
+
+    public function downloadDocument(Request $request, $id, $type)
+    {
+        $summary = AcceptedBidSummary::findOrFail($id);
+
+        $user = Auth::user();
+        if (!$this->canAccessSummary($summary, $user)) {
+            abort(403, 'You are not authorized to access this file.');
+        }
+
+        $allowedTypes = [
+            'id_document'         => 'id_document_path',
+            'proof_of_funds'      => 'proof_of_funds_path',
+            'pre_approval_letter' => 'pre_approval_letter_path',
+            'proof_of_income'     => 'proof_of_income_path',
+        ];
+
+        if (!array_key_exists($type, $allowedTypes)) {
+            abort(404, 'Document type not found.');
+        }
+
+        $doc = AcknowledgementDocument::where('accepted_bid_summary_id', $summary->id)
+            ->where('user_id', $summary->tenant_user_id)
+            ->first();
+
+        if (!$doc) {
+            abort(404, 'No documents found for this summary.');
+        }
+
+        $column = $allowedTypes[$type];
+        $path   = $doc->{$column};
+
+        if (empty($path)) {
+            abort(404, 'This document has not been uploaded.');
+        }
+
+        $fullPath = storage_path('app/' . $path);
+
+        if (!file_exists($fullPath)) {
+            abort(404, 'File not found on disk.');
+        }
+
+        return response()->file($fullPath, [
+            'Content-Disposition' => 'inline; filename="' . basename($path) . '"',
+        ]);
     }
 
     protected function canAccessSummary(AcceptedBidSummary $summary, $user): bool
