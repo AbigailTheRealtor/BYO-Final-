@@ -1,0 +1,45 @@
+Run a read-only audit of Bidding Period vs Traditional behavior across the Hire Agent listing flows.
+
+This is an audit only. Do not modify code yet.
+
+Goal:
+Verify whether the current user-facing tooltip and explanatory copy for “Bidding Period” and “Traditional” accurately match the actual system behavior.
+
+Audit the following across Tenant, Landlord, Buyer, and Seller listing flows:
+
+1. Listing Type behavior
+   - What actually changes when a user selects Bidding Period vs Traditional?
+   - Is the timer the only functional difference?
+   - Are accept / counter / reject actions blocked during an active bidding period?
+   - Are users prevented from selecting an agent before the timer ends?
+   - Are bids hidden, delayed, or treated differently during the timer?
+   - Is any logic enforcing “review all bids together once the timer ends”?
+
+2. Dashboard / listing page behavior
+   - During an active bidding period, can the user still:
+     - view bids
+     - accept
+     - counter
+     - reject
+   - Does the system display any warning encouraging the user to wait?
+   - Does the UI treat Bidding Period differently from Traditional beyond the countdown?
+
+3. Route / controller / Blade logic
+   - Identify the files, methods, and conditions that implement Bidding Period vs Traditional behavior
+   - Confirm whether the distinction is only presentational or actually enforced in logic
+
+4. Tooltip / explanatory copy audit
+   - Compare the current tooltip text and blue info box text against the actual code behavior
+   - Identify where the copy overstates or misrepresents system behavior
+
+Output required:
+- Exact actual behavior of Bidding Period
+- Exact actual behavior of Traditional
+- Whether the timer is the only difference
+- Whether current tooltip/copy is accurate, partially accurate, or misleading
+- Exact files/locations where the logic and text are defined
+- Recommendation:
+  1. keep current behavior and rewrite copy
+  2. enforce true bidding-period restrictions
+  3. remove timer/listing type distinction
+Do not apply any fixes yet.
