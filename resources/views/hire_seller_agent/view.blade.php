@@ -2606,9 +2606,14 @@
             <span class="bid">Pending</span>
         </button>
         @else
-        <div class="alert alert-warning text-center mb-2">
-            <strong>Bidding Period Ended</strong>
+        {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
+        @if ($isBiddingPeriodListing)
+        {{-- BP: "Bidding Ended" already rendered by the timer block above — no duplicate needed --}}
+        @else
+        <div class="alert alert-secondary text-center mb-2">
+            <i class="fa fa-calendar-times me-1"></i> <strong>This listing has expired</strong>
         </div>
+        @endif
         @endif
 
         @if (@$auction->sold)
