@@ -52,13 +52,13 @@ class DashboardController extends Controller
             ->get();
 
         // ── Listing counts per role — filtered to match each role's default page view ──
-        // Tenant/Landlord/Seller pages default to type 2 (Live): is_approved=true, is_sold=false, is_draft=false
-        // Buyer page defaults to type 1 (Pending Approval): is_approved=false, is_sold=false, is_draft=false
-        // Seller stores is_sold as the string 'false' (not boolean), matching the controller's own live filter.
+        // Tenant/Landlord/Seller/Buyer pages all default to type 2 (Live).
+        // Buyer uses whereIn because its is_approved/is_sold columns store mixed values ('true'/'false'/'1'/'0').
+        // Seller stores is_sold as the string 'false' (not boolean), matching its controller's own live filter.
         $page_data['listingCounts'] = [
             'tenant'   => TenantAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
             'landlord' => LandlordAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
-            'buyer'    => BuyerAgentAuction::where('user_id', $uid)->where('is_approved', false)->where('is_sold', false)->where('is_draft', false)->count(),
+            'buyer'    => BuyerAgentAuction::where('user_id', $uid)->whereIn('is_approved', ['true', '1', true])->whereIn('is_sold', ['false', '0', false])->where('is_draft', false)->count(),
             'seller'   => SellerAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)->count(),
         ];
 
@@ -362,5 +362,17 @@ class DashboardController extends Controller
         } else {
             return redirect()->back()->with('error', "Unable to update QR Code settings");
         }
+    }
+
+    public function allListings()
+    {
+        $uid = Auth::id();
+        return view('myListings', [
+            'title'           => 'My Listings',
+            'tenantListings'  => TenantAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'landlordListings'=> LandlordAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'buyerListings'   => BuyerAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'sellerListings'  => SellerAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+        ]);
     }
 }

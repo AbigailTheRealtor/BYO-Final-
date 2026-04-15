@@ -132,9 +132,9 @@
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Agent Listings</b>
                     @php
-                        // Buyer page defaults to Pending Approval (type 1): is_approved=false, is_sold=false, is_draft=false
+                        // Buyer page defaults to Live (type 2): whereIn used because column stores mixed values
                         $my_baa_count = \App\Models\BuyerAgentAuction::where('user_id', auth()->id())
-                            ->where('is_approved', false)->where('is_sold', false)->where('is_draft', false)->count();
+                            ->whereIn('is_approved', ['true', '1', true])->whereIn('is_sold', ['false', '0', false])->where('is_draft', false)->count();
                     @endphp
                     @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
                 </div>
@@ -203,9 +203,9 @@
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
                     @php
-                        // Buyer page defaults to Pending Approval (type 1): is_approved=false, is_sold=false, is_draft=false
+                        // Buyer page defaults to Live (type 2): whereIn used because column stores mixed values
                         $my_tbaa_count = \App\Models\BuyerAgentAuction::where('user_id', auth()->id())
-                            ->where('is_approved', false)->where('is_sold', false)->where('is_draft', false)->count();
+                            ->whereIn('is_approved', ['true', '1', true])->whereIn('is_sold', ['false', '0', false])->where('is_draft', false)->count();
                     @endphp
                     @if ($my_tbaa_count)<span class="badge bg-danger ms-2">{{ $my_tbaa_count }}</span>@endif
                 </div>

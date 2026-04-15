@@ -84,26 +84,14 @@
                                             <a href="{{ route('agent.qr.settings') }}" class="btn btn-outline-secondary btn-sm">QR &amp; Hire Me</a>
                                         @else
                                             @php
-                                                // "My Listings" smart routing — based on actual listing records, not user_type
-                                                // 0 or >1 listings → dashboard (shows the full 4-role grid)
-                                                // Exactly 1 listing → route directly to that role's list page
-                                                $myListingsUrl = route('dashboard');
-                                                if ($totalListings === 1) {
-                                                    foreach ($roleConfig as $_rk => $_rc) {
-                                                        if (($listingCounts[$_rk] ?? 0) === 1) {
-                                                            $myListingsUrl = route($_rc['listRoute']);
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                                // "+ New Listing" still uses user_type — creation flows are unchanged
+                                                // "+ New Listing" uses user_type — creation flows are unchanged
                                                 $primaryRole = $user->user_type;
                                                 $cfg = $roleConfig[$primaryRole] ?? null;
                                             @endphp
                                             @if($cfg)
                                                 <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ New Listing</a>
                                             @endif
-                                            <a href="{{ $myListingsUrl }}" class="btn btn-outline-secondary btn-sm">My Listings</a>
+                                            <a href="{{ route('my.listings') }}" class="btn btn-outline-secondary btn-sm">My Listings</a>
                                             @if($user->user_type === 'tenant')
                                                 <a href="{{ route('myBids', 'agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>
                                             @elseif($user->user_type === 'landlord')

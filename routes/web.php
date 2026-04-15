@@ -333,6 +333,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Admin Can't be access these routes
     Route::middleware('noAdmin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+        Route::get('/my-listings', [DashboardController::class, 'allListings'])->name('my.listings');
         Route::get('/settings', [DashboardController::class, 'settings'])->name('settings');
         Route::post('/settings', [DashboardController::class, 'saveSettings']);
         Route::post('/settings/delete-account', [DashboardController::class, 'deleteAccount'])->name('settings.delete-account');
