@@ -1,0 +1,252 @@
+Run a full read-only audit of the complete Hire Agent flow before this is reused on the agent profile side.
+
+This is an audit only first.
+Do not modify code unless a specific issue is identified and approved.
+
+Goal:
+Verify that the full client-side Hire Agent flow is correct, complete, and consistent for all four listing types before it is reused elsewhere.
+
+Audit these four flows separately and comparatively:
+1. Hire a Tenant’s Agent
+2. Hire a Landlord’s Agent
+3. Hire a Buyer’s Agent
+4. Hire a Seller’s Agent
+
+CRITICAL SAFEGUARD:
+Do not modify any code during this audit.
+Do not change listing creation flows, bid logic, routing, accepted summary logic, or database schema unless a later fix task is explicitly approved.
+This task is read-only and report-only.
+
+IMPORTANT CONTEXT:
+- The Expiration Date tooltip is already considered correct and should not be flagged for rewrite unless there is a true logic mismatch.
+- The main known copy concern is Bidding Period / Traditional wording, especially Listing Type tooltip, Bidding Period Length tooltip, and blue info-box text.
+- The dashboard itself has already been separately audited and polished. This audit is focused on the end-to-end Hire Agent listing flow.
+
+-------------------------------------
+PART 1 — LISTING CREATION FLOW AUDIT
+-------------------------------------
+
+For each of the 4 Hire Agent flows, verify:
+
+1. Route opens correctly
+2. All tabs load correctly
+3. Required fields behave correctly
+4. Labels, tooltips, placeholders, and validation are correct
+5. Dynamic show/hide logic works correctly
+6. Save/create submits successfully
+7. Listing is stored correctly
+8. Editing an existing listing works correctly
+9. No missing fields or broken UI elements
+
+Check for:
+- incorrect labels
+- wrong placeholders
+- missing validation
+- broken dynamic logic
+- role-specific wording mistakes
+- inconsistencies across flows
+
+-------------------------------------
+PART 2 — LISTING TYPE / BIDDING PERIOD AUDIT
+-------------------------------------
+
+For each flow, verify the actual behavior of:
+- Bidding Period
+- Traditional
+- Expiration Date
+- Bidding Period Length
+- related tooltip/help text
+- related blue info-box text
+
+Specifically determine:
+1. What actually changes between Bidding Period and Traditional?
+2. Is the timer the only functional difference, or are there other real behavior differences?
+3. Can the owner still accept/counter/reject during an active bidding period?
+4. Are bids visible immediately in both modes?
+5. Is any current user-facing tooltip or helper copy overstating restrictions or confidentiality?
+
+Flag:
+- misleading wording
+- advisory language that is not enforced
+- confidentiality language that contradicts the actual visible system behavior
+- inconsistent copy across Tenant / Landlord / Buyer / Seller
+
+IMPORTANT:
+Do not recommend changing Expiration Date tooltip unless the actual logic truly conflicts with that text.
+
+-------------------------------------
+PART 3 — DASHBOARD / LISTING VISIBILITY
+-------------------------------------
+
+For each listing type, verify:
+
+1. New listing appears in the correct client dashboard area
+2. Role count updates correctly
+3. Listing appears on the correct role-specific listings page
+4. “My Listings” / all-listings hub behavior is correct
+5. Listing status badge is correct
+6. Draft / live / pending / sold / approved states display correctly
+
+-------------------------------------
+PART 4 — BID APPEARANCE AND MATCHING
+-------------------------------------
+
+For each listing type, verify:
+
+1. Agent bids appear on the correct listing
+2. Bid cards show the correct agent
+3. Match score displays correctly
+4. Broker terms / services counts are correct
+5. View Bid opens the correct full bid
+6. No cross-listing leakage
+7. No missing bids
+
+-------------------------------------
+PART 5 — BID ACTION FLOW
+-------------------------------------
+
+For each listing type, verify:
+
+1. Accept works
+2. Counter works
+3. Reject works
+4. Awaiting response states are correct
+5. Action buttons only appear when appropriate
+6. Accepted state is correct
+7. Counter history / state changes are correct
+8. Notifications / dashboard updates happen correctly
+
+-------------------------------------
+PART 6 — ACCEPTED BID SUMMARY / ACKNOWLEDGEMENT FLOW
+-------------------------------------
+
+For each listing type, verify:
+
+1. Accepted Bid Summary is created correctly
+2. Correct listing data appears
+3. Correct agent data appears
+4. Correct compensation / service terms appear
+5. Acknowledgement states work correctly
+6. Download PDF works if available
+7. Dashboard “Your Hired Agent” section reflects accepted summaries correctly
+
+-------------------------------------
+PART 7 — ROUTING / BUTTON DESTINATIONS
+-------------------------------------
+
+For each listing type, verify all relevant buttons and links:
+
+- View Listing
+- View Bid
+- View Counter Terms
+- Accept
+- Counter
+- Reject
+- View Summary
+- Download PDF
+- Review buttons
+- Notices links
+
+Check that each one routes to the correct listing / correct role / correct bid.
+
+-------------------------------------
+PART 8 — COPY / LABEL CONSISTENCY
+-------------------------------------
+
+Audit all user-facing wording for consistency across the four flows.
+
+Examples:
+- “Listing” vs “Auction”
+- “Hire Tenant’s Agent” vs “Hire a Tenant’s Agent”
+- “Bids on My Listings”
+- “Agent Bids on Your Listings”
+- “Accepted Bid Summary”
+- “Needs Attention”
+- “Your Hired Agent”
+- Bidding Period / Traditional explanatory text
+
+Flag any mismatched wording or role-specific phrasing that is inconsistent.
+
+-------------------------------------
+PART 9 — COUNT / STATUS CONSISTENCY
+-------------------------------------
+
+Verify for all four flows:
+
+1. Sidebar count matches role page default count
+2. Dashboard card count matches role page default count
+3. Needs Attention counts are accurate
+4. Accepted / pending / live / draft statuses are accurate
+5. Bid counts per listing are accurate
+
+-------------------------------------
+PART 10 — EDGE CASES
+-------------------------------------
+
+Check these cases across all four flows:
+
+1. No listings
+2. One listing
+3. Multiple listings
+4. No bids
+5. One bid
+6. Multiple bids
+7. Accepted agent
+8. Countered bid
+9. Draft listing
+10. Live listing
+11. Expired/inactive listing if supported
+
+-------------------------------------
+PART 11 — EDIT FORM VALUE CONSISTENCY
+-------------------------------------
+
+Audit whether create flows and edit flows store consistent values for listing type / auction type.
+
+Specifically verify whether older edit forms store values like:
+- "Traditional Listing"
+- "Normal (Timer)"
+- "Traditional (No Timer)"
+
+while the view logic expects:
+- "Bidding Period"
+- "Traditional"
+or normalized lowercase equivalents.
+
+Report any mismatch that could break:
+- timer logic
+- visibility logic
+- action buttons
+- listing type detection
+
+-------------------------------------
+PART 12 — COMPARATIVE PARITY AUDIT
+-------------------------------------
+
+Compare the four flows side-by-side and identify:
+
+1. Which flow is the strongest / most complete
+2. Which flow has missing logic or weaker UI
+3. Any parity gaps between Tenant / Landlord / Buyer / Seller
+4. Anything that should be fixed before cloning these patterns to the agent profile side
+
+-------------------------------------
+OUTPUT REQUIRED
+-------------------------------------
+
+Return a structured report with:
+
+1. Critical issues
+   - breaks flow or data correctness
+2. Medium issues
+   - confusing UX, wrong routing, missing states, misleading copy
+3. Minor issues
+   - wording, spacing, cosmetic inconsistency
+4. Exact files/locations involved
+5. Recommended fix for each issue
+6. Final recommendation:
+   - “Safe to reuse on agent profile side”
+   - or
+   - “Fix these issues first before reuse”
+
+Do not apply fixes yet. Audit only.
