@@ -112,7 +112,11 @@
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Agent Listings</b>
-                    @php $my_saa_count = auth()->user()->seller_agent_auctions->count(); @endphp
+                    @php
+                        // Seller page defaults to Live (type 2): is_approved=true, is_sold='false'(string), is_draft=false
+                        $my_saa_count = \App\Models\SellerAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_saa_count)<span class="badge bg-danger ms-2">{{ $my_saa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Seller.</div>
@@ -127,7 +131,11 @@
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Agent Listings</b>
-                    @php $my_baa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
+                    @php
+                        // Buyer page defaults to Pending Approval (type 1): is_approved=false, is_sold=false, is_draft=false
+                        $my_baa_count = \App\Models\BuyerAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', false)->where('is_sold', false)->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Buyer.</div>
@@ -142,7 +150,11 @@
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Agent Listings</b>
-                    @php $my_laa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
+                    @php
+                        // Landlord page defaults to Live (type 2): is_approved=true, is_sold=false, is_draft=false
+                        $my_laa_count = \App\Models\LandlordAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_laa_count)<span class="badge bg-danger ms-2">{{ $my_laa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Landlord.</div>
@@ -158,7 +170,11 @@
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Tenant's Agent</b>
-                    @php $my_taa_count = auth()->user()->tenant_agent_auctions->count(); @endphp
+                    @php
+                        // Tenant page defaults to Live (type 2): is_approved=true, is_sold=false, is_draft=false
+                        $my_taa_count = \App\Models\TenantAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_taa_count)<span class="badge bg-danger ms-2">{{ $my_taa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Tenant.</div>
@@ -170,7 +186,11 @@
             <div class="me-3"><i class="fa fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Landlord's Agent</b>
-                    @php $my_llaa_count = auth()->user()->landlord_agent_auctions->count(); @endphp
+                    @php
+                        // Landlord page defaults to Live (type 2): is_approved=true, is_sold=false, is_draft=false
+                        $my_llaa_count = \App\Models\LandlordAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_llaa_count)<span class="badge bg-danger ms-2">{{ $my_llaa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to manage your property as a Landlord.</div>
@@ -182,7 +202,11 @@
             <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
-                    @php $my_tbaa_count = auth()->user()->buyer_agent_auctions->count(); @endphp
+                    @php
+                        // Buyer page defaults to Pending Approval (type 1): is_approved=false, is_sold=false, is_draft=false
+                        $my_tbaa_count = \App\Models\BuyerAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', false)->where('is_sold', false)->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_tbaa_count)<span class="badge bg-danger ms-2">{{ $my_tbaa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Buyer.</div>
@@ -194,7 +218,11 @@
             <div class="me-3"><i class="fa fa-sign-out" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Seller's Agent</b>
-                    @php $my_tsaa_count = auth()->user()->seller_agent_auctions->count(); @endphp
+                    @php
+                        // Seller page defaults to Live (type 2): is_approved=true, is_sold='false'(string), is_draft=false
+                        $my_tsaa_count = \App\Models\SellerAgentAuction::where('user_id', auth()->id())
+                            ->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)->count();
+                    @endphp
                     @if ($my_tsaa_count)<span class="badge bg-danger ms-2">{{ $my_tsaa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Listings where agents bid to represent you as a Seller.</div>

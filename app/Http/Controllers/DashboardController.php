@@ -51,12 +51,15 @@ class DashboardController extends Controller
             ->take(20)
             ->get();
 
-        // ── Listing counts per role (read-only) ────────────────────────────────
+        // ── Listing counts per role — filtered to match each role's default page view ──
+        // Tenant/Landlord/Seller pages default to type 2 (Live): is_approved=true, is_sold=false, is_draft=false
+        // Buyer page defaults to type 1 (Pending Approval): is_approved=false, is_sold=false, is_draft=false
+        // Seller stores is_sold as the string 'false' (not boolean), matching the controller's own live filter.
         $page_data['listingCounts'] = [
-            'tenant'   => TenantAgentAuction::where('user_id', $uid)->count(),
-            'landlord' => LandlordAgentAuction::where('user_id', $uid)->count(),
-            'buyer'    => BuyerAgentAuction::where('user_id', $uid)->count(),
-            'seller'   => SellerAgentAuction::where('user_id', $uid)->count(),
+            'tenant'   => TenantAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
+            'landlord' => LandlordAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
+            'buyer'    => BuyerAgentAuction::where('user_id', $uid)->where('is_approved', false)->where('is_sold', false)->where('is_draft', false)->count(),
+            'seller'   => SellerAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)->count(),
         ];
 
         // ── Pending bids on user's listings (awaiting owner decision) ──────────
