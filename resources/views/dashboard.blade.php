@@ -294,7 +294,7 @@
                                                                 awaiting your signature
                                                             </span>
                                                         </div>
-                                                        <a href="{{ route($roleConfig[$user->user_type]['listRoute'] ?? 'tenant.agent.auctions.list') }}"
+                                                        <a href="{{ route('my.listings') }}"
                                                            class="btn btn-sm flex-shrink-0"
                                                            style="background:#fd7e14;color:#fff;font-size:.75rem;white-space:nowrap;">
                                                             Open Listings &rarr;

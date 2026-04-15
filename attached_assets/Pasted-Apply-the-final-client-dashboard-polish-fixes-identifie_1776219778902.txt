@@ -1,0 +1,48 @@
+Apply the final client dashboard polish fixes identified in the audit. Do not modify listing creation flows, bid logic, counter logic, match score logic, Accepted Bid Summary logic, messaging logic, or database schema. These are small routing and UI text fixes only.
+
+1. Fix the “Open Listings →” button in the Needs Attention section.
+   Current issue:
+   - The unsigned summaries count covers accepted deals across all listing types
+   - But the “Open Listings →” button currently routes only to the user’s primary role page
+   - This can send the user to the wrong role page
+
+   Required fix:
+   - Change the “Open Listings →” button destination to the all-listings hub route:
+     - route('my.listings')
+   - This ensures the user lands on a page that can access all listing types
+
+2. Fix sidebar role labels for Buyer / Landlord / Seller users so they are role-specific and consistent.
+   Current issue:
+   - Some sidebar labels use generic wording like “Hire Agent Listings”
+   - Tenant area is already more specific
+
+   Required fix:
+   - Use role-specific labels matching the dashboard and role pages:
+     - Hire Tenant’s Agent
+     - Hire Landlord’s Agent
+     - Hire Buyer’s Agent
+     - Hire Seller’s Agent
+   - This is text-only; do not change routes or backend logic
+
+3. Fix the tenant sidenav double-header effect.
+   Current issue:
+   - “MY LISTINGS” is followed by another header like “HIRE AGENT LISTINGS,” which feels repetitive
+
+   Required fix:
+   - Remove the redundant second header OR rename it to something clearer only if needed
+   - Preferred: remove the extra repeated sub-header if it adds no value
+
+CRITICAL SAFEGUARD:
+- Do not modify Hire a Tenant’s Agent, Hire a Landlord’s Agent, Hire a Buyer’s Agent, or Hire a Seller’s Agent creation flows
+- Do not modify bid submission, counter, accept/reject, match score, Accepted Bid Summary, or messaging logic
+- Do not rename routes, controllers, models, database columns, or tables
+- This task is strictly:
+  1. one route destination fix
+  2. sidebar wording cleanup
+  3. minor sidebar header cleanup
+
+Acceptance criteria:
+- “Open Listings →” in Needs Attention routes to route('my.listings')
+- sidebar role labels are specific and consistent
+- tenant sidenav no longer has the awkward double-header effect
+- no core workflow logic is changed

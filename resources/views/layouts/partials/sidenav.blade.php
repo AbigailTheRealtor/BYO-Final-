@@ -111,7 +111,7 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Hire Agent Listings</b>
+                <div class="text-600 mb-1"><b>Hire Seller's Agent</b>
                     @php
                         // Seller page defaults to Live (type 2): is_approved=true, is_sold='false'(string), is_draft=false
                         $my_saa_count = \App\Models\SellerAgentAuction::where('user_id', auth()->id())
@@ -130,7 +130,7 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Hire Agent Listings</b>
+                <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
                     @php
                         // Buyer page defaults to Live (type 2): whereIn used because column stores mixed values
                         $my_baa_count = \App\Models\BuyerAgentAuction::where('user_id', auth()->id())
@@ -149,7 +149,7 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Hire Agent Listings</b>
+                <div class="text-600 mb-1"><b>Hire Landlord's Agent</b>
                     @php
                         // Landlord page defaults to Live (type 2): is_approved=true, is_sold=false, is_draft=false
                         $my_laa_count = \App\Models\LandlordAgentAuction::where('user_id', auth()->id())
@@ -164,7 +164,6 @@
     @endif
 
     @if (in_array(auth()->user()->user_type, ['tenant']))
-    <div class="small text-uppercase text-muted fw-bold px-3 pt-2 pb-1" style="letter-spacing:.07em;font-size:.68rem;">Hire Agent Listings</div>
     <a href="{{ route('tenant.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
