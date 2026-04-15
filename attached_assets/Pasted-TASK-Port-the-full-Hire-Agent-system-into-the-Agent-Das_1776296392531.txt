@@ -1,0 +1,249 @@
+TASK: Port the full Hire-Agent system into the Agent Dashboard with strict parity to the currently working behavior, while maintaining a shared core architecture and adding dashboard-only customizations.
+
+GOAL
+Enable the Agent Dashboard to fully create, save draft, edit, publish, manage, and review Hire-Agent listings and bids for:
+- Tenant
+- Buyer
+- Seller
+- Landlord
+
+This must match the exact working behavior already proven in the system (tenant@exp.com baseline), while allowing dashboard-specific customizations without duplicating logic.
+
+--------------------------------------------------
+CORE ARCHITECTURE REQUIREMENT (CRITICAL)
+--------------------------------------------------
+
+We are implementing a SHARED SYSTEM, not a rewrite.
+
+ALL core logic must remain centralized and reused:
+- listing creation flow
+- draft/save/edit logic
+- bid logic
+- counter logic
+- summary generation
+- timer logic
+- status/state logic
+- validation
+- ownership/authorization rules
+
+The Agent Dashboard must act as:
+→ a NEW ENTRY POINT + MANAGEMENT LAYER
+→ NOT a separate system
+
+DO NOT:
+- duplicate forms
+- duplicate services
+- create dashboard-specific versions of core logic
+- fork summary builders or bid logic
+
+If duplication is introduced, STOP and report.
+
+--------------------------------------------------
+DASHBOARD-ONLY CUSTOMIZATION LAYER
+--------------------------------------------------
+
+We also need dashboard-specific behavior that does NOT affect user-facing flows.
+
+These differences must be implemented using:
+- conditional rendering
+- context-aware labels
+- dashboard-only UI blocks
+- optional dashboard-only data fields
+
+DO NOT solve this by duplicating the system.
+
+DASHBOARD-ONLY FEATURES:
+
+1. Referral Percentage
+- Add support for a referral percentage field/section in the Agent Dashboard
+- This must NOT appear on the user-facing side
+- It must NOT alter existing bid logic or summaries unless explicitly intended
+- If stored, use a safe dedicated field or related structure (non-breaking)
+
+2. Label Overrides (Example: Landlord → Agent)
+- Allow dashboard-specific label changes
+- Implement via presentation layer or context-aware label mapping
+- DO NOT globally rename roles in shared logic
+- User-facing wording must remain unchanged
+
+--------------------------------------------------
+PHASE 1 — READ-ONLY AUDIT (DO FIRST)
+--------------------------------------------------
+
+Before making changes, inspect and document:
+
+A. Shared create/edit engine
+- routes
+- controllers / Livewire components
+- Blade views
+- draft logic
+- publish logic
+- edit logic
+- role switching
+- property type branching
+
+B. Dashboard system
+- routes
+- navigation
+- listing queries
+- current filters (draft, active, etc.)
+
+C. Shared dependencies
+- summary builders
+- bid/counter logic
+- timer logic
+- status logic
+- ownership checks
+- authorization policies
+
+D. Known risk areas
+- missing listings in dashboard
+- incorrect user_id filters
+- broken counter lookups
+- summary mismatches
+
+OUTPUT required BEFORE coding:
+- file map
+- reuse plan
+- minimal change plan
+
+--------------------------------------------------
+PHASE 2 — DASHBOARD ENTRY POINTS
+--------------------------------------------------
+
+Add dashboard access to:
+- Create Tenant listing
+- Create Buyer listing
+- Create Seller listing
+- Create Landlord listing
+
+These must launch the SAME shared flow.
+
+--------------------------------------------------
+PHASE 3 — DASHBOARD LIST MANAGEMENT
+--------------------------------------------------
+
+Dashboard must show ALL owned listings with filters:
+- Drafts
+- Active
+- Pending / In Negotiation
+- Hired / Accepted
+- Expired
+
+Ensure:
+- Listing ID first
+- Correct status badge
+- No missing listings
+- Timer behavior matches system
+
+--------------------------------------------------
+PHASE 4 — DRAFT / EDIT PARITY
+--------------------------------------------------
+
+Ensure:
+- Draft saves correctly
+- Draft restores ALL fields (including conditional fields)
+- Services persist
+- Compensation fields persist
+- “Other” fields persist
+- Edit works identically to main flow
+
+--------------------------------------------------
+PHASE 5 — BIDS IN DASHBOARD
+--------------------------------------------------
+
+Agents must be able to:
+- View all bids on their listing
+- View counter terms
+- Accept / Counter / Reject
+
+Must reuse:
+- existing bid state machine
+- existing queries
+- existing permissions
+
+--------------------------------------------------
+PHASE 6 — SUMMARY PARITY
+--------------------------------------------------
+
+Ensure summaries match EXACTLY:
+- structure
+- services grouping
+- compensation formatting
+- changed/added/removed sections
+- disclosures
+
+Use Tenant as formatting benchmark.
+
+--------------------------------------------------
+PHASE 7 — TIMER & STATUS PARITY
+--------------------------------------------------
+
+Do NOT change logic.
+
+Ensure:
+- timer only shows when bidding period exists
+- no timer otherwise
+- correct status colors/states
+- accepted listings NOT marked as sold
+
+--------------------------------------------------
+PHASE 8 — ROUTING & AUTH
+--------------------------------------------------
+
+Ensure dashboard routes allow:
+- create
+- edit
+- resume draft
+- view listing
+- view bids
+- view summary
+
+Maintain strict ownership rules.
+
+--------------------------------------------------
+PHASE 9 — QUERY AUDIT (CRITICAL)
+--------------------------------------------------
+
+Fix any issues where dashboard does NOT show all listings.
+
+Watch for:
+- incorrect filters
+- wrong joins
+- user_id issues
+- role mismatches
+
+--------------------------------------------------
+PHASE 10 — QA MATRIX
+--------------------------------------------------
+
+Test ALL roles:
+Tenant, Buyer, Seller, Landlord
+
+For each:
+- Create listing
+- Save draft
+- Resume draft
+- Publish
+- Edit
+- View in dashboard
+- View bids
+- Accept / Counter / Reject
+- View summary
+- Verify timer
+- Verify status
+- Verify formatting
+
+--------------------------------------------------
+FINAL RULE
+--------------------------------------------------
+
+ALL business logic = shared
+
+ONLY differences:
+- labels
+- dashboard-only fields
+- internal metrics
+- visibility
+
+If a change would create two systems → STOP
