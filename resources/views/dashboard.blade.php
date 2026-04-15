@@ -61,14 +61,9 @@
                                 {{-- ═══════════════════════════════════════════════
                                      WELCOME HEADER
                                 ═══════════════════════════════════════════════ --}}
-                                <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
-                                    <div>
-                                        <h4 class="fw-bold mb-0">Welcome back, {{ $user->user_name }}!</h4>
-                                        <p class="text-muted small mb-0">Your BidYourOffer command center.</p>
-                                    </div>
-                                    <span class="badge text-bg-secondary text-capitalize px-3 py-2" style="font-size:.75rem;">
-                                        {{ str_replace('_', ' ', $user->user_type) }}
-                                    </span>
+                                <div class="mb-1">
+                                    <h4 class="fw-bold mb-0">Welcome back, {{ $user->user_name }}!</h4>
+                                    <p class="text-muted small mb-0">Your BidYourOffer command center.</p>
                                 </div>
                                 <hr class="mt-2 mb-4">
 
