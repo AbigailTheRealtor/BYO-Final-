@@ -61,14 +61,9 @@
                                 {{-- ═══════════════════════════════════════════════
                                      WELCOME HEADER
                                 ═══════════════════════════════════════════════ --}}
-                                <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
-                                    <div>
-                                        <h4 class="fw-bold mb-0">Welcome back, {{ $user->user_name }}!</h4>
-                                        <p class="text-muted small mb-0">Your BidYourOffer command center.</p>
-                                    </div>
-                                    <span class="badge text-bg-secondary text-capitalize px-3 py-2" style="font-size:.75rem;">
-                                        {{ str_replace('_', ' ', $user->user_type) }}
-                                    </span>
+                                <div class="mb-1">
+                                    <h4 class="fw-bold mb-0">Welcome back, {{ $user->user_name }}!</h4>
+                                    <p class="text-muted small mb-0">Your BidYourOffer command center.</p>
                                 </div>
                                 <hr class="mt-2 mb-4">
 
@@ -159,90 +154,117 @@
                                         'buyer'    => "Buyer's Agent",
                                         'seller'   => "Seller's Agent",
                                     ];
+                                    $needsActionSummaries = $acceptedSummaries->filter(fn($s) => !$s->isFullySigned())->values();
+                                    $completedSummaries   = $acceptedSummaries->filter(fn($s) => $s->isFullySigned())->values();
+                                    $hasBothGroups        = $needsActionSummaries->isNotEmpty() && $completedSummaries->isNotEmpty();
+                                    $totalCount           = $acceptedSummaries->count();
+                                    // Threshold: >4 total records triggers show-more on completed group
+                                    $useShowMore          = $totalCount > 4 && $completedSummaries->count() > 2;
+                                    $completedAlwaysVisible = $useShowMore ? $completedSummaries->take(2) : $completedSummaries;
+                                    $completedHidden        = $useShowMore ? $completedSummaries->skip(2)->values() : collect();
                                 @endphp
                                 <div class="mb-4">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
                                         <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">Your Hired Agent</div>
-                                        @if($acceptedSummaries->count() > 1)
-                                            <span class="badge bg-secondary" style="font-size:.68rem;">{{ $acceptedSummaries->count() }} accepted</span>
+                                        @if($totalCount > 1)
+                                            <span class="badge bg-secondary" style="font-size:.68rem;">{{ $totalCount }} accepted</span>
                                         @endif
                                     </div>
-                                    <div class="d-flex flex-column gap-3">
-                                        @foreach($acceptedSummaries as $summary)
-                                        @php
-                                            $sigStatus = $summary->getSignatureStatus();
-                                            $statusStyle = match(true) {
-                                                str_contains($sigStatus, 'Both')    => 'background:#198754;color:#fff;',
-                                                str_contains($sigStatus, 'Creator') => 'background:#fd7e14;color:#fff;',
-                                                str_contains($sigStatus, 'Agent')   => 'background:#ffc107;color:#333;',
-                                                default                             => 'background:#6c757d;color:#fff;',
-                                            };
-                                            $agent   = $summary->agent;
-                                            $listing = $summary->listingSnapshot;
-                                            $roleLabel    = $roleLabels[$summary->listing_type] ?? ucfirst($summary->listing_type);
-                                            $listingAddr  = $listing ? ($listing->address ?: ($listing->listing_id ?? ('Listing #'.$summary->listing_id))) : ('Listing #'.$summary->listing_id);
-                                            $listingCode  = $listing->listing_id ?? null;
-                                        @endphp
-                                        <div class="card border-0 rounded-3 overflow-hidden" style="border-left:3px solid #049399 !important;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-                                            <div class="card-body py-3 px-3">
 
-                                                {{-- Top row: agent info + status badge --}}
-                                                <div class="d-flex align-items-start justify-content-between gap-2 flex-wrap">
-                                                    <div>
-                                                        <div class="fw-bold mb-1" style="font-size:.95rem;color:#1a2333;">
-                                                            {{ $agent->user_name ?? 'Agent' }}
-                                                        </div>
-                                                        @if($agent && $agent->brokerage)
-                                                            <div class="text-muted small mb-1" style="font-size:.8rem;">{{ $agent->brokerage }}</div>
-                                                        @endif
-                                                        <div class="d-flex flex-wrap gap-3" style="font-size:.78rem;color:#666;">
-                                                            @if($agent && $agent->email)
-                                                                <span><i class="fa fa-envelope me-1 opacity-50"></i>{{ $agent->email }}</span>
-                                                            @endif
-                                                            @if($agent && $agent->phone)
-                                                                <span><i class="fa fa-phone me-1 opacity-50"></i>{{ $agent->phone }}</span>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                    <span class="badge rounded-pill px-3 py-2" style="{{ $statusStyle }}font-size:.68rem;max-width:160px;white-space:normal;text-align:center;line-height:1.3;">{{ $sigStatus }}</span>
-                                                </div>
-
-                                                {{-- Bottom row: listing info + action buttons --}}
-                                                <div class="mt-2 pt-2 border-top d-flex align-items-start justify-content-between gap-2 flex-wrap">
-                                                    <div style="font-size:.78rem;color:#888;">
-                                                        <span class="fw-semibold" style="color:#049399;">{{ $roleLabel }}</span>
-                                                        &middot;
-                                                        {{ $listingAddr }}
-                                                        @if($listingCode && $listingCode !== $listingAddr)
-                                                            <span class="ms-1" style="font-family:monospace;font-size:.7rem;color:#aaa;">({{ $listingCode }})</span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="d-flex gap-2 flex-wrap">
-                                                        <a href="{{ route('accepted-bid-summary.view', $summary->id) }}"
-                                                           class="btn btn-sm"
-                                                           style="background:#049399;color:#fff;font-size:.75rem;white-space:nowrap;">
-                                                            View Summary
-                                                        </a>
-                                                        <a href="{{ route('messages') }}"
-                                                           class="btn btn-sm btn-outline-secondary"
-                                                           style="font-size:.75rem;white-space:nowrap;">
-                                                            Message Agent
-                                                        </a>
-                                                        @if($summary->summary_pdf_path)
-                                                            <a href="{{ route('accepted-bid-summary.download-pdf', $summary->id) }}"
-                                                               class="btn btn-sm btn-outline-secondary"
-                                                               style="font-size:.75rem;white-space:nowrap;"
-                                                               target="_blank">
-                                                                Download PDF
-                                                            </a>
-                                                        @endif
-                                                    </div>
-                                                </div>
-
+                                    {{-- NEEDS ACTION group --}}
+                                    @if($needsActionSummaries->isNotEmpty())
+                                        @if($hasBothGroups)
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="small fw-semibold" style="font-size:.72rem;color:#fd7e14;text-transform:uppercase;letter-spacing:.05em;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;vertical-align:-1px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z"/></svg>
+                                                    Needs Action
+                                                </span>
+                                                <span class="badge rounded-pill" style="background:#fd7e14;color:#fff;font-size:.62rem;">{{ $needsActionSummaries->count() }}</span>
                                             </div>
+                                        @endif
+                                        <div class="d-flex flex-column gap-3 mb-3">
+                                            @foreach($needsActionSummaries as $summary)
+                                                @php
+                                                    $sigStatus   = $summary->getSignatureStatus();
+                                                    $statusStyle = match(true) {
+                                                        str_contains($sigStatus, 'Creator') => 'background:#fd7e14;color:#fff;',
+                                                        str_contains($sigStatus, 'Agent')   => 'background:#ffc107;color:#333;',
+                                                        default                             => 'background:#6c757d;color:#fff;',
+                                                    };
+                                                    $agent       = $summary->agent;
+                                                    $listing     = $summary->listingSnapshot;
+                                                    $roleLabel   = $roleLabels[$summary->listing_type] ?? ucfirst($summary->listing_type);
+                                                    $listingAddr = $listing ? ($listing->address ?: ($listing->listing_id ?? ('Listing #'.$summary->listing_id))) : ('Listing #'.$summary->listing_id);
+                                                    $listingCode = $listing->listing_id ?? null;
+                                                @endphp
+                                                @include('layouts.partials.hired_agent_card', compact('summary','sigStatus','statusStyle','agent','roleLabel','listingAddr','listingCode'))
+                                            @endforeach
                                         </div>
-                                        @endforeach
-                                    </div>
+                                    @endif
+
+                                    {{-- COMPLETED group --}}
+                                    @if($completedSummaries->isNotEmpty())
+                                        @if($hasBothGroups)
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="small fw-semibold" style="font-size:.72rem;color:#198754;text-transform:uppercase;letter-spacing:.05em;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;vertical-align:-1px;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                    Completed
+                                                </span>
+                                                <span class="badge rounded-pill" style="background:#198754;color:#fff;font-size:.62rem;">{{ $completedSummaries->count() }}</span>
+                                            </div>
+                                        @endif
+                                        <div class="d-flex flex-column gap-3">
+                                            {{-- Always-visible completed records --}}
+                                            @foreach($completedAlwaysVisible as $summary)
+                                                @php
+                                                    $sigStatus   = $summary->getSignatureStatus();
+                                                    $statusStyle = 'background:#198754;color:#fff;';
+                                                    $agent       = $summary->agent;
+                                                    $listing     = $summary->listingSnapshot;
+                                                    $roleLabel   = $roleLabels[$summary->listing_type] ?? ucfirst($summary->listing_type);
+                                                    $listingAddr = $listing ? ($listing->address ?: ($listing->listing_id ?? ('Listing #'.$summary->listing_id))) : ('Listing #'.$summary->listing_id);
+                                                    $listingCode = $listing->listing_id ?? null;
+                                                @endphp
+                                                @include('layouts.partials.hired_agent_card', compact('summary','sigStatus','statusStyle','agent','roleLabel','listingAddr','listingCode'))
+                                            @endforeach
+
+                                            {{-- Hidden overflow records (show-more) --}}
+                                            @if($completedHidden->isNotEmpty())
+                                                <div id="hiredAgentCompletedExtra" style="display:none;" class="d-flex flex-column gap-3">
+                                                    @foreach($completedHidden as $summary)
+                                                        @php
+                                                            $sigStatus   = $summary->getSignatureStatus();
+                                                            $statusStyle = 'background:#198754;color:#fff;';
+                                                            $agent       = $summary->agent;
+                                                            $listing     = $summary->listingSnapshot;
+                                                            $roleLabel   = $roleLabels[$summary->listing_type] ?? ucfirst($summary->listing_type);
+                                                            $listingAddr = $listing ? ($listing->address ?: ($listing->listing_id ?? ('Listing #'.$summary->listing_id))) : ('Listing #'.$summary->listing_id);
+                                                            $listingCode = $listing->listing_id ?? null;
+                                                        @endphp
+                                                        @include('layouts.partials.hired_agent_card', compact('summary','sigStatus','statusStyle','agent','roleLabel','listingAddr','listingCode'))
+                                                    @endforeach
+                                                </div>
+                                                <div class="text-center mt-1">
+                                                    <button type="button" id="hiredAgentToggle"
+                                                            class="btn btn-link btn-sm p-0"
+                                                            style="font-size:.8rem;color:#049399;text-decoration:none;"
+                                                            onclick="
+                                                                var extra = document.getElementById('hiredAgentCompletedExtra');
+                                                                var isHidden = extra.style.display === 'none';
+                                                                extra.style.display = isHidden ? 'flex' : 'none';
+                                                                extra.style.flexDirection = 'column';
+                                                                extra.style.gap = '1rem';
+                                                                this.textContent = isHidden
+                                                                    ? 'Show less \u25b4'
+                                                                    : 'Show {{ $completedHidden->count() }} more completed \u25be';
+                                                            ">
+                                                        Show {{ $completedHidden->count() }} more completed &#9662;
+                                                    </button>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+
                                 </div>
                                 @endif
 
