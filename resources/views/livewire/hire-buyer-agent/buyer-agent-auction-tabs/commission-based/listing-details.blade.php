@@ -472,7 +472,7 @@
      <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding timer ends. During this period, bids are advisory — the listing owner reviews all bids together once the timer has ended. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time. Bids are visible as received and may be reviewed, accepted, countered, or rejected immediately.">
+                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time while the listing remains active. There is no structured bidding countdown, and bids may be reviewed and acted on as they are received.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -488,7 +488,7 @@
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                     data-icon="fa-solid fa-file-alt" required>
                     <option value="">Select</option>
-                    <option value="Bidding Period" title="Agents submit bids until the countdown timer ends. Bids are advisory — you review all bids together once the timer has ended.">Bidding Period</option>
+                    <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
                     <option value="Traditional">Traditional</option>
                 </select>
             </div>
@@ -503,7 +503,7 @@
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long Agents have to submit bids on this listing. Bids are advisory during this period — you review all bids together once the timer has ended and are not required to select any particular Agent.">
+            title="Select how long Agents have to submit bids. The timer defines the active bidding window but does not restrict when you can review or respond to bids.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
@@ -527,7 +527,7 @@
     {{-- Bidding Period Advisory Notice (shown only when Bidding Period is selected) --}}
     <div class="alert alert-info small py-2 mt-2 mb-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif wire:key="bp-notice-buyer">
         <i class="fa-solid fa-circle-info me-1"></i>
-        <strong>Bidding Period:</strong> During the active bidding period, submitted bids are advisory. The listing owner reviews all bids together once the timer has ended — you are not required to select any particular Agent. Competing Agent identities and compensation details remain confidential until a decision is made.
+        <strong>Bidding Period:</strong> The timer creates a structured window for Agents to submit competitive bids. You may review, accept, counter, or reject bids at any time during or after the bidding period.
     </div>
 
     <div class="form-group">

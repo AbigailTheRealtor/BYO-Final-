@@ -15,7 +15,7 @@
 
             <div class="alert alert-info mb-4">
                 <i class="fas fa-info-circle me-2"></i>
-                <strong>Bidding Period:</strong> During the active bidding period, bids are advisory. You can view other Agents' Offered Services and Terms Match summaries below. Agent identities and compensation details remain confidential.
+                <strong>Bidding Period:</strong> The bidding period creates a structured window for competitive bids. You can view other Agents' Offered Services and Terms Match summaries below. Agent identities and compensation details remain confidential.
             </div>
 
             @if(count($competingBids) === 0)
