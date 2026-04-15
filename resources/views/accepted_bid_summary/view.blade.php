@@ -386,6 +386,20 @@
 </div>
 
 <style>
+    #viewSaveDocsBtn {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+        opacity: 1;
+    }
+    #viewSaveDocsBtn:disabled {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #fff;
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
     .summary-document-card {
         border: 1px solid #dee2e6;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -668,6 +682,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (hintSpan) hintSpan.textContent = '';
         }
     }
+
+    // Ensure the button always shows the correct label on page load
+    // (guards against a previous submit that didn't redirect, leaving a spinner)
+    saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Save Documents';
+
+    // Re-run validation on load so enabled/disabled state is always correct
+    validateAndSync();
 
     // Guard against double-submit
     form.addEventListener('submit', function () {

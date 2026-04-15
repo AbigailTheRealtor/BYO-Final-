@@ -376,6 +376,19 @@
     .doc-upload-card:hover {
         border-color: #0d6efd !important;
     }
+    #signSaveDocsBtn {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+        opacity: 1;
+    }
+    #signSaveDocsBtn:disabled {
+        background-color: #6c757d;
+        border-color: #6c757d;
+        color: #fff;
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
 </style>
 
 @if($canUploadAcknowledgementDocuments)
@@ -450,6 +463,13 @@
             if (hintSpan) hintSpan.textContent = '';
         }
     }
+
+    // Ensure the button always shows the correct label on page load
+    // (guards against a previous submit that didn't redirect, leaving a spinner)
+    saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Save Documents';
+
+    // Re-run validation on load so enabled/disabled state is always correct
+    validateAndSync();
 
     form.addEventListener('submit', function () {
         saveBtn.disabled = true;
