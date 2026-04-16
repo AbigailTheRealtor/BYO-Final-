@@ -27,11 +27,6 @@ class OfferAuction extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function meta()
-    {
-        return $this->hasMany(OfferAuctionMeta::class);
-    }
-
     public function metas()
     {
         return $this->hasMany(OfferAuctionMeta::class);
@@ -42,17 +37,17 @@ class OfferAuction extends Model
         if (is_array($val) || is_object($val)) {
             $val = json_encode($val);
         }
-        return $this->meta()->updateOrCreate(['meta_key' => $key], ['meta_value' => $val]);
+        return $this->metas()->updateOrCreate(['meta_key' => $key], ['meta_value' => $val]);
     }
 
     public function deleteMeta($key)
     {
-        return $this->meta()->where('meta_key', $key)->delete();
+        return $this->metas()->where('meta_key', $key)->delete();
     }
 
     public function info($key)
     {
-        $data = $this->meta->where('meta_key', $key);
+        $data = $this->metas->where('meta_key', $key);
         if ($data->count() > 0) {
             return $data->first()->meta_value;
         }
