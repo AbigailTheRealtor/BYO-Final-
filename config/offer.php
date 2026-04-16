@@ -1,5 +1,5 @@
 <?php
 
 return [
-    'default_auto_approve' => true,
+    'default_auto_approve' => false,
 ];

@@ -108,7 +108,12 @@ class OfferAuction extends Component
         $this->saveRecord(draft: false);
         $this->isDraft    = false;
         $this->isApproved = config('offer.default_auto_approve', true);
-        $this->dispatchBrowserEvent('offer-flash', ['type' => 'success', 'message' => 'Listing published successfully.']);
+
+        $message = config('offer.default_auto_approve', true)
+            ? 'Listing published successfully.'
+            : 'Listing submitted for admin review. You will be notified once it is approved.';
+
+        $this->dispatchBrowserEvent('offer-flash', ['type' => 'success', 'message' => $message]);
     }
 
     // ── Core save logic ───────────────────────────────────────────────────

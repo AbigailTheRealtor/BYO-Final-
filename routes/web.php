@@ -738,6 +738,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('buyer/agent/auctions', [BuyerAgentAuctionController::class, 'buyerAgentAuctionsAdmin'])->name('buyerAgentAuctions');
         Route::get('buyer/agent/auction/approve/{id}', [BuyerAgentAuctionController::class, 'approveBuyerAgentAuction'])->name('approveBuyerAgentAuction');
+        Route::get('offer/listings', [AdminController::class, 'offerListings'])->name('offerListings');
+        Route::post('offer/listing/approve/{id}', [AdminController::class, 'approveOfferListing'])->name('offerListing.approve');
+        Route::post('offer/listing/reject/{id}', [AdminController::class, 'rejectOfferListing'])->name('offerListing.reject');
+
         Route::get('settings', [AdminController::class, 'settings'])->name('settings');
         Route::post('settings', [SettingController::class, 'store']);
         Route::resource('commonBotQuestions', CommonBotQuestionController::class);

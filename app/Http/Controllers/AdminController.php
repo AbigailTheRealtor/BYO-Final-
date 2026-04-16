@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\AgentService;
 use App\Models\AgentServiceAuction;
 use App\Models\BuyerCriteriaAuction;
+use App\Models\OfferAuction;
 use App\Models\PropertyAuction;
 use App\Models\SellerServiceAuction;
 use App\Models\User;
+use App\Notifications\OfferListingStatusNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -224,6 +226,57 @@ class AdminController extends Controller
         $auction->is_approved = true;
         $auction->update();
         return redirect()->back()->with('success', 'Auction Approved Successfully!');
+    }
+
+    public function offerListings(Request $request)
+    {
+        $page_data['title'] = "Offer Listings";
+        $page_data['type']  = $type = $request->type ?? 0;
+
+        if ($type == 1) {
+            $page_data['listings'] = OfferAuction::where('is_approved', true)->where('is_draft', false)->get();
+        } else {
+            $page_data['listings'] = OfferAuction::where('is_approved', false)->where('is_draft', false)->get();
+        }
+
+        return view('admin.offerListings', $page_data);
+    }
+
+    public function approveOfferListing($id)
+    {
+        $listing = OfferAuction::findOrFail($id);
+
+        if ($listing->is_draft || $listing->is_approved) {
+            return redirect()->back()->with('error', 'This listing is not in a pending state and cannot be approved.');
+        }
+
+        $listing->is_approved = true;
+        $listing->save();
+
+        if ($listing->user) {
+            $listing->user->notify(new OfferListingStatusNotification($listing, 'approved'));
+        }
+
+        return redirect()->back()->with('success', 'Offer listing has been approved.');
+    }
+
+    public function rejectOfferListing($id)
+    {
+        $listing = OfferAuction::findOrFail($id);
+
+        if ($listing->is_draft || $listing->is_approved) {
+            return redirect()->back()->with('error', 'This listing is not in a pending state and cannot be rejected.');
+        }
+
+        $listing->is_approved = false;
+        $listing->is_draft    = true;
+        $listing->save();
+
+        if ($listing->user) {
+            $listing->user->notify(new OfferListingStatusNotification($listing, 'rejected'));
+        }
+
+        return redirect()->back()->with('success', 'Offer listing has been rejected and returned to draft.');
     }
 
     public function settings()

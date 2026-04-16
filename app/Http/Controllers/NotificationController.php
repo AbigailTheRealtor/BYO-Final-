@@ -95,6 +95,9 @@ class NotificationController extends Controller
                 }
                 return route('dashboard');
                 
+            case 'offer_listing_status':
+                return route('agent.offer-listings');
+
             case 'bid_rejected':
                 if ($auctionId) {
                     if ($auctionType === 'seller_agent') {
