@@ -10,6 +10,7 @@ class LandlordAuctionBid extends Model
 {
     use HasFactory;
     protected $appends = ["get"];
+    protected $with = ['meta'];
 
     public function meta()
     {
@@ -44,7 +45,7 @@ class LandlordAuctionBid extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = LandlordAuctionBidMeta::where('landlord_auction_bid_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             $data[$row->meta_key] = $row->meta_value;
         }

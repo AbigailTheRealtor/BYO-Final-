@@ -11,6 +11,7 @@ class PropertyAuctionBid extends Model
     use HasFactory;
     protected $guarded = [];
     protected $fillable = ['price', 'accepted', 'accepted_date'];
+    protected $with = ['meta'];
 
     /**
      * Get the user that owns the PropertyAuctionBid
@@ -55,7 +56,7 @@ class PropertyAuctionBid extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = PropertyAuctionBidMeta::where('property_auction_bid_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if (gettype(json_decode($row->meta_value)) == 'array') {
                 $value = json_decode($row->meta_value);

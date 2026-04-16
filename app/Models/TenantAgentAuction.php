@@ -11,6 +11,7 @@ class TenantAgentAuction extends Model
 {
     use HasFactory, HasListingId;
     protected $appends = ["get", "status"];
+    protected $with = ['meta'];
 
     protected $casts = [
         'is_approved' => 'boolean',
@@ -112,7 +113,7 @@ class TenantAgentAuction extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = TenantAgentAuctionMeta::where('tenant_agent_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             $decoded = json_decode($row->meta_value, true);
             if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {

@@ -12,6 +12,7 @@ class SellerAgentAuction extends Model
     use HasFactory, HasListingId;
     protected $guarded = [];
     protected $appends = ["get", "status"];
+    protected $with = ['meta'];
     
     protected $casts = [
         'is_draft'    => 'boolean',
@@ -99,7 +100,7 @@ public function deleteMeta($key)
     public function getGetAttribute()
     {
         $data = [];
-        $metas = SellerAgentAuctionMeta::where('seller_agent_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             $decoded = json_decode($row->meta_value, true);
             if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {

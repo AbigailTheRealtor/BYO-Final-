@@ -12,6 +12,7 @@ class LandlordAgentAuction extends Model
     use HasFactory, HasListingId;
     protected $appends = ["get", "status"];
     protected $guarded = [];
+    protected $with = ['meta'];
 
     protected $casts = [
         'is_approved' => 'boolean',
@@ -99,7 +100,7 @@ class LandlordAgentAuction extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = LandlordAgentAuctionMeta::where('landlord_agent_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             $decoded = json_decode($row->meta_value, true);
             if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {

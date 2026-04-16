@@ -76,7 +76,7 @@ class User extends Authenticatable
     ];
 
     protected $appends = ["get"];
-
+    protected $with = ['meta'];
 
     public function agents()
     {
@@ -111,7 +111,7 @@ class User extends Authenticatable
     public function getGetAttribute()
     {
         $data = [];
-        $metas = UserMeta::where('user_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if (gettype(json_decode($row->meta_value)) == 'array') {
                 $value = json_decode($row->meta_value);

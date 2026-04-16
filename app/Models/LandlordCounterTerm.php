@@ -10,6 +10,7 @@ class LandlordCounterTerm extends Model
 {
     use HasFactory;
         protected $appends = ["get"];
+    protected $with = ['meta'];
 
     protected $table = 'landlord_counter_terms';
     protected $guarded  = [];
@@ -77,7 +78,7 @@ class LandlordCounterTerm extends Model
         public function getGetAttribute()
     {
         $data = [];
-        $metas = LandlordCounterTermMeta::where('counter_term_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if (gettype(json_decode($row->meta_value)) == 'array') {
                 $value = json_decode($row->meta_value);

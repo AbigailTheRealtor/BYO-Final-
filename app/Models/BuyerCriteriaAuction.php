@@ -11,7 +11,8 @@ class BuyerCriteriaAuction extends Model
 {
     use HasFactory, HasListingId;
     protected $appends = ["get"];
-    
+    protected $with = ['meta'];
+
     protected $attributes = [
         'is_approved' => true,
     ];
@@ -64,7 +65,7 @@ class BuyerCriteriaAuction extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = BuyerCriteriaAuctionMeta::where('buyer_criteria_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if (gettype(json_decode($row->meta_value)) == 'array') {
                 $value = json_decode($row->meta_value);

@@ -12,6 +12,7 @@ class PropertyAuction extends Model
 {
     use HasFactory, HasListingId;
     protected $appends = ["get"];
+    protected $with = ['meta'];
     protected $fillable = ['starting_price', 'sold', 'is_paid', 'sold_date', 'auction_ended', 'display_bids', 'auction_type', 'auction_length'];
     
     protected $attributes = [
@@ -84,7 +85,7 @@ class PropertyAuction extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = PropertyAuctionMeta::where('property_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             // $decoded = json_decode($row->meta_value, true);
             // if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {

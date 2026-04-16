@@ -12,6 +12,7 @@ class BuyerAgentAuction extends Model
     use HasFactory, HasListingId;
     protected $guarded = [];
     protected $appends = ["get", "status"];
+    protected $with = ['meta'];
     
     protected $casts = [
         'is_draft' => 'boolean',
@@ -116,7 +117,7 @@ class BuyerAgentAuction extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = BuyerAgentAuctionMeta::where('buyer_agent_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if ($row->meta_value === null) {
                 $data[$row->meta_key] = null;

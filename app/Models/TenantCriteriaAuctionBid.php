@@ -10,6 +10,7 @@ class TenantCriteriaAuctionBid extends Model
 {
     use HasFactory;
     protected $appends = ["get"];
+    protected $with = ['meta'];
 
     public function user()
     {
@@ -44,7 +45,7 @@ class TenantCriteriaAuctionBid extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = TenantCriteriaAuctionBidMeta::where('tenant_criteria_auction_bid_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if (gettype(json_decode($row->meta_value)) == 'array') {
                 $value = json_decode($row->meta_value);

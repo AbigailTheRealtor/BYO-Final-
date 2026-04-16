@@ -11,7 +11,8 @@ class LandlordAuction extends Model
 {
     use HasFactory, HasListingId;
     protected $appends = ["get"];
-    
+    protected $with = ['meta'];
+
     protected $attributes = [
         'is_approved' => true,
         'is_draft' => false,
@@ -70,7 +71,7 @@ class LandlordAuction extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = LandlordAuctionMeta::where('landlord_auction_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             $data[$row->meta_key] = $row->meta_value;
         }

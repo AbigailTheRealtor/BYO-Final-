@@ -10,6 +10,7 @@ class AgentServiceAuctionBid extends Model
 {
     use HasFactory;
     protected $appends = ["get"];
+    protected $with = ['meta'];
 
     public function user()
     {
@@ -44,7 +45,7 @@ class AgentServiceAuctionBid extends Model
     public function getGetAttribute()
     {
         $data = [];
-        $metas = AgentServiceAuctionBidMeta::where('agent_service_auction_bid_id', $this->id)->get();
+        $metas = $this->meta;
         foreach ($metas as $row) {
             if (gettype(json_decode($row->meta_value)) == 'array') {
                 $value = json_decode($row->meta_value);
