@@ -7,6 +7,7 @@ use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Broadcasting\PrivateChannel;
+use App\Mail\OfferListingStatusMail;
 use App\Models\OfferAuction;
 
 class OfferListingStatusNotification extends Notification implements ShouldBroadcast
@@ -24,7 +25,13 @@ class OfferListingStatusNotification extends Notification implements ShouldBroad
 
     public function via($notifiable): array
     {
-        return ['database', 'broadcast'];
+        return ['database', 'broadcast', 'mail'];
+    }
+
+    public function toMail($notifiable): OfferListingStatusMail
+    {
+        return (new OfferListingStatusMail($this->listing, $this->status))
+            ->to($notifiable->email);
     }
 
     public function toDatabase($notifiable): array
