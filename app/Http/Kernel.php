@@ -74,6 +74,7 @@ class Kernel extends HttpKernel
         'landlordBidderAuth' => \App\Http\Middleware\LandlordBidderAuth::class,
         'noAdmin' => \App\Http\Middleware\NoAdminAuth::class,
         'agentAuth' => \App\Http\Middleware\AgentAuth::class,
+        'ensureAgent' => \App\Http\Middleware\EnsureAgent::class,
         'landlordAuth' => \App\Http\Middleware\LandlordAuth::class,
         'tenantAuth' => \App\Http\Middleware\TenantAuth::class,
     ];

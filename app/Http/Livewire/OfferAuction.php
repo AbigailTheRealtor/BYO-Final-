@@ -61,6 +61,10 @@ class OfferAuction extends Component
     // ─────────────────────────────────────────────────────────────────────
     public function mount($offer_type = null, $listingId = null)
     {
+        if (auth()->user()->user_type !== 'agent') {
+            abort(403, 'Offer listings are restricted to agent accounts.');
+        }
+
         // Pre-fill offer_type from URL param
         if ($offer_type && in_array($offer_type, ['sale', 'rental', 'lease'])) {
             $this->offer_type = $offer_type;

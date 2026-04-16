@@ -1,0 +1,158 @@
+TASK: Apply three minor improvements to the OfferAuction system:
+1. Lease validation fix
+2. Future-proof approval logic
+3. N+1 query optimization in Offer hub
+
+Make minimal, non-breaking changes only.
+
+--------------------------------------------------
+FIX 1 — LEASE VALIDATION (REQUIRED)
+--------------------------------------------------
+
+PROBLEM:
+Lease listings can be published without a rent amount.
+
+GOAL:
+Require monthly_rent for BOTH:
+- rental
+- lease
+
+FILE:
+app/Http/Livewire/OfferAuction.php
+
+FIND validation rules for monthly_rent.
+
+REPLACE:
+'required_if:offer_type,rental'
+
+WITH:
+'required_if:offer_type,rental,lease'
+
+OR cleaner:
+
+Use:
+Rule::requiredIf(fn() => in_array($this->offer_type, ['rental', 'lease']))
+
+Ensure:
+- validation still works for sale listings (no rent required)
+- no other validation rules break
+
+--------------------------------------------------
+FIX 2 — REMOVE HARDCODED isApproved = true
+--------------------------------------------------
+
+PROBLEM:
+submitListing() forces isApproved = true
+→ prevents future moderation/approval workflows
+
+GOAL:
+Make approval state flexible without breaking current behavior.
+
+FILE:
+app/Http/Livewire/OfferAuction.php
+
+FIND:
+$this->isApproved = true;
+
+REPLACE WITH:
+
+// Future-proof: default to approved for now
+$this->isApproved = config('offer.default_auto_approve', true);
+
+Then:
+
+IF config does not exist, fallback to true:
+$this->isApproved = config('offer.default_auto_approve', true);
+
+OPTIONAL (if config file exists):
+Add config/offer.php:
+
+return [
+    'default_auto_approve' => true,
+];
+
+IMPORTANT:
+- Do NOT change existing behavior (still approved by default)
+- Just remove hardcoding
+
+--------------------------------------------------
+FIX 3 — N+1 QUERY OPTIMIZATION (IMPORTANT FOR SCALE)
+--------------------------------------------------
+
+PROBLEM:
+Offer hub loads metas with N+1 queries:
+→ 1 query per listing
+
+GOAL:
+Load metas using eager loading.
+
+FILE:
+app/Http/Controllers/AgentController.php
+
+FIND query:
+OfferAuction::where('user_id', $uid)->get()
+
+REPLACE WITH:
+OfferAuction::where('user_id', $uid)
+    ->with('metas')
+    ->get();
+
+--------------------------------------------------
+
+NEXT:
+Find normalizeOfferListing() or wherever this runs:
+
+Currently:
+$auction->get('meta_key')
+
+This triggers DB queries.
+
+REPLACE pattern:
+
+1. Build meta map ONCE:
+
+$meta = $auction->metas->pluck('meta_value', 'meta_key');
+
+2. Replace all:
+$auction->get('key')
+
+WITH:
+$meta['key'] ?? null
+
+--------------------------------------------------
+
+DO NOT:
+- modify database schema
+- remove get() helper globally
+- change Hire system
+- break existing hub behavior
+
+--------------------------------------------------
+TEST AFTER FIXES
+--------------------------------------------------
+
+Verify:
+
+1. Lease listing:
+- Cannot submit without rent
+- Rental still requires rent
+- Sale does NOT require rent
+
+2. Publish flow:
+- Listing still publishes
+- isApproved still true by default
+
+3. Offer hub:
+- Listings still load correctly
+- No missing fields
+- Performance improved (fewer queries)
+
+--------------------------------------------------
+DELIVERABLE
+--------------------------------------------------
+
+Return:
+- files modified
+- exact validation rule change
+- confirmation isApproved now configurable
+- confirmation N+1 resolved
