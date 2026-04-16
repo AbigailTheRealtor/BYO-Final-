@@ -72,7 +72,8 @@ class OfferAuction extends Component
 
         // Load draft if ID supplied
         if ($listingId) {
-            $auction = OfferAuctionModel::where('id', $listingId)
+            $auction = OfferAuctionModel::with('metas')
+                ->where('id', $listingId)
                 ->where('user_id', Auth::id())
                 ->first();
             if ($auction) {
@@ -194,39 +195,42 @@ class OfferAuction extends Component
         $this->isApproved  = (bool) $auction->is_approved;
         $this->isSold      = (bool) $auction->is_sold;
 
-        $get = $auction->get;
+        $metas = $auction->metas->keyBy('meta_key');
+        $val   = fn(string $key, string $default = '') => $metas->has($key)
+            ? (string) $metas[$key]->meta_value
+            : $default;
 
-        $this->listing_title    = $get->listing_title    ?? $auction->title ?? '';
-        $this->listing_status   = $get->listing_status   ?? 'Active';
-        $this->offer_type       = $get->offer_type       ?? $this->offer_type;
-        $this->property_address = $get->property_address ?? '';
-        $this->city             = $get->city             ?? '';
-        $this->state            = $get->state            ?? '';
-        $this->zip_code         = $get->zip_code         ?? '';
-        $this->property_type    = $get->property_type    ?? '';
-        $this->bedrooms         = $get->bedrooms         ?? '';
-        $this->bathrooms        = $get->bathrooms        ?? '';
-        $this->sqft             = $get->sqft             ?? '';
+        $this->listing_title    = $val('listing_title', $auction->title ?? '');
+        $this->listing_status   = $val('listing_status', 'Active');
+        $this->offer_type       = $val('offer_type', $this->offer_type);
+        $this->property_address = $val('property_address');
+        $this->city             = $val('city');
+        $this->state            = $val('state');
+        $this->zip_code         = $val('zip_code');
+        $this->property_type    = $val('property_type');
+        $this->bedrooms         = $val('bedrooms');
+        $this->bathrooms        = $val('bathrooms');
+        $this->sqft             = $val('sqft');
 
-        $this->offer_price                = $get->offer_price                ?? '';
-        $this->earnest_deposit            = $get->earnest_deposit            ?? '';
-        $this->financing_type             = $get->financing_type             ?? 'conventional';
-        $this->financing_contingency      = ($get->financing_contingency     ?? '0') === '1';
-        $this->financing_contingency_days = $get->financing_contingency_days ?? '';
-        $this->down_payment_percent       = $get->down_payment_percent       ?? '';
-        $this->monthly_rent               = $get->monthly_rent               ?? '';
-        $this->security_deposit           = $get->security_deposit           ?? '';
-        $this->lease_term_months          = $get->lease_term_months          ?? '';
+        $this->offer_price                = $val('offer_price');
+        $this->earnest_deposit            = $val('earnest_deposit');
+        $this->financing_type             = $val('financing_type', 'conventional');
+        $this->financing_contingency      = $val('financing_contingency', '0') === '1';
+        $this->financing_contingency_days = $val('financing_contingency_days');
+        $this->down_payment_percent       = $val('down_payment_percent');
+        $this->monthly_rent               = $val('monthly_rent');
+        $this->security_deposit           = $val('security_deposit');
+        $this->lease_term_months          = $val('lease_term_months');
 
-        $this->inspection_contingency      = ($get->inspection_contingency     ?? '0') === '1';
-        $this->inspection_contingency_days = $get->inspection_contingency_days ?? '';
-        $this->appraisal_contingency       = ($get->appraisal_contingency      ?? '0') === '1';
-        $this->closing_date                = $get->closing_date                ?? '';
-        $this->possession_date             = $get->possession_date             ?? '';
-        $this->listing_expiration          = $get->listing_expiration          ?? '';
+        $this->inspection_contingency      = $val('inspection_contingency', '0') === '1';
+        $this->inspection_contingency_days = $val('inspection_contingency_days');
+        $this->appraisal_contingency       = $val('appraisal_contingency', '0') === '1';
+        $this->closing_date                = $val('closing_date');
+        $this->possession_date             = $val('possession_date');
+        $this->listing_expiration          = $val('listing_expiration');
 
-        $this->custom_terms = $get->custom_terms ?? '';
-        $this->notes        = $get->notes        ?? '';
+        $this->custom_terms = $val('custom_terms');
+        $this->notes        = $val('notes');
     }
 
     public function render()

@@ -3,15 +3,12 @@
 namespace App\Models;
 
 use App\Traits\HasListingId;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class OfferAuction extends Model
 {
     use HasFactory, HasListingId;
-
-    protected $appends = ['get'];
 
     protected $casts = [
         'is_approved' => 'boolean',
@@ -62,32 +59,14 @@ class OfferAuction extends Model
         return false;
     }
 
-    public function getGetAttribute()
-    {
-        $data  = [];
-        $metas = OfferAuctionMeta::where('offer_auction_id', $this->id)->get();
-        foreach ($metas as $row) {
-            $decoded = json_decode($row->meta_value, true);
-            if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
-                $value = $decoded;
-            } else {
-                $value = $row->meta_value;
-            }
-            $data[$row->meta_key] = $value;
-        }
-        $collection = new Collection();
-        $collection->push((object) $data);
-        return $collection->first();
-    }
-
     public function getStatusAttribute(): string
     {
         if ($this->is_sold) return 'Accepted';
-        $metaStatus = $this->info('listing_status');
+        $metaStatus = $this->metas->where('meta_key', 'listing_status')->first()?->meta_value;
         if (in_array($metaStatus, ['Accepted', 'Withdrawn', 'Expired'])) {
             return $metaStatus;
         }
-        $expiry = $this->info('listing_expiration');
+        $expiry = $this->metas->where('meta_key', 'listing_expiration')->first()?->meta_value;
         if ($expiry && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiry))) {
             return 'Expired';
         }
