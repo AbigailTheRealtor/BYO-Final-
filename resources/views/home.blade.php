@@ -289,7 +289,7 @@
             </div>
             <div class="col-md-6 text-center">
                 <video class="w-100 rounded-3" src="{{ asset('assets/pictures/home/offerVideo.mp4') }}" controls
-                    controlslist="nodownload" poster="{{ asset('assets/pictures/home/offerPoster.jpg') }}" style="max-height:360px;object-fit:cover;"></video>
+                    controlslist="nodownload" preload="none" poster="{{ asset('assets/pictures/home/offerPoster.jpg') }}" style="max-height:360px;object-fit:cover;"></video>
             </div>
         </div>
     </div>

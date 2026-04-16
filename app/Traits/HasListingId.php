@@ -38,6 +38,7 @@ trait HasListingId
             'BuyerCriteriaAuction' => 'BCA',
             'TenantCriteriaAuction' => 'TCA',
             'LandlordAuction' => 'LA',
+            'OfferAuction'    => 'OFA',
         ];
 
         return $prefixes[$className] ?? 'LST';

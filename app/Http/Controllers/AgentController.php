@@ -15,6 +15,7 @@ use App\Models\UserAgent;
 use App\Models\TenantAgentAuction as TenantAgentAuctionModel;
 use App\Models\BuyerAgentAuction;
 use App\Models\SellerAgentAuction;
+use App\Models\OfferAuction as OfferAuctionModel;
 use Carbon\Carbon;
 
 class AgentController extends Controller
@@ -482,6 +483,101 @@ class AgentController extends Controller
         };
 
         return view('agent.hire-listings', compact('listings', 'filter', 'counts'));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // OFFER LISTINGS HUB (Phase 6)
+    // ─────────────────────────────────────────────────────────────────────
+
+    public function offerListings(Request $request)
+    {
+        $uid    = Auth::id();
+        $filter = $request->get('filter', 'all');
+
+        $all = OfferAuctionModel::where('user_id', $uid)
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(fn($a) => $this->normalizeOfferListing($a));
+
+        $counts = [
+            'all'      => $all->count(),
+            'active'   => $all->filter(fn($l) => !$l['_draft'] && $l['_approved'] && !$l['_sold'] && !$l['_expired'])->count(),
+            'pending'  => $all->filter(fn($l) => !$l['_draft'] && !$l['_approved'] && !$l['_sold'])->count(),
+            'draft'    => $all->filter(fn($l) => $l['_draft'])->count(),
+            'accepted' => $all->filter(fn($l) => $l['_sold'])->count(),
+            'expired'  => $all->filter(fn($l) => $l['_expired'] && !$l['_sold'] && !$l['_draft'])->count(),
+        ];
+
+        $listings = match ($filter) {
+            'active'   => $all->filter(fn($l) => !$l['_draft'] && $l['_approved'] && !$l['_sold'] && !$l['_expired']),
+            'pending'  => $all->filter(fn($l) => !$l['_draft'] && !$l['_approved'] && !$l['_sold']),
+            'draft'    => $all->filter(fn($l) => $l['_draft']),
+            'accepted' => $all->filter(fn($l) => $l['_sold']),
+            'expired'  => $all->filter(fn($l) => $l['_expired'] && !$l['_sold'] && !$l['_draft']),
+            default    => $all,
+        };
+
+        return view('agent.offer-listings', compact('listings', 'filter', 'counts'));
+    }
+
+    private function normalizeOfferListing(OfferAuctionModel $auction): array
+    {
+        $isDraft    = (bool) $auction->is_draft;
+        $isApproved = (bool) $auction->is_approved;
+        $isSold     = (bool) $auction->is_sold;
+
+        $expiryRaw  = $auction->get->listing_expiration ?? null;
+        $isExpired  = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
+
+        if ($isDraft) {
+            $statusLabel = 'Draft';
+            $statusClass = 'secondary';
+        } elseif ($isSold) {
+            $statusLabel = 'Accepted';
+            $statusClass = 'success';
+        } elseif (!$isApproved) {
+            $statusLabel = 'Pending Approval';
+            $statusClass = 'warning';
+        } elseif ($isExpired) {
+            $statusLabel = 'Expired';
+            $statusClass = 'danger';
+        } else {
+            $statusLabel = $auction->get->listing_status ?? 'Active';
+            $statusClass = 'primary';
+        }
+
+        $offerType = $auction->get->offer_type ?? '';
+        $address   = $auction->get->property_address ?? '';
+        $state     = $auction->get->state ?? '';
+        $title     = $auction->title ?? $auction->get->listing_title ?? ($address ?: 'Offer Listing #' . $auction->id);
+
+        $draftRoute = $isDraft
+            ? route('offer.listing.draft', $auction->id)
+            : null;
+
+        $editRoute  = route('offer.listing.draft', $auction->id);
+
+        return [
+            'id'           => $auction->id,
+            'listing_id'   => $auction->listing_id ?? 'OFA-' . $auction->id,
+            'title'        => $title,
+            'address'      => $address,
+            'state'        => $state,
+            'offer_type'   => $offerType,
+            'offer_price'  => $auction->get->offer_price  ?? null,
+            'monthly_rent' => $auction->get->monthly_rent ?? null,
+            'closing_date' => $auction->get->closing_date ?? null,
+            'expiry'       => $expiryRaw,
+            'created_at'   => $auction->created_at,
+            'status_label' => $statusLabel,
+            'status_class' => $statusClass,
+            'draft_route'  => $draftRoute,
+            'edit_route'   => $editRoute,
+            '_draft'       => $isDraft,
+            '_approved'    => $isApproved,
+            '_sold'        => $isSold,
+            '_expired'     => $isExpired,
+        ];
     }
 
     private function normalizeHireListing($auction, string $role): array

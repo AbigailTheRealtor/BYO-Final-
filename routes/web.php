@@ -82,6 +82,7 @@ use App\Http\Controllers\SocialAuth;
 use App\Models\BuyerCriteriaAuction;
 use App\Models\TenantCriteriaAuction;
 use App\Http\Livewire\TenantAgentAuction as liverTenantAgentAuction;
+use App\Http\Livewire\OfferAuction as liverOfferAuction;
 use App\Http\Livewire\Tenant\TenantAgentAuctionBid;
 use App\Http\Livewire\Tenant\TenantAgentAuctionCounterTerm;
 use App\Http\Livewire\Landlord\LandlordAgentAuctionBid;
@@ -144,6 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/agent/hire-listings', [AgentController::class, 'hireListings'])->name('agent.hire-listings');
+    Route::get('/agent/offer-listings', [AgentController::class, 'offerListings'])->name('agent.offer-listings');
 
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
@@ -514,6 +516,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/hire/agent/auction/{user_type}/{listingId}', liverTenantAgentAuction::class)->name('hire.agent.auction.draft')->where('user_type', 'tenant|landlord|buyer|seller');
     Route::get('/hire/agent/auction/{user_type?}', liverTenantAgentAuction::class)->name('hire.agent.auction');
     Route::get('/hire/agent/auction/edit/{auctionId}/{user_type}', TenantAgentAuctionEdit::class)->name('hire.agent.auction.edit');
+
+    // Offer Listing routes (Workflow Engine — Offer mode)
+    Route::get('/offer/listing/draft/{listingId}', liverOfferAuction::class)->name('offer.listing.draft');
+    Route::get('/offer/listing/{offer_type?}', liverOfferAuction::class)->name('offer.listing.create');
     // Only Tenants can access these routes
     //    Route::prefix('tenant')->middleware('tenantAuth')->name('tenant.')->group(function () {
     Route::prefix('tenant')->name('tenant.')->group(function () {
