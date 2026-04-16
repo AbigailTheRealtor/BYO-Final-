@@ -21,12 +21,17 @@
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Buyer's Agent</a></li>
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Seller's Agent</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><h6 class="dropdown-header">Other Listings</h6></li>
-                    <li><a class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a></li>
-                    <li><a class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a></li>
-                    <li><a class="dropdown-item" href="{{ route('buyer_agent.auction.add') }}">Add Buyer Criteria Listing</a></li>
-                    <li><a class="dropdown-item" href="{{ route('agent.tenant.criteria.auction.add') }}">Add Tenant Criteria Listing</a></li>
-                    <li><a class="dropdown-item" href="{{ route('agent.service.auction.add') }}">Add Service Auction</a></li>
+                    <li>
+                        <h6 class="dropdown-header d-flex align-items-center gap-1">
+                            Offer Listings
+                            <span class="badge ms-1" style="background:#e8f7f7;color:#049399;font-size:.65rem;font-weight:600;border:1px solid #b2e0e2;border-radius:4px;padding:1px 5px;">Soon</span>
+                        </h6>
+                    </li>
+                    <li><a class="dropdown-item text-muted" href="#" onclick="alert('Offer Listings are coming soon. This workflow is being built on the shared architecture.'); return false;"><i class="fa fa-home me-2"></i>Property Listing (Rental)</a></li>
+                    <li><a class="dropdown-item text-muted" href="#" onclick="alert('Offer Listings are coming soon. This workflow is being built on the shared architecture.'); return false;"><i class="fa fa-tag me-2"></i>Property Listing (Sale)</a></li>
+                    <li><a class="dropdown-item text-muted" href="#" onclick="alert('Offer Listings are coming soon. This workflow is being built on the shared architecture.'); return false;"><i class="fa fa-search me-2"></i>Buyer Criteria Listing</a></li>
+                    <li><a class="dropdown-item text-muted" href="#" onclick="alert('Offer Listings are coming soon. This workflow is being built on the shared architecture.'); return false;"><i class="fa fa-key me-2"></i>Tenant Criteria Listing</a></li>
+                    <li><a class="dropdown-item text-muted" href="#" onclick="alert('Offer Listings are coming soon. This workflow is being built on the shared architecture.'); return false;"><i class="fa fa-wrench me-2"></i>Service Auction</a></li>
                 </ul>
             </div>
         @endif
@@ -104,6 +109,16 @@
             </div>
         </div>
     </a>
+    <div class="d-flex flex-row p-3 border-end border-bottom" style="opacity:.55;cursor:default;" title="Offer Listings are being built on the shared workflow engine.">
+        <div class="me-3"><i class="fa fa-file-text-o" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+        <div class="w-100">
+            <div class="text-600 mb-1">
+                <b>My Offer Listings</b>
+                <span class="badge ms-2" style="background:#e8f7f7;color:#049399;font-size:.62rem;font-weight:600;border:1px solid #b2e0e2;border-radius:4px;padding:1px 5px;">Coming Soon</span>
+            </div>
+            <div class="opacity-50 text-400 small">Offer, lease &amp; contract negotiation listings.</div>
+        </div>
+    </div>
     @endif
 
     @if (in_array(auth()->user()->user_type, ['agent']))

@@ -1,0 +1,424 @@
+TASK: Refactor the existing shared Hire-Agent workflow into a MULTI-MODE WORKFLOW ENGINE that supports both:
+
+1. Hire Agent mode
+2. Offer mode
+
+AND update the Agent Dashboard sidebar/navigation so the OLD legacy listing flows are removed from the UI and replaced by the NEW workflow structure.
+
+GOAL
+We want to preserve the existing shared Hire-Agent system exactly as it works now, while making the underlying workflow reusable for a second business flow: Offer / Lease / Contract negotiation.
+
+This is NOT a request to duplicate the Hire system.
+This IS a request to abstract the reusable workflow infrastructure so the dashboard can support multiple workflow types with shared lifecycle logic and mode-specific fields.
+
+We also want to clean up the dashboard/sidebar so the OLD listing flows are no longer shown and the NEW workflow structure is what users see.
+
+--------------------------------------------------
+CORE ARCHITECTURE RULE (CRITICAL)
+--------------------------------------------------
+
+DO NOT duplicate the entire Hire flow to create an Offer flow.
+
+We want:
+- one shared workflow engine
+- shared infrastructure
+- mode-specific field sets
+- mode-specific labels
+- mode-specific negotiation logic
+- mode-specific summaries
+
+DO NOT:
+- clone Livewire components into full separate systems if avoidable
+- clone timer logic
+- clone draft/publish/edit infrastructure
+- clone accept/counter/reject framework
+- clone dashboard management pages
+- clone summary engine if a shared summary framework can be used
+
+If the proposed implementation would create two systems that drift apart, STOP and report.
+
+--------------------------------------------------
+CURRENT STATE TO PRESERVE
+--------------------------------------------------
+
+The current Hire-Agent system already has a strong shared core:
+- centralized create/edit flow
+- shared draft/publish logic
+- auth-agnostic bid actions
+- shared timer/status infrastructure
+- shared accepted summary infrastructure
+- existing route/query infrastructure already works for agents
+
+Preserve that architecture. Build on it. Do not regress it.
+
+--------------------------------------------------
+SIDEBAR / NAVIGATION CLEANUP (IMPORTANT)
+--------------------------------------------------
+
+The current “Other Listings” section in the Agent Dashboard sidebar is the OLD flow and should no longer appear in the UI.
+
+REMOVE or COMMENT OUT the old sidebar section:
+
+Other Listings
+- Add Property Listing (Rental)
+- Add Property Listing (Sale)
+- Add Buyer Criteria Listing
+- Add Tenant Criteria Listing
+- Add Service Auction
+
+These are legacy flows and should be removed from the visible sidebar/navigation.
+
+IMPORTANT:
+- Remove from UI only at this stage
+- Do NOT delete controllers, routes, models, or database tables yet unless separately confirmed safe
+- If any hidden dependency still uses one of these old routes, report it before deleting backend logic
+
+REPLACE the old sidebar structure with the NEW workflow structure:
+
+Create Listing
+
+Hire Agent Listings
+- Tenant’s Agent
+- Listing Owner (Landlord’s Agent)
+- Buyer’s Agent
+- Seller’s Agent
+
+Offer Listings
+- Add Property Listing (Rental)
+- Add Property Listing (Sale)
+- Add Buyer Criteria Listing
+- Add Tenant Criteria Listing
+- Add Service Auction
+
+IMPORTANT NOTE:
+These Offer Listings items should no longer represent the OLD legacy flow.
+They should become entry points into the NEW Offer-mode workflow architecture, or be staged as placeholders pointing toward that architecture if full Offer mode is not yet surfaced.
+
+Do NOT leave the old flows visually mixed in as a separate “Other Listings” legacy section.
+
+--------------------------------------------------
+TARGET END STATE
+--------------------------------------------------
+
+The system should support a workflow type concept such as:
+
+- workflow_type = hire_agent
+- workflow_type = offer
+
+The dashboard should eventually be able to show both:
+- Hire Agent Listings
+- Offer Listings
+
+using the SAME underlying lifecycle framework where possible.
+
+--------------------------------------------------
+WHAT MUST REMAIN SHARED
+--------------------------------------------------
+
+These pieces should be reusable across BOTH Hire and Offer modes:
+
+1. Listing lifecycle
+- create
+- save draft
+- resume draft
+- edit
+- publish
+- expire/archive if already supported
+
+2. Dashboard infrastructure
+- listing indexes
+- status filters
+- action buttons
+- ownership checks
+- route patterns where possible
+
+3. Negotiation framework
+- submit
+- counter
+- accept
+- reject
+- negotiation history / audit trail
+- waiting/status banners
+
+4. Timer / status framework
+- bidding/response period logic
+- countdown display rules
+- badge/status rendering
+
+5. Summary framework
+- versioned comparison
+- changed / added / removed display
+- accepted summary generation structure
+- PDF / acknowledgement framework if already tied in
+
+6. Authorization / visibility rules
+- listing owner permissions
+- bidder permissions
+- private vs public visibility rules
+
+--------------------------------------------------
+WHAT MUST BECOME MODE-SPECIFIC
+--------------------------------------------------
+
+These should vary by workflow type:
+
+A. Labels / terminology
+
+Hire mode:
+- Agent bids
+- Services
+- Broker Compensation & Agency Agreement Terms
+- Hired Agent / Accepted Bid Summary wording
+
+Offer mode:
+- Offer bids
+- Offer terms
+- Lease / Contract fields
+- Accepted Offer / Accepted Contract wording
+
+B. Fields / sections
+
+Hire mode keeps:
+- Offered Services
+- Broker Compensation & Agency Agreement Terms
+- Additional Details
+
+Offer mode should REMOVE or suppress:
+- Services section
+- full broker compensation tool
+- hire-agent-specific representation language
+
+Offer mode should ADD the proper fields for a real offer workflow.
+
+--------------------------------------------------
+OFFER MODE FIELD REQUIREMENTS
+--------------------------------------------------
+
+Build Offer mode so it can support the correct fields for real property offers / lease offers / contract negotiation.
+
+At minimum, structure Offer mode to support mode-aware sections such as:
+
+1. Core Offer Terms
+- offered price or offered rent
+- earnest money / escrow / deposit
+- option fee if applicable
+- financing type / cash
+- loan type if applicable
+- down payment if applicable
+- proof of funds / pre-approval indicators
+- possession / move-in / closing date
+- expiration / response deadline
+
+2. Contract / Contingency Terms
+- inspection period
+- financing contingency
+- appraisal contingency
+- sale of other property contingency if applicable
+- due diligence period
+- closing costs contributions / concessions
+- personal property / inclusions / exclusions
+- repair requests structure if applicable
+
+3. Lease-Specific Terms
+- lease start date
+- lease term length
+- monthly rent
+- security deposit
+- pet terms
+- utilities
+- tenant improvement / buildout / CAM / NNN / rent escalation if commercial lease mode is later added
+
+4. Additional Terms
+- freeform custom terms
+- uploaded proof/supporting docs if already supported in architecture
+
+IMPORTANT:
+Do not hard-code the system only for one contract type if you can structure it so purchase offers and lease offers can evolve within the same Offer mode framework.
+
+--------------------------------------------------
+NEGOTIATION MODEL CHANGES FOR OFFER MODE
+--------------------------------------------------
+
+In Offer mode:
+- “agent bids” become “offer bids”
+- comparison logic should compare offer terms, not services/compensation
+- summary wording should reflect contract/lease negotiation, not hiring an agent
+- accepted outcome should become accepted offer / accepted terms / accepted contract summary wording
+
+The reusable negotiation engine should remain the same where possible:
+- original terms
+- counter terms
+- changed / added / removed comparisons
+- accept / counter / reject actions
+
+--------------------------------------------------
+UI / DASHBOARD GOAL
+--------------------------------------------------
+
+Do NOT just make a hidden backend abstraction.
+
+Design the architecture so the Agent Dashboard can support two visible management areas:
+
+1. Hire Agent Listings
+2. Offer Listings
+
+Both should feel consistent in:
+- draft behavior
+- card structure
+- timer logic
+- statuses
+- action buttons
+- history visibility
+
+The sidebar should reflect this new structure and should no longer show the old “Other Listings” legacy grouping.
+
+--------------------------------------------------
+IMPLEMENTATION STRATEGY
+--------------------------------------------------
+
+PHASE 1 — READ-ONLY ARCHITECTURE AUDIT
+
+Before making changes, inspect the current shared Hire-Agent system and identify the exact places where the engine can be abstracted safely.
+
+Also inspect the current sidebar/navigation and identify:
+- where the old “Other Listings” items are rendered
+- which routes they currently point to
+- whether those routes still use legacy logic
+- whether they can be remapped to new Offer-mode entry points now or need staged placeholders
+
+Document:
+- which parts are lifecycle infrastructure
+- which parts are Hire-specific
+- which parts can be converted into mode-aware config
+- where current terminology is hard-coded
+- where services/broker comp assumptions are embedded
+- where summary builder assumes Hire mode
+- where match score assumptions are Hire-specific
+- where old sidebar links point to legacy flow
+
+OUTPUT before coding:
+- reusable engine map
+- hard-coded Hire-specific areas
+- old sidebar file/path
+- safest minimal-refactor plan
+- exact files to touch
+
+PHASE 2 — INTRODUCE WORKFLOW TYPE
+
+Introduce a safe workflow-type concept at the appropriate layer.
+
+Examples may include:
+- workflow_type field
+- config resolver
+- mode-aware service
+- mode-aware rendering helper
+
+IMPORTANT:
+Use the safest minimally invasive pattern.
+Do not force destructive database changes if a non-breaking additive pattern works.
+
+PHASE 3 — EXTRACT REUSABLE LIFECYCLE LAYER
+
+Refactor reusable logic into a shared workflow layer where practical:
+- draft/save/edit/publish
+- statuses
+- timer logic
+- action handling
+- negotiation history framework
+- accepted summary framework shell
+
+PHASE 4 — PRESERVE HIRE MODE EXACTLY
+
+Hire-Agent mode must continue to behave exactly as it does today.
+No regressions.
+No wording drift.
+No logic drift.
+
+PHASE 5 — CREATE OFFER MODE OVERLAY
+
+Implement Offer mode as a mode-specific overlay:
+- different labels
+- different sections
+- different term comparisons
+- different summary wording
+- different offer-specific fields
+
+PHASE 6 — SIDEBAR REPLACEMENT
+
+Replace the old sidebar grouping with the new visible structure:
+
+Create Listing
+
+Hire Agent Listings
+- Tenant’s Agent
+- Listing Owner (Landlord’s Agent)
+- Buyer’s Agent
+- Seller’s Agent
+
+Offer Listings
+- Add Property Listing (Rental)
+- Add Property Listing (Sale)
+- Add Buyer Criteria Listing
+- Add Tenant Criteria Listing
+- Add Service Auction
+
+IMPORTANT:
+These Offer Listings items must no longer be treated as the old legacy flow section.
+They should either:
+1. map into the new Offer-mode architecture, or
+2. be staged as placeholder navigation for the new Offer-mode system if the backend is not fully surfaced yet
+
+But they must not remain presented as an old separate legacy system.
+
+PHASE 7 — DASHBOARD PREP
+
+Prepare the dashboard so it can support separate navigation and management for:
+- Hire listings
+- Offer listings
+
+Even if the Offer dashboard is not fully surfaced yet, the architecture and navigation should support it cleanly.
+
+--------------------------------------------------
+DATA / STORAGE RULES
+--------------------------------------------------
+
+Use additive, non-destructive changes only.
+
+DO NOT:
+- rename or delete current Hire tables/columns
+- break existing queries
+- rewrite current records in a destructive way
+
+Prefer:
+- additive workflow_type support
+- additive meta/config storage
+- shared abstractions over schema rewrites
+
+If a schema addition is required, make it minimal, nullable/safe, and backward-compatible.
+
+--------------------------------------------------
+SAFETY RULES
+--------------------------------------------------
+
+1. Do not break Hire mode.
+2. Do not duplicate full systems.
+3. Do not delete current business logic before proving parity.
+4. Keep file touch minimal.
+5. Remove old sidebar UI, but do not destructively delete backend legacy logic unless confirmed safe.
+6. Stop and report if abstraction becomes too risky without a smaller stepping-stone phase.
+
+--------------------------------------------------
+FINAL DELIVERABLE
+--------------------------------------------------
+
+When finished, provide:
+
+1. architecture summary
+2. files changed
+3. shared vs mode-specific breakdown
+4. how Hire mode was preserved
+5. how Offer mode is now supported
+6. what was removed from sidebar UI
+7. whether old routes/controllers were left in place for safety
+8. any remaining hard-coded Hire assumptions not yet abstracted
+9. safest next step for surfacing Offer mode fully in the dashboard

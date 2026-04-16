@@ -39,6 +39,7 @@ class TenantAgentAuction extends Component
     // public $user_type = 'tenant'; // Default to tenant or whatever makes sense
     public $auction_type = '';
 
+    public $workflow_type = 'hire_agent'; // Multi-mode workflow engine: 'hire_agent' | 'offer'
     public $referral_percentage = '';
 
     public $user_type = '';
@@ -2639,6 +2640,7 @@ class TenantAgentAuction extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
+            $this->workflow_type = $auction->get->workflow_type ?? 'hire_agent';
             $this->service_type = $auction->get->service_type;
             $this->user_type = $auction->get->user_type;
             $this->listing_status = $auction->get->listing_status;
@@ -3610,6 +3612,7 @@ class TenantAgentAuction extends Component
             $this->condition_prop_buyer = [];
         }
 
+        $auction->saveMeta('workflow_type', $this->workflow_type ?: 'hire_agent');
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
