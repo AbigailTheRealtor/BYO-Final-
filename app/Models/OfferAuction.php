@@ -35,6 +35,11 @@ class OfferAuction extends Model
         return $this->hasMany(OfferAuctionMeta::class);
     }
 
+    public function metas()
+    {
+        return $this->hasMany(OfferAuctionMeta::class);
+    }
+
     public function saveMeta($key, $val)
     {
         if (is_array($val) || is_object($val)) {

@@ -495,6 +495,7 @@ class AgentController extends Controller
         $filter = $request->get('filter', 'all');
 
         $all = OfferAuctionModel::where('user_id', $uid)
+            ->with('metas')
             ->orderByDesc('created_at')
             ->get()
             ->map(fn($a) => $this->normalizeOfferListing($a));
@@ -522,11 +523,13 @@ class AgentController extends Controller
 
     private function normalizeOfferListing(OfferAuctionModel $auction): array
     {
+        $meta = $auction->metas->pluck('meta_value', 'meta_key');
+
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = (bool) $auction->is_approved;
         $isSold     = (bool) $auction->is_sold;
 
-        $expiryRaw  = $auction->get->listing_expiration ?? null;
+        $expiryRaw  = $meta['listing_expiration'] ?? null;
         $isExpired  = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
 
         if ($isDraft) {
@@ -542,14 +545,14 @@ class AgentController extends Controller
             $statusLabel = 'Expired';
             $statusClass = 'danger';
         } else {
-            $statusLabel = $auction->get->listing_status ?? 'Active';
+            $statusLabel = $meta['listing_status'] ?? 'Active';
             $statusClass = 'primary';
         }
 
-        $offerType = $auction->get->offer_type ?? '';
-        $address   = $auction->get->property_address ?? '';
-        $state     = $auction->get->state ?? '';
-        $title     = $auction->title ?? $auction->get->listing_title ?? ($address ?: 'Offer Listing #' . $auction->id);
+        $offerType = $meta['offer_type'] ?? '';
+        $address   = $meta['property_address'] ?? '';
+        $state     = $meta['state'] ?? '';
+        $title     = $auction->title ?? $meta['listing_title'] ?? ($address ?: 'Offer Listing #' . $auction->id);
 
         $draftRoute = $isDraft
             ? route('offer.listing.draft', $auction->id)
@@ -564,9 +567,9 @@ class AgentController extends Controller
             'address'      => $address,
             'state'        => $state,
             'offer_type'   => $offerType,
-            'offer_price'  => $auction->get->offer_price  ?? null,
-            'monthly_rent' => $auction->get->monthly_rent ?? null,
-            'closing_date' => $auction->get->closing_date ?? null,
+            'offer_price'  => $meta['offer_price']  ?? null,
+            'monthly_rent' => $meta['monthly_rent'] ?? null,
+            'closing_date' => $meta['closing_date'] ?? null,
             'expiry'       => $expiryRaw,
             'created_at'   => $auction->created_at,
             'status_label' => $statusLabel,

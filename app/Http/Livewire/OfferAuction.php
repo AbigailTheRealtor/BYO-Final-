@@ -95,19 +95,19 @@ class OfferAuction extends Component
             'offer_type'         => 'required',
             'property_address'   => 'required|string|min:5',
             'offer_price'        => 'required_if:offer_type,sale',
-            'monthly_rent'       => 'required_if:offer_type,rental',
+            'monthly_rent'       => 'required_if:offer_type,rental,lease',
             'closing_date'       => 'nullable|date',
             'listing_expiration' => 'nullable|date',
         ], [
             'offer_type.required'       => 'Please select an offer type (Sale, Rental, or Lease).',
             'property_address.required' => 'Property address is required.',
             'offer_price.required_if'   => 'Offer price is required for sale listings.',
-            'monthly_rent.required_if'  => 'Monthly rent is required for rental listings.',
+            'monthly_rent.required_if'  => 'Monthly rent is required for rental and lease listings.',
         ]);
 
         $this->saveRecord(draft: false);
         $this->isDraft    = false;
-        $this->isApproved = true;
+        $this->isApproved = config('offer.default_auto_approve', true);
         $this->dispatchBrowserEvent('offer-flash', ['type' => 'success', 'message' => 'Listing published successfully.']);
     }
 
@@ -128,12 +128,15 @@ class OfferAuction extends Component
 
         $auction->title    = $title;
         $auction->is_draft = $draft;
+        if (!$draft) {
+            $auction->is_approved = config('offer.default_auto_approve', true);
+        }
         $auction->save();
 
         $this->auctionId  = $auction->id;
         $this->isDraft    = $draft;
         $this->isSold     = false;
-        $this->isApproved = true;
+        $this->isApproved = (bool) $auction->is_approved;
 
         $this->saveAllMeta($auction);
     }
