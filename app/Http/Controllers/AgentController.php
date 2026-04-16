@@ -539,7 +539,7 @@ class AgentController extends Controller
             $statusLabel = 'Accepted';
             $statusClass = 'success';
         } elseif (!$isApproved) {
-            $statusLabel = 'Pending Approval';
+            $statusLabel = 'Pending Review';
             $statusClass = 'warning';
         } elseif ($isExpired) {
             $statusLabel = 'Expired';
