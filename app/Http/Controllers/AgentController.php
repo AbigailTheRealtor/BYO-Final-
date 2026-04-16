@@ -489,6 +489,79 @@ class AgentController extends Controller
     // OFFER LISTINGS HUB (Phase 6)
     // ─────────────────────────────────────────────────────────────────────
 
+    public function offerListingView(int $id)
+    {
+        $uid     = Auth::id();
+        $auction = OfferAuctionModel::where('id', $id)
+            ->where('user_id', $uid)
+            ->with('metas')
+            ->firstOrFail();
+
+        $meta = $auction->metas->pluck('meta_value', 'meta_key');
+
+        $isDraft    = (bool) $auction->is_draft;
+        $isApproved = (bool) $auction->is_approved;
+        $isSold     = (bool) $auction->is_sold;
+        $expiryRaw  = $meta['listing_expiration'] ?? null;
+        $isExpired  = $expiryRaw && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($expiryRaw));
+
+        if ($isDraft) {
+            $statusLabel = 'Draft';        $statusClass = 'secondary';
+        } elseif ($isSold) {
+            $statusLabel = 'Accepted';     $statusClass = 'success';
+        } elseif (!$isApproved) {
+            $statusLabel = 'Pending Review'; $statusClass = 'warning';
+        } elseif ($isExpired) {
+            $statusLabel = 'Expired';      $statusClass = 'danger';
+        } else {
+            $statusLabel = $meta['listing_status'] ?? 'Active'; $statusClass = 'primary';
+        }
+
+        $data = [
+            'id'           => $auction->id,
+            'listing_id'   => $auction->listing_id ?? ('OFA-' . $auction->id),
+            'status_label' => $statusLabel,
+            'status_class' => $statusClass,
+            'offer_type'   => $meta['offer_type']  ?? '',
+            'title'        => $auction->title ?? $meta['listing_title'] ?? '',
+            // Property
+            'property_address' => $meta['property_address'] ?? '',
+            'city'             => $meta['city']             ?? '',
+            'state'            => $meta['state']            ?? '',
+            'zip_code'         => $meta['zip_code']         ?? '',
+            'property_type'    => $meta['property_type']    ?? '',
+            'bedrooms'         => $meta['bedrooms']         ?? '',
+            'bathrooms'        => $meta['bathrooms']        ?? '',
+            'sqft'             => $meta['sqft']             ?? '',
+            // Financial
+            'offer_price'             => $meta['offer_price']             ?? '',
+            'earnest_deposit'         => $meta['earnest_deposit']         ?? '',
+            'financing_type'          => $meta['financing_type']          ?? '',
+            'down_payment_percent'    => $meta['down_payment_percent']    ?? '',
+            'monthly_rent'            => $meta['monthly_rent']            ?? '',
+            'security_deposit'        => $meta['security_deposit']        ?? '',
+            'lease_term_months'       => $meta['lease_term_months']       ?? '',
+            // Contingencies
+            'financing_contingency'       => ($meta['financing_contingency']  ?? '0') === '1',
+            'financing_contingency_days'  => $meta['financing_contingency_days']  ?? '',
+            'inspection_contingency'      => ($meta['inspection_contingency'] ?? '0') === '1',
+            'inspection_contingency_days' => $meta['inspection_contingency_days'] ?? '',
+            'appraisal_contingency'       => ($meta['appraisal_contingency']  ?? '0') === '1',
+            // Dates
+            'closing_date'      => $meta['closing_date']      ?? '',
+            'possession_date'   => $meta['possession_date']   ?? '',
+            'listing_expiration'=> $expiryRaw,
+            // Additional
+            'custom_terms' => $meta['custom_terms'] ?? '',
+            'notes'        => $meta['notes']        ?? '',
+            // Links
+            'edit_route'   => route('offer.listing.draft', $auction->id),
+            'hub_route'    => route('agent.offer-listings'),
+        ];
+
+        return view('agent.offer-listing-view', compact('data'));
+    }
+
     public function offerListings(Request $request)
     {
         $uid    = Auth::id();
@@ -559,6 +632,7 @@ class AgentController extends Controller
             : null;
 
         $editRoute  = route('offer.listing.draft', $auction->id);
+        $viewRoute  = route('offer.listing.view', $auction->id);
 
         return [
             'id'           => $auction->id,
@@ -576,6 +650,7 @@ class AgentController extends Controller
             'status_class' => $statusClass,
             'draft_route'  => $draftRoute,
             'edit_route'   => $editRoute,
+            'view_route'   => $viewRoute,
             '_draft'       => $isDraft,
             '_approved'    => $isApproved,
             '_sold'        => $isSold,

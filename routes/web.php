@@ -518,6 +518,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/hire/agent/auction/edit/{auctionId}/{user_type}', TenantAgentAuctionEdit::class)->name('hire.agent.auction.edit');
 
     // Offer Listing routes (Workflow Engine — Offer mode, agent-only)
+    Route::get('/offer/listing/view/{id}', [AgentController::class, 'offerListingView'])->name('offer.listing.view')->middleware('ensureAgent');
     Route::get('/offer/listing/draft/{listingId}', liverOfferAuction::class)->name('offer.listing.draft')->middleware('ensureAgent');
     Route::get('/offer/listing/{offer_type?}', liverOfferAuction::class)->name('offer.listing.create')->middleware('ensureAgent');
     // Only Tenants can access these routes

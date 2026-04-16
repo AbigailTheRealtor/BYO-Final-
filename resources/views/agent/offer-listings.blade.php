@@ -114,6 +114,9 @@
                                     <i class="fa fa-edit me-1"></i>Continue Draft
                                 </a>
                                 @else
+                                <a href="{{ $listing['view_route'] }}" class="btn btn-outline-primary">
+                                    <i class="fa fa-eye me-1"></i>View
+                                </a>
                                 <a href="{{ $listing['edit_route'] }}" class="btn btn-outline-secondary">
                                     <i class="fa fa-edit me-1"></i>Edit
                                 </a>

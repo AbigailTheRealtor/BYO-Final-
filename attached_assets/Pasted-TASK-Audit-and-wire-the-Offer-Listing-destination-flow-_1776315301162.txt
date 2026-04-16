@@ -1,0 +1,116 @@
+TASK: Audit and wire the Offer Listing destination flow so published Offer Listings have a clear place to go after creation.
+
+GOAL
+Right now Offer Listings appear in the Agent Offer Listings hub, but we need to confirm and complete where a published Offer Listing lives in the system.
+
+We need Offer Listings to behave more like real listings, not just stored records.
+
+--------------------------------------------------
+PHASE 1 — READ-ONLY AUDIT FIRST
+--------------------------------------------------
+
+Inspect and report:
+
+1. After an Offer Listing is published, where can it currently be accessed?
+Check:
+- agent offer hub
+- edit route
+- any detail/view route
+- any dashboard card
+- any public-facing page
+- any home page section
+
+2. Does a dedicated Offer Listing detail/view page already exist?
+Look for:
+- route
+- controller
+- Blade view
+- Livewire detail component
+
+3. Can a published Offer Listing currently be opened in view mode, or only edited?
+
+4. Are published Offer Listings surfaced anywhere outside the agent offer hub?
+
+OUTPUT:
+- exact current routes
+- exact current views
+- whether Offer Listings currently have a true “View Listing” destination
+
+--------------------------------------------------
+PHASE 2 — IF MISSING, BUILD THE MINIMUM REQUIRED DESTINATION FLOW
+--------------------------------------------------
+
+If Offer Listings do NOT yet have a real listing destination, add the minimum safe structure:
+
+A. Add a dedicated Offer Listing view route
+Example pattern:
+- /offer/listing/view/{listingId}
+or safest equivalent matching current architecture
+
+B. Add a dedicated Offer Listing detail/view page
+This page should show:
+- Listing ID
+- Status
+- Offer Type
+- Title
+- Property address
+- city/state/zip
+- property type
+- beds/baths/sq ft
+- price/rent
+- closing / expiration / key dates
+- contingencies / terms
+- additional terms
+
+C. Add “View Listing” action in the Agent Offer Listings hub
+Current hub should not only show Edit.
+It should also show:
+- View Listing
+- Edit
+
+D. If there is a dashboard/home section for published listings, surface Offer Listings there where appropriate.
+
+--------------------------------------------------
+PHASE 3 — ACCESS / VISIBILITY RULES
+--------------------------------------------------
+
+For now, use the safest rule:
+
+- Agent owner can always view their own Offer Listing
+- Keep permissions strict
+- Do NOT make public unless explicitly intended
+- If public access is not ready yet, owner-only view is acceptable for now
+
+--------------------------------------------------
+PHASE 4 — UX EXPECTATION
+--------------------------------------------------
+
+After publish, the Offer Listing should have a clear lifecycle:
+
+1. Save Draft
+2. Publish
+3. Appear in Offer Listings hub
+4. Open via View Listing
+5. Later connect to offer submission / negotiation flow
+
+--------------------------------------------------
+PHASE 5 — TEST
+--------------------------------------------------
+
+Verify:
+- published Offer Listing appears in hub
+- View Listing button works
+- detail page renders correct data
+- Edit still works
+- no Hire flow regression
+
+--------------------------------------------------
+DELIVERABLE
+--------------------------------------------------
+
+Report back with:
+1. where Offer Listings currently went before this fix
+2. whether a view page existed already
+3. files changed
+4. exact new route added
+5. confirmation that published Offer Listings now have a real destination page
