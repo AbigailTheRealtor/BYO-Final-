@@ -13,8 +13,15 @@
             <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}" class="btn w-100 fw-semibold" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Hire Agent</a>
         @elseif (auth()->user()->user_type === 'agent')
             <div class="dropdown">
-                <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">Hire Agent</button>
+                <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Create Listing</button>
                 <ul class="dropdown-menu w-100">
+                    <li><h6 class="dropdown-header">Hire Agent Listings</h6></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Tenant's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Listing Owner (Landlord's Agent)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Buyer's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Seller's Agent</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Other Listings</h6></li>
                     <li><a class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a></li>
                     <li><a class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a></li>
                     <li><a class="dropdown-item" href="{{ route('buyer_agent.auction.add') }}">Add Buyer Criteria Listing</a></li>
@@ -73,6 +80,27 @@
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Rental Listings</b></div>
                 <div class="opacity-50 text-400 small">Manage your rental property listings for landlords.</div>
+            </div>
+        </div>
+    </a>
+    @endif
+
+    @if (in_array(auth()->user()->user_type, ['agent']))
+    <a href="{{ route('agent.hire-listings') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa fa-handshake-o" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>My Hire Agent Listings</b>
+                    @php
+                        $agent_hire_total =
+                            \App\Models\TenantAgentAuction::where('user_id', auth()->id())->where('is_draft', false)->count() +
+                            \App\Models\LandlordAgentAuction::where('user_id', auth()->id())->where('is_draft', false)->count() +
+                            \App\Models\BuyerAgentAuction::where('user_id', auth()->id())->where('is_draft', false)->count() +
+                            \App\Models\SellerAgentAuction::where('user_id', auth()->id())->where('is_draft', false)->count();
+                    @endphp
+                    @if ($agent_hire_total)<span class="badge bg-danger ms-2">{{ $agent_hire_total }}</span>@endif
+                </div>
+                <div class="opacity-50 text-400 small">All your Hire Agent listings across all four roles.</div>
             </div>
         </div>
     </a>

@@ -1,0 +1,83 @@
+ANSWERS:
+
+1. Referral Percentage
+
+- This should be a dashboard-only field
+- It should be tied to the LISTING (not per bid)
+- It should be editable during create/edit when the agent is the listing owner
+- It should NOT appear on the user-facing side
+- It should NOT affect match score, summaries, or bid logic
+
+Implementation preference:
+- Store using existing meta structure (referral_percentage key)
+- Only render when auth()->user()->user_type === 'agent'
+
+--------------------------------------------------
+
+2. Label Overrides
+
+We want context-aware labels ONLY in the agent dashboard.
+
+Start with:
+- "Landlord" → "Client" or "Listing Owner" (preferred over Agent to avoid confusion)
+- "Tenant" / "Buyer" / "Seller" → remain the same unless context requires neutral wording
+
+Rule:
+- DO NOT globally rename roles
+- Only override labels in dashboard views (hub + any dashboard-specific pages)
+- Do NOT change labels in shared form logic or user-facing pages
+
+--------------------------------------------------
+
+3. Agent Hub Page
+
+YES — create a new dedicated page:
+
+Route:
+GET /agent/hire-listings
+
+This will be the main control center for agents.
+
+Requirements:
+- Show ALL listings owned by the agent across:
+  - Tenant
+  - Buyer
+  - Seller
+  - Landlord
+- Include filters:
+  - Draft
+  - Active
+  - Pending / In Negotiation
+  - Accepted / Hired
+  - Expired
+- Each listing row/card must include:
+  - Listing ID (first)
+  - Role type
+  - Status badge
+  - Timer (if applicable)
+  - Actions:
+    - Edit
+    - Resume Draft (if draft)
+    - View Listing
+    - View Bids
+
+Important:
+- This hub must NOT duplicate logic
+- It must link into existing routes for view/edit/bids
+
+--------------------------------------------------
+
+FINAL NOTE
+
+Proceed with implementation using the previously defined shared architecture rules.
+
+DO NOT:
+- duplicate create/edit flows
+- create dashboard-specific versions of core logic
+- fork summary or bid systems
+
+ONLY:
+- add dashboard entry points
+- add agent hub
+- add referral % as dashboard-only meta field
+- add label overrides via presentation layer

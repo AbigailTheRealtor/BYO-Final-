@@ -1780,6 +1780,22 @@ $lease_types = [
                         <!-- Listing Details Tab -->
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                             role="tabpanel" aria-labelledby="listing-details-tab">
+                            @if(auth()->user() && auth()->user()->user_type === 'agent')
+                            <div class="mb-3 mt-3 px-1">
+                                <label class="form-label fw-semibold" for="referral_percentage">Referral Percentage <span class="text-muted fw-normal">(%)</span></label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="referral_percentage"
+                                       wire:model.defer="referral_percentage"
+                                       min="0" max="100" step="0.01"
+                                       placeholder="e.g. 25">
+                                <div class="form-text text-muted" style="font-size:.8rem;">
+                                    Agent-only field. Stored privately and visible only on your Hire Agent dashboard.
+                                </div>
+                                @error('referral_percentage') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                            </div>
+                            <hr class="mb-3 mt-0">
+                            @endif
                             @if ($user_type === 'tenant')
                             @include('livewire.tenant-agent-auction-tabs.commission-based.listing-details')
                             @elseif($user_type === 'seller')

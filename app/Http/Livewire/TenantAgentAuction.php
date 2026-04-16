@@ -39,6 +39,8 @@ class TenantAgentAuction extends Component
     // public $user_type = 'tenant'; // Default to tenant or whatever makes sense
     public $auction_type = '';
 
+    public $referral_percentage = '';
+
     public $user_type = '';
     public $listing_title = '';
     public $working_with_agent = '';
@@ -2641,6 +2643,7 @@ class TenantAgentAuction extends Component
             $this->user_type = $auction->get->user_type;
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
+            $this->referral_percentage = $auction->get->referral_percentage ?? '';
             $this->working_with_agent = $auction->get->working_with_agent;
             $this->listing_date = $auction->get->listing_date;
             $this->desired_agent_hire_date = $auction->get->desired_agent_hire_date;
@@ -3611,6 +3614,9 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
+        if (auth()->user() && auth()->user()->user_type === 'agent') {
+            $auction->saveMeta('referral_percentage', $this->referral_percentage);
+        }
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);

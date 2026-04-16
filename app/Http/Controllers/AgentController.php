@@ -12,6 +12,10 @@ use App\Models\BuyerAgentAuctionBid;
 use App\Models\LandlordAgentAuction;
 use App\Models\SellerAgentAuctionBid;
 use App\Models\UserAgent;
+use App\Models\TenantAgentAuction as TenantAgentAuctionModel;
+use App\Models\BuyerAgentAuction;
+use App\Models\SellerAgentAuction;
+use Carbon\Carbon;
 
 class AgentController extends Controller
 {
@@ -439,5 +443,128 @@ class AgentController extends Controller
         $page_data['auctions'] = $auctions;
 
         return view('agent_biding_listing.seller', $page_data);
+    }
+
+    public function hireListings(Request $request)
+    {
+        $uid    = Auth::id();
+        $filter = $request->get('filter', 'all');
+
+        $tenant   = TenantAgentAuctionModel::where('user_id', $uid)->with('bids')->get()
+                        ->map(fn($a) => $this->normalizeHireListing($a, 'tenant'));
+        $landlord = LandlordAgentAuction::where('user_id', $uid)->with('bids')->get()
+                        ->map(fn($a) => $this->normalizeHireListing($a, 'landlord'));
+        $buyer    = BuyerAgentAuction::where('user_id', $uid)->with('bids')->get()
+                        ->map(fn($a) => $this->normalizeHireListing($a, 'buyer'));
+        $seller   = SellerAgentAuction::where('user_id', $uid)->with('bids')->get()
+                        ->map(fn($a) => $this->normalizeHireListing($a, 'seller'));
+
+        $all = collect([...$tenant, ...$landlord, ...$buyer, ...$seller])
+                    ->sortByDesc('created_at')
+                    ->values();
+
+        $counts = [
+            'all'     => $all->count(),
+            'active'  => $all->filter(fn($l) => !$l['_draft'] && $l['_approved'] && !$l['_sold'] && !$l['_expired'])->count(),
+            'pending' => $all->filter(fn($l) => !$l['_draft'] && !$l['_approved'] && !$l['_sold'])->count(),
+            'draft'   => $all->filter(fn($l) => $l['_draft'])->count(),
+            'hired'   => $all->filter(fn($l) => $l['_sold'])->count(),
+            'expired' => $all->filter(fn($l) => $l['_expired'] && !$l['_sold'] && !$l['_draft'])->count(),
+        ];
+
+        $listings = match ($filter) {
+            'active'  => $all->filter(fn($l) => !$l['_draft'] && $l['_approved'] && !$l['_sold'] && !$l['_expired']),
+            'pending' => $all->filter(fn($l) => !$l['_draft'] && !$l['_approved'] && !$l['_sold']),
+            'draft'   => $all->filter(fn($l) => $l['_draft']),
+            'hired'   => $all->filter(fn($l) => $l['_sold']),
+            'expired' => $all->filter(fn($l) => $l['_expired'] && !$l['_sold'] && !$l['_draft']),
+            default   => $all,
+        };
+
+        return view('agent.hire-listings', compact('listings', 'filter', 'counts'));
+    }
+
+    private function normalizeHireListing($auction, string $role): array
+    {
+        $isDraft    = (bool) $auction->is_draft;
+        $isApproved = in_array($auction->is_approved, [true, 1, '1', 'true'], true);
+        $isSold     = in_array($auction->is_sold,     [true, 1, '1', 'true'], true);
+
+        $expiryRaw  = $auction->get->expiration_date ?? null;
+        $isExpired  = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
+
+        $auctionType = strtolower(trim($auction->get->auction_type ?? ''));
+
+        if ($isDraft) {
+            $statusLabel = 'Draft';
+            $statusClass = 'secondary';
+        } elseif ($isSold) {
+            $statusLabel = 'Hired Agent';
+            $statusClass = 'success';
+        } elseif (!$isApproved) {
+            $statusLabel = 'Pending Approval';
+            $statusClass = 'warning';
+        } elseif ($isExpired) {
+            $statusLabel = 'Expired';
+            $statusClass = 'danger';
+        } else {
+            $statusLabel = 'Active';
+            $statusClass = 'primary';
+        }
+
+        $displayRole = match ($role) {
+            'landlord' => "Listing Owner",
+            'tenant'   => "Tenant's Agent",
+            'buyer'    => "Buyer's Agent",
+            'seller'   => "Seller's Agent",
+        };
+
+        $editRoute = match ($role) {
+            'seller'   => route('editSellerAgentHireAuction', $auction->id),
+            'landlord' => route('landlord.hire.agent.auction.edit', $auction->id),
+            default    => route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $role]),
+        };
+
+        $viewRoute = match ($role) {
+            'tenant'   => route('tenant.agent.view.auction.view', $auction->id),
+            'landlord' => route('landlord.agent.auction.view', $auction->id),
+            'buyer'    => route('buyer.view-auction', $auction->id),
+            'seller'   => route('seller.agent.auction.detail', $auction->id),
+        };
+
+        $draftRoute = $isDraft
+            ? route('hire.agent.auction.draft', ['user_type' => $role, 'listingId' => $auction->id])
+            : null;
+
+        $createRoute = route('hire.agent.auction', ['user_type' => $role]);
+
+        $address = $auction->get->address ?? $auction->address ?? '';
+        $state   = $auction->get->state ?? '';
+        $title   = $auction->title ?? $auction->get->listing_title ?? ($address ?: 'Listing #' . $auction->id);
+
+        return [
+            'id'           => $auction->id,
+            'listing_id'   => $auction->listing_id ?? strtoupper(substr($role, 0, 1)) . 'AA-' . $auction->id,
+            'role'         => $role,
+            'display_role' => $displayRole,
+            'title'        => $title,
+            'address'      => $address,
+            'state'        => $state,
+            'auction_type' => $auctionType,
+            'expiry'       => $expiryRaw,
+            'bid_count'    => $auction->bids->count(),
+            'created_at'   => $auction->created_at,
+            'status_label' => $statusLabel,
+            'status_class' => $statusClass,
+            'view_route'   => $viewRoute,
+            'edit_route'   => $editRoute,
+            'draft_route'  => $draftRoute,
+            'create_route' => $createRoute,
+            'referral_pct' => $auction->get->referral_percentage ?? null,
+            '_draft'       => $isDraft,
+            '_approved'    => $isApproved,
+            '_sold'        => $isSold,
+            '_expired'     => $isExpired,
+        ];
     }
 }

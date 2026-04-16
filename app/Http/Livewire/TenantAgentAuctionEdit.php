@@ -39,6 +39,7 @@ class TenantAgentAuctionEdit extends Component
     public $user_type = ''; // Default to tenant or whatever makes sense
     public $auction_type = '';
     public $listing_title = '';
+    public $referral_percentage = '';
     public $working_with_agent = '';
     public $listing_date = '';
     public $desired_agent_hire_date = '';
@@ -2379,6 +2380,7 @@ class TenantAgentAuctionEdit extends Component
         $this->desired_agent_hire_date = $auction->info('desired_agent_hire_date');
         $this->expiration_date = $auction->info('expiration_date');
         $this->auction_type = $auction->info('auction_type');
+        $this->referral_percentage = $auction->info('referral_percentage') ?? '';
         $this->auction_time = $auction->info('auction_time');
         $this->meeting_Preference = $auction->info('meeting_Preference');
         $this->agent_bid_visibility = $auction->info('agent_bid_visibility');
@@ -3068,6 +3070,9 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('service_type', $this->service_type);
             $auction->saveMeta('user_type', $this->user_type);
             $auction->saveMeta('listing_status', $this->listing_status);
+            if (auth()->user() && auth()->user()->user_type === 'agent') {
+                $auction->saveMeta('referral_percentage', $this->referral_percentage);
+            }
             // LOCKED: auction_type cannot be changed after listing creation
             // $auction->saveMeta('auction_type', $this->auction_type);
             // LOCKED: working_with_agent cannot be changed after listing creation
