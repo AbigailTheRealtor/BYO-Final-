@@ -18,6 +18,6 @@ return [
     |
     */
     'playoff_access' => [
-        'allowed_user_ids' => [11],   // internal test account(s) only
+        'allowed_user_ids' => [20],   // testagent@byo.com — internal Offer Playoff test account only
     ],
 ];
