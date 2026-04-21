@@ -1,0 +1,93 @@
+Good. The shared mapping extraction is complete.
+
+Now proceed to Phase 2 of the Hire Me / Hire This Agent flow.
+
+Objective
+
+Build the specific-agent entry mode using the new shared mapping service and existing bid architecture.
+
+Important flow rule
+
+Do not auto-create a listing and bid immediately on page load.
+
+Use this cleaner flow instead:
+
+User opens a specific-agent Hire Me entry URL
+System loads the selected agent + the correct preset by role/property type
+User reviews the agent’s default offer
+User may:
+keep included services
+uncheck included services
+add notes / additional requested services
+Only after the user confirms, create:
+the listing
+the bid generated from the agent preset via AgentBidMapperService
+Then route into the existing review / counter / accept flow
+Why
+
+This avoids:
+
+orphan draft listings
+orphan bids
+cleanup edge cases
+premature record creation
+Phase 2 scope
+
+Build only the first working specific-agent entry mode.
+
+Required audit first
+
+Before coding, report:
+
+safest URL pattern for a specific-agent entry route
+how to identify the selected agent securely
+how to choose role + property type
+what minimal client inputs are needed before record creation
+where to place the confirmation step before persisting listing/bid
+which existing review/counter page the flow should redirect into after creation
+
+Do not code until the audit is complete.
+
+Required implementation rules
+Reuse AgentBidMapperService for all preset-to-bid mapping
+Reuse existing role/property-type preset lookup logic
+Reuse existing bid/counter/accept/reject logic
+Reuse existing acknowledgement/signature flow downstream
+Do not duplicate bid field mapping anywhere
+Service visibility rule
+
+In this specific-agent flow:
+
+only show services the selected agent included in their preset
+do not show the full marketplace checklist
+user may uncheck included services
+user may add custom additional requested services in text
+do not expose services the agent did not include
+Scope restriction
+
+This Phase 2 build must not break:
+
+generic Hire Agent marketplace flow
+existing public user-created listing flow
+existing agent bid form flow
+existing accepted acknowledgement/signature flow
+Safeguards
+No DB renames
+No DB deletes
+No broad rewrite
+No duplicate bid engine
+No creating listing/bid before user confirmation
+Stop and report if a small staging/preview state is needed before persistence
+Deliverable
+
+After audit and implementation, report:
+
+files audited
+files changed
+final entry URL pattern
+how selected agent is loaded
+how role/property type is chosen
+how services are restricted to agent-included services
+where the confirmation step happens before persistence
+where the flow redirects after listing + bid are created
+confirmation that generic marketplace flow was untouched

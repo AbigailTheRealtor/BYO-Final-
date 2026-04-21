@@ -147,6 +147,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/hire-listings', [AgentController::class, 'hireListings'])->name('agent.hire-listings');
     Route::get('/agent/offer-listings', [AgentController::class, 'offerListings'])->name('agent.offer-listings')->middleware('offerPlayoffAccess');
 
+    // Phase-2 Hire-Me direct entry — preview (GET) + confirm/create (POST)
+    Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'show'])->name('hire.agent.direct.preview');
+    Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}', [\App\Http\Controllers\HireAgentDirectController::class, 'confirm'])->name('hire.agent.direct.confirm');
+
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
