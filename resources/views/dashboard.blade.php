@@ -74,7 +74,7 @@
                                     <div class="small text-uppercase text-muted fw-bold mb-2" style="letter-spacing:.06em;font-size:.7rem;">Quick Actions</div>
                                     <div class="d-flex flex-wrap gap-2">
                                         @if($user->user_type === 'agent')
-                                            <a href="{{ route('myAuctions') }}" class="btn btn-primary btn-sm">My Property Listings</a>
+                                            <a href="{{ route('agent.hire-listings') }}" class="btn btn-primary btn-sm">My Hire Agent Listings</a>
                                             <a href="{{ route('myBids') }}" class="btn btn-outline-secondary btn-sm">My Bids</a>
                                             <a href="{{ route('agent.qr.settings') }}" class="btn btn-outline-secondary btn-sm">QR &amp; Hire Me</a>
                                         @else
@@ -321,7 +321,7 @@
                                 {{-- ── Agent quick-summary (no listing-by-role grid needed) ── --}}
                                 <div class="mb-4">
                                     <div class="card border-0 bg-light rounded-3 p-4 text-center text-muted small">
-                                        Use <strong>My Property Listings</strong> and <strong>My Bids</strong> above to manage your agent activity.
+                                        Use <strong>My Hire Agent Listings</strong> and <strong>My Bids</strong> above to manage your agent activity.
                                     </div>
                                 </div>
                                 @endif

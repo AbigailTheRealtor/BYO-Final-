@@ -52,18 +52,14 @@
     {{-- ===== MY LISTINGS ===== --}}
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Listings</div>
 
-    @if (in_array(auth()->user()->user_type, ['agent', 'seller']))
+    @if (in_array(auth()->user()->user_type, ['seller']))
     <a href="{{ route('myAuctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Property Listings</b>
                     @php
-                        if (auth()->user()->user_type == 'agent') {
-                            $my_pac = auth()->user()->property_auctions->count();
-                        } elseif (auth()->user()->user_type == 'seller') {
-                            $my_pac = auth()->user()->seller_properties->count();
-                        } else { $my_pac = 0; }
+                        $my_pac = auth()->user()->seller_properties->count();
                     @endphp
                     @if ($my_pac)<span class="badge bg-danger ms-2">{{ $my_pac }}</span>@endif
                 </div>
@@ -73,17 +69,6 @@
     </a>
     @endif
 
-    @if (in_array(auth()->user()->user_type, ['agent']))
-    <a href="{{ route('agent.landlord.auctions') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>Rental Listings</b></div>
-                <div class="opacity-50 text-400 small">Manage your rental property listings for landlords.</div>
-            </div>
-        </div>
-    </a>
-    @endif
 
     @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('agent.hire-listings') }}">
@@ -122,33 +107,6 @@
     @endcan
     @endif
 
-    @if (in_array(auth()->user()->user_type, ['agent']))
-    <a href="{{ route('buyer.criteria.auctions') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-search" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>Buyer Criteria Listings</b>
-                    @php
-                        $my_bca_count = auth()->user()->user_type == 'agent'
-                            ? auth()->user()->criteria_auctions->count()
-                            : auth()->user()->buyer_criteria_auctions->count();
-                    @endphp
-                    @if ($my_bca_count)<span class="badge bg-danger ms-2">{{ $my_bca_count }}</span>@endif
-                </div>
-                <div class="opacity-50 text-400 small">Listings where buyers define criteria for agent bids.</div>
-            </div>
-        </div>
-    </a>
-    <a href="{{ route('agent.tenant.criteria.auctions.list') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-key" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>Tenant Criteria Listings</b></div>
-                <div class="opacity-50 text-400 small">Listings where tenants define criteria for agent bids.</div>
-            </div>
-        </div>
-    </a>
-    @endif
 
     @if (in_array(auth()->user()->user_type, ['seller']))
     <a href="{{ route('hireSellerAgentHireAuctions') }}">
@@ -322,18 +280,6 @@
                     @if ($my_sbaa_count)<span class="badge bg-danger ms-2">{{ $my_sbaa_count }}</span>@endif
                 </div>
                 <div class="opacity-50 text-400 small">Bids you've placed on Seller hire-agent listings.</div>
-            </div>
-        </div>
-    </a>
-    <a href="{{ route('agent.service.auctions') }}">
-        <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-briefcase" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
-            <div class="w-100">
-                <div class="text-600 mb-1"><b>Service Auction Bids</b>
-                    @php $my_asa_count = auth()->user()->agent_service_auctions->count(); @endphp
-                    @if ($my_asa_count)<span class="badge bg-danger ms-2">{{ $my_asa_count }}</span>@endif
-                </div>
-                <div class="opacity-50 text-400 small">Bids and activity from service auctions.</div>
             </div>
         </div>
     </a>
