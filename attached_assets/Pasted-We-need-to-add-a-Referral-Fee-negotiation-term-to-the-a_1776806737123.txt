@@ -1,0 +1,279 @@
+We need to add a Referral Fee (%) negotiation term to the agent-side Hire Agent system only.
+
+Objective
+
+Implement Referral Fee (%) as an agent-to-agent negotiable term that appears only when the listing was created from the agent dashboard Hire Agent flow.
+
+This feature is not for regular users/clients.
+
+That means:
+
+a tenant, buyer, seller, or landlord using the normal user dashboard should not see or negotiate Referral Fee
+only agents creating Hire Agent listings from the agent dashboard should have this field
+only agents bidding on those agent-created Hire Agent listings should see and negotiate this term
+Core product rule
+
+Referral Fee (%) is:
+
+an agent-to-agent term
+visible to bidding agents on agent-created Hire Agent listings
+negotiable inside the existing bid / counter / accept flow
+separate from client compensation
+not paid by the client
+
+Do not create a separate bidding system or separate negotiation flow.
+
+It must live inside the existing Hire Agent listing/bid/counter flow, but only for agent-created Hire Agent listings.
+
+Scope rules
+
+This change must apply only to:
+
+agent dashboard Hire Agent create/edit flow
+agent-created Hire Agent listings
+bids submitted by agents on those agent-created Hire Agent listings
+counteroffers / summaries / term comparison for those agent-created Hire Agent listings
+
+This change must NOT apply to:
+
+user dashboard Create Hire Agent flow
+regular tenant / buyer / seller / landlord listings created by end users
+user-side bid cards
+user-side counter flows
+user-side agreement sections
+public/client-facing forms
+
+In short:
+
+YES
+
+Agent-created Hire Agent listings → Referral Fee exists and is negotiable by agents
+
+NO
+
+User-created Hire Agent listings → no Referral Fee field at all
+
+Required implementation
+Step 1 — Audit first
+
+Before changing any code, audit and report:
+
+which files power the agent dashboard Hire Agent create/edit form
+which files power the user dashboard Hire Agent create/edit form
+whether they share the same Livewire/component/form logic
+where the current referral percentage field exists now, if anywhere
+how to detect whether a Hire Agent listing is:
+agent-created
+user-created
+where bid submission/counter term rendering happens
+where match/terms comparison logic currently lives
+safest way to implement this without affecting user dashboard flows
+
+Do not code until the audit is complete.
+
+Step 2 — Agent-created listing detection
+
+Implement or reuse a reliable way to determine whether a Hire Agent listing is agent-created.
+
+Use the safest existing source of truth available, such as:
+
+listing owner role/user_type
+listing source/context
+existing route/context for agent dashboard create flow
+
+Do not use fragile front-end-only checks.
+
+This distinction must be available anywhere needed for:
+
+form rendering
+bid rendering
+counter rendering
+summary rendering
+Step 3 — Add a new tab in the agent dashboard Hire Agent form only
+
+For the agent dashboard Hire Agent create/edit flow only, add a new tab:
+
+Referral & Cooperation Terms
+
+This tab should appear only for agent-created Hire Agent listings.
+
+Do not add this tab to user dashboard forms.
+
+Field inside tab
+
+Add this field:
+
+Referral Fee (%)
+
+Helper text:
+
+This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
+
+Keep the input simple:
+
+percentage only for now
+reuse existing storage pattern if possible
+no unnecessary schema rewrite unless absolutely required
+Step 4 — Store the field safely
+
+Store Referral Fee (%) in the safest existing listing meta / terms storage structure available.
+
+Preferred approach:
+
+reuse the same listing meta / normalized terms pattern already used by Hire Agent listings
+
+Avoid:
+
+broad schema refactors
+creating a parallel storage system
+creating user-side dependencies
+
+If a new field key is needed, keep it clearly named, for example:
+
+referral_fee_percent
+
+Report exactly where it is stored.
+
+Step 5 — Show it only in agent-to-agent bids for agent-created listings
+
+When agents bid on an agent-created Hire Agent listing, Referral Fee (%) must appear as part of the existing bid structure.
+
+Do not create a separate bid tab or separate negotiation layer.
+
+Requirements
+
+Include Referral Fee (%) in:
+
+bid submission
+bid display
+counteroffers
+bid comparison where terms are shown
+accepted/negotiated term display where appropriate
+
+Only do this for agent-created Hire Agent listings.
+
+For user-created Hire Agent listings:
+
+no Referral Fee field
+no Referral Fee term in bids
+no blank placeholders
+Step 6 — Counter flow integration
+
+Referral Fee (%) must be negotiable in the same unified bid/counter flow.
+
+That means an agent bidding on an agent-created listing must be able to:
+
+accept the requested referral fee
+counter with a different referral fee
+see the changed value in counter terms
+
+Do not build a second negotiation system.
+
+It must behave like another negotiated term inside the existing bid/counter structure.
+
+Step 7 — Bid card / summary / terms rendering
+
+Where bid cards or bid summaries show negotiated terms for agent-created Hire Agent listings, include Referral Fee (%) in a clean visible way.
+
+Use the existing term rendering layer if possible.
+
+Do not bury it in client compensation.
+Do not show it in user-created listings.
+
+If there are shared bid partials used by both user and agent contexts, add conditional logic carefully so this field renders only when:
+
+listing is agent-created
+Referral Fee exists
+Step 8 — Match / terms comparison logic
+
+If the existing terms comparison / match score system can safely support Referral Fee (%) for agent-created Hire Agent listings, extend it carefully.
+
+Rules:
+
+include it only for agent-created listings
+do not affect user-created listing scoring
+do not break existing match calculations
+if safe integration is not straightforward, stop and report before forcing it
+
+Preferred behavior:
+
+treat Referral Fee (%) as a negotiable term in the terms comparison layer for agent-created listings only
+Step 9 — Accepted summary / negotiated terms output
+
+If accepted bid summaries or negotiated term summaries currently show term outputs for agent-created listings, include Referral Fee (%) there as an agent-to-agent negotiated term where appropriate.
+
+Important:
+
+keep it clearly separate from client-paid compensation
+do not insert it into client compensation sections
+do not expose it in user-created listing summaries
+
+If summary templates differ by role/context, apply only to agent-created listing summary paths.
+
+Visual / UX rules
+Agent dashboard only
+
+For agent-created Hire Agent listings:
+
+show the new Referral & Cooperation Terms tab
+show Referral Fee (%) in bids/counters where relevant
+User dashboard
+
+For user-created Hire Agent listings:
+
+do not show the tab
+do not show the field
+do not show the term in bids/counters/summaries
+Unified negotiation rule
+
+Keep this inside the same existing bid/counter flow.
+Do not split into a second negotiation interface.
+
+Safeguards
+No DB renames
+No DB deletes
+No broad refactor of shared Hire Agent flows unless absolutely necessary
+No exposing Referral Fee to regular user dashboard flows
+No mixing Referral Fee into client compensation sections
+No separate bid system
+No breaking existing Hire Agent create/edit flows
+No breaking bid/counter/accept/reject flows
+No breaking accepted bid summary generation
+No breaking Offer Playoff gating
+Stop and report if agent-created vs user-created listing detection is too coupled and needs a minimal separation layer first
+Stop and report before changing match score logic if it risks regression
+Required verification matrix
+
+After implementation, verify all of the following:
+
+Agent-created Hire Agent listing
+Agent creator sees Referral & Cooperation Terms tab
+Agent creator can enter Referral Fee (%)
+Bidding agent sees Referral Fee (%) on the listing/bid context
+Bidding agent can negotiate/counter it
+Counter display shows changed Referral Fee (%)
+Accepted/negotiated summary shows it correctly where appropriate
+If terms comparison was updated, it reflects safely
+User-created Hire Agent listing
+User creator does not see Referral & Cooperation Terms tab
+No Referral Fee field appears anywhere
+Bidding agent does not see Referral Fee on those listings
+User-side bid cards/summaries remain unchanged
+Deliverable
+
+After audit and implementation, report:
+
+files audited
+files changed
+how agent-created vs user-created listings are detected
+where the new tab was added
+where Referral Fee (%) is stored
+where it appears in bids/counters/summaries
+whether terms comparison/match logic was updated
+confirmation that user dashboard flows were untouched
+confirmation that only agent-created Hire Agent listings use this feature
+Final rule
+
+Referral Fee (%) is an agent-to-agent negotiation term for agent-created Hire Agent listings only.
+
+It must never appear in the regular user/client Hire Agent flow.
