@@ -992,9 +992,10 @@ $tenantPays = [
                         <!-- Tab Navigation -->
 
                         @if ($service_type === 'full_service')
+                            @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                              <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation', 'LandLord Information'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
@@ -1006,6 +1007,16 @@ $tenantPays = [
                                         </button>
                                     </li>
                                 @endforeach
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
+                                        id="landlord-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#landlord-information"
+                                        type="button" role="tab"
+                                        aria-controls="landlord-information"
+                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'LandLord Information' }}
+                                    </button>
+                                </li>
                             </ul>
                         @else
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -1029,7 +1040,9 @@ $tenantPays = [
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        @if ($user_type === 'tenant')
+                                        @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                            Agent Credentials & Contact Info
+                                        @elseif ($user_type === 'tenant')
                                             Tenant Information
                                         @elseif($user_type === 'seller')
                                             Seller Information
@@ -1090,10 +1103,14 @@ $tenantPays = [
 
                                 </div>
 
-                                <!-- Tenant Info Tab -->
+                                <!-- Landlord Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
-                                    id="tenant-info" role="tabpanel" aria-labelledby="tenant-info-tab">
-                                    @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
+                                    id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
+                                    @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                        @include('livewire.partials.agent-credentials')
+                                    @else
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.landlord-info')
+                                    @endif
                                 </div>
                             @elseif($service_type === 'limited_service')
                             @endif

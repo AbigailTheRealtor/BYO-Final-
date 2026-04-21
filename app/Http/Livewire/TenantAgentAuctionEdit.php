@@ -448,6 +448,9 @@ class TenantAgentAuctionEdit extends Component
     public $last_name = '';
     public $phone_number = '';
     public $email = '';
+    public $agent_brokerage = '';
+    public $agent_license_number = '';
+    public $agent_nar_member_id = '';
     public $current_status = '';
     public $assumable_loan_type = '';
     public $assumable_monthly_escrow = '';
@@ -2936,6 +2939,9 @@ class TenantAgentAuctionEdit extends Component
         $this->last_name = $auction->info('last_name');
         $this->phone_number = $auction->info('phone_number');
         $this->email = $auction->info('email');
+        $this->agent_brokerage = $auction->info('agent_brokerage') ?? '';
+        $this->agent_license_number = $auction->info('agent_license_number') ?? '';
+        $this->agent_nar_member_id = $auction->info('agent_nar_member_id') ?? '';
         $this->video_link = $auction->info('video_link');
         if (!empty($this->video_link)) {
             $this->embedUrl = $this->getEmbedUrl($this->video_link);
@@ -3678,6 +3684,11 @@ class TenantAgentAuctionEdit extends Component
             $phoneDigitsOnly = preg_replace('/\D/', '', $this->phone_number);
             $auction->saveMeta('phone_number', $phoneDigitsOnly);
             $auction->saveMeta('email', $this->email);
+            if (auth()->user() && auth()->user()->user_type === 'agent') {
+                $auction->saveMeta('agent_brokerage', $this->agent_brokerage);
+                $auction->saveMeta('agent_license_number', $this->agent_license_number);
+                $auction->saveMeta('agent_nar_member_id', $this->agent_nar_member_id);
+            }
             $auction->saveMeta('current_status', $this->current_status);
             $auction->saveMeta('video_link', $this->video_link);
 

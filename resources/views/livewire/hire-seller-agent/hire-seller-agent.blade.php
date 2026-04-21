@@ -808,9 +808,10 @@
                         <!-- Tab Navigation -->
 
                         @if ($service_type === 'full_service')
+                            @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Services', 'Additional Details', 'Broker Compensation', 'Seller Information'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -823,6 +824,17 @@
                                         </button>
                                     </li>
                                 @endforeach
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(6)"
+                                        id="seller-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#seller-information"
+                                        type="button" role="tab"
+                                        aria-controls="seller-information"
+                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Seller Information' }}
+                                    </button>
+                                </li>
                             </ul>
                         @else
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -847,7 +859,9 @@
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        @if ($user_type === 'tenant')
+                                        @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                            Agent Credentials & Contact Info
+                                        @elseif ($user_type === 'tenant')
                                             Tenant Information
                                         @elseif($user_type === 'seller')
                                             Seller Information
@@ -959,7 +973,9 @@
                                 <!-- Seller Info Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="seller-information"
                                     role="tabpanel" aria-labelledby="seller-information-tab">
-                                    @if ($user_type === 'tenant')
+                                    @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                        @include('livewire.partials.agent-credentials')
+                                    @elseif ($user_type === 'tenant')
                                         @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
                                         @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')

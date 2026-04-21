@@ -1711,6 +1711,7 @@ $lease_types = [
                     'buyer' => 'Buyer Information',
                     'landlord' => 'Landlord Information',
                     ];
+                    $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
 
                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
                     $infoTabs[$user_type] ?? null,
@@ -1730,7 +1731,7 @@ $lease_types = [
                                 type="button" role="tab"
                                 aria-controls="{{ $tabSlug }}"
                                 aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
-                                {{ $tab }}
+                                {{ ($isAgentUser && $tab === ($infoTabs[$user_type] ?? null)) ? 'Agent Credentials & Contact Info' : $tab }}
                             </button>
                         </li>
                         @endif
@@ -1759,7 +1760,9 @@ $lease_types = [
                                 data-bs-target="#information" type="button" role="tab"
                                 aria-controls="information"
                                 aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                @if ($user_type === 'tenant')
+                                @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                Agent Credentials & Contact Info
+                                @elseif ($user_type === 'tenant')
                                 Tenant Information
                                 @elseif($user_type === 'seller')
                                 Seller Information
@@ -1928,7 +1931,9 @@ $lease_types = [
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
                                     id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
 
-                                    @if ($user_type === 'tenant')
+                                    @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                    @include('livewire.partials.agent-credentials')
+                                    @elseif ($user_type === 'tenant')
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
                                     @elseif($user_type === 'seller')
                                     @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.seller-info')
@@ -1961,7 +1966,11 @@ $lease_types = [
 
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="information"
                                     role="tabpanel" aria-labelledby="information-tab">
+                                    @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                    @include('livewire.partials.agent-credentials')
+                                    @else
                                     @include('livewire.tenant-agent-auction-tabs.commission-based.tenant-info')
+                                    @endif
                                 </div>
                                 @endif
                             </div>
