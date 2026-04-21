@@ -155,6 +155,11 @@ class LandlordAgentAuctionCounterTerm extends Component
         'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
     ];
 
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     // Reset methods for each main field change
     public function updatedPurchaseFeeType()
     {

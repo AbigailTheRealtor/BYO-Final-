@@ -152,6 +152,11 @@ public $isListingCreatedByAgent = false;
 
 
 
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     public function updatedOtherServicesEnabled($enabled): void
     {
         // If toggled on and no field exists, create the first one

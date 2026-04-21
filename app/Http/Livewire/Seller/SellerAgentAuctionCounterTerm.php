@@ -132,6 +132,11 @@ class SellerAgentAuctionCounterTerm extends Component
         }
     }
 
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     public function updatedEarlyTerminationFeeOption($value)
     {
         if ($value !== 'yes') {

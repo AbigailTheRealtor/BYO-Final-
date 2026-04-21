@@ -362,6 +362,12 @@ class TenantAgentAuctionBid extends Component
             }
         }
     }
+
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     public function addMaterial(): void
     {
         // Clear all file upload errors for promoMaterials

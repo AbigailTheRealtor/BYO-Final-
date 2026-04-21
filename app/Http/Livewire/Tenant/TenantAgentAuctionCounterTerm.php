@@ -357,6 +357,11 @@ class TenantAgentAuctionCounterTerm extends Component
         }
     }
 
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     public function updatedLeaseFeeType($value)
     {
         $this->resetLeaseFeeFields();

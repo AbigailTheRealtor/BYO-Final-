@@ -636,6 +636,11 @@ class SellerAgentAuctionBid extends Component
         }
     }
 
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     private function storeProfileFiles(): void
     {
         foreach ($this->promoMaterials as $i => $m) {

@@ -376,6 +376,11 @@ class TenantAgentAuctionBidCounter extends Component
         return $this->property_type === 'Commercial Property' ? $commercial : $residential;
     }
 
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     // Ensure lease_type never becomes empty during transitions
     public function updatedLeaseType($value)
     {

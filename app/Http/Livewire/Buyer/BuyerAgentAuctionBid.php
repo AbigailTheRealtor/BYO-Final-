@@ -252,6 +252,12 @@ public $additional_details_broker = '';
             }
         }
     }
+
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     public function addMaterial(): void
     {
         $new = [

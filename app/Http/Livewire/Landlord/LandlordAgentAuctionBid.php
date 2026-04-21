@@ -554,6 +554,12 @@ class LandlordAgentAuctionBid extends Component
             }
         }
     }
+
+    public function updatedReferralFeePercent(): void
+    {
+        $this->validateOnly('referral_fee_percent');
+    }
+
     public function addMaterial(): void
     {
         $new = [
