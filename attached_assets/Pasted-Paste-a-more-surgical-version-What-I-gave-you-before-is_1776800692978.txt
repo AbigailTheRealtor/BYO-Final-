@@ -1,0 +1,171 @@
+Paste a **more surgical version**.
+
+What I gave you before is good for strategy, but Replit works better when you give it a tighter implementation brief with order, scope, and stop rules.
+
+Use this version instead:
+
+---
+
+Build a **permission-gated Offer Playoff test environment** so I can keep developing it without delaying BidYourAgent launch.
+
+## Objective
+
+I want Offer Playoff hidden from normal agent users for launch, while still allowing:
+
+* admin access for oversight/testing
+* one designated internal **non-admin test account** to use it through a real user workflow
+
+Later, I want to enable the same Offer Playoff system for agent profiles or user profiles **without rebuilding it**.
+
+## Required approach
+
+Do **not** move Offer Playoff into admin-only architecture.
+
+Instead:
+
+* keep all Offer Playoff business logic shared
+* add centralized permission gating
+* hide it from normal agent dashboard users
+* allow only admin + designated test account(s) for now
+
+## Execution order
+
+### Step 1 — Audit first
+
+Audit the current Offer Playoff implementation and identify:
+
+* all dashboard nav links/buttons for “My Offer Listings”
+* all routes tied to Offer Playoff
+* all controllers / Livewire components used
+* where current access is assumed to be “agent dashboard only”
+* whether any logic is incorrectly coupled to agent-only UI or role assumptions
+
+Do not refactor yet. First report the exact files and access points.
+
+### Step 2 — Add centralized access control
+
+Create one centralized permission method/helper/policy such as:
+
+`canAccessOfferPlayoff()`
+
+This must be the single source of truth.
+
+For now, it should return true only for:
+
+* admin users
+* my designated internal Offer Playoff test account(s)
+* any future explicitly enabled account flag if needed
+
+Do not hardcode scattered checks in Blade files.
+
+If a whitelist is needed temporarily, centralize it in config, policy, or a single permission layer only.
+
+### Step 3 — Hide Offer Playoff from normal agent dashboard users
+
+Update the agent dashboard so normal agents no longer see:
+
+* “My Offer Listings”
+* Offer Playoff quick links
+* any Offer-related dashboard entry points
+
+But keep those visible for:
+
+* admin
+* designated internal test account(s)
+
+Do not delete the feature. Hide it behind the centralized permission check.
+
+### Step 4 — Protect backend access
+
+Apply the same centralized access check to:
+
+* routes
+* controllers
+* Livewire mount methods
+* Offer actions if needed
+
+Unauthorized users must not be able to access Offer Playoff by typing URLs directly.
+
+### Step 5 — Preserve shared architecture
+
+Keep these in shared app logic, not admin-only code:
+
+* models
+* services
+* offer status/state logic
+* counter logic
+* AI analysis logic
+* summary/PDF logic
+* normalizers/formatters
+* ownership/visibility rules
+
+Admin may have oversight access, but admin must not become the structural owner of the feature.
+
+### Step 6 — Create a real internal test account path
+
+Set up one designated **non-admin** internal test account that can access Offer Playoff.
+
+Purpose:
+
+* simulate future real agent/user workflow
+* let me continue building safely
+* avoid relying only on admin shortcuts
+
+This account should use the same real UX path that future enabled users would use.
+
+### Step 7 — Verify access matrix
+
+Confirm all of the following:
+
+1. Normal agent user:
+
+   * cannot see Offer Playoff in dashboard
+   * cannot access Offer Playoff routes directly
+
+2. Admin:
+
+   * can access Offer Playoff for oversight/testing
+
+3. Internal non-admin test account:
+
+   * can access and use Offer Playoff normally
+
+4. Current BidYourAgent launch-critical hire flows:
+
+   * remain unchanged
+   * remain fully working
+
+## Safeguards
+
+* No DB renames
+* No DB deletes
+* No duplication into separate “admin Offer system” and “agent Offer system”
+* No rewriting Offer Playoff as admin-only logic
+* No breaking launch-critical BidYourAgent flows
+* No scattered hardcoded email/role checks across multiple Blade files
+* Stop and report if Offer Playoff is too tightly coupled to agent-dashboard-only assumptions and requires a **minimal decoupling pass** first
+
+## Deliverable
+
+After the audit and implementation, provide:
+
+1. files changed
+2. what permission method was added
+3. how the test account is allowed
+4. how nav/routes/components are now protected
+5. confirmation that future rollout can be done by permission unlock instead of rebuild
+
+---
+
+That is the version I recommend.
+
+It is better because it tells Replit:
+
+* audit first
+* change as little as possible
+* gate instead of rebuild
+* preserve future rollout path
+
+Your older version was more conceptual. This one is more likely to get the exact result you want.
+
+After Replit responds, paste me its audit/findings before it starts changing code.
