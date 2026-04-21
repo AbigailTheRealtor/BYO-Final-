@@ -13,13 +13,13 @@
             <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}" class="btn w-100 fw-semibold" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Hire Agent</a>
         @elseif (auth()->user()->user_type === 'agent')
             <div class="dropdown">
-                <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Create Listing</button>
+                <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Create Hire Agent Listing</button>
                 <ul class="dropdown-menu w-100">
                     <li><h6 class="dropdown-header">Hire Agent Listings</h6></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Tenant's Agent</a></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Listing Owner (Landlord's Agent)</a></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Buyer's Agent</a></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Seller's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
                     @can('offer-playoff')
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header">Offer Listings</h6></li>
@@ -239,11 +239,11 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Tenant Agent Bids</b>
+                <div class="text-600 mb-1"><b>Tenant's Agent Bids</b>
                     @php $my_baa_count = auth()->user()->tenant_agent_auction_bid->count(); @endphp
                     @if ($my_baa_count)<span class="badge bg-danger ms-2">{{ $my_baa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on Tenant hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Tenant's Agent listings.</div>
             </div>
         </div>
     </a>
@@ -251,11 +251,11 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Landlord Agent Bids</b>
+                <div class="text-600 mb-1"><b>Landlord's Agent Bids</b>
                     @php $my_lbaa_count = auth()->user()->landlord_agent_auction_bid->count(); @endphp
                     @if ($my_lbaa_count)<span class="badge bg-danger ms-2">{{ $my_lbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on Landlord hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Landlord's Agent listings.</div>
             </div>
         </div>
     </a>
@@ -263,11 +263,11 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Buyer Agent Bids</b>
+                <div class="text-600 mb-1"><b>Buyer's Agent Bids</b>
                     @php $my_bbaa_count = auth()->user()->buyer_agent_auction_bid->count(); @endphp
                     @if ($my_bbaa_count)<span class="badge bg-danger ms-2">{{ $my_bbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on Buyer hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Buyer's Agent listings.</div>
             </div>
         </div>
     </a>
@@ -275,11 +275,11 @@
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
-                <div class="text-600 mb-1"><b>Seller Agent Bids</b>
+                <div class="text-600 mb-1"><b>Seller's Agent Bids</b>
                     @php $my_sbaa_count = auth()->user()->seller_agent_auction_bid->count(); @endphp
                     @if ($my_sbaa_count)<span class="badge bg-danger ms-2">{{ $my_sbaa_count }}</span>@endif
                 </div>
-                <div class="opacity-50 text-400 small">Bids you've placed on Seller hire-agent listings.</div>
+                <div class="opacity-50 text-400 small">Bids you've placed on Seller's Agent listings.</div>
             </div>
         </div>
     </a>
