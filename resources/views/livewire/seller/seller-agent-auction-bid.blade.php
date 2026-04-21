@@ -93,7 +93,7 @@
                                 <input type="number"
                                        class="form-control mt-1"
                                        id="referral_fee_percent_seller_bid"
-                                       wire:model.live="referral_fee_percent"
+                                       wire:model.live.debounce.300ms="referral_fee_percent"
                                        min="0" max="100" step="0.01"
                                        placeholder="e.g. 25">
                                 <div class="form-text text-muted mt-1" style="font-size:.85rem;">
