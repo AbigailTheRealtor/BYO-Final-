@@ -110,22 +110,22 @@
                                         <li><h6 class="dropdown-header">Choose a role</h6></li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">
-                                                <i class="fa fa-key me-2 text-muted"></i> Tenant's Agent Listing
+                                                <i class="fa fa-key me-2 text-muted"></i> Hire Tenant's Agent
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">
-                                                <i class="fa fa-building me-2 text-muted"></i> Listing Owner (Landlord's Agent)
+                                                <i class="fa fa-building me-2 text-muted"></i> Hire Landlord's Agent
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">
-                                                <i class="fa fa-search me-2 text-muted"></i> Buyer's Agent Listing
+                                                <i class="fa fa-search me-2 text-muted"></i> Hire Buyer's Agent
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">
-                                                <i class="fa fa-gavel me-2 text-muted"></i> Seller's Agent Listing
+                                                <i class="fa fa-gavel me-2 text-muted"></i> Hire Seller's Agent
                                             </a>
                                         </li>
                                     </ul>

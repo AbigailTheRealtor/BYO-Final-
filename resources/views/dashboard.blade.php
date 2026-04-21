@@ -318,12 +318,131 @@
                                 </div>
 
                                 @else
-                                {{-- ── Agent quick-summary (no listing-by-role grid needed) ── --}}
+                                {{-- ═══════════════════════════════════════════════
+                                     AGENT: HIRE AGENT FRAMEWORK DASHBOARD
+                                ═══════════════════════════════════════════════ --}}
+                                @php
+                                    $agentRoleConfig = [
+                                        'tenant' => [
+                                            'label'        => "Hire Tenant's Agent",
+                                            'icon'         => '<i class="fa fa-key" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'color'        => '#0d6efd',
+                                            'bidsRoute'    => 'tenant.biding.auctions.list',
+                                            'createRoute'  => 'hire.agent.auction',
+                                            'createParams' => ['user_type' => 'tenant'],
+                                        ],
+                                        'landlord' => [
+                                            'label'        => "Hire Landlord's Agent",
+                                            'icon'         => '<i class="fa fa-building" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'color'        => '#198754',
+                                            'bidsRoute'    => 'landlord.biding.auctions.list',
+                                            'createRoute'  => 'hire.agent.auction',
+                                            'createParams' => ['user_type' => 'landlord'],
+                                        ],
+                                        'buyer' => [
+                                            'label'        => "Hire Buyer's Agent",
+                                            'icon'         => '<i class="fa fa-search" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'color'        => '#6f42c1',
+                                            'bidsRoute'    => 'buyer.biding.auctions.list',
+                                            'createRoute'  => 'hire.agent.auction',
+                                            'createParams' => ['user_type' => 'buyer'],
+                                        ],
+                                        'seller' => [
+                                            'label'        => "Hire Seller's Agent",
+                                            'icon'         => '<i class="fa fa-gavel" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'color'        => '#dc3545',
+                                            'bidsRoute'    => 'seller.biding.auctions.list',
+                                            'createRoute'  => 'hire.agent.auction',
+                                            'createParams' => ['user_type' => 'seller'],
+                                        ],
+                                    ];
+                                    $agentBidCounts = [
+                                        'tenant'   => \App\Models\TenantAgentAuctionBid::where('user_id', $user->id)->count(),
+                                        'landlord' => \App\Models\LandlordAgentAuctionBid::where('user_id', $user->id)->count(),
+                                        'buyer'    => \App\Models\BuyerAgentAuctionBid::where('user_id', $user->id)->count(),
+                                        'seller'   => \App\Models\SellerAgentAuctionBid::where('user_id', $user->id)->count(),
+                                    ];
+                                    $totalAgentBids = array_sum($agentBidCounts);
+                                @endphp
+
+                                {{-- My Hire Agent Listings (role grid) --}}
                                 <div class="mb-4">
-                                    <div class="card border-0 bg-light rounded-3 p-4 text-center text-muted small">
-                                        Use <strong>My Hire Agent Listings</strong> and <strong>My Bids</strong> above to manage your agent activity.
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">My Hire Agent Listings</div>
+                                        @if($totalListings > 0)
+                                            <a href="{{ route('agent.hire-listings') }}" class="small text-muted" style="font-size:.75rem;text-decoration:none;color:#049399;">View All →</a>
+                                        @endif
+                                    </div>
+                                    <div class="row g-3">
+                                        @foreach($agentRoleConfig as $roleKey => $roleCfg)
+                                        @php $cnt = $listingCounts[$roleKey] ?? 0; @endphp
+                                        <div class="col-6 col-md-3">
+                                            <div class="card h-100 border-0 rounded-3 p-3" style="background:#f8f9fa;">
+                                                <div class="d-flex align-items-center gap-2 mb-2" style="color:{{ $roleCfg['color'] }};">
+                                                    {!! $roleCfg['icon'] !!}
+                                                    <span class="small fw-semibold" style="font-size:.75rem;color:#444;">{{ $roleCfg['label'] }}</span>
+                                                </div>
+                                                <div class="fw-bold mb-2" style="font-size:1.6rem;color:{{ $cnt > 0 ? $roleCfg['color'] : '#adb5bd' }};">
+                                                    {{ $cnt }}
+                                                </div>
+                                                <div class="mt-auto d-flex gap-1 flex-wrap">
+                                                    @if($cnt > 0)
+                                                        <a href="{{ route('agent.hire-listings') }}"
+                                                           class="btn btn-sm flex-fill text-white"
+                                                           style="background:{{ $roleCfg['color'] }};font-size:.75rem;">
+                                                            View
+                                                        </a>
+                                                    @else
+                                                        <a href="{{ route($roleCfg['createRoute'], $roleCfg['createParams']) }}"
+                                                           class="btn btn-sm flex-fill"
+                                                           style="background:#f0f0f0;color:#888;font-size:.75rem;border:1px dashed #ccc;">
+                                                            + Create
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endforeach
                                     </div>
                                 </div>
+
+                                {{-- My Active Bids (role grid) --}}
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="small text-uppercase text-muted fw-bold" style="letter-spacing:.06em;font-size:.7rem;">My Active Bids</div>
+                                        @if($totalAgentBids > 0)
+                                            <span class="badge bg-secondary" style="font-size:.68rem;">{{ $totalAgentBids }} total</span>
+                                        @endif
+                                    </div>
+                                    <div class="row g-3">
+                                        @foreach($agentRoleConfig as $roleKey => $roleCfg)
+                                        @php $bidCnt = $agentBidCounts[$roleKey] ?? 0; @endphp
+                                        <div class="col-6 col-md-3">
+                                            <div class="card h-100 border-0 rounded-3 p-3" style="background:#f8f9fa;">
+                                                <div class="d-flex align-items-center gap-2 mb-2" style="color:{{ $roleCfg['color'] }};">
+                                                    {!! $roleCfg['icon'] !!}
+                                                    <span class="small fw-semibold" style="font-size:.75rem;color:#444;">{{ $roleCfg['label'] }}</span>
+                                                </div>
+                                                <div class="fw-bold mb-2" style="font-size:1.6rem;color:{{ $bidCnt > 0 ? $roleCfg['color'] : '#adb5bd' }};">
+                                                    {{ $bidCnt }}
+                                                </div>
+                                                <div class="mt-auto d-flex gap-1 flex-wrap">
+                                                    @if($bidCnt > 0)
+                                                        <a href="{{ route($roleCfg['bidsRoute']) }}"
+                                                           class="btn btn-sm flex-fill text-white"
+                                                           style="background:{{ $roleCfg['color'] }};font-size:.75rem;">
+                                                            View Bids
+                                                        </a>
+                                                    @else
+                                                        <span class="small text-muted" style="font-size:.75rem;">No bids yet</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+
                                 @endif
 
                                 {{-- ═══════════════════════════════════════════════
