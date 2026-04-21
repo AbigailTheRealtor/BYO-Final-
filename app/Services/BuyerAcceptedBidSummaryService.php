@@ -424,20 +424,34 @@ class BuyerAcceptedBidSummaryService
     {
         $meta     = $bid->meta->pluck('meta_value', 'meta_key')->toArray();
         $services = $meta['services'] ?? '[]';
-        return array_merge($meta, [
+        $result = array_merge($meta, [
             'services'       => is_string($services) ? json_decode($services, true) ?? [] : (array) $services,
             'other_services' => json_decode($meta['other_services'] ?? '[]', true) ?? [],
         ]);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($bid->auction)->isCreatedByAgent()) {
+            unset($result['referral_fee_percent']);
+        }
+
+        return $result;
     }
 
     private function getCounterData(BuyerCounterTerm $counter): array
     {
         $meta     = $counter->meta->pluck('meta_value', 'meta_key')->toArray();
         $services = $meta['services'] ?? '[]';
-        return array_merge($meta, [
+        $result = array_merge($meta, [
             'services'       => is_string($services) ? json_decode($services, true) ?? [] : (array) $services,
             'other_services' => json_decode($meta['other_services'] ?? '[]', true) ?? [],
         ]);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($counter->auction)->isCreatedByAgent()) {
+            unset($result['referral_fee_percent']);
+        }
+
+        return $result;
     }
 
     private function buildSummaryHtml(
@@ -692,6 +706,12 @@ class BuyerAcceptedBidSummaryService
         $additionalTerms = $data['additional_details'] ?? null;
         if (!empty($additionalTerms)) {
             $rows .= $this->makeRow('Additional Terms', $additionalTerms);
+        }
+
+        // Referral Fee
+        $referralFee = $data['referral_fee_percent'] ?? null;
+        if (!empty($referralFee)) {
+            $rows .= $this->makeRow('Referral Fee (%) (Agent-to-Agent)', $referralFee . '%');
         }
 
         if (empty($rows)) {

@@ -376,7 +376,14 @@ class AcceptedBidSummaryService
     protected function getBidData(TenantAgentAuctionBid $bid): array
     {
         $bidData = $bid->get;
-        return $this->extractCompensationFields($bidData) + [
+        $fields = $this->extractCompensationFields($bidData);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($bid->auction)->isCreatedByAgent()) {
+            unset($fields['referral_fee_percent']);
+        }
+
+        return $fields + [
             'services'      => $this->parseServices(data_get($bidData, 'services', [])),
             'other_services' => data_get($bidData, 'other_services', ''),
             'agent_name'    => data_get($bidData, 'name'),
@@ -391,7 +398,14 @@ class AcceptedBidSummaryService
     protected function getCounterData(TenantCounterBidding $counter): array
     {
         $counterData = $counter->get;
-        return $this->extractCompensationFields($counterData) + [
+        $fields = $this->extractCompensationFields($counterData);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($counter->auction)->isCreatedByAgent()) {
+            unset($fields['referral_fee_percent']);
+        }
+
+        return $fields + [
             'services'      => $this->parseServices(data_get($counterData, 'services', [])),
             'other_services' => data_get($counterData, 'other_services', ''),
             'agent_name'    => null,
@@ -508,6 +522,7 @@ class AcceptedBidSummaryService
             'brokerage_relationship'    => $g('brokerage_relationship'),
             'brokerage_relationship_other' => $g('brokerage_relationship_other'),
             'additional_terms'          => $additionalTerms,
+            'referral_fee_percent'      => $g('referral_fee_percent'),
         ];
     }
 
@@ -787,6 +802,7 @@ class AcceptedBidSummaryService
             'agency_agreement_timeframe'   => 'Tenant Agency Agreement Timeframe',
             'brokerage_relationship'       => 'Acceptable Brokerage Relationship',
             'additional_terms'             => 'Additional Terms',
+            'referral_fee_percent'         => 'Referral Fee (%) (Agent-to-Agent)',
         ];
 
         $hasContent = false;

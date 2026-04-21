@@ -205,6 +205,12 @@ class TenantBidMatchScoreHelper
             'fields' => ['brokerage_relationship'],
         ],
 
+        // 17. Referral Fee (%) — only present on agent-created listings
+        [
+            'key'    => 'referral_fee_percent',
+            'fields' => ['referral_fee_percent'],
+        ],
+
         // NOTE: additional_details_broker (free-text Additional Terms) is intentionally
         // excluded from scoring. "Additional Details NEVER counted" per business rule.
     ];
@@ -245,6 +251,7 @@ class TenantBidMatchScoreHelper
         'retainer_fee_application',
         'agency_agreement_timeframe',
         'brokerage_relationship',
+        'referral_fee_percent',
         'lease_fee_flat',
         'lease_fee_percentage',
         'lease_fee_percentage_monthly_rent',

@@ -34,6 +34,11 @@ class BuyerAgentAuction extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function isCreatedByAgent(): bool
+    {
+        return optional($this->user)->user_type === 'agent';
+    }
+
     public function bot_questions()
     {
         return $this->morphMany(BotQuestion::class, 'auction');

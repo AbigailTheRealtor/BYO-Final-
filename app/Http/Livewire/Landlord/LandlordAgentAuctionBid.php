@@ -140,6 +140,8 @@ class LandlordAgentAuctionBid extends Component
     public $early_termination_fee_amount = '';
     public $agency_agreement_timeframe = '';
     public $agency_agreement_custom = '';
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
     public $interested_in_property_management = '';
     public $interested_in_property_management_fee = '';
     public $interested_in_property_management_fee_gross_lease = '';
@@ -712,6 +714,8 @@ class LandlordAgentAuctionBid extends Component
         $this->interested_in_property_management_fee_other = $auction->get->interested_in_property_management_fee_other ?? '';
         $this->brokerage_relationship = $auction->get->brokerage_relationship ?? '';
         $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
+        $this->referral_fee_percent = $auction->get->referral_percentage ?? '';
+        $this->isListingCreatedByAgent = $auction->isCreatedByAgent();
 
         $this->auctionId = $auctionId;
         // Initialize arrays
@@ -933,6 +937,7 @@ class LandlordAgentAuctionBid extends Component
                 // Brokerage Relationship / Additional Details
                 $this->brokerage_relationship    = $bidData->brokerage_relationship ?? '';
                 $this->additional_details_broker = $bidData->additional_details_broker ?? '';
+                $this->referral_fee_percent      = $bidData->referral_fee_percent ?? '';
 
                 // Presentation/Marketing links
                 $this->presentation_link         = $bidData->presentation_link ?? '';
@@ -1305,6 +1310,10 @@ class LandlordAgentAuctionBid extends Component
 
             // Additional Terms
             $bid->saveMeta('additional_details_broker', $this->additional_details_broker);
+            $landlordAuction = \App\Models\LandlordAgentAuction::find($this->auctionId);
+            if ($landlordAuction && $landlordAuction->isCreatedByAgent()) {
+                $bid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+            }
 
             // $bid->saveMeta('custom_services', json_encode($this->custom_services));
             // Save Promotional Materials

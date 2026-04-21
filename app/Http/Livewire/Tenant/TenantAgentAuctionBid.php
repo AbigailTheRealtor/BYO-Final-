@@ -99,6 +99,8 @@ class TenantAgentAuctionBid extends Component
     public $retainer_fee_application;
     public $agency_agreement_timeframe;
     public $agency_agreement_custom;
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
     public $brokerage_relationship;
     public $additional_details_broker;
 
@@ -629,6 +631,8 @@ class TenantAgentAuctionBid extends Component
         $this->agency_agreement_custom = $auction->get->agency_agreement_custom ?? '';
         $this->brokerage_relationship = $auction->get->brokerage_relationship ?? '';
         $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
+        $this->referral_fee_percent = $auction->get->referral_percentage ?? '';
+        $this->isListingCreatedByAgent = $auction->isCreatedByAgent();
 
         // Auto-fill Broker Fee Timing fields from listing (Residential + Commercial)
         $this->broker_fee_timing = $auction->get->broker_fee_timing ?? '';
@@ -813,7 +817,8 @@ class TenantAgentAuctionBid extends Component
                 $this->agency_agreement_custom = $bidData->agency_agreement_custom ?? '';
                 $this->brokerage_relationship = $bidData->brokerage_relationship ?? '';
                 $this->additional_details_broker = $bidData->additional_details_broker ?? '';
-                
+                $this->referral_fee_percent = $bidData->referral_fee_percent ?? '';
+
                 // Load Broker Fee Timing fields from existing bid
                 $this->broker_fee_timing = $bidData->broker_fee_timing ?? '';
                 $this->broker_fee_days_from_rent = $bidData->broker_fee_days_from_rent ?? '';
@@ -1154,6 +1159,9 @@ class TenantAgentAuctionBid extends Component
             $bid->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
             $bid->saveMeta('brokerage_relationship', $this->brokerage_relationship);
             $bid->saveMeta('additional_details_broker', $this->additional_details_broker);
+            if ($auction->isCreatedByAgent()) {
+                $bid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+            }
             $bid->saveMeta('additional_details', $this->additional_details ?? null);
 
             // Save Services — filter to Tenant catalog first to prevent cross-role

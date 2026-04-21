@@ -380,7 +380,14 @@ class LandlordAcceptedBidSummaryService
     {
         $bidData = $bid->get;
         $rawEnhancements = data_get($bidData, 'photo_enhancements', []);
-        return $this->extractCompensationFields($bidData) + [
+        $fields = $this->extractCompensationFields($bidData);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($bid->auction)->isCreatedByAgent()) {
+            unset($fields['referral_fee_percent']);
+        }
+
+        return $fields + [
             'services'            => $this->parseServices(data_get($bidData, 'services', [])),
             'other_services'      => data_get($bidData, 'other_services', ''),
             'photo_enhancements'  => is_string($rawEnhancements) ? (json_decode($rawEnhancements, true) ?? []) : (is_array($rawEnhancements) ? $rawEnhancements : []),
@@ -400,8 +407,14 @@ class LandlordAcceptedBidSummaryService
         $counterMeta = $counter->getAllMeta();
         $bidData = $bid->get;
         $rawEnhancements = $counterMeta['photo_enhancements'] ?? [];
+        $fields = $this->extractCompensationFields($counterMeta);
 
-        return $this->extractCompensationFields($counterMeta) + [
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($bid->auction)->isCreatedByAgent()) {
+            unset($fields['referral_fee_percent']);
+        }
+
+        return $fields + [
             'services'            => $this->parseServices($counterMeta['services'] ?? []),
             'other_services'      => $counterMeta['other_services'] ?? '',
             'photo_enhancements'  => is_string($rawEnhancements) ? (json_decode($rawEnhancements, true) ?? []) : (is_array($rawEnhancements) ? $rawEnhancements : []),
@@ -518,6 +531,7 @@ class LandlordAcceptedBidSummaryService
             'interested_in_property_management' => $interestedPropMgmt,
             'property_management_fee_display'   => $propMgmtFeeDisplay,
             'additional_terms'                  => $additionalTerms,
+            'referral_fee_percent'              => $g('referral_fee_percent'),
         ];
     }
 
@@ -997,6 +1011,12 @@ class LandlordAcceptedBidSummaryService
 
         // G) Additional Terms
         $rows .= $row('Additional Terms', $data['additional_terms'] ?? null);
+
+        // H) Referral Fee (%) — only on agent-created listings
+        $referralFeePercent = $data['referral_fee_percent'] ?? null;
+        if (!empty($referralFeePercent)) {
+            $rows .= $row('Referral Fee (%) (Agent-to-Agent)', $referralFeePercent . '%');
+        }
 
         if (empty($rows)) {
             return '<p><em>No broker compensation terms specified.</em></p>';

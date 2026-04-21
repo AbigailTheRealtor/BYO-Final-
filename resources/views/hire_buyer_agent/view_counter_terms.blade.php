@@ -633,6 +633,15 @@
                         </div>
                         @endif
 
+                        @if ($auction->isCreatedByAgent() && !empty($counterData['referral_fee_percent']))
+                        <div class="mb-4">
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">
+                                <i class="fa fa-percent me-2"></i>Referral &amp; Cooperation Terms
+                            </h6>
+                            <p class="mb-0 ps-3 text-muted"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ $counterData['referral_fee_percent'] }}%</p>
+                        </div>
+                        @endif
+
                         @if (!empty($counterData['additional_details']))
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">

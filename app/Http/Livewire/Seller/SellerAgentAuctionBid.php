@@ -119,6 +119,8 @@ class SellerAgentAuctionBid extends Component
     public $retainer_fee_amount = '';
     public $retainer_fee_application = '';
     public $retained_deposits = '';
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
 
     // Agency Agreement
     public $agency_agreement_timeframe = '';
@@ -277,6 +279,8 @@ class SellerAgentAuctionBid extends Component
         $this->agency_agreement_custom        = $l->agency_agreement_custom ?? '';
         $this->brokerage_relationship         = $l->brokerage_relationship ?? '';
         $this->additional_details_broker      = $l->additional_details_broker ?? '';
+        $this->referral_fee_percent           = $l->referral_percentage ?? '';
+        $this->isListingCreatedByAgent        = $auction->isCreatedByAgent();
 
         // Initialize arrays
         $this->website_link  = [''];
@@ -374,7 +378,7 @@ class SellerAgentAuctionBid extends Component
                     'brokerage_relationship', 'additional_details_broker',
                     'first_name', 'last_name', 'phone', 'email', 'brokerage', 'license_no', 'nar_id',
                     'presentation_link', 'business_card_link', 'business_card_stored_path',
-                    'custom_enhancement',
+                    'custom_enhancement', 'referral_fee_percent',
                 ];
                 foreach ($strFields as $field) {
                     if (array_key_exists($field, $m) && !is_null($m[$field])) {
@@ -846,6 +850,10 @@ class SellerAgentAuctionBid extends Component
             $bid->saveMeta('agency_agreement_custom',        $this->agency_agreement_custom);
             $bid->saveMeta('brokerage_relationship',         $this->brokerage_relationship);
             $bid->saveMeta('additional_details_broker',      $this->additional_details_broker);
+            $sellerAuction = \App\Models\SellerAgentAuction::find($this->auctionId);
+            if ($sellerAuction && $sellerAuction->isCreatedByAgent()) {
+                $bid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+            }
 
             // Agent Credentials
             $bid->saveMeta('first_name',  $this->first_name);

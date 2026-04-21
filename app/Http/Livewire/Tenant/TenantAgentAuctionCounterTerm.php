@@ -77,6 +77,8 @@ class TenantAgentAuctionCounterTerm extends Component
     public $early_termination_fee_amount = '';
     public $retainer_fee_option = ''; // yes | no
     public $retainer_fee_amount = '';
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
     public $retainer_fee_application = ''; // applied | additional
     public $agency_agreement_timeframe = ''; // preset | custom
     public $agency_agreement_custom = '';
@@ -427,6 +429,7 @@ class TenantAgentAuctionCounterTerm extends Component
         } else {
             $this->property_type = $pab->get->property_type ?? '';
         }
+        $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
 
         // Check for existing active Tenant counter to determine if this is EDIT mode.
         // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
@@ -560,6 +563,7 @@ class TenantAgentAuctionCounterTerm extends Component
             'broker_fee_days_from_rent',
             'broker_fee_days_after_lease',
             'broker_fee_days_after_rent',
+            'referral_fee_percent',
         ];
 
         foreach ($assign as $key) {
@@ -758,5 +762,8 @@ class TenantAgentAuctionCounterTerm extends Component
 
         // Additional Details
         $counterTerm->saveMeta('additional_details_broker', $this->additional_details_broker ?? null);
+        if ($this->isListingCreatedByAgent) {
+            $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+        }
     }
 }

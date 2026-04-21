@@ -469,20 +469,34 @@ class SellerAcceptedBidSummaryService
     {
         $meta     = $bid->meta->pluck('meta_value', 'meta_key')->toArray();
         $services = $meta['services'] ?? '[]';
-        return array_merge($meta, [
+        $result = array_merge($meta, [
             'services'       => is_string($services) ? json_decode($services, true) ?? [] : (array) $services,
             'other_services' => json_decode($meta['other_services'] ?? '[]', true) ?? [],
         ]);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional($bid->auction)->isCreatedByAgent()) {
+            unset($result['referral_fee_percent']);
+        }
+
+        return $result;
     }
 
     private function getCounterData(SellerCounterTerm $counter): array
     {
         $meta     = $counter->meta->pluck('meta_value', 'meta_key')->toArray();
         $services = $meta['services'] ?? '[]';
-        return array_merge($meta, [
+        $result = array_merge($meta, [
             'services'       => is_string($services) ? json_decode($services, true) ?? [] : (array) $services,
             'other_services' => json_decode($meta['other_services'] ?? '[]', true) ?? [],
         ]);
+
+        // Strip referral_fee_percent from summaries for non-agent-created listings
+        if (!optional(optional($counter->bid)->auction)->isCreatedByAgent()) {
+            unset($result['referral_fee_percent']);
+        }
+
+        return $result;
     }
 
     private function buildSummaryHtml(
@@ -775,6 +789,12 @@ class SellerAcceptedBidSummaryService
         // H) Additional Terms (agent's broker notes, never additional_details which is listing owner's text)
         $additionalTerms = $g('additional_details_broker') ?? $g('additional_terms') ?? null;
         $rows .= $row('Additional Terms', $additionalTerms);
+
+        // I) Referral Fee (%) — only on agent-created listings
+        $referralFee = $g('referral_fee_percent');
+        if (!empty($referralFee)) {
+            $rows .= $row('Referral Fee (%) (Agent-to-Agent)', $referralFee . '%');
+        }
 
         if (empty($rows)) {
             return '<p><em>No compensation terms specified.</em></p>';

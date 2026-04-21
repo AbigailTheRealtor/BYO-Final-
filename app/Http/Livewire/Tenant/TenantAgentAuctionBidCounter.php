@@ -177,6 +177,8 @@ class TenantAgentAuctionBidCounter extends Component
     public $agency_agreement_custom = '';
     public $brokerage_relationship = '';
     public $additional_details_broker = '';
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
 
     // Broker Fee Timing
     public $broker_fee_timing = '';
@@ -540,6 +542,7 @@ class TenantAgentAuctionBidCounter extends Component
         } else {
             $this->property_type = $pab->get->property_type ?? '';
         }
+        $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
         
         // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms for THIS bid thread
         // TenantCounterTerm stores bid ID in tenant_agent_auction_id field
@@ -642,6 +645,9 @@ class TenantAgentAuctionBidCounter extends Component
                 ?? $sourceData->additional_details
                 ?? '';
             $this->additional_terms = $sourceData->additional_terms ?? '';
+            if ($this->isListingCreatedByAgent) {
+                $this->referral_fee_percent = $sourceData->referral_fee_percent ?? '';
+            }
             $this->additional_details = $sourceData->additional_details ?? '';
             
             // Load service_type if available in sourceData
@@ -851,6 +857,9 @@ class TenantAgentAuctionBidCounter extends Component
         // Additional Details
         $counterBid->saveMeta('additional_details', $this->additional_details ?? null);
         $counterBid->saveMeta('additional_details_broker', $this->additional_details_broker ?? null);
+        if ($this->isListingCreatedByAgent) {
+            $counterBid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+        }
 
         // Tenant Services
         $counterBid->saveMeta('services', json_encode($this->services));

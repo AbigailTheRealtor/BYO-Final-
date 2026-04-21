@@ -132,6 +132,8 @@ class LandlordAgentAuctionCounterTerm extends Component
     // Brokerage relationship + Additional terms
     public $brokerage_relationship = '';             // select
     public $additional_details_broker = '';          // textarea
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
     public $showEnhancements = false;
     public $showCustomEnhancement = false;
     public ?int $counterTermId = null;   // <— track existing record for edit
@@ -429,6 +431,7 @@ class LandlordAgentAuctionCounterTerm extends Component
         if ($auctionId) {
             $auc = \App\Models\LandlordAgentAuction::find($auctionId);
             $this->property_type = $auc ? ($auc->get->property_type ?? '') : '';
+            $this->isListingCreatedByAgent = optional($auc)->isCreatedByAgent() ?? false;
         } else {
             $this->property_type = $pab->get->property_type ?? '';
         }
@@ -582,6 +585,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             // === Additional Terms ===
             'additional_details_broker',
             'other_services_enabled',
+            'referral_fee_percent',
         ];
 
 
@@ -827,5 +831,8 @@ class LandlordAgentAuctionCounterTerm extends Component
         // Brokerage + Additional
         $counterTerm->saveMeta('brokerage_relationship', $this->brokerage_relationship);
         $counterTerm->saveMeta('additional_details_broker', $this->additional_details_broker);
+        if ($this->isListingCreatedByAgent) {
+            $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+        }
     }
 }

@@ -189,6 +189,12 @@ class LandlordBidMatchScoreHelper
             'key'    => 'interested_in_property_management',
             'fields' => ['interested_in_property_management'],
         ],
+
+        // 17. Referral Fee (%) — only present on agent-created listings
+        [
+            'key'    => 'referral_fee_percent',
+            'fields' => ['referral_fee_percent'],
+        ],
     ];
 
     /**
@@ -234,6 +240,7 @@ class LandlordBidMatchScoreHelper
         'agency_agreement_custom',
         'brokerage_relationship',
         'interested_in_property_management',
+        'referral_fee_percent',
     ];
 
     /**

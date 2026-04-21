@@ -778,6 +778,7 @@
                                 $ctAgencyDsp = strtolower(trim($ctAgencyTf ?? '')) === 'other' ? ($ctAgencyCus ?: 'Other') : ($ctAgencyTf ?: '');
                                 $ctBrokerRel = data_get($counterData, 'brokerage_relationship', '');
                                 $ctAddlDetails = data_get($counterData, 'additional_details_broker', '');
+                                $ctReferralFeePercent = data_get($counterData, 'referral_fee_percent', '');
                                 $ctRetainedDep = data_get($counterData, 'retained_deposits', '');
                                 $ctNominal = data_get($counterData, 'nominal', '');
                                 // Build leasing fee display for B) Lease Terms
@@ -1090,6 +1091,16 @@
                             <i class="fa fa-file-alt me-2"></i>Broker Additional Terms
                         </h6>
                         <div class="ps-3 text-muted">{{ $ctAddlDetails }}</div>
+                    </div>
+                    @endif
+
+                    {{-- Referral & Cooperation Terms --}}
+                    @if($auction->isCreatedByAgent() && $ctReferralFeePercent)
+                    <div class="mb-4">
+                        <h6 class="mb-2" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                            <i class="fa fa-percent me-2"></i>Referral &amp; Cooperation Terms
+                        </h6>
+                        <p class="mb-0 ps-3 text-muted"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ $ctReferralFeePercent }}%</p>
                     </div>
                     @endif
 

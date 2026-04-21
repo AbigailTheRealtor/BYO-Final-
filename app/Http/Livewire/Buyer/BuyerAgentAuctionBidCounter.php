@@ -122,6 +122,8 @@ public $agency_agreement_timeframe = '';    // 3 Months | 6 Months | 9 Months | 
 public $agency_agreement_custom = '';
 public $brokerage_relationship = '';
 public $additional_details_broker = '';
+public $referral_fee_percent = '';
+public $isListingCreatedByAgent = false;
  public $purchase_fee_flat_type = '$';
     public string $lease_fee_flat_type = '$';
     public $gap_payment_type = '$';
@@ -215,6 +217,7 @@ public $additional_details_broker = '';
 
         // Get property_type from the listing (auction), not from the agent bid
         $this->property_type = $pab->get->property_type ?? '';
+        $this->isListingCreatedByAgent = $pab->isCreatedByAgent();
 
         $sourceData = null;
 
@@ -283,6 +286,9 @@ public $additional_details_broker = '';
             $this->brokerage_relationship = $sourceData->brokerage_relationship ?? '';
             $this->additional_details_broker = $sourceData->additional_details_broker ?? '';
             $this->additional_details = $sourceData->additional_details ?? '';
+            if ($this->isListingCreatedByAgent) {
+                $this->referral_fee_percent = $sourceData->referral_fee_percent ?? '';
+            }
 
             $services = $sourceData->services ?? '';
             $rawServices = is_string($services) ? json_decode($services, true) ?? [] : (array) $services;
@@ -423,6 +429,9 @@ public $additional_details_broker = '';
             $counterBid->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
             $counterBid->saveMeta('brokerage_relationship', $this->brokerage_relationship);
             $counterBid->saveMeta('additional_details_broker', $this->additional_details_broker);
+            if ($this->isListingCreatedByAgent) {
+                $counterBid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+            }
 
             // $counterBid->saveMeta('custom_services', json_encode($this->custom_services));
             $counterBid->saveMeta('total_marketing_fee', $this->total_marketing_fee);

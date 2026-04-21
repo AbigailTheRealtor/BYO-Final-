@@ -100,6 +100,8 @@ public $retainer_fee_amount = '';
 public $retainer_fee_application = '';      // Applied toward final compensation | Charged in addition to final compensation
 public $agency_agreement_timeframe = '';    // 3 Months | 6 Months | 9 Months | 12 Months | custom
 public $agency_agreement_custom = '';
+public $referral_fee_percent = '';
+public $isListingCreatedByAgent = false;
 public $brokerage_relationship = '';
 public $additional_details_broker = '';
 
@@ -488,6 +490,7 @@ public $additional_details_broker = '';
             $this->agency_agreement_custom               = $b['agency_agreement_custom'] ?? '';
             $this->brokerage_relationship                = $b['brokerage_relationship'] ?? '';
             $this->additional_details_broker             = $b['additional_details_broker'] ?? '';
+            $this->referral_fee_percent                  = $b['referral_fee_percent'] ?? '';
         } else {
             // Load compensation defaults from the listing itself.
             // BuyerAgentAuction->get returns an anonymous class with __get(), NOT stdClass.
@@ -527,7 +530,9 @@ public $additional_details_broker = '';
             $this->agency_agreement_custom               = $l->agency_agreement_custom ?? '';
             $this->brokerage_relationship                = $l->brokerage_relationship ?? '';
             $this->additional_details_broker             = $l->additional_details_broker ?? '';
+            $this->referral_fee_percent                  = $l->referral_percentage ?? '';
         }
+        $this->isListingCreatedByAgent = $auction->isCreatedByAgent();
         // ─────────────────────────────────────────────────────────────────────
 
         // Auto-fill Agent Information from user profile
@@ -922,6 +927,10 @@ public $additional_details_broker = '';
             $bid->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
             $bid->saveMeta('brokerage_relationship', $this->brokerage_relationship);
             $bid->saveMeta('additional_details_broker', $this->additional_details_broker);
+            $buyerAuction = \App\Models\BuyerAgentAuction::find($this->auctionId);
+            if ($buyerAuction && $buyerAuction->isCreatedByAgent()) {
+                $bid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+            }
 
             // $bid->saveMeta('custom_services', json_encode($this->custom_services));
             $bid->saveMeta('total_marketing_fee', $this->total_marketing_fee);

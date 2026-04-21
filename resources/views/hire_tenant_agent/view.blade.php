@@ -2861,6 +2861,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             </ul>
                                                         </div>
                                                         @endif
+
+                                                        <!-- G) Referral Fee -->
+                                                        @if ($auction->isCreatedByAgent() && data_get($bid, 'get.referral_fee_percent'))
+                                                        <div class="mb-4">
+                                                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Referral &amp; Cooperation Terms</h6>
+                                                            <ul class="list-unstyled ps-3 mb-0">
+                                                                <li class="mb-1" style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ data_get($bid, 'get.referral_fee_percent') }}%{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}</li>
+                                                            </ul>
+                                                        </div>
+                                                        @endif
                                                     </div>
                                                     @endif
 

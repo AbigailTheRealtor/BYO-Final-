@@ -85,6 +85,8 @@ class SellerAgentAuctionCounterTerm extends Component
     public $agency_agreement_custom = '';
     public $brokerage_relationship = '';
     public $additional_details_broker = '';
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
 
     // Additional Details
     public $additional_details = '';
@@ -171,6 +173,7 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->property_type = $pab->get->property_type ?? '';
             $this->auctionId     = $pab->seller_agent_auction_id ?? null;
         }
+        $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
 
         // Determine role: seller = listing owner, agent = bidder responding to seller counter
         $isSeller = $auction && ($auction->user_id === Auth::id());
@@ -285,6 +288,7 @@ class SellerAgentAuctionCounterTerm extends Component
             'additional_details_broker',
             'additional_details',
             'other_services_enabled',
+            'referral_fee_percent',
             'custom_enhancement',
             'openHouseCount',
         ];
@@ -485,6 +489,9 @@ class SellerAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
         $counterTerm->saveMeta('brokerage_relationship', $this->brokerage_relationship);
         $counterTerm->saveMeta('additional_details_broker', $this->additional_details_broker);
+        if ($this->isListingCreatedByAgent) {
+            $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+        }
 
         $counterTerm->saveMeta('additional_details', $this->additional_details);
 

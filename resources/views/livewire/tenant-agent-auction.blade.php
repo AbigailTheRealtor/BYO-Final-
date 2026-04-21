@@ -1684,6 +1684,7 @@ $lease_types = [
                     };
 
                     $baseTabs = ['Listing Details'];
+                    $isAgentUser = auth()->check() && auth()->user()->user_type === 'agent';
 
                     // Conditionally set Property tab label based on user type
                     $propertyTab = match ($user_type) {
@@ -1703,6 +1704,9 @@ $lease_types = [
                     $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
+                    }
+                    if ($isAgentUser) {
+                    $restTabs[] = 'Referral & Cooperation Terms';
                     }
 
                     $infoTabs = [
@@ -1783,22 +1787,6 @@ $lease_types = [
                         <!-- Listing Details Tab -->
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                             role="tabpanel" aria-labelledby="listing-details-tab">
-                            @if(auth()->user() && auth()->user()->user_type === 'agent')
-                            <div class="mb-3 mt-3 px-1">
-                                <label class="form-label fw-semibold" for="referral_percentage">Referral Percentage <span class="text-muted fw-normal">(%)</span></label>
-                                <input type="number"
-                                       class="form-control"
-                                       id="referral_percentage"
-                                       wire:model.defer="referral_percentage"
-                                       min="0" max="100" step="0.01"
-                                       placeholder="e.g. 25">
-                                <div class="form-text text-muted" style="font-size:.8rem;">
-                                    Agent-only field. Stored privately and visible only on your Hire Agent dashboard.
-                                </div>
-                                @error('referral_percentage') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                            </div>
-                            <hr class="mb-3 mt-0">
-                            @endif
                             @if ($user_type === 'tenant')
                             @include('livewire.tenant-agent-auction-tabs.commission-based.listing-details')
                             @elseif($user_type === 'seller')
@@ -1918,6 +1906,29 @@ $lease_types = [
                                     @endif
                                 </div>
 
+                                <!-- Referral & Cooperation Terms Tab - Agent only -->
+                                @if ($isAgentUser)
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
+                                    id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
+                                    <div class="p-3">
+                                        <h5 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h5>
+                                        <div class="mb-4">
+                                            <label class="form-label fw-semibold" for="referral_percentage_create">Referral Fee (%) <span class="text-muted fw-normal">(Agent-to-Agent)</span></label>
+                                            <input type="number"
+                                                   class="form-control"
+                                                   id="referral_percentage_create"
+                                                   wire:model.defer="referral_percentage"
+                                                   min="0" max="100" step="0.01"
+                                                   placeholder="e.g. 25">
+                                            <div class="form-text text-muted mt-1" style="font-size:.85rem;">
+                                                This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
+                                            </div>
+                                            @error('referral_percentage') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+
                                 <!-- Info Tab - Adjust index based on user_type -->
                                 @php
                                     $infoTabId = match($user_type) {
@@ -1927,8 +1938,11 @@ $lease_types = [
                                         'landlord' => 'landlord-information',
                                         default => 'tenant-information'
                                     };
+                                    $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller'])
+                                        ? ($isAgentUser ? 7 : 6)
+                                        : ($isAgentUser ? 8 : 7);
                                 @endphp
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                                     id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
 
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))

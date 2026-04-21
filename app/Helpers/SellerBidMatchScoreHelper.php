@@ -179,6 +179,12 @@ class SellerBidMatchScoreHelper
             'key'    => 'brokerage_relationship',
             'fields' => ['brokerage_relationship'],
         ],
+
+        // 16. Referral Fee (%) — only present on agent-created listings
+        [
+            'key'    => 'referral_fee_percent',
+            'fields' => ['referral_fee_percent'],
+        ],
     ];
 
     /**
@@ -210,6 +216,7 @@ class SellerBidMatchScoreHelper
         'protection_period',
         'agency_agreement_timeframe',
         'brokerage_relationship',
+        'referral_fee_percent',
     ];
 
     /**

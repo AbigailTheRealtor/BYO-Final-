@@ -129,6 +129,15 @@ class CompetingBidsService
         $viewerData    = (array) $viewerBid->get;
         $competingData = (array) $competingBid->get;
 
+        // Referral fee is only a negotiable term for agent-created listings.
+        // Strip it from scoring data when the listing was created by a user to
+        // guarantee no impact on match scores for non-agent-created listings.
+        $auction = $viewerBid->auction;
+        if (!$auction || !$auction->isCreatedByAgent()) {
+            unset($viewerData['referral_fee_percent']);
+            unset($competingData['referral_fee_percent']);
+        }
+
         $result = TenantBidMatchScoreHelper::calculate($viewerData, $competingData, null, $propertyType);
 
         return array_merge($result, [

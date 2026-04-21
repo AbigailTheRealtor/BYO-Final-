@@ -127,6 +127,8 @@ class LandlordAgentAuctionBidCounter extends Component
     public $interested_in_property_management_fee_other = '';
     public $brokerage_relationship = '';
     public $additional_details_broker = '';
+    public $referral_fee_percent = '';
+    public $isListingCreatedByAgent = false;
 
 
     // Presentation & Promotional Materials
@@ -426,6 +428,7 @@ class LandlordAgentAuctionBidCounter extends Component
         $this->pab   = $pab;
         $this->bidId = $bidId;
         $this->property_type = $pab->get->property_type;
+        $this->isListingCreatedByAgent = $pab->isCreatedByAgent();
 
         // COUNTER BID PREFILL RULE: Agent counters with the Landlord's latest counter terms.
         // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
@@ -527,6 +530,7 @@ class LandlordAgentAuctionBidCounter extends Component
             'additional_details_broker',
             'other_services_enabled',
             'commission_structure',
+            'referral_fee_percent',
         ];
 
         foreach ($assign as $key) {
@@ -729,5 +733,8 @@ class LandlordAgentAuctionBidCounter extends Component
 
         // Additional Terms
         $counterBid->saveMeta('additional_details_broker', $this->additional_details_broker);
+        if ($this->isListingCreatedByAgent) {
+            $counterBid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+        }
     }
 }

@@ -105,6 +105,8 @@ public $agency_agreement_timeframe = '';    // 3 Months | 6 Months | 9 Months | 
 public $agency_agreement_custom = '';
 public $brokerage_relationship = '';
 public $additional_details_broker = '';
+public $referral_fee_percent = '';
+public $isListingCreatedByAgent = false;
  public $purchase_fee_flat_type = '$';
     public string $lease_fee_flat_type = '$';
     public $gap_payment_type = '$';
@@ -204,6 +206,7 @@ public $additional_details_broker = '';
         $auction = BuyerAgentAuction::find($pab->buyer_agent_auction_id);
         $this->auctionId = $pab->buyer_agent_auction_id;
         $this->property_type = $auction ? ($auction->get->property_type ?? '') : '';
+        $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
 
         // EDIT MODE: Try load existing active counter term for this buyer (current user) + specific bid.
         // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
@@ -315,6 +318,7 @@ public $additional_details_broker = '';
             'brokerage_relationship',
             'additional_details_broker',
             'other_services_enabled',
+            'referral_fee_percent',
         ];
 
         foreach ($assign as $key) {
@@ -471,5 +475,8 @@ public $additional_details_broker = '';
 
         // Additional Details
         $counterTerm->saveMeta('additional_details_broker', $this->additional_details_broker ?? null);
+        if ($this->isListingCreatedByAgent) {
+            $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
+        }
     }
 }
