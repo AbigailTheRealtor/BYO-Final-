@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Models\LandlordAgentAuctionBid as LandlordAgentAuctionBidData;
 use App\Models\AgentDefaultProfile;
+use App\Services\AgentBidMapperService;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Events\BidSubmitted;
@@ -738,35 +739,34 @@ class LandlordAgentAuctionBid extends Component
             $this->nar_id     = $user->nar_id ?? '';
 
             // Auto-load Default Profile for new bids
-            $defaultProfile = AgentDefaultProfile::findForAgentWithFallback(
+            $mapped = AgentBidMapperService::findAndMap(
                 $user->id,
                 'landlord',
                 $this->property_type ?: 'residential'
             );
-            if ($defaultProfile) {
-                $this->defaultProfileExists = true;
-                $dp = $defaultProfile->profile_data ?? [];
-                $this->bio                 = $dp['bio'] ?? '';
-                $this->why_hire_you        = $dp['why_hire_you'] ?? '';
-                $this->what_sets_you_apart = $dp['what_sets_you_apart'] ?? '';
-                $this->marketing_plan      = $dp['marketing_plan'] ?? '';
-                $this->year_licensed       = $dp['year_licensed'] ?? '';
-                if (!empty($dp['reviews_links']))    $this->reviews_links    = $dp['reviews_links'];
-                if (!empty($dp['website_link']))     $this->website_link     = $dp['website_link'];
-                if (!empty($dp['social_media']))     $this->social_media     = $dp['social_media'];
-                if (!empty($dp['additional_details'])) $this->additional_details = $dp['additional_details'];
-                if (!empty($dp['first_name']))        $this->first_name        = $dp['first_name'];
-                if (!empty($dp['last_name']))         $this->last_name         = $dp['last_name'];
-                if (!empty($dp['phone']))             $this->phone             = $dp['phone'];
-                if (!empty($dp['email']))             $this->email             = $dp['email'];
-                if (!empty($dp['brokerage']))         $this->brokerage         = $dp['brokerage'];
-                if (!empty($dp['license_no']))        $this->license_no        = $dp['license_no'];
-                if (!empty($dp['nar_id']))            $this->nar_id            = $dp['nar_id'];
-                if (!empty($dp['presentation_link']))         $this->presentation_link         = $dp['presentation_link'];
-                if (!empty($dp['business_card_link']))         $this->business_card_link         = $dp['business_card_link'];
-                if (!empty($dp['business_card_stored_path'])) $this->business_card_stored_path  = $dp['business_card_stored_path'];
-                if (!empty($dp['promoMaterials']))             $this->promoMaterials             = $dp['promoMaterials'];
-                $this->defaultProfileLoaded = true;
+            if ($mapped !== null) {
+                $this->defaultProfileExists  = true;
+                $this->bio                   = $mapped['bio'];
+                $this->why_hire_you          = $mapped['why_hire_you'];
+                $this->what_sets_you_apart   = $mapped['what_sets_you_apart'];
+                $this->marketing_plan        = $mapped['marketing_plan'];
+                $this->year_licensed         = $mapped['year_licensed'];
+                if (!empty($mapped['reviews_links']))             $this->reviews_links             = $mapped['reviews_links'];
+                if (!empty($mapped['website_link']))              $this->website_link              = $mapped['website_link'];
+                if (!empty($mapped['social_media']))              $this->social_media              = $mapped['social_media'];
+                if (!empty($mapped['additional_details']))        $this->additional_details        = $mapped['additional_details'];
+                if (!empty($mapped['first_name']))                $this->first_name                = $mapped['first_name'];
+                if (!empty($mapped['last_name']))                 $this->last_name                 = $mapped['last_name'];
+                if (!empty($mapped['phone']))                     $this->phone                     = $mapped['phone'];
+                if (!empty($mapped['email']))                     $this->email                     = $mapped['email'];
+                if (!empty($mapped['brokerage']))                 $this->brokerage                 = $mapped['brokerage'];
+                if (!empty($mapped['license_no']))                $this->license_no                = $mapped['license_no'];
+                if (!empty($mapped['nar_id']))                    $this->nar_id                    = $mapped['nar_id'];
+                if (!empty($mapped['presentation_link']))         $this->presentation_link         = $mapped['presentation_link'];
+                if (!empty($mapped['business_card_link']))        $this->business_card_link        = $mapped['business_card_link'];
+                if (!empty($mapped['business_card_stored_path'])) $this->business_card_stored_path = $mapped['business_card_stored_path'];
+                if (!empty($mapped['promoMaterials']))            $this->promoMaterials            = $mapped['promoMaterials'];
+                $this->defaultProfileLoaded  = true;
             }
         }
 
