@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Http\Livewire\Concerns\HasListingLifecycle;
 use App\Models\OfferAuction as OfferAuctionModel;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * OfferAuction — Phase 4 of the Workflow Engine.
@@ -61,8 +62,9 @@ class OfferAuction extends Component
     // ─────────────────────────────────────────────────────────────────────
     public function mount($offer_type = null, $listingId = null)
     {
-        if (auth()->user()->user_type !== 'agent') {
-            abort(403, 'Offer listings are restricted to agent accounts.');
+        // Defense-in-depth: use the same Gate as routes + Blade
+        if (Gate::denies('offer-playoff')) {
+            abort(403, 'You do not have access to Offer Playoff.');
         }
 
         // Pre-fill offer_type from URL param

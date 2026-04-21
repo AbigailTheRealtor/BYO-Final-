@@ -20,11 +20,13 @@
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Listing Owner (Landlord's Agent)</a></li>
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Buyer's Agent</a></li>
                     <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Seller's Agent</a></li>
+                    @can('offer-playoff')
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header">Offer Listings</h6></li>
                     <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'sale']) }}"><i class="fa fa-tag me-2 text-muted"></i>Sale (Purchase Offer)</a></li>
                     <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'rental']) }}"><i class="fa fa-home me-2 text-muted"></i>Rental Offer</a></li>
                     <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'lease']) }}"><i class="fa fa-key me-2 text-muted"></i>Lease Offer</a></li>
+                    @endcan
                 </ul>
             </div>
         @endif
@@ -102,6 +104,7 @@
             </div>
         </div>
     </a>
+    @can('offer-playoff')
     <a href="{{ route('agent.offer-listings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
             <div class="me-3"><i class="fa fa-file-text-o" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
@@ -116,6 +119,7 @@
             </div>
         </div>
     </a>
+    @endcan
     @endif
 
     @if (in_array(auth()->user()->user_type, ['agent']))
