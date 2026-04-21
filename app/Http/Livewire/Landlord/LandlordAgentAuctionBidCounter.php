@@ -155,6 +155,18 @@ class LandlordAgentAuctionBidCounter extends Component
     public $showCustomEnhancement = false;
 
 
+    protected function rules(): array
+    {
+        return [
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+        ];
+    }
+
+    protected array $messages = [
+        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
+        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+    ];
+
     // Reset methods for each main field change
     public function updatedPurchaseFeeType()
     {
@@ -581,6 +593,8 @@ class LandlordAgentAuctionBidCounter extends Component
 
     public function submit()
     {
+        $this->validate();
+
         try {
             DB::beginTransaction();
 

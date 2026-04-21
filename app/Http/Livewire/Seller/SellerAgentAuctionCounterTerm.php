@@ -106,6 +106,18 @@ class SellerAgentAuctionCounterTerm extends Component
     public $custom_enhancement = '';
     public $openHouseCount = '';
 
+    protected function rules(): array
+    {
+        return [
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+        ];
+    }
+
+    protected array $messages = [
+        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
+        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+    ];
+
     public function setActiveTab($index)
     {
         $this->activeTab = (int) $index;
@@ -355,6 +367,8 @@ class SellerAgentAuctionCounterTerm extends Component
 
     public function submit()
     {
+        $this->validate();
+
         $auction = $this->pab->auction ?? SellerAgentAuction::find($this->pab->seller_agent_auction_id ?? null);
         $isSeller = $auction && ($auction->user_id === Auth::id());
         $isAgent  = ($this->pab->user_id === Auth::id());

@@ -281,6 +281,7 @@ class TenantAgentAuctionBid extends Component
             'email'       => 'required|email',
             'brokerage'   => 'required|string',
             'license_no'  => 'required|string',
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
     }
 
@@ -299,6 +300,8 @@ class TenantAgentAuctionBid extends Component
         'email.email'          => 'Please enter a valid email address.',
         'brokerage.required'   => 'Please enter your brokerage name.',
         'license_no.required'  => 'Please enter your real estate license number.',
+        'referral_fee_percent.numeric'  => 'Referral fee must be a number.',
+        'referral_fee_percent.between'  => 'Referral fee must be between 0 and 100.',
     ];
 
     public function updatePlaceholder($index, $platform)

@@ -116,6 +116,19 @@ public $isListingCreatedByAgent = false;
     public $down_payment_amount = '';
       public $seller_financing_type = '$';
     public $seller_financing_amount = '';
+
+    protected function rules(): array
+    {
+        return [
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+        ];
+    }
+
+    protected array $messages = [
+        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
+        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+    ];
+
     public function setType(string $which, string $type): void
 
     {
@@ -347,6 +360,8 @@ public $isListingCreatedByAgent = false;
     }
     public function submit()
     {
+        $this->validate();
+
         try {
             DB::beginTransaction();
 

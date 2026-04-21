@@ -96,6 +96,18 @@ class TenantAgentAuctionCounterTerm extends Component
     // Additional
     public $additional_details_broker = '';
 
+    protected function rules(): array
+    {
+        return [
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+        ];
+    }
+
+    protected $messages = [
+        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
+        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+    ];
+
     public function getServicesConfigProperty(): array
     {
         $q = "\u{2019}";
@@ -605,6 +617,8 @@ class TenantAgentAuctionCounterTerm extends Component
     }
     public function submit()
     {
+        $this->validate();
+
         try {
             DB::beginTransaction();
 

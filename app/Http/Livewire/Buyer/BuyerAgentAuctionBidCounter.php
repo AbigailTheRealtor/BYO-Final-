@@ -27,6 +27,18 @@ class BuyerAgentAuctionBidCounter extends Component
         parent::syncInput($name, $value, $rehash);
     }
 
+    protected function rules(): array
+    {
+        return [
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+        ];
+    }
+
+    protected array $messages = [
+        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
+        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+    ];
+
     public $pab;
     public $bidId;
     public $counterPrice;
@@ -316,6 +328,8 @@ public $isListingCreatedByAgent = false;
 
     public function submit()
     {
+        $this->validate();
+
         try {
             DB::beginTransaction();
 

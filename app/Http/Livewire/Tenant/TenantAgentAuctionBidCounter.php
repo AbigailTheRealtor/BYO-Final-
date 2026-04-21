@@ -195,6 +195,18 @@ class TenantAgentAuctionBidCounter extends Component
     public $purchase_fee_flat_type = '$';
     public string $lease_fee_flat_type = '$';
 
+    protected function rules(): array
+    {
+        return [
+            'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
+        ];
+    }
+
+    protected $messages = [
+        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
+        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+    ];
+
     public function getServicesConfigProperty(): array
     {
         $q = "\u{2019}";
@@ -727,6 +739,8 @@ class TenantAgentAuctionBidCounter extends Component
 
     public function submit()
     {
+        $this->validate();
+
         try {
             $endDate = strtotime($this->pab->end_date . ' ' . ($this->pab->end_time ?? '23:59:59'));
             if (time() > $endDate) {
