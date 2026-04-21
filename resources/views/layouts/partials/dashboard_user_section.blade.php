@@ -98,19 +98,16 @@
                             </button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('agent.landlord.auction.add') }}">Add Property Listing (Rental)</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">Hire Tenant's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('add-listing') }}">Add Property Listing (Sale)</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">Hire Landlord's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('buyer_agent.auction.add') }}">Add Buyer Criteria Listing</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">Hire Buyer's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('agent.tenant.criteria.auction.add') }}">Add Tenant Criteria Listing</a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" href="{{ route('agent.service.auction.add') }}">Add Service Auction</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">Hire Seller's Agent</a>
                                 </li>
                             </ul>
                         </span>
