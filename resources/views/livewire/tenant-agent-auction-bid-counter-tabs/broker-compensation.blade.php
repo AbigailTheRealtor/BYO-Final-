@@ -658,7 +658,7 @@
     <input type="number"
            class="form-control mt-1"
            id="referral_fee_percent_tenant_counter"
-           wire:model.lazy="referral_fee_percent"
+           wire:model.live="referral_fee_percent"
            min="0" max="100" step="0.01"
            placeholder="e.g. 25">
     <div class="form-text text-muted mt-1" style="font-size:.85rem;">
