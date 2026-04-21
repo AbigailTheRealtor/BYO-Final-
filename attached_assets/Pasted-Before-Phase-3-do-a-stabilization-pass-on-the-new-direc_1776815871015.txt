@@ -1,0 +1,116 @@
+Before Phase 3, do a stabilization pass on the new direct Hire Me / Hire This Agent flow.
+
+Objective
+
+Tighten the new direct Hire Me flow so it is launch-clean before we build preset management UI.
+
+This is not a rebuild.
+Do a small, surgical pass only on trust, validation, UX clarity, and guardrails.
+
+Audit first
+
+Before changing code, audit and report:
+
+what currently happens if the selected agent has:
+no preset for that role/property type
+an empty services array
+missing brokerage/license/profile basics
+what exact page the user lands on after POST/create
+whether that destination clearly shows the pre-created bid and next actions
+whether duplicate submit protection exists on the confirm step
+whether any generic marketplace language is still visible in the direct flow
+whether any user can still reach a half-configured direct flow that should be blocked
+
+Do not code until the audit is complete.
+
+Required fixes
+1. Preset completeness guard
+
+Block the direct Hire Me flow if the selected agent does not have a usable preset for that role/property type.
+
+Minimum requirements to proceed:
+
+preset exists
+services array is not empty
+
+If missing, show a clean unavailable message such as:
+“This agent has not finished setting up this hiring profile yet.”
+
+Do not let the user proceed into a weak or empty preview state.
+
+2. Preview page clarity
+
+Improve the direct preview page copy so it clearly explains:
+
+this is a direct hire request for this specific agent
+the user is reviewing the agent’s proposed offer
+the user can accept as-is later or request changes
+nothing is final until both sides agree and sign
+
+Add a short “What happens next” section.
+
+3. Direct-flow labeling cleanup
+
+Audit the preview page and any immediate next-step pages for leftover generic language like:
+
+post a listing
+auction
+listing request
+generic marketplace wording
+
+Replace visible wording with direct-hire wording where appropriate.
+
+This should feel like:
+Hire This Agent
+not
+Create a public listing
+
+4. Invalid preset / property type handling
+
+If the link points to a role/property type combination the agent has not configured:
+
+show a clean unavailable state
+do not allow POST/create
+do not create partial records
+5. Double-submit protection
+
+Add lightweight protection to the POST confirm step so accidental double-clicks or duplicate form submissions do not create duplicate listing/bid pairs.
+
+Use the smallest safe mechanism already consistent with the codebase.
+
+6. Redirect QA
+
+Audit whether the existing post-create redirect is the best available existing page.
+
+If it is good enough, keep it.
+If it is confusing but still functional, report it clearly for future Phase 3/4 polish.
+Do not rebuild the destination page unless there is a true functional problem.
+
+7. Preserve existing safeguards
+
+Keep all existing guardrails intact:
+
+self-hire blocked
+invalid role blocked
+invalid property type blocked
+services restricted to agent-included services only
+atomic transaction behavior preserved
+Important rules
+No DB renames
+No DB deletes
+No broad route refactor
+No rebuilding the direct flow
+No breaking generic Hire Agent marketplace flow
+No breaking existing accept/counter/reject/signature logic
+Deliverable
+
+After the stabilization pass, report:
+
+files audited
+files changed
+what new preset-completeness checks were added
+how empty-services presets are handled now
+what preview-page copy/UX was improved
+whether duplicate-submit protection was added
+whether redirect destination was kept or flagged for later refinement
+confirmation that generic marketplace flow was untouched
