@@ -38,6 +38,7 @@
                         <li><a href="{{ route('admin.landlord.agent.auctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Hire Landlord's Agent</a></li>
                         <li><a href="{{ route('admin.tenant.agent.auctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Hire Tenant's Agent</a></li>
                         <li><a href="{{ route('admin.offerListings') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Offer Listings</a></li>
+                        <li><a href="{{ route('admin.referrals.index') }}" class="fw-bold" ><i class="fa fa-share-alt me-1"></i> Referral Tracking</a></li>
                     </ul>
                 </li>
                 <li><a class="nav-link" href="{{ route('admin.commonBotQuestions.index') }}"><i class="fa-solid fa-robot"></i> <span>Manage Common Chatbot Questions</span></a></li>

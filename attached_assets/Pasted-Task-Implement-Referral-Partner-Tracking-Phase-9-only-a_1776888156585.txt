@@ -1,0 +1,105 @@
+Task: Implement Referral Partner Tracking — Phase 9 only (admin referral tracking view).
+
+GOAL:
+Create an admin-only page that displays referral activity across the platform using existing referral data (users, listings, accepted_bid_summaries, referral_visits, agent_referral_links). This is a read-only tracking dashboard — no payouts, no editing.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not modify any existing user, listing, bidding, or dashboard flows.
+- Do not add editing capabilities — read-only only.
+- Do not alter admin navigation unless adding a single safe link.
+- Do not restructure database queries used elsewhere.
+- Inspect existing admin routes/controllers first and extend them safely.
+
+PHASE 9 — ADMIN REFERRAL VIEW ONLY
+
+1. Inspect admin structure
+- Identify the existing admin controller(s) and routes
+- Choose the safest place to add a new page:
+  - /admin/referrals
+- Use an existing admin layout/view pattern
+
+2. Create a new admin route:
+GET /admin/referrals
+Name: admin.referrals.index
+
+3. Create controller method:
+AdminController::referrals()
+
+4. Query data (read-only):
+
+Join or map across:
+
+- accepted_bid_summaries (primary dataset)
+- users (referred user)
+- agent_referral_links (code + stats)
+- listings (via auction relationship if needed)
+
+Each row should include:
+
+- Referring Agent ID
+- Referral Code
+- Referred User ID
+- Listing ID
+- Listing Type (buyer/seller/landlord/tenant)
+- Hired Agent ID
+- Referral Status
+- Created Date
+
+5. Optional: include referral_visits linkage if easily accessible, but not required
+
+6. Build a simple table view:
+resources/views/admin/referrals.blade.php
+
+Columns:
+- Referring Agent
+- Code
+- User
+- Listing
+- Hired Agent
+- Status
+- Created
+
+7. Add filters (simple GET filters):
+- status (pending, qualified, closed, paid, void)
+
+8. Keep UI minimal:
+- no charts
+- no editing
+- no payout fields
+- no actions
+
+9. Add safe navigation link:
+- in admin sidebar or menu
+- label: “Referral Tracking”
+
+TEST REQUIREMENTS:
+
+1. Referred deal:
+- confirm accepted_bid_summaries row appears with correct data
+
+2. Non-referred deal:
+- confirm it either:
+  - does not appear
+  OR
+  - appears with null referral fields (choose and report behavior)
+
+3. Multiple agents:
+- confirm data displays correctly across different referring agents
+
+4. Filter:
+- confirm status filter works
+
+5. No side effects:
+- confirm no changes to any data when viewing page
+
+AFTER IMPLEMENTATION, REPORT:
+1. route added
+2. controller method
+3. query structure used
+4. whether non-referred deals are included or excluded
+5. filter behavior
+6. test results
+
+DELIVERABLE:
+Only Phase 9 admin referral tracking view. No payout logic, no edits, no model relationship pass.

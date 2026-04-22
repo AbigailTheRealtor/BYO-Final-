@@ -11,6 +11,7 @@ use App\Models\SellerServiceAuction;
 use App\Models\User;
 use App\Notifications\OfferListingStatusNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AdminController extends Controller
@@ -277,6 +278,78 @@ class AdminController extends Controller
         }
 
         return redirect()->back()->with('success', 'Offer listing has been rejected and returned to draft.');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Phase 9 — Admin Referral Tracking
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * GET /admin/referrals
+     *
+     * Read-only referral tracking view.
+     * Primary dataset: accepted_bid_summaries WHERE referring_agent_id IS NOT NULL.
+     * Non-referred deals are excluded.
+     */
+    public function referrals(Request $request)
+    {
+        $page_data['title'] = 'Referral Tracking';
+
+        $validStatuses = ['pending', 'qualified', 'closed', 'paid', 'void'];
+        $status = in_array($request->get('status'), $validStatuses, true)
+            ? $request->get('status')
+            : null;
+
+        // ── Per-agent link summary ────────────────────────────────────────────
+        $page_data['linkStats'] = DB::table('agent_referral_links')
+            ->leftJoin('users', 'agent_referral_links.agent_id', '=', 'users.id')
+            ->where('agent_referral_links.is_active', true)
+            ->select([
+                'agent_referral_links.id',
+                'agent_referral_links.code',
+                'agent_referral_links.click_count',
+                'agent_referral_links.signup_count',
+                'agent_referral_links.listing_count',
+                'agent_referral_links.hire_count',
+                'users.name   as agent_name',
+                'users.email  as agent_email',
+                'users.id     as agent_id',
+            ])
+            ->orderByDesc('agent_referral_links.hire_count')
+            ->get();
+
+        // ── Referred hires (accepted_bid_summaries with attribution) ──────────
+        $query = DB::table('accepted_bid_summaries')
+            ->whereNotNull('accepted_bid_summaries.referring_agent_id')
+            ->leftJoin('users as ra', 'accepted_bid_summaries.referring_agent_id', '=', 'ra.id')
+            ->leftJoin('users as ru', 'accepted_bid_summaries.tenant_user_id',      '=', 'ru.id')
+            ->leftJoin('users as ha', 'accepted_bid_summaries.agent_user_id',       '=', 'ha.id')
+            ->select([
+                'accepted_bid_summaries.id',
+                'accepted_bid_summaries.listing_type',
+                'accepted_bid_summaries.listing_id',
+                'accepted_bid_summaries.referring_agent_id',
+                'accepted_bid_summaries.referral_source_code',
+                'accepted_bid_summaries.referral_status',
+                'accepted_bid_summaries.created_at',
+                'accepted_bid_summaries.tenant_user_id',
+                'accepted_bid_summaries.agent_user_id',
+                'ra.name  as referring_agent_name',
+                'ra.email as referring_agent_email',
+                'ru.name  as referred_user_name',
+                'ha.name  as hired_agent_name',
+            ])
+            ->orderByDesc('accepted_bid_summaries.created_at');
+
+        if ($status) {
+            $query->where('accepted_bid_summaries.referral_status', $status);
+        }
+
+        $page_data['rows']           = $query->paginate(50)->withQueryString();
+        $page_data['filterStatus']   = $status;
+        $page_data['validStatuses']  = $validStatuses;
+
+        return view('admin.referrals', $page_data);
     }
 
     public function settings()
