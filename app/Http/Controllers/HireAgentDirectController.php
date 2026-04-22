@@ -66,6 +66,34 @@ class HireAgentDirectController extends Controller
         'seller'   => 'seller.agent.auction.detail',
     ];
 
+    /**
+     * Resolve the agent's services list from a profile.
+     * Handles: array, JSON-encoded string, "none", null.
+     * Returns a plain indexed array of non-empty strings.
+     *
+     * @param  AgentDefaultProfile|null  $profile
+     * @return array<int, string>
+     */
+    private static function resolveServices(?AgentDefaultProfile $profile): array
+    {
+        if (!$profile) {
+            return [];
+        }
+        $raw = $profile->profile_data['services'] ?? null;
+
+        if (is_array($raw)) {
+            $services = $raw;
+        } elseif (is_string($raw) && $raw !== 'none' && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            $services = is_array($decoded) ? $decoded : [];
+        } else {
+            return [];
+        }
+
+        // Filter out blank entries
+        return array_values(array_filter($services, fn($s) => is_string($s) && trim($s) !== ''));
+    }
+
     // ─────────────────────────────────────────────────────────────────
     // GET — Preview / confirmation page (no DB writes)
     // ─────────────────────────────────────────────────────────────────
@@ -102,12 +130,25 @@ class HireAgentDirectController extends Controller
             ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? [])
             : null;
 
+        // Resolve services from the preset (handles array or JSON-string storage)
+        $agentServices = self::resolveServices($profile);
+
+        // Preset is only usable when it exists AND has at least one service
+        $presetValid = $profile !== null && count($agentServices) > 0;
+
+        // Fix 2 — generate a one-time submit token for backend duplicate protection
+        $submitToken = bin2hex(random_bytes(16));
+        session(['hire_direct_token' => $submitToken]);
+
         return view('hire-agent-direct.preview', compact(
             'agent',
             'role',
             'propertyType',
             'profile',
-            'mapped'
+            'mapped',
+            'agentServices',
+            'presetValid',
+            'submitToken'
         ));
     }
 
@@ -134,6 +175,16 @@ class HireAgentDirectController extends Controller
             abort(403, 'You cannot hire yourself.');
         }
 
+        // Fix 2 — backend one-time token: consume it or reject as duplicate
+        $expectedToken = session('hire_direct_token');
+        $submittedToken = $request->input('_hire_token');
+        if (!$expectedToken || !$submittedToken || !hash_equals($expectedToken, $submittedToken)) {
+            return redirect()->back()
+                ->with('error', 'This request has already been submitted or the page has expired. Please refresh and try again.');
+        }
+        // Consume the token immediately — subsequent POSTs with the same token are rejected
+        session()->forget('hire_direct_token');
+
         // Validate minimal client inputs
         $validated = $request->validate([
             'address'              => 'required|string|max:500',
@@ -151,16 +202,22 @@ class HireAgentDirectController extends Controller
 
         if (!$profile) {
             return redirect()->back()
-                ->with('error', 'This agent has not set up a profile preset for the selected role and property type. Unable to proceed.');
+                ->with('error', 'This agent has not set up a hiring profile for the selected role and property type. Unable to proceed.');
+        }
+
+        // Fix 1 — block if the agent's preset has no services configured
+        $agentServices = self::resolveServices($profile);
+        if (empty($agentServices)) {
+            return redirect()->back()
+                ->with('error', 'This agent has not finished setting up their services yet. Unable to proceed.');
         }
 
         $mapped = AgentBidMapperService::mapFromProfile($profile->profile_data ?? []);
 
         // Services the client confirmed (must be a subset of agent's preset services)
-        $agentServices  = $profile->profile_data['services'] ?? [];
         $clientServices = array_values(array_intersect(
             $validated['services'] ?? [],
-            is_array($agentServices) ? $agentServices : []
+            $agentServices
         ));
 
         DB::beginTransaction();

@@ -63,12 +63,31 @@
         font-size: .92rem;
         color: #333;
     }
-    .no-profile-notice {
+    .unavailable-notice {
         background: #fff3cd;
         border: 1px solid #ffc107;
         border-radius: 8px;
         padding: 20px;
         margin-bottom: 24px;
+    }
+    .what-next-block {
+        background: #f0f9f0;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 18px 22px;
+        margin-bottom: 24px;
+        font-size: .92rem;
+    }
+    .what-next-block h6 {
+        font-weight: 700;
+        color: #1a5c2a;
+        margin-bottom: 10px;
+    }
+    .what-next-block ol {
+        margin: 0;
+        padding-left: 20px;
+        color: #2d4f36;
+        line-height: 1.7;
     }
     .confirm-btn {
         background: #facd34;
@@ -80,7 +99,8 @@
         color: #1a1a1a;
         transition: opacity .15s;
     }
-    .confirm-btn:hover { opacity: .85; }
+    .confirm-btn:hover:not(:disabled) { opacity: .85; }
+    .confirm-btn:disabled { opacity: .55; cursor: not-allowed; }
     .role-badge {
         display: inline-block;
         background: #facd34;
@@ -101,22 +121,26 @@
 <div class="buyerOfferContentDetails py-4">
 <div class="container hire-direct-wrap">
 
-    {{-- Page Header --}}
+    {{-- Page Header — Fix 6: include agent name --}}
+    @php
+        $agentFullName = trim(($agent->first_name ?? '') . ' ' . ($agent->last_name ?? ''));
+        $agentDisplayName = $agentFullName ?: ($agent->name ?? 'This Agent');
+    @endphp
     <div class="mb-4">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb small">
                 <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('search.agents') }}">Browse Agents</a></li>
-                <li class="breadcrumb-item active">Hire Agent</li>
+                <li class="breadcrumb-item active">Hire {{ $agentDisplayName }}</li>
             </ol>
         </nav>
         <h4 class="fw-bold mb-1">
-            Hire Agent
+            Hire {{ $agentDisplayName }}
             <span class="role-badge">{{ \App\Models\AgentDefaultProfile::roleLabel($role) }}</span>
         </h4>
         <p class="text-muted small mb-0">
-            Review the agent's preset offer below. You can uncheck any services you don't need,
-            add any extra requests, then confirm to send the hire request.
+            You are reviewing this agent's proposed offer directly.
+            Confirm below to send your hire request — nothing is final until both sides agree and sign.
         </p>
     </div>
 
@@ -138,7 +162,7 @@
                      style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;">
             </div>
             <div>
-                <h3>{{ $agent->first_name ?? '' }} {{ $agent->last_name ?? '' }}
+                <h3>{{ $agentDisplayName }}
                     <span style="font-size:.85rem;font-weight:400;color:#6c757d;">
                         — {{ \App\Models\AgentDefaultProfile::roleLabel($role) }}
                     </span>
@@ -157,18 +181,23 @@
         </div>
     </div>
 
-    {{-- No profile notice --}}
-    @if(!$profile || !$mapped)
-        <div class="no-profile-notice">
-            <strong>No preset available.</strong>
-            This agent has not yet set up a profile for
-            <em>{{ \App\Models\AgentDefaultProfile::roleLabel($role) }}</em>
-            /
-            <em>{{ \App\Models\AgentDefaultProfile::propertyLabel($propertyType) }}</em>.
-            Please contact them directly or browse other agents.
+    {{-- Fix 1: Unavailable state — no preset OR empty services --}}
+    @if(!$presetValid)
+        <div class="unavailable-notice">
+            @if(!$profile)
+                <strong>Profile not available.</strong>
+                {{ $agentDisplayName }} has not set up a hiring profile for
+                <em>{{ \App\Models\AgentDefaultProfile::roleLabel($role) }}</em> /
+                <em>{{ \App\Models\AgentDefaultProfile::propertyLabel($propertyType) }}</em>.
+            @else
+                <strong>Profile not ready.</strong>
+                {{ $agentDisplayName }} has not finished setting up their services yet for this role.
+            @endif
+            <div class="mt-2 text-muted small">Please contact them directly or browse other agents.</div>
         </div>
         <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">← Back to Browse Agents</a>
     @else
+
         {{-- Agent overview --}}
         @if(!empty($mapped['bio']))
         <div class="mb-3">
@@ -191,24 +220,19 @@
         </div>
         @endif
 
-        {{-- Confirmation Form --}}
-        <form method="POST" action="{{ route('hire.agent.direct.confirm', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}">
+        {{-- Fix 2 (frontend): disable button on submit; pass one-time token --}}
+        <form method="POST"
+              id="hire-direct-form"
+              action="{{ route('hire.agent.direct.confirm', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}"
+              onsubmit="return hireDirectSubmit(this)">
             @csrf
+            <input type="hidden" name="_hire_token" value="{{ $submitToken }}">
 
-            {{-- Services Section --}}
-            @php
-                $agentServices = is_array($profile->profile_data['services'] ?? null)
-                    ? $profile->profile_data['services']
-                    : (is_string($profile->profile_data['services'] ?? null)
-                        ? json_decode($profile->profile_data['services'], true) ?? []
-                        : []);
-            @endphp
-
-            @if(!empty($agentServices))
+            {{-- Services Section — only shown when presetValid (services is non-empty) --}}
             <div class="mb-4">
                 <div class="section-label">Included Services</div>
                 <p class="text-muted small mb-2">
-                    These are the services this agent includes in their offer.
+                    These are the services {{ $agentDisplayName }} includes in their offer.
                     Uncheck any you do not need.
                 </p>
                 <div class="service-checkbox-list">
@@ -225,13 +249,12 @@
                 @error('services') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                 @error('services.*') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
             </div>
-            @endif
 
             {{-- Property Address --}}
             <div class="mb-4">
                 <div class="section-label">Property Address <span class="text-danger">*</span></div>
                 <p class="text-muted small mb-2">
-                    Enter the address of the property related to this hire request.
+                    Enter the address of the property this hire request relates to.
                 </p>
                 <input type="text"
                        name="address"
@@ -248,8 +271,8 @@
             <div class="mb-4">
                 <div class="section-label">Additional Requests (Optional)</div>
                 <p class="text-muted small mb-2">
-                    Any extra services or special requests you want to note.
-                    These are requests only — the agent's final bid determines what is included.
+                    Anything extra you'd like to note. These are requests only — the agent's offer
+                    determines what is formally included.
                 </p>
                 <textarea name="additional_requested"
                           class="form-control @error('additional_requested') is-invalid @enderror"
@@ -260,20 +283,21 @@
                 @enderror
             </div>
 
-            {{-- Terms notice --}}
-            <div class="alert alert-info d-flex align-items-start gap-2 mb-4" style="font-size:.88rem;">
-                <span style="font-size:1.1rem;margin-top:1px;">ℹ️</span>
-                <div>
-                    Confirming this request will create a listing and pre-load the agent's preset bid.
-                    You can then <strong>accept, counter, or decline</strong> the bid using the standard
-                    review flow — no obligation until you explicitly accept.
-                </div>
+            {{-- Fix 4: replaced "create a listing" wording --}}
+            {{-- Fix 5: What happens next section --}}
+            <div class="what-next-block mb-4">
+                <h6>What happens next</h6>
+                <ol>
+                    <li>Your request is sent directly to {{ $agentDisplayName }} with their proposed terms.</li>
+                    <li>You can review the offer and choose to <strong>accept</strong>, request changes with a <strong>counter</strong>, or <strong>decline</strong> — no obligation yet.</li>
+                    <li>Once both sides agree on the terms, you will <strong>sign the agreement digitally</strong> to make it official.</li>
+                </ol>
             </div>
 
             {{-- Submit --}}
             <div class="d-flex align-items-center gap-3 flex-wrap">
-                <button type="submit" class="confirm-btn btn">
-                    Confirm Hire Request
+                <button type="submit" id="hire-direct-submit" class="confirm-btn btn">
+                    Send Hire Request to {{ $agentDisplayName }}
                 </button>
                 <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">
                     Cancel
@@ -284,4 +308,17 @@
 
 </div>
 </div>
+
+{{-- Fix 2 (frontend): disable button immediately on submit to prevent double-click --}}
+<script>
+function hireDirectSubmit(form) {
+    var btn = document.getElementById('hire-direct-submit');
+    if (btn.disabled) {
+        return false;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    return true;
+}
+</script>
 @endsection
