@@ -95,6 +95,25 @@ class HireAgentDirectController extends Controller
     }
 
     // ─────────────────────────────────────────────────────────────────
+    // GET — Phase-4 clean public Hire Me URL resolver
+    //       Resolves agent by short_id, then redirects to the internal
+    //       direct-hire preview route. No logic is duplicated.
+    // ─────────────────────────────────────────────────────────────────
+
+    public function showPublic(string $agentShortId, string $role, string $propertyType = 'residential')
+    {
+        $agent = \App\Models\User::where('short_id', $agentShortId)
+            ->where('user_type', 'agent')
+            ->firstOrFail();
+
+        return redirect()->route('hire.agent.direct.preview', [
+            'agentId'      => $agent->id,
+            'role'         => $role,
+            'propertyType' => $propertyType,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
     // GET — Preview / confirmation page (no DB writes)
     // ─────────────────────────────────────────────────────────────────
 

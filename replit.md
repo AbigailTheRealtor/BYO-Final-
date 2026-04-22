@@ -33,6 +33,8 @@ The Profile Settings page provides a multi-section Bootstrap accordion for manag
 
 The Phase-3 Agent Preset Management UI (`/agent/presets`) allows agents to create and manage default offer presets per role × property type. Presets store services, bio, credentials, and links in `AgentDefaultProfile.profile_data` (JSON). The `AgentPresetCatalog` service provides all service strings for all 14 combinations (buyer/seller × 5 property types, tenant/landlord × 2 property types). The `AgentPresetController` handles index, edit, and save actions. The edit form has four accordion sections: Services (always open), Agent Overview (open by default), Agent Credentials (collapsed), and Presentation & Links (collapsed). A "My Offer Presets" sidenav link is shown to all agent users.
 
+The Phase-4 Clean Public Hire Me URL layer adds `/hire/{agentShortId}/{role}/{propertyType?}` as a clean shareable route (named `hire.agent.public`). It resolves the agent by the `users.short_id` field (hex-only, URL-safe, 100% agent coverage) and redirects to the existing internal `hire.agent.direct.preview` route — no controller logic is duplicated. A `->where('agentShortId', '[0-9a-f]+')` constraint prevents conflicts with all existing `/hire/agent/...`, `/hire/seller/...` routes. The `showPublic()` method lives in `HireAgentDirectController`. Preset cards on the index page now display the clean URL path and copy it to clipboard.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.

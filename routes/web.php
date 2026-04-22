@@ -151,6 +151,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'show'])->name('hire.agent.direct.preview');
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}', [\App\Http\Controllers\HireAgentDirectController::class, 'confirm'])->name('hire.agent.direct.confirm');
 
+    // Phase-4 Clean public Hire Me URL — resolves agent by short_id, redirects to existing direct flow
+    // Constraint [0-9a-f]+ ensures no collision with /hire/agent/..., /hire/seller/..., etc.
+    Route::get('/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'showPublic'])
+        ->name('hire.agent.public')
+        ->where('agentShortId', '[0-9a-f]+');
+
     // Phase-3 Agent Preset Management
     Route::get('/agent/presets', [\App\Http\Controllers\AgentPresetController::class, 'index'])->name('agent.presets.index');
     Route::get('/agent/presets/{role}/{propertyType}/edit', [\App\Http\Controllers\AgentPresetController::class, 'edit'])->name('agent.presets.edit');

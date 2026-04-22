@@ -86,6 +86,18 @@
         color: #9aa5b1;
         margin-top: .45rem;
     }
+    .preset-hire-path {
+        font-size: .72rem;
+        font-family: monospace;
+        color: #6c9ab0;
+        background: #f1f7fb;
+        border: 1px solid #d4e6f0;
+        border-radius: 4px;
+        padding: .2rem .5rem;
+        margin-top: .6rem;
+        word-break: break-all;
+        display: block;
+    }
     .page-hero {
         background: linear-gradient(135deg, #049399 0%, #036b70 100%);
         color: #fff;
@@ -187,10 +199,12 @@
                                     <i class="fa fa-pencil me-1"></i>{{ $info['exists'] ? 'Edit Preset' : 'Create Preset' }}
                                 </a>
                                 @if ($info['exists'] && $info['services'] > 0)
+                                    @php $cleanPath = '/hire/' . $agentShortId . '/' . $role . '/' . $propertyType; @endphp
+                                    <span class="preset-hire-path" title="{{ url($cleanPath) }}">{{ $cleanPath }}</span>
                                     <button type="button"
                                             class="btn btn-outline btn-copy-hire w-100 mt-2"
                                             title="Copy your public Hire Me link to share with clients"
-                                            data-hire-url="{{ route('hire.agent.direct.preview', ['agentId' => $userId, 'role' => $role, 'propertyType' => $propertyType]) }}">
+                                            data-hire-url="{{ route('hire.agent.public', ['agentShortId' => $agentShortId, 'role' => $role, 'propertyType' => $propertyType]) }}">
                                         <i class="fa fa-link me-1"></i>Copy Hire Me Link
                                     </button>
                                 @endif

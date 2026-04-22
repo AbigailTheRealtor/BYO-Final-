@@ -1,0 +1,151 @@
+We need to fix a major UI issue on the Edit Preset page.
+
+Problem
+
+This is not just the Services section.
+
+All fields across the entire Edit Preset page flash briefly and then disappear after load.
+
+That means this is likely a full-page hydration / re-render / Alpine / Livewire state issue affecting the entire preset form.
+
+We need a read-only audit first, then a small surgical fix.
+
+Phase 1 — Audit only first
+
+Before changing code, audit and report:
+
+whether the Edit Preset page is:
+plain Blade
+Livewire
+Blade + Alpine
+Blade + Livewire + Alpine
+whether the entire form or its sections are wrapped in:
+x-data
+x-show
+x-if
+wire:ignore
+wire:model
+@if(...) conditionals that could hide content after load
+whether the preset data is rendered server-side correctly on first paint, then lost on a second render/hydration
+whether there is any custom JS or Alpine code that:
+initializes sections closed
+resets state after load
+toggles visibility after mount
+whether the entire form body is conditionally hidden if one field/array is empty
+whether the issue is:
+data missing after hydration
+UI hidden after hydration
+or both
+
+Do not code until the audit is complete.
+
+What I strongly suspect
+
+This is probably one of these patterns:
+
+A. Alpine state resets after hydration
+
+Example:
+
+server renders full form
+Alpine initializes with default collapsed/hidden state
+entire form body disappears
+B. Livewire re-render wipes values/visibility
+
+Example:
+
+first paint is correct
+Livewire updates component
+bound properties or visibility checks go empty/false
+C. Main Blade conditional is too aggressive
+
+Example:
+
+form only renders when some array/field is truthy
+second pass evaluates false
+everything disappears
+Required implementation goal
+
+Stabilize the entire Edit Preset page so:
+
+all sections remain visible
+all saved values remain visible
+no flashing/disappearing occurs
+no data is lost
+no save logic changes
+no DB changes
+
+This is a rendering/hydration fix only.
+
+Implementation rules
+
+After the audit, apply the smallest safe fix.
+
+1. If Alpine is controlling section visibility
+
+Make all major preset sections default to visible/open on initial load.
+
+Do not let Alpine initialize the page into a collapsed/empty state after first paint.
+
+2. If Livewire is re-rendering the full form
+
+Do not let the whole form body get wiped by a reactive re-render.
+
+Use the smallest safe approach, such as:
+
+stabilizing mount data
+avoiding a second reset
+or applying wire:ignore / wire:ignore.self only where appropriate
+
+Do not broadly disable reactivity unless absolutely necessary.
+
+3. If Blade conditionals are hiding the form
+
+Remove or loosen the conditional so the form shell and saved values always render.
+
+No preset edit page should fully collapse just because a subsection is empty.
+
+4. Add a fallback empty-state only where needed
+
+If a subsection truly has no values, show:
+
+the empty fields
+or a lightweight “No values set yet” helper
+
+Do not hide the entire section.
+
+Important safeguard
+
+Do NOT:
+
+change DB schema
+change preset storage structure
+change AgentBidMapperService
+change save logic
+change direct Hire Me flow
+change marketplace flow
+
+We are fixing only:
+
+rendering
+hydration
+visibility
+state stability
+Deliverable
+
+After the audit and fix, report:
+
+root cause
+files changed
+whether issue was Alpine, Livewire, Blade conditional, or another render problem
+what exact fix was applied
+confirmation that all preset sections now stay visible
+confirmation that save behavior was untouched
+Expected result
+
+When opening Edit Preset:
+
+all sections stay visible
+all fields stay visible
+no flash/disappear
+saved values remain loaded correctly

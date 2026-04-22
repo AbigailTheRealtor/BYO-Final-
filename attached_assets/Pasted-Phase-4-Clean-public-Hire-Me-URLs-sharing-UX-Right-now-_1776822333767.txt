@@ -1,0 +1,142 @@
+Phase 4 — Clean public Hire Me URLs + sharing UX
+
+Right now the underlying direct-hire flow works, but the URL format is still technical.
+You want to make it easier for agents to share and easier for clients to trust.
+
+Goals for Phase 4
+cleaner public-facing Hire Me URL structure
+keep old direct route working internally for compatibility
+show/copy the clean public URL inside preset cards
+prepare for widget/embed later without rebuilding
+Replit instructions
+
+Paste this:
+
+We are moving to Phase 4: Clean public Hire Me URLs + sharing UX.
+
+Objective
+
+Add a clean, shareable public URL structure for the direct Hire Me flow while preserving the existing direct-hire route and core flow.
+
+The current direct route works technically, but it is too internal-looking for sharing:
+
+/hire/agent/direct/{agentId}/{role}/{propertyType}
+
+We need a cleaner public-facing sharing layer.
+
+Goal
+
+Create a public Hire Me URL structure like one of these patterns:
+
+/hire/{agentSlug}/{role}/{propertyType}
+or
+/hire/{agentSlug}/{role}
+with property type optional when appropriate
+
+Use the safest structure based on the current app architecture.
+
+Do not remove the existing direct route yet.
+The existing route should remain intact as the underlying working path until the clean public route is verified.
+
+Audit first
+
+Before changing code, audit and report:
+
+what existing user/agent slug field or public identifier already exists, if any
+whether agent usernames/slugs are already unique in the system
+safest source of truth for a public agent identifier:
+slug
+username
+user ID fallback
+how the clean public route should map internally to the current direct Hire Me flow
+whether redirects or internal forwarding are safer than duplicating controller logic
+what happens if two agents would generate the same slug
+best place in the preset card UI to surface the clean public URL
+
+Do not code until the audit is complete.
+
+Required implementation rules
+1. Add clean public Hire Me route(s)
+
+Add a clean public-facing route pattern for direct hire links.
+
+Preferred behavior:
+
+public clean route resolves agent by slug/public identifier
+role required
+property type supported where needed
+
+Keep the role/property-type structure aligned with existing preset logic.
+
+2. Preserve the existing direct route
+
+Do not remove or break:
+
+/hire/agent/direct/{agentId}/{role}/{propertyType}
+
+The clean route should either:
+
+resolve and internally reuse the same controller flow
+or redirect safely to the existing route
+
+Do not duplicate the entire direct-hire controller logic unless absolutely necessary.
+
+3. Public identifier safety
+
+If no reliable slug system already exists:
+
+propose the smallest safe solution
+avoid broad account/profile refactors
+
+If a temporary safe public identifier is needed, report it clearly before implementing.
+
+4. Update Copy Hire Me Link button
+
+After the clean route exists, the preset card’s Copy Hire Me Link button should copy the new clean public URL, not the old direct/internal-looking one.
+
+5. Add visible share URL text (lightweight)
+
+On saved/usable preset cards, add a small visible line showing the clean public URL or a shortened readable version near the Copy Link button.
+
+Keep it compact and not cluttered.
+
+6. Do not change the flow behavior
+
+The clean public URL must still lead into the same existing direct Hire Me flow:
+
+same preview page
+same confirmation step
+same listing/bid creation
+same counter/accept/reject flow
+same acknowledgement/signature flow
+
+This is a sharing-layer improvement, not a workflow rewrite.
+
+Safeguards
+No DB renames
+No DB deletes
+No broad user/profile system rewrite
+No duplicate Hire Me controller logic unless unavoidable
+No breaking existing direct route
+No breaking preset logic
+No breaking marketplace flow
+No widget/embed work yet
+Stop and report if a safe unique public slug does not already exist and needs a minimal isolated implementation
+Deliverable
+
+After audit and implementation, report:
+
+files audited
+files changed
+what public identifier was used
+final clean public route pattern
+how it maps to the existing direct Hire Me flow
+whether the old direct route still works
+how Copy Hire Me Link behavior was updated
+what visible share URL text was added to preset cards
+confirmation that no core flows were changed
+Priority
+
+Do this before widget/embed work.
+
+The clean public URL is the next required layer for real sharing and agent adoption.
