@@ -1211,6 +1211,9 @@ class BuyerAgentAuction extends Component
             $auction->is_draft = true;
             $auction->save();
 
+            // Phase 6 — persist referral attribution on brand-new listing rows.
+            \App\Services\ReferralLinkService::persistListingReferral($auction);
+
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
@@ -2152,6 +2155,9 @@ class BuyerAgentAuction extends Component
             $auction->is_sold = $auction->is_sold ?: 'false';
             $auction->is_paid = $auction->is_paid ?: 'false';
             $auction->save();
+
+            // Phase 6 — persist referral attribution on brand-new listing rows.
+            \App\Services\ReferralLinkService::persistListingReferral($auction);
 
             $this->listingId = $auction->id;
 

@@ -1,0 +1,138 @@
+Task: Implement Referral Partner Tracking — Phase 6 only (listing persistence).
+
+GOAL:
+When a brand-new listing is created, persist referral attribution onto the listing record using the existing referral session first, then user-level referral as fallback. This must be added only at the final shared create/save path(s) used by the BidYourAgent listing flows. Do not touch accepted-hire flows, dashboard UI, admin UI, or model relationships yet.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not redesign anything.
+- Do not modify Buyer/Seller/Landlord/Tenant field logic.
+- Do not touch bidding, counters, match scores, timers, summaries, PDFs, or dashboard behavior.
+- Do not alter draft behavior unless absolutely necessary.
+- Do not alter edit/update flows except to explicitly avoid overwriting existing referral attribution.
+- Do not patch every role-specific branch if there is a shared final save path.
+- Inspect first and report the exact file(s) and method(s) where NEW listings are finally created.
+- STOP and report if the create flow is split in a way that makes safe shared insertion impossible.
+
+USE THE EXISTING REFERRAL STATE:
+Session keys already in use:
+- referral.agent_id
+- referral.code
+- referral.captured_at
+- referral.visit_id
+
+User-level fallback fields already exist:
+- users.referred_by_agent_id
+- users.referral_source_code
+- users.referral_captured_at
+
+Listing-level fields already exist on the role-specific auction/listing tables:
+- referring_agent_id
+- referral_source_code
+- referral_captured_at
+- referral_locked
+
+PHASE 6 — LISTING PERSISTENCE ONLY
+
+1. Inspect the real listing creation flow(s)
+- Find the exact final path(s) where NEW records are inserted for:
+  - seller_agent_auctions
+  - buyer_agent_auctions
+  - landlord_agent_auctions
+  - tenant_criteria_auctions
+- Prefer a single shared save method/path if it truly exists.
+- Identify which file(s) and method(s) actually perform the final insert for new listings.
+- Also identify whether drafts use the same path, and whether referral should apply only on true create/publish or also on first draft creation.
+- Choose the safest behavior and report it.
+
+2. Apply referral attribution ONLY when a brand-new listing record is created
+For each newly created listing:
+- if the listing already has referring_agent_id populated, do nothing
+- else determine attribution source in this priority order:
+  A. session referral
+     - referral.agent_id
+     - referral.code
+     - referral.captured_at
+  B. authenticated user referral fallback
+     - users.referred_by_agent_id
+     - users.referral_source_code
+     - users.referral_captured_at
+  C. none
+
+3. If attribution source A or B exists, write to the new listing:
+- referring_agent_id
+- referral_source_code
+- referral_captured_at
+- referral_locked = true
+
+4. Update referral_visits if session('referral.visit_id') exists:
+- set listing_id = newly created listing id
+- set converted_to_listing = true
+Fail gracefully if the row is missing or stale.
+Do not break listing creation.
+
+5. Increment listing_count on agent_referral_links only when:
+- a brand-new listing was actually attributed
+- and the agent/code pair is valid enough to identify the referral link row
+Use atomic increment.
+
+6. Preserve safety rules
+- never overwrite listing referral once set
+- do not change referral attribution on edits/updates
+- do not clear referral session yet
+- if session referral is absent but user fallback exists, still attribute
+- if both are absent, do nothing
+- if session visit id is stale/missing, still attribute the listing without crashing
+
+7. IMPORTANT: Draft handling
+Before coding, determine whether initial draft creation creates the actual database row.
+- If yes, use the safest one-time attachment behavior so the first created row gets referral attribution and later edits do not overwrite it.
+- If no, attach referral only on the first true inserted row.
+- Report which behavior was implemented and why.
+
+TEST REQUIREMENTS:
+Verify all of the following with the safest method available:
+
+1. Referred new listing
+- valid /invite/{code}
+- authenticated user creates a brand-new listing
+- confirm listing table row gets:
+  - referring_agent_id
+  - referral_source_code
+  - referral_captured_at
+  - referral_locked = true
+- confirm referral_visits.listing_id is populated
+- confirm referral_visits.converted_to_listing = true
+- confirm agent_referral_links.listing_count increments by 1
+
+2. Non-referred new listing
+- create a new listing without referral session and without user referral
+- confirm listing referral fields remain null/false
+- confirm no listing_count increment
+
+3. User fallback
+- no referral session
+- authenticated user has referred_by_agent_id/referral_source_code/referral_captured_at
+- create a brand-new listing
+- confirm listing gets attributed from user fallback
+
+4. Existing listing protection
+- verify that editing/updating an existing listing with referral fields already set does not overwrite them
+
+5. Stale/missing visit resilience
+- valid referral session exists but referral.visit_id is missing or stale
+- listing still creates successfully
+- listing still gets attributed
+- no crash
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact file(s) and method(s) patched
+2. whether there was truly a shared final create path or multiple create paths
+3. exact insertion point(s)
+4. how draft handling was resolved
+5. how listing_count is incremented
+6. whether referral session is preserved for Phase 7
+7. results of all 5 required tests
+
+DELIVERABLE:
+Only Phase 6 listing persistence. No accepted-hire persistence, no dashboard/admin changes, no model relationship pass.

@@ -2579,6 +2579,12 @@ class TenantAgentAuction extends Component
 
             $auction->save();
 
+            // Phase 6 — on append-only draft versioning, only set referral on
+            // the very first draft (when there is no parent draft yet).
+            if ($parentDraftId === null) {
+                \App\Services\ReferralLinkService::persistListingReferral($auction);
+            }
+
             $this->listingId = $auction->id;
 
             $this->saveAllMetadata($auction);
@@ -4303,6 +4309,9 @@ class TenantAgentAuction extends Component
             }
             
             $auction->save();
+
+            // Phase 6 — persist referral attribution on brand-new listing rows.
+            \App\Services\ReferralLinkService::persistListingReferral($auction);
 
             // ── Regression guard ──────────────────────────────────────────────
             // The search query binds PHP `true` as integer 1, which matches the
