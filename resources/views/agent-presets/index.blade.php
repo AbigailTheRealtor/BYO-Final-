@@ -81,6 +81,39 @@
         border-color: #198754;
         background: #f0faf4;
     }
+    .btn-open-hire {
+        font-size: .78rem;
+        padding: .3rem .8rem;
+        border-radius: 6px;
+        background: #049399;
+        color: #fff;
+        border-color: #049399;
+    }
+    .btn-open-hire:hover {
+        background: #036b70;
+        border-color: #036b70;
+        color: #fff;
+    }
+    .preset-share-actions {
+        display: flex;
+        gap: .5rem;
+        margin-top: .5rem;
+    }
+    .preset-share-actions .btn {
+        flex: 1;
+    }
+    .preset-hire-note {
+        font-size: .73rem;
+        color: #6a8fa0;
+        margin-top: .45rem;
+        line-height: 1.4;
+    }
+    .preset-inactive-note {
+        font-size: .73rem;
+        color: #a07a30;
+        margin-top: .5rem;
+        line-height: 1.4;
+    }
     .preset-updated {
         font-size: .73rem;
         color: #9aa5b1;
@@ -93,10 +126,13 @@
         background: #f1f7fb;
         border: 1px solid #d4e6f0;
         border-radius: 4px;
-        padding: .2rem .5rem;
+        padding: .25rem .55rem;
         margin-top: .6rem;
         word-break: break-all;
         display: block;
+        user-select: all;
+        -webkit-user-select: all;
+        cursor: text;
     }
     .page-hero {
         background: linear-gradient(135deg, #049399 0%, #036b70 100%);
@@ -199,14 +235,33 @@
                                     <i class="fa fa-pencil me-1"></i>{{ $info['exists'] ? 'Edit Preset' : 'Create Preset' }}
                                 </a>
                                 @if ($info['exists'] && $info['services'] > 0)
-                                    @php $cleanPath = '/hire/' . $agentShortId . '/' . $role . '/' . $propertyType; @endphp
-                                    <span class="preset-hire-path" title="{{ url($cleanPath) }}">{{ $cleanPath }}</span>
-                                    <button type="button"
-                                            class="btn btn-outline btn-copy-hire w-100 mt-2"
-                                            title="Copy your public Hire Me link to share with clients"
-                                            data-hire-url="{{ route('hire.agent.public', ['agentShortId' => $agentShortId, 'role' => $role, 'propertyType' => $propertyType]) }}">
-                                        <i class="fa fa-link me-1"></i>Copy Hire Me Link
-                                    </button>
+                                    @php
+                                        $cleanPath = '/hire/' . $agentShortId . '/' . $role . '/' . $propertyType;
+                                        $fullHireUrl = route('hire.agent.public', ['agentShortId' => $agentShortId, 'role' => $role, 'propertyType' => $propertyType]);
+                                    @endphp
+                                    <span class="preset-hire-path" title="Click to select — then copy">{{ $cleanPath }}</span>
+                                    <div class="preset-share-actions">
+                                        <button type="button"
+                                                class="btn btn-outline btn-copy-hire"
+                                                title="Copy this link to your clipboard"
+                                                data-hire-url="{{ $fullHireUrl }}">
+                                            <i class="fa fa-copy me-1"></i>Copy Link
+                                        </button>
+                                        <a href="{{ $fullHireUrl }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="btn btn-open-hire"
+                                           title="Open your public Hire Me page in a new tab">
+                                            <i class="fa fa-external-link me-1"></i>Open Link
+                                        </a>
+                                    </div>
+                                    <div class="preset-hire-note">
+                                        <i class="fa fa-info-circle me-1"></i>Share this link directly with clients to let them hire you using this preset.
+                                    </div>
+                                @elseif ($info['exists'] && $info['services'] === 0)
+                                    <div class="preset-inactive-note mt-2">
+                                        <i class="fa fa-lock me-1"></i>Complete your services to activate this Hire Me link.
+                                    </div>
                                 @endif
                             </div>
                         </div>
