@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Pre-commit hook: reject backup files in tracked directories
+#
+# Patterns blocked: *.bak, *.bak_*, "* copy.*", "* copy" (no ext)
+# Directories checked: app/, resources/, public/, database/
+
+set -euo pipefail
+
+DIRS="app resources public database"
+
+BAK_PATTERN='\.(bak|bak_.+)$| copy(\.[^/]+)?$'
+
+found=()
+
+for dir in $DIRS; do
+    while IFS= read -r -d '' file; do
+        if echo "$file" | grep -qiE "$BAK_PATTERN"; then
+            found+=("$file")
+        fi
+    done < <(git diff --cached --name-only --diff-filter=ACMR -z -- "$dir/" 2>/dev/null || true)
+done
+
+if [ ${#found[@]} -gt 0 ]; then
+    echo ""
+    echo "ERROR: Backup files detected in your commit:"
+    echo ""
+    for f in "${found[@]}"; do
+        echo "  $f"
+    done
+    echo ""
+    echo "Please remove or rename these files before committing."
+    echo "Backup files (*.bak, *.bak_*, '* copy.*') must not be committed."
+    echo "If you intended to commit a renamed/cleaned version, rename the file"
+    echo "to its final name first, then stage and commit it."
+    echo ""
+    exit 1
+fi
+
+exit 0
