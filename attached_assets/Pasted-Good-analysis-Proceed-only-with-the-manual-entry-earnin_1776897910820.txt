@@ -1,0 +1,109 @@
+Good analysis. Proceed only with the manual-entry earnings visibility plan.
+
+Do not attempt automatic referral fee calculation.
+
+APPROVED SCOPE:
+Use the existing accepted_bid_summaries columns:
+- platform_referral_amount
+- partner_referral_amount
+
+These amounts must remain admin-entered only.
+
+CRITICAL SAFEGUARDS:
+- Additive changes only
+- Do not modify referral capture, attribution, counters, or status logic except to allow optional amount fields to save alongside a status update
+- Do not change Buyer/Seller/Landlord/Tenant listing or bid flows
+- Do not modify AcceptedBidSummary generation
+- Do not introduce any automatic math, assumptions, hardcoded percentages, or payout automation
+- Do not redesign existing pages
+- Keep all agent-facing earnings language clearly labeled as estimated/pending, not paid
+
+IMPLEMENT ONLY THIS:
+
+1. Admin referrals page
+Extend the existing /admin/referrals page:
+- Add two read-only columns to the referred hires table:
+  - Platform Fee
+  - Partner Earnings
+- Show current stored values from accepted_bid_summaries
+- If null, show em dash or similar placeholder
+
+2. Admin status update form
+Extend the existing per-row POST status form on /admin/referrals:
+- Add two optional numeric inputs:
+  - platform_referral_amount
+  - partner_referral_amount
+- When submitted with a valid status update, save these values only if provided and numeric
+- Leave existing values unchanged if inputs are blank
+- Do not require these fields
+- Do not save invalid numeric input
+
+3. Admin controller
+Extend AdminController::updateReferralStatus() only:
+- Keep current status validation exactly as-is
+- After valid status update, optionally save:
+  - platform_referral_amount
+  - partner_referral_amount
+- Only update those fields when request values are present and numeric
+- Do not touch any other fields
+
+4. Agent My Referrals page
+Add a read-only earnings display for hire rows only:
+- Add a column:
+  - Est. Earnings
+- Show partner_referral_amount when present
+- If null, show em dash
+- Add a small note near the page title or hires section:
+  - “Earnings shown are estimates entered by the platform admin and are not a payment confirmation.”
+
+5. Optional dashboard summary
+Only if this is a very small additive change:
+- On the existing agent dashboard referral area, show:
+  - Est. Pending Earnings
+- This should be the sum of partner_referral_amount for this agent’s referred hire rows where referral_status is not void
+- If no values are set, do not show the line
+- Keep styling muted and secondary
+
+LABELING RULES:
+- Admin page:
+  - Platform Fee
+  - Partner Earnings
+- Agent page:
+  - Est. Earnings
+  - Est. Pending Earnings
+- Never label anything as paid unless referral_status is actually paid
+- Never imply payout automation
+
+TEST REQUIREMENTS:
+T1. Admin enters valid amounts on one referred hire row
+- confirm status updates
+- confirm both amount fields save correctly
+
+T2. Admin submits blank amount fields
+- confirm status updates
+- confirm existing amount fields remain unchanged
+
+T3. Admin submits invalid numeric input
+- confirm invalid amount is rejected safely or ignored
+- confirm no bad value is saved
+- confirm no crash
+
+T4. Agent My Referrals page
+- confirm hire rows show Est. Earnings correctly
+- confirm non-hire rows do not show earnings
+- confirm note is visible
+
+T5. Optional dashboard summary
+- if implemented, confirm sum matches DB across non-void rows only
+- confirm hidden when no values exist
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact controller changes
+2. exact admin blade changes
+3. exact agent page changes
+4. whether dashboard summary was added
+5. how blank vs numeric vs invalid inputs are handled
+6. full test results
+
+DELIVERABLE:
+Only manual-entry earnings visibility using existing fields. No automatic calculations, no payout logic, no schema changes.
