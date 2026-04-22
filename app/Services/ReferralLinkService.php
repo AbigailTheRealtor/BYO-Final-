@@ -107,22 +107,59 @@ class ReferralLinkService
     /**
      * Called immediately after a new user account is successfully created.
      *
+     * Attribution priority (first non-empty source wins):
+     *   A. Active PHP session  (referral.agent_id)
+     *   B. referral_code cookie fallback  ← Gap-1 addition
+     *   C. None — method returns with no side effects
+     *
      * Session keys consumed (read-only here):
      *   referral.agent_id, referral.code, referral.captured_at, referral.visit_id
      *
+     * Cookie key consumed (read-only):
+     *   referral_code  (set by ReferralController::capture on a fresh attribution)
+     *
      * Rules:
-     *  • First-click-wins: never overwrites an existing referred_by_agent_id.
+     *  • First-write-wins: never overwrites an existing referred_by_agent_id.
      *  • Session is NOT cleared — Phase 6 still needs it.
+     *  • Cookie fallback does NOT fabricate a referral_visits row.
+     *  • signup_count is incremented only when a fresh attribution is written.
      *  • Fully wrapped in try/catch — never crashes registration.
      */
     public static function persistSignup(int $userId): void
     {
         try {
-            $agentId = session('referral.agent_id');
+            // ── Path A: active session referral ───────────────────────────────
+            $agentId    = session('referral.agent_id');
+            $code       = session('referral.code');
+            $capturedAt = session('referral.captured_at');
+            $fromCookie = false;
+
+            // ── Path B: cookie fallback (session was cleared / expired) ───────
+            if (empty($agentId)) {
+                $cookieCode = request()->cookie('referral_code');
+
+                if (!empty($cookieCode)) {
+                    $link = DB::table('agent_referral_links')
+                        ->where('code', $cookieCode)
+                        ->where('is_active', true)
+                        ->first();
+
+                    if ($link) {
+                        $agentId    = $link->agent_id;
+                        $code       = $link->code;
+                        $capturedAt = now()->toIso8601String();
+                        $fromCookie = true;
+                    }
+                    // Stale/invalid cookie: $agentId remains empty, handled below.
+                }
+            }
+
+            // ── Path C: no attribution source — nothing to do ─────────────────
             if (empty($agentId)) {
                 return;
             }
 
+            // ── First-write-wins: never overwrite an existing referral ─────────
             $alreadyAttributed = DB::table('users')
                 ->where('id', $userId)
                 ->whereNotNull('referred_by_agent_id')
@@ -132,9 +169,7 @@ class ReferralLinkService
                 return;
             }
 
-            $code       = session('referral.code');
-            $capturedAt = session('referral.captured_at');
-
+            // ── Write referral attribution to the new user ────────────────────
             DB::table('users')->where('id', $userId)->update([
                 'referred_by_agent_id' => $agentId,
                 'referral_source_code' => $code,
@@ -142,17 +177,22 @@ class ReferralLinkService
                 'updated_at'           => now(),
             ]);
 
-            $visitId = session('referral.visit_id');
-            if ($visitId) {
-                DB::table('referral_visits')
-                    ->where('id', $visitId)
-                    ->update([
-                        'visitor_user_id'     => $userId,
-                        'converted_to_signup' => true,
-                        'updated_at'          => now(),
-                    ]);
+            // ── Update referral_visits row (session path only) ────────────────
+            // Cookie-fallback path: no visit row exists to back-fill; skip silently.
+            if (!$fromCookie) {
+                $visitId = session('referral.visit_id');
+                if ($visitId) {
+                    DB::table('referral_visits')
+                        ->where('id', $visitId)
+                        ->update([
+                            'visitor_user_id'     => $userId,
+                            'converted_to_signup' => true,
+                            'updated_at'          => now(),
+                        ]);
+                }
             }
 
+            // ── Increment signup_count (only on fresh attribution write) ───────
             DB::table('agent_referral_links')
                 ->where('agent_id', $agentId)
                 ->where('code', $code)

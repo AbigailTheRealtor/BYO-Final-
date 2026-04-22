@@ -20,11 +20,12 @@ use Illuminate\Support\Facades\Log;
  *  • Increment click_count on the referral link.
  *  • Always redirect safely to the homepage — no crashes exposed to the user.
  *
- * Out of scope here:
- *  • Signup persistence (Phase 5)
- *  • Listing / accepted-hire persistence (Phase 6)
- *  • Dashboard / admin UI
- *  • Cookie persistence
+ * Gap-1 addition:
+ *  • Set a 30-day referral_code cookie on every fresh (new) attribution so
+ *    attribution survives session expiry.  The cookie is set ONLY when the
+ *    session is also being set (i.e. on a genuine new attribution event) to
+ *    keep the cookie and session in sync.  No extra visit rows and no extra
+ *    click_count increments are created on revisits.
  */
 class ReferralController extends Controller
 {
@@ -33,8 +34,17 @@ class ReferralController extends Controller
      */
     private const SESSION_NS = 'referral';
 
+    /** Cookie name used for cross-session fallback. */
+    private const COOKIE_NAME = 'referral_code';
+
+    /** Cookie lifetime in minutes (30 days). */
+    private const COOKIE_MINUTES = 60 * 24 * 30;
+
     public function capture(Request $request, string $code)
     {
+        // Holds the code to bake into the cookie; set only on a fresh attribution.
+        $cookieCode = null;
+
         try {
             // ── 1. Look up the referral link ────────────────────────────
             $link = DB::table('agent_referral_links')
@@ -50,6 +60,9 @@ class ReferralController extends Controller
             // ── 2. First-click-wins: never overwrite an existing attribution ──
             if (session(self::SESSION_NS . '.agent_id') !== null) {
                 // Attribution already locked in session — still redirect safely.
+                // Cookie is NOT refreshed here; it was already set on the original
+                // capture event and must not be overwritten with a potentially
+                // different code from a second link click.
                 return redirect()->route('home');
             }
 
@@ -84,6 +97,9 @@ class ReferralController extends Controller
                 ->where('id', $link->id)
                 ->increment('click_count');
 
+            // ── 6. Mark code for cookie (set below, outside try/catch) ───
+            $cookieCode = $link->code;
+
         } catch (\Throwable $e) {
             // Never expose DB errors to the visitor.
             Log::error('ReferralController::capture failed', [
@@ -92,6 +108,27 @@ class ReferralController extends Controller
             ]);
         }
 
-        return redirect()->route('home');
+        // ── 7. Attach referral cookie to the redirect ────────────────────────
+        // Only set when a fresh attribution was successfully recorded above.
+        // HttpOnly=true, SameSite=Lax, Secure=true on HTTPS environments.
+        $response = redirect()->route('home');
+
+        if ($cookieCode !== null) {
+            $response = $response->withCookie(
+                cookie(
+                    self::COOKIE_NAME,
+                    $cookieCode,
+                    self::COOKIE_MINUTES,
+                    '/',
+                    null,
+                    $request->secure(), // Secure flag follows the current scheme
+                    true,               // HttpOnly
+                    false,              // raw
+                    'Lax'               // SameSite
+                )
+            );
+        }
+
+        return $response;
     }
 }
