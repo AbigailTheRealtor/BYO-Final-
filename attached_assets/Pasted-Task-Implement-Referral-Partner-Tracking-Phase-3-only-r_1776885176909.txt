@@ -1,0 +1,85 @@
+Task: Implement Referral Partner Tracking — Phase 3 only (referral link generation service).
+
+GOAL:
+Create a small isolated service that can generate, retrieve, and build a shareable referral link for an agent using the existing agent_referral_links table. Do not touch signup, listing creation, accepted-hire flows, dashboard UI, admin UI, or model relationships yet.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not redesign anything.
+- Do not modify Buyer/Seller/Landlord/Tenant flows.
+- Do not touch Livewire components.
+- Do not touch bidding, counters, match scores, timers, summaries, PDFs, or dashboard behavior.
+- Do not alter login or registration logic.
+- Do not add new routes in this phase.
+- Do not add model relationships in this phase unless absolutely required by existing project conventions.
+- Use the existing Phase 1 schema and existing /invite/{code} route from Phase 4.
+- If there is ambiguity about what table stores agents in this codebase, inspect first and report before guessing.
+
+PHASE 3 — REFERRAL LINK SERVICE ONLY
+
+1. Create:
+- app/Services/ReferralLinkService.php
+
+2. Add these methods:
+
+A. getOrCreateForAgent(int $agentId): array
+Behavior:
+- Look in agent_referral_links for an existing active row for this agent.
+- If found, return it.
+- If not found, generate a unique code, insert a new active row, then return it.
+- Return enough data for later use, such as:
+  - id
+  - agent_id
+  - code
+  - is_active
+  - url
+
+B. generateUniqueCode(int $agentId): string
+Behavior:
+- Create a short, human-shareable code.
+- Prefer a readable format, for example:
+  - AGT{agentId}{random}
+  or
+  - short alpha prefix + short random suffix
+- Must be unique against agent_referral_links.code
+- Retry safely if collision occurs
+- Keep it reasonably short and shareable
+
+C. buildUrl(string $code): string
+Behavior:
+- Build the full absolute URL using the existing referral.capture route
+- Use route('referral.capture', ['code' => $code]) if appropriate in this project
+- Output should resolve to:
+  /invite/{code}
+
+3. Implementation style:
+- Use DB::table() if that best matches the style already used in the new referral controller
+- Keep the service standalone and minimal
+- No UI or controller wiring yet
+- No dashboard integration yet
+
+4. Add a small safe test path for verification
+Choose one of these options, whichever is most consistent with the codebase:
+- no permanent test route; just verify via tinker/manual service resolution
+OR
+- a temporary internal-only verification path if the project already uses that pattern
+
+Prefer no new route. Tinker/manual verification is best unless a route is clearly safer in this codebase.
+
+TEST REQUIREMENTS:
+After implementation, verify:
+1. Calling getOrCreateForAgent(X) for a real agent creates the first row if none exists
+2. Calling it again for the same agent returns the same existing row and does not create a duplicate
+3. The returned URL correctly points to /invite/{code}
+4. A second different agent gets a different code
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact file added
+2. code format chosen
+3. uniqueness strategy used
+4. whether DB::table() or a model was used
+5. how URL generation works
+6. results of the 4 required tests above
+
+DELIVERABLE:
+Only Phase 3 referral link generation service implementation and verification. No signup persistence, no listing persistence, no accepted-hire persistence, no dashboard/admin changes, no model relationship pass.
