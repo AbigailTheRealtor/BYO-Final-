@@ -168,6 +168,21 @@ class DashboardController extends Controller
                     'error'   => $e->getMessage(),
                 ]);
             }
+
+            // Sum of admin-entered partner earnings where status is not void.
+            // Returns 0.0 when no amounts have been entered yet.
+            try {
+                $page_data['pendingReferralEarnings'] = DB::table('accepted_bid_summaries')
+                    ->where('referring_agent_id', $uid)
+                    ->where(function ($q) {
+                        $q->whereNull('referral_status')
+                          ->orWhere('referral_status', '!=', 'void');
+                    })
+                    ->whereNotNull('partner_referral_amount')
+                    ->sum('partner_referral_amount');
+            } catch (\Throwable $e) {
+                $page_data['pendingReferralEarnings'] = null;
+            }
         }
 
         return view('dashboard', $page_data);

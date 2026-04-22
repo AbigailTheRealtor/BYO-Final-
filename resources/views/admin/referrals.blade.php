@@ -89,6 +89,8 @@
                         <th>Listing</th>
                         <th>Hired Agent</th>
                         <th>Status</th>
+                        <th class="text-right" title="Admin-entered platform fee">Platform Fee</th>
+                        <th class="text-right" title="Admin-entered partner earnings">Partner Earnings</th>
                         <th>Created</th>
                         <th>Actions</th>
                     </tr>
@@ -149,32 +151,80 @@
                                 <span class="text-muted">—</span>
                             @endif
                         </td>
+
+                        {{-- ── Platform Fee (read-only display) ─── --}}
+                        <td class="text-right" style="white-space:nowrap;">
+                            @if($row->platform_referral_amount !== null)
+                                <span class="text-dark">${{ number_format($row->platform_referral_amount, 2) }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+
+                        {{-- ── Partner Earnings (read-only display) ─ --}}
+                        <td class="text-right" style="white-space:nowrap;">
+                            @if($row->partner_referral_amount !== null)
+                                <span class="text-success fw-semibold">${{ number_format($row->partner_referral_amount, 2) }}</span>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
+
                         <td class="text-muted" style="white-space:nowrap;">
                             {{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('M j, Y') : '—' }}
                         </td>
-                        {{-- ── Inline status actions ───────────────────────── --}}
-                        <td style="white-space:nowrap;vertical-align:middle;">
-                            <div class="d-flex flex-wrap gap-1">
-                                @foreach($actionStatuses as $s)
-                                <form method="POST"
-                                      action="{{ route('admin.referrals.status', $row->id) }}"
-                                      style="display:inline;"
-                                      onsubmit="return confirm('Set referral #{{ $row->id }} to {{ ucfirst($s) }}?');">
-                                    @csrf
-                                    <input type="hidden" name="status" value="{{ $s }}">
+
+                        {{-- ── Single form: status buttons + optional amount inputs ── --}}
+                        <td style="min-width:200px;vertical-align:middle;">
+                            <form method="POST"
+                                  action="{{ route('admin.referrals.status', $row->id) }}"
+                                  onsubmit="return confirm('Set referral #{{ $row->id }} to \'' + (this.dataset.newStatus || '?') + '\'?');">
+                                @csrf
+
+                                {{-- Status action buttons --}}
+                                <div class="d-flex flex-wrap gap-1 mb-2">
+                                    @foreach($actionStatuses as $s)
                                     <button type="submit"
+                                            name="status"
+                                            value="{{ $s }}"
                                             class="btn btn-outline-{{ $statusColors[$s] ?? 'secondary' }} btn-xs"
-                                            style="font-size:.7rem;padding:2px 7px;line-height:1.4;">
+                                            style="font-size:.7rem;padding:2px 7px;line-height:1.4;"
+                                            onclick="this.form.dataset.newStatus='{{ ucfirst($s) }}';">
                                         {{ ucfirst($s) }}
                                     </button>
-                                </form>
-                                @endforeach
-                            </div>
+                                    @endforeach
+                                </div>
+
+                                {{-- Optional earnings inputs (saved only when a status button is clicked) --}}
+                                <div class="d-flex gap-1 align-items-center" title="Enter amounts and click a status button to save together">
+                                    <input type="number"
+                                           name="platform_referral_amount"
+                                           step="0.01"
+                                           min="0"
+                                           placeholder="Platform $"
+                                           value="{{ $row->platform_referral_amount !== null ? number_format((float)$row->platform_referral_amount, 2, '.', '') : '' }}"
+                                           class="form-control form-control-sm"
+                                           style="width:78px;font-size:.7rem;"
+                                           title="Platform fee (optional — leave blank to keep current value)">
+                                    <input type="number"
+                                           name="partner_referral_amount"
+                                           step="0.01"
+                                           min="0"
+                                           placeholder="Partner $"
+                                           value="{{ $row->partner_referral_amount !== null ? number_format((float)$row->partner_referral_amount, 2, '.', '') : '' }}"
+                                           class="form-control form-control-sm"
+                                           style="width:78px;font-size:.7rem;"
+                                           title="Partner earnings (optional — leave blank to keep current value)">
+                                </div>
+                                <div class="text-muted mt-1" style="font-size:.68rem;line-height:1.2;">
+                                    Amounts saved when a status button is clicked. Leave blank to keep existing values.
+                                </div>
+                            </form>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="9" class="text-center text-muted py-4">
+                        <td colspan="11" class="text-center text-muted py-4">
                             @if($filterStatus)
                                 No referred hires with status "{{ ucfirst($filterStatus) }}".
                                 <a href="{{ route('admin.referrals.index') }}">Clear filter</a>

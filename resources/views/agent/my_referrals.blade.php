@@ -176,6 +176,7 @@
                                                 <th class="text-center py-2" style="width:90px;">Listing ID</th>
                                                 <th class="py-2" style="width:120px;">Type</th>
                                                 <th class="py-2" style="width:90px;">Status</th>
+                                                <th class="text-end py-2 pe-3" style="width:110px;" title="Admin-entered estimate only — not payment confirmation">Est. Earnings</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -272,6 +273,17 @@
                                                         @endif
                                                     </td>
 
+                                                    {{-- Est. Earnings (hire rows only) --}}
+                                                    <td class="text-end pe-3">
+                                                        @if($row->stage === 'hire' && isset($row->earnings) && $row->earnings !== null)
+                                                            <span class="fw-semibold text-success" style="font-size:.82rem;">
+                                                                ${{ number_format((float)$row->earnings, 2) }}
+                                                            </span>
+                                                        @else
+                                                            <span class="text-muted opacity-40">—</span>
+                                                        @endif
+                                                    </td>
+
                                                 </tr>
                                             @endforeach
                                         </tbody>
@@ -291,6 +303,13 @@
                                     <span class="text-muted" style="font-size:.75rem;">
                                         {{ $rows->count() }} record{{ $rows->count() !== 1 ? 's' : '' }}
                                     </span>
+                                </div>
+
+                                {{-- Earnings disclaimer --}}
+                                <div class="alert alert-light border mt-3 py-2 px-3" style="font-size:.77rem;color:#6c757d;">
+                                    <i class="fa-solid fa-circle-info me-1 opacity-75"></i>
+                                    <strong>Est. Earnings</strong> amounts are manually entered by the platform admin and are estimates only.
+                                    They are not a payment confirmation or guarantee. Contact support for questions about your referral payouts.
                                 </div>
                             @endif
 

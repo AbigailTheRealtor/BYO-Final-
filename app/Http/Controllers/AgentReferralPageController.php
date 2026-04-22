@@ -74,6 +74,7 @@ class AgentReferralPageController extends Controller
                         'listing_type' => null,
                         'status'       => null,
                         'note'         => $r->ip_address,   // shown as "Source IP" when no user
+                        'earnings'     => null,
                     ]);
 
                 $rows = $rows->merge($clicks);
@@ -101,6 +102,7 @@ class AgentReferralPageController extends Controller
                         'listing_type' => null,
                         'status'       => ucfirst($r->user_type ?? ''),
                         'note'         => null,
+                        'earnings'     => null,
                     ]);
 
                 $rows = $rows->merge($signups);
@@ -143,6 +145,7 @@ class AgentReferralPageController extends Controller
                             'listing_type' => $typeLabel,
                             'status'       => 'Published',
                             'note'         => null,
+                            'earnings'     => null,
                         ]);
 
                     $rows = $rows->merge($listingRows);
@@ -165,6 +168,7 @@ class AgentReferralPageController extends Controller
                         'accepted_bid_summaries.listing_id',
                         'accepted_bid_summaries.listing_type',
                         'accepted_bid_summaries.referral_status',
+                        'accepted_bid_summaries.partner_referral_amount',
                         'accepted_bid_summaries.created_at',
                         'client.name  as client_name',
                         'client.email as client_email',
@@ -181,6 +185,7 @@ class AgentReferralPageController extends Controller
                         'listing_type' => ucfirst($r->listing_type ?? ''),
                         'status'       => $r->referral_status,
                         'note'         => $r->hired_agent_name,  // shown as "Hired Agent"
+                        'earnings'     => $r->partner_referral_amount,
                     ]);
 
                 $rows = $rows->merge($hires);

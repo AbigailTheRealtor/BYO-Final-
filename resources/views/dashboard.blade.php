@@ -495,6 +495,19 @@
                                                 </div>
                                             </div>
 
+                                            {{-- Est. Pending Earnings — only shown when admin has entered at least one amount --}}
+                                            @php $pendingEarnings = $pendingReferralEarnings ?? null; @endphp
+                                            @if($pendingEarnings !== null && $pendingEarnings > 0)
+                                            <div class="mt-3 pt-2 border-top d-flex align-items-center justify-content-between" style="font-size:.82rem;">
+                                                <span class="text-muted">
+                                                    <i class="fa-solid fa-coins me-1 opacity-75"></i>
+                                                    Est. Pending Earnings
+                                                    <span class="text-muted" style="font-size:.72rem;">(admin estimate, not confirmed)</span>
+                                                </span>
+                                                <span class="fw-bold text-success" style="font-size:1rem;">${{ number_format($pendingEarnings, 2) }}</span>
+                                            </div>
+                                            @endif
+
                                         </div>
                                     </div>
                                 </div>

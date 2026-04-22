@@ -345,6 +345,12 @@ class AdminController extends Controller
             $query->where('accepted_bid_summaries.referral_status', $status);
         }
 
+        // Include the two amount fields so the blade can display them
+        $query->addSelect([
+            'accepted_bid_summaries.platform_referral_amount',
+            'accepted_bid_summaries.partner_referral_amount',
+        ]);
+
         $page_data['rows']           = $query->paginate(50)->withQueryString();
         $page_data['filterStatus']   = $status;
         $page_data['validStatuses']  = $validStatuses;
@@ -380,12 +386,27 @@ class AdminController extends Controller
                 ->with('error', 'Referred hire record not found.');
         }
 
+        // Build update payload — status is always written.
+        $updateData = [
+            'referral_status' => $newStatus,
+            'updated_at'      => now(),
+        ];
+
+        // Optionally save earnings amounts when provided, numeric, and non-negative.
+        // Blank inputs are ignored; existing stored values are left unchanged.
+        $platformAmt = $request->input('platform_referral_amount');
+        $partnerAmt  = $request->input('partner_referral_amount');
+
+        if ($platformAmt !== null && $platformAmt !== '' && is_numeric($platformAmt) && (float) $platformAmt >= 0) {
+            $updateData['platform_referral_amount'] = round((float) $platformAmt, 2);
+        }
+        if ($partnerAmt !== null && $partnerAmt !== '' && is_numeric($partnerAmt) && (float) $partnerAmt >= 0) {
+            $updateData['partner_referral_amount'] = round((float) $partnerAmt, 2);
+        }
+
         DB::table('accepted_bid_summaries')
             ->where('id', $summaryId)
-            ->update([
-                'referral_status' => $newStatus,
-                'updated_at'      => now(),
-            ]);
+            ->update($updateData);
 
         return redirect()->back()
             ->with('success', 'Referral #' . $summaryId . ' status updated to ' . ucfirst($newStatus) . '.');
