@@ -375,6 +375,16 @@
             </div>
         </div>
     </a>
+
+    <a href="{{ route('agent.my-referrals') }}">
+        <div class="d-flex flex-row p-3 border-end border-bottom">
+            <div class="me-3"><i class="fa-solid fa-chart-line" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="w-100">
+                <div class="text-600 mb-1"><b>My Referrals</b></div>
+                <div class="opacity-50 text-400 small">View all referred leads, signups, listings, and hires.</div>
+            </div>
+        </div>
+    </a>
     @endif
 
     {{-- ===== PROFILE / SETTINGS ===== --}}

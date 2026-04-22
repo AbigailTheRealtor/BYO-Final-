@@ -157,6 +157,9 @@ Route::middleware('auth')->group(function () {
         ->name('hire.agent.public')
         ->where('agentShortId', '[0-9a-f]+');
 
+    // Agent Referral Activity page
+    Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
+
     // Phase-3 Agent Preset Management
     Route::get('/agent/presets', [\App\Http\Controllers\AgentPresetController::class, 'index'])->name('agent.presets.index');
     Route::get('/agent/presets/{role}/{propertyType}/edit', [\App\Http\Controllers\AgentPresetController::class, 'edit'])->name('agent.presets.edit');
