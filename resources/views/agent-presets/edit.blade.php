@@ -179,7 +179,7 @@
 @endpush
 
 @section('content')
-<div class="preset-edit-wrap py-4 px-3">
+<div class="preset-edit-wrap py-4 px-3" x-ignore>
 
     <div class="preset-header">
         <h1><i class="fa fa-sliders me-2"></i>Edit Preset: {{ $roleLabel }}</h1>
@@ -453,6 +453,12 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Explicitly register open collapse sections so Bootstrap does not toggle them ──
+    ['section-services', 'section-overview'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) { new bootstrap.Collapse(el, { toggle: false }); }
+    });
 
     // ── Service checkbox: visual checked state ────────────────────────────
     const updateServiceItem = (checkbox) => {

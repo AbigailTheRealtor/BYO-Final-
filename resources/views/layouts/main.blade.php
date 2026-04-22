@@ -223,8 +223,7 @@
     {{-- <script src="https://kit.fontawesome.com/d7dd5c0801.js" crossorigin="anonymous"></script> --}}
     <script src="{{ asset('assets/js/jquery-3.6.1.min.js') }}"></script>
     <script src="{{ asset('assets/js/loader.js') }}"></script>
-    {{-- <script src="{{ asset('assets/bootstrap-5.2.2/js/bootstrap.bundle.min.js') }}"></script> --}}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('assets/bootstrap-5.2.2/js/bootstrap.bundle.min.js') }}"></script>
     <!-- PopOver Script  -->
     <script>
         const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
