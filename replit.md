@@ -31,6 +31,8 @@ Agent-specific fields like `referral_percentage` and agent credentials (first na
 
 The Profile Settings page provides a multi-section Bootstrap accordion for managing account information, profile details, preferences, privacy & security, and a delete account option.
 
+The Phase-3 Agent Preset Management UI (`/agent/presets`) allows agents to create and manage default offer presets per role × property type. Presets store services, bio, credentials, and links in `AgentDefaultProfile.profile_data` (JSON). The `AgentPresetCatalog` service provides all service strings for all 14 combinations (buyer/seller × 5 property types, tenant/landlord × 2 property types). The `AgentPresetController` handles index, edit, and save actions. The edit form has four accordion sections: Services (always open), Agent Overview (open by default), Agent Credentials (collapsed), and Presentation & Links (collapsed). A "My Offer Presets" sidenav link is shown to all agent users.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.

@@ -151,6 +151,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'show'])->name('hire.agent.direct.preview');
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}', [\App\Http\Controllers\HireAgentDirectController::class, 'confirm'])->name('hire.agent.direct.confirm');
 
+    // Phase-3 Agent Preset Management
+    Route::get('/agent/presets', [\App\Http\Controllers\AgentPresetController::class, 'index'])->name('agent.presets.index');
+    Route::get('/agent/presets/{role}/{propertyType}/edit', [\App\Http\Controllers\AgentPresetController::class, 'edit'])->name('agent.presets.edit');
+    Route::post('/agent/presets/{role}/{propertyType}', [\App\Http\Controllers\AgentPresetController::class, 'save'])->name('agent.presets.save');
+
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.markAllRead');
