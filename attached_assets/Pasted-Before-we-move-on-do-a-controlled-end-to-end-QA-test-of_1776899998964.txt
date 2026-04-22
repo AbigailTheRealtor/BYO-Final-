@@ -1,0 +1,101 @@
+Before we move on, do a controlled end-to-end QA test of the full referral and earnings flow.
+
+IMPORTANT:
+- Read/test first
+- Do not make any code changes unless a real bug is found
+- If a bug is found, stop and report it before fixing
+- Use the current implemented system exactly as-is
+
+GOAL:
+Verify the complete real referral workflow end-to-end:
+
+1. referral link click
+2. signup attribution
+3. listing attribution
+4. accepted hire attribution
+5. admin earnings entry
+6. agent dashboard / My Referrals display
+
+TEST FLOW TO EXECUTE:
+
+A. Referral capture
+- Use a real active referral link for an agent
+- Simulate a fresh browser/session state
+- Visit /invite/{code}
+- Confirm:
+  - redirect works
+  - referral session is set
+  - referral_code cookie is set
+  - click_count increments
+  - referral_visits row is created
+
+B. Signup
+- Register a brand-new user from that referred session
+- Confirm:
+  - users.referred_by_agent_id is set correctly
+  - users.referral_source_code is set
+  - users.referral_captured_at is set
+  - signup_count increments
+  - no duplicate signup attribution
+
+C. Listing creation
+- Using that same referred user, create a real test listing through one live flow
+- Confirm:
+  - listing row gets referring_agent_id
+  - referral_source_code is set
+  - referral_locked = true
+  - listing_count increments
+  - referral_visits.converted_to_listing is updated if applicable
+
+D. Accepted hire
+- Complete the minimum live flow necessary so an accepted_bid_summaries row is created for that referred listing
+- Confirm:
+  - accepted_bid_summaries.referring_agent_id is set
+  - referral_source_code is set
+  - referral_status = pending
+  - hire_count increments
+
+E. Admin earnings entry
+- Go to /admin/referrals
+- On the new referred hire row, enter test values:
+  - Platform Fee = 150
+  - Partner Earnings = 75
+- Update status to qualified
+- Confirm:
+  - referral_status updates
+  - platform_referral_amount saves
+  - partner_referral_amount saves
+  - blank/unchanged behavior is preserved for other rows
+
+F. Agent-facing display
+- Log in as the referring agent
+- Confirm on dashboard:
+  - referral card still renders
+  - counters reflect the new referral
+  - Est. Pending Earnings appears and matches entered value
+- Confirm on My Referrals page:
+  - row appears in the correct stage
+  - hire row shows Est. Earnings
+  - disclaimer/note is present
+  - no wrong-agent leakage
+
+G. Cookie fallback test
+- Simulate session loss while preserving referral_code cookie
+- Register another fresh user or safely simulate the signup fallback path
+- Confirm cookie fallback attribution still works
+
+H. Regression check
+- Confirm no side effects on:
+  - non-referred users
+  - non-agent dashboard
+  - admin referrals page filters
+  - existing counters beyond expected increments
+
+REQUIRED OUTPUT:
+Return a structured report with:
+1. each step tested
+2. exact pass/fail result
+3. exact DB fields verified
+4. any discrepancies
+5. whether the system is ready for manual human testing
+6. if a bug is found, identify the exact file/method likely responsible, but do not fix without approval
