@@ -114,6 +114,27 @@
         margin-top: .5rem;
         line-height: 1.4;
     }
+    .btn-copy-embed {
+        font-size: .78rem;
+        padding: .3rem .8rem;
+        border-radius: 6px;
+        color: #6c757d;
+        border-color: #ced4da;
+        background: #fff;
+        width: 100%;
+        margin-top: .4rem;
+        text-align: left;
+    }
+    .btn-copy-embed:hover {
+        background: #f8f9fa;
+        color: #495057;
+        border-color: #adb5bd;
+    }
+    .btn-copy-embed.copied {
+        color: #198754;
+        border-color: #198754;
+        background: #f0faf4;
+    }
     .preset-updated {
         font-size: .73rem;
         color: #9aa5b1;
@@ -238,6 +259,8 @@
                                     @php
                                         $cleanPath = '/hire/' . $agentShortId . '/' . $role . '/' . $propertyType;
                                         $fullHireUrl = route('hire.agent.public', ['agentShortId' => $agentShortId, 'role' => $role, 'propertyType' => $propertyType]);
+                                        $widgetUrl = route('hire.agent.widget', ['agentShortId' => $agentShortId, 'role' => $role, 'propertyType' => $propertyType]);
+                                        $embedCode = '<iframe src="' . $widgetUrl . '" width="320" height="220" frameborder="0" style="border-radius:10px;border:none;display:block;"></iframe>';
                                     @endphp
                                     <span class="preset-hire-path" title="Click to select — then copy">{{ $cleanPath }}</span>
                                     <div class="preset-share-actions">
@@ -255,6 +278,12 @@
                                             <i class="fa fa-external-link me-1"></i>Open Link
                                         </a>
                                     </div>
+                                    <button type="button"
+                                            class="btn btn-outline btn-copy-embed"
+                                            title="Copy the embed code to add this widget to your website"
+                                            data-embed-code="{{ $embedCode }}">
+                                        <i class="fa fa-code me-1"></i>Copy Embed Code
+                                    </button>
                                     <div class="preset-hire-note">
                                         <i class="fa fa-info-circle me-1"></i>Share this link directly with clients to let them hire you using this preset.
                                     </div>
@@ -314,6 +343,31 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.removeChild(inp);
         callback();
     }
+
+    document.querySelectorAll('.btn-copy-embed').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var code = this.dataset.embedCode;
+            var self = this;
+            var orig = self.innerHTML;
+
+            function showCopied() {
+                self.innerHTML = '<i class="fa fa-check me-1"></i>Embed code copied!';
+                self.classList.add('copied');
+                setTimeout(function () {
+                    self.innerHTML = orig;
+                    self.classList.remove('copied');
+                }, 2500);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(showCopied).catch(function () {
+                    fallbackCopy(code, showCopied);
+                });
+            } else {
+                fallbackCopy(code, showCopied);
+            }
+        });
+    });
 });
 </script>
 @endpush

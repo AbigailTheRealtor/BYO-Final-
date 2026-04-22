@@ -177,6 +177,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
 });
 
+// Widget — public, no auth. Read-only teaser card embeddable via iframe.
+Route::get('/widget/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Controllers\WidgetController::class, 'show'])
+    ->where('agentShortId', '[0-9a-f]+')
+    ->name('hire.agent.widget');
+
 
 // Route::post('/notification', [NotificationController::class, 'notification']);
 
