@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ReferralLinkService;
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -18,17 +19,24 @@ class SocialAuth extends Controller
 
         $user = User::where('email', $facebookUser->getEmail())->first();
 
+        $isNewUser = false;
         if (!$user) {
             $user = User::create([
                 'name' => $facebookUser->getName(),
                 'email' => $facebookUser->getEmail(),
                 'password' => bcrypt(uniqid()), // Create a random password
             ]);
+            $isNewUser = true;
+        }
+
+        // Phase 5 — persist referral attribution for brand-new social signups.
+        if ($isNewUser) {
+            ReferralLinkService::persistSignup($user->id);
         }
 
         Auth::login($user, true);
 
-        return redirect()->intended('/'); 
+        return redirect()->intended('/');
     }
 
     public function googleIndex()
@@ -42,12 +50,19 @@ class SocialAuth extends Controller
         
         $user = User::where('email', $googleUser->getEmail())->first();
 
+        $isNewUser = false;
         if (!$user) {
             $user = User::create([
                 'name' => $googleUser->getName(),
                 'email' => $googleUser->getEmail(),
                 'password' => bcrypt(uniqid()), // Create a random password
             ]);
+            $isNewUser = true;
+        }
+
+        // Phase 5 — persist referral attribution for brand-new social signups.
+        if ($isNewUser) {
+            ReferralLinkService::persistSignup($user->id);
         }
 
         Auth::login($user, true);

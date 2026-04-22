@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
+use App\Services\ReferralLinkService;
 use Carbon\Carbon;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
@@ -101,6 +102,9 @@ class RegisteredUserController extends Controller
         $user->saveMeta("city", $request->city);
         $user->saveMeta("county", $request->county);
         $user->saveMeta("state", $request->state);
+        // Phase 5 — persist referral attribution if session contains one.
+        ReferralLinkService::persistSignup($user->id);
+
         // dd($user);
         // event(new Registered($user));
         Auth::login($user);
