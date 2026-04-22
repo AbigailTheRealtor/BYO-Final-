@@ -135,6 +135,38 @@
         border-color: #198754;
         background: #f0faf4;
     }
+    .btn-open-widget {
+        font-size: .78rem;
+        padding: .3rem .8rem;
+        border-radius: 6px;
+        color: #6c757d;
+        border-color: #ced4da;
+        background: #fff;
+        white-space: nowrap;
+    }
+    .btn-open-widget:hover {
+        background: #f8f9fa;
+        color: #495057;
+        border-color: #adb5bd;
+    }
+    .preset-embed-actions {
+        display: flex;
+        gap: .5rem;
+        margin-top: .4rem;
+        align-items: stretch;
+    }
+    .preset-embed-actions .btn-copy-embed {
+        flex: 1;
+        margin-top: 0;
+        width: auto;
+        text-align: left;
+    }
+    .preset-embed-note {
+        font-size: .72rem;
+        color: #8fa8b8;
+        margin-top: .35rem;
+        line-height: 1.4;
+    }
     .preset-updated {
         font-size: .73rem;
         color: #9aa5b1;
@@ -278,12 +310,24 @@
                                             <i class="fa fa-external-link me-1"></i>Open Link
                                         </a>
                                     </div>
-                                    <button type="button"
-                                            class="btn btn-outline btn-copy-embed"
-                                            title="Copy the embed code to add this widget to your website"
-                                            data-embed-code="{{ $embedCode }}">
-                                        <i class="fa fa-code me-1"></i>Copy Embed Code
-                                    </button>
+                                    <div class="preset-embed-actions">
+                                        <button type="button"
+                                                class="btn btn-outline btn-copy-embed"
+                                                title="Copy the embed code to add this widget to your website"
+                                                data-embed-code="{{ $embedCode }}">
+                                            <i class="fa fa-code me-1"></i>Copy Embed Code
+                                        </button>
+                                        <a href="{{ $widgetUrl }}"
+                                           target="_blank"
+                                           rel="noopener noreferrer"
+                                           class="btn btn-outline btn-open-widget"
+                                           title="Open widget preview in a new tab">
+                                            <i class="fa fa-eye me-1"></i>Preview
+                                        </a>
+                                    </div>
+                                    <div class="preset-embed-note">
+                                        <i class="fa fa-code me-1"></i>Paste this embed code into your website to show your Hire Me card.
+                                    </div>
                                     <div class="preset-hire-note">
                                         <i class="fa fa-info-circle me-1"></i>Share this link directly with clients to let them hire you using this preset.
                                     </div>
