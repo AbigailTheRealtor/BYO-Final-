@@ -224,6 +224,7 @@ class TenantCriteriaAuctionController extends Controller
             // 19 June 2023 for Residential and Income
 
             DB::commit();
+            \App\Services\ReferralLinkService::persistListingReferral($auction);
             return redirect()->route('tenant.criteria.auction.view', $auction->id)->with('success', 'Auction added successfully');
         } catch (\Exception $e) {
             DB::rollBack();
