@@ -24,7 +24,6 @@
     @endif
   </div>
 
-  <!-- Include Bootstrap JS -->
-  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  {{-- Bootstrap JS (legacy CDN removed; file unused) --}}
 </body>
 </html>
