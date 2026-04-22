@@ -4,7 +4,7 @@ This page should redirect and never be used.
 --}}
 @extends('layouts.main')
 @push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.css">
 
@@ -1194,7 +1194,7 @@ This page should redirect and never be used.
     </template>
 @endsection
 @push('scripts')
-    <script src="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.js"></script>
+    <script src="{{ asset('assets/choices.min.js') }}"></script>
     <script>
         function changeAuctionType(v) {
             if (v == "Auction (Timer)") {

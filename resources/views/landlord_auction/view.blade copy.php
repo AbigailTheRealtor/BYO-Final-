@@ -1,7 +1,7 @@
 @extends('layouts.main')
 @push('styles')
 <!-- //Listing Description css  -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+<link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 <link rel="stylesheet" href="{{ asset('assets/css/listingDescription.css') }}" />
 <style>
     /* Chrome, Safari, Edge, Opera */
@@ -931,7 +931,7 @@ $meta = @$auction->meta;
 
 @push('scripts')
 {{-- <script src="{{asset('assets/bootstrap-5.2.2/js/twitter-bootstrap.min.js')}}"></script> --}}
-<script src="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.js"></script>
+<script src="{{ asset('assets/choices.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/timer.jquery/0.9.0/timer.jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {{-- <script>
         var durations = '{{ $diff_d }}d{{ $diff_H }}h{{ $diff_I }}m{{ $diff_S }}s';

@@ -1,5 +1,5 @@
 @push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
     <style>
         .wizard-steps-progress { height: 5px; width: 100%; background-color: #CCC; position: absolute; top: 0; left: 0; }
         .steps-progress-percent { height: 100%; width: 0%; background-color: #11b7cf; }

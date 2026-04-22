@@ -1,5 +1,5 @@
 @push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
     <style>
         /* Your custom styles here */
         .wizard-steps-progress {

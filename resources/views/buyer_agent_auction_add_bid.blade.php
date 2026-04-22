@@ -1,6 +1,6 @@
 @extends('layouts.main')
 @push('styles')
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+  <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
   <style>
     .choices__list {
       z-index: 999;
@@ -814,7 +814,7 @@
   </div>
 @endsection
 @push('scripts')
-  <script src="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.js"></script>
+  <script src="{{ asset('assets/choices.min.js') }}"></script>
   <script>
     // Video Preview
     $(document).ready(function($) {

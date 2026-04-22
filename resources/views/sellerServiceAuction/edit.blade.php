@@ -1,7 +1,7 @@
 @extends('layouts.main')
 @push('styles')
     <link rel="stylesheet" href="assets/css/addListing.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.css">
     <style>
         .choices__list {
@@ -314,7 +314,7 @@ Address where the agent needs to meet:"}}</textarea>
     </div>
 @endsection
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.js"></script>
+<script src="{{ asset('assets/choices.min.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.20/jquery.datetimepicker.full.min.js"></script>
     <script>
         function changeAuctionType(v) {

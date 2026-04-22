@@ -1,6 +1,6 @@
 @extends('layouts.main')
 @push('styles')
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+    <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 @endpush
 @section('content')
     <div class="mainDashboard">

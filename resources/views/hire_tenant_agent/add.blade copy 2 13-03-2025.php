@@ -1,6 +1,6 @@
 @extends('layouts.main')
 @push('styles')
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+<link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
 <style>
     @import url(https://fonts.googleapis.com/icon?family=Material+Icons);
     @import url("https://fonts.googleapis.com/css?family=Raleway");

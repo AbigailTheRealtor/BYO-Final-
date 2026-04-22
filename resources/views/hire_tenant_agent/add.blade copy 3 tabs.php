@@ -1,7 +1,7 @@
 @extends('layouts.main')
 
 @push('styles')
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+  <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
   <style>
     /* Custom styles for the form */
     .wizard-steps-progress {

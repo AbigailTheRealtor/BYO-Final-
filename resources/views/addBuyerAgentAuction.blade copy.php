@@ -12,7 +12,7 @@
 @endforeach --}}
 
 @push('styles')
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/bbbootstrap/libraries@main/choices.min.css">
+  <link rel="stylesheet" href="{{ asset('assets/choices.min.css') }}">
   <style>
     /* .dropdown-menu {
                                                                                                                                                                                                                                                                                                             width: 100%;
