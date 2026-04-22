@@ -500,6 +500,86 @@
                                 </div>
                                 @endif
 
+                                {{-- ═══════════════════════════════════════════════
+                                     RECENT REFERRAL ACTIVITY  (agent only)
+                                ═══════════════════════════════════════════════ --}}
+                                <div class="mb-4">
+                                    <div class="small text-uppercase text-muted fw-bold mb-2" style="letter-spacing:.06em;font-size:.7rem;">Recent Referral Activity</div>
+                                    @if($recentReferrals->isEmpty())
+                                        <div class="card border-0 rounded-3 p-3 text-center" style="background:#f8f9fa;">
+                                            <span class="text-muted small">No referral activity yet.</span>
+                                        </div>
+                                    @else
+                                    <div class="card border-0 rounded-3 overflow-hidden" style="box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                                        <div class="table-responsive">
+                                            <table class="table table-sm mb-0" style="font-size:.8rem;">
+                                                <thead style="background:#f8f9fa;">
+                                                    <tr>
+                                                        <th class="px-3 py-2" style="font-weight:600;color:#666;">Date</th>
+                                                        <th class="px-3 py-2" style="font-weight:600;color:#666;">Listing</th>
+                                                        <th class="px-3 py-2" style="font-weight:600;color:#666;">Hired Agent</th>
+                                                        <th class="px-3 py-2" style="font-weight:600;color:#666;">Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @php
+                                                        $referralStatusColors = [
+                                                            'pending'   => '#856404',
+                                                            'qualified' => '#055160',
+                                                            'closed'    => '#0a3622',
+                                                            'paid'      => '#084298',
+                                                            'void'      => '#495057',
+                                                        ];
+                                                        $referralStatusBg = [
+                                                            'pending'   => '#fff3cd',
+                                                            'qualified' => '#cff4fc',
+                                                            'closed'    => '#d1e7dd',
+                                                            'paid'      => '#cfe2ff',
+                                                            'void'      => '#e9ecef',
+                                                        ];
+                                                    @endphp
+                                                    @foreach($recentReferrals as $ref)
+                                                    @php
+                                                        $refStatus = $ref->referral_status ?? null;
+                                                        $badgeFg   = $referralStatusColors[$refStatus] ?? '#495057';
+                                                        $badgeBg   = $referralStatusBg[$refStatus]     ?? '#e9ecef';
+                                                    @endphp
+                                                    <tr>
+                                                        <td class="px-3 py-2 text-muted" style="white-space:nowrap;">
+                                                            {{ $ref->created_at ? \Carbon\Carbon::parse($ref->created_at)->format('M j, Y') : '—' }}
+                                                        </td>
+                                                        <td class="px-3 py-2">
+                                                            <span class="text-muted" style="font-size:.75rem;">ID {{ $ref->listing_id }}</span>
+                                                            @if($ref->listing_type)
+                                                                <span class="ms-1 text-muted" style="font-size:.72rem;">({{ ucfirst($ref->listing_type) }})</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="px-3 py-2">
+                                                            @if($ref->hired_agent_name)
+                                                                <span>{{ $ref->hired_agent_name }}</span>
+                                                            @else
+                                                                <span class="text-muted">Agent #{{ $ref->agent_user_id }}</span>
+                                                            @endif
+                                                        </td>
+                                                        <td class="px-3 py-2">
+                                                            @if($refStatus)
+                                                                <span class="badge"
+                                                                      style="background:{{ $badgeBg }};color:{{ $badgeFg }};font-size:.7rem;font-weight:600;">
+                                                                    {{ ucfirst($refStatus) }}
+                                                                </span>
+                                                            @else
+                                                                <span class="text-muted">—</span>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    @endif
+                                </div>
+
                                 @endif
 
                                 {{-- ═══════════════════════════════════════════════

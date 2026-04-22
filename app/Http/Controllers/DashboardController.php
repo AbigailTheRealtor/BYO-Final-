@@ -27,6 +27,7 @@ use App\Models\User;
 use App\Services\ReferralLinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -130,13 +131,39 @@ class DashboardController extends Controller
             return $s;
         });
 
-        // ── Referral partner link (agents only) ────────────────────────────────
-        $page_data['referralLink'] = null;
+        // ── Referral partner link + recent activity (agents only) ─────────────
+        $page_data['referralLink']    = null;
+        $page_data['recentReferrals'] = collect();
+
         if ($user->user_type === 'agent') {
             try {
                 $page_data['referralLink'] = ReferralLinkService::getOrCreateForAgent($uid);
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('Dashboard: could not load referral link', [
+                    'user_id' => $uid,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+
+            try {
+                $page_data['recentReferrals'] = DB::table('accepted_bid_summaries')
+                    ->where('accepted_bid_summaries.referring_agent_id', $uid)
+                    ->leftJoin('users as ha', 'accepted_bid_summaries.agent_user_id', '=', 'ha.id')
+                    ->select([
+                        'accepted_bid_summaries.id',
+                        'accepted_bid_summaries.listing_id',
+                        'accepted_bid_summaries.listing_type',
+                        'accepted_bid_summaries.referral_source_code',
+                        'accepted_bid_summaries.referral_status',
+                        'accepted_bid_summaries.created_at',
+                        'accepted_bid_summaries.agent_user_id',
+                        'ha.name as hired_agent_name',
+                    ])
+                    ->orderByDesc('accepted_bid_summaries.created_at')
+                    ->limit(10)
+                    ->get();
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Dashboard: could not load recent referrals', [
                     'user_id' => $uid,
                     'error'   => $e->getMessage(),
                 ]);
