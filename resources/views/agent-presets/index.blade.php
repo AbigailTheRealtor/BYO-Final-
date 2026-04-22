@@ -186,9 +186,10 @@
                                    class="btn btn-outline-secondary btn-edit-preset w-100">
                                     <i class="fa fa-pencil me-1"></i>{{ $info['exists'] ? 'Edit Preset' : 'Create Preset' }}
                                 </a>
-                                @if ($info['exists'])
+                                @if ($info['exists'] && $info['services'] > 0)
                                     <button type="button"
                                             class="btn btn-outline btn-copy-hire w-100 mt-2"
+                                            title="Copy your public Hire Me link to share with clients"
                                             data-hire-url="{{ route('hire.agent.direct.preview', ['agentId' => $userId, 'role' => $role, 'propertyType' => $propertyType]) }}">
                                         <i class="fa fa-link me-1"></i>Copy Hire Me Link
                                     </button>

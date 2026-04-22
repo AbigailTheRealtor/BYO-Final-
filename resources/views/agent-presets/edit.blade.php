@@ -218,7 +218,7 @@
             </div>
             <div class="collapse show" id="section-services">
                 <div class="preset-section-body">
-                    <p class="form-hint mb-3">Select the services you typically offer for this role and property type. These will be pre-selected when a client hires you directly.</p>
+                    <p class="form-hint mb-3">Select the services you include by default in your offer.</p>
 
                     <div class="services-toolbar">
                         <button type="button" class="btn btn-outline-secondary btn-select-all" data-target="services-grid">Select All</button>
