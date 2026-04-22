@@ -192,7 +192,7 @@
         color: #fff;
         border-radius: 12px;
         padding: 1.6rem 2rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.25rem;
     }
     .page-hero h1 {
         font-size: 1.5rem;
@@ -204,6 +204,49 @@
         opacity: .85;
         font-size: .92rem;
     }
+    .how-it-works {
+        background: #f0fafa;
+        border: 1px solid #c8e8ea;
+        border-radius: 10px;
+        padding: .9rem 1.2rem;
+        margin-bottom: 1.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem 2rem;
+    }
+    .how-it-works-item {
+        display: flex;
+        align-items: flex-start;
+        gap: .55rem;
+        flex: 1 1 200px;
+    }
+    .how-it-works-icon {
+        color: #049399;
+        font-size: 1rem;
+        margin-top: .12rem;
+        flex-shrink: 0;
+    }
+    .how-it-works-text strong {
+        font-size: .82rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        display: block;
+        line-height: 1.3;
+    }
+    .how-it-works-text span {
+        font-size: .77rem;
+        color: #5a7a82;
+        line-height: 1.35;
+    }
+    .action-cluster-label {
+        font-size: .68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #9aa5b1;
+        margin-top: .7rem;
+        margin-bottom: .2rem;
+    }
 </style>
 @endpush
 
@@ -212,7 +255,31 @@
 
     <div class="page-hero">
         <h1><i class="fa fa-sliders me-2"></i>My Offer Presets</h1>
-        <p>Save default services, bio, credentials, and compensation details for each role and property type. These presets auto-fill your bids when a client hires you directly.</p>
+        <p>Presets define the services and terms you offer by role and property type. Once saved, each preset generates a personal Hire Me link you can share directly with clients — and an embeddable widget card you can place on your own website.</p>
+    </div>
+
+    <div class="how-it-works">
+        <div class="how-it-works-item">
+            <div class="how-it-works-icon"><i class="fa fa-sliders"></i></div>
+            <div class="how-it-works-text">
+                <strong>1. Build a Preset</strong>
+                <span>Select services, add your bio and credentials for a specific role &amp; property type.</span>
+            </div>
+        </div>
+        <div class="how-it-works-item">
+            <div class="how-it-works-icon"><i class="fa fa-link"></i></div>
+            <div class="how-it-works-text">
+                <strong>2. Share Your Hire Me Link</strong>
+                <span>Send the link to clients. They click it and hire you directly — no search needed.</span>
+            </div>
+        </div>
+        <div class="how-it-works-item">
+            <div class="how-it-works-icon"><i class="fa fa-code"></i></div>
+            <div class="how-it-works-text">
+                <strong>3. Embed on Your Website</strong>
+                <span>Copy the embed code and paste it on your site to show a live Hire Me card.</span>
+            </div>
+        </div>
     </div>
 
     @if (session('success'))
@@ -294,11 +361,12 @@
                                         $widgetUrl = route('hire.agent.widget', ['agentShortId' => $agentShortId, 'role' => $role, 'propertyType' => $propertyType]);
                                         $embedCode = '<iframe src="' . $widgetUrl . '" width="320" height="220" frameborder="0" style="border-radius:10px;border:none;display:block;"></iframe>';
                                     @endphp
+                                    <div class="action-cluster-label">Share with clients</div>
                                     <span class="preset-hire-path" title="Click to select — then copy">{{ $cleanPath }}</span>
                                     <div class="preset-share-actions">
                                         <button type="button"
                                                 class="btn btn-outline btn-copy-hire"
-                                                title="Copy this link to your clipboard"
+                                                title="Copy link to share directly with clients"
                                                 data-hire-url="{{ $fullHireUrl }}">
                                             <i class="fa fa-copy me-1"></i>Copy Link
                                         </button>
@@ -306,14 +374,15 @@
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="btn btn-open-hire"
-                                           title="Open your public Hire Me page in a new tab">
-                                            <i class="fa fa-external-link me-1"></i>Open Link
+                                           title="See the page your client will land on">
+                                            <i class="fa fa-external-link me-1"></i>Open
                                         </a>
                                     </div>
+                                    <div class="action-cluster-label" style="margin-top:.75rem">Embed on your website</div>
                                     <div class="preset-embed-actions">
                                         <button type="button"
                                                 class="btn btn-outline btn-copy-embed"
-                                                title="Copy the embed code to add this widget to your website"
+                                                title="Copy the iframe snippet to paste into your website"
                                                 data-embed-code="{{ $embedCode }}">
                                             <i class="fa fa-code me-1"></i>Copy Embed Code
                                         </button>
@@ -321,15 +390,12 @@
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="btn btn-outline btn-open-widget"
-                                           title="Open widget preview in a new tab">
+                                           title="See what your embedded card looks like">
                                             <i class="fa fa-eye me-1"></i>Preview
                                         </a>
                                     </div>
                                     <div class="preset-embed-note">
-                                        <i class="fa fa-code me-1"></i>Paste this embed code into your website to show your Hire Me card.
-                                    </div>
-                                    <div class="preset-hire-note">
-                                        <i class="fa fa-info-circle me-1"></i>Share this link directly with clients to let them hire you using this preset.
+                                        Paste this embed code into your website to show your Hire Me card.
                                     </div>
                                 @elseif ($info['exists'] && $info['services'] === 0)
                                     <div class="preset-inactive-note mt-2">
