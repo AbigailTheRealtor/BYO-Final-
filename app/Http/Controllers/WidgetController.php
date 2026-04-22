@@ -56,7 +56,7 @@ class WidgetController extends Controller
             $propertyType
         );
 
-        $services = $profile ? array_filter($profile->profile_data['services'] ?? []) : [];
+        $services = HireAgentDirectController::resolveServices($profile);
 
         if (!$profile || count($services) === 0) {
             return $this->unavailable();

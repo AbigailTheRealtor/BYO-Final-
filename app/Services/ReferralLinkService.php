@@ -36,11 +36,15 @@ class ReferralLinkService
 
         if ($existing) {
             return [
-                'id'        => $existing->id,
-                'agent_id'  => $existing->agent_id,
-                'code'      => $existing->code,
-                'is_active' => $existing->is_active,
-                'url'       => static::buildUrl($existing->code),
+                'id'            => $existing->id,
+                'agent_id'      => $existing->agent_id,
+                'code'          => $existing->code,
+                'is_active'     => $existing->is_active,
+                'url'           => static::buildUrl($existing->code),
+                'click_count'   => (int) ($existing->click_count   ?? 0),
+                'signup_count'  => (int) ($existing->signup_count  ?? 0),
+                'listing_count' => (int) ($existing->listing_count ?? 0),
+                'hire_count'    => (int) ($existing->hire_count    ?? 0),
             ];
         }
 
@@ -61,11 +65,15 @@ class ReferralLinkService
         ]);
 
         return [
-            'id'        => $id,
-            'agent_id'  => $agentId,
-            'code'      => $code,
-            'is_active' => true,
-            'url'       => static::buildUrl($code),
+            'id'            => $id,
+            'agent_id'      => $agentId,
+            'code'          => $code,
+            'is_active'     => true,
+            'url'           => static::buildUrl($code),
+            'click_count'   => 0,
+            'signup_count'  => 0,
+            'listing_count' => 0,
+            'hire_count'    => 0,
         ];
     }
 

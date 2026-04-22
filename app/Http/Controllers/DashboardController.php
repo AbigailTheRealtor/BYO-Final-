@@ -24,6 +24,7 @@ use App\Models\TenantAgentAuction;
 use App\Models\TenantAgentAuctionBid;
 use App\Models\TenantCriteriaAuctionBid;
 use App\Models\User;
+use App\Services\ReferralLinkService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -128,6 +129,19 @@ class DashboardController extends Controller
             $s->listingSnapshot = $listingCache[$s->listing_type][$s->listing_id] ?? null;
             return $s;
         });
+
+        // ── Referral partner link (agents only) ────────────────────────────────
+        $page_data['referralLink'] = null;
+        if ($user->user_type === 'agent') {
+            try {
+                $page_data['referralLink'] = ReferralLinkService::getOrCreateForAgent($uid);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Dashboard: could not load referral link', [
+                    'user_id' => $uid,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+        }
 
         return view('dashboard', $page_data);
     }

@@ -74,7 +74,7 @@ class HireAgentDirectController extends Controller
      * @param  AgentDefaultProfile|null  $profile
      * @return array<int, string>
      */
-    private static function resolveServices(?AgentDefaultProfile $profile): array
+    public static function resolveServices(?AgentDefaultProfile $profile): array
     {
         if (!$profile) {
             return [];

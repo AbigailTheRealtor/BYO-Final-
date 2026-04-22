@@ -443,6 +443,63 @@
                                     </div>
                                 </div>
 
+                                {{-- ═══════════════════════════════════════════════
+                                     REFERRAL PARTNER LINK  (agent only)
+                                ═══════════════════════════════════════════════ --}}
+                                @if($referralLink)
+                                <div class="mb-4">
+                                    <div class="small text-uppercase text-muted fw-bold mb-2" style="letter-spacing:.06em;font-size:.7rem;">Referral Partner Link</div>
+                                    <div class="card border-0 rounded-3 overflow-hidden" style="border-left:3px solid #049399 !important;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                                        <div class="card-body py-3 px-3">
+
+                                            {{-- URL row --}}
+                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+                                                <input id="referral-url-input"
+                                                       type="text"
+                                                       class="form-control form-control-sm"
+                                                       value="{{ $referralLink['url'] }}"
+                                                       readonly
+                                                       style="font-size:.8rem;font-family:monospace;background:#f8f9fa;max-width:380px;cursor:text;">
+                                                <button id="btn-copy-referral"
+                                                        class="btn btn-sm btn-outline-secondary"
+                                                        style="font-size:.78rem;white-space:nowrap;"
+                                                        data-url="{{ $referralLink['url'] }}"
+                                                        title="Copy referral link to clipboard">
+                                                    <i class="fa fa-copy me-1"></i>Copy Link
+                                                </button>
+                                                <a href="{{ $referralLink['url'] }}"
+                                                   target="_blank"
+                                                   class="btn btn-sm btn-outline-secondary"
+                                                   style="font-size:.78rem;white-space:nowrap;">
+                                                    <i class="fa fa-external-link-alt me-1"></i>Open Link
+                                                </a>
+                                            </div>
+
+                                            {{-- Stats row --}}
+                                            <div class="d-flex flex-wrap gap-3" style="font-size:.82rem;">
+                                                <div class="d-flex flex-column align-items-center px-3 py-2 rounded-3" style="background:#f8f9fa;min-width:70px;">
+                                                    <span class="fw-bold" style="font-size:1.3rem;color:#049399;">{{ number_format($referralLink['click_count']) }}</span>
+                                                    <span class="text-muted" style="font-size:.72rem;">Clicks</span>
+                                                </div>
+                                                <div class="d-flex flex-column align-items-center px-3 py-2 rounded-3" style="background:#f8f9fa;min-width:70px;">
+                                                    <span class="fw-bold" style="font-size:1.3rem;color:#049399;">{{ number_format($referralLink['signup_count']) }}</span>
+                                                    <span class="text-muted" style="font-size:.72rem;">Signups</span>
+                                                </div>
+                                                <div class="d-flex flex-column align-items-center px-3 py-2 rounded-3" style="background:#f8f9fa;min-width:70px;">
+                                                    <span class="fw-bold" style="font-size:1.3rem;color:#049399;">{{ number_format($referralLink['listing_count']) }}</span>
+                                                    <span class="text-muted" style="font-size:.72rem;">Listings</span>
+                                                </div>
+                                                <div class="d-flex flex-column align-items-center px-3 py-2 rounded-3" style="background:#f8f9fa;min-width:70px;">
+                                                    <span class="fw-bold" style="font-size:1.3rem;color:#049399;">{{ number_format($referralLink['hire_count']) }}</span>
+                                                    <span class="text-muted" style="font-size:.72rem;">Hires</span>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                                @endif
+
                                 @endif
 
                                 {{-- ═══════════════════════════════════════════════
@@ -507,3 +564,46 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    var btn = document.getElementById('btn-copy-referral');
+    if (!btn) return;
+
+    function fallbackCopy(text, onDone) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity  = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        onDone();
+    }
+
+    function showCopied() {
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-check me-1"></i>Copied!';
+        btn.classList.add('text-success');
+        setTimeout(function () {
+            btn.innerHTML = orig;
+            btn.classList.remove('text-success');
+        }, 2000);
+    }
+
+    btn.addEventListener('click', function () {
+        var url = btn.getAttribute('data-url');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(showCopied).catch(function () {
+                fallbackCopy(url, showCopied);
+            });
+        } else {
+            fallbackCopy(url, showCopied);
+        }
+    });
+})();
+</script>
+@endpush

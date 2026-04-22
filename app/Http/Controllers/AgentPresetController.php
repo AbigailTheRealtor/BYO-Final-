@@ -45,7 +45,7 @@ class AgentPresetController extends Controller
 
         $agentShortId = Auth::user()->short_id;
 
-        return view('agent-presets.index', compact('presets', 'roles', 'userId', 'agentShortId'));
+        return view('agent-presets.index', compact('presets', 'roles', 'agentShortId'));
     }
 
     /**
