@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\AcceptedBidSummary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,7 @@ use Illuminate\Support\Str;
  * Phase 3 — Referral link generation and retrieval.
  * Phase 5 — Signup persistence hook.
  * Phase 6 — Listing persistence hook.
+ * Phase 7 — Accepted hire persistence hook.
  */
 class ReferralLinkService
 {
@@ -113,7 +115,6 @@ class ReferralLinkService
                 return;
             }
 
-            // Guard: never overwrite an existing attribution on this user.
             $alreadyAttributed = DB::table('users')
                 ->where('id', $userId)
                 ->whereNotNull('referred_by_agent_id')
@@ -126,7 +127,6 @@ class ReferralLinkService
             $code       = session('referral.code');
             $capturedAt = session('referral.captured_at');
 
-            // 1. Persist referral fields on the user record.
             DB::table('users')->where('id', $userId)->update([
                 'referred_by_agent_id' => $agentId,
                 'referral_source_code' => $code,
@@ -134,7 +134,6 @@ class ReferralLinkService
                 'updated_at'           => now(),
             ]);
 
-            // 2. Update referral_visits row if visit_id is in session.
             $visitId = session('referral.visit_id');
             if ($visitId) {
                 DB::table('referral_visits')
@@ -146,14 +145,11 @@ class ReferralLinkService
                     ]);
             }
 
-            // 3. Increment signup_count on the referral link (atomic).
             DB::table('agent_referral_links')
                 ->where('agent_id', $agentId)
                 ->where('code', $code)
                 ->where('is_active', true)
                 ->increment('signup_count');
-
-            // Session is preserved — Phase 6 (listing attribution) reads it.
 
         } catch (\Throwable $e) {
             Log::error('ReferralLinkService::persistSignup failed', [
@@ -171,29 +167,19 @@ class ReferralLinkService
      * Called immediately after a listing record is saved.
      *
      * Only acts when $auction->wasRecentlyCreated (brand-new DB row).
-     * The caller is responsible for an additional guard on append-only draft
-     * versioning — e.g. only calling this on the first draft version.
+     * Attribution priority: A. Session referral  B. User fallback  C. None.
      *
-     * Attribution priority:
-     *   A. Session referral  (referral.agent_id / code / captured_at)
-     *   B. User-level fallback (users.referred_by_agent_id / …)
-     *   C. None — do nothing
-     *
-     * Also:
-     *   • Updates referral_visits if session('referral.visit_id') exists.
-     *   • Increments listing_count on agent_referral_links (atomic).
-     *   • Does NOT clear session — Phase 7 still needs it.
-     *   • Fully wrapped in try/catch — never crashes listing creation.
+     * Also updates referral_visits and increments listing_count atomically.
+     * Session is preserved — Phase 7 still needs it.
+     * Fully wrapped in try/catch — never crashes listing creation.
      */
     public static function persistListingReferral(Model $auction): void
     {
         try {
-            // Only act on brand-new rows.
             if (!$auction->wasRecentlyCreated) {
                 return;
             }
 
-            // Belt-and-suspenders: skip if already attributed.
             $already = DB::table($auction->getTable())
                 ->where('id', $auction->id)
                 ->whereNotNull('referring_agent_id')
@@ -203,12 +189,10 @@ class ReferralLinkService
                 return;
             }
 
-            // ── Determine attribution source ─────────────────────────────────
             $agentId    = null;
             $code       = null;
             $capturedAt = null;
 
-            // Priority A: session referral.
             $sessionAgentId = session('referral.agent_id');
             if (!empty($sessionAgentId)) {
                 $agentId    = $sessionAgentId;
@@ -216,7 +200,6 @@ class ReferralLinkService
                 $capturedAt = session('referral.captured_at');
             }
 
-            // Priority B: user-level fallback.
             if (empty($agentId)) {
                 $userId = Auth::id();
                 if ($userId) {
@@ -233,42 +216,36 @@ class ReferralLinkService
                 }
             }
 
-            // No attribution available.
             if (empty($agentId)) {
                 return;
             }
 
-            // ── 1. Write referral fields onto the listing row ─────────────────
             DB::table($auction->getTable())
                 ->where('id', $auction->id)
                 ->update([
-                    'referring_agent_id'  => $agentId,
+                    'referring_agent_id'   => $agentId,
                     'referral_source_code' => $code,
                     'referral_captured_at' => $capturedAt,
                     'referral_locked'      => true,
                     'updated_at'           => now(),
                 ]);
 
-            // ── 2. Update referral_visits row if visit_id is in session ────────
             $visitId = session('referral.visit_id');
             if ($visitId) {
                 DB::table('referral_visits')
                     ->where('id', $visitId)
                     ->update([
-                        'listing_id'            => $auction->id,
-                        'converted_to_listing'  => true,
-                        'updated_at'            => now(),
+                        'listing_id'           => $auction->id,
+                        'converted_to_listing' => true,
+                        'updated_at'           => now(),
                     ]);
             }
 
-            // ── 3. Increment listing_count on the referral link (atomic) ──────
             DB::table('agent_referral_links')
                 ->where('agent_id', $agentId)
                 ->where('code', $code)
                 ->where('is_active', true)
                 ->increment('listing_count');
-
-            // Session is preserved — Phase 7 (hire attribution) reads it.
 
         } catch (\Throwable $e) {
             Log::error('ReferralLinkService::persistListingReferral failed', [
@@ -276,6 +253,88 @@ class ReferralLinkService
                 'listing_id'    => $auction->id ?? null,
                 'error'         => $e->getMessage(),
             ]);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Phase 7 — Accepted hire persistence
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Called immediately after AcceptedBidSummary::create() in each
+     * generateSummary() service method.
+     *
+     * Copies referral attribution from the parent listing onto the accepted
+     * bid summary row, sets referral_status = 'pending', optionally marks
+     * converted_to_hire on the referral_visits row, and atomically increments
+     * hire_count on agent_referral_links.
+     *
+     * Rules:
+     *  • Never overwrites an accepted record that already has referring_agent_id.
+     *  • Source is listing.referring_agent_id only (not session — the hire
+     *    flow happens after listing creation; the listing is the authoritative
+     *    attribution record at this point).
+     *  • If listing has no referring_agent_id, does nothing.
+     *  • If session referral.visit_id is missing or stale, logs gracefully.
+     *  • Session is NOT cleared — preserved for any later phases.
+     *  • Fully wrapped in try/catch — never crashes the acceptance flow.
+     *
+     * @param  AcceptedBidSummary  $summary  The newly created summary record.
+     * @param  Model               $listing  The parent listing Eloquent model.
+     */
+    public static function persistAcceptedHireReferral(
+        AcceptedBidSummary $summary,
+        Model $listing
+    ): void {
+        try {
+            // ── Guard: never overwrite an already-attributed summary ──────────
+            if (!empty($summary->referring_agent_id)) {
+                return;
+            }
+
+            // ── Source: listing-level referral only ───────────────────────────
+            $agentId = $listing->referring_agent_id ?? null;
+            $code    = $listing->referral_source_code ?? null;
+
+            if (empty($agentId)) {
+                return;
+            }
+
+            // ── 1. Write referral fields onto the accepted_bid_summaries row ──
+            DB::table('accepted_bid_summaries')
+                ->where('id', $summary->id)
+                ->update([
+                    'referring_agent_id'   => $agentId,
+                    'referral_source_code' => $code,
+                    'referral_status'      => 'pending',
+                    'updated_at'           => now(),
+                ]);
+
+            // ── 2. Mark converted_to_hire on referral_visits if visit exists ──
+            $visitId = session('referral.visit_id');
+            if ($visitId) {
+                DB::table('referral_visits')
+                    ->where('id', $visitId)
+                    ->update([
+                        'converted_to_hire' => true,
+                        'updated_at'        => now(),
+                    ]);
+            }
+
+            // ── 3. Increment hire_count on agent_referral_links (atomic) ──────
+            DB::table('agent_referral_links')
+                ->where('agent_id', $agentId)
+                ->where('code', $code)
+                ->where('is_active', true)
+                ->increment('hire_count');
+
+        } catch (\Throwable $e) {
+            Log::error('ReferralLinkService::persistAcceptedHireReferral failed', [
+                'summary_id' => $summary->id ?? null,
+                'listing_id' => $listing->id ?? null,
+                'error'      => $e->getMessage(),
+            ]);
+            // Never propagate — acceptance flow must succeed regardless.
         }
     }
 }

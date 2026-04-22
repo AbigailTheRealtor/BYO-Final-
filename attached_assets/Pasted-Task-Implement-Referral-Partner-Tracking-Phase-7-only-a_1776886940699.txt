@@ -1,0 +1,94 @@
+Task: Implement Referral Partner Tracking — Phase 7 only (accepted hire persistence).
+
+GOAL:
+When a bid is accepted and an accepted_bid_summaries record is created or finalized, carry over referral attribution from the parent listing into the accepted record. Do not touch listing creation, dashboard UI, admin UI, or model relationships.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not redesign anything.
+- Do not modify bidding, counter, or acceptance logic.
+- Do not change match score, timers, summaries, PDFs, or UI behavior.
+- Do not alter how accepted_bid_summaries are created except to append referral attribution.
+- Do not overwrite referral fields if already present.
+- Inspect first and identify the exact file and method where accepted_bid_summaries are created or finalized.
+- STOP and report if there are multiple competing creation paths.
+
+USE EXISTING FIELDS:
+accepted_bid_summaries:
+- referring_agent_id
+- referral_source_code
+- referral_status
+- platform_referral_amount
+- partner_referral_amount
+
+Listing tables already contain:
+- referring_agent_id
+- referral_source_code
+- referral_captured_at
+
+PHASE 7 — ACCEPTED HIRE PERSISTENCE ONLY
+
+1. Inspect the accept/hire flow
+- Identify where accepted_bid_summaries records are created or finalized
+- Find the exact file(s) and method(s)
+- Confirm whether creation happens once or across multiple flows
+
+2. At the moment an accepted_bid_summaries record is created or finalized:
+- if accepted_bid_summaries.referring_agent_id is already populated → do nothing
+- else:
+  - get the parent listing record associated with this accepted bid
+  - if the listing has referring_agent_id:
+    - copy to accepted record:
+      - referring_agent_id
+      - referral_source_code
+    - set:
+      - referral_status = 'pending'
+
+3. Update referral_visits if possible:
+- if session('referral.visit_id') exists:
+  - set converted_to_hire = true
+- if missing or stale, fail gracefully (no crash)
+
+4. Increment hire_count on agent_referral_links only when:
+- accepted record was newly attributed
+- referral data exists
+
+Use atomic increment.
+
+5. Safety rules:
+- never overwrite accepted record referral fields
+- do not change listing referral
+- do not clear referral session yet
+- do not break acceptance flow under any circumstance
+
+TEST REQUIREMENTS:
+
+1. Referred listing → accepted bid:
+- confirm accepted_bid_summaries gets:
+  - referring_agent_id
+  - referral_source_code
+  - referral_status = 'pending'
+- confirm agent_referral_links.hire_count increments
+
+2. Non-referred listing:
+- accept a bid
+- confirm accepted record referral fields remain null
+- no hire_count increment
+
+3. Existing protection:
+- if accepted record already has referral data, confirm it is not overwritten
+
+4. Stale visit:
+- referral.visit_id missing or invalid
+- accepted record still populated correctly
+- no crash
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact file(s) and method(s) patched
+2. insertion point
+3. how listing was resolved from accepted record
+4. how hire_count is incremented
+5. results of all 4 tests
+
+DELIVERABLE:
+Only Phase 7 accepted hire persistence. No dashboard/admin UI, no model relationship pass.

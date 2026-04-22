@@ -311,6 +311,9 @@ class BuyerAcceptedBidSummaryService
                 'summary_html'        => $html,
             ]);
 
+            // Phase 7 — carry referral attribution from listing into accepted record.
+            \App\Services\ReferralLinkService::persistAcceptedHireReferral($summary, $listing);
+
             return $summary;
 
         } catch (\Exception $e) {
