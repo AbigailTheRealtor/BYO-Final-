@@ -352,6 +352,45 @@ class AdminController extends Controller
         return view('admin.referrals', $page_data);
     }
 
+    /**
+     * POST /admin/referrals/{summary}/status
+     *
+     * Updates referral_status on a single accepted_bid_summaries row.
+     * Only the status field is written — no other fields are touched.
+     * Uses DB::table() for consistency with the referrals() query above.
+     */
+    public function updateReferralStatus(Request $request, $summaryId)
+    {
+        $allowedStatuses = ['pending', 'qualified', 'closed', 'paid', 'void'];
+
+        $newStatus = $request->input('status');
+
+        if (!in_array($newStatus, $allowedStatuses, true)) {
+            return redirect()->back()
+                ->with('error', 'Invalid status value.');
+        }
+
+        $row = DB::table('accepted_bid_summaries')
+            ->whereNotNull('referring_agent_id')
+            ->where('id', $summaryId)
+            ->first();
+
+        if (!$row) {
+            return redirect()->back()
+                ->with('error', 'Referred hire record not found.');
+        }
+
+        DB::table('accepted_bid_summaries')
+            ->where('id', $summaryId)
+            ->update([
+                'referral_status' => $newStatus,
+                'updated_at'      => now(),
+            ]);
+
+        return redirect()->back()
+            ->with('success', 'Referral #' . $summaryId . ' status updated to ' . ucfirst($newStatus) . '.');
+    }
+
     public function settings()
     {
         $page_data['title'] = "Settings";

@@ -1,10 +1,18 @@
 @extends('layouts.admin')
 @section('content')
 
+{{-- ── Flash messages ──────────────────────────────────────────────────────── --}}
+@if(session('success'))
+    <div class="alert alert-success mx-3 mt-3">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger mx-3 mt-3">{{ session('error') }}</div>
+@endif
+
 <div class="card">
     <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
         <h5 class="mb-0">Referral Tracking</h5>
-        <span class="text-muted small">Read-only · {{ $rows->total() }} referred hire{{ $rows->total() !== 1 ? 's' : '' }}</span>
+        <span class="text-muted small">{{ $rows->total() }} referred hire{{ $rows->total() !== 1 ? 's' : '' }}</span>
     </div>
 
     {{-- ── Per-Agent Link Summary ──────────────────────────────────────── --}}
@@ -82,6 +90,7 @@
                         <th>Hired Agent</th>
                         <th>Status</th>
                         <th>Created</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,6 +104,11 @@
                             'void'      => 'secondary',
                         ];
                         $badgeColor = $statusColors[$row->referral_status ?? ''] ?? 'light';
+                        // Action buttons: all statuses except the one currently set
+                        $actionStatuses = array_filter(
+                            array_keys($statusColors),
+                            fn($s) => $s !== ($row->referral_status ?? '')
+                        );
                     @endphp
                     <tr>
                         <td class="text-muted">{{ $rows->firstItem() + $loop->index }}</td>
@@ -138,10 +152,29 @@
                         <td class="text-muted" style="white-space:nowrap;">
                             {{ $row->created_at ? \Carbon\Carbon::parse($row->created_at)->format('M j, Y') : '—' }}
                         </td>
+                        {{-- ── Inline status actions ───────────────────────── --}}
+                        <td style="white-space:nowrap;vertical-align:middle;">
+                            <div class="d-flex flex-wrap gap-1">
+                                @foreach($actionStatuses as $s)
+                                <form method="POST"
+                                      action="{{ route('admin.referrals.status', $row->id) }}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Set referral #{{ $row->id }} to {{ ucfirst($s) }}?');">
+                                    @csrf
+                                    <input type="hidden" name="status" value="{{ $s }}">
+                                    <button type="submit"
+                                            class="btn btn-outline-{{ $statusColors[$s] ?? 'secondary' }} btn-xs"
+                                            style="font-size:.7rem;padding:2px 7px;line-height:1.4;">
+                                        {{ ucfirst($s) }}
+                                    </button>
+                                </form>
+                                @endforeach
+                            </div>
+                        </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">
+                        <td colspan="9" class="text-center text-muted py-4">
                             @if($filterStatus)
                                 No referred hires with status "{{ ucfirst($filterStatus) }}".
                                 <a href="{{ route('admin.referrals.index') }}">Clear filter</a>

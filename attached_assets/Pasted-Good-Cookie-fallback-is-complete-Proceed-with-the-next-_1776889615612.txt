@@ -1,0 +1,117 @@
+Good. Cookie fallback is complete. Proceed with the next additive improvement only.
+
+ALREADY IMPLEMENTED — DO NOT REBUILD:
+- referral DB schema
+- referral link generation
+- referral capture route
+- referral visit logging
+- session attribution
+- cookie fallback attribution
+- signup persistence
+- listing persistence
+- accepted hire persistence
+- agent dashboard referral card
+- admin referral tracking page
+
+NEXT TASK:
+Implement only admin referral status actions on the existing /admin/referrals page.
+
+GOAL:
+Allow an admin to change accepted_bid_summaries.referral_status from the admin referrals page using safe inline actions. This is status management only — no payout automation, no earnings calculations, no edits to other fields.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not redesign the admin page.
+- Do not change referral creation logic.
+- Do not touch Buyer/Seller/Landlord/Tenant flows.
+- Do not touch Livewire components, bids, counters, match scores, timers, summaries, PDFs, or dashboard layout.
+- Do not rebuild the admin referrals page.
+- Do not add payout logic yet.
+- Do not expose these actions outside adminAuth protection.
+- Validate allowed statuses strictly.
+- Do not allow mass update; row-level only.
+
+IMPLEMENT ONLY THESE ADDITIVE CHANGES:
+
+1. Inspect the current admin referrals implementation first
+- Find the existing route, controller method, and blade for /admin/referrals
+- Extend them safely without restructuring the page
+
+2. Add one new admin-only POST route
+Suggested:
+POST /admin/referrals/{summary}/status
+Name:
+admin.referrals.status
+
+Use the existing admin route group and middleware conventions.
+
+3. Add one controller method to AdminController
+Suggested:
+updateReferralStatus(Request $request, $summaryId)
+
+Behavior:
+- load accepted_bid_summaries row by id
+- validate requested status against allowed list only:
+  - pending
+  - qualified
+  - closed
+  - paid
+  - void
+- if row not found, fail safely
+- update only referral_status
+- redirect back to /admin/referrals with existing filters/query string preserved if practical
+- flash a small success/error message if that matches project conventions
+
+4. Update the admin referrals blade
+On each referred-hire row, add a compact Actions area or dropdown/button group for:
+- Qualified
+- Closed
+- Paid
+- Void
+
+Rules:
+- show actions only for referred rows already displayed
+- current status can remain visible as badge
+- no status editing for non-referred rows (though current page already excludes them)
+- keep styling minimal and consistent with existing admin tables/buttons
+- avoid clutter
+
+5. Safety behavior
+- allow moving between statuses for now; do not over-engineer status transition rules yet
+- but only write valid enum-like values from the allowed list
+- do not modify partner_referral_amount or platform_referral_amount in this phase
+- do not touch created_at or other fields
+- no JS-heavy solution needed; standard POST forms/buttons are preferred
+
+TEST REQUIREMENTS:
+Run and report all of these:
+
+T1. Update pending → qualified
+- confirm DB row changes
+- confirm page reload shows new badge/status
+
+T2. Update qualified → closed
+- confirm DB row changes
+
+T3. Invalid status attempt
+- confirm rejected safely
+- confirm row unchanged
+- no crash
+
+T4. Missing summary id
+- confirm handled safely
+- no crash
+
+T5. No side effects
+- confirm no other referral fields or counts are changed when updating status
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact route added
+2. exact controller method added
+3. exact blade/view changes made
+4. allowed statuses enforced
+5. how redirect-back/filter preservation works
+6. results of all 5 tests
+
+DELIVERABLE:
+Only admin referral status actions on the existing /admin/referrals page. No payout logic, no earnings math, no agent dashboard changes, no recent activity table yet.
