@@ -1,0 +1,89 @@
+Task: Implement Referral Partner Tracking — Phase 4 only (referral capture entry route).
+
+GOAL:
+Create the standalone referral capture route and controller so an agent’s referral link can be visited, stored in session, and logged in referral_visits. Do not touch signup, listing creation, accepted-hire flows, dashboard UI, or admin UI yet.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not redesign anything.
+- Do not modify Buyer/Seller/Landlord/Tenant flows.
+- Do not touch Livewire components.
+- Do not touch bidding, counters, match scores, timers, summaries, PDFs, or dashboard behavior.
+- Do not alter login or registration logic.
+- Use first-click-wins.
+- Never overwrite an existing referral already stored in session.
+- If the project already has referral-like routes or middleware, inspect first and report before adding duplicates.
+
+PHASE 4 — REFERRAL CAPTURE ONLY
+
+1. Inspect routes and choose the correct public web routes file used by this project.
+
+2. Add a dedicated public GET route:
+- /invite/{code}
+Named route:
+- referral.capture
+
+3. Create a new controller:
+- app/Http/Controllers/ReferralController.php
+
+4. Add method:
+- capture(Request $request, string $code)
+
+Required behavior:
+A. Find an active referral link in agent_referral_links by code.
+B. If the code is invalid or inactive:
+   - redirect safely to the main landing page or homepage
+   - optionally flash a neutral message
+   - do not crash
+
+C. If the code is valid:
+   - check whether session already contains referral attribution:
+     - referral.agent_id
+     - referral.code
+     - referral.captured_at
+     - referral.visit_id
+
+D. First-click-wins rule:
+   - if session already has a referral.agent_id, do not overwrite it
+   - still redirect safely
+   - do not create a duplicate referral_visits record for the same request if attribution is already locked in session
+
+E. If session has no referral yet:
+   - store in session:
+     - referral.agent_id = referral link’s agent_id
+     - referral.code = referral link code
+     - referral.captured_at = now()
+   - create a referral_visits row with:
+     - agent_id
+     - referral_code
+     - session_id (if available from session)
+     - ip_address
+     - user_agent
+     - landing_url (current full URL is fine)
+   - after creating the row, store referral.visit_id in session
+   - increment click_count on agent_referral_links by 1
+
+5. Redirect target:
+- redirect to the main public landing page used by this project
+- if there is ambiguity, inspect existing public entry points and choose the safest neutral landing page
+- report which route/path was chosen
+
+IMPLEMENTATION RULES:
+- No middleware unless clearly necessary.
+- Do not add cookie persistence yet unless already idiomatic in this codebase.
+- Keep the controller small and isolated.
+- Match project coding style.
+- Use null-safe/session-safe handling.
+- Do not expose internal database errors to users.
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact route added
+2. exact controller file added
+3. redirect destination chosen
+4. exact session keys used
+5. whether first-click-wins is enforced
+6. how click_count is incremented
+7. how invalid codes behave
+
+DELIVERABLE:
+Only Phase 4 referral capture route/controller implementation. No signup persistence, no listing persistence, no accepted-hire persistence, no dashboard/admin changes.

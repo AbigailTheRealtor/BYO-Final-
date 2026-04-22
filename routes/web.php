@@ -218,6 +218,11 @@ Route::post('render_patch', [UserController::class, 'fetchPatches'])->name('fetc
 Route::get('/', function () {
     return view('home');
 })->name('home');
+
+// Referral capture — Phase 4. Public, no auth.
+Route::get('/invite/{code}', [\App\Http\Controllers\ReferralController::class, 'capture'])
+    ->name('referral.capture');
+
 /////////////////////////////////Testing Route ///////////////////////////////
 
 Route::get('/testing', function () {
