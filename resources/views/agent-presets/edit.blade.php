@@ -72,38 +72,63 @@
     .services-grid {
         display: grid;
         grid-template-columns: 1fr;
-        gap: .35rem;
+        gap: .4rem;
     }
     @media (min-width: 640px) {
         .services-grid { grid-template-columns: 1fr 1fr; }
     }
     .service-item {
-        background: #fff;
-        border: 1px solid #c8d6e5;
+        background: #f8fafc;
+        border: 1px solid #a8bfcf;
         border-radius: 6px;
-        padding: .45rem .75rem;
+        padding: .55rem .75rem;
         display: flex;
         align-items: flex-start;
-        gap: .5rem;
-        font-size: .83rem;
-        line-height: 1.4;
+        gap: .55rem;
+        font-size: .875rem;
+        color: #253041;
+        line-height: 1.45;
         cursor: pointer;
         transition: background .12s, border-color .12s;
     }
     .service-item:hover {
         background: #e8f7f7;
         border-color: #049399;
+        color: #036b70;
     }
     .service-item input[type="checkbox"] {
-        margin-top: .15rem;
+        margin-top: .18rem;
         flex-shrink: 0;
+        width: 15px;
+        height: 15px;
         accent-color: #049399;
         cursor: pointer;
     }
     .service-item.checked {
-        background: #e8f7f7;
+        background: #e4f5f5;
         border-color: #049399;
-        font-weight: 500;
+        color: #023e40;
+        font-weight: 600;
+    }
+    /* Section requirement badges */
+    .section-req-badge {
+        font-size: .68rem;
+        font-weight: 700;
+        padding: .1rem .42rem;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        vertical-align: middle;
+    }
+    .section-req-badge.req {
+        background: #fff3cd;
+        color: #7d5a00;
+        border: 1px solid #ffc107;
+    }
+    .section-req-badge.rec {
+        background: #e8f4fd;
+        color: #0c5a9c;
+        border: 1px solid #b8d9f5;
     }
     .services-toolbar {
         display: flex;
@@ -188,6 +213,7 @@
                  aria-controls="section-services">
                 <i class="fa fa-list-ul section-icon"></i>
                 Services
+                <span class="section-req-badge req">Required</span>
                 <i class="fa fa-chevron-down toggle-icon"></i>
             </div>
             <div class="collapse show" id="section-services">
@@ -229,6 +255,7 @@
                  aria-controls="section-overview">
                 <i class="fa fa-user section-icon"></i>
                 Agent Overview
+                <span class="section-req-badge rec">Recommended</span>
                 <i class="fa fa-chevron-down toggle-icon"></i>
             </div>
             <div class="collapse show" id="section-overview">

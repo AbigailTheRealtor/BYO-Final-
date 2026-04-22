@@ -64,6 +64,28 @@
         padding: .35rem .9rem;
         border-radius: 6px;
     }
+    .btn-copy-hire {
+        font-size: .78rem;
+        padding: .3rem .8rem;
+        border-radius: 6px;
+        color: #049399;
+        border-color: #049399;
+    }
+    .btn-copy-hire:hover {
+        background: #e8f7f7;
+        color: #036b70;
+        border-color: #036b70;
+    }
+    .btn-copy-hire.copied {
+        color: #198754;
+        border-color: #198754;
+        background: #f0faf4;
+    }
+    .preset-updated {
+        font-size: .73rem;
+        color: #9aa5b1;
+        margin-top: .45rem;
+    }
     .page-hero {
         background: linear-gradient(135deg, #049399 0%, #036b70 100%);
         color: #fff;
@@ -141,7 +163,7 @@
                                         @if ($info['services'] > 0)
                                             <span><i class="fa fa-check-circle text-success me-1"></i>{{ $info['services'] }} service{{ $info['services'] !== 1 ? 's' : '' }} selected</span><br>
                                         @else
-                                            <span class="text-muted"><i class="fa fa-circle-o me-1"></i>No services selected</span><br>
+                                            <span class="text-warning"><i class="fa fa-exclamation-circle me-1"></i>No services selected</span><br>
                                         @endif
                                         @if ($info['has_bio'])
                                             <span><i class="fa fa-check-circle text-success me-1"></i>Bio included</span>
@@ -150,6 +172,9 @@
                                             <span><i class="fa fa-check-circle text-success me-1"></i>Credentials included</span>
                                         @else
                                             <span class="text-muted"><i class="fa fa-circle-o me-1"></i>No bio or credentials</span>
+                                        @endif
+                                        @if ($info['updated_at'])
+                                            <div class="preset-updated"><i class="fa fa-clock-o me-1"></i>Updated {{ $info['updated_at']->diffForHumans() }}</div>
                                         @endif
                                     @else
                                         <span class="text-muted">No preset saved yet. Click Edit to create one.</span>
@@ -161,6 +186,13 @@
                                    class="btn btn-outline-secondary btn-edit-preset w-100">
                                     <i class="fa fa-pencil me-1"></i>{{ $info['exists'] ? 'Edit Preset' : 'Create Preset' }}
                                 </a>
+                                @if ($info['exists'])
+                                    <button type="button"
+                                            class="btn btn-outline btn-copy-hire w-100 mt-2"
+                                            data-hire-url="{{ route('hire.agent.direct.preview', ['agentId' => $userId, 'role' => $role, 'propertyType' => $propertyType]) }}">
+                                        <i class="fa fa-link me-1"></i>Copy Hire Me Link
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -171,3 +203,47 @@
 
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.btn-copy-hire').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var url = this.dataset.hireUrl;
+            var self = this;
+            var orig = self.innerHTML;
+
+            function showCopied() {
+                self.innerHTML = '<i class="fa fa-check me-1"></i>Copied!';
+                self.classList.add('copied');
+                setTimeout(function () {
+                    self.innerHTML = orig;
+                    self.classList.remove('copied');
+                }, 2200);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(showCopied).catch(function () {
+                    fallbackCopy(url, showCopied);
+                });
+            } else {
+                fallbackCopy(url, showCopied);
+            }
+        });
+    });
+
+    function fallbackCopy(text, callback) {
+        var inp = document.createElement('input');
+        inp.style.position = 'fixed';
+        inp.style.opacity = '0';
+        inp.value = text;
+        document.body.appendChild(inp);
+        inp.focus();
+        inp.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(inp);
+        callback();
+    }
+});
+</script>
+@endpush
