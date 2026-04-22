@@ -1,0 +1,79 @@
+Task: Implement Referral Partner Tracking — Phase 8 only (agent dashboard referral card).
+
+GOAL:
+Add a small isolated dashboard card/tab for agents that shows their referral partner link and basic referral stats using the existing referral tracking tables and ReferralLinkService. Do not touch signup, listing creation, accepted-hire logic, admin UI, or model relationships.
+
+CRITICAL SAFEGUARDS:
+- Surgical changes only.
+- Do not redesign the dashboard.
+- Do not modify bid tables, listing tables, counters, match scores, timers, summaries, PDFs, or any Buyer/Seller/Landlord/Tenant flows.
+- Do not alter existing dashboard navigation unless a small additive tab/card is clearly the project’s pattern.
+- Reuse the existing ReferralLinkService and existing agent_referral_links data.
+- Inspect first and identify the exact agent dashboard page/component/blade where this should be added with the least risk.
+- STOP and report if there are multiple competing agent dashboard entry points and the safe insertion point is unclear.
+
+PHASE 8 — AGENT DASHBOARD ONLY
+
+1. Inspect the agent dashboard rendering path
+- Find the exact file(s) that render the agent-facing dashboard/home area
+- Choose the safest small insertion point for a new referral card or tab
+- Prefer an additive card/section over a layout rewrite
+- Report the chosen file and why it is the safest insertion point
+
+2. Generate or load the agent’s referral link
+- For the authenticated agent user, call the existing ReferralLinkService::getOrCreateForAgent(auth()->id())
+- Do not create duplicate rows
+- Use the returned code/url for display
+
+3. Display a “Referral Partner Link” card/section showing:
+- referral link (full URL)
+- Copy Link button
+- Open Link button
+- Clicks
+- Signups
+- Listings
+- Hires
+
+4. Data source
+- Use agent_referral_links as the primary source for:
+  - click_count
+  - signup_count
+  - listing_count
+  - hire_count
+- If the card is rendered in a controller, pass the data cleanly
+- If rendered directly in Blade/Livewire per project pattern, keep the logic minimal and safe
+
+5. UI rules
+- Keep styling consistent with the existing dashboard
+- Do not redesign surrounding areas
+- Do not add earnings/payout amounts yet
+- Keep labels simple:
+  - Referral Partner Link
+  - Clicks
+  - Signups
+  - Listings
+  - Hires
+
+6. Copy/Open behavior
+- Copy button should copy the URL cleanly
+- Open button should open the referral URL
+- Use the project’s existing JS/UI conventions if any; otherwise keep it minimal
+
+TEST REQUIREMENTS:
+Verify:
+1. An agent with no existing referral link sees a card and a new link is generated once
+2. Reloading the dashboard does not create a duplicate referral link row
+3. The displayed URL matches /invite/{code}
+4. Counts shown match the agent_referral_links row
+5. A second agent sees their own distinct link and stats
+
+AFTER IMPLEMENTATION, REPORT:
+1. exact dashboard file(s) patched
+2. exact insertion point
+3. how the referral data is loaded
+4. whether getOrCreateForAgent is called safely without duplication
+5. how copy/open actions were implemented
+6. results of all 5 required tests
+
+DELIVERABLE:
+Only Phase 8 agent dashboard referral card. No admin UI yet, no payout logic, no model relationship pass.
