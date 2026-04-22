@@ -1,0 +1,121 @@
+That’s a strong result. This was exactly the right-sized pass.
+
+What Replit delivered is good:
+
+* **Open Link** added only for usable presets
+* **Copy Link** still gated correctly
+* visible URL is more usable
+* inactive presets now explain why they cannot be shared
+* no core flow changes
+
+I’d consider this sharing UX pass **done**.
+
+## What I’d do next
+
+You now have:
+
+* presets
+* clean public URLs
+* copy/open sharing UX
+* stable direct Hire Me flow
+
+So the next logical step is **widget/embed**, but do it in an audit-first, reuse-first way.
+
+## Replit instructions for the next step
+
+Paste this:
+
+---
+
+We are ready to begin the **widget/embed phase** for the Hire Me system.
+
+## Objective
+
+Create a lightweight **Hire Me embed/widget layer** that reuses the existing clean public Hire Me route and direct Hire Me flow.
+
+This should not be a new hiring system.
+It should be a reusable embedding/sharing layer on top of what already exists.
+
+## Goal
+
+Allow agents to embed a small Hire Me widget/button on their own website that routes users into the same existing Hire Me flow for a specific usable preset.
+
+Examples:
+
+* button embed
+* compact card embed
+* iframe-style embed if appropriate
+
+Do not build everything at once.
+Start with the smallest viable embed option.
+
+---
+
+## Audit first
+
+Before coding, audit and report:
+
+1. what existing public Hire Me route should power the widget
+2. what the minimum viable widget should be:
+
+   * simple button snippet
+   * compact card
+   * iframe
+   * or a combination
+3. safest way to support embedding without duplicating the Hire Me flow
+4. whether CSP / X-Frame-Options / same-origin behavior would affect iframe embedding
+5. whether a lightweight hosted widget page is better than embedding the full Hire Me page directly
+6. what preset data should appear in the widget:
+
+   * agent name
+   * role
+   * property type
+   * maybe brokerage
+7. whether only usable presets should be embeddable
+8. best place in the preset dashboard to surface:
+
+   * Copy Link
+   * Open Link
+   * Copy Embed Code
+
+Do not code until the audit is complete.
+
+---
+
+## Implementation rules
+
+* Reuse the existing clean public Hire Me route and direct flow
+* Do not duplicate controller logic
+* Do not rebuild the form flow
+* Keep widget/embed scoped to usable presets only
+* Prefer the smallest viable embed first
+* If iframe is not safe/clean yet, recommend a simpler first version
+* Keep marketplace flow untouched
+
+## Important restrictions
+
+* No DB changes unless absolutely necessary
+* No route rewrites of the direct Hire Me flow
+* No widget feature explosion
+* No redesign of presets page beyond adding embed actions if needed
+* No changes to bid/counter/accept/signature flow
+
+## Deliverable
+
+After the audit, report:
+
+1. recommended first widget/embed format
+2. why that format is safest
+3. which existing routes/components can be reused
+4. what minimal UI/actions need to be added to the preset cards
+5. safest phased implementation path
+
+---
+
+We will decide the exact widget implementation only after the audit.
+
+---
+
+That’s the next right move.
+
+When Replit sends back the widget/embed audit, paste it here and I’ll turn it into the next exact implementation prompt.
