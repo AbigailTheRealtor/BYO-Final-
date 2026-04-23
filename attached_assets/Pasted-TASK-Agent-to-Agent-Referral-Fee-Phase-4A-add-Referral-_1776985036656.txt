@@ -1,0 +1,97 @@
+TASK: Agent-to-Agent Referral Fee — Phase 4A add Referral Fee to agent bid forms ONLY
+
+GOAL
+For listings created by an agent profile / agent dashboard, add Referral Fee into the AGENT BID workflow only.
+
+This applies ONLY to agent-to-agent bids:
+- listing creator is an Agent
+- bidder is an Agent
+- listing has referral_percentage saved
+
+Do NOT apply this to normal consumer/client-created listings.
+
+PLACEMENT
+In the agent bid form, add a new tab/section immediately after:
+
+Broker Compensation & Agency Agreement Terms
+
+New tab/section title:
+Referral & Cooperation Terms
+
+Field label:
+Referral Fee (%)
+
+Placeholder:
+e.g. 25
+
+Helper text:
+Enter a number only. The final listing display will show the percentage symbol automatically.
+
+REQUIRED BEHAVIOR
+1. When an agent places a bid on an agent-created listing, the Referral Fee field should automatically pre-fill from the listing’s saved referral_percentage value.
+2. The bidding agent must be able to edit the Referral Fee before submitting the bid.
+3. Save the bid’s Referral Fee separately from the listing’s original referral_percentage so the bid can preserve the agent’s offered/countered value.
+4. Do not mutate the original listing referral_percentage when an agent submits or edits a bid.
+5. If the listing is not agent-created, do not show this tab/field.
+6. If the bidder is not an agent, do not show this tab/field.
+
+READ-ONLY AUDIT FIRST
+Before editing, identify:
+1. Which bid form/component is used when agents bid on:
+   - Hire Tenant Agent listings
+   - Hire Buyer Agent listings
+   - Hire Seller Agent listings
+   - Hire Landlord Agent listings
+2. Where Broker Compensation & Agency Agreement Terms is rendered in the bid form
+3. How the app detects:
+   - listing creator is agent
+   - bidder is agent
+4. Where bid metadata is saved
+5. Whether bid meta already has a safe place to store referral fee
+6. Existing naming conventions for bid meta keys
+
+RECOMMENDED META KEY
+Use a clear bid-level key such as:
+referral_percentage
+
+or if conflict risk exists:
+bid_referral_percentage
+
+Use the app’s existing bid meta pattern.
+
+IMPORTANT
+The listing’s referral_percentage is the default source only.
+The bid’s saved value should be independent after submission.
+
+IMPLEMENTATION RULES
+- Do not change public listing creation
+- Do not change listing referral_percentage save logic
+- Do not change referral payout logic
+- Do not change match score logic yet
+- Do not change counter terms yet
+- Do not change accepted summary yet
+- This phase is only bid form display, prefill, edit, and save
+
+VERIFICATION
+Test agent-to-agent only:
+A. Agent-created Tenant listing with referral_percentage = 25
+   - Agent opens bid form
+   - Referral & Cooperation Terms appears after Broker Compensation
+   - Referral Fee pre-fills as 25
+   - Agent edits to 30
+   - Submit bid
+   - Bid stores 30 separately
+
+B. Repeat for Buyer, Seller, and Landlord agent-created listings.
+
+C. Open a normal consumer-created listing
+   - Confirm Referral & Cooperation Terms does NOT appear in the bid form
+
+DELIVERABLE
+Return:
+1. audit findings
+2. files changed
+3. how agent-to-agent was detected
+4. where the bid-level referral fee is stored
+5. confirmation original listing referral_percentage is not overwritten
+6. verification results
