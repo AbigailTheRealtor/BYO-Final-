@@ -1151,6 +1151,21 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
                 @endif
 
+                @php
+                    $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+                    $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
+                @endphp
+                @if ($referralPctDisplay !== '')
+                <hr />
+                <div class="card-header section-header">
+                    <h4 class="section-title">Referral & Cooperation Terms</h4>
+                </div>
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    Referral Fee:
+                    <span class="removeBold">{{ $referralPctDisplay }}</span>
+                </div>
+                @endif
+
                 <hr />
                 <div class="card-header section-header">
                     <h4 class="section-title">{{ ($auction->user && $auction->user->user_type === 'agent') ? "Agent's Info" : "Tenant's Info" }}</h4>
