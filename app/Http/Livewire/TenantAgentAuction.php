@@ -1270,6 +1270,7 @@ class TenantAgentAuction extends Component
     public function conditionUpdated($value)
     {
         $this->condition_prop_buyer = $value['value'];
+        $this->condition_prop_buyer_json = json_encode($value['value'] ?? []);
     }
 
     public function updatedConditionPropBuyer($value)
@@ -3484,7 +3485,6 @@ class TenantAgentAuction extends Component
             $rules['last_name']      = 'required|string|max:255';
             $rules['phone_number']   = 'required';
             $rules['email']          = 'required|email';
-            $rules['current_status'] = 'required';
         }
 
         // Seller-specific required fields (full_service only)
@@ -3528,7 +3528,6 @@ class TenantAgentAuction extends Component
             $rules['last_name']      = 'required|string|max:255';
             $rules['phone_number']   = 'required';
             $rules['email']          = 'required|email';
-            $rules['current_status'] = 'required';
         }
 
         if ($this->isDraft) {

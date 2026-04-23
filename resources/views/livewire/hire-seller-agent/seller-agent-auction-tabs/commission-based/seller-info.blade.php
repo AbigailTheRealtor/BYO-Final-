@@ -50,7 +50,7 @@
 
 <!-- Buyer’s Current Status -->
 <div class="form-group mt-3">
-    <label class="fw-bold">Seller’s Current Status: <span class="text-danger">*</span></label>
+    <label class="fw-bold">Seller’s Current Status:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the option that best describes the Seller’s current situation.">
@@ -58,7 +58,7 @@
 
     </span>
     <div class="input-cover">
-        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie" required>
+        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie">
             <option value="">Select status</option>
             <option value="First-Time Seller">First-Time Seller</option>
             <option value="Selling Primary Residence">Selling Primary Residence</option>

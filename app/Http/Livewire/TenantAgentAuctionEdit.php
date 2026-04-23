@@ -894,6 +894,7 @@ class TenantAgentAuctionEdit extends Component
     // Handle purchase fee type changes
     public function updatedPurchaseFeeType($value)
     {
+        if ($this->isLoadingData) return;
         if ($this->property_type === 'Residential Property') {
             $this->resetResidentialFeeFields();
         } elseif ($this->property_type === 'Commercial Property') {
@@ -1192,6 +1193,7 @@ class TenantAgentAuctionEdit extends Component
     public function conditionUpdated($value)
     {
         $this->condition_prop_buyer = $value['value'];
+        $this->condition_prop_buyer_json = json_encode($value['value'] ?? []);
     }
 
     public function updatedConditionPropBuyer($value)

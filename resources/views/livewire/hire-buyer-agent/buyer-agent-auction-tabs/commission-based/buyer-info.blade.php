@@ -46,7 +46,7 @@
 
 <!-- Buyer’s Current Status -->
 <div class="form-group mt-3">
-    <label class="fw-bold">Buyer’s Current Status: <span class="text-danger">*</span></label>
+    <label class="fw-bold">Buyer’s Current Status:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Indicate the Buyer’s current situation to help Agents tailor their support.">
@@ -54,7 +54,7 @@
 
     </span>
     <div class="input-cover">
-        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie" required>
+        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie">
             <option value="">Select status</option>
             <option value="Currently Renting">Currently Renting</option>
             <option value="First-Time Buyer">First-Time Buyer</option>

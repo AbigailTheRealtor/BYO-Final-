@@ -1,0 +1,167 @@
+TASK: Agent Dashboard Hire Agent listings — Phase 1 logic/persistence fixes ONLY
+
+GOAL
+Fix the agent-dashboard-created Hire Agent listing bugs for:
+- Hire a Tenant Agent
+- Hire a Buyer Agent
+- Hire a Seller Agent
+- Hire a Landlord Agent
+
+This phase is ONLY for data persistence, validation, and field state bugs.
+Do NOT do UI wording changes yet.
+Do NOT add new display sections yet.
+
+CRITICAL SCOPE
+Only fix the AGENT DASHBOARD version of these listing flows.
+Do NOT change the original public/consumer flows such as tenant@exp.com.
+Do NOT make global replacements.
+
+HARD SAFEGUARD
+If ANY change risks affecting the original Tenant/Buyer/Seller/Landlord public flow, STOP and report instead of applying it.
+
+READ-ONLY AUDIT FIRST
+Before editing, identify:
+1. Which files/components power the agent dashboard create/edit flows for Tenant, Buyer, Seller, and Landlord
+2. How agent-created/dashboard-created listings are distinguished from original consumer/public listings
+3. The exact field keys/meta keys used for:
+   - Acceptable Property Conditions
+   - Buyer’s Current Status
+   - Seller’s Current Status
+   - Services
+   - Landlord’s Broker Lease Fee
+
+Do not code until this audit is complete.
+
+ISSUES TO FIX IN THIS PHASE
+
+1) HIRE A TENANT + HIRE A BUYER:
+Acceptable Property Conditions is not persisting correctly
+BUG:
+In agent dashboard Tenant/Buyer listings, “Acceptable Property Conditions” is not saving correctly in draft/edit flow. It appears to only keep “Updated/Renovated” even when other selections were made.
+
+REQUIRED FIX:
+- Audit the full save/load path for this field:
+  - form input name
+  - binding
+  - normalization
+  - save mapping
+  - model cast/storage format
+  - edit rehydration
+- Ensure all selected values persist through:
+  1. draft save
+  2. edit reload
+  3. publish/submit
+- Fix only the broken mapping/persistence path.
+- Do not change public consumer flows unless the same exact bug exists there and is proven.
+
+2) HIRE A BUYER:
+“Buyer’s Current Status” is still being required even though it was removed from Agent Credentials & Contact Info
+BUG:
+On agent dashboard Buyer listings, submit is blocked with:
+“Please complete the required fields before submitting. Buyer’s Current Status”
+even though that field no longer exists in the agent dashboard form.
+
+REQUIRED FIX:
+- Find every place still requiring this field for the agent dashboard Buyer flow:
+  - server validation
+  - Livewire/component rules
+  - missing-fields checker
+  - tab completeness/progress logic
+  - submit validation
+- Remove that requirement ONLY for the agent-dashboard-created Buyer flow
+- Preserve original consumer/public requirement if it still exists there
+
+3) HIRE A SELLER:
+“Seller’s Current Status” is still being required even though it was removed from Agent Credentials & Contact Info
+BUG:
+On agent dashboard Seller listings, submit is blocked with:
+“Please complete the required fields before submitting. Seller’s Current Status”
+even though that field no longer exists in the agent dashboard form.
+
+REQUIRED FIX:
+- Find every place still requiring this field for the agent dashboard Seller flow
+- Remove that requirement ONLY for the agent-dashboard-created Seller flow
+- Preserve original consumer/public requirement if it still exists there
+
+4) HIRE A SELLER + HIRE A LANDLORD:
+Selected services are deleting/not persisting
+BUG:
+On agent dashboard Seller and Landlord listings, selected Services are being removed or not reloading after save.
+
+REQUIRED FIX:
+Audit the full service persistence path:
+- form input names
+- checkbox/multi-select structure
+- normalizer
+- save mapping
+- model casting/storage
+- edit rehydration
+- submit flow
+Ensure selected services persist through:
+1. draft save
+2. edit reload
+3. publish/submit
+Fix only the broken persistence path.
+
+5) HIRE A LANDLORD:
+Landlord’s Broker Lease Fee selection flashes and resets to Select
+BUG:
+In agent dashboard Hire a Landlord Agent listings, under Broker Compensation & Agency Agreement Terms > Landlord’s Broker Lease Fee, the selected option flashes briefly and then resets to “Select”.
+
+REQUIRED FIX:
+Audit this field end-to-end:
+- front-end binding
+- wire:model / state property
+- watchers / updated hooks
+- conditional rendering
+- option values
+- hydration/dehydration
+- default fallback logic
+- save/reload mapping
+Fix only the specific reset issue without restructuring the full compensation section.
+
+IMPLEMENTATION RULES
+- Apply the narrowest possible fix
+- Prefer conditional logic scoped to agent-dashboard-created listings
+- Do not rename DB columns
+- Do not refactor unrelated files
+- Do not touch bid logic, timer logic, accepted summary logic, or referral payout logic
+
+MANUAL VERIFICATION REQUIRED
+
+A. Buyer Agent listing from agent dashboard
+- create/edit listing
+- do not provide Buyer’s Current Status
+- save and submit
+- confirm no false required error
+- verify Acceptable Property Conditions persist after draft save + reload
+
+B. Seller Agent listing from agent dashboard
+- create/edit listing
+- do not provide Seller’s Current Status
+- save and submit
+- verify no false required error
+- verify services persist after draft save + reload
+
+C. Landlord Agent listing from agent dashboard
+- select Landlord’s Broker Lease Fee
+- confirm it does not reset
+- save draft and reopen
+- verify selected value remains
+- verify services persist after draft save + reload
+
+D. Tenant Agent listing from agent dashboard
+- verify Acceptable Property Conditions persist after draft save + reload
+
+E. Regression
+- open original public/consumer flow(s)
+- confirm no unintended changes were made there
+
+DELIVERABLE FORMAT
+When done, return:
+1. audit findings
+2. files changed
+3. root cause for each bug
+4. exact fixes applied
+5. confirmation that non-agent/public flows were not altered
+6. manual verification results for scenarios A-E
