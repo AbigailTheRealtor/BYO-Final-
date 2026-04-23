@@ -1153,7 +1153,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
                 <hr />
                 <div class="card-header section-header">
-                    <h4 class="section-title">Tenant's Info </h4>
+                    <h4 class="section-title">{{ ($auction->user && $auction->user->user_type === 'agent') ? "Agent's Info" : "Tenant's Info" }}</h4>
                 </div>
                 @if (!empty($auction->get->first_name))
                 <div class="col-md-12 col-12 pt-2 fw-bold"> First
