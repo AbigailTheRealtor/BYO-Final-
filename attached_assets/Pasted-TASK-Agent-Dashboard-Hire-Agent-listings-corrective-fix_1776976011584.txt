@@ -1,0 +1,176 @@
+TASK: Agent Dashboard Hire Agent listings — corrective fix for unresolved Phase 1 bugs ONLY
+
+GOAL
+The previous pass did NOT fully fix the actual agent-dashboard flow.
+Fix ONLY these still-broken issues in the AGENT DASHBOARD Hire Agent listing flow:
+
+1. Acceptable Property Conditions still only saves “Updated/Renovated” in draft
+   - affects Hire a Tenant Agent
+   - affects Hire a Buyer Agent
+
+2. Buyer listing still cannot submit because:
+   “Please complete the required fields before submitting. Buyer’s Current Status”
+
+3. Seller listing still cannot submit because:
+   “Please complete the required fields before submitting. Seller’s Current Status”
+
+CRITICAL SCOPE
+This task is ONLY for the AGENT DASHBOARD create/edit/submit flow for agent-created listings.
+Do NOT touch the public consumer flow unless you prove the same exact broken code path is shared.
+
+HARD SAFEGUARDS
+- Do not assume the first fix was applied to the correct component/path.
+- Audit the ACTUAL component/view/controller used when an AGENT logged into the dashboard creates/edits/submits:
+  - Hire a Tenant Agent listing
+  - Hire a Buyer Agent listing
+  - Hire a Seller Agent listing
+- If the currently broken path is different from the one edited previously, fix the actual live path.
+- Do not make global text replacements.
+- Do not touch bids, timers, accepted summary, referral payouts, or unrelated UI.
+
+READ-ONLY AUDIT FIRST — REQUIRED
+Before making changes, identify the EXACT live code path used when an agent creates these listings from the dashboard:
+1. route
+2. controller / Livewire component
+3. edit component
+4. submit/saveDraft method
+5. missing-fields / required-fields checker
+6. view blade(s) used for the agent dashboard version
+
+Then report:
+- where “Acceptable Property Conditions” is bound
+- where its value is normalized
+- where its draft value is saved
+- where it is rehydrated on edit
+- where “Buyer’s Current Status” is still being required
+- where “Seller’s Current Status” is still being required
+
+IMPORTANT:
+Do not stop at general validation rules.
+You MUST inspect:
+- server-side validation
+- missing field summary generator
+- step/tab completeness logic
+- front-end required arrays
+- agent-dashboard-specific conditional logic
+- submit() and saveDraft() separately
+
+ISSUE 1 — ACCEPTABLE PROPERTY CONDITIONS STILL BROKEN
+BUG
+In the AGENT DASHBOARD Tenant and Buyer listing flow, Acceptable Property Conditions still only saves “Updated/Renovated” in draft instead of all selected values.
+
+REQUIRED FIX
+Find the actual live save/load path and fix it completely.
+
+Audit all of the following:
+- checkbox/multiselect input name(s)
+- Livewire bound property name(s)
+- any bridge variable such as json/string/array mirrors
+- normalization helper(s)
+- saveDraft()
+- submit/publish method
+- edit/loadDraft/hydrate logic
+- model meta key used to persist the field
+- blade re-check logic when edit form loads
+
+Likely cause:
+There is still a stale bridge, fallback, or overwrite happening in the actual dashboard path, OR the edit reload is reading a different property than the one being saved.
+
+REQUIRED OUTCOME
+For both Tenant and Buyer agent-dashboard listings:
+- select multiple Acceptable Property Conditions
+- save draft
+- reload draft
+- all previously selected values remain selected
+- submit listing
+- values remain intact
+
+ISSUE 2 — BUYER’S CURRENT STATUS STILL FALSE-REQUIRED
+BUG
+Buyer agent-dashboard listings still cannot submit because:
+“Please complete the required fields before submitting. Buyer’s Current Status”
+
+IMPORTANT
+This means the field is still required in the ACTUAL missing-field/completeness path, even if one validation rule was removed.
+
+REQUIRED FIX
+Find and remove Buyer’s Current Status from every agent-dashboard-only required path, including:
+- submit validation
+- save/publish completeness check
+- missing field summary builder
+- tab completion logic
+- required-fields arrays
+- agent dashboard field map
+- any “for buyer role require current_status” logic
+
+Do NOT remove it globally unless the public flow also no longer uses it.
+
+REQUIRED OUTCOME
+Buyer agent-dashboard listing can submit successfully without Buyer’s Current Status.
+
+ISSUE 3 — SELLER’S CURRENT STATUS STILL FALSE-REQUIRED
+BUG
+Seller agent-dashboard listings still cannot submit because:
+“Please complete the required fields before submitting. Seller’s Current Status”
+
+REQUIRED FIX
+Find and remove Seller’s Current Status from every agent-dashboard-only required path, including:
+- submit validation
+- save/publish completeness check
+- missing field summary builder
+- tab completion logic
+- required-fields arrays
+- agent dashboard field map
+- any “for seller role require current_status” logic
+
+Do NOT remove it globally unless the public flow also no longer uses it.
+
+REQUIRED OUTCOME
+Seller agent-dashboard listing can submit successfully without Seller’s Current Status.
+
+IMPLEMENTATION RULES
+- Use the narrowest fix possible.
+- Prefer conditional logic for agent-created/dashboard-created listings.
+- If there are separate draft and submit paths, fix both.
+- If there are separate completeness-check and validation-check paths, fix both.
+- If a hidden old key is still injected into required arrays, remove it only for agent-dashboard flow.
+
+MANDATORY MANUAL VERIFICATION
+You must manually test the actual live agent-dashboard flow after changes:
+
+TEST A — Tenant listing
+- log in as agent/dashboard user
+- create or edit Hire a Tenant Agent listing
+- select multiple Acceptable Property Conditions
+- save draft
+- reopen draft
+- confirm all selected conditions remain
+
+TEST B — Buyer listing
+- log in as agent/dashboard user
+- create or edit Hire a Buyer Agent listing
+- select multiple Acceptable Property Conditions
+- save draft
+- reopen draft
+- confirm all selected conditions remain
+- submit listing without Buyer’s Current Status
+- confirm submission succeeds with no false required error
+
+TEST C — Seller listing
+- log in as agent/dashboard user
+- create or edit Hire a Seller Agent listing
+- submit listing without Seller’s Current Status
+- confirm submission succeeds with no false required error
+
+TEST D — Regression
+- confirm no unintended changes to public/consumer flows
+
+DELIVERABLE FORMAT
+Return:
+1. the exact live route/component/view path used by the agent dashboard flow
+2. every file changed
+3. exact root cause for each unresolved bug
+4. exact fixes applied
+5. proof that both draft-save and submit paths were tested
+6. confirmation that buyer and seller now submit successfully
+7. confirmation that Tenant and Buyer Acceptable Property Conditions now persist correctly

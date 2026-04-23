@@ -2184,6 +2184,12 @@
                 var cpbVals = $cpb.val() || [];
                 cpbVals = [...new Set(cpbVals)];
                 @this.set('condition_prop_buyer', cpbVals, true);
+                var cpbJsonInput = document.querySelector('input[wire\\:model="condition_prop_buyer_json"]');
+                if (cpbJsonInput) {
+                    cpbJsonInput.value = JSON.stringify(cpbVals);
+                    cpbJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                @this.set('condition_prop_buyer_json', JSON.stringify(cpbVals), true);
             }
 
             var $numUnit = $('.number_of_unit_type');

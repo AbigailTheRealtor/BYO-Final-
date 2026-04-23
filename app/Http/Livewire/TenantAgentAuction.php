@@ -3616,11 +3616,13 @@ class TenantAgentAuction extends Component
         $this->normalizeOtherInArray($this->appliances, $this->other_appliances);
         $this->normalizeOtherInArray($this->condition_prop_buyer, $this->other_property_condition);
 
-        $fromJsonCpb = json_decode($this->condition_prop_buyer_json, true);
-        if (is_array($fromJsonCpb) && !empty($fromJsonCpb)) {
-            $this->condition_prop_buyer = array_values(array_unique(array_map('trim', $fromJsonCpb)));
-        } elseif (!is_array($this->condition_prop_buyer)) {
-            $this->condition_prop_buyer = [];
+        if (is_array($this->condition_prop_buyer)) {
+            $this->condition_prop_buyer = array_values(array_unique(array_map('trim', $this->condition_prop_buyer)));
+        } else {
+            $fromJsonCpb = json_decode($this->condition_prop_buyer_json, true);
+            $this->condition_prop_buyer = (is_array($fromJsonCpb) && !empty($fromJsonCpb))
+                ? array_values(array_unique(array_map('trim', $fromJsonCpb)))
+                : [];
         }
 
         $auction->saveMeta('workflow_type', $this->workflow_type ?: 'hire_agent');

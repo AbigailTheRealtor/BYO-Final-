@@ -3115,11 +3115,9 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('zip_code', $this->zip_code);
 
             if ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
-                $fromJsonCpb = $this->decodeJsonArray($this->condition_prop_buyer_json);
-                if (!empty($fromJsonCpb)) {
-                    $this->condition_prop_buyer = $fromJsonCpb;
-                } elseif (!is_array($this->condition_prop_buyer)) {
-                    $this->condition_prop_buyer = [];
+                if (!is_array($this->condition_prop_buyer)) {
+                    $fromJsonCpb = $this->decodeJsonArray($this->condition_prop_buyer_json);
+                    $this->condition_prop_buyer = !empty($fromJsonCpb) ? $fromJsonCpb : [];
                 }
 
                 $fromJsonNut = $this->decodeJsonArray($this->number_of_unit_type_json);

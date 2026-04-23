@@ -2207,6 +2207,15 @@ $lease_types = [
                 var val = $el.first().val();
                 if (f.multi && Array.isArray(val)) { val = [...new Set(val)]; }
                 safeLivewireSet(f.field, val);
+                if (f.field === 'condition_prop_buyer') {
+                    var _cpbJson = JSON.stringify(val || []);
+                    var _cpbJsonInput = document.querySelector('input[wire\\:model="condition_prop_buyer_json"]');
+                    if (_cpbJsonInput) {
+                        _cpbJsonInput.value = _cpbJson;
+                        _cpbJsonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    safeLivewireSet('condition_prop_buyer_json', _cpbJson);
+                }
             }
         });
 
@@ -4241,7 +4250,7 @@ $lease_types = [
         initSelect2('#property_items', 'property_items', '.other_property_items_wrapper');
         initSelect2('#condition_prop_buyer', 'condition_prop_buyer', '.other_property_condition_wrapper');
         var _cpbUT = (@this.get('user_type') || '').toLowerCase();
-        if (_cpbUT === 'tenant') {
+        if (_cpbUT === 'tenant' || _cpbUT === 'buyer') {
             var _cpbEl = $('.condition_prop_buyer');
             if (_cpbEl.length && _cpbEl.hasClass('select2-hidden-accessible')) {
                 var _cpbLwVals = @this.get('condition_prop_buyer') || [];
@@ -4890,18 +4899,6 @@ $lease_types = [
                                         }
                                     }
 
-                                    // Buyer — current_status: no required HTML attr — hybrid DOM+Livewire check
-                                    var _csElBuyer = document.querySelector('[wire\\:model="current_status"]');
-                                    var _csDomValBuyer = _csElBuyer ? _csElBuyer.value : null;
-                                    var _csEmptyBuyer = !_csDomValBuyer || _csDomValBuyer.trim() === '';
-                                    if (_csEmptyBuyer) {
-                                        var _csLwValBuyer = _comp.get('current_status');
-                                        if (_csLwValBuyer && typeof _csLwValBuyer === 'string' && _csLwValBuyer.trim() !== '') _csEmptyBuyer = false;
-                                    }
-                                    if (_csEmptyBuyer && !items.some(function(i) { return i.key === 'current_status'; })) {
-                                        var _csTabBuyer = _csElBuyer ? _csElBuyer.closest('.tab-pane') : null;
-                                        items.push({ field: _csElBuyer || document.body, tab: _csTabBuyer, fieldName: "Buyer's Current Status", key: 'current_status' });
-                                    }
                                 } else if (_curUTgi === 'seller') {
                                     // Seller: sale_provision is a Select2 multi-select (wire:ignore) — check Livewire state.
                                     var _spValSeller = _comp.get('sale_provision');
@@ -4945,7 +4942,6 @@ $lease_types = [
                                         { prop: 'last_name',      label: 'Last Name',                 domSel: '[wire\\:model="last_name"]' },
                                         { prop: 'phone_number',   label: 'Phone Number',              domSel: '#seller_phone_number' },
                                         { prop: 'email',          label: 'Email Address',             domSel: '[wire\\:model="email"]' },
-                                        { prop: 'current_status', label: "Seller's Current Status",   domSel: '[wire\\:model="current_status"]' },
                                     ];
                                     _sellerInfoFields.forEach(function(chkS) {
                                         var _sEl = document.querySelector(chkS.domSel);
@@ -5257,7 +5253,6 @@ $lease_types = [
                                         { prop: 'last_name',      label: 'Last Name',                domSel: '[wire\\:model="last_name"]' },
                                         { prop: 'phone_number',   label: 'Phone Number',             domSel: '#seller_phone_number' },
                                         { prop: 'email',          label: 'Email Address',            domSel: '[wire\\:model="email"]' },
-                                        { prop: 'current_status', label: "Seller's Current Status",  domSel: '[wire\\:model="current_status"]' },
                                     ];
                                     _sellerInfoFieldsSub.forEach(function(chkSub) {
                                         var _sElSub = document.querySelector(chkSub.domSel);
@@ -5341,18 +5336,6 @@ $lease_types = [
                                         }
                                     }
 
-                                    // Buyer — current_status: no required HTML attr — hybrid DOM+Livewire check
-                                    var _csElBSub = document.querySelector('[wire\\:model="current_status"]');
-                                    var _csDomBSub = _csElBSub ? _csElBSub.value : null;
-                                    var _csEmptyBSub = !_csDomBSub || _csDomBSub.trim() === '';
-                                    if (_csEmptyBSub) {
-                                        var _csLwBSub = comp.get('current_status');
-                                        if (_csLwBSub && typeof _csLwBSub === 'string' && _csLwBSub.trim() !== '') _csEmptyBSub = false;
-                                    }
-                                    if (_csEmptyBSub && !invalidItems.some(function(i) { return i.key === 'current_status'; })) {
-                                        var _csTabBSub = _csElBSub ? _csElBSub.closest('.tab-pane') : null;
-                                        invalidItems.push({ field: _csElBSub || document.body, tab: _csTabBSub, fieldName: "Buyer's Current Status", key: 'current_status' });
-                                    }
                                 }
                             }
                         }
