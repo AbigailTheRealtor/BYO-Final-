@@ -4037,6 +4037,20 @@
             </ul>
         </div>
         @endif
+
+        {{-- G) Referral & Cooperation Terms --}}
+        @if ($auction->isCreatedByAgent() && !empty($allMeta['referral_fee_percent']))
+        <div class="mb-3">
+            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Referral &amp; Cooperation Terms</div>
+            <ul class="list-unstyled ps-3 mb-0" style="font-size: 12px;">
+                @php $refFeeChg = $isChanged($allMeta['referral_fee_percent'], 'referral_fee_percent'); @endphp
+                <li class="mb-1" style="{{ $refFeeChg ? $changedStyle : '' }}">
+                    <span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ str_ends_with($allMeta['referral_fee_percent'], '%') ? $allMeta['referral_fee_percent'] : $allMeta['referral_fee_percent'] . '%' }}
+                    @if ($refFeeChg) {!! $changedBadge !!} @endif
+                </li>
+            </ul>
+        </div>
+        @endif
     </div>
 @endif
 

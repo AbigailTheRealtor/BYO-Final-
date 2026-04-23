@@ -1,0 +1,79 @@
+TASK: Agent-to-Agent Referral Fee — Phase 4B show Referral Fee on bid cards/details ONLY
+
+GOAL
+For agent-to-agent bids only, display the bid-level Referral Fee wherever Broker Compensation & Agency Agreement Terms are shown on bid cards, bid detail modals, or bid detail pages.
+
+This phase is display only.
+Do NOT change bid form save logic.
+Do NOT change counter logic yet.
+Do NOT change accepted summary/PDF yet.
+
+SCOPE
+Only show Referral Fee when:
+- the listing was created by an agent, AND
+- the bid has referral_fee_percent saved
+
+DISPLAY PLACEMENT
+Where bid details currently show:
+Broker Compensation & Agency Agreement Terms
+
+Add immediately after that:
+Referral & Cooperation Terms
+
+Inside show:
+Referral Fee: X%
+
+FORMATTING
+- Use bid meta key: referral_fee_percent
+- If stored value is 25, display 25%
+- If stored value is 25%, display 25%
+- Never double append %
+- If blank/null, hide the row/section
+
+READ-ONLY AUDIT FIRST
+Before editing, identify:
+1. all bid card/detail/modal blades for Tenant, Buyer, Seller, and Landlord
+2. where Broker Compensation & Agency Agreement Terms are displayed
+3. whether each view has access to:
+   - the bid object
+   - bid meta get accessor
+   - the parent auction/listing object
+   - isCreatedByAgent()
+4. safest conditional display logic
+
+IMPLEMENTATION RULES
+- Display only
+- No DB schema changes
+- No validation changes
+- No bid save changes
+- No counter changes
+- No accepted summary changes
+- Do not show Referral Fee on consumer-created listings
+- Do not expose this in public/competitor views where private compensation terms are intentionally hidden
+
+IMPORTANT PRIVACY SAFEGUARD
+Only show Referral Fee in places where full Broker Compensation & Agency Agreement Terms are already visible to that user.
+If a bid card is a limited/competitor/public summary that hides compensation terms, do NOT add Referral Fee there.
+
+VERIFICATION
+Test:
+A. Agent-created listing + agent bid with referral_fee_percent = 25
+   - bid detail/card/modal shows Referral & Cooperation Terms
+   - Referral Fee shows 25%
+
+B. Bid with blank referral_fee_percent
+   - no broken empty section
+
+C. Consumer-created listing bid
+   - Referral & Cooperation Terms does not show
+
+D. Limited/public/competitor bid views
+   - Referral Fee is not exposed unless compensation terms are already exposed
+
+DELIVERABLE
+Return:
+1. audit findings
+2. files changed
+3. display logic used
+4. privacy check results
+5. verification results
