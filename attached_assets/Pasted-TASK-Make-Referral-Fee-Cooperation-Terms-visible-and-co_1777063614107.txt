@@ -1,0 +1,171 @@
+TASK: Make Referral Fee & Cooperation Terms visible and counterable everywhere Agent bids are shown
+
+ISSUE:
+Referral Fee (%) is now separated into its own Agent bid tab, but it is not showing in the Agent bid display. It must show anywhere Agent bid terms are displayed, similar to Broker Compensation & Agency Agreement Terms and Offered Services.
+
+This applies ONLY to Agent-to-Agent bids on agent-created listings.
+
+DO NOT change normal Seller/Buyer/Landlord/Tenant listing creation flows.
+
+REFERENCE:
+In the Agent bid display, I currently see:
+- Agent Overview & Qualifications
+- Broker Compensation & Agency Agreement Terms
+- Offered Services
+- Agent Presentation & Promotional Materials
+- Agent Credentials and Contact Information
+
+But I do NOT see:
+Referral Fee & Cooperation Terms
+
+The bid display does show “Added by Agent: 1,” which may be the referral fee being counted internally, but it is not visible as its own section. That is wrong. The referral fee must be shown clearly. :contentReference[oaicite:0]{index=0}
+
+GOAL:
+For Agent-to-Agent bids only, add a visible section:
+
+Referral Fee & Cooperation Terms
+
+Field:
+Referral Fee (%) (Agent-to-Agent):
+[referral_fee_percent]%
+
+Helper/context text where appropriate:
+This referral fee is negotiated between agents and is not paid by the client.
+
+WHERE IT MUST SHOW:
+1. Agent bid detail view / full bid view
+2. Bid cards or expanded bid modal where Broker Compensation & Agency Agreement Terms shows
+3. Counter offer screens
+4. Counter history / changed terms display
+5. Accepted Bid Summary
+6. PDF summary, if generated from the accepted summary
+7. Any comparison or review screen where Offered Services and Broker Compensation terms are shown
+
+CRITICAL SAFEGUARDS:
+- Agent-to-Agent bids only.
+- Only show Referral Fee & Cooperation Terms when $isListingCreatedByAgent is true or when the listing was created by an Agent.
+- Do not show this section on normal consumer-created Seller/Buyer/Landlord/Tenant listings.
+- Do not change listing creation tabs.
+- Do not change database schema unless absolutely required.
+- Do not rename referral_fee_percent.
+- Do not remove existing saved referral fee values.
+- Do not change Offered Services logic.
+- Do not change normal Broker Compensation fields.
+- Do not expose referral fee publicly to unauthenticated users or competing agents if they should not see private bid details.
+
+STEP 1 — READ-ONLY AUDIT:
+Search for:
+- referral_fee_percent
+- Referral Fee
+- Broker Compensation & Agency Agreement Terms
+- Offered Services
+- AcceptedBidSummary
+- counter terms
+- changed terms
+- added terms
+- buildCompensationHtml
+- private compensation
+- full bid view
+- bid modal
+
+Report before editing:
+1. Where Agent bid detail/full bid HTML is built.
+2. Where counter comparison terms are built.
+3. Where accepted summary HTML is built.
+4. Whether referral_fee_percent is currently stored in bid data.
+5. Whether referral_fee_percent is being counted as “Added by Agent” but not displayed.
+
+STEP 2 — ADD DISPLAY SECTION TO FULL BID VIEW:
+Wherever the full Agent bid displays:
+
+Broker Compensation & Agency Agreement Terms
+
+Add a separate section immediately after it:
+
+Referral Fee & Cooperation Terms
+
+Display:
+Referral Fee (%) (Agent-to-Agent): [value]%
+
+Only render if:
+- listing is Agent-created / $isListingCreatedByAgent is true
+- referral_fee_percent has a value
+
+STEP 3 — ADD TO COUNTER SCREENS:
+Referral Fee (%) must be counterable.
+
+Confirm referral_fee_percent is included in the counterable terms array/config for Agent-created listings.
+
+It should appear as its own section:
+Referral Fee & Cooperation Terms
+
+Not inside Broker Compensation & Agency Agreement Terms.
+
+Counter behavior:
+- Original bid has referral_fee_percent
+- Other party may counter referral_fee_percent
+- Counter history should show:
+  Changed: Referral Fee (%) changed from X% to Y%
+- If newly added:
+  Added: Referral Fee (%) Y%
+- If removed:
+  Removed: Referral Fee (%)
+
+STEP 4 — ADD TO CHANGE HISTORY / COMPARISON:
+Where changed/added/removed terms are displayed, make sure referral_fee_percent uses the label:
+
+Referral Fee (%) (Agent-to-Agent)
+
+Format:
+25%
+
+Do not show raw value only.
+
+STEP 5 — ACCEPTED BID SUMMARY:
+In Accepted Bid Summary, add a separate section after Agreed Compensation & Agency Terms:
+
+Referral Fee & Cooperation Terms
+
+Display:
+Referral Fee (%) (Agent-to-Agent): [value]%
+
+Include only for Agent-to-Agent bids on agent-created listings.
+
+Do not add this to normal consumer listing accepted summaries.
+
+STEP 6 — PDF SUMMARY:
+If the PDF pulls from accepted summary HTML, confirm it appears automatically.
+If PDF uses a separate builder, add the same section there too.
+
+STEP 7 — MATCH SCORE SAFEGUARD:
+Referral Fee should NOT be counted inside normal client-facing Broker Compensation match score.
+
+Preferred:
+- Keep Broker Compensation match separate.
+- Referral Fee may be tracked/countered as an agent-to-agent cooperation term.
+- If it appears as “Added by Agent: 1,” either:
+  A) show it under Referral Fee & Cooperation Terms so the count makes sense, OR
+  B) exclude it from “Added by Agent” if that count is intended only for client-facing terms.
+
+STEP 8 — QA:
+Test using an Agent-created Seller listing and at least one other Agent-created role listing if available.
+
+Confirm:
+1. Referral Fee appears in Agent bid form tab.
+2. Referral Fee saves on draft.
+3. Referral Fee saves on submit.
+4. Referral Fee appears in full bid view.
+5. Referral Fee appears in owner review modal/detail.
+6. Referral Fee can be countered.
+7. Referral Fee changes show in counter history.
+8. Referral Fee appears in Accepted Bid Summary.
+9. Referral Fee appears in PDF if applicable.
+10. Referral Fee does NOT appear on normal consumer-created listing flows.
+
+FINAL REPORT:
+List:
+- Files changed
+- Where referral fee is now displayed
+- Whether it is counterable
+- Whether it appears in accepted summary/PDF
+- Confirmation that consumer listing creation flows were untouched

@@ -481,6 +481,21 @@
                                         </div>
                                         @endif
 
+                                        <!-- 2b. Referral Fee & Cooperation Terms -->
+                                        @if ($auction->isCreatedByAgent() && data_get($bid, 'get.referral_fee_percent'))
+                                        <div class="mb-5">
+                                            <h6 class="section-header">
+                                                <i class="fa fa-percent me-2"></i>Referral Fee &amp; Cooperation Terms
+                                            </h6>
+                                            <ul class="list-unstyled ps-3 mb-0">
+                                                <li class="mb-1" style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}">
+                                                    <span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span>
+                                                    {{ data_get($bid, 'get.referral_fee_percent') }}%{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        @endif
+
                                         <!-- Additional Details -->
                                         @if (data_get($bid, 'get.additional_details'))
                                         <div class="mb-5">
