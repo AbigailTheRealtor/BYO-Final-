@@ -988,6 +988,11 @@ class LandlordAgentAuctionBid extends Component
         $this->activeTab = $index;
     }
 
+    public function hasReferralTab(): bool
+    {
+        return $this->isListingCreatedByAgent ?? false;
+    }
+
     public function goToNextStep(): void
     {
         // Validate Agent Overview required fields when leaving Tab 0
@@ -1003,7 +1008,7 @@ class LandlordAgentAuctionBid extends Component
             }
         }
 
-        $maxTab = $this->service_type === 'full_service' ? ($this->isListingCreatedByAgent ? 6 : 5) : 4;
+        $maxTab = $this->service_type === 'full_service' ? ($this->hasReferralTab() ? 6 : 5) : 4;
         if ($this->activeTab < $maxTab) {
             $this->activeTab = $this->activeTab + 1;
         }

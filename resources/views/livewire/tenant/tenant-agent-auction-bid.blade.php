@@ -222,7 +222,7 @@
                         @php
                             $user_type = 'tenant';
                             $tabs = ['Agent Overview', 'Broker Compensation and Agency Agreement'];
-                            if ($isListingCreatedByAgent) {
+                            if ($this->hasReferralTab()) {
                                 $tabs[] = 'Referral Fee & Cooperation Terms';
                             }
                             $tabs[] = 'Additional Details';
@@ -294,13 +294,13 @@
 
                         </div>
                         @if ($service_type === 'full_service')
-                            @php $tabOffset = $isListingCreatedByAgent ? 1 : 0; @endphp
+                            @php $tabOffset = $this->hasReferralTab() ? 1 : 0; @endphp
                             <!-- Tab 1: Broker Compensation & Agency Agreement Terms -->
                             <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
                                 @include('livewire.tenant-agent-auction-bid-tabs.commission-based.broker-compensation')
                             </div>
 
-                            @if ($isListingCreatedByAgent)
+                            @if ($this->hasReferralTab())
                             <!-- Tab 2: Referral Fee & Cooperation Terms -->
                             <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}">
                                 <h3>Referral Fee &amp; Cooperation Terms</h3>

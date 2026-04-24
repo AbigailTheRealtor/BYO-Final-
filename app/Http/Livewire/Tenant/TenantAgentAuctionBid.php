@@ -886,6 +886,11 @@ class TenantAgentAuctionBid extends Component
         session()->flash('message', 'Next button click detected - Livewire is connected!');
     }
 
+    public function hasReferralTab(): bool
+    {
+        return $this->isListingCreatedByAgent ?? false;
+    }
+
     public function goToNextStep()
     {
         Log::info('NEXT STEP ADVANCE', ['from' => $this->activeTab]);
@@ -903,7 +908,7 @@ class TenantAgentAuctionBid extends Component
             }
         }
 
-        $maxTab = $this->service_type === 'full_service' ? ($this->isListingCreatedByAgent ? 6 : 5) : 4;
+        $maxTab = $this->service_type === 'full_service' ? ($this->hasReferralTab() ? 6 : 5) : 4;
         if ($this->activeTab < $maxTab) {
             $this->activeTab = $this->activeTab + 1;
         }

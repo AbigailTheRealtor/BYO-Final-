@@ -459,6 +459,11 @@ class SellerAgentAuctionBid extends Component
         $this->activeTab = $index;
     }
 
+    public function hasReferralTab(): bool
+    {
+        return $this->isListingCreatedByAgent ?? false;
+    }
+
     public function goToNextStep(): void
     {
         if ($this->activeTab === 0) {
@@ -473,7 +478,7 @@ class SellerAgentAuctionBid extends Component
             }
         }
 
-        $maxTab = $this->isListingCreatedByAgent ? 6 : 5;
+        $maxTab = $this->hasReferralTab() ? 6 : 5;
         if ($this->activeTab < $maxTab) {
             $this->activeTab++;
         }
