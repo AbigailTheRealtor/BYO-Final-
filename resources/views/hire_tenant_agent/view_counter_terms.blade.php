@@ -135,6 +135,8 @@
                                 'brokerage_relationship' => $auction->get->brokerage_relationship ?? null,
                                 'services' => $auction->get->services ?? [],
                                 'other_services' => $auction->get->other_services ?? [],
+                                // Referral fee — bid-level field; seed from original bid so first-counter change detection works
+                                'referral_fee_percent' => $auction->isCreatedByAgent() ? ($bid->get->referral_fee_percent ?? null) : null,
                             ];
                             $baselineLabel = "Listing Owner's Original Terms";
                         }

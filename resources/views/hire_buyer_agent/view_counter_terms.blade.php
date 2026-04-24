@@ -114,6 +114,12 @@
                             $baselineLabel = "Listing Owner's Original Terms";
                         }
 
+                        // Referral fee — bid-level field not present in listing meta.
+                        // Seed from original bid so first-counter change detection works correctly.
+                        if ($auction->isCreatedByAgent()) {
+                            $baselineData['referral_fee_percent'] = $bid->get->referral_fee_percent ?? null;
+                        }
+
                         $counterPropType = $auction->get->property_type ?? 'Residential Property';
                         $score = \App\Helpers\BuyerBidMatchScoreHelper::calculate($baselineData, $counterData, null, $counterPropType);
 

@@ -112,6 +112,12 @@
                             $baselineLabel = "Listing Owner's Original Terms";
                         }
 
+                        // Referral fee — bid-level field not present in listing meta.
+                        // Seed from original bid so first-counter change detection works correctly.
+                        if ($auction->isCreatedByAgent()) {
+                            $baselineData['referral_fee_percent'] = $bid->get->referral_fee_percent ?? null;
+                        }
+
                         $counterPropType = $auction->get->property_type ?? 'Residential Property';
                         $score = \App\Helpers\SellerBidMatchScoreHelper::calculate(
                             $baselineData,
@@ -1100,7 +1106,10 @@
                         <h6 class="mb-2" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                             <i class="fa fa-percent me-2"></i>Referral &amp; Cooperation Terms
                         </h6>
-                        <p class="mb-0 ps-3 text-muted"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ $ctReferralFeePercent }}%</p>
+                        <p class="mb-0 ps-3 text-muted">
+                            <span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span>
+                            <span style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}">{{ str_ends_with($ctReferralFeePercent, '%') ? $ctReferralFeePercent : $ctReferralFeePercent . '%' }}</span>{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
+                        </p>
                     </div>
                     @endif
 
