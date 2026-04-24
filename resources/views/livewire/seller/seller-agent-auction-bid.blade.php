@@ -48,14 +48,14 @@
                     </div>
                     <!-- Tab Navigation -->
                     @php
-                        $tabs = [
-                            'Agent Overview',
-                            'Broker Compensation and Agency Agreement',
-                            'Additional Details',
-                            'Services the Seller Requests from Their Agent',
-                            'Agent Presentation & Marketing Materials',
-                            'Agent Credentials & Contact Info',
-                        ];
+                        $tabs = ['Agent Overview', 'Broker Compensation and Agency Agreement'];
+                        if ($isListingCreatedByAgent) {
+                            $tabs[] = 'Referral Fee & Cooperation Terms';
+                        }
+                        $tabs[] = 'Additional Details';
+                        $tabs[] = 'Services the Seller Requests from Their Agent';
+                        $tabs[] = 'Agent Presentation & Marketing Materials';
+                        $tabs[] = 'Agent Credentials & Contact Info';
                     @endphp
 
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -85,10 +85,15 @@
                         <!-- Tab 1: Broker Compensation -->
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-bid-tabs.commission-based.broker-compensation')
-                            @if ($isListingCreatedByAgent)
-                            <div class="form-group mb-4 mt-2">
-                                <hr>
-                                <h6 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h6>
+                        </div>
+
+                        @php $tabOffset = $isListingCreatedByAgent ? 1 : 0; @endphp
+
+                        @if ($isListingCreatedByAgent)
+                        <!-- Tab 2: Referral Fee & Cooperation Terms -->
+                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}">
+                            <h3>Referral Fee &amp; Cooperation Terms</h3>
+                            <div class="form-group mb-4 mt-3">
                                 <label class="fw-semibold" for="referral_fee_percent_seller_bid">Referral Fee (%) <span class="text-muted fw-normal">(Agent-to-Agent)</span></label>
                                 <input type="number"
                                        class="form-control mt-1"
@@ -101,26 +106,26 @@
                                 </div>
                                 @error('referral_fee_percent') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                             </div>
-                            @endif
                         </div>
+                        @endif
 
-                        <!-- Tab 2: Additional Details -->
-                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}">
+                        <!-- Tab 2/3: Additional Details -->
+                        <div class="tab-pane fade {{ $activeTab === (2 + $tabOffset) ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-bid-tabs.commission-based.additional-details')
                         </div>
 
-                        <!-- Tab 3: Services -->
-                        <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services">
+                        <!-- Tab 3/4: Services -->
+                        <div class="tab-pane fade {{ $activeTab === (3 + $tabOffset) ? 'show active' : '' }}" id="services">
                             @include('livewire.seller-agent-auction-bid-tabs.commission-based.services')
                         </div>
 
-                        <!-- Tab 4: Promotional Materials -->
-                        <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}">
+                        <!-- Tab 4/5: Promotional Materials -->
+                        <div class="tab-pane fade {{ $activeTab === (4 + $tabOffset) ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-bid-tabs.commission-based.agent-presentation')
                         </div>
 
-                        <!-- Tab 5: Agent Credentials -->
-                        <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}">
+                        <!-- Tab 5/6: Agent Credentials -->
+                        <div class="tab-pane fade {{ $activeTab === (5 + $tabOffset) ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-bid-tabs.commission-based.agent-info')
                         </div>
                     </div>

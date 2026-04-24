@@ -1,0 +1,103 @@
+TASK: Fix Agent Bid Referral Fee tab placement and duplicate display
+
+Issue:
+When an Agent submits a bid on a listing, “Referral Fee” is currently appearing twice and is showing inside the wrong tab:
+- It appears under “Broker Compensation & Agency Agreement Terms”
+- It should appear only once in its own separate tab:
+  “Referral Fee & Cooperation Terms”
+
+This should match the listing-creation flow, where Referral Fee & Cooperation Terms is already its own tab.
+
+CRITICAL SAFEGUARDS:
+- Do not change listing creation flows.
+- Do not change accepted bid summaries.
+- Do not change referral backend logic.
+- Do not change referral fee database fields.
+- Do not change match score calculations unless referral_fee_percent is incorrectly counted as a broker compensation term.
+- UI/tab placement fix only.
+- Apply consistently across all Agent bid forms for Tenant, Buyer, Seller, and Landlord if those flows exist.
+- Preserve all existing fields, labels, tooltips, and validation unless directly related to referral_fee_percent placement.
+
+STEP 1 — READ-ONLY AUDIT FIRST:
+Search the codebase for:
+- referral_fee_percent
+- Referral Fee
+- Referral & Cooperation Terms
+- Broker Compensation & Agency Agreement Terms
+- Agent bid
+- bid form tabs
+
+Identify every place where referral_fee_percent is rendered inside the Agent bid form.
+
+Do not edit anything until you report:
+1. Which bid form/view/component renders referral_fee_percent under Broker Compensation.
+2. Whether referral_fee_percent is rendered more than once in the same Agent bid form.
+3. Whether all four role bid forms share one Livewire component or separate Blade partials.
+4. Whether listing creation already has a reusable Referral Fee & Cooperation Terms tab that can be mirrored.
+
+STEP 2 — FIX TAB STRUCTURE:
+In the Agent bid form only, add a separate tab called:
+
+Referral Fee & Cooperation Terms
+
+Place it immediately after:
+Broker Compensation & Agency Agreement Terms
+
+or in the same relative location used in the listing creation flow.
+
+STEP 3 — MOVE FIELD:
+Move this field into the new tab:
+
+Referral Fee (%) (Agent-to-Agent)
+
+Keep this helper text:
+
+This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
+
+Placeholder:
+e.g. 25
+
+Field binding must remain the same:
+referral_fee_percent
+
+STEP 4 — REMOVE DUPLICATE:
+Remove referral_fee_percent from the Broker Compensation & Agency Agreement Terms tab.
+
+Confirm it appears only once in the Agent bid form.
+
+STEP 5 — CONSISTENCY:
+Apply the same tab/field structure to Agent bid forms for:
+- Tenant listings
+- Buyer listings
+- Seller listings
+- Landlord listings
+
+Only apply where Agent bidding exists.
+
+STEP 6 — MATCH SCORE SAFEGUARD:
+Confirm referral_fee_percent is not counted as part of the client-facing Broker Compensation match score unless the current system intentionally treats it as a separate agent-to-agent cooperation term.
+
+Preferred behavior:
+- Referral Fee & Cooperation Terms should be separate from Broker Compensation & Agency Agreement Terms.
+- It should not inflate or reduce the normal broker compensation match count.
+- It may still be stored and displayed in private bid details/accepted summaries if already supported.
+
+STEP 7 — QA:
+Test the Agent bid form for at least one Tenant listing and one Seller/Buyer/Landlord listing if available.
+
+Confirm:
+1. “Referral Fee (%) (Agent-to-Agent)” appears only once.
+2. It appears under “Referral Fee & Cooperation Terms.”
+3. It no longer appears under “Broker Compensation & Agency Agreement Terms.”
+4. Saving draft preserves the referral fee.
+5. Submitting bid preserves the referral fee.
+6. Editing an existing bid loads the referral fee in the correct tab.
+7. No listing creation tabs were changed.
+8. No accepted summary output was changed.
+
+FINAL REPORT:
+Provide a concise report with:
+- Files changed
+- Whether the field was duplicated and where
+- Confirmation that the referral fee is now isolated in its own tab
+- Confirmation that listing creation and accepted summaries were not changed

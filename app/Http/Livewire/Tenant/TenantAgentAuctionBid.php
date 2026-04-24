@@ -903,7 +903,7 @@ class TenantAgentAuctionBid extends Component
             }
         }
 
-        $maxTab = $this->service_type === 'full_service' ? 5 : 4;
+        $maxTab = $this->service_type === 'full_service' ? ($this->isListingCreatedByAgent ? 6 : 5) : 4;
         if ($this->activeTab < $maxTab) {
             $this->activeTab = $this->activeTab + 1;
         }

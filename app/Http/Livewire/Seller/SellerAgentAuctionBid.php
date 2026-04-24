@@ -473,7 +473,8 @@ class SellerAgentAuctionBid extends Component
             }
         }
 
-        if ($this->activeTab < 5) {
+        $maxTab = $this->isListingCreatedByAgent ? 6 : 5;
+        if ($this->activeTab < $maxTab) {
             $this->activeTab++;
         }
     }

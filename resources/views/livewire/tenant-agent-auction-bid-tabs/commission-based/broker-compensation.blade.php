@@ -658,20 +658,3 @@
         placeholder="Enter any additional terms"></textarea>
 </div>
 
-@if ($isListingCreatedByAgent)
-<div class="form-group mb-4 mt-2">
-    <hr>
-    <h6 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h6>
-    <label class="fw-semibold" for="referral_fee_percent_bid">Referral Fee (%) <span class="text-muted fw-normal">(Agent-to-Agent)</span></label>
-    <input type="number"
-           class="form-control mt-1"
-           id="referral_fee_percent_bid"
-           wire:model.live.debounce.300ms="referral_fee_percent"
-           min="0" max="100" step="0.01"
-           placeholder="e.g. 25">
-    <div class="form-text text-muted mt-1" style="font-size:.85rem;">
-        This is the referral fee offered to or requested from the hired Agent or their brokerage. This term is negotiated between agents and is not paid by the client.
-    </div>
-    @error('referral_fee_percent') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-</div>
-@endif
