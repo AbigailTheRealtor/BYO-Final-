@@ -858,7 +858,7 @@ class AcceptedBidSummaryService
             'protection_period',
         ];
 
-        $percentFields = [];
+        $percentFields = ['referral_fee_percent'];
 
         $feeAmountFields = [
             'broker_fee_amount',
@@ -873,6 +873,11 @@ class AcceptedBidSummaryService
                 return $value . ' days';
             }
             return $value;
+        }
+
+        if (in_array($key, $percentFields)) {
+            // Append % suffix; strip any existing % first to avoid "25%%" duplication.
+            return rtrim((string) $value, '%') . '%';
         }
 
         if (in_array($key, $feeAmountFields)) {
