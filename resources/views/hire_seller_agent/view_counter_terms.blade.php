@@ -1100,14 +1100,12 @@
                     </div>
                     @endif
 
-                    {{-- Referral & Cooperation Terms --}}
+                    {{-- G) Referral Fee --}}
                     @if($auction->isCreatedByAgent() && $ctReferralFeePercent)
                     <div class="mb-4">
-                        <h6 class="mb-2" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                            <i class="fa fa-percent me-2"></i>Referral &amp; Cooperation Terms
-                        </h6>
+                        <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Referral Fee</h6>
                         <p class="mb-0 ps-3 text-muted">
-                            <span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span>
+                            <span class="fw-semibold">Referral Fee (%):</span>
                             <span style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}">{{ str_ends_with($ctReferralFeePercent, '%') ? $ctReferralFeePercent : $ctReferralFeePercent . '%' }}</span>{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
                         </p>
                     </div>

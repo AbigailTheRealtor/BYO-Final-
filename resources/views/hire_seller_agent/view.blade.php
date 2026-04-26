@@ -4024,10 +4024,10 @@
                                             {{-- G) Referral Fee --}}
                                             @if ($auction->isCreatedByAgent() && !empty($scAllMeta['referral_fee_percent']))
                                             <div class="mb-3">
-                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Referral &amp; Cooperation Terms</div>
+                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Referral Fee</div>
                                                 <ul class="list-unstyled ps-3 mb-0">
                                                     @php $scRefFeeChg = $scIsChanged($scAllMeta['referral_fee_percent'], 'referral_fee_percent'); @endphp
-                                                    <li class="mb-1" style="font-size: 12px; {{ $scRefFeeChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ $scAllMeta['referral_fee_percent'] }}%{!! $scRefFeeChg ? $scChangedBadge : '' !!}</li>
+                                                    <li class="mb-1" style="font-size: 12px; {{ $scRefFeeChg ? $scChangedStyle : '' }}"><span class="fw-semibold">Referral Fee (%):</span> {{ $scAllMeta['referral_fee_percent'] }}%{!! $scRefFeeChg ? $scChangedBadge : '' !!}</li>
                                                 </ul>
                                             </div>
                                             @endif

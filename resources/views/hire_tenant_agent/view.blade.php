@@ -2881,15 +2881,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     </div>
                                                     @endif
 
-                                                    <!-- 2b. Referral Fee & Cooperation Terms -->
+                                                    <!-- G) Referral Fee -->
                                                     @if ($auction->isCreatedByAgent() && data_get($bid, 'get.referral_fee_percent'))
-                                                    <div class="mb-5">
-                                                        <h6 class="section-header">
-                                                            <i class="fa fa-percent me-2"></i>Referral Fee &amp; Cooperation Terms
-                                                        </h6>
+                                                    <div class="mb-4">
+                                                        <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Referral Fee</h6>
                                                         <ul class="list-unstyled ps-3 mb-0">
                                                             <li class="mb-1" style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}">
-                                                                <span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span>
+                                                                <span class="fw-semibold">Referral Fee (%):</span>
                                                                 {{ data_get($bid, 'get.referral_fee_percent') }}%{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
                                                             </li>
                                                         </ul>
@@ -4254,13 +4252,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         </div>
                                                         @endif
 
-                                                        {{-- G) Referral & Cooperation Terms --}}
+                                                        {{-- G) Referral Fee --}}
                                                         @if ($auction->isCreatedByAgent() && !empty($allMeta['referral_fee_percent']))
                                                         <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Referral &amp; Cooperation Terms</div>
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">G) Referral Fee</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @php $refFeeChg = $isChanged($allMeta['referral_fee_percent'], 'referral_fee_percent'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $refFeeChg ? $changedStyle : '' }}"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ str_ends_with($allMeta['referral_fee_percent'], '%') ? $allMeta['referral_fee_percent'] : $allMeta['referral_fee_percent'] . '%' }}{!! $refFeeChg ? $changedBadge : '' !!}</li>
+                                                                <li class="mb-1" style="font-size: 12px; {{ $refFeeChg ? $changedStyle : '' }}"><span class="fw-semibold">Referral Fee (%):</span> {{ str_ends_with($allMeta['referral_fee_percent'], '%') ? $allMeta['referral_fee_percent'] : $allMeta['referral_fee_percent'] . '%' }}{!! $refFeeChg ? $changedBadge : '' !!}</li>
                                                             </ul>
                                                         </div>
                                                         @endif

@@ -3431,10 +3431,10 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                         {{-- H) Referral Fee --}}
                                                         @if ($auction->isCreatedByAgent() && !empty($allMeta['referral_fee_percent']))
                                                         <div class="mb-3">
-                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">H) Referral &amp; Cooperation Terms</div>
+                                                            <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;">H) Referral Fee</div>
                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                 @php $ctRefFeeChg = $ctIsChanged($allMeta['referral_fee_percent'], 'referral_fee_percent'); @endphp
-                                                                <li class="mb-1" style="font-size: 12px; {{ $ctRefFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ $allMeta['referral_fee_percent'] }}%{!! $ctRefFeeChg ? $ctChangedBadge : '' !!}</li>
+                                                                <li class="mb-1" style="font-size: 12px; {{ $ctRefFeeChg ? $ctChangedStyle : '' }}"><span class="fw-semibold">Referral Fee (%):</span> {{ $allMeta['referral_fee_percent'] }}%{!! $ctRefFeeChg ? $ctChangedBadge : '' !!}</li>
                                                             </ul>
                                                         </div>
                                                         @endif

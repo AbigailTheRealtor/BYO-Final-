@@ -641,10 +641,10 @@
 
                         @if ($auction->isCreatedByAgent() && !empty($counterData['referral_fee_percent']))
                         <div class="mb-4">
-                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">Referral &amp; Cooperation Terms</h6>
+                            <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Referral Fee</h6>
                             <ul class="list-unstyled ps-3 mb-0">
                                 <li class="mb-2" style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}">
-                                    <span class="fw-semibold">Referral Fee (%) (Agent-to-Agent):</span> {{ $counterData['referral_fee_percent'] }}%
+                                    <span class="fw-semibold">Referral Fee (%):</span> {{ $counterData['referral_fee_percent'] }}%
                                     {!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
                                 </li>
                             </ul>
