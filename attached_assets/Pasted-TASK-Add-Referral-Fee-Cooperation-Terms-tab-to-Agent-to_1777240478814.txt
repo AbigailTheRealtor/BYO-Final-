@@ -1,0 +1,130 @@
+TASK: Add Referral Fee & Cooperation Terms tab to Agent-to-Agent Counter Terms only
+
+GOAL:
+When an Agent is countering another Agent’s bid, add a separate Counter Terms tab immediately after:
+“Broker Compensation & Agency Agreement Terms”
+
+New tab name:
+“Referral Fee & Cooperation Terms”
+
+This tab should contain the Agent-to-Agent Referral Fee question and should auto-fill from the Agent’s submitted bid, while remaining editable during the counter process.
+
+CRITICAL SAFEGUARDS:
+- Agent-to-Agent counterbids ONLY.
+- Do NOT change Seller, Buyer, Tenant, or Landlord consumer/client listing creation flows.
+- Do NOT change public listing views.
+- Do NOT rename or remove existing fields.
+- Do NOT change database schema unless the existing referral_fee_percent field cannot support this.
+- Do NOT alter Broker Compensation, Agency Agreement, Offered Services, or Additional Details logic.
+- Preserve all existing counterbid behavior, validation, state handling, and Accepted Bid Summary generation.
+
+SCOPE:
+Only update the Agent-to-Agent counter terms UI/form flow where an Agent counters another Agent’s bid.
+
+STEP 1 — READ-ONLY AUDIT FIRST:
+Find the counter terms component/view used for Agent-to-Agent bidding.
+
+Search for:
+- “Counter Terms”
+- “Broker Compensation & Agency Agreement Terms”
+- “Offered Services”
+- “referral_fee_percent”
+- “Private Compensation & Agreement Terms”
+- agent-to-agent conditions already in use
+
+Report the exact files before editing.
+
+STEP 2 — ADD NEW TAB:
+In the Agent-to-Agent counter form only, insert a new tab directly after:
+“Broker Compensation & Agency Agreement Terms”
+
+New tab:
+“Referral Fee & Cooperation Terms”
+
+Expected tab order:
+1. Broker Compensation & Agency Agreement Terms
+2. Referral Fee & Cooperation Terms
+3. Offered Services
+4. Additional Details
+
+Only show this tab when the counterbid is Agent-to-Agent.
+
+STEP 3 — ADD QUESTION/FIELD:
+Inside the new tab, add:
+
+Label:
+Referral Fee (%):
+
+Helper text:
+Enter the referral fee percentage offered for this Agent-to-Agent referral arrangement.
+
+Field:
+Use the existing referral_fee_percent field if available.
+
+Format:
+- Numeric input
+- Percent suffix/display
+- No yellow percent icon
+- Do not say “Agent-to-Agent” in the field label
+- Match the clean styling used by other compensation fields
+
+STEP 4 — AUTO-FILL FROM AGENT BID:
+When opening Counter Terms for an Agent-to-Agent bid, prefill:
+referral_fee_percent
+
+Source priority:
+1. Existing counter value, if already saved
+2. Original Agent bid value
+3. Original listing/default value, only if no bid value exists
+
+This should behave like the existing auto-filled Broker Compensation & Agency Agreement Terms and Offered Services fields.
+
+STEP 5 — MAKE EDITABLE:
+The countering Agent must be able to edit the Referral Fee (%) field.
+
+When saved/submitted, the edited referral fee must persist into the counter terms just like edited broker compensation fields and services.
+
+STEP 6 — DISPLAY IN COUNTER REVIEW:
+Where counter terms are reviewed/displayed, show Referral Fee & Cooperation Terms as its own section after Broker Compensation & Agency Agreement Terms.
+
+Display format:
+Referral Fee (%): 25%
+
+Do not duplicate the referral fee inside Broker Compensation if the new separate section is shown.
+
+STEP 7 — AGENT-TO-AGENT ONLY CONDITION:
+Use the existing Agent-to-Agent condition already in the codebase.
+
+If no centralized condition exists, create a local helper variable only inside this component/view, such as:
+$isAgentToAgentBid
+
+Do not create broad global logic.
+
+STEP 8 — TESTING:
+Test these flows:
+
+1. Agent-to-Agent original bid:
+- Referral fee exists on the bid
+- Counter Terms opens with Referral Fee (%) prefilled
+
+2. Agent-to-Agent counter:
+- New tab appears immediately after Broker Compensation & Agency Agreement Terms
+- Field is editable
+- Updated value saves correctly
+- Review screen shows Referral Fee & Cooperation Terms as separate section
+
+3. Non-agent client listings:
+- Tenant/Seller/Buyer/Landlord counter terms do NOT show this new tab
+- No change to existing tabs
+- No referral fee question appears
+
+4. Public/competitive views:
+- No referral fee leak
+- No new public compensation display
+
+5. Accepted Bid Summary:
+- Referral fee still appears only where Agent-to-Agent referral terms should appear
+- No duplicate referral fee display
+
+STOP RULE:
+If the Agent-to-Agent counter form shares a component with client-facing counter forms and you cannot safely isolate the change, stop and report the exact shared files and safest isolation plan before editing.
