@@ -674,6 +674,26 @@ class AcceptedBidSummaryService
         $compensationHtml = $this->buildCompensationHtml($sourceData);
         $html = str_replace('{{broker_compensation_and_agency_terms_block}}', $compensationHtml, $html);
 
+        $referralFeeVal = trim((string) ($sourceData['referral_fee_percent'] ?? ''));
+        $hasReferralFee = $referralFeeVal !== '';
+        $referralFeeSectionHtml = '';
+        if ($hasReferralFee) {
+            $displayVal = (strpos($referralFeeVal, '%') !== false) ? $referralFeeVal : ($referralFeeVal . '%');
+            $referralFeeSectionHtml = '<div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">'
+                . '<h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">5. Referral Fee &amp; Cooperation Terms</h2>'
+                . '<table style="width: 100%; border-collapse: collapse;"><tr>'
+                . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Referral Fee (%)</td>'
+                . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayVal) . '</td>'
+                . '</tr></table>'
+                . '</div>';
+        }
+        $html = str_replace('{{referral_fee_section}}', $referralFeeSectionHtml, $html);
+        $sAdd     = $hasReferralFee ? 6 : 5;
+        $sNotice  = $hasReferralFee ? 7 : 6;
+        $sRefDisc = $hasReferralFee ? 8 : 7;
+        $sSig     = $hasReferralFee ? 9 : 8;
+        $html = str_replace(['{{s_add}}', '{{s_notice}}', '{{s_ref_disc}}', '{{s_sig}}'], [$sAdd, $sNotice, $sRefDisc, $sSig], $html);
+
         $additionalDetailsHtml = $this->buildAdditionalDetailsHtml($sourceData, $listingData);
         $html = str_replace('{{additional_details_block}}', $additionalDetailsHtml, $html);
 
@@ -805,7 +825,6 @@ class AcceptedBidSummaryService
             'agency_agreement_timeframe'   => 'Tenant Agency Agreement Timeframe',
             'brokerage_relationship'       => 'Acceptable Brokerage Relationship',
             'additional_terms'             => 'Additional Terms',
-            'referral_fee_percent'         => 'Referral Fee (%) (Agent-to-Agent)',
         ];
 
         $hasContent = false;
@@ -1065,23 +1084,25 @@ class AcceptedBidSummaryService
         {{broker_compensation_and_agency_terms_block}}
     </div>
 
+    {{referral_fee_section}}
+
     <div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">5. Additional Details</h2>
+        <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">{{s_add}}. Additional Details</h2>
         {{additional_details_block}}
     </div>
 
     <div style="background: #fff3cd; padding: 20px; border: 1px solid #ffc107; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #856404; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">6. Important Notice</h2>
+        <h2 style="color: #856404; border-bottom: 2px solid #ffc107; padding-bottom: 10px;">{{s_notice}}. Important Notice</h2>
         <p style="color: #856404;">This Accepted Bid Summary is a record of the terms agreed upon through the Bid Your Offer platform. It does not constitute a legally binding contract. Both parties are encouraged to formalize their agreement through appropriate legal documentation and consult with legal professionals as needed.</p>
     </div>
 
     <div style="background: #e7f3ff; padding: 20px; border: 1px solid #007bff; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #0056b3; border-bottom: 2px solid #007bff; padding-bottom: 10px;">7. Platform Referral Disclosure</h2>
+        <h2 style="color: #0056b3; border-bottom: 2px solid #007bff; padding-bottom: 10px;">{{s_ref_disc}}. Platform Referral Disclosure</h2>
         <p style="color: #0056b3;">The platform may receive a referral fee from the hired Agent or their brokerage as part of the agent's compensation. The Tenant does not pay any fee to the platform.</p>
     </div>
 
     <div style="background: #f8f9fa; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">8. Signature Acknowledgement</h2>
+        <h2 style="color: #333; border-bottom: 2px solid #28a745; padding-bottom: 10px;">{{s_sig}}. Signature Acknowledgement</h2>
         <div style="display: flex; flex-wrap: wrap; gap: 20px;">
             <div style="flex: 1; min-width: 250px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
                 <h4 style="color: #28a745;">Tenant Acknowledgement</h4>
