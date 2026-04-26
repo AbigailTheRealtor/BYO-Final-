@@ -36,11 +36,15 @@
 
                 <form wire:submit.prevent="submit">
                     @php
-                        $tabs = [
-                            'Broker Compensation & Agency Agreement',
-                            'Additional Details',
-                            'Offered Services',
-                        ];
+                        $tabs = ['Broker Compensation & Agency Agreement'];
+                        if ($isListingCreatedByAgent) {
+                            $tabs[] = 'Referral Fee & Cooperation Terms';
+                        }
+                        $tabs[] = 'Additional Details';
+                        $tabs[] = 'Offered Services';
+                        $referralTabIndex          = $isListingCreatedByAgent ? 1 : null;
+                        $additionalDetailsTabIndex = $isListingCreatedByAgent ? 2 : 1;
+                        $servicesTabIndex          = $isListingCreatedByAgent ? 3 : 2;
                     @endphp
 
                     <ul class="nav nav-tabs" id="sellerCounterTab" role="tablist">
@@ -62,11 +66,17 @@
                             @include('livewire.seller-agent-auction-counter-tabs.broker-compensation')
                         </div>
 
+                        @if ($isListingCreatedByAgent)
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
+                            @include('livewire.seller-agent-auction-counter-tabs.referral-fee')
+                        </div>
+                        @endif
+
+                        <div class="tab-pane fade {{ $activeTab === $additionalDetailsTabIndex ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-counter-tabs.additional-details')
                         </div>
 
-                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}">
+                        <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-counter-tabs.services')
                         </div>
                     </div>

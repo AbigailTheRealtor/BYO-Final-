@@ -1,0 +1,207 @@
+TASK: Add “Referral Fee & Cooperation Terms” tab to Agent-to-Agent Counter Terms ONLY
+
+GOAL:
+Add a new tab for Referral Fee in the Agent-to-Agent counter flow.
+It must:
+- Appear immediately after “Broker Compensation & Agency Agreement Terms”
+- Auto-fill from existing bid data
+- Be editable
+- Be isolated to Agent-to-Agent scenarios only
+- Not affect any client (Tenant/Buyer/Seller/Landlord) flows
+
+--------------------------------------------------
+🚨 CRITICAL SAFEGUARDS (DO NOT VIOLATE)
+--------------------------------------------------
+- DO NOT modify database schema
+- DO NOT rename referral_fee_percent
+- DO NOT modify controllers unless absolutely necessary (should not be needed)
+- DO NOT change public views
+- DO NOT change listing creation flows
+- DO NOT affect non-agent-created listings
+- ALL CHANGES MUST BE VIEW-LEVEL ONLY
+- USE EXISTING: $isListingCreatedByAgent
+
+STOP RULE:
+If you cannot isolate using $isListingCreatedByAgent, STOP and report.
+
+--------------------------------------------------
+🔍 STEP 1 — FILE LOCATIONS (CONFIRM FIRST)
+--------------------------------------------------
+
+You should be working in these files:
+
+SELLER:
+resources/views/livewire/seller/seller-agent-auction-counter-term.blade.php
+
+TENANT:
+resources/views/livewire/tenant/tenant-agent-auction-counter-term.blade.php
+
+BUYER:
+resources/views/livewire/buyer/buyer-agent-auction-counter-term.blade.php
+
+LANDLORD:
+resources/views/livewire/landlord/landlord-agent-auction-counter-term.blade.php
+
+Sub-tabs directories:
+
+seller-agent-auction-counter-tabs/
+tenant-agent-auction-bid-counter-tabs/
+buyer-agent-auction-bid-counter-tabs/
+landlord-agent-auction-bid-tabs/commission-based/
+
+--------------------------------------------------
+🔧 STEP 2 — ADD NEW TAB (ALL 4 FILES)
+--------------------------------------------------
+
+In EACH counter-term blade, locate tab navigation.
+
+Insert AFTER Broker Compensation tab:
+
+@if ($isListingCreatedByAgent)
+    <button type="button" wire:click="$set('activeTab', 'referral')">
+        Referral Fee & Cooperation Terms
+    </button>
+@endif
+
+--------------------------------------------------
+🔧 STEP 3 — ADD TAB CONTENT (ALL 4 FILES)
+--------------------------------------------------
+
+Find tab content switch/conditional blocks.
+
+Add:
+
+@if ($isListingCreatedByAgent && $activeTab === 'referral')
+    @include('PATH_TO_ROLE_SPECIFIC.referral-fee')
+@endif
+
+Replace PATH_TO_ROLE_SPECIFIC with correct directory per role.
+
+--------------------------------------------------
+🔧 STEP 4 — CREATE PARTIAL (4 FILES)
+--------------------------------------------------
+
+Create these new files:
+
+SELLER:
+seller-agent-auction-counter-tabs/referral-fee.blade.php
+
+TENANT:
+tenant-agent-auction-bid-counter-tabs/referral-fee.blade.php
+
+BUYER:
+buyer-agent-auction-bid-counter-tabs/referral-fee.blade.php
+
+LANDLORD:
+landlord-agent-auction-bid-tabs/commission-based/referral-fee.blade.php
+
+--------------------------------------------------
+📄 CONTENT OF EACH PARTIAL (IDENTICAL)
+--------------------------------------------------
+
+<div class="space-y-4">
+    <div>
+        <label class="block text-sm font-medium text-gray-700">
+            Referral Fee (%):
+        </label>
+
+        <input
+            type="number"
+            step="0.01"
+            min="0"
+            max="100"
+            wire:model.defer="referral_fee_percent"
+            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+            placeholder="Enter referral fee percentage"
+        />
+
+        <p class="text-xs text-gray-500 mt-1">
+            Enter the referral fee percentage offered for this referral arrangement.
+        </p>
+    </div>
+</div>
+
+--------------------------------------------------
+🔧 STEP 5 — REMOVE DUPLICATES (CRITICAL)
+--------------------------------------------------
+
+ONLY for TENANT and BUYER:
+
+Open:
+tenant-agent-auction-bid-counter-tabs/broker-compensation.blade.php
+buyer-agent-auction-bid-counter-tabs/broker-compensation.blade.php
+
+FIND and DELETE:
+
+@if ($isListingCreatedByAgent)
+    ... referral_fee_percent block ...
+@endif
+
+This prevents duplicate display.
+
+DO NOT touch Seller or Landlord broker-comp tabs.
+
+--------------------------------------------------
+🔧 STEP 6 — TAB ORDER (CRITICAL)
+--------------------------------------------------
+
+Ensure final tab order is:
+
+1. Broker Compensation & Agency Agreement Terms
+2. Referral Fee & Cooperation Terms   ← NEW
+3. Offered Services
+4. Additional Details
+
+--------------------------------------------------
+🔧 STEP 7 — NO BACKEND CHANGES
+--------------------------------------------------
+
+Do NOT add:
+- new properties
+- new validation
+- new database fields
+
+referral_fee_percent already:
+- exists
+- saves
+- auto-fills
+
+--------------------------------------------------
+🧪 STEP 8 — TESTING
+--------------------------------------------------
+
+TEST 1 — Agent-to-Agent Counter
+- New tab appears
+- Field is prefilled
+- Editable
+- Saves properly
+
+TEST 2 — Normal Listings
+- NO new tab
+- NO referral fee field
+
+TEST 3 — Duplicate Check
+- Referral fee appears ONLY in new tab
+- NOT inside Broker Compensation
+
+TEST 4 — Review Screen
+- Shows:
+  Referral Fee (%): 25%
+- No duplication
+
+--------------------------------------------------
+✅ EXPECTED RESULT
+--------------------------------------------------
+
+Clean separation:
+
+Broker Compensation
+Referral Fee
+Services
+Additional Details
+
+No icons, no duplicate fields, no leakage into client flows.
+
+--------------------------------------------------
+END TASK
+--------------------------------------------------

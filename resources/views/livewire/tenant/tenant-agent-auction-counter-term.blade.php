@@ -46,7 +46,11 @@
 
         <form wire:submit.prevent="submit">
           @php
-            $tabs = ['Broker Compensation and Agency Agreement','Additional Details'];
+            $tabs = ['Broker Compensation and Agency Agreement'];
+            if ($isListingCreatedByAgent) {
+                $tabs[] = 'Referral Fee & Cooperation Terms';
+            }
+            $tabs[] = 'Additional Details';
             $user_type = "tenant";
             $tabs[] = match (strtolower($user_type)) {
                 'tenant' => 'Offered Services',
@@ -55,6 +59,8 @@
                 'buyer' => 'Services the Buyer Requests from Their Agent',
                 default => 'Services',
             };
+            $additionalDetailsTabIndex = $isListingCreatedByAgent ? 2 : 1;
+            $servicesTabIndex          = $isListingCreatedByAgent ? 3 : 2;
           @endphp
 
           <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -87,13 +93,17 @@
             <input  type="hidden"  wire:mode="bidId"  value={{$bidId}} />
             <input  type="hidden" wire:mode="auctionId" value={{$pab->id}} />
 
-
-
+            @if ($isListingCreatedByAgent)
             <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
+              @include('livewire.tenant-agent-auction-bid-counter-tabs.referral-fee')
+            </div>
+            @endif
+
+            <div class="tab-pane fade {{ $activeTab === $additionalDetailsTabIndex ? 'show active' : '' }}">
               @include('livewire.tenant-agent-auction-bid-counter-tabs.additional-details')
             </div>
 
-            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="services">
+            <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}" id="services">
               @include('livewire.tenant-agent-auction-bid-counter-tabs.services')
             </div>
           </div>
