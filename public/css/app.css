@@ -1237,6 +1237,9 @@ select {
 .pt-8 {
   padding-top: 2rem;
 }
+.pb-0 {
+  padding-bottom: 0px;
+}
 .pt-1 {
   padding-top: 0.25rem;
 }
@@ -1248,9 +1251,6 @@ select {
 }
 .pr-4 {
   padding-right: 1rem;
-}
-.pb-0 {
-  padding-bottom: 0px;
 }
 .pb-3 {
   padding-bottom: 0.75rem;
@@ -1385,14 +1385,17 @@ select {
 .opacity-5 {
   opacity: 0.05;
 }
+.opacity-75 {
+  opacity: 0.75;
+}
 .opacity-25 {
   opacity: 0.25;
 }
+.opacity-40 {
+  opacity: 0.4;
+}
 .opacity-80 {
   opacity: 0.8;
-}
-.opacity-75 {
-  opacity: 0.75;
 }
 .opacity-0 {
   opacity: 0;
