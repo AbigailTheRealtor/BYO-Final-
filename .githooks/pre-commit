@@ -1,37 +1,47 @@
 #!/usr/bin/env bash
 # Pre-commit hook: reject backup files and debug statements in staged files
 #
-# Backup patterns blocked: *.bak, *.bak_*, *.orig, *.tmp, "* copy.*", "* copy" (no ext)
-# Backup directories checked: app/, resources/, public/, database/
+# ┌─ Backup-file check ────────────────────────────────────────────────────────
+# │  Scope: DIRECTORY-RESTRICTED — only app/, resources/, public/, database/
+# │  Patterns: *.bak, *.bak_*, *.orig, *.tmp, "* copy.*", "* copy" (no ext)
+# └────────────────────────────────────────────────────────────────────────────
 #
-# Debug patterns blocked (PHP): dd(, var_dump(
-# Debug patterns blocked (JS/TS): console.log(, debugger;
-# Debug check scope: ALL staged PHP and JS/TS files, including test files
-#   (e.g. tests/**/*.php, **/*.test.ts, **/*.spec.ts, app/, resources/, etc.)
+# ┌─ Debug-statement check ────────────────────────────────────────────────────
+# │  Scope: ALL staged PHP and JS/TS files — intentionally NOT directory-scoped
+# │         Covers tests/**/*.php, **/*.test.ts, **/*.spec.ts, app/, resources/
+# │         etc.  Do NOT add directory filters here; debug statements must be
+# │         caught wherever they appear, including test files.
+# │  PHP patterns:   dd(, var_dump(
+# │  JS/TS patterns: console.log(, debugger;
+# └────────────────────────────────────────────────────────────────────────────
 #
 # To bypass intentionally: git commit --no-verify
 
 set -euo pipefail
 
-DIRS="app resources public database"
+# ── Backup-file check (directory-scoped) ──────────────────────────────────────
+# Only the directories below are scanned for backup files.  This is deliberate:
+# backup-file pollution is most harmful in source directories that Laravel's
+# autoloader, migration scanner, and asset pipeline traverse automatically.
+BACKUP_DIRS="app resources public database"
 
 BAK_PATTERN='\.(bak|bak_.+|orig|tmp)$| copy(\.[^/]+)?$'
 
-found=()
+backup_found=()
 
-for dir in $DIRS; do
+for dir in $BACKUP_DIRS; do
     while IFS= read -r -d '' file; do
         if echo "$file" | grep -qiE "$BAK_PATTERN"; then
-            found+=("$file")
+            backup_found+=("$file")
         fi
     done < <(git diff --cached --name-only --diff-filter=ACMR -z -- "$dir/" 2>/dev/null || true)
 done
 
-if [ ${#found[@]} -gt 0 ]; then
+if [ ${#backup_found[@]} -gt 0 ]; then
     echo ""
     echo "ERROR: Backup files detected in your commit:"
     echo ""
-    for f in "${found[@]}"; do
+    for f in "${backup_found[@]}"; do
         echo "  $f"
     done
     echo ""
@@ -44,13 +54,18 @@ if [ ${#found[@]} -gt 0 ]; then
     exit 1
 fi
 
-# ── Debug statement checks ────────────────────────────────────────────────────
+# ── Debug-statement check (ALL staged files — no directory restriction) ────────
+# This check is intentionally unrestricted by directory.  Debug statements are
+# harmful anywhere in the codebase, including test files.  Do NOT add a DIRS
+# filter or path prefix here — doing so would silently allow debug statements
+# through in any file outside those directories (e.g. tests/, routes/, etc.).
 
 PHP_DEBUG_PATTERN='dd\(|var_dump\('
 JS_DEBUG_PATTERN='console\.log\(|debugger;'
 
 debug_hits=()
 
+# Check all staged PHP files (no directory filter — intentional, see above)
 while IFS= read -r -d '' file; do
     if [[ "$file" =~ \.(php)$ ]]; then
         while IFS= read -r match; do
@@ -59,6 +74,7 @@ while IFS= read -r -d '' file; do
     fi
 done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
 
+# Check all staged JS/TS files (no directory filter — intentional, see above)
 while IFS= read -r -d '' file; do
     if [[ "$file" =~ \.(js|ts|jsx|tsx|vue)$ ]]; then
         while IFS= read -r match; do
