@@ -559,10 +559,11 @@
                 hdr.setAttribute('aria-expanded', 'true');
                 hdr.classList.add('has-errors');
                 if (!hdr.querySelector('.section-error-badge')) {
+                    var errorCount = body.querySelectorAll('.is-invalid').length;
                     var badge = document.createElement('span');
                     badge.className = 'section-error-badge';
-                    badge.setAttribute('aria-label', 'Section has errors');
-                    badge.textContent = '!';
+                    badge.setAttribute('aria-label', errorCount + ' error' + (errorCount !== 1 ? 's' : '') + ' in this section');
+                    badge.textContent = errorCount;
                     var toggleIcon = hdr.querySelector('.toggle-icon');
                     if (toggleIcon) {
                         hdr.insertBefore(badge, toggleIcon);
