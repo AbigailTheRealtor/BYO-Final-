@@ -156,6 +156,10 @@ class AgentBidMapperService
             'broker_fee_days_after_rent'          => $profileData['broker_fee_days_after_rent']          ?? '',
             'broker_fee_timing_other'             => $profileData['broker_fee_timing_other']             ?? '',
 
+            // Landlord: split payment due
+            'split_payment_due'                   => $profileData['split_payment_due']                   ?? '',
+            'split_payment_due_other'             => $profileData['split_payment_due_other']             ?? '',
+
             // Landlord: lease renewal/extension fee
             'renewal_fee_type'                    => $profileData['renewal_fee_type']                    ?? '',
             'renewal_fee_percentage'              => $profileData['renewal_fee_percentage']              ?? '',
@@ -195,6 +199,9 @@ class AgentBidMapperService
             'brokerage_relationship'              => $profileData['brokerage_relationship']              ?? '',
             'additional_details_broker'           => $profileData['additional_details_broker']           ?? '',
             'retained_deposits'                   => $profileData['retained_deposits']                   ?? '',
+
+            // All roles: agent-to-agent referral fee
+            'referral_fee_percent'                => $profileData['referral_fee_percent']                ?? '',
 
             // Seller: leasing sub-fields (exact keys from SellerAgentAuctionBid component)
             'seller_leasing_gross_other'                   => $profileData['seller_leasing_gross_other']                   ?? '',
