@@ -8,18 +8,22 @@ class AddReferralColumnsToBuyerAgentAuctionsTable extends Migration
 {
     public function up()
     {
-        Schema::table('buyer_agent_auctions', function (Blueprint $table) {
-            $table->unsignedBigInteger('referring_agent_id')->nullable()->after('sold_date');
-            $table->string('referral_source_code')->nullable()->after('referring_agent_id');
-            $table->timestamp('referral_captured_at')->nullable()->after('referral_source_code');
-            $table->boolean('referral_locked')->default(false)->after('referral_captured_at');
-        });
+        if (Schema::hasTable('buyer_agent_auctions')) {
+            Schema::table('buyer_agent_auctions', function (Blueprint $table) {
+                $table->unsignedBigInteger('referring_agent_id')->nullable()->after('sold_date');
+                $table->string('referral_source_code')->nullable()->after('referring_agent_id');
+                $table->timestamp('referral_captured_at')->nullable()->after('referral_source_code');
+                $table->boolean('referral_locked')->default(false)->after('referral_captured_at');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('buyer_agent_auctions', function (Blueprint $table) {
-            $table->dropColumn(['referring_agent_id', 'referral_source_code', 'referral_captured_at', 'referral_locked']);
-        });
+        if (Schema::hasTable('buyer_agent_auctions')) {
+            Schema::table('buyer_agent_auctions', function (Blueprint $table) {
+                $table->dropColumn(['referring_agent_id', 'referral_source_code', 'referral_captured_at', 'referral_locked']);
+            });
+        }
     }
 }

@@ -13,15 +13,19 @@ class AddAcceptedDateToLandlordAgentAuctionBids extends Migration
      */
     public function up()
     {
-        Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
-            $table->timestamp('accepted_date')->nullable()->after('accepted');
-        });
+        if (Schema::hasTable('landlord_agent_auction_bids')) {
+            Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
+                $table->timestamp('accepted_date')->nullable()->after('accepted');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
-            $table->dropColumn('accepted_date');
-        });
+        if (Schema::hasTable('landlord_agent_auction_bids')) {
+            Schema::table('landlord_agent_auction_bids', function (Blueprint $table) {
+                $table->dropColumn('accepted_date');
+            });
+        }
     }
 }
