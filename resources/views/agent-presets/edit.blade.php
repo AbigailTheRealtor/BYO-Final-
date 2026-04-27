@@ -510,6 +510,17 @@
         });
     });
 
+    // ── Auto-open sections that contain validation errors ─────────────────
+    @if ($errors->any())
+    document.querySelectorAll('.preset-section-body.preset-closed').forEach(function (body) {
+        if (body.querySelector('.is-invalid')) {
+            body.classList.remove('preset-closed');
+            var hdr = document.querySelector('[data-preset-toggle="' + body.id + '"]');
+            if (hdr) hdr.setAttribute('aria-expanded', 'true');
+        }
+    });
+    @endif
+
 })();
 </script>
 @endpush
