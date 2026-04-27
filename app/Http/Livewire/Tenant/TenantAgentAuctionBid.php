@@ -703,6 +703,46 @@ class TenantAgentAuctionBid extends Component
                     }
                 }
                 if (!empty($mapped['other_services']))            $this->other_services            = $mapped['other_services'];
+                // Broker Compensation fields from preset
+                if (!empty($mapped['commission_structure']))                $this->commission_structure                = $mapped['commission_structure'];
+                if (!empty($mapped['lease_fee_type']))                      $this->lease_fee_type                      = $mapped['lease_fee_type'];
+                if (!empty($mapped['lease_fee_flat']))                      $this->lease_fee_flat                      = $mapped['lease_fee_flat'];
+                if (!empty($mapped['lease_fee_percentage']))                $this->lease_fee_percentage                = $mapped['lease_fee_percentage'];
+                if (!empty($mapped['lease_fee_percentage_monthly_rent']))   $this->lease_fee_percentage_monthly_rent   = $mapped['lease_fee_percentage_monthly_rent'];
+                if (!empty($mapped['lease_fee_percentage_monthly_number'])) $this->lease_fee_percentage_monthly_number = $mapped['lease_fee_percentage_monthly_number'];
+                if (!empty($mapped['lease_fee_flat_combo']))                $this->lease_fee_flat_combo                = $mapped['lease_fee_flat_combo'];
+                if (!empty($mapped['lease_fee_percentage_combo']))          $this->lease_fee_percentage_combo          = $mapped['lease_fee_percentage_combo'];
+                if (!empty($mapped['lease_fee_percentage_net']))            $this->lease_fee_percentage_net            = $mapped['lease_fee_percentage_net'];
+                if (!empty($mapped['lease_fee_flat_combo_net']))            $this->lease_fee_flat_combo_net            = $mapped['lease_fee_flat_combo_net'];
+                if (!empty($mapped['lease_fee_percentage_combo_net']))      $this->lease_fee_percentage_combo_net      = $mapped['lease_fee_percentage_combo_net'];
+                if (!empty($mapped['lease_fee_other']))                     $this->lease_fee_other                     = $mapped['lease_fee_other'];
+                if (!empty($mapped['interested_purchase_fee_type']))        $this->interested_purchase_fee_type        = $mapped['interested_purchase_fee_type'];
+                if (!empty($mapped['purchase_fee_type']))                   $this->purchase_fee_type                   = $mapped['purchase_fee_type'];
+                if (!empty($mapped['purchase_fee_flat']))                   $this->purchase_fee_flat                   = $mapped['purchase_fee_flat'];
+                if (!empty($mapped['purchase_fee_percentage']))             $this->purchase_fee_percentage             = $mapped['purchase_fee_percentage'];
+                if (!empty($mapped['purchase_fee_percentage_combo']))       $this->purchase_fee_percentage_combo       = $mapped['purchase_fee_percentage_combo'];
+                if (!empty($mapped['purchase_fee_flat_combo']))             $this->purchase_fee_flat_combo             = $mapped['purchase_fee_flat_combo'];
+                if (!empty($mapped['purchase_fee_other']))                  $this->purchase_fee_other                  = $mapped['purchase_fee_other'];
+                if (!empty($mapped['interested_lease_option_agreement']))   $this->interested_lease_option_agreement   = $mapped['interested_lease_option_agreement'];
+                if (!empty($mapped['lease_type']))                          $this->lease_type                          = $mapped['lease_type'];
+                if (!empty($mapped['lease_value']))                         $this->lease_value                         = $mapped['lease_value'];
+                if (!empty($mapped['purchase_type']))                       $this->purchase_type                       = $mapped['purchase_type'];
+                if (!empty($mapped['purchase_value']))                      $this->purchase_value                      = $mapped['purchase_value'];
+                if (!empty($mapped['protection_period']))                   $this->protection_period                   = $mapped['protection_period'];
+                if (!empty($mapped['early_termination_fee_option']))        $this->early_termination_fee_option        = $mapped['early_termination_fee_option'];
+                if (!empty($mapped['early_termination_fee_amount']))        $this->early_termination_fee_amount        = $mapped['early_termination_fee_amount'];
+                if (!empty($mapped['retainer_fee_option']))                 $this->retainer_fee_option                 = $mapped['retainer_fee_option'];
+                if (!empty($mapped['retainer_fee_amount']))                 $this->retainer_fee_amount                 = $mapped['retainer_fee_amount'];
+                if (!empty($mapped['retainer_fee_application']))            $this->retainer_fee_application            = $mapped['retainer_fee_application'];
+                if (!empty($mapped['broker_fee_timing']))                   $this->broker_fee_timing                   = $mapped['broker_fee_timing'];
+                if (!empty($mapped['broker_fee_days_from_rent']))           $this->broker_fee_days_from_rent           = $mapped['broker_fee_days_from_rent'];
+                if (!empty($mapped['broker_fee_days_after_lease']))         $this->broker_fee_days_after_lease         = $mapped['broker_fee_days_after_lease'];
+                if (!empty($mapped['broker_fee_days_after_rent']))          $this->broker_fee_days_after_rent          = $mapped['broker_fee_days_after_rent'];
+                if (!empty($mapped['broker_fee_timing_other']))             $this->broker_fee_timing_other             = $mapped['broker_fee_timing_other'];
+                if (!empty($mapped['agency_agreement_timeframe']))          $this->agency_agreement_timeframe          = $mapped['agency_agreement_timeframe'];
+                if (!empty($mapped['agency_agreement_custom']))             $this->agency_agreement_custom             = $mapped['agency_agreement_custom'];
+                if (!empty($mapped['brokerage_relationship']))              $this->brokerage_relationship              = $mapped['brokerage_relationship'];
+                if (!empty($mapped['additional_details_broker']))           $this->additional_details_broker           = $mapped['additional_details_broker'];
                 $this->defaultProfileLoaded  = true;
             }
         }

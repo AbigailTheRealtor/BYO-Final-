@@ -517,6 +517,967 @@
             </div>
         </div>
 
+        {{-- ── BROKER COMPENSATION & AGENCY AGREEMENT TERMS ──────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-compensation"
+                 aria-expanded="false"
+                 aria-controls="section-compensation">
+                <i class="fa fa-dollar section-icon"></i>
+                Broker Compensation &amp; Agency Agreement Terms
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-compensation">
+                <p class="text-muted mb-4 small">These defaults will pre-fill the compensation fields in bid forms when submitting bids. All fields are optional.</p>
+
+                @if ($role === 'buyer')
+                    {{-- Buyer's Broker Commission Structure --}}
+                    <div class="mb-4">
+                        <label class="fw-bold">Buyer's Broker Commission Structure</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_commission_structure" name="commission_structure" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Buyer Pays Out-of-Pocket" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Buyer Pays Out-of-Pocket')>Buyer Pays Out-of-Pocket</option>
+                                <option value="Requested From Seller in the Offer" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Requested From Seller in the Offer')>Requested From Seller in the Offer</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {{-- Buyer's Broker Purchase Fee --}}
+                    <div class="mb-4">
+                        <label class="fw-bold">Buyer's Broker Purchase Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                <option value="Percentage of the Total Purchase Price" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
+                                <option value="Percentage of the Total Purchase Price + Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price + Flat Fee')>Percentage of the Total Purchase Price + Flat Fee</option>
+                                <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Flat Fee">
+                                <div class="input-group"><span class="input-group-text">$</span>
+                                    <input type="text" name="purchase_fee_flat" class="form-control" value="{{ old('purchase_fee_flat', $data['purchase_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Total Purchase Price">
+                                <div class="input-group">
+                                    <input type="number" name="purchase_fee_percentage" class="form-control" value="{{ old('purchase_fee_percentage', $data['purchase_fee_percentage'] ?? '') }}" placeholder="Enter percentage of the total purchase price (e.g., 3)">
+                                    <span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Total Purchase Price + Flat Fee">
+                                <div class="row g-2">
+                                    <div class="col-md-6"><div class="input-group"><input type="number" name="purchase_fee_percentage_combo" class="form-control" value="{{ old('purchase_fee_percentage_combo', $data['purchase_fee_percentage_combo'] ?? '') }}" placeholder="Enter percentage (e.g., 2)"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-md-1 text-center pt-2">+</div>
+                                    <div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat_combo" class="form-control" value="{{ old('purchase_fee_flat_combo', $data['purchase_fee_flat_combo'] ?? '') }}" placeholder="Enter flat fee (e.g., 3,000)"></div></div>
+                                </div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="other">
+                                <input type="text" name="purchase_fee_other" class="form-control" value="{{ old('purchase_fee_other', $data['purchase_fee_other'] ?? '') }}" placeholder="Enter purchase fee structure (e.g., 1,000 upfront + 2% at Closing)">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Interested in a Lease Agreement --}}
+                    <div class="mb-2">
+                        <label class="fw-bold">Interested in a Lease Agreement</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_lease_option" name="interested_lease_option" class="form-control has-icon"
+                                    data-icon="fa-solid fa-ruler" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Yes" @selected(old('interested_lease_option', $data['interested_lease_option'] ?? '') === 'Yes')>Yes</option>
+                                <option value="No" @selected(old('interested_lease_option', $data['interested_lease_option'] ?? '') === 'No')>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div data-cp-parent="cp_interested_lease_option" data-cp-values="Yes" class="mb-4 ps-3 border-start border-2 border-secondary">
+                        <label class="fw-bold mt-2">Buyer's Broker Lease Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_lease_fee_type" name="lease_fee_type" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="flat" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'flat')>Flat Fee</option>
+                                @if ($propertyType === 'residential')
+                                    <option value="Percentage of Monthly Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of Monthly Rent')>Percentage of Monthly Rent</option>
+                                    <option value="Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                    <option value="Flat Fee + Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Gross Lease Value')>Flat Fee + Percentage of the Gross Lease Value</option>
+                                @else
+                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
+                                    <option value="Flat Fee + Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Net Aggregate Rent')>Flat Fee + Percentage of the Net Aggregate Rent</option>
+                                @endif
+                                <option value="other" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="flat">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="lease_fee_flat" class="form-control" value="{{ old('lease_fee_flat', $data['lease_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 2,500)"></div>
+                            </div>
+                            @if ($propertyType === 'residential')
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Percentage of Monthly Rent">
+                                <div class="input-group"><input type="number" name="lease_fee_percentage_monthly_rent" class="form-control" value="{{ old('lease_fee_percentage_monthly_rent', $data['lease_fee_percentage_monthly_rent'] ?? '') }}" placeholder="Enter percentage of monthly rent (e.g., 100)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Percentage of the Gross Lease Value">
+                                <div class="input-group"><input type="number" name="lease_fee_percentage" class="form-control" value="{{ old('lease_fee_percentage', $data['lease_fee_percentage'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Flat Fee + Percentage of the Gross Lease Value">
+                                <div class="row g-2"><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="lease_fee_flat_combo" class="form-control" value="{{ old('lease_fee_flat_combo', $data['lease_fee_flat_combo'] ?? '') }}" placeholder="Flat fee (e.g., 1,000)"></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-6"><div class="input-group"><input type="number" name="lease_fee_percentage_combo" class="form-control" value="{{ old('lease_fee_percentage_combo', $data['lease_fee_percentage_combo'] ?? '') }}" placeholder="% gross lease value (e.g., 7)"><span class="input-group-text">%</span></div></div></div>
+                            </div>
+                            @else
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Percentage of the Net Aggregate Rent">
+                                <div class="input-group"><input type="number" name="lease_fee_percentage_net" class="form-control" value="{{ old('lease_fee_percentage_net', $data['lease_fee_percentage_net'] ?? '') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Flat Fee + Percentage of the Net Aggregate Rent">
+                                <div class="row g-2"><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="lease_fee_flat_combo_net" class="form-control" value="{{ old('lease_fee_flat_combo_net', $data['lease_fee_flat_combo_net'] ?? '') }}" placeholder="Flat fee (e.g., 1,500)"></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-6"><div class="input-group"><input type="number" name="lease_fee_percentage_combo_net" class="form-control" value="{{ old('lease_fee_percentage_combo_net', $data['lease_fee_percentage_combo_net'] ?? '') }}" placeholder="% net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div></div></div>
+                            </div>
+                            @endif
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="other">
+                                <input type="text" name="lease_fee_other" class="form-control" value="{{ old('lease_fee_other', $data['lease_fee_other'] ?? '') }}" placeholder="Enter custom lease fee structure">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($role === 'seller')
+                    {{-- Seller's Broker Purchase Fee --}}
+                    <div class="mb-4">
+                        <label class="fw-bold">Seller's Broker Purchase Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="percentage" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'percentage')>Percentage of the Total Purchase Price</option>
+                                <option value="flat" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'flat')>Flat Fee</option>
+                                <option value="combo" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'combo')>Percentage of the Total Purchase Price + Flat Fee</option>
+                                <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="flat">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat" class="form-control" value="{{ old('purchase_fee_flat', $data['purchase_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="percentage">
+                                <div class="input-group"><input type="number" name="purchase_fee_percentage" class="form-control" value="{{ old('purchase_fee_percentage', $data['purchase_fee_percentage'] ?? '') }}" placeholder="Enter percentage of total purchase price (e.g., 6)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="combo">
+                                <div class="row g-2"><div class="col-md-6"><div class="input-group"><input type="number" name="purchase_fee_percentage_combo" class="form-control" value="{{ old('purchase_fee_percentage_combo', $data['purchase_fee_percentage_combo'] ?? '') }}" placeholder="Enter percentage (e.g., 2)"><span class="input-group-text">%</span></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat_combo" class="form-control" value="{{ old('purchase_fee_flat_combo', $data['purchase_fee_flat_combo'] ?? '') }}" placeholder="Enter flat fee (e.g., 2,000)"></div></div></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type" data-cp-values="other">
+                                <input type="text" name="purchase_fee_other" class="form-control" value="{{ old('purchase_fee_other', $data['purchase_fee_other'] ?? '') }}" placeholder="Enter commission structure (e.g., Tiered fee: 5% on the first $500,000, 3% above)">
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (in_array($propertyType, ['income', 'commercial', 'business']))
+                    <div class="mb-4">
+                        <label class="fw-bold">Nominal Consideration Fee</label>
+                        <div class="input-group mt-2"><span class="input-group-text">$</span>
+                            <input type="text" name="nominal" class="form-control" value="{{ old('nominal', $data['nominal'] ?? '') }}" placeholder="Enter nominal consideration fee amount (e.g., 1,000)">
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Buyer's Broker Commission Structure --}}
+                    <div class="mb-2">
+                        <label class="fw-bold">Buyer's Broker Commission Structure</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_commission_structure" name="commission_structure" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission" @selected(old('commission_structure', $data['commission_structure'] ?? '') === "Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission")>Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission</option>
+                                <option value="Seller to Pay Buyer's Broker Separately" @selected(old('commission_structure', $data['commission_structure'] ?? '') === "Seller to Pay Buyer's Broker Separately")>Seller to Pay Buyer's Broker Separately</option>
+                                <option value="No Compensation Offered to the Buyer's Broker" @selected(old('commission_structure', $data['commission_structure'] ?? '') === "No Compensation Offered to the Buyer's Broker")>No Compensation Offered to the Buyer's Broker</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div data-cp-parent="cp_commission_structure"
+                         data-cp-values="Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission|Seller to Pay Buyer's Broker Separately"
+                         class="mb-4 ps-3 border-start border-2 border-secondary">
+                        <label class="fw-bold mt-2">Buyer's Broker Commission Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_commission_structure_type" name="commission_structure_type" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Percentage of the Total Purchase Price" @selected(old('commission_structure_type', $data['commission_structure_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
+                                <option value="Flat Fee" @selected(old('commission_structure_type', $data['commission_structure_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                <option value="other" @selected(old('commission_structure_type', $data['commission_structure_type'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_commission_structure_type" data-cp-values="Flat Fee">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="commission_structure_type_fee_flat" class="form-control" value="{{ old('commission_structure_type_fee_flat', $data['commission_structure_type_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 4,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_commission_structure_type" data-cp-values="Percentage of the Total Purchase Price">
+                                <div class="input-group"><input type="number" name="commission_structure_type_fee_percentage" class="form-control" value="{{ old('commission_structure_type_fee_percentage', $data['commission_structure_type_fee_percentage'] ?? '') }}" placeholder="Enter percentage of the total purchase price (e.g., 3)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_commission_structure_type" data-cp-values="other">
+                                <input type="text" name="commission_structure_type_fee_other" class="form-control" value="{{ old('commission_structure_type_fee_other', $data['commission_structure_type_fee_other'] ?? '') }}" placeholder="Enter custom Buyer's Broker fee structure">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Seller: Interested in Offering a Lease Agreement --}}
+                    <div class="mb-2 mt-4">
+                        <label class="fw-bold">Interested in Offering a Lease Agreement</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_purchase_fee_type" name="interested_purchase_fee_type"
+                                    class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Yes" @selected(old('interested_purchase_fee_type', $data['interested_purchase_fee_type'] ?? '') === 'Yes')>Yes</option>
+                                <option value="No" @selected(old('interested_purchase_fee_type', $data['interested_purchase_fee_type'] ?? '') === 'No')>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div data-cp-parent="cp_interested_purchase_fee_type" data-cp-values="Yes"
+                         class="mb-4 ps-3 border-start border-2 border-secondary">
+                        <label class="fw-bold mt-2">Seller's Broker Leasing Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_seller_leasing_fee_type" name="seller_leasing_fee_type"
+                                    class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                @if (in_array($propertyType, ['residential', 'income', 'vacant_land']))
+                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
+                                    <option value="Percentage of the Gross Lease Value" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                    <option value="Percentage of the First Month's Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === "Percentage of the First Month's Rent")>Percentage of the First Month's Rent</option>
+                                    <option value="Flat Fee" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                    <option value="other" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'other')>Other</option>
+                                @elseif (in_array($propertyType, ['commercial', 'business']))
+                                    <option value="Percentage of Net Aggregate Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of Net Aggregate Rent')>Percentage of Net Aggregate Rent</option>
+                                    <option value="Percentage of Gross Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of Gross Rent')>Percentage of Gross Rent</option>
+                                    <option value="Percentage of Month's Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === "Percentage of Month's Rent")>Percentage of Month's Rent</option>
+                                    <option value="Flat Fee" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                @endif
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of the Rent Due Each Rental Period">
+                                <div class="input-group"><input type="number" name="seller_leasing_gross_rental" class="form-control" value="{{ old('seller_leasing_gross_rental', $data['seller_leasing_gross_rental'] ?? '') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of the Gross Lease Value">
+                                <div class="input-group"><input type="number" name="seller_leasing_gross" class="form-control" value="{{ old('seller_leasing_gross', $data['seller_leasing_gross'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of the First Month's Rent">
+                                <div class="input-group"><input type="number" name="seller_leasing_gross_month_rent" class="form-control" value="{{ old('seller_leasing_gross_month_rent', $data['seller_leasing_gross_month_rent'] ?? '') }}" placeholder="Enter percentage of the first month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of Net Aggregate Rent">
+                                <div class="input-group"><input type="number" name="seller_leasing_gross_other" class="form-control" value="{{ old('seller_leasing_gross_other', $data['seller_leasing_gross_other'] ?? '') }}" placeholder="Enter percentage of net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of Gross Rent">
+                                <div class="row gy-2">
+                                    <div class="col-12"><div class="input-group"><input type="number" name="seller_leasing_gross_percentage" class="form-control" value="{{ old('seller_leasing_gross_percentage', $data['seller_leasing_gross_percentage'] ?? '') }}" placeholder="Enter percentage of the gross rent (e.g., 6)"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_option_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('seller_leasing_gross_sales_tax_option_gross', $data['seller_leasing_gross_sales_tax_option_gross'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('seller_leasing_gross_sales_tax_option_gross', $data['seller_leasing_gross_sales_tax_option_gross'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                </div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of Month's Rent">
+                                <div class="row gy-2">
+                                    <div class="col-12"><div class="input-group"><input type="number" name="seller_leasing_gross_month_rent" class="form-control" value="{{ old('seller_leasing_gross_month_rent', $data['seller_leasing_gross_month_rent'] ?? '') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_first_month" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('seller_leasing_gross_sales_tax_first_month', $data['seller_leasing_gross_sales_tax_first_month'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('seller_leasing_gross_sales_tax_first_month', $data['seller_leasing_gross_sales_tax_first_month'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    <div class="col-12"><label class="fw-bold">Number of Months</label><div class="input-group mt-1"><span class="input-group-text">#</span><input type="number" name="seller_leasing_gross_no_of_months" class="form-control" value="{{ old('seller_leasing_gross_no_of_months', $data['seller_leasing_gross_no_of_months'] ?? '') }}" placeholder="Enter number of months (e.g., 1)"></div></div>
+                                </div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Flat Fee">
+                                @if (in_array($propertyType, ['commercial', 'business']))
+                                <div class="mb-2"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_flat_free_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('seller_leasing_gross_sales_tax_flat_free_gross', $data['seller_leasing_gross_sales_tax_flat_free_gross'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('seller_leasing_gross_sales_tax_flat_free_gross', $data['seller_leasing_gross_sales_tax_flat_free_gross'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                @endif
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="seller_leasing_gross_purchase_fee_flat_amount" class="form-control" value="{{ old('seller_leasing_gross_purchase_fee_flat_amount', $data['seller_leasing_gross_purchase_fee_flat_amount'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="other">
+                                <input type="text" name="seller_leasing_gross_purchase_fee_other" class="form-control" value="{{ old('seller_leasing_gross_purchase_fee_other', $data['seller_leasing_gross_purchase_fee_other'] ?? '') }}" placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent)">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($role === 'landlord')
+                    @if ($propertyType === 'residential')
+                        {{-- Landlord's Broker Lease Fee (Residential) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Landlord's Broker Lease Fee</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
+                                        data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
+                                    <option value="Percentage of the Gross Lease Value" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                    <option value="Percentage of the First Month’s Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === "Percentage of the First Month’s Rent")>Percentage of the First Month’s Rent</option>
+                                    <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                    <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Rent Due Each Rental Period">
+                                    <div class="input-group"><input type="number" name="purchase_fee_rental_period" class="form-control" value="{{ old('purchase_fee_rental_period', $data['purchase_fee_rental_period'] ?? '') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Gross Lease Value">
+                                    <div class="input-group"><input type="number" name="purchase_fee_percentage_combo" class="form-control" value="{{ old('purchase_fee_percentage_combo', $data['purchase_fee_percentage_combo'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the First Month’s Rent">
+                                    <div class="input-group"><input type="number" name="purchase_fee_flat_combo" class="form-control" value="{{ old('purchase_fee_flat_combo', $data['purchase_fee_flat_combo'] ?? '') }}" placeholder="Enter percentage of the first month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Flat Fee">
+                                    <div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat" class="form-control" value="{{ old('purchase_fee_flat', $data['purchase_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="other">
+                                    <input type="text" name="purchase_fee_other" class="form-control" value="{{ old('purchase_fee_other', $data['purchase_fee_other'] ?? '') }}" placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent)">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Tenant's Broker Commission Structure --}}
+                        <div class="mb-2">
+                            <label class="fw-bold">Tenant's Broker Commission Structure</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_tenant_broker_commission_structure" name="tenant_broker_commission_structure"
+                                        class="form-control has-icon" data-icon="fa-solid fa-handshake"
+                                        onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission" @selected(old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? '') === "Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission")>Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission</option>
+                                    <option value="Landlord to Pay Tenant's Broker Separately" @selected(old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? '') === "Landlord to Pay Tenant's Broker Separately")>Landlord to Pay Tenant's Broker Separately</option>
+                                    <option value="No Compensation Offered to the Tenant's Broker" @selected(old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? '') === "No Compensation Offered to the Tenant's Broker")>No Compensation Offered to the Tenant's Broker</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div data-cp-parent="cp_tenant_broker_commission_structure"
+                             data-cp-values="Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission|Landlord to Pay Tenant's Broker Separately"
+                             class="mb-4 ps-3 border-start border-2 border-secondary">
+                            <label class="fw-bold mt-2">Tenant's Broker Commission Fee</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_tenant_broker_fee_structure" name="tenant_broker_fee_structure"
+                                        class="form-control has-icon" data-icon="fa-solid fa-ruler"
+                                        onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
+                                    <option value="Percentage of the Gross Lease Value" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                    <option value="Percentage of the First Month’s Rent" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === "Percentage of the First Month’s Rent")>Percentage of the First Month’s Rent</option>
+                                    <option value="Flat fee" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Flat fee')>Flat Fee</option>
+                                    <option value="Other" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Other')>Other</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <div data-cp-parent="cp_tenant_broker_fee_structure" data-cp-values="Percentage of the Rent Due Each Rental Period">
+                                    <div class="input-group"><input type="number" name="tenant_broker_percentage" class="form-control" value="{{ old('tenant_broker_percentage', $data['tenant_broker_percentage'] ?? '') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 5)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_tenant_broker_fee_structure" data-cp-values="Percentage of the Gross Lease Value">
+                                    <div class="input-group"><input type="number" name="tenant_broker_gross_lease" class="form-control" value="{{ old('tenant_broker_gross_lease', $data['tenant_broker_gross_lease'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 5)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_tenant_broker_fee_structure" data-cp-values="Percentage of the First Month’s Rent">
+                                    <div class="input-group"><input type="number" name="tenant_broker_first_month_rent" class="form-control" value="{{ old('tenant_broker_first_month_rent', $data['tenant_broker_first_month_rent'] ?? '') }}" placeholder="Enter percentage of the first month's rent (e.g., 50)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_tenant_broker_fee_structure" data-cp-values="Flat fee">
+                                    <div class="input-group"><span class="input-group-text">$</span><input type="text" name="tenant_broker_flat_fee" class="form-control" value="{{ old('tenant_broker_flat_fee', $data['tenant_broker_flat_fee'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 1,000)"></div>
+                                </div>
+                                <div data-cp-parent="cp_tenant_broker_fee_structure" data-cp-values="Other">
+                                    <input type="text" name="tenant_broker_other" class="form-control" value="{{ old('tenant_broker_other', $data['tenant_broker_other'] ?? '') }}" placeholder="Enter Tenant's Broker commission arrangement">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Payment Timing for Broker Fees (Landlord Residential) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Payment Timing for Broker Fees</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
+                                        data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Deducted from Rent Collected" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Deducted from Rent Collected')>Deducted from Rent Collected</option>
+                                    <option value="Paid Within Calendar Days After Executed Lease" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days After Executed Lease')>Paid Within Calendar Days After Executed Lease</option>
+                                    <option value="Paid Within Calendar Days of Tenant Rent Payment" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days of Tenant Rent Payment')>Paid Within Calendar Days of Tenant Rent Payment</option>
+                                    <option value="other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'other')>Other</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Deducted from Rent Collected">
+                                    <div class="input-group"><span class="input-group-text">#</span><input type="number" name="broker_fee_days_from_rent" class="form-control" value="{{ old('broker_fee_days_from_rent', $data['broker_fee_days_from_rent'] ?? '') }}" placeholder="Enter number of calendar days (e.g., 5)"></div>
+                                </div>
+                                <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Paid Within Calendar Days After Executed Lease">
+                                    <div class="input-group"><span class="input-group-text">#</span><input type="number" name="broker_fee_days_after_lease" class="form-control" value="{{ old('broker_fee_days_after_lease', $data['broker_fee_days_after_lease'] ?? '') }}" placeholder="Enter number of calendar days (e.g., 5)"></div>
+                                </div>
+                                <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Paid Within Calendar Days of Tenant Rent Payment">
+                                    <div class="input-group"><span class="input-group-text">#</span><input type="number" name="broker_fee_days_after_rent" class="form-control" value="{{ old('broker_fee_days_after_rent', $data['broker_fee_days_after_rent'] ?? '') }}" placeholder="Enter number of calendar days (e.g., 5)"></div>
+                                </div>
+                                <div data-cp-parent="cp_broker_fee_timing" data-cp-values="other">
+                                    <input type="text" name="broker_fee_timing_other" class="form-control" value="{{ old('broker_fee_timing_other', $data['broker_fee_timing_other'] ?? '') }}" placeholder="Describe payment arrangement">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Lease Renewal/Extension Fee (Landlord Residential) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Lease Renewal/Extension Fee</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_renewal_fee_type_res" name="renewal_fee_type" class="form-control has-icon"
+                                        data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
+                                    <option value="Percentage of the Gross Lease Value" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                    <option value="Percentage of the First Month's Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === "Percentage of the First Month’s Rent")>Percentage of the First Month's Rent</option>
+                                    <option value="Flat Fee" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                    <option value="other" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'other')>Other</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="Percentage of the Rent Due Each Rental Period">
+                                    <div class="input-group"><input type="number" name="renewal_fee_percentage" class="form-control" value="{{ old('renewal_fee_percentage', $data['renewal_fee_percentage'] ?? '') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="Percentage of the Gross Lease Value">
+                                    <div class="input-group"><input type="number" name="renewal_fee_lease_value" class="form-control" value="{{ old('renewal_fee_lease_value', $data['renewal_fee_lease_value'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="Percentage of the First Month's Rent">
+                                    <div class="input-group"><input type="number" name="renewal_fee_first_month" class="form-control" value="{{ old('renewal_fee_first_month', $data['renewal_fee_first_month'] ?? '') }}" placeholder="Enter percentage of first month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="Flat Fee">
+                                    <div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_free" class="form-control" value="{{ old('renewal_fee_flat_free', $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 2,000)"></div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_res" data-cp-values="other">
+                                    <input type="text" name="renewal_fee_custom" class="form-control" value="{{ old('renewal_fee_custom', $data['renewal_fee_custom'] ?? '') }}" placeholder="Enter commission structure (e.g., $500 flat fee plus 5% of the gross lease value)">
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($propertyType === 'commercial')
+                        {{-- Landlord's Broker Lease Fee (Commercial) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Landlord's Broker Lease Fee</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
+                                        data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
+                                    <option value="Percentage of the Gross Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Gross Rent')>Percentage of the Gross Rent</option>
+                                    <option value="Percentage of Month’s Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === "Percentage of Month’s Rent")>Percentage of Month’s Rent</option>
+                                    <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                    <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Net Aggregate Rent">
+                                    <div class="input-group"><input type="number" name="purchase_fee_net_aggregate" class="form-control" value="{{ old('purchase_fee_net_aggregate', $data['purchase_fee_net_aggregate'] ?? '') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 5)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Gross Rent">
+                                    <div class="row gy-2">
+                                        <div class="col-12"><div class="input-group"><input type="number" name="purchase_fee_gross_rent" class="form-control" value="{{ old('purchase_fee_gross_rent', $data['purchase_fee_gross_rent'] ?? '') }}" placeholder="Enter percentage of the gross rent (e.g., 5)"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('sales_tax_option_gross', $data['sales_tax_option_gross'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('sales_tax_option_gross', $data['sales_tax_option_gross'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    </div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of Month’s Rent">
+                                    <div class="row gy-2">
+                                        <div class="col-12"><div class="input-group"><input type="number" name="purchase_fee_monthly_percentage" class="form-control" value="{{ old('purchase_fee_monthly_percentage', $data['purchase_fee_monthly_percentage'] ?? '') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-12"><label class="fw-bold">Number of Months</label><div class="input-group mt-1"><span class="input-group-text">#</span><input type="number" name="purchase_fee_months" class="form-control" value="{{ old('purchase_fee_months', $data['purchase_fee_months'] ?? '') }}" placeholder="Enter number of months (e.g., 1)"></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_monthly" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('sales_tax_option_monthly', $data['sales_tax_option_monthly'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('sales_tax_option_monthly', $data['sales_tax_option_monthly'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    </div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Flat Fee">
+                                    <div class="row gy-2">
+                                        <div class="col-12"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat_commercial" class="form-control" value="{{ old('purchase_fee_flat_commercial', $data['purchase_fee_flat_commercial'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 3,000)"></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_flat" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('sales_tax_option_flat', $data['sales_tax_option_flat'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('sales_tax_option_flat', $data['sales_tax_option_flat'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    </div>
+                                </div>
+                                <div data-cp-parent="cp_purchase_fee_type" data-cp-values="other">
+                                    <input type="text" name="purchase_fee_other_commercial" class="form-control" value="{{ old('purchase_fee_other_commercial', $data['purchase_fee_other_commercial'] ?? '') }}" placeholder="Enter lease fee structure">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Payment Timing for Broker Fees (Landlord Commercial) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Payment Timing for Broker Fees</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
+                                        data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="full_execution" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'full_execution')>Full amount upon execution of lease, sales contract, or other transfer agreement</option>
+                                    <option value="50% due upon execution, 50% due upon commencement of agreement" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === '50% due upon execution, 50% due upon commencement of agreement')>50% due upon execution, 50% due upon commencement of agreement</option>
+                                    <option value="50% due upon execution, 50% due upon occupancy of premises" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === '50% due upon execution, 50% due upon occupancy of premises')>50% due upon execution, 50% due upon occupancy of premises</option>
+                                    <option value="Other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Other')>Other</option>
+                                </select>
+                            </div>
+                            <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Other" class="mt-2">
+                                <input type="text" name="broker_fee_timing_other" class="form-control" value="{{ old('broker_fee_timing_other', $data['broker_fee_timing_other'] ?? '') }}" placeholder="Describe payment arrangement">
+                            </div>
+                        </div>
+
+                        {{-- Lease Renewal/Extension Fee (Landlord Commercial) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Lease Renewal/Extension Fee</label>
+                            <div class="input-cover mt-2">
+                                <select id="cp_renewal_fee_type_com" name="renewal_fee_type" class="form-control has-icon"
+                                        data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                    <option value="">Select</option>
+                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
+                                    <option value="Percentage of the Gross Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Gross Rent')>Percentage of the Gross Rent</option>
+                                    <option value="Percentage of Month's Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === "Percentage of Month’s Rent")>Percentage of Month's Rent</option>
+                                    <option value="Flat Fee" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                    <option value="other" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'other')>Other</option>
+                                </select>
+                            </div>
+                            <div class="mt-2">
+                                <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Percentage of the Net Aggregate Rent">
+                                    <div class="input-group"><input type="number" name="renewal_fee_percentage" class="form-control" value="{{ old('renewal_fee_percentage', $data['renewal_fee_percentage'] ?? '') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 5)"><span class="input-group-text">%</span></div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Percentage of the Gross Rent">
+                                    <div class="row gy-2">
+                                        <div class="col-12"><div class="input-group"><input type="number" name="renewal_fee_lease_value" class="form-control" value="{{ old('renewal_fee_lease_value', $data['renewal_fee_lease_value'] ?? '') }}" placeholder="Enter percentage of the gross rent (e.g., 5)"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_lease_value" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('renewal_fee_sales_tax_lease_value', $data['renewal_fee_sales_tax_lease_value'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('renewal_fee_sales_tax_lease_value', $data['renewal_fee_sales_tax_lease_value'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    </div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Percentage of Month's Rent">
+                                    <div class="row gy-2">
+                                        <div class="col-12"><div class="input-group"><input type="number" name="renewal_fee_first_month" class="form-control" value="{{ old('renewal_fee_first_month', $data['renewal_fee_first_month'] ?? '') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-12"><label class="fw-bold">Number of Months</label><div class="input-group mt-1"><span class="input-group-text">#</span><input type="number" name="renewal_fee_no_of_months" class="form-control" value="{{ old('renewal_fee_no_of_months', $data['renewal_fee_no_of_months'] ?? '') }}" placeholder="Enter number of months (e.g., 1)"></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_first_month" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('renewal_fee_sales_tax_first_month', $data['renewal_fee_sales_tax_first_month'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('renewal_fee_sales_tax_first_month', $data['renewal_fee_sales_tax_first_month'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    </div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Flat Fee">
+                                    <div class="row gy-2">
+                                        <div class="col-12"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_free" class="form-control" value="{{ old('renewal_fee_flat_free', $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_flat_fee" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('renewal_fee_sales_tax_flat_fee', $data['renewal_fee_sales_tax_flat_fee'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('renewal_fee_sales_tax_flat_fee', $data['renewal_fee_sales_tax_flat_fee'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    </div>
+                                </div>
+                                <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="other">
+                                    <input type="text" name="renewal_fee_custom" class="form-control" value="{{ old('renewal_fee_custom', $data['renewal_fee_custom'] ?? '') }}" placeholder="Describe commission fee (e.g., 50% of first month's rent plus 3% of the net aggregate rent)">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Expansion Commission for Lease Amendment (Landlord Commercial) --}}
+                        <div class="mb-4">
+                            <label class="fw-bold">Expansion Commission for Lease Amendment (%)</label>
+                            <div class="input-group mt-2">
+                                <input type="number" name="expansion_commission_percentage" class="form-control"
+                                       value="{{ old('expansion_commission_percentage', $data['expansion_commission_percentage'] ?? '') }}"
+                                       placeholder="Enter percentage of original commission for expansion (e.g., 50)">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Interested in Property Management (Landlord, all property types) --}}
+                    <div class="mb-2 mt-2">
+                        <label class="fw-bold">Interested in Property Management</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_in_property_management" name="interested_in_property_management"
+                                    class="form-control has-icon" data-icon="fa-solid fa-ruler"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="yes" @selected(old('interested_in_property_management', $data['interested_in_property_management'] ?? '') === 'yes')>Yes</option>
+                                <option value="no" @selected(old('interested_in_property_management', $data['interested_in_property_management'] ?? '') === 'no')>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div data-cp-parent="cp_interested_in_property_management" data-cp-values="yes"
+                         class="mb-4 ps-3 border-start border-2 border-secondary">
+                        <label class="fw-bold mt-2">Property Management Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_in_property_management_fee" name="interested_in_property_management_fee"
+                                    class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Percentage of the Gross Lease Value" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                <option value="Percentage of the Rent Due Each Rental Period" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
+                                <option value="Flat Fee" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                <option value="Other" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_interested_in_property_management_fee" data-cp-values="Percentage of the Gross Lease Value">
+                                <div class="input-group"><input type="number" name="interested_in_property_management_fee_gross_lease" class="form-control" value="{{ old('interested_in_property_management_fee_gross_lease', $data['interested_in_property_management_fee_gross_lease'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_interested_in_property_management_fee" data-cp-values="Percentage of the Rent Due Each Rental Period">
+                                <div class="input-group"><input type="number" name="interested_in_property_management_fee_rental_periord" class="form-control" value="{{ old('interested_in_property_management_fee_rental_periord', $data['interested_in_property_management_fee_rental_periord'] ?? '') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_interested_in_property_management_fee" data-cp-values="Flat Fee">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="interested_in_property_management_fee_flate_free" class="form-control" value="{{ old('interested_in_property_management_fee_flate_free', $data['interested_in_property_management_fee_flate_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 1,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_interested_in_property_management_fee" data-cp-values="Other">
+                                <input type="text" name="interested_in_property_management_fee_other" class="form-control" value="{{ old('interested_in_property_management_fee_other', $data['interested_in_property_management_fee_other'] ?? '') }}" placeholder="Enter property management fee (e.g., 4% of the gross lease value + $500)">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Interested in Selling (Landlord) --}}
+                    <div class="mb-2 mt-2">
+                        <label class="fw-bold">Interested in Selling</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_in_selling" name="interested_in_selling"
+                                    class="form-control has-icon" data-icon="fa-solid fa-ruler"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Yes" @selected(old('interested_in_selling', $data['interested_in_selling'] ?? '') === 'Yes')>Yes</option>
+                                <option value="No" @selected(old('interested_in_selling', $data['interested_in_selling'] ?? '') === 'No')>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div data-cp-parent="cp_interested_in_selling" data-cp-values="Yes"
+                         class="mb-4 ps-3 border-start border-2 border-secondary">
+                        <label class="fw-bold mt-2">Landlord's Broker Purchase Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_in_selling_type" name="interested_in_selling_type"
+                                    class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Percentage of the Total Purchase Price" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
+                                <option value="Percentage of the Total Purchase Price + Flat Fee" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Percentage of the Total Purchase Price + Flat Fee')>Percentage of the Total Purchase Price + Flat Fee</option>
+                                <option value="Flat Fee" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                <option value="Other" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_interested_in_selling_type" data-cp-values="Percentage of the Total Purchase Price">
+                                <div class="input-group"><input type="number" name="landlord_broker_purchase_price" class="form-control" value="{{ old('landlord_broker_purchase_price', $data['landlord_broker_purchase_price'] ?? '') }}" placeholder="Enter percentage of total purchase price (e.g., 6)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_interested_in_selling_type" data-cp-values="Percentage of the Total Purchase Price + Flat Fee">
+                                <div class="row g-2"><div class="col-md-6"><div class="input-group"><input type="number" name="landlord_broker_percentage_price" class="form-control" value="{{ old('landlord_broker_percentage_price', $data['landlord_broker_percentage_price'] ?? '') }}" placeholder="Enter percentage of purchase price (e.g., 2)"><span class="input-group-text">%</span></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="landlord_broker_dollar_price" class="form-control" value="{{ old('landlord_broker_dollar_price', $data['landlord_broker_dollar_price'] ?? '') }}" placeholder="Flat fee (e.g., 2,000)"></div></div></div>
+                            </div>
+                            <div data-cp-parent="cp_interested_in_selling_type" data-cp-values="Flat Fee">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="landlord_broker_flate_fee" class="form-control" value="{{ old('landlord_broker_flate_fee', $data['landlord_broker_flate_fee'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_interested_in_selling_type" data-cp-values="Other">
+                                <input type="text" name="landlord_broker_other" class="form-control" value="{{ old('landlord_broker_other', $data['landlord_broker_other'] ?? '') }}" placeholder="Enter purchase fee structure (e.g., Tiered: 5% on the first $500,000, 3% on any amount above $500,000)">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($role === 'tenant')
+                    {{-- Tenant's Broker Commission Structure --}}
+                    <div class="mb-4">
+                        <label class="fw-bold">Tenant's Broker Commission Structure</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_commission_structure" name="commission_structure" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Out-of-Pocket Payment" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Out-of-Pocket Payment')>Tenant Pays Out-of-Pocket</option>
+                                <option value="Included in Offer" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Included in Offer')>Requested From Landlord in the Offer</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {{-- Tenant's Broker Lease Fee --}}
+                    <div class="mb-4">
+                        <label class="fw-bold">Tenant's Broker Lease Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_lease_fee_type" name="lease_fee_type" class="form-control has-icon"
+                                    data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Flat Fee" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                @if ($propertyType === 'residential')
+                                    <option value="Percentage of Monthly Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of Monthly Rent')>Percentage of Monthly Rent</option>
+                                    <option value="Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
+                                    <option value="Flat Fee + Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Gross Lease Value')>Flat Fee + Percentage of the Gross Lease Value</option>
+                                @elseif ($propertyType === 'commercial')
+                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
+                                    <option value="Flat Fee + Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Net Aggregate Rent')>Flat Fee + Percentage of the Net Aggregate Rent</option>
+                                @endif
+                                <option value="other" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Flat Fee">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="lease_fee_flat" class="form-control" value="{{ old('lease_fee_flat', $data['lease_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                            </div>
+                            @if ($propertyType === 'residential')
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Percentage of Monthly Rent">
+                                <div class="input-group"><input type="number" name="lease_fee_percentage_monthly_rent" class="form-control" value="{{ old('lease_fee_percentage_monthly_rent', $data['lease_fee_percentage_monthly_rent'] ?? '') }}" placeholder="Enter percentage of monthly rent (e.g., 100)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Percentage of the Gross Lease Value">
+                                <div class="input-group"><input type="number" name="lease_fee_percentage" class="form-control" value="{{ old('lease_fee_percentage', $data['lease_fee_percentage'] ?? '') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Flat Fee + Percentage of the Gross Lease Value">
+                                <div class="row g-2"><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="lease_fee_flat_combo" class="form-control" value="{{ old('lease_fee_flat_combo', $data['lease_fee_flat_combo'] ?? '') }}" placeholder="Flat fee (e.g., 1,000)"></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-6"><div class="input-group"><input type="number" name="lease_fee_percentage_combo" class="form-control" value="{{ old('lease_fee_percentage_combo', $data['lease_fee_percentage_combo'] ?? '') }}" placeholder="% gross lease value (e.g., 7)"><span class="input-group-text">%</span></div></div></div>
+                            </div>
+                            @elseif ($propertyType === 'commercial')
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Percentage of the Net Aggregate Rent">
+                                <div class="input-group"><input type="number" name="lease_fee_percentage_net" class="form-control" value="{{ old('lease_fee_percentage_net', $data['lease_fee_percentage_net'] ?? '') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="Flat Fee + Percentage of the Net Aggregate Rent">
+                                <div class="row g-2"><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="lease_fee_flat_combo_net" class="form-control" value="{{ old('lease_fee_flat_combo_net', $data['lease_fee_flat_combo_net'] ?? '') }}" placeholder="Flat fee (e.g., 1,500)"></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-6"><div class="input-group"><input type="number" name="lease_fee_percentage_combo_net" class="form-control" value="{{ old('lease_fee_percentage_combo_net', $data['lease_fee_percentage_combo_net'] ?? '') }}" placeholder="% net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div></div></div>
+                            </div>
+                            @endif
+                            <div data-cp-parent="cp_lease_fee_type" data-cp-values="other">
+                                <input type="text" name="lease_fee_other" class="form-control" value="{{ old('lease_fee_other', $data['lease_fee_other'] ?? '') }}" placeholder="Enter the total lease fee amount and payment structure">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Payment Timing for Broker Fees (Tenant, residential only) --}}
+                    @if ($propertyType === 'residential')
+                    <div class="mb-4">
+                        <label class="fw-bold">Payment Timing for Broker Fees</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
+                                    data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Deducted from Rent Collected" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Deducted from Rent Collected')>Deducted from Rent Collected</option>
+                                <option value="Paid Within Calendar Days After Executed Lease" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days After Executed Lease')>Paid Within Calendar Days After Executed Lease</option>
+                                <option value="Paid Within Calendar Days of Tenant Rent Payment" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days of Tenant Rent Payment')>Paid Within Calendar Days of Tenant Rent Payment</option>
+                                <option value="other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Deducted from Rent Collected">
+                                <div class="input-group"><span class="input-group-text">#</span><input type="number" name="broker_fee_days_from_rent" class="form-control" value="{{ old('broker_fee_days_from_rent', $data['broker_fee_days_from_rent'] ?? '') }}" placeholder="Enter number of calendar days (e.g., 5)"></div>
+                            </div>
+                            <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Paid Within Calendar Days After Executed Lease">
+                                <div class="input-group"><span class="input-group-text">#</span><input type="number" name="broker_fee_days_after_lease" class="form-control" value="{{ old('broker_fee_days_after_lease', $data['broker_fee_days_after_lease'] ?? '') }}" placeholder="Enter number of calendar days (e.g., 5)"></div>
+                            </div>
+                            <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Paid Within Calendar Days of Tenant Rent Payment">
+                                <div class="input-group"><span class="input-group-text">#</span><input type="number" name="broker_fee_days_after_rent" class="form-control" value="{{ old('broker_fee_days_after_rent', $data['broker_fee_days_after_rent'] ?? '') }}" placeholder="Enter number of calendar days (e.g., 5)"></div>
+                            </div>
+                            <div data-cp-parent="cp_broker_fee_timing" data-cp-values="other">
+                                <input type="text" name="broker_fee_timing_other" class="form-control" value="{{ old('broker_fee_timing_other', $data['broker_fee_timing_other'] ?? '') }}" placeholder="Describe payment arrangement">
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Payment Timing for Broker Fees (Tenant, commercial) --}}
+                    @if ($propertyType === 'commercial')
+                    <div class="mb-4">
+                        <label class="fw-bold">Payment Timing for Broker Fees</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
+                                    data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="full_execution" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'full_execution')>Full amount upon execution of lease, sales contract, or other transfer agreement</option>
+                                <option value="half_execution_half_commencement" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'half_execution_half_commencement')>50% due upon execution, 50% due upon commencement of agreement</option>
+                                <option value="half_execution_half_occupancy" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'half_execution_half_occupancy')>50% due upon execution, 50% due upon occupancy of premises</option>
+                                <option value="other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div data-cp-parent="cp_broker_fee_timing" data-cp-values="other" class="mt-2">
+                            <input type="text" name="broker_fee_timing_other" class="form-control" value="{{ old('broker_fee_timing_other', $data['broker_fee_timing_other'] ?? '') }}" placeholder="Describe payment arrangement">
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Tenant: Interested in Purchasing a Property --}}
+                    <div class="mb-2 mt-4">
+                        <label class="fw-bold">Interested in Purchasing a Property</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_interested_purchase_fee_type" name="interested_purchase_fee_type"
+                                    class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Yes" @selected(old('interested_purchase_fee_type', $data['interested_purchase_fee_type'] ?? '') === 'Yes')>Yes</option>
+                                <option value="No" @selected(old('interested_purchase_fee_type', $data['interested_purchase_fee_type'] ?? '') === 'No')>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div data-cp-parent="cp_interested_purchase_fee_type" data-cp-values="Yes"
+                         class="mb-4 ps-3 border-start border-2 border-secondary">
+                        <label class="fw-bold mt-2">Tenant's Broker Purchase Fee</label>
+                        <div class="input-cover mt-2">
+                            <select id="cp_purchase_fee_type_tenant" name="purchase_fee_type"
+                                    class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                    onchange="_cpTrigger(this.id)">
+                                <option value="">Select</option>
+                                <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
+                                <option value="Percentage of the Total Purchase Price" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
+                                <option value="Percentage of the Total Purchase Price + Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price + Flat Fee')>Percentage of the Total Purchase Price + Flat Fee</option>
+                                <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                            </select>
+                        </div>
+                        <div class="mt-2">
+                            <div data-cp-parent="cp_purchase_fee_type_tenant" data-cp-values="Flat Fee">
+                                <div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat" class="form-control" value="{{ old('purchase_fee_flat', $data['purchase_fee_flat'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type_tenant" data-cp-values="Percentage of the Total Purchase Price">
+                                <div class="input-group"><input type="number" name="purchase_fee_percentage" class="form-control" value="{{ old('purchase_fee_percentage', $data['purchase_fee_percentage'] ?? '') }}" placeholder="Enter percentage of total purchase price (e.g., 3)"><span class="input-group-text">%</span></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type_tenant" data-cp-values="Percentage of the Total Purchase Price + Flat Fee">
+                                <div class="row g-2"><div class="col-md-6"><div class="input-group"><input type="number" name="purchase_fee_percentage_combo" class="form-control" value="{{ old('purchase_fee_percentage_combo', $data['purchase_fee_percentage_combo'] ?? '') }}" placeholder="Enter % of total purchase price (e.g., 3)"><span class="input-group-text">%</span></div></div><div class="col-md-1 text-center pt-2">+</div><div class="col-md-5"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat_combo" class="form-control" value="{{ old('purchase_fee_flat_combo', $data['purchase_fee_flat_combo'] ?? '') }}" placeholder="Flat fee (e.g., 2,000)"></div></div></div>
+                            </div>
+                            <div data-cp-parent="cp_purchase_fee_type_tenant" data-cp-values="other">
+                                <input type="text" name="purchase_fee_other" class="form-control" value="{{ old('purchase_fee_other', $data['purchase_fee_other'] ?? '') }}" placeholder="Enter purchase fee structure (e.g., 3% if sale price is under $500,000, 2% above)">
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Interested in a Lease-Option Agreement (all roles) --}}
+                <div class="mb-2">
+                    <label class="fw-bold">Interested in a Lease-Option Agreement</label>
+                    <div class="input-cover mt-2">
+                        <select id="cp_interested_lease_option_agreement" name="interested_lease_option_agreement"
+                                class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
+                                onchange="_cpTrigger(this.id)">
+                            <option value="">Select</option>
+                            <option value="Yes" @selected(old('interested_lease_option_agreement', $data['interested_lease_option_agreement'] ?? '') === 'Yes')>Yes</option>
+                            <option value="No" @selected(old('interested_lease_option_agreement', $data['interested_lease_option_agreement'] ?? '') === 'No')>No</option>
+                        </select>
+                    </div>
+                </div>
+                <div data-cp-parent="cp_interested_lease_option_agreement" data-cp-values="Yes"
+                     class="mb-4 ps-3 border-start border-2 border-secondary">
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Compensation for Creating the Lease-Option Agreement</label>
+                            <div class="input-group">
+                                <select name="lease_type" class="form-select" style="max-width:80px">
+                                    <option value="percent" @selected(old('lease_type', $data['lease_type'] ?? 'percent') === 'percent')>%</option>
+                                    <option value="flat" @selected(old('lease_type', $data['lease_type'] ?? '') === 'flat')>$</option>
+                                </select>
+                                <input type="text" name="lease_value" class="form-control" value="{{ old('lease_value', $data['lease_value'] ?? '') }}" placeholder="Enter amount (e.g., 5 or 1,500)">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Compensation if Purchase Option is Exercised</label>
+                            <div class="input-group">
+                                <select name="purchase_type" class="form-select" style="max-width:80px">
+                                    <option value="percent" @selected(old('purchase_type', $data['purchase_type'] ?? 'percent') === 'percent')>%</option>
+                                    <option value="flat" @selected(old('purchase_type', $data['purchase_type'] ?? '') === 'flat')>$</option>
+                                </select>
+                                <input type="text" name="purchase_value" class="form-control" value="{{ old('purchase_value', $data['purchase_value'] ?? '') }}" placeholder="Enter amount (e.g., 6 or 5,000)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Protection Period --}}
+                <div class="mb-4">
+                    <label class="fw-bold">Protection Period Timeframe (Days)</label>
+                    <div class="input-cover mt-2">
+                        <input type="number" name="protection_period" class="form-control has-icon"
+                               data-icon="fa-solid fa-shield-alt"
+                               value="{{ old('protection_period', $data['protection_period'] ?? '') }}"
+                               placeholder="Enter protection period in days (e.g., 90)">
+                    </div>
+                </div>
+
+                {{-- Early Termination Fee --}}
+                @php
+                    $etfYesVal = ($role === 'tenant') ? 'Yes' : 'yes';
+                    $etfNoVal  = ($role === 'tenant') ? 'No'  : 'no';
+                    $etfCur    = old('early_termination_fee_option', $data['early_termination_fee_option'] ?? '');
+                @endphp
+                <div class="mb-2">
+                    <label class="fw-bold">Early Termination Fee</label>
+                    <div class="input-cover mt-2">
+                        <select id="cp_early_termination_fee_option" name="early_termination_fee_option"
+                                class="form-control has-icon" data-icon="fa-solid fa-ban"
+                                onchange="_cpTrigger(this.id)">
+                            <option value="">Select</option>
+                            <option value="{{ $etfYesVal }}" @selected($etfCur === $etfYesVal)>Yes</option>
+                            <option value="{{ $etfNoVal }}" @selected($etfCur === $etfNoVal)>No</option>
+                        </select>
+                    </div>
+                </div>
+                <div data-cp-parent="cp_early_termination_fee_option" data-cp-values="{{ $etfYesVal }}" class="mb-4">
+                    <div class="input-group mt-2"><span class="input-group-text">$</span>
+                        <input type="text" name="early_termination_fee_amount" class="form-control"
+                               value="{{ old('early_termination_fee_amount', $data['early_termination_fee_amount'] ?? '') }}"
+                               placeholder="Enter early termination fee amount (e.g., 2,000)">
+                    </div>
+                </div>
+
+                {{-- Seller: Retained Deposits --}}
+                @if ($role === 'seller')
+                <div class="mb-4">
+                    <label class="fw-bold">Seller's Broker's Share of Retained Deposits (%)</label>
+                    <div class="input-group mt-2">
+                        <input type="number" name="retained_deposits" class="form-control"
+                               value="{{ old('retained_deposits', $data['retained_deposits'] ?? '') }}"
+                               placeholder="Enter percentage of retained deposit if Buyer defaults (e.g., 50)">
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Retainer Fee (buyer, seller, tenant only) --}}
+                @if (in_array($role, ['buyer', 'seller', 'tenant']))
+                @php
+                    $rtfYesVal = ($role === 'tenant') ? 'Yes' : 'yes';
+                    $rtfNoVal  = ($role === 'tenant') ? 'No'  : 'no';
+                    $rtfCur    = old('retainer_fee_option', $data['retainer_fee_option'] ?? '');
+                @endphp
+                <div class="mb-2">
+                    <label class="fw-bold">Retainer Fee</label>
+                    <div class="input-cover mt-2">
+                        <select id="cp_retainer_fee_option" name="retainer_fee_option"
+                                class="form-control has-icon" data-icon="fa-solid fa-receipt"
+                                onchange="_cpTrigger(this.id)">
+                            <option value="">Select</option>
+                            <option value="{{ $rtfYesVal }}" @selected($rtfCur === $rtfYesVal)>Yes</option>
+                            <option value="{{ $rtfNoVal }}" @selected($rtfCur === $rtfNoVal)>No</option>
+                        </select>
+                    </div>
+                </div>
+                <div data-cp-parent="cp_retainer_fee_option" data-cp-values="{{ $rtfYesVal }}" class="mb-4 ps-3 border-start border-2 border-secondary">
+                    <div class="input-group mt-2"><span class="input-group-text">$</span>
+                        <input type="text" name="retainer_fee_amount" class="form-control"
+                               value="{{ old('retainer_fee_amount', $data['retainer_fee_amount'] ?? '') }}"
+                               placeholder="Enter retainer fee amount (e.g., 500)">
+                    </div>
+                    <div class="input-cover mt-2">
+                        <select name="retainer_fee_application" class="form-control has-icon" data-icon="fa-solid fa-check-circle">
+                            <option value="">Select application</option>
+                            @if ($role === 'buyer')
+                                <option value="Applied toward final compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Applied toward final compensation')>Applied toward final compensation</option>
+                                <option value="Charged in addition to final compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Charged in addition to final compensation')>Charged in addition to final compensation</option>
+                            @elseif ($role === 'seller')
+                                <option value="Applied Toward Final Compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Applied Toward Final Compensation')>Applied Toward Final Compensation</option>
+                                <option value="Charged in Addition to Final Compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Charged in Addition to Final Compensation')>Charged in Addition to Final Compensation</option>
+                            @elseif ($role === 'tenant')
+                                <option value="applied" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'applied')>Applied toward final compensation</option>
+                                <option value="additional" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'additional')>Charged in addition to final compensation</option>
+                            @endif
+                        </select>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Brokerage Relationship (all roles) --}}
+                <div class="mb-4">
+                    <label class="fw-bold">Acceptable Brokerage Relationship</label>
+                    <div class="input-cover mt-2">
+                        <select name="brokerage_relationship" class="form-control has-icon" data-icon="fa-solid fa-handshake">
+                            <option value="">Select</option>
+                            <option value="Transaction Broker Representation" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'Transaction Broker Representation')>Transaction Broker Representation</option>
+                            <option value="Single Agent Representation" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'Single Agent Representation')>Single Agent Representation</option>
+                            <option value="Dual Agency Representation" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'Dual Agency Representation')>Dual Agency Representation</option>
+                            <option value="No Brokerage Relationship" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'No Brokerage Relationship')>No Brokerage Relationship</option>
+                        </select>
+                    </div>
+                </div>
+
+                {{-- Agency Agreement Timeframe --}}
+                @php
+                    $aatCustomVal = ($role === 'buyer') ? 'custom' : 'Other';
+                    $aatCur       = old('agency_agreement_timeframe', $data['agency_agreement_timeframe'] ?? '');
+                @endphp
+                <div class="mb-2">
+                    <label class="fw-bold">Agency Agreement Timeframe</label>
+                    <div class="input-cover mt-2">
+                        <select id="cp_agency_agreement_timeframe" name="agency_agreement_timeframe"
+                                class="form-control has-icon" data-icon="fa-solid fa-calendar"
+                                onchange="_cpTrigger(this.id)">
+                            <option value="">Select</option>
+                            <option value="3 Months" @selected($aatCur === '3 Months')>3 Months</option>
+                            <option value="6 Months" @selected($aatCur === '6 Months')>6 Months</option>
+                            <option value="9 Months" @selected($aatCur === '9 Months')>9 Months</option>
+                            <option value="12 Months" @selected($aatCur === '12 Months')>12 Months</option>
+                            <option value="{{ $aatCustomVal }}" @selected($aatCur === $aatCustomVal)>Other (Custom)</option>
+                        </select>
+                    </div>
+                </div>
+                <div data-cp-parent="cp_agency_agreement_timeframe" data-cp-values="{{ $aatCustomVal }}" class="mb-4">
+                    <input type="text" name="agency_agreement_custom" class="form-control mt-2"
+                           value="{{ old('agency_agreement_custom', $data['agency_agreement_custom'] ?? '') }}"
+                           placeholder="Enter custom timeframe (e.g., 18 Months)">
+                </div>
+
+                {{-- Additional Terms (all roles) --}}
+                <div class="mb-4">
+                    <label class="fw-bold">Additional Terms</label>
+                    <textarea name="additional_details_broker" class="form-control mt-2" rows="3"
+                              placeholder="Enter any additional compensation terms, conditions, or agreements not covered above">{{ old('additional_details_broker', $data['additional_details_broker'] ?? '') }}</textarea>
+                </div>
+
+            </div>
+        </div>
+
         {{-- ── STICKY SAVE BAR ──────────────────────────────────────────────── --}}
         <div class="sticky-save-bar">
             <a href="{{ route('agent.presets.index') }}" class="btn btn-outline-secondary">
@@ -532,6 +1493,29 @@
 @endsection
 
 @push('scripts')
+<script>
+    // ── Compensation sub-field show/hide ──────────────────────────────────────
+    function _cpTrigger(selectId) {
+        var sel = document.getElementById(selectId);
+        if (!sel) return;
+        var val = sel.value;
+        document.querySelectorAll('[data-cp-parent="' + selectId + '"]').forEach(function (div) {
+            var allowed = div.getAttribute('data-cp-values').split('|');
+            div.style.display = (allowed.indexOf(val) !== -1) ? '' : 'none';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialise all compensation dependent divs on page load
+        document.querySelectorAll('[data-cp-parent]').forEach(function (div) {
+            var parentId = div.getAttribute('data-cp-parent');
+            var parentEl = document.getElementById(parentId);
+            if (!parentEl) { div.style.display = 'none'; return; }
+            var allowed = div.getAttribute('data-cp-values').split('|');
+            div.style.display = (allowed.indexOf(parentEl.value) !== -1) ? '' : 'none';
+        });
+    });
+</script>
 <script>
 (function () {
 

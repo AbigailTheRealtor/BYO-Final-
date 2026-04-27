@@ -71,6 +71,145 @@ class AgentBidMapperService
             'website_link'              => $profileData['website_link']   ?? [],
             'social_media'              => $profileData['social_media']   ?? [],
             'promoMaterials'            => $profileData['promoMaterials'] ?? [],
+
+            // ── Broker Compensation & Agency Agreement Terms (all roles) ────
+
+            // Shared
+            'protection_period'                  => $profileData['protection_period']                  ?? '',
+            'early_termination_fee_option'        => $profileData['early_termination_fee_option']        ?? '',
+            'early_termination_fee_amount'        => $profileData['early_termination_fee_amount']        ?? '',
+            'agency_agreement_timeframe'          => $profileData['agency_agreement_timeframe']          ?? '',
+            'agency_agreement_custom'             => $profileData['agency_agreement_custom']             ?? '',
+            'interested_lease_option_agreement'   => $profileData['interested_lease_option_agreement']   ?? '',
+            'lease_type'                          => $profileData['lease_type']                          ?? '',
+            'lease_value'                         => $profileData['lease_value']                         ?? '',
+            'purchase_type'                       => $profileData['purchase_type']                       ?? '',
+            'purchase_value'                      => $profileData['purchase_value']                      ?? '',
+
+            // Buyer / Tenant / Landlord / Seller shared compensation fields
+            'commission_structure'                => $profileData['commission_structure']                ?? '',
+            'purchase_fee_type'                   => $profileData['purchase_fee_type']                   ?? '',
+            'purchase_fee_flat'                   => $profileData['purchase_fee_flat']                   ?? '',
+            'purchase_fee_percentage'             => $profileData['purchase_fee_percentage']             ?? '',
+            'purchase_fee_percentage_combo'       => $profileData['purchase_fee_percentage_combo']       ?? '',
+            'purchase_fee_flat_combo'             => $profileData['purchase_fee_flat_combo']             ?? '',
+            'purchase_fee_other'                  => $profileData['purchase_fee_other']                  ?? '',
+            'retainer_fee_option'                 => $profileData['retainer_fee_option']                 ?? '',
+            'retainer_fee_amount'                 => $profileData['retainer_fee_amount']                 ?? '',
+            'retainer_fee_application'            => $profileData['retainer_fee_application']            ?? '',
+
+            // Buyer / Tenant: lease fee
+            'interested_lease_option'             => $profileData['interested_lease_option']             ?? '',
+            'lease_fee_type'                      => $profileData['lease_fee_type']                      ?? '',
+            'lease_fee_flat'                      => $profileData['lease_fee_flat']                      ?? '',
+            'lease_fee_percentage'                => $profileData['lease_fee_percentage']                ?? '',
+            'lease_fee_percentage_monthly_rent'   => $profileData['lease_fee_percentage_monthly_rent']   ?? '',
+            'lease_fee_percentage_monthly_number' => $profileData['lease_fee_percentage_monthly_number'] ?? '',
+            'lease_fee_flat_combo'                => $profileData['lease_fee_flat_combo']                ?? '',
+            'lease_fee_percentage_combo'          => $profileData['lease_fee_percentage_combo']          ?? '',
+            'lease_fee_percentage_net'            => $profileData['lease_fee_percentage_net']            ?? '',
+            'lease_fee_flat_combo_net'            => $profileData['lease_fee_flat_combo_net']            ?? '',
+            'lease_fee_percentage_combo_net'      => $profileData['lease_fee_percentage_combo_net']      ?? '',
+            'lease_fee_other'                     => $profileData['lease_fee_other']                     ?? '',
+
+            // Seller-specific
+            'nominal'                                    => $profileData['nominal']                                    ?? '',
+            'commission_structure_type'                  => $profileData['commission_structure_type']                  ?? '',
+            'commission_structure_type_fee_flat'         => $profileData['commission_structure_type_fee_flat']         ?? '',
+            'commission_structure_type_fee_flat_combo'   => $profileData['commission_structure_type_fee_flat_combo']   ?? '',
+            'commission_structure_type_fee_percentage'   => $profileData['commission_structure_type_fee_percentage']   ?? '',
+            'commission_structure_type_fee_percentage_combo' => $profileData['commission_structure_type_fee_percentage_combo'] ?? '',
+            'commission_structure_type_fee_other'        => $profileData['commission_structure_type_fee_other']        ?? '',
+            'interested_purchase_fee_type'               => $profileData['interested_purchase_fee_type']               ?? '',
+            'seller_leasing_fee_type'                    => $profileData['seller_leasing_fee_type']                    ?? '',
+            'seller_leasing_gross'                       => $profileData['seller_leasing_gross']                       ?? '',
+            'seller_leasing_gross_rental'                => $profileData['seller_leasing_gross_rental']                ?? '',
+            'seller_leasing_gross_month_rent'            => $profileData['seller_leasing_gross_month_rent']            ?? '',
+            'sales_tax_option_gross'                     => $profileData['sales_tax_option_gross']                     ?? '',
+
+            // Landlord: residential lease fee sub-fields
+            'purchase_fee_rental_period'          => $profileData['purchase_fee_rental_period']          ?? '',
+
+            // Landlord: commercial lease fee sub-fields
+            'purchase_fee_net_aggregate'          => $profileData['purchase_fee_net_aggregate']          ?? '',
+            'purchase_fee_gross_rent'             => $profileData['purchase_fee_gross_rent']             ?? '',
+            'purchase_fee_monthly_percentage'     => $profileData['purchase_fee_monthly_percentage']     ?? '',
+            'purchase_fee_months'                 => $profileData['purchase_fee_months']                 ?? '',
+            'sales_tax_option_monthly'            => $profileData['sales_tax_option_monthly']            ?? '',
+            'purchase_fee_flat_commercial'        => $profileData['purchase_fee_flat_commercial']        ?? '',
+            'sales_tax_option_flat'               => $profileData['sales_tax_option_flat']               ?? '',
+            'purchase_fee_other_commercial'       => $profileData['purchase_fee_other_commercial']       ?? '',
+
+            // Landlord: tenant broker commission (residential)
+            'tenant_broker_commission_structure'  => $profileData['tenant_broker_commission_structure']  ?? '',
+            'tenant_broker_fee_structure'         => $profileData['tenant_broker_fee_structure']         ?? '',
+            'tenant_broker_percentage'            => $profileData['tenant_broker_percentage']            ?? '',
+            'tenant_broker_gross_lease'           => $profileData['tenant_broker_gross_lease']           ?? '',
+            'tenant_broker_first_month_rent'      => $profileData['tenant_broker_first_month_rent']      ?? '',
+            'tenant_broker_flat_fee'              => $profileData['tenant_broker_flat_fee']              ?? '',
+            'tenant_broker_other'                 => $profileData['tenant_broker_other']                 ?? '',
+
+            // Landlord + Tenant: broker fee timing
+            'broker_fee_timing'                   => $profileData['broker_fee_timing']                   ?? '',
+            'broker_fee_days_from_rent'           => $profileData['broker_fee_days_from_rent']           ?? '',
+            'broker_fee_days_after_lease'         => $profileData['broker_fee_days_after_lease']         ?? '',
+            'broker_fee_days_after_rent'          => $profileData['broker_fee_days_after_rent']          ?? '',
+            'broker_fee_timing_other'             => $profileData['broker_fee_timing_other']             ?? '',
+
+            // Landlord: lease renewal/extension fee
+            'renewal_fee_type'                    => $profileData['renewal_fee_type']                    ?? '',
+            'renewal_fee_percentage'              => $profileData['renewal_fee_percentage']              ?? '',
+            'renewal_fee_lease_value'             => $profileData['renewal_fee_lease_value']             ?? '',
+            'renewal_fee_first_month'             => $profileData['renewal_fee_first_month']             ?? '',
+            'renewal_fee_flat_free'               => $profileData['renewal_fee_flat_free']               ?? '',
+            'renewal_fee_custom'                  => $profileData['renewal_fee_custom']                  ?? '',
+            'renewal_fee_sales_tax_lease_value'   => $profileData['renewal_fee_sales_tax_lease_value']   ?? '',
+            'renewal_fee_no_of_months'            => $profileData['renewal_fee_no_of_months']            ?? '',
+            'renewal_fee_sales_tax_first_month'   => $profileData['renewal_fee_sales_tax_first_month']   ?? '',
+            'renewal_fee_sales_tax_flat_fee'      => $profileData['renewal_fee_sales_tax_flat_fee']      ?? '',
+
+            // Landlord: expansion commission (commercial)
+            'expansion_commission_percentage'     => $profileData['expansion_commission_percentage']     ?? '',
+
+            // Landlord: property management
+            'interested_in_property_management'                      => $profileData['interested_in_property_management']                      ?? '',
+            'interested_in_property_management_fee'                  => $profileData['interested_in_property_management_fee']                  ?? '',
+            'interested_in_property_management_fee_gross_lease'      => $profileData['interested_in_property_management_fee_gross_lease']      ?? '',
+            'interested_in_property_management_fee_rental_periord'   => $profileData['interested_in_property_management_fee_rental_periord']   ?? '',
+            'interested_in_property_management_fee_flate_free'       => $profileData['interested_in_property_management_fee_flate_free']       ?? '',
+            'interested_in_property_management_fee_other'            => $profileData['interested_in_property_management_fee_other']            ?? '',
+
+            // Landlord: interested in selling
+            'interested_in_selling'               => $profileData['interested_in_selling']               ?? '',
+            'interested_in_selling_type'          => $profileData['interested_in_selling_type']          ?? '',
+            'landlord_broker_purchase_price'      => $profileData['landlord_broker_purchase_price']      ?? '',
+            'landlord_broker_percentage_price'    => $profileData['landlord_broker_percentage_price']    ?? '',
+            'landlord_broker_dollar_price'        => $profileData['landlord_broker_dollar_price']        ?? '',
+            'landlord_broker_flate_fee'           => $profileData['landlord_broker_flate_fee']           ?? '',
+            'landlord_broker_other'               => $profileData['landlord_broker_other']               ?? '',
+
+            // Landlord: commercial lease fee additional sub-field
+            'purchase_fee_purchase_price'         => $profileData['purchase_fee_purchase_price']         ?? '',
+
+            // All roles: brokerage relationship, additional terms, retained deposits
+            'brokerage_relationship'              => $profileData['brokerage_relationship']              ?? '',
+            'additional_details_broker'           => $profileData['additional_details_broker']           ?? '',
+            'retained_deposits'                   => $profileData['retained_deposits']                   ?? '',
+
+            // Seller: leasing sub-fields (exact keys from SellerAgentAuctionBid component)
+            'seller_leasing_gross_other'                   => $profileData['seller_leasing_gross_other']                   ?? '',
+            'seller_leasing_gross_percentage'              => $profileData['seller_leasing_gross_percentage']              ?? '',
+            'seller_leasing_gross_purchase_fee_flat_amount'=> $profileData['seller_leasing_gross_purchase_fee_flat_amount'] ?? '',
+            'seller_leasing_gross_purchase_fee_other'      => $profileData['seller_leasing_gross_purchase_fee_other']      ?? '',
+            'seller_leasing_each_rental'                   => $profileData['seller_leasing_each_rental']                   ?? '',
+            'seller_leasing_gross_no_of_months'            => $profileData['seller_leasing_gross_no_of_months']            ?? '',
+            'seller_leasing_gross_flat_combo'              => $profileData['seller_leasing_gross_flat_combo']              ?? '',
+            'seller_leasing_gross_percentage_combo'        => $profileData['seller_leasing_gross_percentage_combo']        ?? '',
+            'seller_leasing_gross_flat_net_combo'          => $profileData['seller_leasing_gross_flat_net_combo']          ?? '',
+            'seller_leasing_gross_percentage_net_combo'    => $profileData['seller_leasing_gross_percentage_net_combo']    ?? '',
+            'seller_leasing_gross_sales_tax_first_month'   => $profileData['seller_leasing_gross_sales_tax_first_month']   ?? '',
+            'seller_leasing_gross_sales_tax_option_gross'  => $profileData['seller_leasing_gross_sales_tax_option_gross']  ?? '',
+            'seller_leasing_gross_sales_tax_flat_free_gross'=> $profileData['seller_leasing_gross_sales_tax_flat_free_gross'] ?? '',
         ];
     }
 
