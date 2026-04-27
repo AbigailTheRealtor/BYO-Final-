@@ -1,0 +1,72 @@
+name: No Debug Statements
+
+on:
+  pull_request:
+
+jobs:
+  check-debug-statements:
+    name: Check for debug statements
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect debug statements in changed files
+        run: |
+          # Patterns mirror .githooks/pre-commit exactly.
+          PHP_DEBUG_PATTERN='dd\(|var_dump\('
+          JS_DEBUG_PATTERN='console\.log\(|debugger;'
+          TWIG_DEBUG_PATTERN='dump\('
+
+          # Get the list of files changed in this PR (added, copied, modified, renamed).
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+
+          mapfile -t changed_files < <(
+            git diff --name-only --diff-filter=ACMR "$BASE" "$HEAD" 2>/dev/null || true
+          )
+
+          debug_hits=()
+
+          for file in "${changed_files[@]}"; do
+            # Skip files that no longer exist (e.g. renamed source side).
+            [[ -f "$file" ]] || continue
+
+            if [[ "$file" =~ \.(php)$ ]]; then
+              while IFS= read -r match; do
+                debug_hits+=("$match")
+              done < <(grep -nE "$PHP_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
+
+            elif [[ "$file" =~ \.(js|mjs|jsx|ts|tsx|vue|svelte)$ ]]; then
+              while IFS= read -r match; do
+                debug_hits+=("$match")
+              done < <(grep -nE "$JS_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
+
+            elif [[ "$file" =~ \.(twig)$ ]]; then
+              while IFS= read -r match; do
+                debug_hits+=("$match")
+              done < <(grep -nE "$TWIG_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
+            fi
+          done
+
+          if [ ${#debug_hits[@]} -gt 0 ]; then
+            echo ""
+            echo "ERROR: Debug statements detected in changed files:"
+            echo ""
+            for hit in "${debug_hits[@]}"; do
+              echo "$hit"
+            done
+            echo ""
+            echo "Please remove these debug statements before merging."
+            echo "Patterns checked:"
+            echo "  PHP (*.php)                  : dd(, var_dump("
+            echo "  JS/TS (*.js *.mjs *.jsx etc) : console.log(, debugger;"
+            echo "  Twig (*.twig)                : dump("
+            echo ""
+            exit 1
+          fi
+
+          echo "No debug statements found in changed files."
