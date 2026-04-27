@@ -200,6 +200,23 @@
         background: #036b70;
         color: #fff;
     }
+    .btn-copy-hire-edit {
+        font-size: .83rem;
+        padding: .25rem .65rem;
+        border-radius: 6px;
+        color: #049399;
+        border-color: #049399;
+    }
+    .btn-copy-hire-edit:hover {
+        background: #e8f7f7;
+        color: #036b70;
+        border-color: #036b70;
+    }
+    .btn-copy-hire-edit.copied {
+        color: #198754;
+        border-color: #198754;
+        background: #f0faf4;
+    }
 </style>
 @endpush
 
@@ -219,6 +236,12 @@
             <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-outline-info">
                 <i class="fa fa-eye me-1"></i>Open Hire Me Page
             </a>
+            <button type="button"
+                    class="btn btn-sm btn-outline btn-copy-hire-edit"
+                    data-hire-url="{{ $hireMeUrl }}"
+                    title="Copy your Hire Me link to share with clients">
+                <i class="fa fa-copy me-1"></i>Copy Hire Me Link
+            </button>
         @else
             <button type="button" class="btn btn-sm btn-outline-info" disabled title="Save this preset first to preview your Hire Me page">
                 <i class="fa fa-eye me-1"></i>Open Hire Me Page
@@ -580,6 +603,45 @@
         }
     });
     @endif
+
+    // ── Copy Hire Me Link button ──────────────────────────────────────────
+    function fallbackCopy(text, callback) {
+        var inp = document.createElement('input');
+        inp.style.position = 'fixed';
+        inp.style.opacity = '0';
+        inp.value = text;
+        document.body.appendChild(inp);
+        inp.focus();
+        inp.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(inp);
+        callback();
+    }
+
+    document.querySelectorAll('.btn-copy-hire-edit').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var url = this.dataset.hireUrl;
+            var self = this;
+            var orig = self.innerHTML;
+
+            function showCopied() {
+                self.innerHTML = '<i class="fa fa-check me-1"></i>Copied!';
+                self.classList.add('copied');
+                setTimeout(function () {
+                    self.innerHTML = orig;
+                    self.classList.remove('copied');
+                }, 2200);
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(showCopied).catch(function () {
+                    fallbackCopy(url, showCopied);
+                });
+            } else {
+                fallbackCopy(url, showCopied);
+            }
+        });
+    });
 
 })();
 </script>
