@@ -173,7 +173,9 @@ class TenantAgentAuctionBidController extends Controller
             
             TenantAgentAuctionBid::where('tenant_agent_auction_id', $pa->id)
                 ->where('id', '!=', $pab->id)
-                ->where('accepted', '!=', 'accepted')
+                ->where(function ($q) {
+                    $q->whereNull('accepted')->orWhere('accepted', '!=', 'accepted');
+                })
                 ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
 
             $ua = new UserAgent();
@@ -354,7 +356,9 @@ class TenantAgentAuctionBidController extends Controller
             
             TenantAgentAuctionBid::where('tenant_agent_auction_id', $pa->id)
                 ->where('id', '!=', $originalBid->id)
-                ->where('accepted', '!=', 'accepted')
+                ->where(function ($q) {
+                    $q->whereNull('accepted')->orWhere('accepted', '!=', 'accepted');
+                })
                 ->update(['accepted' => 'rejected', 'accepted_date' => date('Y-m-d H:i:s')]);
 
             $ua = new UserAgent();
