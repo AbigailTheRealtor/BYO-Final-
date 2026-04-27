@@ -235,16 +235,10 @@
         </div>
     @endif
 
-    @if ($errors->any())
-        <div class="alert alert-danger mb-4">
-            <strong>Please fix the following errors:</strong>
-            <ul class="mb-0 mt-1">
-                @foreach ($errors->all() as $err)
-                    <li>{{ $err }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
+    <div id="preset-error-summary" class="d-none alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert" aria-live="polite">
+        <i class="fa fa-exclamation-circle flex-shrink-0"></i>
+        <span id="preset-error-summary-text"></span>
+    </div>
 
     <form method="POST" action="{{ route('agent.presets.save', [$role, $propertyType]) }}" id="preset-form">
         @csrf
@@ -551,6 +545,17 @@
 
     // ── Auto-open sections that contain validation errors ─────────────────
     @if ($errors->any())
+    (function () {
+        var totalInvalid = document.querySelectorAll('#preset-form .is-invalid').length;
+        if (totalInvalid > 0) {
+            var banner = document.getElementById('preset-error-summary');
+            var bannerText = document.getElementById('preset-error-summary-text');
+            if (banner && bannerText) {
+                bannerText.textContent = 'Fix ' + totalInvalid + ' error' + (totalInvalid !== 1 ? 's' : '') + ' before saving.';
+                banner.classList.remove('d-none');
+            }
+        }
+    })();
     document.querySelectorAll('.preset-section-body').forEach(function (body) {
         if (body.querySelector('.is-invalid')) {
             body.classList.remove('preset-closed');
