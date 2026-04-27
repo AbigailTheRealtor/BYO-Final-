@@ -2,11 +2,12 @@
 # Pre-commit hook: reject backup files and debug statements in staged files
 #
 # Backup patterns blocked: *.bak, *.bak_*, *.orig, *.tmp, "* copy.*", "* copy" (no ext)
-# Directories checked for backup files: app/, resources/, public/, database/
+# Backup directories checked: app/, resources/, public/, database/
 #
 # Debug patterns blocked (PHP): dd(, var_dump(
 # Debug patterns blocked (JS/TS): console.log(, debugger;
-# Directories checked for debug statements: all staged files (includes app/, resources/, public/, database/, tests/, etc.)
+# Debug check scope: ALL staged PHP and JS/TS files, including test files
+#   (e.g. tests/**/*.php, **/*.test.ts, **/*.spec.ts, app/, resources/, etc.)
 #
 # To bypass intentionally: git commit --no-verify
 
