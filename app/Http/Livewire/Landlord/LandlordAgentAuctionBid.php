@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Models\LandlordAgentAuctionBid as LandlordAgentAuctionBidData;
 use App\Models\AgentDefaultProfile;
 use App\Services\AgentBidMapperService;
+use App\Helpers\LandlordBidMatchScoreHelper;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Events\BidSubmitted;
@@ -606,7 +607,30 @@ class LandlordAgentAuctionBid extends Component
             array_splice($this->reviews_links, $index, 1); // Removes the selected entry
         }
     }
-    // Add this method to your component class
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $propType = $this->property_type ?: '';
+        if ($propType === '') {
+            return $services;
+        }
+
+        $catalog = LandlordBidMatchScoreHelper::getCatalog($propType);
+        if (empty($catalog)) {
+            return $services;
+        }
+
+        $normalize = static function (string $s): string {
+            return mb_strtolower(trim(str_replace(
+                ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "'"],
+                ["'",        "'",        '"',        '"',        "'"],
+                $s
+            )));
+        };
+
+        return array_values(array_filter($services, static function ($svc) use ($catalog, $normalize): bool {
+            return in_array($normalize((string) $svc), $catalog, true);
+        }));
+    }
 
     public function mount($auctionId = null)
     {
@@ -772,6 +796,14 @@ class LandlordAgentAuctionBid extends Component
                 if (!empty($mapped['business_card_link']))        $this->business_card_link        = $mapped['business_card_link'];
                 if (!empty($mapped['business_card_stored_path'])) $this->business_card_stored_path = $mapped['business_card_stored_path'];
                 if (!empty($mapped['promoMaterials']))            $this->promoMaterials            = $mapped['promoMaterials'];
+                if (!empty($mapped['services'])) {
+                    $filtered = $this->filterServicesToCurrentCatalog($mapped['services']);
+                    if (!empty($filtered)) {
+                        $this->services = $filtered;
+                        $this->showEnhancements = in_array('Provide digital photo enhancements', $this->services);
+                    }
+                }
+                if (!empty($mapped['other_services']))            $this->other_services            = $mapped['other_services'];
                 $this->defaultProfileLoaded  = true;
             }
         }

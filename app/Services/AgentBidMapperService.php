@@ -16,11 +16,15 @@ use App\Models\AgentDefaultProfile;
  * ─────
  * • Scalar text fields always present; default to empty string so callers
  *   can assign without extra null-checks.
- * • Array fields (reviews_links, website_link, social_media, promoMaterials)
- *   always present; default to empty array.
+ * • Array fields (reviews_links, website_link, social_media, promoMaterials,
+ *   services, other_services) always present; default to empty array.
  * • Credential fields (first_name … nar_id) included in the map.  Callers
  *   apply them with an !empty() guard so they only override when the profile
  *   actually contains a value — preserving the existing component behaviour.
+ * • Services contract: 'services' and 'other_services' are required keys.
+ *   Buyer, Seller, Tenant, and Landlord bid form mount() methods all depend
+ *   on these keys being present.  Each component applies its own catalog
+ *   filter (filterServicesToCurrentCatalog) before assigning to $this->services.
  * • No DB writes, no side-effects.  Pure transformation.
  */
 class AgentBidMapperService
@@ -57,6 +61,10 @@ class AgentBidMapperService
             'presentation_link'         => $profileData['presentation_link']          ?? '',
             'business_card_link'        => $profileData['business_card_link']         ?? '',
             'business_card_stored_path' => $profileData['business_card_stored_path']  ?? '',
+
+            // ── Services (agent's standard offering from the preset editor) ─
+            'services'                  => $profileData['services']       ?? [],
+            'other_services'            => $profileData['other_services'] ?? [],
 
             // ── Array fields ────────────────────────────────────────────────
             'reviews_links'             => $profileData['reviews_links']  ?? [],

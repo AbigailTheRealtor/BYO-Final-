@@ -696,6 +696,13 @@ class TenantAgentAuctionBid extends Component
                 if (!empty($mapped['business_card_link']))        $this->business_card_link        = $mapped['business_card_link'];
                 if (!empty($mapped['business_card_stored_path'])) $this->business_card_stored_path = $mapped['business_card_stored_path'];
                 if (!empty($mapped['promoMaterials']))            $this->promoMaterials            = $mapped['promoMaterials'];
+                if (!empty($mapped['services'])) {
+                    $filtered = $this->filterServicesToCurrentCatalog($mapped['services']);
+                    if (!empty($filtered)) {
+                        $this->services = $this->normalizeTenantServiceLabels($filtered);
+                    }
+                }
+                if (!empty($mapped['other_services']))            $this->other_services            = $mapped['other_services'];
                 $this->defaultProfileLoaded  = true;
             }
         }
