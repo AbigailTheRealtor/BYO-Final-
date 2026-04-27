@@ -410,6 +410,9 @@ class AgentPresetCatalog
                 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
                 'Schedule and confirm the Final Walkthrough',
                 'Schedule and confirm the Closing Appointment',
+                'Provide a Comparative Market Analysis (CMA) with recent commercial sales comps, cap rate estimates, and an estimated value range (for informational purposes only — not a formal appraisal)',
+                'Provide general insight on local commercial market trends, vacancy rates, and Buyer activity',
+                'Recommend adjustments to pricing or marketing strategy if the property is not receiving sufficient interest',
             ],
             'business' => [
                 'List the Business Opportunity on the local Multiple Listing Service (MLS)',
@@ -458,6 +461,9 @@ class AgentPresetCatalog
                 'Confirm delivery of final executed documents, wire instructions, and Closing paperwork to all relevant parties',
                 'Schedule and confirm the Final Walkthrough',
                 'Schedule and confirm the Closing Appointment',
+                'Provide a Comparative Market Review based on similar business sales, financial performance, and industry benchmarks (for informational purposes only — not a formal appraisal or valuation)',
+                'Provide general insight on likely Buyer profiles, business value drivers, and market demand',
+                'Recommend adjustments to marketing strategy or asking price if the listing is not generating sufficient interest',
             ],
             'vacant_land' => [
                 'List the property in the local Multiple Listing Service (MLS)',
