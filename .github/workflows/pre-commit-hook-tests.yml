@@ -1,0 +1,22 @@
+name: Pre-commit Hook Tests
+
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches: ["main"]
+    paths:
+      - ".githooks/pre-commit"
+      - "tests/hooks/**"
+
+jobs:
+  hook-tests:
+    name: Run pre-commit hook test suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run pre-commit hook tests
+        run: bash tests/hooks/test-pre-commit.sh
