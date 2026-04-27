@@ -7,12 +7,28 @@
 # └────────────────────────────────────────────────────────────────────────────
 #
 # ┌─ Debug-statement check ────────────────────────────────────────────────────
-# │  Scope: ALL staged PHP and JS/TS files — intentionally NOT directory-scoped
-# │         Covers tests/**/*.php, **/*.test.ts, **/*.spec.ts, app/, resources/
-# │         etc.  Do NOT add directory filters here; debug statements must be
-# │         caught wherever they appear, including test files.
-# │  PHP patterns:   dd(, var_dump(
-# │  JS/TS patterns: console.log(, debugger;
+# │  Scope: ALL staged files — intentionally NOT directory-scoped.
+# │         Covers app/, config/, routes/, tests/, resources/, and any other
+# │         location.  Do NOT add directory filters here; debug statements must
+# │         be caught wherever they appear.
+# │
+# │  File types in scope:
+# │    PHP group   — *.php (includes *.blade.php, config/*.php, routes/*.php,
+# │                          tests/**/*.php, and any other .php file)
+# │    JS group    — *.js, *.mjs, *.jsx (plain JS, ES-module scripts, React JSX)
+# │    TS group    — *.ts, *.tsx       (TypeScript and React TSX)
+# │    Vue/Svelte  — *.vue, *.svelte   (single-file components)
+# │    Templates   — *.twig            (Twig templates; uses dump() for debug)
+# │
+# │  Debug patterns checked:
+# │    PHP/Twig  : dd(, var_dump(, dump(
+# │    JS/TS/Vue : console.log(, debugger;
+# │
+# │  To add a new file type in the future:
+# │    1. Identify which debug patterns are relevant for that type.
+# │    2. Add the extension to the appropriate [[ "$file" =~ ... ]] condition
+# │       below (or create a new loop if it needs distinct patterns).
+# │    3. Update the "File types in scope" list in this header comment.
 # └────────────────────────────────────────────────────────────────────────────
 #
 # To bypass intentionally: git commit --no-verify
@@ -60,12 +76,19 @@ fi
 # filter or path prefix here — doing so would silently allow debug statements
 # through in any file outside those directories (e.g. tests/, routes/, etc.).
 
+# PHP debug patterns: dd( and var_dump( (Laravel helpers)
 PHP_DEBUG_PATTERN='dd\(|var_dump\('
+
+# JS/TS/Vue/Svelte debug patterns: console.log( and debugger;
 JS_DEBUG_PATTERN='console\.log\(|debugger;'
+
+# Twig template debug patterns: dump( (Twig's built-in debug function)
+TWIG_DEBUG_PATTERN='dump\('
 
 debug_hits=()
 
-# Check all staged PHP files (no directory filter — intentional, see above)
+# Check all staged PHP files (*.php covers Blade, config/, routes/, tests/, etc.)
+# No directory filter — intentional, see header above.
 while IFS= read -r -d '' file; do
     if [[ "$file" =~ \.(php)$ ]]; then
         while IFS= read -r match; do
@@ -74,12 +97,26 @@ while IFS= read -r -d '' file; do
     fi
 done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
 
-# Check all staged JS/TS files (no directory filter — intentional, see above)
+# Check all staged JS/TS/Vue/Svelte files.
+# Extensions covered: .js, .mjs (ES modules), .jsx, .ts, .tsx, .vue, .svelte
+# No directory filter — intentional, see header above.
+# To add a new JS-family type, append its extension to the regex below.
 while IFS= read -r -d '' file; do
-    if [[ "$file" =~ \.(js|ts|jsx|tsx|vue)$ ]]; then
+    if [[ "$file" =~ \.(js|mjs|jsx|ts|tsx|vue|svelte)$ ]]; then
         while IFS= read -r match; do
             debug_hits+=("$match")
         done < <(git show ":$file" 2>/dev/null | grep -nE "$JS_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
+    fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
+
+# Check all staged Twig template files (*.twig).
+# Twig uses dump() as its primary debug helper (requires {% debug %} to be enabled).
+# No directory filter — intentional, see header above.
+while IFS= read -r -d '' file; do
+    if [[ "$file" =~ \.(twig)$ ]]; then
+        while IFS= read -r match; do
+            debug_hits+=("$match")
+        done < <(git show ":$file" 2>/dev/null | grep -nE "$TWIG_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
     fi
 done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
 
@@ -92,7 +129,10 @@ if [ ${#debug_hits[@]} -gt 0 ]; then
     done
     echo ""
     echo "Please remove these debug statements before committing."
-    echo "Patterns checked — PHP: dd(, var_dump(  |  JS/TS: console.log(, debugger;"
+    echo "Patterns checked:"
+    echo "  PHP (*.php)                  : dd(, var_dump("
+    echo "  JS/TS (*.js *.mjs *.jsx etc) : console.log(, debugger;"
+    echo "  Twig (*.twig)                : dump("
     echo "If this is intentional, bypass with: git commit --no-verify"
     echo ""
     exit 1
