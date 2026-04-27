@@ -211,9 +211,29 @@
         <p>Property type: <strong>{{ $propertyLabel }}</strong> &nbsp;&middot;&nbsp; Changes save to your default profile and auto-fill future bids.</p>
     </div>
 
-    <a href="{{ route('agent.presets.index') }}" class="btn btn-sm btn-outline-secondary mb-4">
-        <i class="fa fa-arrow-left me-1"></i>Back to All Presets
-    </a>
+    <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
+        <a href="{{ route('agent.presets.index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa fa-arrow-left me-1"></i>Back to All Presets
+        </a>
+        @if ($profileExists)
+            <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-outline-info">
+                <i class="fa fa-eye me-1"></i>Open Hire Me Page
+            </a>
+        @else
+            <button type="button" class="btn btn-sm btn-outline-info" disabled title="Save this preset first to preview your Hire Me page">
+                <i class="fa fa-eye me-1"></i>Open Hire Me Page
+            </button>
+        @endif
+    </div>
+
+    @if (request()->query('saved'))
+        <div class="alert alert-success d-flex align-items-center justify-content-between gap-3 mb-4" role="alert">
+            <span><i class="fa fa-check-circle me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
+            <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-success text-nowrap">
+                <i class="fa fa-eye me-1"></i>Preview Hire Me Page
+            </a>
+        </div>
+    @endif
 
     @if ($errors->any())
         <div class="alert alert-danger mb-4">

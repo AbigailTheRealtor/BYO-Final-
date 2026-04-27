@@ -65,10 +65,18 @@ class AgentPresetController extends Controller
 
         $roleLabel     = AgentDefaultProfile::roleLabel($role);
         $propertyLabel = AgentDefaultProfile::propertyLabel($propertyType);
+        $profileExists = $profile !== null;
+        $agentShortId  = Auth::user()->short_id;
+        $hireMeUrl     = route('hire.agent.public', [
+            'agentShortId' => $agentShortId,
+            'role'         => $role,
+            'propertyType' => $propertyType,
+        ]);
 
         return view('agent-presets.edit', compact(
             'role', 'propertyType', 'data', 'services',
-            'selectedServices', 'roleLabel', 'propertyLabel'
+            'selectedServices', 'roleLabel', 'propertyLabel',
+            'profileExists', 'agentShortId', 'hireMeUrl'
         ));
     }
 
@@ -129,8 +137,7 @@ class AgentPresetController extends Controller
         AgentDefaultProfile::upsertForAgent(Auth::id(), $role, $propertyType, $profileData);
 
         return redirect()
-            ->route('agent.presets.index')
-            ->with('success', AgentDefaultProfile::roleLabel($role) . ' — ' . AgentDefaultProfile::propertyLabel($propertyType) . ' preset saved.');
+            ->route('agent.presets.edit', ['role' => $role, 'propertyType' => $propertyType, 'saved' => 1]);
     }
 
     protected static function splitLines(?string $value): array
