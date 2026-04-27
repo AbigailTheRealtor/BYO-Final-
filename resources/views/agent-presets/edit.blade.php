@@ -116,6 +116,25 @@
         color: #023e40;
         font-weight: 600;
     }
+    /* Section error badge */
+    .section-error-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.25rem;
+        height: 1.25rem;
+        background: #dc3545;
+        color: #fff;
+        border-radius: 50%;
+        font-size: .7rem;
+        font-weight: 800;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+    .preset-section-header.has-errors {
+        background: #fff5f5;
+        border-bottom-color: #f5c2c7;
+    }
     /* Section requirement badges */
     .section-req-badge {
         font-size: .68rem;
@@ -512,11 +531,26 @@
 
     // ── Auto-open sections that contain validation errors ─────────────────
     @if ($errors->any())
-    document.querySelectorAll('.preset-section-body.preset-closed').forEach(function (body) {
+    document.querySelectorAll('.preset-section-body').forEach(function (body) {
         if (body.querySelector('.is-invalid')) {
             body.classList.remove('preset-closed');
             var hdr = document.querySelector('[data-preset-toggle="' + body.id + '"]');
-            if (hdr) hdr.setAttribute('aria-expanded', 'true');
+            if (hdr) {
+                hdr.setAttribute('aria-expanded', 'true');
+                hdr.classList.add('has-errors');
+                if (!hdr.querySelector('.section-error-badge')) {
+                    var badge = document.createElement('span');
+                    badge.className = 'section-error-badge';
+                    badge.setAttribute('aria-label', 'Section has errors');
+                    badge.textContent = '!';
+                    var toggleIcon = hdr.querySelector('.toggle-icon');
+                    if (toggleIcon) {
+                        hdr.insertBefore(badge, toggleIcon);
+                    } else {
+                        hdr.appendChild(badge);
+                    }
+                }
+            }
         }
     });
     @endif
