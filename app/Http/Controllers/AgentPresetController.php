@@ -221,6 +221,9 @@ class AgentPresetController extends Controller
             'seller_leasing_gross_sales_tax_first_month'     => ['nullable', 'string', 'max:20'],
             'seller_leasing_gross_sales_tax_option_gross'    => ['nullable', 'string', 'max:20'],
             'seller_leasing_gross_sales_tax_flat_free_gross' => ['nullable', 'string', 'max:20'],
+            'referral_fee_percent'                           => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'split_payment_due'                              => ['nullable', 'string', 'max:255'],
+            'split_payment_due_other'                        => ['nullable', 'string', 'max:255'],
         ]);
 
         $otherServicesRaw = $request->input('other_services', []);
@@ -357,6 +360,9 @@ class AgentPresetController extends Controller
             'seller_leasing_gross_sales_tax_first_month'     => $request->input('seller_leasing_gross_sales_tax_first_month', ''),
             'seller_leasing_gross_sales_tax_option_gross'    => $request->input('seller_leasing_gross_sales_tax_option_gross', ''),
             'seller_leasing_gross_sales_tax_flat_free_gross' => $request->input('seller_leasing_gross_sales_tax_flat_free_gross', ''),
+            'referral_fee_percent'                           => $request->input('referral_fee_percent', ''),
+            'split_payment_due'                              => $request->input('split_payment_due', ''),
+            'split_payment_due_other'                        => $request->input('split_payment_due_other', ''),
         ];
 
         AgentDefaultProfile::upsertForAgent(Auth::id(), $role, $propertyType, $profileData);
