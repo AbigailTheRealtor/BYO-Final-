@@ -47,6 +47,16 @@ We would like to extend our thanks to the following sponsors for funding Laravel
 - **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
 - **[Lendio](https://lendio.com)**
 
+## Local Development Setup
+
+After cloning the repository, install PHP dependencies with:
+
+```bash
+composer install
+```
+
+This automatically configures Git to use the project's version-controlled hooks in `.githooks/`. In particular, a pre-commit hook will run on every commit to block accidental backup files (e.g. `*.bak`, `*.orig`, editor swap files) from being committed. No manual hook installation is needed.
+
 ## Contributing
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
