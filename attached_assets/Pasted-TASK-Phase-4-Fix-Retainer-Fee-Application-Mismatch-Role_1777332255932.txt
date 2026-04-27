@@ -1,0 +1,64 @@
+TASK: Phase 4 — Fix Retainer Fee Application Mismatch (Role-Aware)
+
+EDIT ONLY:
+resources/views/agent-presets/edit.blade.php
+
+GOAL:
+Ensure retainer_fee_application values match each role's bid form.
+
+-------------------------------------
+
+PROBLEM:
+Tenant bid form expects:
+- "applied"
+- "additional"
+
+Other roles expect:
+- "Applied toward final compensation"
+- "Charged in addition to final compensation"
+
+Preset editor currently mixes all options → causes prefill failure.
+
+-------------------------------------
+
+FIX:
+
+Locate the retainer_fee_application <select> field.
+
+Replace its options with role-based logic:
+
+@if ($role === 'tenant')
+    <option value="applied" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'applied' ? 'selected' : '' }}>
+        Applied toward final compensation
+    </option>
+    <option value="additional" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'additional' ? 'selected' : '' }}>
+        Charged in addition to final compensation
+    </option>
+@else
+    <option value="Applied toward final compensation" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'Applied toward final compensation' ? 'selected' : '' }}>
+        Applied toward final compensation
+    </option>
+    <option value="Charged in addition to final compensation" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'Charged in addition to final compensation' ? 'selected' : '' }}>
+        Charged in addition to final compensation
+    </option>
+@endif
+
+-------------------------------------
+
+CRITICAL SAFEGUARDS:
+
+- DO NOT change field name
+- DO NOT change Livewire components
+- DO NOT modify other fields
+- DO NOT remove existing logic outside this select
+- DO NOT affect Buyer/Seller/Landlord behavior
+- Only modify this one dropdown
+
+-------------------------------------
+
+AFTER COMPLETING:
+
+1. Show updated select block
+2. Confirm only this select was modified
+3. Confirm no other roles were impacted
+4. STOP

@@ -1466,15 +1466,20 @@
                     <div class="input-cover mt-2">
                         <select name="retainer_fee_application" class="form-control has-icon" data-icon="fa-solid fa-check-circle">
                             <option value="">Select application</option>
-                            @if ($role === 'buyer')
-                                <option value="Applied toward final compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Applied toward final compensation')>Applied toward final compensation</option>
-                                <option value="Charged in addition to final compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Charged in addition to final compensation')>Charged in addition to final compensation</option>
-                            @elseif ($role === 'seller')
-                                <option value="Applied Toward Final Compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Applied Toward Final Compensation')>Applied Toward Final Compensation</option>
-                                <option value="Charged in Addition to Final Compensation" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'Charged in Addition to Final Compensation')>Charged in Addition to Final Compensation</option>
-                            @elseif ($role === 'tenant')
-                                <option value="applied" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'applied')>Applied toward final compensation</option>
-                                <option value="additional" @selected(old('retainer_fee_application', $data['retainer_fee_application'] ?? '') === 'additional')>Charged in addition to final compensation</option>
+                            @if ($role === 'tenant')
+                                <option value="applied" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'applied' ? 'selected' : '' }}>
+                                    Applied toward final compensation
+                                </option>
+                                <option value="additional" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'additional' ? 'selected' : '' }}>
+                                    Charged in addition to final compensation
+                                </option>
+                            @else
+                                <option value="Applied toward final compensation" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'Applied toward final compensation' ? 'selected' : '' }}>
+                                    Applied toward final compensation
+                                </option>
+                                <option value="Charged in addition to final compensation" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'Charged in addition to final compensation' ? 'selected' : '' }}>
+                                    Charged in addition to final compensation
+                                </option>
                             @endif
                         </select>
                     </div>
