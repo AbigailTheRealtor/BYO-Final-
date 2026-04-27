@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
-# Pre-commit hook: reject backup files in tracked directories
+# Pre-commit hook: reject backup files and debug statements in staged files
 #
-# Patterns blocked: *.bak, *.bak_*, *.orig, *.tmp, "* copy.*", "* copy" (no ext)
+# Backup patterns blocked: *.bak, *.bak_*, *.orig, *.tmp, "* copy.*", "* copy" (no ext)
 # Directories checked: app/, resources/, public/, database/
+#
+# Debug patterns blocked (PHP): dd(, var_dump(
+# Debug patterns blocked (JS/TS): console.log(, debugger;
+#
+# To bypass intentionally: git commit --no-verify
 
 set -euo pipefail
 
@@ -33,6 +38,44 @@ if [ ${#found[@]} -gt 0 ]; then
     echo "These extensions can confuse Laravel's migration scanner and other tooling."
     echo "If you intended to commit a renamed/cleaned version, rename the file"
     echo "to its final name first, then stage and commit it."
+    echo ""
+    exit 1
+fi
+
+# ── Debug statement checks ────────────────────────────────────────────────────
+
+PHP_DEBUG_PATTERN='dd\(|var_dump\('
+JS_DEBUG_PATTERN='console\.log\(|debugger;'
+
+debug_hits=()
+
+while IFS= read -r -d '' file; do
+    if [[ "$file" =~ \.(php)$ ]]; then
+        while IFS= read -r match; do
+            debug_hits+=("$match")
+        done < <(git show ":$file" 2>/dev/null | grep -nE "$PHP_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
+    fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
+
+while IFS= read -r -d '' file; do
+    if [[ "$file" =~ \.(js|ts|jsx|tsx|vue)$ ]]; then
+        while IFS= read -r match; do
+            debug_hits+=("$match")
+        done < <(git show ":$file" 2>/dev/null | grep -nE "$JS_DEBUG_PATTERN" | sed "s|^|  $file:|" || true)
+    fi
+done < <(git diff --cached --name-only --diff-filter=ACMR -z 2>/dev/null || true)
+
+if [ ${#debug_hits[@]} -gt 0 ]; then
+    echo ""
+    echo "ERROR: Debug statements detected in staged files:"
+    echo ""
+    for hit in "${debug_hits[@]}"; do
+        echo "$hit"
+    done
+    echo ""
+    echo "Please remove these debug statements before committing."
+    echo "Patterns checked — PHP: dd(, var_dump(  |  JS/TS: console.log(, debugger;"
+    echo "If this is intentional, bypass with: git commit --no-verify"
     echo ""
     exit 1
 fi
