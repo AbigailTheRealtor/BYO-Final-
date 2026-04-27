@@ -1,0 +1,62 @@
+name: Check for Debug Statements
+
+on:
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  debug-check:
+    name: Block debug statements (PHP & JS/TS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect debug statements in changed files
+        run: |
+          PHP_DEBUG_PATTERN='dd\(|var_dump\('
+          JS_DEBUG_PATTERN='console\.log\(|debugger;'
+
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+
+          mapfile -t CHANGED_FILES < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" "$HEAD_SHA")
+
+          debug_hits=()
+
+          for file in "${CHANGED_FILES[@]}"; do
+            if [[ ! -f "$file" ]]; then
+              continue
+            fi
+
+            if [[ "$file" =~ \.(php)$ ]]; then
+              while IFS= read -r match; do
+                debug_hits+=("$match")
+              done < <(grep -nE "$PHP_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
+            fi
+
+            if [[ "$file" =~ \.(js|ts|jsx|tsx|vue)$ ]]; then
+              while IFS= read -r match; do
+                debug_hits+=("$match")
+              done < <(grep -nE "$JS_DEBUG_PATTERN" "$file" | sed "s|^|  $file:|" || true)
+            fi
+          done
+
+          if [ ${#debug_hits[@]} -gt 0 ]; then
+            echo ""
+            echo "ERROR: Debug statements detected in changed files:"
+            echo ""
+            for hit in "${debug_hits[@]}"; do
+              echo "$hit"
+            done
+            echo ""
+            echo "Please remove these debug statements before merging."
+            echo "Patterns checked — PHP: dd(, var_dump(  |  JS/TS: console.log(, debugger;"
+            echo ""
+            exit 1
+          fi
+
+          echo "No debug statements found."
