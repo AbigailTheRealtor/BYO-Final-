@@ -1138,6 +1138,59 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Referral Fee (Landlord, agent-to-agent) --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Referral Fee (%)</label>
+                        <div class="input-group mt-2">
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="100"
+                                   name="referral_fee_percent"
+                                   class="form-control"
+                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
+                                   placeholder="Enter referral fee percentage (e.g., 25)">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
+
+                    {{-- Split Payment Due (Landlord) --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Split Payment Due</label>
+                        <div class="input-cover mt-2">
+                            <select name="split_payment_due" class="form-control has-icon"
+                                    data-icon="fa-solid fa-clock">
+                                <option value="">Select</option>
+                                <option value="Full amount upon execution of lease, sales contract, or other transfer agreement"
+                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === 'Full amount upon execution of lease, sales contract, or other transfer agreement')>
+                                    Full amount upon execution of lease, sales contract, or other transfer agreement
+                                </option>
+                                <option value="50% due upon execution, 50% due upon commencement of agreement"
+                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === '50% due upon execution, 50% due upon commencement of agreement')>
+                                    50% due upon execution, 50% due upon commencement of agreement
+                                </option>
+                                <option value="50% due upon execution, 50% due uponoccupancy of premises"
+                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === '50% due upon execution, 50% due uponoccupancy of premises')>
+                                    50% due upon execution, 50% due upon occupancy of premises
+                                </option>
+                                <option value="Other"
+                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === 'Other')>
+                                    Other
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {{-- Split Payment Due — Other (Landlord) --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">If Other, Specify</label>
+                        <input type="text"
+                               name="split_payment_due_other"
+                               class="form-control"
+                               value="{{ old('split_payment_due_other', $data['split_payment_due_other'] ?? '') }}"
+                               placeholder="Describe custom payment timing">
+                    </div>
                 @endif
 
                 @if ($role === 'tenant')
