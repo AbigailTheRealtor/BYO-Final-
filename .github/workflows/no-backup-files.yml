@@ -44,7 +44,7 @@ jobs:
       - name: Check for backup files in changed files
         run: |
           DIRS="app resources public database"
-          BAK_PATTERN='\.(bak|bak_.+)$| copy(\.[^/]+)?$'
+          BAK_PATTERN='\.(bak|bak_.+|orig|tmp)$| copy(\.[^/]+)?$'
 
           found=()
 
@@ -73,7 +73,8 @@ jobs:
             done
             echo ""
             echo "Please remove or rename these files before merging."
-            echo "Backup files (*.bak, *.bak_*, '* copy.*') must not be committed."
+            echo "Backup files (*.bak, *.bak_*, *.orig, *.tmp, '* copy.*') must not be committed."
+            echo "These extensions can confuse Laravel's migration scanner and other tooling."
             exit 1
           fi
 

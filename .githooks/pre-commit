@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Pre-commit hook: reject backup files in tracked directories
 #
-# Patterns blocked: *.bak, *.bak_*, "* copy.*", "* copy" (no ext)
+# Patterns blocked: *.bak, *.bak_*, *.orig, *.tmp, "* copy.*", "* copy" (no ext)
 # Directories checked: app/, resources/, public/, database/
 
 set -euo pipefail
 
 DIRS="app resources public database"
 
-BAK_PATTERN='\.(bak|bak_.+)$| copy(\.[^/]+)?$'
+BAK_PATTERN='\.(bak|bak_.+|orig|tmp)$| copy(\.[^/]+)?$'
 
 found=()
 
@@ -29,7 +29,8 @@ if [ ${#found[@]} -gt 0 ]; then
     done
     echo ""
     echo "Please remove or rename these files before committing."
-    echo "Backup files (*.bak, *.bak_*, '* copy.*') must not be committed."
+    echo "Backup files (*.bak, *.bak_*, *.orig, *.tmp, '* copy.*') must not be committed."
+    echo "These extensions can confuse Laravel's migration scanner and other tooling."
     echo "If you intended to commit a renamed/cleaned version, rename the file"
     echo "to its final name first, then stage and commit it."
     echo ""
