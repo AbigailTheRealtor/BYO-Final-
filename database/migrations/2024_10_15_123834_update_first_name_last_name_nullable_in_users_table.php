@@ -13,10 +13,12 @@ class UpdateFirstNameLastNameNullableInUsersTable extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('first_name')->nullable(false)->change();
-            $table->string('last_name')->nullable(false)->change();
-        });
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('first_name')->nullable(false)->change();
+                $table->string('last_name')->nullable(false)->change();
+            });
+        }
     }
 
     /**
@@ -26,9 +28,11 @@ class UpdateFirstNameLastNameNullableInUsersTable extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('first_name')->nullable()->change();
-            $table->string('last_name')->nullable()->change();
-        });
+        if (Schema::hasTable('users')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('first_name')->nullable()->change();
+                $table->string('last_name')->nullable()->change();
+            });
+        }
     }
 }

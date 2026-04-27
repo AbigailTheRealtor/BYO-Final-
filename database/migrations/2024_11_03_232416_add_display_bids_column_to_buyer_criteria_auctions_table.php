@@ -13,9 +13,11 @@ class AddDisplayBidsColumnToBuyerCriteriaAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
-            $table->boolean('display_bids')->after('id')->default(true);
-        });
+        if (Schema::hasTable('buyer_criteria_auctions') && !Schema::hasColumn('buyer_criteria_auctions', 'display_bids')) {
+            Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
+                $table->boolean('display_bids')->after('id')->default(true);
+            });
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ class AddDisplayBidsColumnToBuyerCriteriaAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
-            $table->dropColumn('display_bids');
-        });
+        if (Schema::hasTable('buyer_criteria_auctions') && Schema::hasColumn('buyer_criteria_auctions', 'display_bids')) {
+            Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
+                $table->dropColumn('display_bids');
+            });
+        }
     }
 }

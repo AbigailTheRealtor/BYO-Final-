@@ -13,11 +13,13 @@ class AddIsDraftToBuyerAgentAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('buyer_agent_auctions', function (Blueprint $table) {
-            if (!Schema::hasColumn('buyer_agent_auctions', 'is_draft')) {
-                $table->boolean('is_draft')->default(false)->after('listing_id');
-            }
-        });
+        if (Schema::hasTable('buyer_agent_auctions')) {
+            Schema::table('buyer_agent_auctions', function (Blueprint $table) {
+                if (!Schema::hasColumn('buyer_agent_auctions', 'is_draft')) {
+                    $table->boolean('is_draft')->default(false)->after('listing_id');
+                }
+            });
+        }
     }
 
     /**
@@ -27,10 +29,12 @@ class AddIsDraftToBuyerAgentAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('buyer_agent_auctions', function (Blueprint $table) {
-            if (Schema::hasColumn('buyer_agent_auctions', 'is_draft')) {
-                $table->dropColumn('is_draft');
-            }
-        });
+        if (Schema::hasTable('buyer_agent_auctions')) {
+            Schema::table('buyer_agent_auctions', function (Blueprint $table) {
+                if (Schema::hasColumn('buyer_agent_auctions', 'is_draft')) {
+                    $table->dropColumn('is_draft');
+                }
+            });
+        }
     }
 }

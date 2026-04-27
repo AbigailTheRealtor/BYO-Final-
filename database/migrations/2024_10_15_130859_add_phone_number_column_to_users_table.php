@@ -13,9 +13,11 @@ class AddPhoneNumberColumnToUsersTable extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('phone_number')->after('email');
-        });
+        if (Schema::hasTable('users') && !Schema::hasColumn('users', 'phone_number')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('phone_number')->after('email');
+            });
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ class AddPhoneNumberColumnToUsersTable extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('phone_number');
-        });
+        if (Schema::hasTable('users') && Schema::hasColumn('users', 'phone_number')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('phone_number');
+            });
+        }
     }
 }

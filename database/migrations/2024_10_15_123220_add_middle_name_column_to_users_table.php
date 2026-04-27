@@ -13,9 +13,11 @@ class AddMiddleNameColumnToUsersTable extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('middle_name')->after('first_name')->nullable();
-        });
+        if (Schema::hasTable('users') && !Schema::hasColumn('users', 'middle_name')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('middle_name')->after('first_name')->nullable();
+            });
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ class AddMiddleNameColumnToUsersTable extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('middle_name');
-        });
+        if (Schema::hasTable('users') && Schema::hasColumn('users', 'middle_name')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('middle_name');
+            });
+        }
     }
 }

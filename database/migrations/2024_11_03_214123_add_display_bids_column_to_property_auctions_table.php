@@ -13,9 +13,11 @@ class AddDisplayBidsColumnToPropertyAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('property_auctions', function (Blueprint $table) {
-            $table->boolean('display_bids')->after('id')->default(true);
-        });
+        if (Schema::hasTable('property_auctions') && !Schema::hasColumn('property_auctions', 'display_bids')) {
+            Schema::table('property_auctions', function (Blueprint $table) {
+                $table->boolean('display_bids')->after('id')->default(true);
+            });
+        }
     }
 
     /**
@@ -25,8 +27,10 @@ class AddDisplayBidsColumnToPropertyAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('property_auctions', function (Blueprint $table) {
-            $table->dropColumn('display_bids');
-        });
+        if (Schema::hasTable('property_auctions') && Schema::hasColumn('property_auctions', 'display_bids')) {
+            Schema::table('property_auctions', function (Blueprint $table) {
+                $table->dropColumn('display_bids');
+            });
+        }
     }
 }

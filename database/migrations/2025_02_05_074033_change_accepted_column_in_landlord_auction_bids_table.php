@@ -27,8 +27,10 @@ class ChangeAcceptedColumnInLandlordAuctionBidsTable extends Migration
      */
     public function down()
     {
-        Schema::table('landlord_auction_bids', function (Blueprint $table) {
-            $table->boolean('accepted')->change();
-        });
+        if (Schema::hasTable('landlord_auction_bids')) {
+            Schema::table('landlord_auction_bids', function (Blueprint $table) {
+                $table->boolean('accepted')->change();
+            });
+        }
     }
 }

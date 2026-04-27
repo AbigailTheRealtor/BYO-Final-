@@ -8,15 +8,19 @@ class AddPropertyIdToUserAgentsTable extends Migration
 {
     public function up()
     {
-        Schema::table('user_agents', function (Blueprint $table) {
-            $table->unsignedBigInteger('property_id')->nullable()->after('agent_id');
-        });
+        if (Schema::hasTable('user_agents') && !Schema::hasColumn('user_agents', 'property_id')) {
+            Schema::table('user_agents', function (Blueprint $table) {
+                $table->unsignedBigInteger('property_id')->nullable()->after('agent_id');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('user_agents', function (Blueprint $table) {
-            $table->dropColumn('property_id');
-        });
+        if (Schema::hasTable('user_agents') && Schema::hasColumn('user_agents', 'property_id')) {
+            Schema::table('user_agents', function (Blueprint $table) {
+                $table->dropColumn('property_id');
+            });
+        }
     }
 }

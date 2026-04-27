@@ -13,17 +13,19 @@ class AddAcceptedDateToTenantAgentAuctionBidsTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenant_agent_auction_bids', function (Blueprint $table) {
-            if (!Schema::hasColumn('tenant_agent_auction_bids', 'accepted_date')) {
-                $table->timestamp('accepted_date')->nullable();
-            }
-            if (!Schema::hasColumn('tenant_agent_auction_bids', 'rejected_date')) {
-                $table->timestamp('rejected_date')->nullable();
-            }
-            if (!Schema::hasColumn('tenant_agent_auction_bids', 'countered_date')) {
-                $table->timestamp('countered_date')->nullable();
-            }
-        });
+        if (Schema::hasTable('tenant_agent_auction_bids')) {
+            Schema::table('tenant_agent_auction_bids', function (Blueprint $table) {
+                if (!Schema::hasColumn('tenant_agent_auction_bids', 'accepted_date')) {
+                    $table->timestamp('accepted_date')->nullable();
+                }
+                if (!Schema::hasColumn('tenant_agent_auction_bids', 'rejected_date')) {
+                    $table->timestamp('rejected_date')->nullable();
+                }
+                if (!Schema::hasColumn('tenant_agent_auction_bids', 'countered_date')) {
+                    $table->timestamp('countered_date')->nullable();
+                }
+            });
+        }
     }
 
     /**
@@ -33,16 +35,18 @@ class AddAcceptedDateToTenantAgentAuctionBidsTable extends Migration
      */
     public function down()
     {
-        Schema::table('tenant_agent_auction_bids', function (Blueprint $table) {
-            if (Schema::hasColumn('tenant_agent_auction_bids', 'accepted_date')) {
-                $table->dropColumn('accepted_date');
-            }
-            if (Schema::hasColumn('tenant_agent_auction_bids', 'rejected_date')) {
-                $table->dropColumn('rejected_date');
-            }
-            if (Schema::hasColumn('tenant_agent_auction_bids', 'countered_date')) {
-                $table->dropColumn('countered_date');
-            }
-        });
+        if (Schema::hasTable('tenant_agent_auction_bids')) {
+            Schema::table('tenant_agent_auction_bids', function (Blueprint $table) {
+                if (Schema::hasColumn('tenant_agent_auction_bids', 'accepted_date')) {
+                    $table->dropColumn('accepted_date');
+                }
+                if (Schema::hasColumn('tenant_agent_auction_bids', 'rejected_date')) {
+                    $table->dropColumn('rejected_date');
+                }
+                if (Schema::hasColumn('tenant_agent_auction_bids', 'countered_date')) {
+                    $table->dropColumn('countered_date');
+                }
+            });
+        }
     }
 }

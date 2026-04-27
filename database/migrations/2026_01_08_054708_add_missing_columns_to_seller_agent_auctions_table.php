@@ -13,14 +13,16 @@ class AddMissingColumnsToSellerAgentAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('seller_agent_auctions', function (Blueprint $table) {
-            if (!Schema::hasColumn('seller_agent_auctions', 'title')) {
-                $table->string('title')->nullable()->after('address');
-            }
-            if (!Schema::hasColumn('seller_agent_auctions', 'is_draft')) {
-                $table->boolean('is_draft')->default(false)->after('is_approved');
-            }
-        });
+        if (Schema::hasTable('seller_agent_auctions')) {
+            Schema::table('seller_agent_auctions', function (Blueprint $table) {
+                if (!Schema::hasColumn('seller_agent_auctions', 'title')) {
+                    $table->string('title')->nullable()->after('address');
+                }
+                if (!Schema::hasColumn('seller_agent_auctions', 'is_draft')) {
+                    $table->boolean('is_draft')->default(false)->after('is_approved');
+                }
+            });
+        }
     }
 
     /**
@@ -30,13 +32,15 @@ class AddMissingColumnsToSellerAgentAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('seller_agent_auctions', function (Blueprint $table) {
-            if (Schema::hasColumn('seller_agent_auctions', 'title')) {
-                $table->dropColumn('title');
-            }
-            if (Schema::hasColumn('seller_agent_auctions', 'is_draft')) {
-                $table->dropColumn('is_draft');
-            }
-        });
+        if (Schema::hasTable('seller_agent_auctions')) {
+            Schema::table('seller_agent_auctions', function (Blueprint $table) {
+                if (Schema::hasColumn('seller_agent_auctions', 'title')) {
+                    $table->dropColumn('title');
+                }
+                if (Schema::hasColumn('seller_agent_auctions', 'is_draft')) {
+                    $table->dropColumn('is_draft');
+                }
+            });
+        }
     }
 }

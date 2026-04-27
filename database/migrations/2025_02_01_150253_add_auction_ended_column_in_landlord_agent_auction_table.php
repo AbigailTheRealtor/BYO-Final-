@@ -27,8 +27,10 @@ class AddAuctionEndedColumnInLandlordAgentAuctionTable extends Migration
      */
     public function down()
     {
-        Schema::table('landlord_agent_auctions', function (Blueprint $table) {
-            $table->dropColumn('auction_ended');
-        });
+        if (Schema::hasTable('landlord_agent_auctions') && Schema::hasColumn('landlord_agent_auctions', 'auction_ended')) {
+            Schema::table('landlord_agent_auctions', function (Blueprint $table) {
+                $table->dropColumn('auction_ended');
+            });
+        }
     }
 }

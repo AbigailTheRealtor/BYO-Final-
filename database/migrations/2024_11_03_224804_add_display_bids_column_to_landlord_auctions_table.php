@@ -27,8 +27,10 @@ class AddDisplayBidsColumnToLandlordAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('landlord_auctions', function (Blueprint $table) {
-            $table->dropColumn('display_bids');
-        });
+        if (Schema::hasTable('landlord_auctions') && Schema::hasColumn('landlord_auctions', 'display_bids')) {
+            Schema::table('landlord_auctions', function (Blueprint $table) {
+                $table->dropColumn('display_bids');
+            });
+        }
     }
 }

@@ -27,8 +27,10 @@ class AddDisplayBidsColumnToTenantCriteriaAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('tenat_criteria_auctions', function (Blueprint $table) {
-            $table->dropColumn('display_bids');
-        });
+        if (Schema::hasTable('tenant_criteria_auctions') && Schema::hasColumn('tenant_criteria_auctions', 'display_bids')) {
+            Schema::table('tenant_criteria_auctions', function (Blueprint $table) {
+                $table->dropColumn('display_bids');
+            });
+        }
     }
 }
