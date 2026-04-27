@@ -1,0 +1,82 @@
+TASK: Add Broker Compensation & Agency Agreement Terms to Agent Dashboard → My Offer Presets.
+
+ISSUE:
+Agent Bids already show Broker Compensation & Agency Agreement Terms by user type and property type. Agent Offer Presets also need this same section so agents can save default compensation/agreement terms per preset.
+
+GOAL:
+Agent Offer Presets must include the correct Broker Compensation & Agency Agreement Terms fields for each exact user type/property type, matching the existing listing creation/bid system.
+
+COVERAGE:
+Audit and support:
+- Tenant: Residential, Commercial
+- Buyer: Residential, Income, Commercial, Business Opportunity, Vacant Land
+- Seller: Residential, Income, Commercial, Business Opportunity, Vacant Land
+- Landlord: Residential, Commercial
+
+CRITICAL SAFEGUARDS:
+- Do NOT rewrite existing listing creation flows.
+- Do NOT change existing Agent Bid logic unless needed only to map presets into bids.
+- Do NOT rename existing broker compensation fields.
+- Do NOT remove existing fields.
+- Do NOT change match score logic.
+- Do NOT change accepted bid summary logic.
+- Do NOT change referral fee logic.
+- Do NOT change dashboard routing outside Agent Offer Presets.
+- Use existing field names, labels, options, placeholders, and conditional logic wherever possible.
+- If storage changes are required, use additive-only migrations. Do not rename/drop existing tables or columns.
+- Preserve all existing saved presets and services.
+
+AUDIT STEPS:
+1. Locate the source of truth for Broker Compensation & Agency Agreement Terms in the listing creation flows.
+2. Locate the source of truth for Agent Bid Broker Compensation & Agency Agreement Terms.
+3. Locate Agent Offer Preset create/edit/save/apply logic.
+4. Compare required compensation/agreement fields by:
+   - user type
+   - property type
+   - residential/commercial/income/business/vacant land logic
+5. Identify whether Agent Offer Presets currently store only services or also term/compensation fields.
+6. Report findings before coding.
+
+FIX REQUIREMENTS:
+1. Add a Broker Compensation & Agency Agreement Terms section to Agent Offer Presets.
+2. The section must dynamically show the correct fields based on selected user type and property type.
+3. Fields must match the same labels/options/placeholders already used in the system.
+4. Terms saved in a preset must reload when editing that preset.
+5. Terms saved in a preset must apply correctly when the agent uses the preset to create a bid/direct hire offer.
+6. Existing presets without these terms must continue to work.
+7. Empty optional fields should not break bid creation.
+8. Required fields should follow the same required/optional behavior already used for that user/property type.
+
+FIELD SOURCE RULE:
+Do not invent new compensation fields.
+Reuse the exact current field keys and labels already used in Agent Bids/listing creation for each role/property type.
+
+UI REQUIREMENTS:
+- Add section title:
+  “Broker Compensation & Agency Agreement Terms”
+- Place it near the services section in My Offer Presets.
+- Keep styling consistent with the existing preset page.
+- Use the same conditional field behavior already used in listing creation/bids.
+- Do not expose unrelated property details, client info, or private listing fields.
+
+TESTING REQUIREMENTS:
+For each role/property type:
+1. Create or edit an Agent Offer Preset.
+2. Confirm correct Broker Compensation & Agency Agreement Terms fields appear.
+3. Fill in compensation/agreement terms.
+4. Save preset.
+5. Reopen preset and confirm fields persist.
+6. Apply preset to an Agent Bid/direct hire flow.
+7. Confirm the bid receives the correct compensation/agreement terms.
+8. Confirm services still work.
+9. Confirm custom Additional Services still work.
+10. Confirm no listing creation flow changed.
+
+FINAL REPORT REQUIRED:
+After completing, provide:
+1. Files reviewed.
+2. Files changed.
+3. Source of truth used for each user/property type.
+4. Confirmation each role/property type has matching Broker Compensation & Agency Agreement Terms.
+5. Confirmation terms save, reload, edit, and apply to bids correctly.
+6. Confirmation no match score, accepted summary, referral fee, or listing creation logic was changed.

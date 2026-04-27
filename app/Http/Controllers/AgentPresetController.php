@@ -62,6 +62,7 @@ class AgentPresetController extends Controller
         $services = AgentPresetCatalog::getServices($role, $propertyType);
 
         $selectedServices = $data['services'] ?? [];
+        $otherServices    = $data['other_services'] ?? [];
 
         $roleLabel     = AgentDefaultProfile::roleLabel($role);
         $propertyLabel = AgentDefaultProfile::propertyLabel($propertyType);
@@ -75,7 +76,7 @@ class AgentPresetController extends Controller
 
         return view('agent-presets.edit', compact(
             'role', 'propertyType', 'data', 'services',
-            'selectedServices', 'roleLabel', 'propertyLabel',
+            'selectedServices', 'otherServices', 'roleLabel', 'propertyLabel',
             'profileExists', 'agentShortId', 'hireMeUrl'
         ));
     }
@@ -92,6 +93,8 @@ class AgentPresetController extends Controller
         $request->validate([
             'services'          => ['nullable', 'array'],
             'services.*'        => ['string', 'max:500'],
+            'other_services'    => ['nullable', 'array'],
+            'other_services.*'  => ['string', 'max:500'],
             'bio'               => ['nullable', 'string', 'max:5000'],
             'why_hire_you'      => ['nullable', 'string', 'max:5000'],
             'what_sets_you_apart' => ['nullable', 'string', 'max:5000'],
@@ -112,8 +115,14 @@ class AgentPresetController extends Controller
             'social_media_raw'  => ['nullable', 'string', 'max:5000'],
         ]);
 
+        $otherServicesRaw = $request->input('other_services', []);
+        $otherServices    = array_values(array_filter(
+            array_map('trim', (array) $otherServicesRaw)
+        ));
+
         $profileData = [
             'services'            => $request->input('services', []),
+            'other_services'      => $otherServices,
             'bio'                 => $request->input('bio', ''),
             'why_hire_you'        => $request->input('why_hire_you', ''),
             'what_sets_you_apart' => $request->input('what_sets_you_apart', ''),

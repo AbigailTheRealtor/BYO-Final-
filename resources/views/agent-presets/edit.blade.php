@@ -303,6 +303,35 @@
                         <p class="text-muted fst-italic">No services available for this combination.</p>
                     @endforelse
                 </div>
+
+                {{-- ── ADDITIONAL / CUSTOM SERVICES ────────────────────────────── --}}
+                <div class="additional-services-wrap mt-4 pt-3" style="border-top: 1px solid #dee2e6;">
+                    <div class="d-flex align-items-center justify-content-between mb-1 flex-wrap gap-2">
+                        <span class="form-label-sm mb-0">Additional Services</span>
+                        <button type="button" id="add-custom-service-btn"
+                                class="btn btn-sm btn-outline-secondary">
+                            <i class="fa fa-plus me-1"></i>Add Custom Service
+                        </button>
+                    </div>
+                    <div class="form-hint mb-2">Enter any custom services not listed above — these are included alongside your checked services when pre-filling bids.</div>
+                    <div id="custom-services-list">
+                        @foreach ($otherServices as $osVal)
+                            <div class="custom-service-row d-flex gap-2 mb-2">
+                                <input type="text"
+                                       name="other_services[]"
+                                       class="form-control form-control-sm"
+                                       value="{{ $osVal }}"
+                                       placeholder="Enter a custom service the Agent is willing to provide"
+                                       maxlength="500">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger custom-service-remove flex-shrink-0"
+                                        title="Remove this service">
+                                    <i class="fa fa-times"></i>
+                                </button>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -603,6 +632,53 @@
         }
     });
     @endif
+
+    // ── Additional / Custom Services add & remove ─────────────────────────
+    (function () {
+        var list = document.getElementById('custom-services-list');
+        var addBtn = document.getElementById('add-custom-service-btn');
+
+        function makeRow() {
+            var row = document.createElement('div');
+            row.className = 'custom-service-row d-flex gap-2 mb-2';
+
+            var inp = document.createElement('input');
+            inp.type = 'text';
+            inp.name = 'other_services[]';
+            inp.className = 'form-control form-control-sm';
+            inp.placeholder = 'Enter a custom service the Agent is willing to provide';
+            inp.maxLength = 500;
+
+            var removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'btn btn-sm btn-outline-danger custom-service-remove flex-shrink-0';
+            removeBtn.title = 'Remove this service';
+            removeBtn.innerHTML = '<i class="fa fa-times"></i>';
+            removeBtn.addEventListener('click', function () {
+                row.parentNode.removeChild(row);
+            });
+
+            row.appendChild(inp);
+            row.appendChild(removeBtn);
+            return row;
+        }
+
+        if (addBtn && list) {
+            addBtn.addEventListener('click', function () {
+                var row = makeRow();
+                list.appendChild(row);
+                row.querySelector('input').focus();
+            });
+
+            list.addEventListener('click', function (e) {
+                var btn = e.target.closest('.custom-service-remove');
+                if (btn) {
+                    var row = btn.closest('.custom-service-row');
+                    if (row) { row.parentNode.removeChild(row); }
+                }
+            });
+        }
+    })();
 
     // ── Copy Hire Me Link button ──────────────────────────────────────────
     function fallbackCopy(text, callback) {
