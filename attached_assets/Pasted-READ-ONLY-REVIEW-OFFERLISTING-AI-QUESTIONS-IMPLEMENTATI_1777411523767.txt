@@ -1,0 +1,113 @@
+READ-ONLY REVIEW — OFFERLISTING AI QUESTIONS IMPLEMENTATION.
+
+Do not edit files.
+
+Goal:
+Review the AI Questions / Chatbot Knowledge Base tab that was added to Create Regular Listing / OfferListing flows.
+
+Only review:
+resources/views/livewire/offer-listing/**
+app/Http/Livewire/OfferListing/**
+config/ai_faq_seller.php
+config/ai_faq_buyer.php
+config/ai_faq_landlord.php
+config/tenant_ai_faq.php
+
+Do NOT modify:
+seller_property/**
+original Hire Agent flows
+routes
+dashboard
+bid/counter/accept logic
+
+--------------------------------------------------
+
+REVIEW TASKS
+
+1. Tab placement
+Confirm AI Questions is the FINAL tab for:
+- Seller Create Regular Listing
+- Buyer Create Regular Listing
+- Landlord Create Regular Listing
+- Tenant Create Regular Listing
+- All related edit flows
+
+--------------------------------------------------
+
+2. Question source
+Confirm each role pulls from the correct config:
+- Seller → config/ai_faq_seller.php
+- Buyer → config/ai_faq_buyer.php
+- Landlord → config/ai_faq_landlord.php
+- Tenant → config/tenant_ai_faq.php
+
+--------------------------------------------------
+
+3. Property-type logic
+Confirm addon questions show correctly based on property type:
+
+Seller:
+- Residential
+- Income
+- Commercial
+- Business Opportunity
+- Vacant Land
+
+Buyer:
+- Residential
+- Income
+- Commercial
+- Business Opportunity
+- Vacant Land
+
+Landlord:
+- Residential
+- Commercial
+
+Tenant:
+- Residential
+- Commercial
+
+Important:
+- Do NOT assume mappings — verify actual logic
+- Confirm visible_for is being used correctly
+
+--------------------------------------------------
+
+4. Data binding
+Confirm ALL inputs use:
+wire:model.defer="listing_ai_faq.{question_key}"
+
+Confirm no missing bindings or inconsistent keys.
+
+--------------------------------------------------
+
+5. Save and reload
+Confirm:
+- Create → save → edit → reload shows saved AI answers
+- Works for all roles (Seller, Buyer, Landlord, Tenant)
+- No data loss
+- No JSON corruption
+
+--------------------------------------------------
+
+6. Viewer compatibility
+Confirm:
+- Saved answers are compatible with listing-ai-knowledge-base.blade.php
+- Identify any gaps (especially addon questions not rendering)
+
+--------------------------------------------------
+
+7. Safety checks
+Confirm:
+- No AI Questions exist in seller_property/**
+- No AI Questions exist in Hire Agent flows
+- No duplicate hardcoded question blocks exist
+- No routes or dashboard files were modified
+
+--------------------------------------------------
+
+OUTPUT
+
+Write full report to:
+.local/offerlisting_ai_questions_review_report.md
