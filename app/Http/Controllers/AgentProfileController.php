@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 class AgentProfileController extends Controller
 {
     /**
-     * Keys from profile_data that are safe to expose on the public profile page.
+     * Keys from profile_data that are safe to expose on the public profile page (35 keys).
      * Only these keys are passed to the Blade view — all other keys (compensation
      * structures, referral fees, agency agreement terms, broker fee details, etc.)
      * are stripped server-side before the view is rendered.
