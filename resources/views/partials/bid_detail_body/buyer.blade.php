@@ -287,6 +287,71 @@
                                                                                 </div>
                                                                             @endif
 
+                                                                            {{-- ===== AGENT HIGHLIGHTS STRIP ===== --}}
+                                                                            @php
+                                                                                $bidAgentHighlightProfile = \App\Models\AgentDefaultProfile::where('user_id', $bid->user_id)
+                                                                                    ->whereNotNull('profile_data')
+                                                                                    ->orderByDesc('updated_at')
+                                                                                    ->first();
+                                                                                $bidHighlights = $bidAgentHighlightProfile?->profile_data ?? [];
+                                                                                $hlYearsExp    = $bidHighlights['years_experience'] ?? null;
+                                                                                $hlTxns        = $bidHighlights['transactions_last_12_months'] ?? null;
+                                                                                $hlResponse    = $bidHighlights['avg_response_time'] ?? null;
+                                                                                $hlAreas       = $bidHighlights['primary_areas_served'] ?? null;
+                                                                                $hlReview      = $bidHighlights['review_1'] ?? null;
+                                                                                $hlHasAny      = $hlYearsExp || $hlTxns || $hlResponse || $hlAreas || $hlReview;
+                                                                                $hlShortId     = optional($bid->user)->short_id;
+                                                                            @endphp
+                                                                            @if ($hlHasAny)
+                                                                            <div class="agent-highlights-strip mb-3 p-3"
+                                                                                 style="background:#f0fafa;border:1px solid #b2e0e0;border-radius:8px;border-left:4px solid #049399;">
+                                                                                <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap" style="gap:6px;">
+                                                                                    <span class="fw-semibold" style="color:#049399;font-size:0.9rem;">
+                                                                                        <i class="fa fa-star me-1"></i>Agent Highlights
+                                                                                    </span>
+                                                                                    @if ($hlShortId)
+                                                                                    <a href="{{ route('agent.profile.public', $hlShortId) }}" target="_blank"
+                                                                                       class="text-decoration-none small" style="color:#049399;">
+                                                                                        <i class="fa fa-external-link-alt me-1"></i>View Full Profile
+                                                                                    </a>
+                                                                                    @endif
+                                                                                </div>
+                                                                                <div class="row g-2">
+                                                                                    @if ($hlYearsExp)
+                                                                                    <div class="col-6 col-md-4">
+                                                                                        <div class="small text-muted">Years of Experience</div>
+                                                                                        <div class="fw-semibold" style="font-size:0.95rem;">{{ $hlYearsExp }}</div>
+                                                                                    </div>
+                                                                                    @endif
+                                                                                    @if ($hlTxns)
+                                                                                    <div class="col-6 col-md-4">
+                                                                                        <div class="small text-muted">Transactions (12 mo.)</div>
+                                                                                        <div class="fw-semibold" style="font-size:0.95rem;">{{ $hlTxns }}</div>
+                                                                                    </div>
+                                                                                    @endif
+                                                                                    @if ($hlResponse)
+                                                                                    <div class="col-6 col-md-4">
+                                                                                        <div class="small text-muted">Avg. Response Time</div>
+                                                                                        <div class="fw-semibold" style="font-size:0.95rem;">{{ $hlResponse }}</div>
+                                                                                    </div>
+                                                                                    @endif
+                                                                                    @if ($hlAreas)
+                                                                                    <div class="col-12 col-md-6">
+                                                                                        <div class="small text-muted">Primary Areas Served</div>
+                                                                                        <div class="fw-semibold" style="font-size:0.95rem;">{{ $hlAreas }}</div>
+                                                                                    </div>
+                                                                                    @endif
+                                                                                </div>
+                                                                                @if ($hlReview)
+                                                                                <div class="mt-2 pt-2" style="border-top:1px dashed #b2e0e0;">
+                                                                                    <div class="small text-muted mb-1"><i class="fa fa-quote-left me-1"></i>Featured Review</div>
+                                                                                    <div class="fst-italic text-muted small" style="font-size:0.88rem;">{{ $hlReview }}</div>
+                                                                                </div>
+                                                                                @endif
+                                                                            </div>
+                                                                            @endif
+                                                                            {{-- ===== END AGENT HIGHLIGHTS STRIP ===== --}}
+
                                                                         </div>
 
                                                                         <!-- 2. Broker Compensation & Agency Agreement Terms -->

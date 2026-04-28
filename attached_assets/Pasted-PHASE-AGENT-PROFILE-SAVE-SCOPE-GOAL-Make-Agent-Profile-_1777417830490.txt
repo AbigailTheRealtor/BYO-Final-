@@ -1,0 +1,174 @@
+PHASE — AGENT PROFILE SAVE SCOPE
+
+GOAL:
+Make Agent Profile sections easy to reuse across presets. Agents should be able to fill out profile information once and choose whether to save it only to the current preset, all presets for the current role, or all roles/property types.
+
+IMPORTANT SAFEGUARDS:
+- Do NOT modify existing Hire Agent listing flows.
+- Do NOT modify Agent Bid forms.
+- Do NOT modify Accepted Bid Summary logic.
+- Do NOT modify HireAgentDirectController.
+- Do NOT modify AgentBidMapperService.
+- Do NOT create new database tables.
+- Do NOT rename or delete existing fields.
+- Use existing AgentDefaultProfile.profile_data JSON.
+- Preserve existing data unless the agent intentionally saves over the selected profile fields.
+- This change applies ONLY to public Agent Profile fields.
+
+AFFECTED PROFILE SECTIONS:
+Apply save-scope behavior only to these sections:
+
+1. Agent Overview
+2. Agent Credentials
+3. Presentation & Links
+4. Quick Highlights
+5. Areas Served
+6. Social Proof
+7. Video Intro
+8. Availability & Service Style
+
+PROFILE FIELDS INCLUDED:
+- bio
+- why_hire_you
+- what_sets_you_apart
+- additional_details
+- year_licensed
+- first_name
+- last_name
+- phone
+- email
+- brokerage
+- license_no
+- nar_id
+- presentation_link
+- business_card_link
+- reviews_links
+- website_link
+- social_media
+- years_experience
+- transactions_last_12_months
+- primary_areas_served
+- avg_response_time
+- is_full_time
+- cities_served
+- counties_served
+- neighborhoods_served
+- areas_notes
+- review_1
+- review_2
+- review_3
+- awards_recognition
+- intro_video_url
+- video_caption
+- availability_status
+- evenings_available
+- weekends_available
+- communication_style
+- preferred_contact_method
+
+FIELDS EXCLUDED:
+Do NOT apply save-scope behavior to:
+- services
+- other_services
+- broker compensation fields
+- agency agreement fields
+- referral_fee_percent
+- referral/cooperation fields
+- role/property-specific pricing fields
+- protection period fields
+- retainer fields
+- early termination fields
+- any Direct Hire, bid, counter, or accepted summary fields
+
+UI REQUIREMENT:
+In resources/views/agent-presets/edit.blade.php, add a save-scope selector near the Save button.
+
+Label:
+“How would you like to save this profile information?”
+
+Options:
+1. This preset only
+2. All [current role] presets
+3. All roles and property types
+
+Use field name:
+profile_save_scope
+
+Allowed values:
+- current_preset
+- current_role
+- all_roles
+
+Default:
+current_preset
+
+Suggested helper text:
+“This only applies to public Agent Profile sections. Services, compensation, and agreement terms stay specific to this preset.”
+
+CONTROLLER REQUIREMENT:
+In app/Http/Controllers/AgentPresetController.php, update save behavior.
+
+When saving, separate profile fields from preset-specific fields.
+
+Behavior:
+
+1. Always save preset-specific fields only to the current AgentDefaultProfile record.
+This includes services, other_services, compensation, agency terms, referral/cooperation terms, and all role/property-specific fields.
+
+2. Save public profile fields according to profile_save_scope:
+
+- current_preset:
+  Save listed profile fields only to the current AgentDefaultProfile record.
+
+- current_role:
+  Save listed profile fields to all AgentDefaultProfile records for this agent where role equals the current role.
+
+- all_roles:
+  Save listed profile fields to all AgentDefaultProfile records for this agent, across all roles and property types.
+
+IMPORTANT DATA RULES:
+- Only overwrite the profile fields listed above.
+- Do not overwrite unrelated profile_data keys.
+- Do not blank out existing values unless the current form submitted that field as intentionally blank.
+- Merge into existing profile_data JSON instead of replacing the whole JSON object.
+- Preserve arrays/legacy string handling already used for link fields.
+- If no profile_save_scope is submitted, default to current_preset.
+
+AUTOFILL REQUIREMENT:
+When editing any preset, public profile fields should be prefilled intelligently:
+
+1. First use the current preset’s existing profile fields if present.
+2. If a field is missing/empty on the current preset, fallback to the agent’s most recently updated AgentDefaultProfile record that has that field filled.
+3. Do not fallback for services, compensation, or agreement terms.
+4. Do not change the saved value just by displaying fallback data. Only persist when the agent clicks Save.
+
+PUBLIC PROFILE REQUIREMENT:
+Do not change the public profile display except to make sure it still reads profile fields normally and still does NOT show:
+- services
+- compensation
+- agency agreement terms
+- role-specific strategy
+- accept/counter/reject
+- send hire request form
+
+TESTING REQUIRED:
+After implementation, test and report:
+
+1. Files changed.
+2. Exact profile fields included in save-scope behavior.
+3. Exact fields excluded.
+4. Save “This preset only”:
+   - Edit Buyer Residential profile field.
+   - Confirm only Buyer Residential changes.
+   - Confirm Buyer Income/Seller/Tenant/Landlord do not change.
+5. Save “All Buyer presets”:
+   - Edit Buyer Residential profile field.
+   - Confirm all Buyer property type presets update.
+   - Confirm Seller/Tenant/Landlord do not change.
+6. Save “All roles and property types”:
+   - Edit one preset profile field.
+   - Confirm Buyer/Seller/Tenant/Landlord presets update.
+7. Confirm services remain preset-specific.
+8. Confirm compensation and agency agreement terms remain preset-specific.
+9. Confirm Agent clicking Open still shows public profile preview and does not trigger 403.
+10. Confirm no hire/bid/accepted summary logic changed.
