@@ -92,69 +92,62 @@ $auction_lengths_seller = [
         </div>
     </div>
 
-    {{--
-    {{-- Select Agent Type section removed for Regular Listing flow --}} --}}
-    {{-- Select Agent Type section removed for Regular Listing flow --}}
+    <!-- Select Listing Type -->
+    <div class="form-group mb-4 text-center">
+        <label class="fw-bold mb-3">Select Listing Type:</label>
+        <div class="row">
+            <!-- Seller Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.seller') }}" class="text-decoration-none">
+                    <div class="card user-type-card active-user-type border-primary" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Seller Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
 
-    {{--
-    @if ($service_type === 'full_service')
-        <div class="form-group mb-4">
-            <label class="fw-bold mb-3 d-block">Listing Status:
+            <!-- Buyer Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.buyer') }}" class="text-decoration-none">
+                    <div class="card user-type-card" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Buyer Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
 
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose the current stage of this listing: Active means the listing is open to Agent bids and inquiries; Pending indicates the client is reviewing options and a decision is pending; Hired Agent confirms that an Agent has been selected.">
-                    <i class="fa-solid fa-circle-info"></i>
-                </span></label>
+            <!-- Landlord Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.landlord') }}" class="text-decoration-none">
+                    <div class="card user-type-card" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Landlord Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
 
-            <div class="btn-group w-100 shadow-sm" role="group" aria-label="Listing status">
-                <input type="radio" class="btn-check" wire:model="listing_status" id="status-active"
-                    value="Active" autocomplete="off" checked>
-                <label class="btn btn-status btn-outline-success px-3 px-md-4 position-relative" for="status-active">
-                    <span class="status-icon"><i class="fas fa-check-circle me-2"></i></span>
-                    <span class="status-text">Active</span>
-                    <span
-                        class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
-                        <i class="fas fa-bolt"></i>
-                    </span>
-                </label>
-
-                <input type="radio" class="btn-check" wire:model="listing_status" id="status-pending"
-                    value="Pending" autocomplete="off">
-                <label class="btn btn-status btn-outline-warning px-3 px-md-4 position-relative" for="status-pending">
-                    <span class="status-icon"><i class="fas fa-clock me-2"></i></span>
-                    <span class="status-text">Pending</span>
-                    <span
-                        class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color:#d97706;color:#fff;">
-                        <i class="fas fa-exclamation"></i>
-                    </span>
-                </label>
-
-                <input type="radio" class="btn-check" wire:model="listing_status" id="status-hired"
-                    value="Hired Agent" autocomplete="off">
-                <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative" for="status-hired">
-                    <span class="status-icon"><i class="fas fa-user-tie me-2"></i></span>
-                    <span class="status-text">Hired Agent</span>
-                    <span
-                        class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                        <i class="fas fa-handshake"></i>
-                    </span>
-                </label>
-
-
-                  <!-- Expired Status -->
-            <input type="radio" class="btn-check" wire:model="listing_status" id="status-expired"
-                value="Expired" autocomplete="off" disabled>
-            <label class="btn btn-status btn-outline-secondary px-3 px-md-4 position-relative" for="status-expired">
-                <span class="status-icon"><i class="fas fa-calendar-times me-2"></i></span>
-                <span class="status-text">Expired</span>
-                <span
-                    class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">
-                    <i class="fas fa-calendar-times"></i>
-                </span>
-            </label>
+            <!-- Tenant Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.tenant') }}" class="text-decoration-none">
+                    <div class="card user-type-card" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Tenant Listing</p>
+                        </div>
+                    </div>
+                </a>
             </div>
         </div>
-    @endif --}}
+    </div>
 
     @if ($service_type === 'full_service')
         <div class="form-group mb-4">

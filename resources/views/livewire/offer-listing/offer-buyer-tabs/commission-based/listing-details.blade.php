@@ -83,9 +83,62 @@
         </div>
     </div>
 
-    {{--
-    {{-- Select Agent Type section removed for Regular Listing flow --}} --}}
-    {{-- Select Agent Type section removed for Regular Listing flow --}}
+    <!-- Select Listing Type -->
+    <div class="form-group mb-4 text-center">
+        <label class="fw-bold mb-3">Select Listing Type:</label>
+        <div class="row">
+            <!-- Seller Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.seller') }}" class="text-decoration-none">
+                    <div class="card user-type-card" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Seller Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Buyer Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.buyer') }}" class="text-decoration-none">
+                    <div class="card user-type-card active-user-type border-primary" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Buyer Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Landlord Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.landlord') }}" class="text-decoration-none">
+                    <div class="card user-type-card" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Landlord Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Tenant Option -->
+            <div class="col-md-3 mb-3">
+                <a href="{{ route('offer.listing.tenant') }}" class="text-decoration-none">
+                    <div class="card user-type-card" style="cursor: pointer;">
+                        <div class="card-body text-center position-relative">
+                            <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <p class="mb-1 user-selected">Create Tenant Listing</p>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
 
     @if ($service_type === 'full_service')
         <div class="form-group mb-4">
