@@ -876,3 +876,56 @@ if (app()->environment('local', 'development')) {
         return redirect('/dashboard');
     })->name('dev.login');
 }
+
+// ===========================================================================
+// LAYER 2 DEV-ONLY — OfferListing duplication test routes
+// These routes are DEVELOPMENT-ONLY. Do NOT use in production.
+// Purpose: smoke-test the duplicated OfferListing Livewire components.
+// Remove or gate behind feature flag before any production deployment.
+// ===========================================================================
+if (app()->environment('local', 'development')) {
+    Route::middleware(['auth'])->group(function () {
+        // Tenant Offer Listing (create)
+        Route::get('/dev/offer-listing/tenant/{user_type?}',
+            \App\Http\Livewire\OfferListing\Tenant\TenantOfferListing::class
+        )->name('dev.offer-listing.tenant');
+
+        // Tenant Offer Listing (edit)
+        Route::get('/dev/offer-listing/tenant/edit/{auctionId}/{user_type}',
+            \App\Http\Livewire\OfferListing\Tenant\TenantOfferListingEdit::class
+        )->name('dev.offer-listing.tenant.edit');
+
+        // Buyer Offer Listing (create)
+        Route::get('/dev/offer-listing/buyer',
+            \App\Http\Livewire\OfferListing\Buyer\BuyerOfferListing::class
+        )->name('dev.offer-listing.buyer');
+
+        // Buyer Offer Listing (edit)
+        Route::get('/dev/offer-listing/buyer/edit',
+            \App\Http\Livewire\OfferListing\Buyer\BuyerOfferListingEdit::class
+        )->name('dev.offer-listing.buyer.edit');
+
+        // Seller Offer Listing (create)
+        Route::get('/dev/offer-listing/seller',
+            \App\Http\Livewire\OfferListing\Seller\SellerOfferListing::class
+        )->name('dev.offer-listing.seller');
+
+        // Seller Offer Listing (edit)
+        Route::get('/dev/offer-listing/seller/edit',
+            \App\Http\Livewire\OfferListing\Seller\SellerOfferListingEdit::class
+        )->name('dev.offer-listing.seller.edit');
+
+        // Landlord Offer Listing (create)
+        Route::get('/dev/offer-listing/landlord',
+            \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class
+        )->name('dev.offer-listing.landlord');
+
+        // Landlord Offer Listing (edit)
+        Route::get('/dev/offer-listing/landlord/edit',
+            \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit::class
+        )->name('dev.offer-listing.landlord.edit');
+    });
+}
+// ===========================================================================
+// END LAYER 2 DEV-ONLY routes
+// ===========================================================================
