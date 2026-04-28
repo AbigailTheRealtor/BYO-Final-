@@ -918,7 +918,7 @@
           @endif
         </div>
         @php
-            $_sellerAiFaq = json_decode($data->info('listing_ai_faq') ?: '{}', true) ?? [];
+            $_sellerAiFaq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
             $_sellerIsOwner = auth()->check() && $auction->user_id == auth()->id();
         @endphp
         <x-listing-ai-knowledge-base

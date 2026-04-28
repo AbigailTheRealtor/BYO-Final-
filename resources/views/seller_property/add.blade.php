@@ -9747,15 +9747,6 @@
 
   };
 
-  $('#property_picture').click(function() {
-    $('.wizard-step-next').hide();
-    $('.wizard-step-finish').show();
-  });
-  $('#property_picture1').click(function() {
-    $('.wizard-step-next').hide();
-    $('.wizard-step-finish').show();
-  });
-
   $('#unit_type').change(function(){
     $('.unit-info').removeClass('d-none');
   })
