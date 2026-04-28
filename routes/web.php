@@ -180,6 +180,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
 });
 
+// Public agent profile — fully public, no auth required.
+Route::get('/agent/{agentShortId}/profile', [\App\Http\Controllers\AgentProfileController::class, 'show'])
+    ->name('agent.profile.public')
+    ->where('agentShortId', '[0-9a-f]+');
+
 // Widget — public, no auth. Read-only teaser card embeddable via iframe.
 Route::get('/widget/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Controllers\WidgetController::class, 'show'])
     ->where('agentShortId', '[0-9a-f]+')

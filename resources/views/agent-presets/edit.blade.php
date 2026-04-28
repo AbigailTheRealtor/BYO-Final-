@@ -517,6 +517,251 @@
             </div>
         </div>
 
+        {{-- ── QUICK HIGHLIGHTS ──────────────────────────────────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-highlights"
+                 aria-expanded="false"
+                 aria-controls="section-highlights">
+                <i class="fa fa-star section-icon"></i>
+                Quick Highlights
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-highlights">
+                <p class="form-hint mb-3">These at-a-glance stats appear on your public profile. All optional.</p>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <label class="form-label form-label-sm" for="years_experience">Years of Experience</label>
+                        <input type="text" class="form-control @error('years_experience') is-invalid @enderror"
+                               id="years_experience" name="years_experience"
+                               placeholder="e.g. 8"
+                               value="{{ old('years_experience', $data['years_experience'] ?? '') }}">
+                        @error('years_experience')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label form-label-sm" for="transactions_last_12_months">Transactions (Last 12 Months)</label>
+                        <input type="number" min="0" class="form-control @error('transactions_last_12_months') is-invalid @enderror"
+                               id="transactions_last_12_months" name="transactions_last_12_months"
+                               placeholder="e.g. 24"
+                               value="{{ old('transactions_last_12_months', isset($data['transactions_last_12_months']) && $data['transactions_last_12_months'] !== null ? $data['transactions_last_12_months'] : '') }}">
+                        @error('transactions_last_12_months')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label form-label-sm" for="avg_response_time">Average Response Time</label>
+                        <input type="text" class="form-control @error('avg_response_time') is-invalid @enderror"
+                               id="avg_response_time" name="avg_response_time"
+                               placeholder="e.g. Within 1 hour"
+                               value="{{ old('avg_response_time', $data['avg_response_time'] ?? '') }}">
+                        @error('avg_response_time')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label form-label-sm" for="is_full_time">Full-Time Agent?</label>
+                        <select class="form-control @error('is_full_time') is-invalid @enderror"
+                                id="is_full_time" name="is_full_time">
+                            <option value="">Select</option>
+                            <option value="Yes" @selected(old('is_full_time', $data['is_full_time'] ?? '') === 'Yes')>Yes</option>
+                            <option value="No" @selected(old('is_full_time', $data['is_full_time'] ?? '') === 'No')>No</option>
+                        </select>
+                        @error('is_full_time')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label form-label-sm" for="primary_areas_served">Primary Areas Served</label>
+                        <input type="text" class="form-control @error('primary_areas_served') is-invalid @enderror"
+                               id="primary_areas_served" name="primary_areas_served"
+                               placeholder="e.g. Miami-Dade, Broward County"
+                               value="{{ old('primary_areas_served', $data['primary_areas_served'] ?? '') }}">
+                        @error('primary_areas_served')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── AREAS SERVED ───────────────────────────────────────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-areas"
+                 aria-expanded="false"
+                 aria-controls="section-areas">
+                <i class="fa fa-map-marker section-icon"></i>
+                Areas Served
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-areas">
+                <p class="form-hint mb-3">Detailed geographic areas you serve. All optional.</p>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="cities_served">Cities Served</label>
+                    <textarea class="form-control @error('cities_served') is-invalid @enderror"
+                              id="cities_served" name="cities_served" rows="2"
+                              placeholder="e.g. Miami, Coral Gables, Hialeah">{{ old('cities_served', $data['cities_served'] ?? '') }}</textarea>
+                    @error('cities_served')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="counties_served">Counties Served</label>
+                    <textarea class="form-control @error('counties_served') is-invalid @enderror"
+                              id="counties_served" name="counties_served" rows="2"
+                              placeholder="e.g. Miami-Dade, Broward, Palm Beach">{{ old('counties_served', $data['counties_served'] ?? '') }}</textarea>
+                    @error('counties_served')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="neighborhoods_served">Neighborhoods Served</label>
+                    <textarea class="form-control @error('neighborhoods_served') is-invalid @enderror"
+                              id="neighborhoods_served" name="neighborhoods_served" rows="2"
+                              placeholder="e.g. Brickell, Wynwood, Little Havana">{{ old('neighborhoods_served', $data['neighborhoods_served'] ?? '') }}</textarea>
+                    @error('neighborhoods_served')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-0">
+                    <label class="form-label form-label-sm" for="areas_notes">Additional Notes</label>
+                    <textarea class="form-control @error('areas_notes') is-invalid @enderror"
+                              id="areas_notes" name="areas_notes" rows="2"
+                              placeholder="Any other geographic context...">{{ old('areas_notes', $data['areas_notes'] ?? '') }}</textarea>
+                    @error('areas_notes')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- ── SOCIAL PROOF ───────────────────────────────────────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-social-proof"
+                 aria-expanded="false"
+                 aria-controls="section-social-proof">
+                <i class="fa fa-quote-left section-icon"></i>
+                Social Proof
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-social-proof">
+                <p class="form-hint mb-3">Client testimonials and recognition that appear on your public profile. All optional.</p>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="review_1">Client Review / Testimonial 1</label>
+                    <textarea class="form-control @error('review_1') is-invalid @enderror"
+                              id="review_1" name="review_1" rows="3"
+                              placeholder="A brief client testimonial or review quote...">{{ old('review_1', $data['review_1'] ?? '') }}</textarea>
+                    @error('review_1')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="review_2">Client Review / Testimonial 2</label>
+                    <textarea class="form-control @error('review_2') is-invalid @enderror"
+                              id="review_2" name="review_2" rows="3"
+                              placeholder="A brief client testimonial or review quote...">{{ old('review_2', $data['review_2'] ?? '') }}</textarea>
+                    @error('review_2')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="review_3">Client Review / Testimonial 3</label>
+                    <textarea class="form-control @error('review_3') is-invalid @enderror"
+                              id="review_3" name="review_3" rows="3"
+                              placeholder="A brief client testimonial or review quote...">{{ old('review_3', $data['review_3'] ?? '') }}</textarea>
+                    @error('review_3')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-0">
+                    <label class="form-label form-label-sm" for="awards_recognition">Awards &amp; Recognition</label>
+                    <textarea class="form-control @error('awards_recognition') is-invalid @enderror"
+                              id="awards_recognition" name="awards_recognition" rows="3"
+                              placeholder="Awards, designations, certifications, recognitions...">{{ old('awards_recognition', $data['awards_recognition'] ?? '') }}</textarea>
+                    @error('awards_recognition')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- ── VIDEO INTRO ────────────────────────────────────────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-video"
+                 aria-expanded="false"
+                 aria-controls="section-video">
+                <i class="fa fa-play-circle section-icon"></i>
+                Video Intro
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-video">
+                <p class="form-hint mb-3">A short intro video embedded on your public profile. All optional.</p>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="intro_video_url">Intro Video URL</label>
+                    <input type="url" class="form-control @error('intro_video_url') is-invalid @enderror"
+                           id="intro_video_url" name="intro_video_url"
+                           placeholder="https://youtube.com/... or https://vimeo.com/..."
+                           value="{{ old('intro_video_url', $data['intro_video_url'] ?? '') }}">
+                    @error('intro_video_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-hint">YouTube and Vimeo URLs are embedded directly. Other URLs show as a link.</div>
+                </div>
+                <div class="mb-0">
+                    <label class="form-label form-label-sm" for="video_caption">Video Caption</label>
+                    <input type="text" class="form-control @error('video_caption') is-invalid @enderror"
+                           id="video_caption" name="video_caption"
+                           placeholder="e.g. My 60-second agent intro — watch before you hire!"
+                           value="{{ old('video_caption', $data['video_caption'] ?? '') }}">
+                    @error('video_caption')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+        </div>
+
+        {{-- ── AVAILABILITY / SERVICE STYLE ───────────────────────────────────── --}}
+        <div class="preset-section">
+            <div class="preset-section-header"
+                 data-preset-toggle="section-availability"
+                 aria-expanded="false"
+                 aria-controls="section-availability">
+                <i class="fa fa-calendar section-icon"></i>
+                Availability &amp; Service Style
+                <i class="fa fa-chevron-down toggle-icon"></i>
+            </div>
+            <div class="preset-section-body preset-closed" id="section-availability">
+                <p class="form-hint mb-3">Let clients know how and when you work. All optional.</p>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label form-label-sm" for="availability_status">Availability Status</label>
+                        <select class="form-control @error('availability_status') is-invalid @enderror"
+                                id="availability_status" name="availability_status">
+                            <option value="">Select</option>
+                            <option value="Actively Taking New Clients" @selected(old('availability_status', $data['availability_status'] ?? '') === 'Actively Taking New Clients')>Actively Taking New Clients</option>
+                            <option value="Limited Availability" @selected(old('availability_status', $data['availability_status'] ?? '') === 'Limited Availability')>Limited Availability</option>
+                            <option value="By Referral Only" @selected(old('availability_status', $data['availability_status'] ?? '') === 'By Referral Only')>By Referral Only</option>
+                        </select>
+                        @error('availability_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label form-label-sm" for="evenings_available">Evenings Available?</label>
+                        <select class="form-control @error('evenings_available') is-invalid @enderror"
+                                id="evenings_available" name="evenings_available">
+                            <option value="">Select</option>
+                            <option value="Yes" @selected(old('evenings_available', $data['evenings_available'] ?? '') === 'Yes')>Yes</option>
+                            <option value="No" @selected(old('evenings_available', $data['evenings_available'] ?? '') === 'No')>No</option>
+                        </select>
+                        @error('evenings_available')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label form-label-sm" for="weekends_available">Weekends Available?</label>
+                        <select class="form-control @error('weekends_available') is-invalid @enderror"
+                                id="weekends_available" name="weekends_available">
+                            <option value="">Select</option>
+                            <option value="Yes" @selected(old('weekends_available', $data['weekends_available'] ?? '') === 'Yes')>Yes</option>
+                            <option value="No" @selected(old('weekends_available', $data['weekends_available'] ?? '') === 'No')>No</option>
+                        </select>
+                        @error('weekends_available')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label form-label-sm" for="communication_style">Communication Style</label>
+                        <input type="text" class="form-control @error('communication_style') is-invalid @enderror"
+                               id="communication_style" name="communication_style"
+                               placeholder="e.g. Proactive, responsive, detail-oriented communicator"
+                               value="{{ old('communication_style', $data['communication_style'] ?? '') }}">
+                        @error('communication_style')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label form-label-sm" for="preferred_contact_method">Preferred Contact Method</label>
+                        <select class="form-control @error('preferred_contact_method') is-invalid @enderror"
+                                id="preferred_contact_method" name="preferred_contact_method">
+                            <option value="">Select</option>
+                            <option value="Phone Call" @selected(old('preferred_contact_method', $data['preferred_contact_method'] ?? '') === 'Phone Call')>Phone Call</option>
+                            <option value="Text Message" @selected(old('preferred_contact_method', $data['preferred_contact_method'] ?? '') === 'Text Message')>Text Message</option>
+                            <option value="Email" @selected(old('preferred_contact_method', $data['preferred_contact_method'] ?? '') === 'Email')>Email</option>
+                            <option value="Any" @selected(old('preferred_contact_method', $data['preferred_contact_method'] ?? '') === 'Any')>Any</option>
+                        </select>
+                        @error('preferred_contact_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- ── BROKER COMPENSATION & AGENCY AGREEMENT TERMS ──────────────────── --}}
         <div class="preset-section">
             <div class="preset-section-header"
