@@ -2,7 +2,7 @@
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>💵 Enter the desired lease terms, including the budget, lease duration, proposed lease start date, and acceptable leasing space. </strong>
+            <strong>💵 Enter the Tenant's desired lease terms. These terms will be used as the starting point for Landlord lease offers and future counteroffers.</strong>
         </div>
     </div>
 </div>
@@ -126,6 +126,371 @@
         </select>
     </div>
 </div>
+<!-- ===== New Tenant Leasing Terms Fields ===== -->
+
+<!-- Field 1: Desired Lease Length -->
+<div class="form-group">
+    <label class="fw-bold">Desired Lease Length:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the tenant's preferred lease duration (e.g., 12 months, 2 years).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="tenant_desired_lease_length" class="form-control has-icon"
+            data-icon="fa-solid fa-clock" placeholder="e.g., 12 months, 2 years">
+    </div>
+</div>
+
+<!-- Field 2: Security Deposit Budget -->
+<div class="form-group">
+    <label class="fw-bold">Security Deposit Budget:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the maximum security deposit the tenant is prepared to pay.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="security_deposit_budget" class="form-control"
+            placeholder="Enter amount (e.g., 3000)"
+            onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+<!-- Field 3: Move-In Funds Available -->
+<div class="form-group">
+    <label class="fw-bold">Move-In Funds Available:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the total move-in funds the tenant has available.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="move_in_funds_available" class="form-control"
+            placeholder="Enter amount (e.g., 5000)"
+            onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+
+<!-- Field 4: First Month Rent Available -->
+<div class="form-group">
+    <label class="fw-bold">First Month Rent Available:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the tenant has the first month's rent available upfront.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="first_month_rent_available" class="form-control has-icon"
+            data-icon="fa-solid fa-calendar-check">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- Field 5: Last Month Rent Available -->
+<div class="form-group">
+    <label class="fw-bold">Last Month Rent Available:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the tenant has the last month's rent available upfront.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="last_month_rent_available" class="form-control has-icon"
+            data-icon="fa-solid fa-calendar-check">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- Field 6: Pet Information -->
+<div class="form-group">
+    <label class="fw-bold">Pet Information:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe any pets the tenant has (e.g., breed, size, number).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="pet_information" class="form-control" rows="3"
+            placeholder="Describe pets (e.g., 1 small dog, 10 lbs, no aggressive breed)"></textarea>
+    </div>
+</div>
+
+<!-- Field 7: Number of Occupants -->
+<div class="form-group">
+    <label class="fw-bold">Number of Occupants:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the total number of people who will occupy the unit.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="number_of_occupants" class="form-control has-icon"
+            data-icon="fa-solid fa-users" placeholder="e.g., 2" min="0">
+    </div>
+</div>
+
+<!-- Field 8: Parking Needed -->
+<div class="form-group">
+    <label class="fw-bold">Parking Needed:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the tenant's parking requirements.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="parking_needed" class="form-control has-icon"
+            data-icon="fa-solid fa-square-parking" placeholder="e.g., 1 covered space, 2 outdoor spots">
+    </div>
+</div>
+
+<!-- Field 9: Utility Preference -->
+<div class="form-group">
+    <label class="fw-bold">Utility Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the tenant's preferred utility arrangement.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="utility_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-bolt" placeholder="e.g., Utilities included, Tenant pays electric only">
+    </div>
+</div>
+
+<!-- Field 10: Maintenance Preference -->
+<div class="form-group">
+    <label class="fw-bold">Maintenance Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the tenant's preferred maintenance arrangement.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="maintenance_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-screwdriver-wrench" placeholder="e.g., Landlord handles all repairs">
+    </div>
+</div>
+
+<!-- Field 11: Renewal Option Requested -->
+<div class="form-group" x-data="{}">
+    <label class="fw-bold">Renewal Option Requested:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the tenant wants the option to renew the lease.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="renewal_option_requested" class="form-control has-icon"
+            data-icon="fa-solid fa-rotate-right">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- Field 12: Renewal Option Details (conditional) -->
+@if ($renewal_option_requested === 'Yes' || $renewal_option_requested === 'Negotiable')
+<div class="form-group">
+    <label class="fw-bold">Renewal Option Details:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Provide details about the desired renewal option terms.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="renewal_option_details" class="form-control" rows="3"
+            placeholder="e.g., Option to renew for 1 additional year at the same rate"></textarea>
+    </div>
+</div>
+@endif
+
+<!-- Field 13: Tenant Conditions -->
+<div class="form-group">
+    <label class="fw-bold">Tenant Conditions:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any specific conditions the tenant requires before signing a lease.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="tenant_conditions" class="form-control" rows="3"
+            placeholder="e.g., Must allow small pet, must include parking"></textarea>
+    </div>
+</div>
+
+<!-- Field 14: Additional Tenant Lease Terms -->
+<div class="form-group">
+    <label class="fw-bold">Additional Tenant Lease Terms:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any additional lease terms or requests from the tenant.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="additional_tenant_lease_terms" class="form-control" rows="3"
+            placeholder="Enter any additional desired lease terms"></textarea>
+    </div>
+</div>
+
+<!-- Commercial-Only Fields (15–23) -->
+@if ($property_type === 'Commercial Property')
+
+<!-- Field 15: Commercial Lease Type Preference -->
+<div class="form-group">
+    <label class="fw-bold">Commercial Lease Type Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the preferred type of commercial lease structure.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="commercial_lease_type_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-file-contract">
+            <option value="">Select</option>
+            <option value="Gross Lease">Gross Lease</option>
+            <option value="Net Lease">Net Lease</option>
+            <option value="NNN (Triple Net)">NNN (Triple Net)</option>
+            <option value="Modified Gross">Modified Gross</option>
+            <option value="Absolute Net">Absolute Net</option>
+            <option value="Percentage Lease">Percentage Lease</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- Field 16: CAM / NNN Preference -->
+<div class="form-group">
+    <label class="fw-bold">CAM / NNN Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the tenant's preference for CAM or NNN expense responsibility.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="cam_nnn_preference" class="form-control" rows="2"
+            placeholder="e.g., Prefer CAM capped at 5% annual increase"></textarea>
+    </div>
+</div>
+
+<!-- Field 17: Rent Escalation Preference -->
+<div class="form-group">
+    <label class="fw-bold">Rent Escalation Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe how the tenant prefers rent escalations to be structured.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="rent_escalation_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-chart-line" placeholder="e.g., Fixed 3% annual increase">
+    </div>
+</div>
+
+<!-- Field 18: Buildout / Tenant Improvement Request -->
+<div class="form-group">
+    <label class="fw-bold">Buildout / Tenant Improvement Request:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe any buildout or tenant improvement allowance the tenant is requesting.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="buildout_tenant_improvement_request" class="form-control has-icon"
+            data-icon="fa-solid fa-hammer" placeholder="e.g., $20/sqft TI allowance">
+    </div>
+</div>
+
+<!-- Field 19: Intended Business Use -->
+<div class="form-group">
+    <label class="fw-bold">Intended Business Use:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe how the tenant intends to use the commercial space.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="intended_business_use" class="form-control has-icon"
+            data-icon="fa-solid fa-briefcase" placeholder="e.g., Retail clothing boutique">
+    </div>
+</div>
+
+<!-- Field 20: Signage Request -->
+<div class="form-group">
+    <label class="fw-bold">Signage Request:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the tenant's signage requirements.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="signage_request" class="form-control has-icon"
+            data-icon="fa-solid fa-sign-hanging" placeholder="e.g., Exterior storefront sign and window graphics">
+    </div>
+</div>
+
+<!-- Field 21: Commercial Parking / Access Needs -->
+<div class="form-group">
+    <label class="fw-bold">Commercial Parking / Access Needs:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe parking or loading dock access requirements for the commercial space.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="commercial_parking_access_needs" class="form-control has-icon"
+            data-icon="fa-solid fa-truck" placeholder="e.g., 10 customer spots + 1 loading dock">
+    </div>
+</div>
+
+<!-- Field 22: Personal Guarantee Preference -->
+<div class="form-group">
+    <label class="fw-bold">Personal Guarantee Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the tenant is willing to provide a personal guarantee.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="personal_guarantee_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-signature">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- Field 23: Commercial Approval Conditions -->
+<div class="form-group">
+    <label class="fw-bold">Commercial Approval Conditions:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any conditions that must be met for the tenant to approve the commercial lease.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="commercial_approval_conditions" class="form-control" rows="3"
+            placeholder="e.g., Zoning approval, health department permit"></textarea>
+    </div>
+</div>
+
+@endif
+<!-- End Commercial-Only Fields -->
+
 <!-- Leasing Details Based on Selected Space -->
 {{--
 <div class="form-group mt-4" id="leasing_space_details">
