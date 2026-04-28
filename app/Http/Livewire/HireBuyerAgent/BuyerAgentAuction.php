@@ -99,6 +99,26 @@ class BuyerAgentAuction extends Component
     public $gap_payment_type = '$';
     public $gap_payment_amount = '';
     
+    // New Buyer Purchasing Terms Fields
+    public $earnest_money_amount = '';
+    public $earnest_money_timing = '';
+    public $inspection_period_days = '';
+    public $inspection_contingency_buyer = '';
+    public $appraisal_contingency_buyer = '';
+    public $financing_contingency_buyer = '';
+    public $financing_contingency_days_buyer = '';
+    public $seller_contribution = '';
+    public $seller_contribution_details = '';
+    public $possession_preference = '';
+    public $possession_details = '';
+    public $home_warranty_requested = '';
+    public $home_warranty_details = '';
+    public $as_is_purchase = '';
+    public $property_inclusions = '';
+    public $property_exclusions = '';
+    public $closing_cost_responsibility = '';
+    public $additional_purchase_terms = '';
+
     // Seller Financing Additional Properties
     public $seller_amortization_type = '';
     public $seller_amortization_other = '';
@@ -1318,7 +1338,27 @@ class BuyerAgentAuction extends Component
             $this->assumable_loan_type = $auction->get->assumable_loan_type ?? '';
             $this->gap_payment_type = $auction->get->gap_payment_type ?? '$';
             $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
-            
+
+            // New Buyer Purchasing Terms Fields
+            $this->earnest_money_amount = $auction->get->earnest_money_amount ?? '';
+            $this->earnest_money_timing = $auction->get->earnest_money_timing ?? '';
+            $this->inspection_period_days = $auction->get->inspection_period_days ?? '';
+            $this->inspection_contingency_buyer = $auction->get->inspection_contingency_buyer ?? '';
+            $this->appraisal_contingency_buyer = $auction->get->appraisal_contingency_buyer ?? '';
+            $this->financing_contingency_buyer = $auction->get->financing_contingency_buyer ?? '';
+            $this->financing_contingency_days_buyer = $auction->get->financing_contingency_days_buyer ?? '';
+            $this->seller_contribution = $auction->get->seller_contribution ?? '';
+            $this->seller_contribution_details = $auction->get->seller_contribution_details ?? '';
+            $this->possession_preference = $auction->get->possession_preference ?? '';
+            $this->possession_details = $auction->get->possession_details ?? '';
+            $this->home_warranty_requested = $auction->get->home_warranty_requested ?? '';
+            $this->home_warranty_details = $auction->get->home_warranty_details ?? '';
+            $this->as_is_purchase = $auction->get->as_is_purchase ?? '';
+            $this->property_inclusions = $auction->get->property_inclusions ?? '';
+            $this->property_exclusions = $auction->get->property_exclusions ?? '';
+            $this->closing_cost_responsibility = $auction->get->closing_cost_responsibility ?? '';
+            $this->additional_purchase_terms = $auction->get->additional_purchase_terms ?? '';
+
             // Seller Financing Additional Fields
             $this->seller_amortization_type = $auction->get->seller_amortization_type ?? '';
             $this->seller_amortization_other = $auction->get->seller_amortization_other ?? '';
@@ -1779,7 +1819,27 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
-        
+
+        // New Buyer Purchasing Terms Fields
+        $auction->saveMeta('earnest_money_amount', $this->stripCommas($this->earnest_money_amount));
+        $auction->saveMeta('earnest_money_timing', $this->earnest_money_timing);
+        $auction->saveMeta('inspection_period_days', $this->inspection_period_days);
+        $auction->saveMeta('inspection_contingency_buyer', $this->inspection_contingency_buyer);
+        $auction->saveMeta('appraisal_contingency_buyer', $this->appraisal_contingency_buyer);
+        $auction->saveMeta('financing_contingency_buyer', $this->financing_contingency_buyer);
+        $auction->saveMeta('financing_contingency_days_buyer', $this->financing_contingency_days_buyer);
+        $auction->saveMeta('seller_contribution', $this->seller_contribution);
+        $auction->saveMeta('seller_contribution_details', $this->seller_contribution_details);
+        $auction->saveMeta('possession_preference', $this->possession_preference);
+        $auction->saveMeta('possession_details', $this->possession_details);
+        $auction->saveMeta('home_warranty_requested', $this->home_warranty_requested);
+        $auction->saveMeta('home_warranty_details', $this->home_warranty_details);
+        $auction->saveMeta('as_is_purchase', $this->as_is_purchase);
+        $auction->saveMeta('property_inclusions', $this->property_inclusions);
+        $auction->saveMeta('property_exclusions', $this->property_exclusions);
+        $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
+        $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
+
         // Seller Financing Additional Fields - DEBUG LOG
         \Log::info('[FINANCING FOLLOWUPS - VALUES AT SAVE TIME]', [
             'auction_id' => $auction->id,
@@ -2124,10 +2184,32 @@ class BuyerAgentAuction extends Component
         ]);
 
         try {
+            // Normalize money field before validation so formatted values (e.g. "5,000") pass numeric check
+            $this->earnest_money_amount = $this->stripCommas($this->earnest_money_amount);
+
             // Validate required fields: Counties and State are required, Cities are optional
             $validationRules = [
                 'counties' => 'required|array|min:1',
                 'state' => 'required|string',
+                // New Buyer Purchasing Terms Fields
+                'earnest_money_amount'            => 'nullable|numeric|min:0',
+                'earnest_money_timing'            => 'nullable|string|in:,Upon Acceptance,Within 1 Business Day,Within 2 Business Days,Within 3 Business Days,Within 5 Business Days,Within 7 Days,Negotiable',
+                'inspection_period_days'          => 'nullable|string|in:,5 Days,7 Days,10 Days,14 Days,15 Days,21 Days,30 Days,Waived,Negotiable',
+                'inspection_contingency_buyer'    => 'nullable|string|in:,Yes,No,Waived',
+                'appraisal_contingency_buyer'     => 'nullable|string|in:,Yes,No,Waived',
+                'financing_contingency_buyer'     => 'nullable|string|in:,Yes,No,Waived,Not Applicable (Cash)',
+                'financing_contingency_days_buyer'=> 'nullable|integer|min:1|max:365',
+                'seller_contribution'             => 'nullable|string|in:,None,Up to 1%,Up to 2%,Up to 3%,Up to 4%,Up to 5%,Negotiable / Other',
+                'seller_contribution_details'     => 'nullable|string|max:1000',
+                'possession_preference'           => 'nullable|string|in:,At Closing,1–7 Days After Closing,8–14 Days After Closing,15–29 Days After Closing,30+ Days After Closing,Seller Leaseback,Negotiable',
+                'possession_details'              => 'nullable|string|max:500',
+                'home_warranty_requested'         => 'nullable|string|in:,No,Yes – Buyer Pays,Yes – Seller Pays,Negotiable',
+                'home_warranty_details'           => 'nullable|string|max:500',
+                'as_is_purchase'                  => 'nullable|string|in:,Yes,No,Negotiable',
+                'property_inclusions'             => 'nullable|string|max:2000',
+                'property_exclusions'             => 'nullable|string|max:2000',
+                'closing_cost_responsibility'     => 'nullable|string|in:,Buyer Pays All,Seller Pays All,Standard Split,Negotiable',
+                'additional_purchase_terms'       => 'nullable|string|max:5000',
             ];
             
             // Add Bidding Period specific validation
