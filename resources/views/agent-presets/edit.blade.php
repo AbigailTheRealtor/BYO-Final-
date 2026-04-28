@@ -637,6 +637,22 @@
                             </div>
                         </div>
                     </div>
+
+                    {{-- Referral Fee (Buyer) --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Referral Fee (%)</label>
+                        <div class="input-group mt-2">
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="100"
+                                   name="referral_fee_percent"
+                                   class="form-control"
+                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
+                                   placeholder="Enter referral fee percentage (e.g., 25)">
+                            <span class="input-group-text">%</span>
+                        </div>
+                    </div>
                 @endif
 
                 @if ($role === 'seller')
@@ -787,6 +803,22 @@
                             <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="other">
                                 <input type="text" name="seller_leasing_gross_purchase_fee_other" class="form-control" value="{{ old('seller_leasing_gross_purchase_fee_other', $data['seller_leasing_gross_purchase_fee_other'] ?? '') }}" placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent)">
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Referral Fee (Seller) --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Referral Fee (%)</label>
+                        <div class="input-group mt-2">
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="100"
+                                   name="referral_fee_percent"
+                                   class="form-control"
+                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
+                                   placeholder="Enter referral fee percentage (e.g., 25)">
+                            <span class="input-group-text">%</span>
                         </div>
                     </div>
                 @endif
@@ -1345,6 +1377,22 @@
                             <div data-cp-parent="cp_purchase_fee_type_tenant" data-cp-values="other">
                                 <input type="text" name="purchase_fee_other" class="form-control" value="{{ old('purchase_fee_other', $data['purchase_fee_other'] ?? '') }}" placeholder="Enter purchase fee structure (e.g., 3% if sale price is under $500,000, 2% above)">
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- Referral Fee (Tenant) --}}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Referral Fee (%)</label>
+                        <div class="input-group mt-2">
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="100"
+                                   name="referral_fee_percent"
+                                   class="form-control"
+                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
+                                   placeholder="Enter referral fee percentage (e.g., 25)">
+                            <span class="input-group-text">%</span>
                         </div>
                     </div>
                 @endif
