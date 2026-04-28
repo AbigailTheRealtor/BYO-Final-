@@ -435,6 +435,33 @@ class LandLordAgentAuction extends Component
     public $expansion_flat_fee = null;
     public $expansion_custom_commission = null;
 
+    // Landlord Leasing Terms — 24 new fields
+    public $lease_available_date = '';
+    public $security_deposit_required = '';
+    public $first_month_rent_required = '';
+    public $last_month_rent_required = '';
+    public $total_move_in_funds_required = '';
+    public $pet_policy = '';
+    public $pet_deposit_fee_rent = '';
+    public $number_of_occupants_allowed = '';
+    public $parking_terms = '';
+    public $utility_responsibility = '';
+    public $ll_maintenance_responsibility = '';
+    public $renewal_option_offered = '';
+    public $renewal_option_details = '';
+    public $landlord_approval_conditions = '';
+    public $additional_landlord_lease_terms = '';
+    // Commercial-only
+    public $commercial_lease_type = '';
+    public $cam_nnn_additional_rent_charges = '';
+    public $rent_escalation_terms = '';
+    public $tenant_improvement_buildout_terms = '';
+    public $permitted_use_restrictions = '';
+    public $signage_rights = '';
+    public $commercial_parking_terms = '';
+    public $personal_guarantee_requirement = '';
+    public $commercial_approval_conditions = '';
+
     // Lease Terms - Leasing Space Sub-Fields
     public $occupant_status = '';
     public $occupant_tenant = '';
@@ -1592,6 +1619,32 @@ class LandLordAgentAuction extends Component
             $this->included_storage_space = $auction->get->included_storage_space ?? null;
             $this->storage_space = $auction->get->storage_space ?? null;
 
+            // Landlord Leasing Terms — 24 new fields
+            $this->lease_available_date = $auction->get->lease_available_date ?? null;
+            $this->security_deposit_required = $auction->get->security_deposit_required ?? null;
+            $this->first_month_rent_required = $auction->get->first_month_rent_required ?? null;
+            $this->last_month_rent_required = $auction->get->last_month_rent_required ?? null;
+            $this->total_move_in_funds_required = $auction->get->total_move_in_funds_required ?? null;
+            $this->pet_policy = $auction->get->pet_policy ?? null;
+            $this->pet_deposit_fee_rent = $auction->get->pet_deposit_fee_rent ?? null;
+            $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? null;
+            $this->parking_terms = $auction->get->parking_terms ?? null;
+            $this->utility_responsibility = $auction->get->utility_responsibility ?? null;
+            $this->ll_maintenance_responsibility = $auction->get->ll_maintenance_responsibility ?? null;
+            $this->renewal_option_offered = $auction->get->renewal_option_offered ?? null;
+            $this->renewal_option_details = $auction->get->renewal_option_details ?? null;
+            $this->landlord_approval_conditions = $auction->get->landlord_approval_conditions ?? null;
+            $this->additional_landlord_lease_terms = $auction->get->additional_landlord_lease_terms ?? null;
+            $this->commercial_lease_type = $auction->get->commercial_lease_type ?? null;
+            $this->cam_nnn_additional_rent_charges = $auction->get->cam_nnn_additional_rent_charges ?? null;
+            $this->rent_escalation_terms = $auction->get->rent_escalation_terms ?? null;
+            $this->tenant_improvement_buildout_terms = $auction->get->tenant_improvement_buildout_terms ?? null;
+            $this->permitted_use_restrictions = $auction->get->permitted_use_restrictions ?? null;
+            $this->signage_rights = $auction->get->signage_rights ?? null;
+            $this->commercial_parking_terms = $auction->get->commercial_parking_terms ?? null;
+            $this->personal_guarantee_requirement = $auction->get->personal_guarantee_requirement ?? null;
+            $this->commercial_approval_conditions = $auction->get->commercial_approval_conditions ?? null;
+
             $this->non_negotiable_amenities = $this->ensureArray($auction->get->non_negotiable_amenities ?? null);
 
             $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities ?? null;
@@ -2094,6 +2147,32 @@ class LandLordAgentAuction extends Component
         $auction->saveMeta('included_storage_space', $this->included_storage_space);
         $auction->saveMeta('storage_space', $this->storage_space);
 
+        // Landlord Leasing Terms — 24 new fields
+        $auction->saveMeta('lease_available_date', $this->lease_available_date);
+        $auction->saveMeta('security_deposit_required', $this->security_deposit_required);
+        $auction->saveMeta('first_month_rent_required', $this->first_month_rent_required);
+        $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
+        $auction->saveMeta('total_move_in_funds_required', $this->total_move_in_funds_required);
+        $auction->saveMeta('pet_policy', $this->pet_policy);
+        $auction->saveMeta('pet_deposit_fee_rent', $this->pet_deposit_fee_rent);
+        $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
+        $auction->saveMeta('parking_terms', $this->parking_terms);
+        $auction->saveMeta('utility_responsibility', $this->utility_responsibility);
+        $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);
+        $auction->saveMeta('renewal_option_offered', $this->renewal_option_offered);
+        $auction->saveMeta('renewal_option_details', $this->renewal_option_details);
+        $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
+        $auction->saveMeta('additional_landlord_lease_terms', $this->additional_landlord_lease_terms);
+        $auction->saveMeta('commercial_lease_type', $this->commercial_lease_type);
+        $auction->saveMeta('cam_nnn_additional_rent_charges', $this->cam_nnn_additional_rent_charges);
+        $auction->saveMeta('rent_escalation_terms', $this->rent_escalation_terms);
+        $auction->saveMeta('tenant_improvement_buildout_terms', $this->tenant_improvement_buildout_terms);
+        $auction->saveMeta('permitted_use_restrictions', $this->permitted_use_restrictions);
+        $auction->saveMeta('signage_rights', $this->signage_rights);
+        $auction->saveMeta('commercial_parking_terms', $this->commercial_parking_terms);
+        $auction->saveMeta('personal_guarantee_requirement', $this->personal_guarantee_requirement);
+        $auction->saveMeta('commercial_approval_conditions', $this->commercial_approval_conditions);
+
         // Requirements
         $auction->saveMeta('non_negotiable_amenities', json_encode($this->ensureArray($this->non_negotiable_amenities)));
         $auction->saveMeta('other_non_negotiable_amenities', $this->other_non_negotiable_amenities);
@@ -2399,6 +2478,31 @@ class LandLordAgentAuction extends Component
             'phone_number'         => 'required|string',
             'email'                => 'required|email',
             'desired_lease_length' => 'required|array|min:1',
+            // Landlord Leasing Terms — nullable rules
+            'lease_available_date'                => 'nullable|date',
+            'security_deposit_required'           => 'nullable|numeric',
+            'first_month_rent_required'           => 'nullable|string|in:Yes,No',
+            'last_month_rent_required'            => 'nullable|string|in:Yes,No,Negotiable',
+            'total_move_in_funds_required'        => 'nullable|numeric',
+            'pet_policy'                          => 'nullable|string|in:No Pets Allowed,Pets Considered,Pets Allowed With Restrictions,Pets Allowed',
+            'pet_deposit_fee_rent'                => 'nullable|string',
+            'number_of_occupants_allowed'         => 'nullable|integer|min:1',
+            'parking_terms'                       => 'nullable|string',
+            'utility_responsibility'              => 'nullable|string',
+            'll_maintenance_responsibility'       => 'nullable|string',
+            'renewal_option_offered'              => 'nullable|string|in:Yes,No,Negotiable',
+            'renewal_option_details'              => 'nullable|string',
+            'landlord_approval_conditions'        => 'nullable|string',
+            'additional_landlord_lease_terms'     => 'nullable|string',
+            'commercial_lease_type'               => 'nullable|string|in:Gross Lease,Modified Gross Lease,Triple Net / NNN,Full Service Gross,Percentage Rent,Other',
+            'cam_nnn_additional_rent_charges'     => 'nullable|string',
+            'rent_escalation_terms'               => 'nullable|string',
+            'tenant_improvement_buildout_terms'   => 'nullable|string',
+            'permitted_use_restrictions'          => 'nullable|string',
+            'signage_rights'                      => 'nullable|string',
+            'commercial_parking_terms'            => 'nullable|string',
+            'personal_guarantee_requirement'      => 'nullable|string|in:Required,Not Required,Negotiable',
+            'commercial_approval_conditions'      => 'nullable|string',
         ], [
             'first_name.required'           => 'First Name is required.',
             'last_name.required'            => 'Last Name is required.',

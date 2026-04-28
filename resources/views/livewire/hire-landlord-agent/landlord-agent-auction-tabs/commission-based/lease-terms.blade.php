@@ -34,8 +34,7 @@
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>💵 Enter the lease terms, such as rent amount, lease duration, occupancy status, and who is
-                responsible for specific expenses.</strong>
+            <strong>💵 Enter the Landlord's preferred lease terms. These terms will be used as the starting point for Tenant lease offers and future counteroffers.</strong>
         </div>
     </div>
 </div>
@@ -1082,6 +1081,375 @@
 @error('desired_lease_length')
     <span class="text-danger">{{ $message }}</span>
 @enderror
+
+{{-- ===== NEW LANDLORD LEASING TERMS FIELDS ===== --}}
+
+{{-- Lease Available Date --}}
+<div class="form-group">
+    <label class="fw-bold">Lease Available Date:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the date the property will be available for the Tenant to begin the lease.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="date" wire:model="lease_available_date" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar">
+    </div>
+</div>
+
+{{-- Security Deposit Required --}}
+<div class="form-group">
+    <label class="fw-bold">Security Deposit Required:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the amount of the security deposit the Landlord requires from the Tenant.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="number" wire:model="security_deposit_required" class="form-control has-icon"
+            data-icon="fa-solid fa-dollar-sign" min="0" step="0.01" placeholder="Enter security deposit amount (e.g., 2500.00)">
+    </div>
+</div>
+
+{{-- First Month Rent Required --}}
+<div class="form-group">
+    <label class="fw-bold">First Month Rent Required:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Indicate whether the first month's rent must be paid upfront at lease signing.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="first_month_rent_required" class="form-control has-icon"
+            data-icon="fa-solid fa-money-bill">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+{{-- Last Month Rent Required --}}
+<div class="form-group">
+    <label class="fw-bold">Last Month Rent Required:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Indicate whether the last month's rent must be paid upfront at lease signing.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="last_month_rent_required" class="form-control has-icon"
+            data-icon="fa-solid fa-money-bill">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+{{-- Total Move-In Funds Required --}}
+<div class="form-group">
+    <label class="fw-bold">Total Move-In Funds Required:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the total amount the Tenant must provide at move-in (e.g., first month, last month, and security deposit combined).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="number" wire:model="total_move_in_funds_required" class="form-control has-icon"
+            data-icon="fa-solid fa-dollar-sign" min="0" step="0.01" placeholder="Enter total move-in amount (e.g., 7500.00)">
+    </div>
+</div>
+
+{{-- Pet Policy --}}
+<div class="form-group">
+    <label class="fw-bold">Pet Policy:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Select the Landlord's policy regarding pets on the property.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="pet_policy" class="form-control has-icon" data-icon="fa-solid fa-paw">
+            <option value="">Select</option>
+            <option value="No Pets Allowed">No Pets Allowed</option>
+            <option value="Pets Considered">Pets Considered</option>
+            <option value="Pets Allowed With Restrictions">Pets Allowed With Restrictions</option>
+            <option value="Pets Allowed">Pets Allowed</option>
+        </select>
+    </div>
+</div>
+
+{{-- Pet Deposit / Fee / Rent (hidden when No Pets Allowed) --}}
+@if ($pet_policy !== 'No Pets Allowed' && $pet_policy !== '')
+    <div class="form-group">
+        <label class="fw-bold">Pet Deposit / Pet Fee / Pet Rent:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the pet deposit, one-time fee, or additional monthly pet rent amount the Landlord requires.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <input type="text" wire:model="pet_deposit_fee_rent" class="form-control has-icon"
+                data-icon="fa-solid fa-paw"
+                placeholder="Enter pet deposit/fee/rent (e.g., $300 deposit, $50/month)">
+        </div>
+    </div>
+@endif
+
+{{-- Number of Occupants Allowed --}}
+<div class="form-group">
+    <label class="fw-bold">Number of Occupants Allowed:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the maximum number of occupants permitted to live in the property under the lease.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <input type="number" wire:model="number_of_occupants_allowed" class="form-control has-icon"
+            data-icon="fa-solid fa-users" min="1" placeholder="Enter max number of occupants (e.g., 4)">
+    </div>
+</div>
+
+{{-- Parking Terms --}}
+<div class="form-group">
+    <label class="fw-bold">Parking Terms:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Describe the parking arrangement included with the lease (e.g., 1 assigned space, street parking only, garage included).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <textarea wire:model="parking_terms" class="form-control has-icon" rows="3"
+            data-icon="fa-solid fa-car"
+            placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
+    </div>
+</div>
+
+{{-- Utility Responsibility --}}
+<div class="form-group">
+    <label class="fw-bold">Utility Responsibility:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Describe which utilities the Landlord covers and which are the Tenant's responsibility.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <textarea wire:model="utility_responsibility" class="form-control has-icon" rows="3"
+            data-icon="fa-solid fa-bolt"
+            placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)"></textarea>
+    </div>
+</div>
+
+{{-- Maintenance Responsibility --}}
+<div class="form-group">
+    <label class="fw-bold">Maintenance Responsibility:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Describe maintenance and repair responsibilities for both the Landlord and Tenant.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon" rows="3"
+            data-icon="fa-solid fa-screwdriver-wrench"
+            placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)"></textarea>
+    </div>
+</div>
+
+{{-- Renewal Option Offered --}}
+<div class="form-group">
+    <label class="fw-bold">Renewal Option Offered:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Indicate whether the Landlord is willing to offer a lease renewal option to the Tenant.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <select wire:model="renewal_option_offered" class="form-control has-icon"
+            data-icon="fa-solid fa-rotate">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+{{-- Renewal Option Details (shown when Yes or Negotiable) --}}
+@if ($renewal_option_offered === 'Yes' || $renewal_option_offered === 'Negotiable')
+    <div class="form-group">
+        <label class="fw-bold">Renewal Option Details:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the terms of the renewal option (e.g., 1-year renewal at market rate with 60-day notice required).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="renewal_option_details" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-file-signature"
+                placeholder="Describe renewal option terms (e.g., 1-year renewal at market rate, 60-day notice required)"></textarea>
+        </div>
+    </div>
+@endif
+
+{{-- Landlord Approval Conditions --}}
+<div class="form-group">
+    <label class="fw-bold">Landlord Approval Conditions:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="List any conditions or requirements the Tenant must meet for the Landlord to approve the lease (e.g., credit check, income verification, references).">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <textarea wire:model="landlord_approval_conditions" class="form-control has-icon" rows="3"
+            data-icon="fa-solid fa-clipboard-check"
+            placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)"></textarea>
+    </div>
+</div>
+
+{{-- Additional Landlord Lease Terms --}}
+<div class="form-group">
+    <label class="fw-bold">Additional Landlord Lease Terms:</label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter any additional lease terms or conditions not covered above.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="4"
+            data-icon="fa-solid fa-file-lines"
+            placeholder="Enter any additional lease terms or special conditions"></textarea>
+    </div>
+</div>
+
+{{-- ===== COMMERCIAL-ONLY LEASING TERM FIELDS ===== --}}
+@if ($property_type === 'Commercial Property')
+    {{-- Commercial Lease Type --}}
+    <div class="form-group">
+        <label class="fw-bold">Commercial Lease Type:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the type of commercial lease structure the Landlord is offering.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="commercial_lease_type" class="form-control has-icon"
+                data-icon="fa-solid fa-building">
+                <option value="">Select</option>
+                <option value="Gross Lease">Gross Lease</option>
+                <option value="Modified Gross Lease">Modified Gross Lease</option>
+                <option value="Triple Net / NNN">Triple Net / NNN</option>
+                <option value="Full Service Gross">Full Service Gross</option>
+                <option value="Percentage Rent">Percentage Rent</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+    </div>
+
+    {{-- CAM/NNN/Additional Rent Charges --}}
+    <div class="form-group">
+        <label class="fw-bold">CAM / NNN / Additional Rent Charges:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe any Common Area Maintenance (CAM), NNN, or additional charges the Tenant is responsible for beyond base rent.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-receipt"
+                placeholder="Describe CAM/NNN charges (e.g., estimated $3/sqft annually for taxes, insurance, and maintenance)"></textarea>
+        </div>
+    </div>
+
+    {{-- Rent Escalation Terms --}}
+    <div class="form-group">
+        <label class="fw-bold">Rent Escalation Terms:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe how rent increases are structured over the lease term (e.g., 3% annual increase, CPI-based adjustment).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="rent_escalation_terms" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-arrow-trend-up"
+                placeholder="Describe rent escalation (e.g., 3% annual increase beginning year 2)"></textarea>
+        </div>
+    </div>
+
+    {{-- Tenant Improvement / Buildout Terms --}}
+    <div class="form-group">
+        <label class="fw-bold">Tenant Improvement / Buildout Terms:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe any Tenant Improvement (TI) allowance or buildout terms the Landlord is offering.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-hammer"
+                placeholder="Describe TI/buildout terms (e.g., $20/sqft TI allowance, delivered in shell condition)"></textarea>
+        </div>
+    </div>
+
+    {{-- Permitted Use / Use Restrictions --}}
+    <div class="form-group">
+        <label class="fw-bold">Permitted Use / Use Restrictions:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Specify the permitted uses for the space and any restrictions on how the Tenant may use the premises.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-building-columns"
+                placeholder="Describe permitted uses and restrictions (e.g., General office use only, no retail or food service)"></textarea>
+        </div>
+    </div>
+
+    {{-- Signage Rights --}}
+    <div class="form-group">
+        <label class="fw-bold">Signage Rights:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe the Tenant's rights to install signage on the building, windows, or monument sign.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="signage_rights" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-sign-hanging"
+                placeholder="Describe signage rights (e.g., Tenant may install one suite sign and one directory listing)"></textarea>
+        </div>
+    </div>
+
+    {{-- Commercial Parking Terms --}}
+    <div class="form-group">
+        <label class="fw-bold">Commercial Parking Terms:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Describe parking availability, ratios, reserved spaces, and any associated costs.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="commercial_parking_terms" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-square-parking"
+                placeholder="Describe commercial parking terms (e.g., 4 spaces per 1,000 sqft, 2 reserved spaces included)"></textarea>
+        </div>
+    </div>
+
+    {{-- Personal Guarantee Requirement --}}
+    <div class="form-group">
+        <label class="fw-bold">Personal Guarantee Requirement:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether a personal guarantee from the Tenant or principal is required for the lease.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="personal_guarantee_requirement" class="form-control has-icon"
+                data-icon="fa-solid fa-file-signature">
+                <option value="">Select</option>
+                <option value="Required">Required</option>
+                <option value="Not Required">Not Required</option>
+                <option value="Negotiable">Negotiable</option>
+            </select>
+        </div>
+    </div>
+
+    {{-- Commercial Approval Conditions --}}
+    <div class="form-group">
+        <label class="fw-bold">Commercial Approval Conditions:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any conditions or requirements the Tenant must meet for the Landlord to approve the commercial lease.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="3"
+                data-icon="fa-solid fa-clipboard-check"
+                placeholder="Enter commercial approval conditions (e.g., 2 years of financial statements, business plan, references)"></textarea>
+        </div>
+    </div>
+@endif
+
+{{-- ===== END NEW LANDLORD LEASING TERMS FIELDS ===== --}}
 
 @if ($property_type === 'Residential Property')
     <div class="form-group" wire:ignore wire:key="landlord-rent-includes-group">
