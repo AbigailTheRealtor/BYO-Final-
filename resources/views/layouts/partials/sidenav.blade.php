@@ -29,6 +29,15 @@
                     @endcan
                 </ul>
             </div>
+            <div class="dropdown mt-2">
+                <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#fff !important;border:1px solid #049399 !important;color:#049399 !important;">+ Create Regular Listing</button>
+                <ul class="dropdown-menu w-100">
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.seller') }}">Create Seller Listing</a></li>
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.buyer') }}">Create Buyer Listing</a></li>
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.landlord') }}">Create Landlord Listing</a></li>
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.tenant', ['user_type' => 'tenant']) }}">Create Tenant Listing</a></li>
+                </ul>
+            </div>
         @endif
     </div>
     @endif
