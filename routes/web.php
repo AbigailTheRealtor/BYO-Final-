@@ -806,7 +806,19 @@ Route::get('/chat/{id}', [ChatController::class, 'index'])->name('chat');
 Route::post('/chat_gpt', [ChatController::class, 'askToChatGpt_integrate_view']);
 Route::post('/chat_gpt_reply', [ChatController::class, 'askToChatGpt_integrate']);
 
-// AI Chat Routes
+// AI Knowledge Base — public read endpoint (no auth required)
+Route::get('/ai-knowledge/{token}', [\App\Http\Controllers\AiKnowledgeController::class, 'show'])
+    ->name('ai.knowledge.show')
+    ->where('token', '[A-Za-z0-9]+');
+
+// AI Knowledge Base — token management (auth required)
+Route::middleware('auth')->group(function () {
+    Route::post('/ai-knowledge/token/generate', [\App\Http\Controllers\AiKnowledgeController::class, 'generateToken'])
+        ->name('ai.knowledge.generate');
+    Route::post('/ai-knowledge/token/regenerate', [\App\Http\Controllers\AiKnowledgeController::class, 'regenerateToken'])
+        ->name('ai.knowledge.regenerate');
+});
+
 require __DIR__ . '/auth.php';
 
 

@@ -12,6 +12,7 @@ class BuyerCriteriaAuction extends Model
     use HasFactory, HasListingId;
     protected $appends = ["get"];
     protected $with = ['meta'];
+    protected $fillable = ['ai_share_token'];
 
     protected $attributes = [
         'is_approved' => true,

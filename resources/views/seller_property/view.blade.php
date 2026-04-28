@@ -917,6 +917,17 @@
             </div>
           @endif
         </div>
+        @php
+            $_sellerAiFaq = json_decode($data->info('listing_ai_faq') ?: '{}', true) ?? [];
+            $_sellerIsOwner = auth()->check() && $auction->user_id == auth()->id();
+        @endphp
+        <x-listing-ai-knowledge-base
+            listing-type="seller"
+            :listing-id="$auction->id"
+            :is-owner="$_sellerIsOwner"
+            :ai-faq="$_sellerAiFaq"
+            :share-token="$auction->ai_share_token"
+        />
         <!-- Modal -->
         @if (@$auction->get->photos)
           <div class="modal fade" id="lightbox" role="dialog" tabindex="-1" aria-labelledby="exampleModalLabel"

@@ -13,7 +13,7 @@ class PropertyAuction extends Model
     use HasFactory, HasListingId;
     protected $appends = ["get"];
     protected $with = ['meta'];
-    protected $fillable = ['starting_price', 'sold', 'is_paid', 'sold_date', 'auction_ended', 'display_bids', 'auction_type', 'auction_length'];
+    protected $fillable = ['starting_price', 'sold', 'is_paid', 'sold_date', 'auction_ended', 'display_bids', 'auction_type', 'auction_length', 'ai_share_token'];
     
     protected $attributes = [
         'is_approved' => true,

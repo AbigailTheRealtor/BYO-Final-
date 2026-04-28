@@ -57,6 +57,17 @@
             </div>
           @endif
         </div>
+        @php
+            $_tenantAiFaq = is_array($auction->listing_ai_faq) ? $auction->listing_ai_faq : (json_decode($auction->listing_ai_faq ?: '{}', true) ?? []);
+            $_tenantIsOwner = auth()->check() && $auction->user_id == auth()->id();
+        @endphp
+        <x-listing-ai-knowledge-base
+            listing-type="tenant"
+            :listing-id="$auction->id"
+            :is-owner="$_tenantIsOwner"
+            :ai-faq="$_tenantAiFaq"
+            :share-token="$auction->ai_share_token"
+        />
         <!-- Description Box  -->
         <div class="card description">
           <div class="card-body">

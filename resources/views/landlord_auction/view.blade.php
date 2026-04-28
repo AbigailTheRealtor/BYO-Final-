@@ -245,6 +245,17 @@
             </div>
           @endif
         </div>
+        @php
+            $_landlordAiFaq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
+            $_landlordIsOwner = auth()->check() && $auction->user_id == auth()->id();
+        @endphp
+        <x-listing-ai-knowledge-base
+            listing-type="landlord"
+            :listing-id="$auction->id"
+            :is-owner="$_landlordIsOwner"
+            :ai-faq="$_landlordAiFaq"
+            :share-token="$auction->ai_share_token"
+        />
         <!-- Description Box  -->
         <div class="card description">
           <div class="col-md-12 col-12 fw-bold image">

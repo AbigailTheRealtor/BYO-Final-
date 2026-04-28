@@ -207,6 +207,17 @@
                         </div>
                     @endif
                 </div>
+                @php
+                    $_buyerAiFaq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
+                    $_buyerIsOwner = auth()->check() && $auction->user_id == auth()->id();
+                @endphp
+                <x-listing-ai-knowledge-base
+                    listing-type="buyer"
+                    :listing-id="$auction->id"
+                    :is-owner="$_buyerIsOwner"
+                    :ai-faq="$_buyerAiFaq"
+                    :share-token="$auction->ai_share_token"
+                />
                 <!-- Description Box  -->
                 <div class="card description">
                     {{-- {{dd(@$auction)}} --}}
