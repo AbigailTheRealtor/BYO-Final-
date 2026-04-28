@@ -1,0 +1,161 @@
+TASK: Add an internal “AI Questions / Chatbot Knowledge Base” tab for Seller listings only.
+
+LOCATION:
+Only update the Agent Dashboard Create Listing / Edit Listing flow for Seller listings.
+
+GOAL:
+Allow the Seller or Agent to optionally answer common Buyer questions. These answers will not show publicly on the listing page, but will be stored internally so the listing chatbot can answer Buyer questions accurately.
+
+SAFEGUARDS:
+- Do not edit Buyer, Landlord, or Tenant flows.
+- Do not edit public listing pages.
+- Do not edit Bid Now, bid cards, offer forms, accepted summaries, dashboards, or agent bid logic.
+- Do not remove or change existing tabs.
+- Add this as an optional internal tab/section only.
+- Do not make any questions required.
+- Do not duplicate public display.
+- Store answers in structured JSON, preferably listing_ai_faq or chatbot_knowledge_base.
+- Each answer should be nullable.
+- Preserve save draft and edit listing behavior.
+
+TAB NAME:
+AI Questions / Chatbot Knowledge Base
+
+HELPER TEXT:
+Answer any optional questions below to help the listing chatbot respond to common Buyer questions. These answers are internal only and will not appear publicly on the listing page unless the chatbot is asked a related question.
+
+SELLER LISTING — BUYER FAQ QUESTIONS
+
+Category: Pricing, Costs & Financing
+1. What is the asking price, and is the Seller open to negotiation?
+2. Are there any HOA, condo, or association fees? If yes, what are the amounts and what do they include?
+3. What are the estimated property taxes?
+4. What closing costs should a Buyer expect?
+5. How much earnest money deposit does the Seller prefer?
+6. Are there any lender-related fees, seller-paid fees, or transaction costs the Buyer should know about?
+7. What are the estimated monthly ownership costs, if known?
+8. Is the Seller willing to contribute toward Buyer closing costs or credits?
+9. Are there any special assessments, pending assessments, or upcoming fee increases?
+10. What is included in the sale price?
+
+Category: Financing & Pre-Approval
+11. Does the Seller require a Buyer to be pre-approved or provide proof of funds before making an offer?
+12. What financing types will the Seller consider?
+13. Are FHA, VA, conventional, cash, seller financing, assumable financing, cryptocurrency, exchange/trade, lease option, lease purchase, NFT, or other payment structures acceptable?
+14. Is there a minimum down payment the Seller prefers or requires?
+15. Are there any financing types the Seller will not consider?
+16. How quickly does the Seller want loan approval or proof of funds confirmed?
+17. Will the Seller consider a Buyer switching lenders during the transaction?
+18. Are there any appraisal concerns or financing concerns Buyers should know about?
+
+Category: Property Details
+19. How many bedrooms and bathrooms does the property have?
+20. What is the square footage?
+21. What year was the property built?
+22. Has the property been updated or renovated, and when were the updates completed?
+23. What appliances, fixtures, or personal property are included?
+24. What is the age and condition of the roof?
+25. What is the age and condition of the HVAC system?
+26. What is the age and condition of the water heater?
+27. What is the age and condition of major systems, including plumbing and electrical?
+28. Is the property in a flood zone?
+29. Is the property furnished or unfurnished?
+30. Are there any known defects, repairs needed, or condition issues?
+
+Category: Offer & Negotiation
+31. How should a Buyer submit an offer?
+32. Are there currently multiple offers or strong interest?
+33. How competitive is the current offer situation?
+34. Is the Seller willing to negotiate price?
+35. Is the Seller willing to negotiate terms other than price?
+36. What contingencies will the Seller consider?
+37. What inspection period does the Seller prefer?
+38. How long does the Seller usually need to respond to an offer?
+39. Will the Seller consider backup offers?
+40. Are there any offer terms that would make an offer stronger?
+
+Category: Inspections & Due Diligence
+41. Can the Buyer have the property inspected?
+42. What inspections are recommended or expected?
+43. Are there any known inspection issues?
+44. What happens if inspection issues are found?
+45. Will the Seller consider repair requests or credits?
+46. Is the property being sold as-is?
+47. Is a Seller disclosure available?
+48. Are there any permits, code issues, or open violations known?
+
+Category: Closing & Possession
+49. What closing timeline does the Seller prefer?
+50. Is the Seller flexible on the closing date?
+51. Who does the Seller prefer to use for title/closing, if anyone?
+52. When can the Buyer take possession?
+53. Does the Seller need post-closing occupancy or a leaseback?
+54. Can closing be delayed if needed?
+55. What documents will the Buyer need to sign or provide?
+
+Category: Location & Neighborhood
+56. What area or neighborhood is the property in?
+57. What schools is the property zoned for, if known?
+58. What nearby amenities, shopping, restaurants, parks, beaches, or highways should Buyers know about?
+59. How far is the property from major roads, airports, employment centers, or local attractions?
+60. Are there any neighborhood, community, HOA, or lifestyle details Buyers should know?
+
+Category: High-Intent Buyer Questions
+61. Is the property still available?
+62. Can a Buyer schedule a showing?
+63. How does a Buyer make an offer?
+64. What does a Buyer need to do to secure the property?
+65. How quickly can a Buyer close?
+66. What is the best next step for an interested Buyer?
+
+COMMERCIAL / INCOME 5+ ADD-ON QUESTIONS:
+Show these only for Commercial or Income 5+ property types.
+67. What is the current NOI, and how is it calculated?
+68. What is the current or projected cap rate?
+69. What is the current occupancy rate?
+70. Is a rent roll available?
+71. Are existing leases transferable or assignable?
+72. Are tenant estoppels available or required?
+73. What are the operating expenses?
+74. Are there CAM, tax, insurance, or maintenance expense details?
+75. Are there any major tenant, lease, vacancy, or income concerns?
+76. Are financial statements, profit/loss reports, or income records available?
+
+BUSINESS OPPORTUNITY ADD-ON QUESTIONS:
+Show these only for Business Opportunity property type.
+77. What business assets are included in the sale?
+78. Are FF&E, equipment, inventory, phone numbers, websites, licenses, or goodwill included?
+79. Are business financials available for review?
+80. Is seller training or transition support available?
+81. Are licenses, permits, vendor accounts, or contracts transferable?
+82. What is the reason for selling?
+83. Are employees expected to stay after the sale?
+84. Are there any non-compete terms or restrictions?
+
+VACANT LAND ADD-ON QUESTIONS:
+Show these only for Vacant Land property type.
+85. What is the zoning?
+86. What uses are currently allowed?
+87. What is the likely or intended use for the land?
+88. Are utilities available, including water, sewer, electric, gas, or internet?
+89. Are utilities connected or nearby?
+90. Is there legal road access or an easement?
+91. Are there wetlands, flood zones, environmental concerns, or protected areas?
+92. Is a survey available?
+93. Are soil tests, environmental studies, or feasibility studies available?
+94. Are there building restrictions, setbacks, deed restrictions, or HOA restrictions?
+
+CHATBOT REQUIREMENTS:
+- Store each answer with a stable question key.
+- Allow aliases/search terms internally so chatbot can match user wording.
+- Example: roof_age_condition should match “roof age,” “how old is the roof,” “roof condition,” and “when was roof replaced.”
+- Chatbot should check structured listing fields first, then these AI answers, then fallback.
+- Do not hallucinate answers. If unanswered, chatbot should say the information was not provided and offer to connect the user or ask a follow-up.
+
+VERIFY:
+- Seller AI Questions tab appears only in Seller Create/Edit Listing flow.
+- All fields are optional.
+- Answers save in draft.
+- Answers prefill when editing.
+- No answers display publicly on the listing page.
+- No other role or BidYourAgent logic changed.

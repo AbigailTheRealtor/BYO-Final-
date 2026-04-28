@@ -516,6 +516,50 @@ class TenantAgentAuction extends Component
     public $personal_guarantee_preference = '';
     public $commercial_approval_conditions = '';
 
+    // Buyer Purchasing Terms — 18 new optional fields (Task #155)
+    public $earnest_money_amount = '';
+    public $earnest_money_timing = '';
+    public $inspection_period_days = '';
+    public $inspection_contingency_buyer = '';
+    public $appraisal_contingency_buyer = '';
+    public $financing_contingency_buyer = '';
+    public $financing_contingency_days_buyer = '';
+    public $seller_contribution = '';
+    public $seller_contribution_details = '';
+    public $possession_preference = '';
+    public $possession_details = '';
+    public $home_warranty_requested = '';
+    public $home_warranty_details = '';
+    public $as_is_purchase = '';
+    public $property_inclusions = '';
+    public $property_exclusions = '';
+    public $closing_cost_responsibility = '';
+    public $additional_purchase_terms = '';
+
+    // Landlord Lease Terms — 22 new optional fields (Task #157)
+    public $lease_available_date = '';
+    public $security_deposit_required = '';
+    public $first_month_rent_required = '';
+    public $last_month_rent_required = '';
+    public $total_move_in_funds_required = '';
+    public $pet_policy = '';
+    public $pet_deposit_fee_rent = '';
+    public $number_of_occupants_allowed = '';
+    public $parking_terms = '';
+    public $utility_responsibility = '';
+    public $ll_maintenance_responsibility = '';
+    public $renewal_option_offered = '';
+    public $landlord_approval_conditions = '';
+    public $additional_landlord_lease_terms = '';
+    public $commercial_lease_type = '';
+    public $cam_nnn_additional_rent_charges = '';
+    public $rent_escalation_terms = '';
+    public $tenant_improvement_buildout_terms = '';
+    public $permitted_use_restrictions = '';
+    public $signage_rights = '';
+    public $commercial_parking_terms = '';
+    public $personal_guarantee_requirement = '';
+
     // Personal information
     public $first_name = '';
     public $last_name = '';
@@ -3056,7 +3100,49 @@ class TenantAgentAuction extends Component
 
             ///////////////// Buyer purchasing terms end
 
+            // Buyer Purchasing Terms — 18 new optional fields (Task #155, draft rehydration)
+            $this->earnest_money_amount              = $auction->info('earnest_money_amount') ?: '';
+            $this->earnest_money_timing              = $auction->info('earnest_money_timing') ?: '';
+            $this->inspection_period_days            = $auction->info('inspection_period_days') ?: '';
+            $this->inspection_contingency_buyer      = $auction->info('inspection_contingency_buyer') ?: '';
+            $this->appraisal_contingency_buyer       = $auction->info('appraisal_contingency_buyer') ?: '';
+            $this->financing_contingency_buyer       = $auction->info('financing_contingency_buyer') ?: '';
+            $this->financing_contingency_days_buyer  = $auction->info('financing_contingency_days_buyer') ?: '';
+            $this->seller_contribution               = $auction->info('seller_contribution') ?: '';
+            $this->seller_contribution_details       = $auction->info('seller_contribution_details') ?: '';
+            $this->possession_preference             = $auction->info('possession_preference') ?: '';
+            $this->possession_details                = $auction->info('possession_details') ?: '';
+            $this->home_warranty_requested           = $auction->info('home_warranty_requested') ?: '';
+            $this->home_warranty_details             = $auction->info('home_warranty_details') ?: '';
+            $this->as_is_purchase                    = $auction->info('as_is_purchase') ?: '';
+            $this->property_inclusions               = $auction->info('property_inclusions') ?: '';
+            $this->property_exclusions               = $auction->info('property_exclusions') ?: '';
+            $this->closing_cost_responsibility       = $auction->info('closing_cost_responsibility') ?: '';
+            $this->additional_purchase_terms         = $auction->info('additional_purchase_terms') ?: '';
 
+            // Landlord Lease Terms — 22 new optional fields (Task #157, draft rehydration)
+            $this->lease_available_date              = $auction->info('lease_available_date') ?: '';
+            $this->security_deposit_required         = $auction->info('security_deposit_required') ?: '';
+            $this->first_month_rent_required         = $auction->info('first_month_rent_required') ?: '';
+            $this->last_month_rent_required          = $auction->info('last_month_rent_required') ?: '';
+            $this->total_move_in_funds_required      = $auction->info('total_move_in_funds_required') ?: '';
+            $this->pet_policy                        = $auction->info('pet_policy') ?: '';
+            $this->pet_deposit_fee_rent              = $auction->info('pet_deposit_fee_rent') ?: '';
+            $this->number_of_occupants_allowed       = $auction->info('number_of_occupants_allowed') ?: '';
+            $this->parking_terms                     = $auction->info('parking_terms') ?: '';
+            $this->utility_responsibility            = $auction->info('utility_responsibility') ?: '';
+            $this->ll_maintenance_responsibility     = $auction->info('ll_maintenance_responsibility') ?: '';
+            $this->renewal_option_offered            = $auction->info('renewal_option_offered') ?: '';
+            $this->landlord_approval_conditions      = $auction->info('landlord_approval_conditions') ?: '';
+            $this->additional_landlord_lease_terms   = $auction->info('additional_landlord_lease_terms') ?: '';
+            $this->commercial_lease_type             = $auction->info('commercial_lease_type') ?: '';
+            $this->cam_nnn_additional_rent_charges   = $auction->info('cam_nnn_additional_rent_charges') ?: '';
+            $this->rent_escalation_terms             = $auction->info('rent_escalation_terms') ?: '';
+            $this->tenant_improvement_buildout_terms = $auction->info('tenant_improvement_buildout_terms') ?: '';
+            $this->permitted_use_restrictions        = $auction->info('permitted_use_restrictions') ?: '';
+            $this->signage_rights                    = $auction->info('signage_rights') ?: '';
+            $this->commercial_parking_terms          = $auction->info('commercial_parking_terms') ?: '';
+            $this->personal_guarantee_requirement    = $auction->info('personal_guarantee_requirement') ?: '';
 
             $this->prior_eviction = $auction->get->prior_eviction ?? '';
             $this->eviction_explanation = $auction->get->eviction_explanation ?? '';
@@ -3876,6 +3962,50 @@ class TenantAgentAuction extends Component
         $auction->saveMeta('commercial_parking_access_needs', $this->commercial_parking_access_needs);
         $auction->saveMeta('personal_guarantee_preference', $this->personal_guarantee_preference);
         $auction->saveMeta('commercial_approval_conditions', $this->commercial_approval_conditions);
+
+        // Buyer Purchasing Terms — 18 new optional fields (Task #155)
+        $auction->saveMeta('earnest_money_amount', $this->stripCommas($this->earnest_money_amount));
+        $auction->saveMeta('earnest_money_timing', $this->earnest_money_timing);
+        $auction->saveMeta('inspection_period_days', $this->inspection_period_days);
+        $auction->saveMeta('inspection_contingency_buyer', $this->inspection_contingency_buyer);
+        $auction->saveMeta('appraisal_contingency_buyer', $this->appraisal_contingency_buyer);
+        $auction->saveMeta('financing_contingency_buyer', $this->financing_contingency_buyer);
+        $auction->saveMeta('financing_contingency_days_buyer', $this->financing_contingency_days_buyer);
+        $auction->saveMeta('seller_contribution', $this->seller_contribution);
+        $auction->saveMeta('seller_contribution_details', $this->seller_contribution_details);
+        $auction->saveMeta('possession_preference', $this->possession_preference);
+        $auction->saveMeta('possession_details', $this->possession_details);
+        $auction->saveMeta('home_warranty_requested', $this->home_warranty_requested);
+        $auction->saveMeta('home_warranty_details', $this->home_warranty_details);
+        $auction->saveMeta('as_is_purchase', $this->as_is_purchase);
+        $auction->saveMeta('property_inclusions', $this->property_inclusions);
+        $auction->saveMeta('property_exclusions', $this->property_exclusions);
+        $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
+        $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
+
+        // Landlord Lease Terms — 22 new optional fields (Task #157)
+        $auction->saveMeta('lease_available_date', $this->lease_available_date);
+        $auction->saveMeta('security_deposit_required', $this->stripCommas($this->security_deposit_required));
+        $auction->saveMeta('first_month_rent_required', $this->first_month_rent_required);
+        $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
+        $auction->saveMeta('total_move_in_funds_required', $this->stripCommas($this->total_move_in_funds_required));
+        $auction->saveMeta('pet_policy', $this->pet_policy);
+        $auction->saveMeta('pet_deposit_fee_rent', $this->pet_deposit_fee_rent);
+        $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
+        $auction->saveMeta('parking_terms', $this->parking_terms);
+        $auction->saveMeta('utility_responsibility', $this->utility_responsibility);
+        $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);
+        $auction->saveMeta('renewal_option_offered', $this->renewal_option_offered);
+        $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
+        $auction->saveMeta('additional_landlord_lease_terms', $this->additional_landlord_lease_terms);
+        $auction->saveMeta('commercial_lease_type', $this->commercial_lease_type);
+        $auction->saveMeta('cam_nnn_additional_rent_charges', $this->cam_nnn_additional_rent_charges);
+        $auction->saveMeta('rent_escalation_terms', $this->rent_escalation_terms);
+        $auction->saveMeta('tenant_improvement_buildout_terms', $this->tenant_improvement_buildout_terms);
+        $auction->saveMeta('permitted_use_restrictions', $this->permitted_use_restrictions);
+        $auction->saveMeta('signage_rights', $this->signage_rights);
+        $auction->saveMeta('commercial_parking_terms', $this->commercial_parking_terms);
+        $auction->saveMeta('personal_guarantee_requirement', $this->personal_guarantee_requirement);
 
         // Tenant Information
         $auction->saveMeta('pets', $this->pets);
