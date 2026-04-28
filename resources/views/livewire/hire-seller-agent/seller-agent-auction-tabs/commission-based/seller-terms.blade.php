@@ -43,9 +43,7 @@
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>💰 Enter the desired sale price, preferred closing date, accepted financing or currency types, and
-                any applicable special sale provisions.
-            </strong>
+            <strong>Enter the Seller's preferred sale terms. These terms will be used as the starting point for Buyer offers and future counteroffers.</strong>
         </div>
     </div>
 </div>
@@ -1630,6 +1628,348 @@
                 data-icon="fa-solid fa-clock"
                 placeholder="Enter late fee and when it applies (e.g., $100 after 10 days late, or 5% of payment after 15 days)">
         </div>
+    </div>
+</div>
+
+{{-- ============================================================
+     NEW SELLER PURCHASE TERMS (19 fields)
+     ============================================================ --}}
+
+<div class="financing-section-header mt-5 mb-3 pb-2 border-bottom">
+    <h5 class="fw-bold text-primary mb-0">
+        <i class="fa-solid fa-file-contract me-2"></i>Seller's Purchase Terms
+    </h5>
+</div>
+
+{{-- 1. Initial Deposit Requested --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Initial Deposit Requested:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the earnest money deposit amount the Seller expects from the Buyer at contract signing.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="initial_deposit_requested" class="form-control has-icon"
+            placeholder="Enter initial deposit amount (e.g., 5000)"
+            data-error-id="initial_deposit_requested_error"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+    <span class="error mt-2" id="initial_deposit_requested_error"></span>
+</div>
+
+{{-- 2. Initial Deposit Timeframe --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Initial Deposit Timeframe:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select how many days after contract execution the initial deposit must be received.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="initial_deposit_timeframe" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days">
+            <option value="">Select</option>
+            <option value="Within 1 Day">Within 1 Day</option>
+            <option value="Within 3 Days">Within 3 Days</option>
+            <option value="Within 5 Days">Within 5 Days</option>
+            <option value="Within 7 Days">Within 7 Days</option>
+            <option value="Within 10 Days">Within 10 Days</option>
+            <option value="Within 14 Days">Within 14 Days</option>
+            <option value="At Closing">At Closing</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+</div>
+
+{{-- 3. Additional Deposit Requested --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Additional Deposit Requested:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any secondary deposit amount required after the inspection or financing contingency period.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="additional_deposit_requested" class="form-control has-icon"
+            placeholder="Enter additional deposit amount (e.g., 10000)"
+            data-error-id="additional_deposit_requested_error"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+    <span class="error mt-2" id="additional_deposit_requested_error"></span>
+</div>
+
+{{-- 4. Additional Deposit Timeframe --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Additional Deposit Timeframe:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select how many days after the triggering event the additional deposit must be received.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="additional_deposit_timeframe" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days">
+            <option value="">Select</option>
+            <option value="Within 1 Day">Within 1 Day</option>
+            <option value="Within 3 Days">Within 3 Days</option>
+            <option value="Within 5 Days">Within 5 Days</option>
+            <option value="Within 7 Days">Within 7 Days</option>
+            <option value="Within 10 Days">Within 10 Days</option>
+            <option value="Within 14 Days">Within 14 Days</option>
+            <option value="At Closing">At Closing</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+</div>
+
+{{-- 5. Escrow Agent Preference --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Escrow Agent Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the Seller's preferred escrow company, attorney, or title agent to hold deposits and manage closing.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="escrow_agent_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-building-columns"
+            placeholder="Enter preferred escrow agent or company name (e.g., First American Title, Local Attorney)">
+    </div>
+</div>
+
+{{-- 6. Preferred Inspection Period (Days) --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Preferred Inspection Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Seller is willing to allow for the Buyer's inspection contingency period.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="preferred_inspection_period" class="form-control has-icon"
+            data-icon="fa-solid fa-magnifying-glass"
+            placeholder="Enter number of inspection days (e.g., 10)" min="0">
+    </div>
+</div>
+
+{{-- 7. Appraisal Contingency Preference --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Appraisal Contingency Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Seller requires, will accept, or prefers the Buyer to waive the appraisal contingency.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="appraisal_contingency_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-scale-balanced">
+            <option value="">Select</option>
+            <option value="Required">Required</option>
+            <option value="Preferred Waived">Preferred Waived</option>
+            <option value="Negotiable">Negotiable</option>
+            <option value="Not Applicable">Not Applicable</option>
+        </select>
+    </div>
+</div>
+
+{{-- 8. Financing Contingency Preference --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Financing Contingency Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Seller requires, will accept, or prefers the Buyer to waive the financing contingency.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="financing_contingency_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-file-invoice-dollar">
+            <option value="">Select</option>
+            <option value="Required">Required</option>
+            <option value="Preferred Waived">Preferred Waived</option>
+            <option value="Negotiable">Negotiable</option>
+            <option value="Not Applicable">Not Applicable</option>
+        </select>
+    </div>
+</div>
+
+{{-- 9. Sale of Buyer's Property Contingency --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Sale of Buyer's Property Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Seller will accept an offer contingent on the Buyer selling their current property first.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="sale_of_buyer_property_contingency" class="form-control has-icon"
+            data-icon="fa-solid fa-house-circle-check">
+            <option value="">Select</option>
+            <option value="Accepted">Accepted</option>
+            <option value="Not Accepted">Not Accepted</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+{{-- 10. Seller Contribution / Credit Offered --}}
+<div class="form-group mt-3" id="seller-contribution-credit-wrapper">
+    <label class="fw-bold">Seller Contribution / Credit Offered:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Seller is willing to offer a credit toward the Buyer's closing costs or other expenses.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="seller_contribution_credit_offered" id="seller_contribution_credit_offered"
+            class="form-control has-icon" data-icon="fa-solid fa-hand-holding-dollar"
+            onchange="document.getElementById('seller-contribution-amount-details-section').style.display = (this.value === 'Yes') ? 'block' : 'none'">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+{{-- 11. Seller Contribution Amount / Details (conditional) --}}
+<div id="seller-contribution-amount-details-section" wire:ignore.self
+    style="display: {{ ($seller_contribution_credit_offered ?? '') === 'Yes' ? 'block' : 'none' }}">
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="seller_contribution_amount_details" class="form-control has-icon"
+                data-icon="fa-solid fa-hand-holding-dollar"
+                placeholder="Enter contribution amount and details (e.g., $5,000 toward buyer closing costs)">
+        </div>
+    </div>
+</div>
+
+{{-- 12. Possession Preference --}}
+<div class="form-group mt-3" id="seller-possession-preference-wrapper">
+    <label class="fw-bold">Possession Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select when the Seller prefers to transfer possession of the property to the Buyer.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="possession_preference" id="possession_preference"
+            class="form-control has-icon" data-icon="fa-solid fa-key"
+            onchange="document.getElementById('seller-possession-details-section').style.display = (this.value === 'Seller Rent Back' || this.value === 'Other') ? 'block' : 'none'">
+            <option value="">Select</option>
+            <option value="At Closing">At Closing</option>
+            <option value="Day After Closing">Day After Closing</option>
+            <option value="Seller Rent Back">Seller Rent Back</option>
+            <option value="Negotiable">Negotiable</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+</div>
+
+{{-- 13. Possession Details (conditional) --}}
+<div id="seller-possession-details-section" wire:ignore.self
+    style="display: {{ in_array($possession_preference ?? '', ['Seller Rent Back', 'Other']) ? 'block' : 'none' }}">
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="possession_details" class="form-control has-icon"
+                data-icon="fa-solid fa-key"
+                placeholder="Enter possession details (e.g., Seller requests 30-day rent back at market rate)">
+        </div>
+    </div>
+</div>
+
+{{-- 14. Included Personal Property --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Included Personal Property:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any personal property (furniture, appliances, fixtures) the Seller intends to include in the sale.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="included_personal_property" class="form-control has-icon" rows="3"
+            style="padding-left:40px;"
+            data-icon="fa-solid fa-couch"
+            placeholder="List items included in the sale (e.g., Refrigerator, washer/dryer, dining room chandelier)"></textarea>
+    </div>
+</div>
+
+{{-- 15. Excluded Items --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Excluded Items:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any fixtures or personal property the Seller intends to remove and exclude from the sale.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="excluded_items" class="form-control has-icon" rows="3"
+            style="padding-left:40px;"
+            data-icon="fa-solid fa-ban"
+            placeholder="List items excluded from the sale (e.g., Antique light fixture in dining room, detached storage shed)"></textarea>
+    </div>
+</div>
+
+{{-- 16. Home Warranty Offered --}}
+<div class="form-group mt-3" id="seller-home-warranty-wrapper">
+    <label class="fw-bold">Home Warranty Offered:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Seller is willing to provide a home warranty policy for the Buyer.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="home_warranty_offered" id="home_warranty_offered"
+            class="form-control has-icon" data-icon="fa-solid fa-shield-halved"
+            onchange="document.getElementById('seller-home-warranty-amount-details-section').style.display = (this.value === 'Yes') ? 'block' : 'none'">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+{{-- 17. Home Warranty Amount / Details (conditional) --}}
+<div id="seller-home-warranty-amount-details-section" wire:ignore.self
+    style="display: {{ ($home_warranty_offered ?? '') === 'Yes' ? 'block' : 'none' }}">
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text" wire:model="home_warranty_amount_details" class="form-control has-icon"
+                data-icon="fa-solid fa-shield-halved"
+                placeholder="Enter warranty amount and details (e.g., $500 one-year home warranty through American Home Shield)">
+        </div>
+    </div>
+</div>
+
+{{-- 18. HOA / Condo Association Terms --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">HOA / Condo Association Terms:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any relevant HOA or condo association terms, fees, transfer requirements, or restrictions the Buyer should be aware of.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="hoa_condo_association_terms" class="form-control has-icon"
+            data-icon="fa-solid fa-building"
+            placeholder="Enter HOA or condo association terms (e.g., $350/month HOA, $200 transfer fee, no rentals allowed)">
+    </div>
+</div>
+
+{{-- 19. Additional Seller Sale Terms --}}
+<div class="form-group mt-3">
+    <label class="fw-bold">Additional Seller Sale Terms:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any additional terms or conditions the Seller requires that are not covered by the fields above.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon" rows="4"
+            style="padding-left:40px;"
+            data-icon="fa-solid fa-file-lines"
+            placeholder="Enter any additional sale terms or special conditions the Seller requires"></textarea>
     </div>
 </div>
 

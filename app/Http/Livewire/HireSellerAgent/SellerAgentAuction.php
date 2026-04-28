@@ -186,6 +186,27 @@ class SellerAgentAuction extends Component
     public $nft_transfer_method = '';
     public $nft_valuation_method = '';
 
+    // Seller Purchase Terms (19 new fields)
+    public $initial_deposit_requested = '';
+    public $initial_deposit_timeframe = '';
+    public $additional_deposit_requested = '';
+    public $additional_deposit_timeframe = '';
+    public $escrow_agent_preference = '';
+    public $preferred_inspection_period = null;
+    public $appraisal_contingency_preference = '';
+    public $financing_contingency_preference = '';
+    public $sale_of_buyer_property_contingency = '';
+    public $seller_contribution_credit_offered = '';
+    public $seller_contribution_amount_details = '';
+    public $possession_preference = '';
+    public $possession_details = '';
+    public $included_personal_property = '';
+    public $excluded_items = '';
+    public $home_warranty_offered = '';
+    public $home_warranty_amount_details = '';
+    public $hoa_condo_association_terms = '';
+    public $additional_seller_sale_terms = '';
+
     public $garage_needed = '';
     public $other_garage_needed = '';
     public $garage_parking_spaces = '';
@@ -1707,6 +1728,27 @@ class SellerAgentAuction extends Component
             $this->nft_percentage = $auction->get->nft_percentage;
             $this->cash_percentage_nft = $auction->get->cash_percentage_nft;
 
+            // Seller Purchase Terms (19 new fields)
+            $this->initial_deposit_requested = $auction->get->initial_deposit_requested ?? '';
+            $this->initial_deposit_timeframe = $auction->get->initial_deposit_timeframe ?? '';
+            $this->additional_deposit_requested = $auction->get->additional_deposit_requested ?? '';
+            $this->additional_deposit_timeframe = $auction->get->additional_deposit_timeframe ?? '';
+            $this->escrow_agent_preference = $auction->get->escrow_agent_preference ?? '';
+            $this->preferred_inspection_period = $auction->get->preferred_inspection_period ?? null;
+            $this->appraisal_contingency_preference = $auction->get->appraisal_contingency_preference ?? '';
+            $this->financing_contingency_preference = $auction->get->financing_contingency_preference ?? '';
+            $this->sale_of_buyer_property_contingency = $auction->get->sale_of_buyer_property_contingency ?? '';
+            $this->seller_contribution_credit_offered = $auction->get->seller_contribution_credit_offered ?? '';
+            $this->seller_contribution_amount_details = $auction->get->seller_contribution_amount_details ?? '';
+            $this->possession_preference = $auction->get->possession_preference ?? '';
+            $this->possession_details = $auction->get->possession_details ?? '';
+            $this->included_personal_property = $auction->get->included_personal_property ?? '';
+            $this->excluded_items = $auction->get->excluded_items ?? '';
+            $this->home_warranty_offered = $auction->get->home_warranty_offered ?? '';
+            $this->home_warranty_amount_details = $auction->get->home_warranty_amount_details ?? '';
+            $this->hoa_condo_association_terms = $auction->get->hoa_condo_association_terms ?? '';
+            $this->additional_seller_sale_terms = $auction->get->additional_seller_sale_terms ?? '';
+
             // Amenities and features
 
             $this->tenant_require = is_string($auction->get->tenant_require) ? json_decode($auction->get->tenant_require, true) ?? [] : (array)$auction->get->tenant_require;
@@ -2086,6 +2128,27 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('nft_description', $this->nft_description);
         $auction->saveMeta('nft_percentage', $this->nft_percentage);
         $auction->saveMeta('cash_percentage_nft', $this->cash_percentage_nft);
+
+        // Seller Purchase Terms (19 new fields)
+        $auction->saveMeta('initial_deposit_requested', $this->stripCommas($this->initial_deposit_requested));
+        $auction->saveMeta('initial_deposit_timeframe', $this->initial_deposit_timeframe);
+        $auction->saveMeta('additional_deposit_requested', $this->stripCommas($this->additional_deposit_requested));
+        $auction->saveMeta('additional_deposit_timeframe', $this->additional_deposit_timeframe);
+        $auction->saveMeta('escrow_agent_preference', $this->escrow_agent_preference);
+        $auction->saveMeta('preferred_inspection_period', $this->preferred_inspection_period);
+        $auction->saveMeta('appraisal_contingency_preference', $this->appraisal_contingency_preference);
+        $auction->saveMeta('financing_contingency_preference', $this->financing_contingency_preference);
+        $auction->saveMeta('sale_of_buyer_property_contingency', $this->sale_of_buyer_property_contingency);
+        $auction->saveMeta('seller_contribution_credit_offered', $this->seller_contribution_credit_offered);
+        $auction->saveMeta('seller_contribution_amount_details', $this->seller_contribution_amount_details);
+        $auction->saveMeta('possession_preference', $this->possession_preference);
+        $auction->saveMeta('possession_details', $this->possession_details);
+        $auction->saveMeta('included_personal_property', $this->included_personal_property);
+        $auction->saveMeta('excluded_items', $this->excluded_items);
+        $auction->saveMeta('home_warranty_offered', $this->home_warranty_offered);
+        $auction->saveMeta('home_warranty_amount_details', $this->home_warranty_amount_details);
+        $auction->saveMeta('hoa_condo_association_terms', $this->hoa_condo_association_terms);
+        $auction->saveMeta('additional_seller_sale_terms', $this->additional_seller_sale_terms);
 
         // Amenities and Features
         $auction->saveMeta('tenant_require', json_encode($this->tenant_require));
@@ -2482,6 +2545,16 @@ class SellerAgentAuction extends Component
                 $rules['purchase_fee_other'] = 'required|string';
             }
         }
+
+        // Seller Purchase Terms dropdown validation (all optional / nullable)
+        $rules['initial_deposit_timeframe'] = 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other';
+        $rules['additional_deposit_timeframe'] = 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other';
+        $rules['appraisal_contingency_preference'] = 'nullable|in:,Required,Preferred Waived,Negotiable,Not Applicable';
+        $rules['financing_contingency_preference'] = 'nullable|in:,Required,Preferred Waived,Negotiable,Not Applicable';
+        $rules['sale_of_buyer_property_contingency'] = 'nullable|in:,Accepted,Not Accepted,Negotiable';
+        $rules['seller_contribution_credit_offered'] = 'nullable|in:,Yes,No';
+        $rules['possession_preference'] = 'nullable|in:,At Closing,Day After Closing,Seller Rent Back,Negotiable,Other';
+        $rules['home_warranty_offered'] = 'nullable|in:,Yes,No';
 
         return $rules;
     }
