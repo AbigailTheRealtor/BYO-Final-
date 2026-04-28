@@ -327,9 +327,6 @@
             font-size: 1rem;
         }
 
-        .user-selected {
-            margin-left: -15px !important;
-        }
     }
 
     @media (max-width: 320px) {
@@ -378,9 +375,10 @@
         padding-left: 9px !important;
     }
 
+    /* Agent type selection button text styling */
     .user-selected {
         color: #0ce7ef;
-        font-size: 18px;
+        font-weight: 600;
     }
 
     .set-button {
