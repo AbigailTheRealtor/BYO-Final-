@@ -6604,6 +6604,326 @@
                             </div>
                         </span>
                     </div>
+                    <div class="wizard-step" data-step="56">
+                        @php
+                            $faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
+                        @endphp
+                        <h4>AI Questions / Chatbot Knowledge Base</h4>
+                        <p class="text-muted mb-4">These answers are for internal use only and help the listing chatbot respond accurately to seller inquiries. All fields are optional — answer only what applies to your buyer.</p>
+
+                        <h5 class="fw-bold mt-3 mb-2">Buyer Readiness &amp; Motivation</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_active_now" class="form-control" rows="2" placeholder="Is the buyer actively looking to purchase now, or is this exploratory?">{{ old('listing_ai_faq_buyer_active_now', $faq['buyer_active_now'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_timeline" class="form-control" rows="2" placeholder="What is the buyer's target timeline to purchase?">{{ old('listing_ai_faq_buyer_timeline', $faq['buyer_timeline'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_motivation" class="form-control" rows="2" placeholder="What is the buyer's primary motivation for purchasing?">{{ old('listing_ai_faq_buyer_motivation', $faq['buyer_motivation'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_current_situation" class="form-control" rows="2" placeholder="What is the buyer's current living or business situation (renting, owning, etc.)?">{{ old('listing_ai_faq_buyer_current_situation', $faq['buyer_current_situation'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_area_familiarity" class="form-control" rows="2" placeholder="How familiar is the buyer with the target area?">{{ old('listing_ai_faq_buyer_area_familiarity', $faq['buyer_area_familiarity'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_flexibility" class="form-control" rows="2" placeholder="How flexible is the buyer on location or timing?">{{ old('listing_ai_faq_buyer_flexibility', $faq['buyer_flexibility'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_deal_breakers" class="form-control" rows="2" placeholder="What are the buyer's absolute deal-breakers?">{{ old('listing_ai_faq_buyer_deal_breakers', $faq['buyer_deal_breakers'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_lost_deal" class="form-control" rows="2" placeholder="Has the buyer previously lost a deal? If so, what happened?">{{ old('listing_ai_faq_buyer_lost_deal', $faq['buyer_lost_deal'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Budget</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_budget_confirmed" class="form-control" rows="2" placeholder="Has the buyer confirmed their total budget?">{{ old('listing_ai_faq_buyer_budget_confirmed', $faq['buyer_budget_confirmed'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_down_payment" class="form-control" rows="2" placeholder="How much is the buyer planning to put as a down payment?">{{ old('listing_ai_faq_buyer_down_payment', $faq['buyer_down_payment'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_cash_reserves" class="form-control" rows="2" placeholder="Does the buyer have cash reserves remaining after the down payment?">{{ old('listing_ai_faq_buyer_cash_reserves', $faq['buyer_cash_reserves'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_seller_concessions" class="form-control" rows="2" placeholder="Would the buyer consider seller concessions in lieu of a price reduction?">{{ old('listing_ai_faq_buyer_seller_concessions', $faq['buyer_seller_concessions'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_monthly_payment_limit" class="form-control" rows="2" placeholder="What is the buyer's maximum acceptable monthly payment?">{{ old('listing_ai_faq_buyer_monthly_payment_limit', $faq['buyer_monthly_payment_limit'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_budget_other" class="form-control" rows="2" placeholder="Any other budget-related details?">{{ old('listing_ai_faq_buyer_budget_other', $faq['buyer_budget_other'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Financing</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_preapproval_status" class="form-control" rows="2" placeholder="Has the buyer been pre-approved or pre-qualified for a loan?">{{ old('listing_ai_faq_buyer_preapproval_status', $faq['buyer_preapproval_status'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_preapproval_amount" class="form-control" rows="2" placeholder="What is the pre-approval amount?">{{ old('listing_ai_faq_buyer_preapproval_amount', $faq['buyer_preapproval_amount'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_lender_name" class="form-control" rows="2" placeholder="Who is the buyer's lender or bank?">{{ old('listing_ai_faq_buyer_lender_name', $faq['buyer_lender_name'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_loan_type" class="form-control" rows="2" placeholder="What type of loan is the buyer using (e.g., Conventional, FHA, VA, Cash)?">{{ old('listing_ai_faq_buyer_loan_type', $faq['buyer_loan_type'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_cash_buyer" class="form-control" rows="2" placeholder="Is the buyer a cash buyer? Do they have proof of funds?">{{ old('listing_ai_faq_buyer_cash_buyer', $faq['buyer_cash_buyer'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_financing_contingency" class="form-control" rows="2" placeholder="Will the buyer include a financing contingency in the offer?">{{ old('listing_ai_faq_buyer_financing_contingency', $faq['buyer_financing_contingency'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_bridge_loan" class="form-control" rows="2" placeholder="Is the buyer using a bridge loan or any interim financing?">{{ old('listing_ai_faq_buyer_bridge_loan', $faq['buyer_bridge_loan'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_co_borrower" class="form-control" rows="2" placeholder="Is there a co-borrower on the loan?">{{ old('listing_ai_faq_buyer_co_borrower', $faq['buyer_co_borrower'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Desired Property Criteria</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_property_style" class="form-control" rows="2" placeholder="What property style or architecture is preferred?">{{ old('listing_ai_faq_buyer_property_style', $faq['buyer_property_style'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_age_preference" class="form-control" rows="2" placeholder="Does the buyer prefer new construction, older homes, or no preference?">{{ old('listing_ai_faq_buyer_age_preference', $faq['buyer_age_preference'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_must_have_features" class="form-control" rows="2" placeholder="What are the buyer's absolute must-have property features?">{{ old('listing_ai_faq_buyer_must_have_features', $faq['buyer_must_have_features'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_nice_to_have" class="form-control" rows="2" placeholder="What property features are nice-to-have but not required?">{{ old('listing_ai_faq_buyer_nice_to_have', $faq['buyer_nice_to_have'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_school_district" class="form-control" rows="2" placeholder="Is a specific school district required?">{{ old('listing_ai_faq_buyer_school_district', $faq['buyer_school_district'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_hoa_acceptable" class="form-control" rows="2" placeholder="Will the buyer consider HOA communities? What is the maximum monthly HOA fee?">{{ old('listing_ai_faq_buyer_hoa_acceptable', $faq['buyer_hoa_acceptable'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_accessibility" class="form-control" rows="2" placeholder="Does the buyer need any accessibility features?">{{ old('listing_ai_faq_buyer_accessibility', $faq['buyer_accessibility'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_home_office" class="form-control" rows="2" placeholder="Does the buyer require a dedicated home office or workspace?">{{ old('listing_ai_faq_buyer_home_office', $faq['buyer_home_office'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Offer Terms</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_earnest_money" class="form-control" rows="2" placeholder="How much earnest money deposit can the buyer offer?">{{ old('listing_ai_faq_buyer_earnest_money', $faq['buyer_earnest_money'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_inspection_contingency" class="form-control" rows="2" placeholder="Will the buyer include an inspection contingency?">{{ old('listing_ai_faq_buyer_inspection_contingency', $faq['buyer_inspection_contingency'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_appraisal_contingency" class="form-control" rows="2" placeholder="Will the buyer waive or keep the appraisal contingency?">{{ old('listing_ai_faq_buyer_appraisal_contingency', $faq['buyer_appraisal_contingency'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_escalation_clause" class="form-control" rows="2" placeholder="Is the buyer willing to use an escalation clause in a competitive situation?">{{ old('listing_ai_faq_buyer_escalation_clause', $faq['buyer_escalation_clause'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_as_is" class="form-control" rows="2" placeholder="Would the buyer consider purchasing a property as-is?">{{ old('listing_ai_faq_buyer_as_is', $faq['buyer_as_is'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_repairs_limit" class="form-control" rows="2" placeholder="What is the maximum repair credit the buyer would accept instead of repairs?">{{ old('listing_ai_faq_buyer_repairs_limit', $faq['buyer_repairs_limit'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_leaseback" class="form-control" rows="2" placeholder="Would the buyer allow a seller leaseback after closing?">{{ old('listing_ai_faq_buyer_leaseback', $faq['buyer_leaseback'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_multiple_offers" class="form-control" rows="2" placeholder="How does the buyer handle multiple-offer situations?">{{ old('listing_ai_faq_buyer_multiple_offers', $faq['buyer_multiple_offers'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_offer_expiration" class="form-control" rows="2" placeholder="How long will the buyer keep an offer open?">{{ old('listing_ai_faq_buyer_offer_expiration', $faq['buyer_offer_expiration'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Showing &amp; Access</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_showing_availability" class="form-control" rows="2" placeholder="What are the buyer's preferred showing hours and availability?">{{ old('listing_ai_faq_buyer_showing_availability', $faq['buyer_showing_availability'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_virtual_tour" class="form-control" rows="2" placeholder="Would the buyer consider making an offer based on a virtual tour only?">{{ old('listing_ai_faq_buyer_virtual_tour', $faq['buyer_virtual_tour'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_relocation" class="form-control" rows="2" placeholder="Is the buyer relocating from another city, state, or country?">{{ old('listing_ai_faq_buyer_relocation', $faq['buyer_relocation'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_relocation_timeline" class="form-control" rows="2" placeholder="If relocating, what is the buyer's relocation timeline?">{{ old('listing_ai_faq_buyer_relocation_timeline', $faq['buyer_relocation_timeline'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_agent_present" class="form-control" rows="2" placeholder="Does the buyer require their agent to be present at all showings?">{{ old('listing_ai_faq_buyer_agent_present', $faq['buyer_agent_present'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_travel_distance" class="form-control" rows="2" placeholder="How far is the buyer willing to travel to view properties?">{{ old('listing_ai_faq_buyer_travel_distance', $faq['buyer_travel_distance'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Closing Readiness</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_close_timeline" class="form-control" rows="2" placeholder="What is the buyer's ideal closing timeline?">{{ old('listing_ai_faq_buyer_close_timeline', $faq['buyer_close_timeline'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_flexible_close" class="form-control" rows="2" placeholder="Is the buyer flexible on the closing date if the seller needs more time?">{{ old('listing_ai_faq_buyer_flexible_close', $faq['buyer_flexible_close'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_simultaneous_close" class="form-control" rows="2" placeholder="Does the buyer need a simultaneous close on a property they are selling?">{{ old('listing_ai_faq_buyer_simultaneous_close', $faq['buyer_simultaneous_close'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_post_close_occupancy" class="form-control" rows="2" placeholder="Does the buyer need post-close occupancy or early possession?">{{ old('listing_ai_faq_buyer_post_close_occupancy', $faq['buyer_post_close_occupancy'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_move_in_ready" class="form-control" rows="2" placeholder="Does the buyer require a move-in-ready property or can they handle renovations?">{{ old('listing_ai_faq_buyer_move_in_ready', $faq['buyer_move_in_ready'] ?? '') }}</textarea>
+                        </div>
+
+                        <h5 class="fw-bold mt-3 mb-2">Seller High-Intent</h5>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_communication_preference" class="form-control" rows="2" placeholder="How does the buyer prefer to communicate (phone, email, text)?">{{ old('listing_ai_faq_buyer_communication_preference', $faq['buyer_communication_preference'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_decision_makers" class="form-control" rows="2" placeholder="Who else is involved in the final buying decision?">{{ old('listing_ai_faq_buyer_decision_makers', $faq['buyer_decision_makers'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_ready_to_offer" class="form-control" rows="2" placeholder="Is the buyer ready to make an offer if the right property is found today?">{{ old('listing_ai_faq_buyer_ready_to_offer', $faq['buyer_ready_to_offer'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_agent_loyalty" class="form-control" rows="2" placeholder="Is the buyer working exclusively with one agent or interviewing multiple agents?">{{ old('listing_ai_faq_buyer_agent_loyalty', $faq['buyer_agent_loyalty'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_prefers_off_market" class="form-control" rows="2" placeholder="Is the buyer open to off-market or pocket listings?">{{ old('listing_ai_faq_buyer_prefers_off_market', $faq['buyer_prefers_off_market'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_additional_criteria" class="form-control" rows="2" placeholder="Any additional criteria or preferences the buyer wants sellers to know?">{{ old('listing_ai_faq_buyer_additional_criteria', $faq['buyer_additional_criteria'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_neighborhood_preferences" class="form-control" rows="2" placeholder="Does the buyer have specific neighborhood or community preferences?">{{ old('listing_ai_faq_buyer_neighborhood_preferences', $faq['buyer_neighborhood_preferences'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_commute_requirements" class="form-control" rows="2" placeholder="Does the buyer have commute distance or public transit requirements?">{{ old('listing_ai_faq_buyer_commute_requirements', $faq['buyer_commute_requirements'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_noise_tolerance" class="form-control" rows="2" placeholder="What is the buyer's tolerance for noise (e.g., near highways, airports, schools)?">{{ old('listing_ai_faq_buyer_noise_tolerance', $faq['buyer_noise_tolerance'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_privacy_requirements" class="form-control" rows="2" placeholder="Does the buyer have specific privacy requirements (e.g., fencing, lot size)?">{{ old('listing_ai_faq_buyer_privacy_requirements', $faq['buyer_privacy_requirements'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_outdoor_space" class="form-control" rows="2" placeholder="What outdoor space requirements does the buyer have?">{{ old('listing_ai_faq_buyer_outdoor_space', $faq['buyer_outdoor_space'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_storage_needs" class="form-control" rows="2" placeholder="What storage needs does the buyer have (garage, basement, attic, etc.)?">{{ old('listing_ai_faq_buyer_storage_needs', $faq['buyer_storage_needs'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_parking_needs" class="form-control" rows="2" placeholder="What are the buyer's parking requirements?">{{ old('listing_ai_faq_buyer_parking_needs', $faq['buyer_parking_needs'] ?? '') }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <textarea name="listing_ai_faq_buyer_view_preference" class="form-control" rows="2" placeholder="Does the buyer have a preference for a specific view (water, mountain, city, etc.)?">{{ old('listing_ai_faq_buyer_view_preference', $faq['buyer_view_preference'] ?? '') }}</textarea>
+                        </div>
+
+                        <div id="ai_faq_commercial_section" style="display:none;">
+                            <h5 class="fw-bold mt-4 mb-2">Commercial / Income Property Add-On Questions</h5>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_property_use" class="form-control" rows="2" placeholder="What is the intended use of the commercial property?">{{ old('listing_ai_faq_com_property_use', $faq['com_property_use'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_investment_type" class="form-control" rows="2" placeholder="Is this an investment or owner-occupied purchase?">{{ old('listing_ai_faq_com_investment_type', $faq['com_investment_type'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_cap_rate_target" class="form-control" rows="2" placeholder="What cap rate is the buyer targeting?">{{ old('listing_ai_faq_com_cap_rate_target', $faq['com_cap_rate_target'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_noi_required" class="form-control" rows="2" placeholder="What minimum Net Operating Income (NOI) is required?">{{ old('listing_ai_faq_com_noi_required', $faq['com_noi_required'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_occupancy_rate" class="form-control" rows="2" placeholder="What minimum occupancy rate is required?">{{ old('listing_ai_faq_com_occupancy_rate', $faq['com_occupancy_rate'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_lease_terms" class="form-control" rows="2" placeholder="What lease terms are preferred (NNN, gross, modified gross, etc.)?">{{ old('listing_ai_faq_com_lease_terms', $faq['com_lease_terms'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_tenant_type" class="form-control" rows="2" placeholder="What type of tenants are preferred?">{{ old('listing_ai_faq_com_tenant_type', $faq['com_tenant_type'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_zoning" class="form-control" rows="2" placeholder="What zoning classifications are acceptable?">{{ old('listing_ai_faq_com_zoning', $faq['com_zoning'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_buildout_allowance" class="form-control" rows="2" placeholder="Is a tenant buildout allowance expected?">{{ old('listing_ai_faq_com_buildout_allowance', $faq['com_buildout_allowance'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_due_diligence_period" class="form-control" rows="2" placeholder="How long does the buyer need for due diligence?">{{ old('listing_ai_faq_com_due_diligence_period', $faq['com_due_diligence_period'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_environmental_concerns" class="form-control" rows="2" placeholder="Does the buyer have environmental or Phase I/II study requirements?">{{ old('listing_ai_faq_com_environmental_concerns', $faq['com_environmental_concerns'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_parking_requirements" class="form-control" rows="2" placeholder="What are the parking requirements for the commercial property?">{{ old('listing_ai_faq_com_parking_requirements', $faq['com_parking_requirements'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_com_1031_exchange" class="form-control" rows="2" placeholder="Is the buyer doing a 1031 exchange?">{{ old('listing_ai_faq_com_1031_exchange', $faq['com_1031_exchange'] ?? '') }}</textarea>
+                            </div>
+                        </div>
+
+                        <div id="ai_faq_business_section" style="display:none;">
+                            <h5 class="fw-bold mt-4 mb-2">Business Opportunity Add-On Questions</h5>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_type_seeking" class="form-control" rows="2" placeholder="What type of business is the buyer seeking?">{{ old('listing_ai_faq_biz_type_seeking', $faq['biz_type_seeking'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_revenue_required" class="form-control" rows="2" placeholder="What minimum annual revenue is required?">{{ old('listing_ai_faq_biz_revenue_required', $faq['biz_revenue_required'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_profit_required" class="form-control" rows="2" placeholder="What minimum net profit is required?">{{ old('listing_ai_faq_biz_profit_required', $faq['biz_profit_required'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_staff_included" class="form-control" rows="2" placeholder="Will existing staff be retained as part of the purchase?">{{ old('listing_ai_faq_biz_staff_included', $faq['biz_staff_included'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_training_expected" class="form-control" rows="2" placeholder="How much seller training or transition support is expected?">{{ old('listing_ai_faq_biz_training_expected', $faq['biz_training_expected'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_lease_status" class="form-control" rows="2" placeholder="What is the status of the business lease (length remaining, assignable, etc.)?">{{ old('listing_ai_faq_biz_lease_status', $faq['biz_lease_status'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_inventory_included" class="form-control" rows="2" placeholder="Is inventory included in the purchase price?">{{ old('listing_ai_faq_biz_inventory_included', $faq['biz_inventory_included'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_non_compete" class="form-control" rows="2" placeholder="Is a non-compete agreement required from the seller?">{{ old('listing_ai_faq_biz_non_compete', $faq['biz_non_compete'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_biz_sba_financing" class="form-control" rows="2" placeholder="Is the buyer considering SBA financing for the business purchase?">{{ old('listing_ai_faq_biz_sba_financing', $faq['biz_sba_financing'] ?? '') }}</textarea>
+                            </div>
+                        </div>
+
+                        <div id="ai_faq_vacant_section" style="display:none;">
+                            <h5 class="fw-bold mt-4 mb-2">Vacant Land Add-On Questions</h5>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_intended_use" class="form-control" rows="2" placeholder="What is the intended use of the vacant land (residential build, agricultural, commercial, etc.)?">{{ old('listing_ai_faq_land_intended_use', $faq['land_intended_use'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_zoning_required" class="form-control" rows="2" placeholder="What zoning classification is required for the land?">{{ old('listing_ai_faq_land_zoning_required', $faq['land_zoning_required'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_utilities_needed" class="form-control" rows="2" placeholder="What utilities need to be available or accessible at the land?">{{ old('listing_ai_faq_land_utilities_needed', $faq['land_utilities_needed'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_soil_testing" class="form-control" rows="2" placeholder="Will the buyer require soil or environmental testing as a contingency?">{{ old('listing_ai_faq_land_soil_testing', $faq['land_soil_testing'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_subdivision_plans" class="form-control" rows="2" placeholder="Does the buyer plan to subdivide the land?">{{ old('listing_ai_faq_land_subdivision_plans', $faq['land_subdivision_plans'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_build_timeline" class="form-control" rows="2" placeholder="What is the buyer's expected building or development timeline?">{{ old('listing_ai_faq_land_build_timeline', $faq['land_build_timeline'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_survey_required" class="form-control" rows="2" placeholder="Is a current survey required as part of the transaction?">{{ old('listing_ai_faq_land_survey_required', $faq['land_survey_required'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_access_requirements" class="form-control" rows="2" placeholder="What road access or easement requirements does the buyer have?">{{ old('listing_ai_faq_land_access_requirements', $faq['land_access_requirements'] ?? '') }}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <textarea name="listing_ai_faq_land_topography" class="form-control" rows="2" placeholder="Are there topography, flood zone, or elevation requirements?">{{ old('listing_ai_faq_land_topography', $faq['land_topography'] ?? '') }}</textarea>
+                            </div>
+                        </div>
+                    </div>
                     <div class="d-flex justify-content-between form-group mt-4">
                         <div>
                             <a class="wizard-step-back btn btn-success btn-lg text-600" style="display: none;">Back</a>
@@ -7263,27 +7583,25 @@
                             ) {
                                 StepWizard.nextStep = 43;
                                 StepWizard.backStep = 6;
+                            } else if (StepWizard.currentStep == 25 &&
+                                (property_type == 'Residential Property' || property_type == 'Income Property')
+                            ) {
+                                StepWizard.nextStep = 56;
+                                StepWizard.backStep = 25;
+                            } else if (StepWizard.currentStep == 42 &&
+                                (property_type == 'Commercial Property' || property_type == 'Business Opportunity')
+                            ) {
+                                StepWizard.nextStep = 56;
+                                StepWizard.backStep = 42;
+                            } else if (StepWizard.currentStep == 55) {
+                                StepWizard.nextStep = 56;
+                                StepWizard.backStep = 55;
                             } else {
                                 StepWizard.backStep = StepWizard.currentStep;
                             }
                             $('[ data-step="' + StepWizard.nextStep + '"]').addClass("active");
                             StepWizard.setStep();
-                            if (
-                                StepWizard.currentStep == 25 &&
-                                (property_type == 'Residential Property' || property_type ==
-                                    'Income Property')
-                            ) {
-                                $('.wizard-step-next').hide();
-                                $('.wizard-step-finish').show();
-                            }
-                            if (
-                                StepWizard.currentStep == 42 &&
-                                (property_type == 'Commercial Property' || property_type ==
-                                    'Business Opportunity')
-                            ) {
-                                $('.wizard-step-next').hide();
-                                $('.wizard-step-finish').show();
-                            }
+                            StepWizard.updateAiFaqSections();
                         }
                     }
                 });
@@ -7317,6 +7635,14 @@
                             'Vacant Land'
                         ) {
                             StepWizard.backStep = 6;
+                        } else if (StepWizard.currentStep == 56 &&
+                            (property_type == 'Residential Property' || property_type == 'Income Property')
+                        ) {
+                            StepWizard.backStep = 25;
+                        } else if (StepWizard.currentStep == 56 &&
+                            (property_type == 'Commercial Property' || property_type == 'Business Opportunity')
+                        ) {
+                            StepWizard.backStep = 42;
                         } else {
                             StepWizard.backStep = StepWizard.currentStep - 1;
                         }
@@ -7397,7 +7723,9 @@
             stepChanged: function() {
                 var comp = 0;
 
-                if (StepWizard.currentStep >= 5 && StepWizard.currentStep <= 25) {
+                if (StepWizard.currentStep == 56) {
+                    comp = 100;
+                } else if (StepWizard.currentStep >= 5 && StepWizard.currentStep <= 25) {
                     // Calculate progress for Residential and Income property steps (5 to 19)
                     comp = 20 + (((StepWizard.currentStep - 5) / (25 - 5)) * 80);
                 } else if (StepWizard.currentStep >= 25 && StepWizard.currentStep <= 42) {
@@ -7415,6 +7743,25 @@
                 $('.steps-progress-percent').animate({
                     width: comp.toFixed(0) + '%',
                 });
+            },
+            updateAiFaqSections: function() {
+                if (StepWizard.currentStep !== 56) return;
+                var pt = property_type;
+                if (pt === 'Commercial Property' || pt === 'Income Property') {
+                    $('#ai_faq_commercial_section').show();
+                } else {
+                    $('#ai_faq_commercial_section').hide();
+                }
+                if (pt === 'Business Opportunity') {
+                    $('#ai_faq_business_section').show();
+                } else {
+                    $('#ai_faq_business_section').hide();
+                }
+                if (pt === 'Vacant Land') {
+                    $('#ai_faq_vacant_section').show();
+                } else {
+                    $('#ai_faq_vacant_section').hide();
+                }
             },
 
             currentStep: 1,

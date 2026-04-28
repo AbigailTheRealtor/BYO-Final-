@@ -215,6 +215,47 @@ class BuyerCriteriaAuctionController extends Controller
             $auction->saveMeta('road_surface_type', json_encode($request->road_surface_type));
             $auction->saveMeta('lot_features', json_encode($request->lot_features));
             $auction->saveMeta("otherFeature", $request->otherFeature);
+            $aiFaqKeys = [
+                'buyer_active_now','buyer_timeline','buyer_motivation','buyer_current_situation',
+                'buyer_area_familiarity','buyer_flexibility','buyer_deal_breakers','buyer_lost_deal',
+                'buyer_budget_confirmed','buyer_down_payment','buyer_cash_reserves',
+                'buyer_seller_concessions','buyer_monthly_payment_limit','buyer_budget_other',
+                'buyer_preapproval_status','buyer_preapproval_amount','buyer_lender_name',
+                'buyer_loan_type','buyer_cash_buyer','buyer_financing_contingency',
+                'buyer_bridge_loan','buyer_co_borrower',
+                'buyer_property_style','buyer_age_preference','buyer_must_have_features',
+                'buyer_nice_to_have','buyer_school_district','buyer_hoa_acceptable',
+                'buyer_accessibility','buyer_home_office',
+                'buyer_earnest_money','buyer_inspection_contingency','buyer_appraisal_contingency',
+                'buyer_escalation_clause','buyer_as_is','buyer_repairs_limit',
+                'buyer_leaseback','buyer_multiple_offers','buyer_offer_expiration',
+                'buyer_showing_availability','buyer_virtual_tour','buyer_relocation',
+                'buyer_relocation_timeline','buyer_agent_present','buyer_travel_distance',
+                'buyer_close_timeline','buyer_flexible_close','buyer_simultaneous_close',
+                'buyer_post_close_occupancy','buyer_move_in_ready',
+                'buyer_communication_preference','buyer_decision_makers','buyer_ready_to_offer',
+                'buyer_agent_loyalty','buyer_prefers_off_market','buyer_additional_criteria',
+                'buyer_neighborhood_preferences','buyer_commute_requirements',
+                'buyer_noise_tolerance','buyer_privacy_requirements','buyer_outdoor_space',
+                'buyer_storage_needs','buyer_parking_needs','buyer_view_preference',
+                'com_property_use','com_investment_type','com_cap_rate_target',
+                'com_noi_required','com_occupancy_rate','com_lease_terms',
+                'com_tenant_type','com_zoning','com_buildout_allowance',
+                'com_due_diligence_period','com_environmental_concerns',
+                'com_parking_requirements','com_1031_exchange',
+                'biz_type_seeking','biz_revenue_required','biz_profit_required',
+                'biz_staff_included','biz_training_expected','biz_lease_status',
+                'biz_inventory_included','biz_non_compete','biz_sba_financing',
+                'land_intended_use','land_zoning_required','land_utilities_needed',
+                'land_soil_testing','land_subdivision_plans','land_build_timeline',
+                'land_survey_required','land_access_requirements','land_topography',
+            ];
+            $aiFaqData = [];
+            foreach ($aiFaqKeys as $key) {
+                $fieldName = 'listing_ai_faq_' . $key;
+                $aiFaqData[$key] = $request->input($fieldName);
+            }
+            $auction->saveMeta('listing_ai_faq', json_encode($aiFaqData));
             $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
             $allowedVideos = ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v'];
             $visible_upload_file = [];
@@ -495,6 +536,47 @@ class BuyerCriteriaAuctionController extends Controller
             $auction->saveMeta('road_surface_type', json_encode($request->road_surface_type));
             $auction->saveMeta('lot_features', json_encode($request->lot_features));
             $auction->saveMeta("otherFeature", $request->otherFeature);
+            $aiFaqKeysUpdate = [
+                'buyer_active_now','buyer_timeline','buyer_motivation','buyer_current_situation',
+                'buyer_area_familiarity','buyer_flexibility','buyer_deal_breakers','buyer_lost_deal',
+                'buyer_budget_confirmed','buyer_down_payment','buyer_cash_reserves',
+                'buyer_seller_concessions','buyer_monthly_payment_limit','buyer_budget_other',
+                'buyer_preapproval_status','buyer_preapproval_amount','buyer_lender_name',
+                'buyer_loan_type','buyer_cash_buyer','buyer_financing_contingency',
+                'buyer_bridge_loan','buyer_co_borrower',
+                'buyer_property_style','buyer_age_preference','buyer_must_have_features',
+                'buyer_nice_to_have','buyer_school_district','buyer_hoa_acceptable',
+                'buyer_accessibility','buyer_home_office',
+                'buyer_earnest_money','buyer_inspection_contingency','buyer_appraisal_contingency',
+                'buyer_escalation_clause','buyer_as_is','buyer_repairs_limit',
+                'buyer_leaseback','buyer_multiple_offers','buyer_offer_expiration',
+                'buyer_showing_availability','buyer_virtual_tour','buyer_relocation',
+                'buyer_relocation_timeline','buyer_agent_present','buyer_travel_distance',
+                'buyer_close_timeline','buyer_flexible_close','buyer_simultaneous_close',
+                'buyer_post_close_occupancy','buyer_move_in_ready',
+                'buyer_communication_preference','buyer_decision_makers','buyer_ready_to_offer',
+                'buyer_agent_loyalty','buyer_prefers_off_market','buyer_additional_criteria',
+                'buyer_neighborhood_preferences','buyer_commute_requirements',
+                'buyer_noise_tolerance','buyer_privacy_requirements','buyer_outdoor_space',
+                'buyer_storage_needs','buyer_parking_needs','buyer_view_preference',
+                'com_property_use','com_investment_type','com_cap_rate_target',
+                'com_noi_required','com_occupancy_rate','com_lease_terms',
+                'com_tenant_type','com_zoning','com_buildout_allowance',
+                'com_due_diligence_period','com_environmental_concerns',
+                'com_parking_requirements','com_1031_exchange',
+                'biz_type_seeking','biz_revenue_required','biz_profit_required',
+                'biz_staff_included','biz_training_expected','biz_lease_status',
+                'biz_inventory_included','biz_non_compete','biz_sba_financing',
+                'land_intended_use','land_zoning_required','land_utilities_needed',
+                'land_soil_testing','land_subdivision_plans','land_build_timeline',
+                'land_survey_required','land_access_requirements','land_topography',
+            ];
+            $aiFaqDataUpdate = [];
+            foreach ($aiFaqKeysUpdate as $key) {
+                $fieldName = 'listing_ai_faq_' . $key;
+                $aiFaqDataUpdate[$key] = $request->input($fieldName);
+            }
+            $auction->saveMeta('listing_ai_faq', json_encode($aiFaqDataUpdate));
             // photos and video uploads
 
             $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
