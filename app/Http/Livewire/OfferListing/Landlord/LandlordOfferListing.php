@@ -301,6 +301,32 @@ class LandlordOfferListing extends Component
 
     public $virtual_showings_count = '';
 
+    // Landlord Lease Terms Questions
+    public $lease_available_date = '';
+    public $security_deposit_required = '';
+    public $first_month_rent_required = '';
+    public $last_month_rent_required = '';
+    public $total_move_in_funds_required = '';
+    public $pet_policy = '';
+    public $pet_deposit_fee_rent = '';
+    public $number_of_occupants_allowed = '';
+    public $parking_terms = '';
+    public $utility_responsibility = '';
+    public $ll_maintenance_responsibility = '';
+    public $renewal_option_offered = '';
+    public $renewal_option_details = '';
+    public $landlord_approval_conditions = '';
+    public $additional_landlord_lease_terms = '';
+    public $commercial_lease_type = '';
+    public $cam_nnn_additional_rent_charges = '';
+    public $rent_escalation_terms = '';
+    public $tenant_improvement_buildout_terms = '';
+    public $permitted_use_restrictions = '';
+    public $signage_rights = '';
+    public $commercial_parking_terms = '';
+    public $personal_guarantee_requirement = '';
+    public $commercial_approval_conditions = '';
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -1865,6 +1891,32 @@ class LandlordOfferListing extends Component
             // Landlord
             $this->virtual_showings_count = $auction->get->virtual_showings_count ?? null;
 
+            // Landlord Lease Terms Questions
+            $this->lease_available_date = $auction->get->lease_available_date ?? '';
+            $this->security_deposit_required = $auction->get->security_deposit_required ?? '';
+            $this->first_month_rent_required = $auction->get->first_month_rent_required ?? '';
+            $this->last_month_rent_required = $auction->get->last_month_rent_required ?? '';
+            $this->total_move_in_funds_required = $auction->get->total_move_in_funds_required ?? '';
+            $this->pet_policy = $auction->get->pet_policy ?? '';
+            $this->pet_deposit_fee_rent = $auction->get->pet_deposit_fee_rent ?? '';
+            $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? '';
+            $this->parking_terms = $auction->get->parking_terms ?? '';
+            $this->utility_responsibility = $auction->get->utility_responsibility ?? '';
+            $this->ll_maintenance_responsibility = $auction->get->ll_maintenance_responsibility ?? '';
+            $this->renewal_option_offered = $auction->get->renewal_option_offered ?? '';
+            $this->renewal_option_details = $auction->get->renewal_option_details ?? '';
+            $this->landlord_approval_conditions = $auction->get->landlord_approval_conditions ?? '';
+            $this->additional_landlord_lease_terms = $auction->get->additional_landlord_lease_terms ?? '';
+            $this->commercial_lease_type = $auction->get->commercial_lease_type ?? '';
+            $this->cam_nnn_additional_rent_charges = $auction->get->cam_nnn_additional_rent_charges ?? '';
+            $this->rent_escalation_terms = $auction->get->rent_escalation_terms ?? '';
+            $this->tenant_improvement_buildout_terms = $auction->get->tenant_improvement_buildout_terms ?? '';
+            $this->permitted_use_restrictions = $auction->get->permitted_use_restrictions ?? '';
+            $this->signage_rights = $auction->get->signage_rights ?? '';
+            $this->commercial_parking_terms = $auction->get->commercial_parking_terms ?? '';
+            $this->personal_guarantee_requirement = $auction->get->personal_guarantee_requirement ?? '';
+            $this->commercial_approval_conditions = $auction->get->commercial_approval_conditions ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -2348,6 +2400,32 @@ class LandlordOfferListing extends Component
 
         //Landlord
         $auction->saveMeta('virtual_showings_count', $this->virtual_showings_count);
+
+        // Landlord Lease Terms Questions
+        $auction->saveMeta('lease_available_date', $this->lease_available_date);
+        $auction->saveMeta('security_deposit_required', $this->security_deposit_required);
+        $auction->saveMeta('first_month_rent_required', $this->first_month_rent_required);
+        $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
+        $auction->saveMeta('total_move_in_funds_required', $this->total_move_in_funds_required);
+        $auction->saveMeta('pet_policy', $this->pet_policy);
+        $auction->saveMeta('pet_deposit_fee_rent', $this->pet_deposit_fee_rent);
+        $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
+        $auction->saveMeta('parking_terms', $this->parking_terms);
+        $auction->saveMeta('utility_responsibility', $this->utility_responsibility);
+        $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);
+        $auction->saveMeta('renewal_option_offered', $this->renewal_option_offered);
+        $auction->saveMeta('renewal_option_details', $this->renewal_option_details);
+        $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
+        $auction->saveMeta('additional_landlord_lease_terms', $this->additional_landlord_lease_terms);
+        $auction->saveMeta('commercial_lease_type', $this->commercial_lease_type);
+        $auction->saveMeta('cam_nnn_additional_rent_charges', $this->cam_nnn_additional_rent_charges);
+        $auction->saveMeta('rent_escalation_terms', $this->rent_escalation_terms);
+        $auction->saveMeta('tenant_improvement_buildout_terms', $this->tenant_improvement_buildout_terms);
+        $auction->saveMeta('permitted_use_restrictions', $this->permitted_use_restrictions);
+        $auction->saveMeta('signage_rights', $this->signage_rights);
+        $auction->saveMeta('commercial_parking_terms', $this->commercial_parking_terms);
+        $auction->saveMeta('personal_guarantee_requirement', $this->personal_guarantee_requirement);
+        $auction->saveMeta('commercial_approval_conditions', $this->commercial_approval_conditions);
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);

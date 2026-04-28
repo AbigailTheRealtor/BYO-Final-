@@ -337,6 +337,26 @@ class BuyerOfferListing extends Component
 
     public $virtual_showings_count = '';
 
+    // Purchase Terms Questions
+    public $earnest_money_amount = '';
+    public $earnest_money_timing = '';
+    public $inspection_period_days = '';
+    public $inspection_contingency_buyer = '';
+    public $appraisal_contingency_buyer = '';
+    public $financing_contingency_buyer = '';
+    public $financing_contingency_days_buyer = '';
+    public $seller_contribution = '';
+    public $seller_contribution_details = '';
+    public $possession_preference = '';
+    public $possession_details = '';
+    public $home_warranty_requested = '';
+    public $home_warranty_details = '';
+    public $as_is_purchase = '';
+    public $property_inclusions = '';
+    public $property_exclusions = '';
+    public $closing_cost_responsibility = '';
+    public $additional_purchase_terms = '';
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -1600,6 +1620,26 @@ class BuyerOfferListing extends Component
             // Landlord
             $this->virtual_showings_count = $auction->get->virtual_showings_count;
 
+            // Purchase Terms Questions
+            $this->earnest_money_amount = $auction->get->earnest_money_amount ?? '';
+            $this->earnest_money_timing = $auction->get->earnest_money_timing ?? '';
+            $this->inspection_period_days = $auction->get->inspection_period_days ?? '';
+            $this->inspection_contingency_buyer = $auction->get->inspection_contingency_buyer ?? '';
+            $this->appraisal_contingency_buyer = $auction->get->appraisal_contingency_buyer ?? '';
+            $this->financing_contingency_buyer = $auction->get->financing_contingency_buyer ?? '';
+            $this->financing_contingency_days_buyer = $auction->get->financing_contingency_days_buyer ?? '';
+            $this->seller_contribution = $auction->get->seller_contribution ?? '';
+            $this->seller_contribution_details = $auction->get->seller_contribution_details ?? '';
+            $this->possession_preference = $auction->get->possession_preference ?? '';
+            $this->possession_details = $auction->get->possession_details ?? '';
+            $this->home_warranty_requested = $auction->get->home_warranty_requested ?? '';
+            $this->home_warranty_details = $auction->get->home_warranty_details ?? '';
+            $this->as_is_purchase = $auction->get->as_is_purchase ?? '';
+            $this->property_inclusions = $auction->get->property_inclusions ?? '';
+            $this->property_exclusions = $auction->get->property_exclusions ?? '';
+            $this->closing_cost_responsibility = $auction->get->closing_cost_responsibility ?? '';
+            $this->additional_purchase_terms = $auction->get->additional_purchase_terms ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -2069,6 +2109,26 @@ class BuyerOfferListing extends Component
 
         //Landlord
         $auction->saveMeta('virtual_showings_count', $this->virtual_showings_count);
+
+        // Purchase Terms Questions
+        $auction->saveMeta('earnest_money_amount', $this->earnest_money_amount);
+        $auction->saveMeta('earnest_money_timing', $this->earnest_money_timing);
+        $auction->saveMeta('inspection_period_days', $this->inspection_period_days);
+        $auction->saveMeta('inspection_contingency_buyer', $this->inspection_contingency_buyer);
+        $auction->saveMeta('appraisal_contingency_buyer', $this->appraisal_contingency_buyer);
+        $auction->saveMeta('financing_contingency_buyer', $this->financing_contingency_buyer);
+        $auction->saveMeta('financing_contingency_days_buyer', $this->financing_contingency_days_buyer);
+        $auction->saveMeta('seller_contribution', $this->seller_contribution);
+        $auction->saveMeta('seller_contribution_details', $this->seller_contribution_details);
+        $auction->saveMeta('possession_preference', $this->possession_preference);
+        $auction->saveMeta('possession_details', $this->possession_details);
+        $auction->saveMeta('home_warranty_requested', $this->home_warranty_requested);
+        $auction->saveMeta('home_warranty_details', $this->home_warranty_details);
+        $auction->saveMeta('as_is_purchase', $this->as_is_purchase);
+        $auction->saveMeta('property_inclusions', $this->property_inclusions);
+        $auction->saveMeta('property_exclusions', $this->property_exclusions);
+        $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
+        $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);

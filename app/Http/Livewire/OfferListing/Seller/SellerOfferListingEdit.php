@@ -275,6 +275,27 @@ class SellerOfferListingEdit extends Component
 
     public $virtual_showings_count = '';
 
+    // Sale Terms Questions
+    public $initial_deposit_requested = '';
+    public $initial_deposit_timeframe = '';
+    public $additional_deposit_requested = '';
+    public $additional_deposit_timeframe = '';
+    public $escrow_agent_preference = '';
+    public $preferred_inspection_period = '';
+    public $appraisal_contingency_preference = '';
+    public $financing_contingency_preference = '';
+    public $sale_of_buyer_property_contingency = '';
+    public $seller_contribution_credit_offered = '';
+    public $seller_contribution_amount_details = '';
+    public $possession_preference = '';
+    public $possession_details = '';
+    public $included_personal_property = '';
+    public $excluded_items = '';
+    public $home_warranty_offered = '';
+    public $home_warranty_amount_details = '';
+    public $hoa_condo_association_terms = '';
+    public $additional_seller_sale_terms = '';
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -1315,6 +1336,27 @@ class SellerOfferListingEdit extends Component
             // Landlord
             $this->virtual_showings_count = $auction->get->virtual_showings_count;
 
+            // Sale Terms Questions
+            $this->initial_deposit_requested = $auction->get->initial_deposit_requested ?? '';
+            $this->initial_deposit_timeframe = $auction->get->initial_deposit_timeframe ?? '';
+            $this->additional_deposit_requested = $auction->get->additional_deposit_requested ?? '';
+            $this->additional_deposit_timeframe = $auction->get->additional_deposit_timeframe ?? '';
+            $this->escrow_agent_preference = $auction->get->escrow_agent_preference ?? '';
+            $this->preferred_inspection_period = $auction->get->preferred_inspection_period ?? '';
+            $this->appraisal_contingency_preference = $auction->get->appraisal_contingency_preference ?? '';
+            $this->financing_contingency_preference = $auction->get->financing_contingency_preference ?? '';
+            $this->sale_of_buyer_property_contingency = $auction->get->sale_of_buyer_property_contingency ?? '';
+            $this->seller_contribution_credit_offered = $auction->get->seller_contribution_credit_offered ?? '';
+            $this->seller_contribution_amount_details = $auction->get->seller_contribution_amount_details ?? '';
+            $this->possession_preference = $auction->get->possession_preference ?? '';
+            $this->possession_details = $auction->get->possession_details ?? '';
+            $this->included_personal_property = $auction->get->included_personal_property ?? '';
+            $this->excluded_items = $auction->get->excluded_items ?? '';
+            $this->home_warranty_offered = $auction->get->home_warranty_offered ?? '';
+            $this->home_warranty_amount_details = $auction->get->home_warranty_amount_details ?? '';
+            $this->hoa_condo_association_terms = $auction->get->hoa_condo_association_terms ?? '';
+            $this->additional_seller_sale_terms = $auction->get->additional_seller_sale_terms ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -1637,6 +1679,27 @@ class SellerOfferListingEdit extends Component
 
         //Landlord
         $auction->saveMeta('virtual_showings_count', $this->virtual_showings_count);
+
+        // Sale Terms Questions
+        $auction->saveMeta('initial_deposit_requested', $this->initial_deposit_requested);
+        $auction->saveMeta('initial_deposit_timeframe', $this->initial_deposit_timeframe);
+        $auction->saveMeta('additional_deposit_requested', $this->additional_deposit_requested);
+        $auction->saveMeta('additional_deposit_timeframe', $this->additional_deposit_timeframe);
+        $auction->saveMeta('escrow_agent_preference', $this->escrow_agent_preference);
+        $auction->saveMeta('preferred_inspection_period', $this->preferred_inspection_period);
+        $auction->saveMeta('appraisal_contingency_preference', $this->appraisal_contingency_preference);
+        $auction->saveMeta('financing_contingency_preference', $this->financing_contingency_preference);
+        $auction->saveMeta('sale_of_buyer_property_contingency', $this->sale_of_buyer_property_contingency);
+        $auction->saveMeta('seller_contribution_credit_offered', $this->seller_contribution_credit_offered);
+        $auction->saveMeta('seller_contribution_amount_details', $this->seller_contribution_amount_details);
+        $auction->saveMeta('possession_preference', $this->possession_preference);
+        $auction->saveMeta('possession_details', $this->possession_details);
+        $auction->saveMeta('included_personal_property', $this->included_personal_property);
+        $auction->saveMeta('excluded_items', $this->excluded_items);
+        $auction->saveMeta('home_warranty_offered', $this->home_warranty_offered);
+        $auction->saveMeta('home_warranty_amount_details', $this->home_warranty_amount_details);
+        $auction->saveMeta('hoa_condo_association_terms', $this->hoa_condo_association_terms);
+        $auction->saveMeta('additional_seller_sale_terms', $this->additional_seller_sale_terms);
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);

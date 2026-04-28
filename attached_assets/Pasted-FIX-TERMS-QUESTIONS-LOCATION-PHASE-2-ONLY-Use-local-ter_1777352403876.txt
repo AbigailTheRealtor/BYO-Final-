@@ -1,0 +1,59 @@
+FIX TERMS QUESTIONS LOCATION — PHASE 2 ONLY.
+
+Use:
+.local/terms_questions_wrong_flow_audit.md
+.local/terms_questions_wrong_flow_phase1_blade_move_report.md
+
+Goal:
+Make the new additional terms questions work in Create Regular Listing / OfferListing flows.
+
+Only edit:
+app/Http/Livewire/OfferListing/**
+
+Do NOT edit original Hire Agent PHP components unless removing temporary crash-fix properties is clearly safe and listed separately.
+Do NOT edit Blade files.
+Do NOT run migrations.
+Do NOT change routes.
+Do NOT change dashboard.
+Do NOT change Services, Broker Compensation, Referral, bid/counter/accept logic.
+
+Tasks:
+1. Add the new public properties needed by the moved fields to:
+- BuyerOfferListing
+- BuyerOfferListingEdit
+- SellerOfferListing
+- SellerOfferListingEdit
+- LandlordOfferListing
+- LandlordOfferListingEdit
+- TenantOfferListing
+- TenantOfferListingEdit
+
+2. Add save/load logic so the new fields persist in the same meta system used by the copied OfferListing components.
+
+3. Add validation as nullable/optional unless an existing similar field is already required.
+
+4. Preserve all wire:model names exactly as moved in Phase 1.
+
+5. Do not rename fields.
+
+6. If OfferListing currently saves to the same underlying AgentAuction tables, document that clearly before changing anything.
+
+Safeguards:
+- OfferListing PHP only.
+- No original Hire Agent logic changes in this phase.
+- No schema changes.
+- No field renames.
+- No route changes.
+- If storage destination is unclear, stop and report.
+
+Verification:
+1. Create Buyer Listing page loads without Livewire missing-property errors.
+2. Create Seller Listing page loads without Livewire missing-property errors.
+3. Create Landlord Listing page loads without Livewire missing-property errors.
+4. Create Tenant Listing page loads without Livewire missing-property errors.
+5. New fields save and reload on edit for each role.
+6. Original Hire Agent creation pages still load.
+7. Report exactly where the new fields are saved.
+
+Write report to:
+.local/terms_questions_wrong_flow_phase2_offerlisting_php_report.md
