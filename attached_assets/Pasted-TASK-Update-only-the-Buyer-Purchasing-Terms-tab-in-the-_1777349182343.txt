@@ -1,0 +1,150 @@
+TASK: Update only the Buyer Purchasing Terms tab in the Agent Dashboard Create Listing / Edit Listing flow.
+
+LOCATION:
+This applies only to the listing creation/editing workflow inside the Agent Dashboard when creating or editing a Buyer listing.
+
+Do not edit public listing pages, Bid Now pages, agent bid forms, offer preset forms, dashboards, or accepted bid summaries.
+
+GOAL:
+Buyer Purchasing Terms will collect the Buyer’s baseline purchase terms for the future BidYourOffer “Bid Now” flow.
+
+SAFEGUARDS:
+- Do not edit Seller, Landlord, or Tenant tabs.
+- Do not edit Services, Additional Details, Broker Compensation, Referral & Cooperation, Agent Credentials, dashboards, offer presets, bid cards, bid modals, accepted bid summaries, or public listing pages.
+- Do not change tab order.
+- Keep the existing Offered Financing/Currency section exactly as-is.
+- Do not remove existing save draft or edit listing behavior.
+- Do not touch BidYourAgent bid/counter/accept logic.
+
+BUYER PURCHASING TERMS TAB:
+
+Helper Notice:
+Enter the Buyer’s preferred purchase terms. These terms will be used as the starting point for Seller offers and future counteroffers.
+
+Keep these existing fields:
+1. Acceptable Special Sale Provisions
+2. Target Closing Timeframe
+3. Maximum Budget
+4. Offered Financing/Currency
+
+Add these fields:
+
+1. Initial Deposit Offered
+Input type: money
+Placeholder: Enter proposed initial deposit amount (e.g., 10000)
+
+2. Initial Deposit Due Timeframe
+Dropdown options:
+- Upon Acceptance
+- Within 1 Day After Acceptance
+- Within 3 Days After Acceptance
+- Within 5 Days After Acceptance
+- Other
+
+3. Additional Deposit Offered
+Input type: money
+Placeholder: Enter additional deposit amount, if any (e.g., 15000)
+
+4. Additional Deposit Due Timeframe
+Dropdown options:
+- Not Applicable
+- Within 3 Days After Acceptance
+- Within 5 Days After Acceptance
+- Within 10 Days After Acceptance
+- After Inspection Period
+- Other
+
+5. Escrow Agent / Deposit Holder Preference
+Input type: text
+Placeholder: Enter preferred escrow agent, title company, attorney, or brokerage, if any.
+
+6. Preferred Inspection Period
+Input type: number
+Placeholder: Enter desired inspection period in days (e.g., 10)
+
+7. Appraisal Contingency Preference
+Dropdown options:
+- Required
+- Waived
+- To Be Negotiated
+- Not Applicable
+
+8. Financing Contingency Preference
+Dropdown options:
+- Required
+- Waived
+- To Be Negotiated
+- Not Applicable
+
+9. Sale of Buyer Property Contingency
+Dropdown options:
+- No
+- Yes
+- To Be Negotiated
+
+10. Seller Contribution / Credit Requested
+Dropdown options:
+- None
+- Fixed Dollar Amount
+- Percentage of Purchase Price
+- Seller to Pay Specific Costs
+- Other
+
+11. Seller Contribution Amount / Details
+Show only if Seller Contribution / Credit Requested is not “None”.
+Input type: text
+Placeholder: Enter requested contribution amount, percentage, or specific costs.
+
+12. Possession Preference
+Dropdown options:
+- At Closing
+- After Closing
+- Seller Leaseback Considered
+- Subject to Tenant Occupancy
+- Other
+
+13. Possession Details
+Show only if Possession Preference is not “At Closing”.
+Input type: text
+Placeholder: Enter preferred possession timing or leaseback terms.
+
+14. Personal Property Requested
+Input type: textarea
+Placeholder: List any appliances, fixtures, equipment, or personal property the Buyer wants included.
+
+15. Home Warranty Requested
+Dropdown options:
+- No
+- Yes
+- To Be Negotiated
+
+16. Home Warranty Amount / Details
+Show only if Home Warranty Requested is not “No”.
+Input type: text
+Placeholder: Enter requested home warranty amount, provider preference, or related details.
+
+17. HOA / Condo / Association Terms
+Input type: textarea
+Placeholder: Enter any HOA, condo, association approval, document, fee, or transfer terms.
+
+18. Additional Buyer Purchase Terms
+Input type: textarea
+Placeholder: Enter any additional purchase terms the Buyer wants sellers to consider.
+
+SAVE REQUIREMENTS:
+- Add these fields to the Buyer Purchasing Terms Livewire state.
+- Save them using the current listing save pattern.
+- Include them in save draft.
+- Include them when editing an existing Buyer listing.
+- Make new fields optional unless already required by existing logic.
+- Money fields should be nullable numeric decimals.
+- Number fields should be nullable numeric.
+- Text and textarea fields should be nullable strings.
+- Dropdown fields should validate only against the listed options.
+
+VERIFY:
+- Buyer Purchasing Terms tab loads.
+- Buyer listing saves as draft.
+- Buyer listing reloads with the new fields pre-filled.
+- Offered Financing/Currency still works exactly as before.
+- No other role tabs or BidYourAgent logic changed.

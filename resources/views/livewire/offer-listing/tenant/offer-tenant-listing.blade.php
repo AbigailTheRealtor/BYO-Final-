@@ -1724,7 +1724,7 @@ $lease_types = [
 
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         @foreach ($allTabs as $index => $tab)
-                        @if ($tab)
+                        @if ($tab && !in_array($tab, ['Services', 'Broker Compensation & Agency Agreement Terms', 'Referral & Cooperation Terms']))
                         @php $tabSlug = $safeSlug($tab); @endphp
                         <li class="nav-item" role="presentation">
                             <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
@@ -3954,7 +3954,8 @@ $lease_types = [
         if (!nextTabEl) { isNavigating = false; return false; }
 
         bootstrap.Tab.getOrCreateInstance(nextTabEl).show();
-        Livewire.emit('setActiveTab', currentIndex + 1);
+        const nextWireIndex = parseInt((nextTabEl.getAttribute('wire:click') || '').replace(/\D/g, ''), 10);
+        if (!isNaN(nextWireIndex)) { Livewire.emit('setActiveTab', nextWireIndex); }
 
         setTimeout(() => { isNavigating = false; }, 500);
         return true;
@@ -3977,7 +3978,8 @@ $lease_types = [
         if (!prevTabEl) return false;
 
         bootstrap.Tab.getOrCreateInstance(prevTabEl).show();
-        Livewire.emit('setActiveTab', currentIndex - 1);
+        const prevWireIndex = parseInt((prevTabEl.getAttribute('wire:click') || '').replace(/\D/g, ''), 10);
+        if (!isNaN(prevWireIndex)) { Livewire.emit('setActiveTab', prevWireIndex); }
         return true;
     }
 

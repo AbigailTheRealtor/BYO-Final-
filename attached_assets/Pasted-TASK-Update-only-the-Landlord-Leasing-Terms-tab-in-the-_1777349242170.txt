@@ -1,0 +1,165 @@
+TASK: Update only the Landlord Leasing Terms tab in the Agent Dashboard Create Listing / Edit Listing flow.
+
+LOCATION:
+This applies only to the listing creation/editing workflow inside the Agent Dashboard when creating or editing a Landlord listing.
+
+Do not edit public listing pages, Bid Now pages, agent bid forms, offer preset forms, dashboards, or accepted bid summaries.
+
+GOAL:
+Landlord Leasing Terms will collect the Landlord’s baseline lease terms for the future BidYourOffer “Bid Now” flow.
+
+SAFEGUARDS:
+- Do not edit Seller, Buyer, or Tenant tabs.
+- Do not edit Services, Additional Details, Broker Compensation, Referral & Cooperation, Agent Credentials, dashboards, offer presets, bid cards, bid modals, accepted bid summaries, or public listing pages.
+- Do not change tab order.
+- Do not remove existing save draft or edit listing behavior.
+- Do not touch BidYourAgent bid/counter/accept logic.
+
+LANDLORD LEASING TERMS TAB:
+
+Helper Notice:
+Enter the Landlord’s preferred lease terms. These terms will be used as the starting point for Tenant lease offers and future counteroffers.
+
+Keep these existing fields:
+1. Occupant Type
+2. Leasing Space
+3. Desired Rental Amount
+4. Lease Amount Frequency
+5. Desired Lease Term
+
+Add these fields:
+
+1. Lease Available Date
+Input type: date
+
+2. Security Deposit Required
+Input type: money
+Placeholder: Enter required security deposit amount (e.g., 2500)
+
+3. First Month Rent Required
+Dropdown options:
+- Yes
+- No
+
+4. Last Month Rent Required
+Dropdown options:
+- Yes
+- No
+- Negotiable
+
+5. Total Move-In Funds Required
+Input type: money
+Placeholder: Enter total move-in funds required, if applicable.
+
+6. Pet Policy
+Dropdown options:
+- No Pets Allowed
+- Pets Considered
+- Pets Allowed With Restrictions
+- Pets Allowed
+
+7. Pet Deposit / Pet Fee / Pet Rent
+Show only if Pet Policy is not “No Pets Allowed”.
+Input type: text
+Placeholder: Enter pet deposit, pet fee, pet rent, breed limits, weight limits, or other pet terms.
+
+8. Number of Occupants Allowed
+Input type: number
+Placeholder: Enter maximum number of occupants, if applicable.
+
+9. Parking Terms
+Input type: textarea
+Placeholder: Describe included parking, assigned spaces, guest parking, or parking restrictions.
+
+10. Utility Responsibility
+Input type: textarea
+Placeholder: Describe which utilities are paid by Landlord vs. Tenant.
+
+11. Maintenance Responsibility
+Input type: textarea
+Placeholder: Describe maintenance, lawn, pool, pest control, repair, or service responsibilities.
+
+12. Renewal Option Offered
+Dropdown options:
+- No
+- Yes
+- Negotiable
+
+13. Renewal Option Details
+Show only if Renewal Option Offered is “Yes” or “Negotiable”.
+Input type: textarea
+Placeholder: Enter renewal option terms, timing, rent increase, or other renewal details.
+
+14. Landlord Approval Conditions
+Input type: textarea
+Placeholder: Enter any application, background check, credit, income, HOA, business approval, or documentation requirements.
+
+15. Additional Landlord Lease Terms
+Input type: textarea
+Placeholder: Enter any additional lease terms the Landlord wants tenants to consider.
+
+COMMERCIAL-ONLY FIELDS:
+Show only when property type is commercial.
+
+16. Commercial Lease Type
+Dropdown options:
+- Gross Lease
+- Modified Gross Lease
+- Triple Net / NNN
+- Full Service Gross
+- Percentage Rent
+- Other
+
+17. CAM / NNN / Additional Rent Charges
+Input type: textarea
+Placeholder: Enter CAM, tax, insurance, maintenance, operating expense, or additional rent terms.
+
+18. Rent Escalation Terms
+Input type: textarea
+Placeholder: Enter annual increases, fixed increases, CPI adjustments, or other escalation terms.
+
+19. Tenant Improvement / Buildout Terms
+Input type: textarea
+Placeholder: Describe any buildout allowance, delivery condition, white box, vanilla shell, turnkey work, or tenant improvement terms.
+
+20. Permitted Use / Use Restrictions
+Input type: textarea
+Placeholder: Enter permitted use, prohibited uses, exclusive use rights, or business restrictions.
+
+21. Signage Rights
+Input type: textarea
+Placeholder: Describe signage rights, monument signage, window signage, exterior signage, or approval requirements.
+
+22. Commercial Parking Terms
+Input type: textarea
+Placeholder: Describe parking ratio, assigned spaces, shared parking, loading zones, or truck access.
+
+23. Personal Guarantee Requirement
+Dropdown options:
+- Required
+- Not Required
+- Negotiable
+
+24. Commercial Approval Conditions
+Input type: textarea
+Placeholder: Enter financial statements, business history, licenses, permits, franchise approval, or other approval conditions.
+
+SAVE REQUIREMENTS:
+- Add these fields to the Landlord Leasing Terms Livewire state.
+- Save them using the current listing save pattern.
+- Include them in save draft.
+- Include them when editing an existing Landlord listing.
+- Make new fields optional unless already required by existing logic.
+- Money fields should be nullable numeric decimals.
+- Number fields should be nullable numeric.
+- Date fields should be nullable valid dates.
+- Text and textarea fields should be nullable strings.
+- Dropdown fields should validate only against the listed options.
+- Commercial-only fields should only show for commercial Landlord listings.
+
+VERIFY:
+- Landlord Leasing Terms tab loads.
+- Landlord listing saves as draft.
+- Landlord listing reloads with the new fields pre-filled.
+- Commercial-only fields only show for commercial Landlord listings.
+- No other role tabs or BidYourAgent logic changed.
