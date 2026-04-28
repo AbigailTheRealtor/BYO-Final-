@@ -1,0 +1,65 @@
+READ-ONLY AUDIT — OFFERLISTING COPY PARITY CHECK ONLY.
+
+Do not change any files.
+
+Problem:
+The new OfferListing / Regular Listing flow does not look like a true regular listing flow yet. It still appears to contain Hire Agent language and tabs such as:
+- Select Agent Type
+- Hire a Seller’s Agent / Buyer’s Agent / Landlord’s Agent / Tenant’s Agent
+- Desired Agent Hire Date
+- Agent Credentials & Contact Info
+- Services
+- Broker Compensation
+- Referral & Cooperation Terms
+
+We need to confirm whether the Layer 2 copy duplicated the correct source files and whether the OfferListing copies are exact clones of the current Hire Agent listing flow or an older/wrong/shared version.
+
+Audit tasks:
+
+1. Compare the original Hire Agent listing files against the copied OfferListing files for all four roles:
+   - Seller
+   - Buyer
+   - Landlord
+   - Tenant
+
+2. Identify every copied OfferListing file that still references:
+   - Hire Agent
+   - Agent Type
+   - Agent Hire Date
+   - Agent Credentials
+   - Broker Compensation
+   - Services
+   - Referral & Cooperation Terms
+
+3. Confirm whether the OfferListing routes are opening:
+   - the new copied OfferListing components, or
+   - the original Hire Agent components by mistake.
+
+4. Confirm whether the OfferListing copied Blade files are rendering the copied offer-listing partials or still including original Hire Agent partials.
+
+5. Identify whether the seller/buyer/landlord/tenant OfferListing flows are using the correct role-specific tab files or a shared TenantAgentAuction template.
+
+6. Provide exact file paths and line numbers for:
+   - tabs rendered
+   - agent-type selector rendered
+   - Desired Agent Hire Date field
+   - Services tab
+   - Broker Compensation tab
+   - Referral tab/section
+   - Agent Credentials & Contact Info tab
+
+7. Recommend the safest next step:
+   Option A: continue modifying the copied OfferListing files
+   Option B: delete/re-copy the OfferListing files from the correct current source
+   Option C: create a cleaner new RegularListing component that reuses shared field partials only
+
+Important safeguards:
+- Do not edit files.
+- Do not remove tabs.
+- Do not rename anything.
+- Do not change routes.
+- Do not run migrations.
+- Only inspect and report.
+
+Write the audit report to:
+.local/bid_your_offer_layer_3_parity_audit.md
