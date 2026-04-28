@@ -79,13 +79,23 @@
                                             <a href="{{ route('agent.qr.settings') }}" class="btn btn-outline-secondary btn-sm">QR &amp; Hire Me</a>
                                         @else
                                             @php
-                                                // "+ New Listing" uses user_type — creation flows are unchanged
                                                 $primaryRole = $user->user_type;
                                                 $cfg = $roleConfig[$primaryRole] ?? null;
                                             @endphp
                                             @if($cfg)
-                                                <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ New Listing</a>
+                                                <a href="{{ route($cfg['createRoute'], $cfg['createParams']) }}" class="btn btn-primary btn-sm">+ Create Hire Agent Listing</a>
                                             @endif
+                                            <div class="dropdown">
+                                                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    + Create Regular Listing
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="{{ route('offer.listing.seller') }}">Create Seller Listing</a></li>
+                                                    <li><a class="dropdown-item" href="{{ route('offer.listing.buyer') }}">Create Buyer Listing</a></li>
+                                                    <li><a class="dropdown-item" href="{{ route('offer.listing.landlord') }}">Create Landlord Listing</a></li>
+                                                    <li><a class="dropdown-item" href="{{ route('offer.listing.tenant', ['user_type' => 'tenant']) }}">Create Tenant Listing</a></li>
+                                                </ul>
+                                            </div>
                                             <a href="{{ route('my.listings') }}" class="btn btn-outline-secondary btn-sm">My Listings</a>
                                             @if($user->user_type === 'tenant')
                                                 <a href="{{ route('myBids', 'agent-bids') }}" class="btn btn-outline-secondary btn-sm">Bids on My Listings</a>

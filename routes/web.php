@@ -878,6 +878,31 @@ if (app()->environment('local', 'development')) {
 }
 
 // ===========================================================================
+// Regular Listing (Offer) — production routes
+// These route to the isolated OfferListing Livewire components (Layer 2 copies).
+// ===========================================================================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/offer-listing/seller',
+        \App\Http\Livewire\OfferListing\Seller\SellerOfferListing::class
+    )->name('offer.listing.seller');
+
+    Route::get('/offer-listing/buyer',
+        \App\Http\Livewire\OfferListing\Buyer\BuyerOfferListing::class
+    )->name('offer.listing.buyer');
+
+    Route::get('/offer-listing/landlord',
+        \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class
+    )->name('offer.listing.landlord');
+
+    Route::get('/offer-listing/tenant/{user_type?}',
+        \App\Http\Livewire\OfferListing\Tenant\TenantOfferListing::class
+    )->name('offer.listing.tenant');
+});
+// ===========================================================================
+// END Regular Listing (Offer) production routes
+// ===========================================================================
+
+// ===========================================================================
 // LAYER 2 DEV-ONLY — OfferListing duplication test routes
 // These routes are DEVELOPMENT-ONLY. Do NOT use in production.
 // Purpose: smoke-test the duplicated OfferListing Livewire components.
