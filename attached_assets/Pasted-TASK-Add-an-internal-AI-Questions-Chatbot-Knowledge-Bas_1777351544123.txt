@@ -1,0 +1,165 @@
+TASK: Add an internal “AI Questions / Chatbot Knowledge Base” tab for Buyer criteria listings only.
+
+IMPORTANT LOCATION CLARIFICATION:
+This task applies only to the Create a Listing / Property Listing workflow for Buyer criteria listings.
+
+Do NOT edit Hire an Agent listings, Agent Hiring flows, Agent Bid forms, Broker Compensation forms, Agent Presets, Accepted Bid Summaries, public listing pages, dashboards, or BidYourAgent hire-agent logic.
+
+This is for Buyer criteria listings that will later connect to BidYourOffer and the listing chatbot.
+
+GOAL:
+Allow the Buyer or Agent to optionally answer common Seller questions. These answers will not show publicly on the listing page, but will be stored internally so the listing chatbot can answer Seller questions accurately.
+
+SAFEGUARDS:
+- Do not edit Seller, Landlord, or Tenant listing flows.
+- Do not edit public listing pages.
+- Do not edit Bid Now, offer forms, bid cards, dashboards, or accepted summaries.
+- Do not remove or change existing tabs.
+- Add this as an optional internal tab/section only.
+- Do not make any questions required.
+- Store answers in structured JSON, preferably listing_ai_faq or chatbot_knowledge_base.
+- Each answer should be nullable.
+- Preserve save draft and edit listing behavior.
+
+TAB NAME:
+AI Questions / Chatbot Knowledge Base
+
+HELPER TEXT:
+Answer any optional questions below to help the listing chatbot respond to common Seller questions. These answers are internal only and will not appear publicly on the listing page unless the chatbot is asked a related question.
+
+BUYER CRITERIA LISTING — SELLER FAQ QUESTIONS
+
+Category: Buyer Readiness & Motivation
+1. Is the Buyer actively looking to purchase now?
+2. How soon does the Buyer want to buy?
+3. Why is the Buyer looking to purchase?
+4. Is the Buyer relocating, upsizing, downsizing, investing, or purchasing for another reason?
+5. Has the Buyer already viewed properties?
+6. Has the Buyer submitted offers on other properties?
+7. Is the Buyer under any time pressure or deadline?
+8. Is the Buyer flexible on location, property type, or terms?
+
+Category: Budget, Price & Offer Strength
+9. What is the Buyer’s maximum budget?
+10. Is the Buyer willing to offer above asking price for the right property?
+11. Is the Buyer flexible on price?
+12. How much earnest money deposit is the Buyer willing to offer?
+13. Is the Buyer willing to increase the deposit for a stronger offer?
+14. Is the Buyer requesting Seller credits, concessions, or closing cost assistance?
+15. What price range is the Buyer most comfortable with?
+16. Does the Buyer have funds available for closing costs and reserves?
+
+Category: Financing / Offered Currency
+17. Is the Buyer pre-approved?
+18. Can the Buyer provide a pre-approval letter or proof of funds?
+19. What financing or payment type does the Buyer plan to use?
+20. Is the Buyer using cash, conventional, FHA, VA, seller financing, assumable financing, cryptocurrency, exchange/trade, lease option, lease purchase, NFT, or another structure?
+21. Has the Buyer’s lender reviewed the Buyer’s documents?
+22. How much is the Buyer putting down?
+23. Does the Buyer have any financing conditions the Seller should know about?
+24. Is the Buyer willing to switch loan programs or lenders if needed?
+25. How quickly can the Buyer obtain loan approval?
+26. Are there any appraisal concerns or financing limits?
+
+Category: Desired Property Criteria
+27. What property type is the Buyer looking for?
+28. What locations, cities, counties, or neighborhoods is the Buyer considering?
+29. What bedroom and bathroom count does the Buyer prefer?
+30. What square footage range does the Buyer prefer?
+31. What lot size, acreage, or outdoor space does the Buyer prefer?
+32. What property condition is acceptable?
+33. Is the Buyer open to repairs, renovations, or as-is properties?
+34. What features are must-haves?
+35. What features are deal-breakers?
+36. Is the Buyer interested in furnished or unfurnished properties?
+37. Is the Buyer interested in HOA, condo, or association communities?
+
+Category: Offer Terms & Contingencies
+38. What closing timeline does the Buyer prefer?
+39. Is the Buyer flexible on the closing date?
+40. What inspection period does the Buyer prefer?
+41. Is the Buyer willing to shorten or waive inspection contingencies?
+42. Does the Buyer require an appraisal contingency?
+43. Does the Buyer require a financing contingency?
+44. Does the Buyer need to sell another property first?
+45. Is the Buyer requesting any personal property, appliances, furniture, or fixtures?
+46. Is the Buyer requesting a home warranty?
+47. Is the Buyer open to Seller leaseback or post-closing occupancy?
+48. Are there any special terms the Buyer needs?
+
+Category: Showing & Access
+49. Is the Buyer available for showings?
+50. How much notice does the Buyer need for showings?
+51. Is the Buyer available for virtual showings?
+52. Can the Buyer make quick decisions after viewing a property?
+53. Who will be involved in the decision-making process?
+
+Category: Closing Readiness
+54. How quickly can the Buyer close?
+55. Does the Buyer already have a title company, attorney, or closing preference?
+56. Is the Buyer ready to sign documents electronically?
+57. Does the Buyer need to be physically present for closing?
+58. Are there any timing issues that could delay closing?
+
+Category: Seller High-Intent Questions
+59. Why should a Seller consider this Buyer?
+60. What makes the Buyer’s offer strong?
+61. Is the Buyer serious and ready to move forward?
+62. Can the Buyer submit an offer quickly?
+63. What is the best way for a Seller to respond to the Buyer?
+64. What does the Buyer need from a Seller to move forward?
+
+COMMERCIAL / INCOME 5+ ADD-ON QUESTIONS:
+Show these only for Commercial or Income 5+ Buyer criteria listings.
+65. Is the Buyer purchasing personally or through an entity?
+66. What type of commercial or income property is the Buyer seeking?
+67. Is the Buyer an investor, owner-user, developer, or business operator?
+68. What is the Buyer’s intended use for the property?
+69. Does the Buyer have experience purchasing commercial or income properties?
+70. What cap rate, NOI, or return range is the Buyer seeking?
+71. What occupancy level is acceptable?
+72. Is the Buyer open to existing tenants or leases?
+73. Does the Buyer require rent rolls, leases, estoppels, or financial statements before making an offer?
+74. Does the Buyer require environmental, zoning, or feasibility due diligence?
+75. Is the Buyer using SBA, commercial financing, private financing, cash, seller financing, exchange/trade, or another structure?
+76. How long of a due diligence period does the Buyer need?
+77. Are there any tenant, lease, zoning, or income requirements that are deal-breakers?
+
+BUSINESS OPPORTUNITY ADD-ON QUESTIONS:
+Show these only for Business Opportunity Buyer criteria listings.
+78. What type of business is the Buyer looking to purchase?
+79. Is the Buyer looking for assets only, business operations, real estate, or a combination?
+80. Does the Buyer require financial statements before making an offer?
+81. What revenue, profit, or cash-flow range is the Buyer seeking?
+82. Does the Buyer need seller training or transition support?
+83. Does the Buyer need licenses, permits, vendor accounts, employees, phone numbers, websites, or goodwill included?
+84. Is the Buyer willing to sign a confidentiality or nondisclosure agreement?
+85. Does the Buyer require seller financing?
+86. Are there any industries or business types the Buyer will not consider?
+
+VACANT LAND ADD-ON QUESTIONS:
+Show these only for Vacant Land Buyer criteria listings.
+87. What does the Buyer intend to use the land for?
+88. What zoning does the Buyer need?
+89. What lot size, acreage, or dimensions does the Buyer prefer?
+90. Does the Buyer need utilities available or connected?
+91. Does the Buyer need road frontage, legal access, or easements?
+92. Is the Buyer concerned about wetlands, flood zones, soil conditions, environmental issues, or protected areas?
+93. Does the Buyer require a survey, soil test, environmental study, or feasibility period?
+94. Is the Buyer looking for buildable land, agricultural land, recreational land, commercial land, or development land?
+95. Does the Buyer need permits, approvals, or entitlement contingencies?
+
+CHATBOT REQUIREMENTS:
+- Store each answer with a stable question key.
+- Allow aliases/search terms internally so chatbot can match user wording.
+- Example: buyer_preapproval_status should match “is buyer pre-approved,” “preapproval,” “proof of funds,” and “financing strength.”
+- Chatbot should check structured listing fields first, then these AI answers, then fallback.
+- Do not hallucinate answers. If unanswered, chatbot should say the information was not provided and offer to connect the user or ask a follow-up.
+
+VERIFY:
+- Buyer AI Questions tab appears only in Buyer Criteria Create/Edit Listing flow.
+- All fields are optional.
+- Answers save in draft.
+- Answers prefill when editing.
+- No answers display publicly on the listing page.
+- No other role or BidYourAgent logic changed.
