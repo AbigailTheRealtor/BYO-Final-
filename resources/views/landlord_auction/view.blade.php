@@ -255,6 +255,7 @@
             :is-owner="$_landlordIsOwner"
             :ai-faq="$_landlordAiFaq"
             :share-token="$auction->ai_share_token"
+            :property-type="$auction->get->property_type ?? ''"
         />
         <!-- Description Box  -->
         <div class="card description">

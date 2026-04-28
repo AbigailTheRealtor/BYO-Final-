@@ -67,6 +67,7 @@
             :is-owner="$_tenantIsOwner"
             :ai-faq="$_tenantAiFaq"
             :share-token="$auction->ai_share_token"
+            :property-type="$auction->get->property_type ?? ''"
         />
         <!-- Description Box  -->
         <div class="card description">

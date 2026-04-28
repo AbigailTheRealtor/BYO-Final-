@@ -1,9 +1,10 @@
 @props([
     'listingType',
     'listingId',
-    'isOwner'   => false,
-    'aiFaq'     => [],
-    'shareToken'=> null,
+    'isOwner'      => false,
+    'aiFaq'        => [],
+    'shareToken'   => null,
+    'propertyType' => null,
 ])
 
 @php
@@ -45,6 +46,23 @@
             }
             if (!empty($answers)) {
                 $questionGroups[] = ['category' => $cat, 'answers' => $answers];
+            }
+        }
+
+        foreach (config($configKey . '.addons', []) as $addon) {
+            if (!empty($propertyType) && !in_array($propertyType, $addon['visible_for'] ?? [])) {
+                continue;
+            }
+            $answers = [];
+            foreach ($addon['questions'] ?? [] as $key => $label) {
+                $val = trim($aiFaq[$key] ?? '');
+                if ($val !== '') {
+                    $answers[] = ['label' => $label, 'answer' => $val];
+                    $answeredCount++;
+                }
+            }
+            if (!empty($answers)) {
+                $questionGroups[] = ['category' => $addon['label'], 'answers' => $answers];
             }
         }
     }
