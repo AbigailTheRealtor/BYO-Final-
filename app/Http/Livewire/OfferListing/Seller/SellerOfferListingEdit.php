@@ -219,7 +219,7 @@ class SellerOfferListingEdit extends Component
     public $agent_license_number = '';
     public $agent_nar_member_id = '';
     public $video_link = '';
-
+    public array $listing_ai_faq = [];
 
 
     // location and meeting details
@@ -1237,6 +1237,7 @@ class SellerOfferListingEdit extends Component
             $this->agent_license_number = $auction->get->agent_license_number ?? '';
             $this->agent_nar_member_id = $auction->get->agent_nar_member_id ?? '';
             $this->video_link = $auction->get->video_link;
+            $this->listing_ai_faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
             $this->photo = $auction->get->photo ?? null;
             $this->video = $auction->get->video ?? null;
 
@@ -1713,6 +1714,7 @@ class SellerOfferListingEdit extends Component
             $auction->saveMeta('agent_nar_member_id', $this->agent_nar_member_id);
         }
         $auction->saveMeta('video_link', $this->video_link);
+        $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
 
         // Save photo - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->photo && !is_string($this->photo)) {

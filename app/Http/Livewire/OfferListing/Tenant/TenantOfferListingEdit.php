@@ -462,7 +462,7 @@ class TenantOfferListingEdit extends Component
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
     public $video_link = '';
-
+    public array $listing_ai_faq = [];
 
 
     // location and meeting details
@@ -2999,6 +2999,7 @@ class TenantOfferListingEdit extends Component
         if (!empty($this->video_link)) {
             $this->embedUrl = $this->getEmbedUrl($this->video_link);
         }
+        $this->listing_ai_faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
         $this->photo = $auction->info('photo');
         $this->video = $auction->info('video');
 
@@ -3767,7 +3768,7 @@ class TenantOfferListingEdit extends Component
             }
             $auction->saveMeta('current_status', $this->current_status);
             $auction->saveMeta('video_link', $this->video_link);
-
+            $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
 
             if ($this->photo instanceof TemporaryUploadedFile) {
                 $extensionPhoto = $this->photo->getClientOriginalExtension();

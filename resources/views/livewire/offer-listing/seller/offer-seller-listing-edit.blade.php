@@ -747,6 +747,16 @@
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Seller Information' }}
                                     </button>
                                 </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
+                                        id="ai-questions-tab" data-bs-toggle="tab"
+                                        data-bs-target="#ai-questions"
+                                        type="button" role="tab"
+                                        aria-controls="ai-questions"
+                                        aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
+                                        AI Questions
+                                    </button>
+                                </li>
                             </ul>
                         @else
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -780,6 +790,16 @@
                                         @elseif($user_type === 'landlord')
                                             Landlord Information
                                         @endif
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                        id="ai-questions-tab" data-bs-toggle="tab"
+                                        data-bs-target="#ai-questions"
+                                        type="button" role="tab"
+                                        aria-controls="ai-questions"
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        AI Questions
                                     </button>
                                 </li>
                             </ul>
@@ -843,8 +863,19 @@
                                         @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-info')
                                     @endif
                                 </div>
+
+                                <!-- AI Questions Tab (full_service: index 7) -->
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
                             @elseif($service_type === 'limited_service')
 
+                                <!-- AI Questions Tab (limited_service: index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
                             @endif
                         </div>
                         <!-- Navigation Buttons -->
@@ -2043,6 +2074,21 @@
                 });
             }
         });
+    </script>
+    <script>
+        (function () {
+            function syncWizardButtons() {
+                var aiPane = document.getElementById('ai-questions');
+                var nextBtn = document.querySelector('.wizard-step-next');
+                var finishBtn = document.querySelector('.wizard-step-finish');
+                if (!nextBtn || !finishBtn) return;
+                var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
+                nextBtn.style.display = onAI ? 'none' : '';
+                finishBtn.style.display = onAI ? '' : 'none';
+            }
+            document.addEventListener('shown.bs.tab', syncWizardButtons);
+            document.addEventListener('DOMContentLoaded', syncWizardButtons);
+        })();
     </script>
   
 @endpush

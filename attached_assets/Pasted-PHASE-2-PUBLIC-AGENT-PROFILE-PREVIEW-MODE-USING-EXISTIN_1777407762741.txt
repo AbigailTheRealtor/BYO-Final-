@@ -1,0 +1,122 @@
+PHASE 2 — PUBLIC AGENT PROFILE + PREVIEW MODE USING EXISTING profile_data JSON
+
+Use the audit findings. Do not create new database columns yet.
+
+IMPORTANT SAFEGUARDS:
+- Do NOT modify existing regular Hire Agent listing flows.
+- Do NOT modify Agent Bid forms.
+- Do NOT modify Accepted Bid Summary logic.
+- Do NOT remove or rename existing fields.
+- Do NOT expose services, broker compensation, or agency agreement terms on the public Agent Profile.
+- Use existing AgentDefaultProfile.profile_data JSON for new profile-only fields.
+- This phase is display/profile only. Do NOT connect Hire buttons to Direct Hire creation yet.
+
+GOAL:
+Create a clean public Agent Profile / Preview page separate from the transactional Hire Me form.
+
+CURRENT ISSUE:
+The Open button currently routes to hire.agent.public, which redirects into HireAgentDirectController@show and triggers:
+“You cannot hire yourself.”
+
+FIX:
+1. Update Agent Dashboard → My Offer Presets “Open” button so the Agent opens a profile preview route, not the transactional hire route.
+2. If current user is the Agent owner, show:
+“Preview Mode: This is how your profile appears to clients.”
+3. Do not block the Agent with “You cannot hire yourself” on the profile page.
+
+PROFILE FIELDS:
+Keep existing:
+- bio
+- why_hire_you
+- what_sets_you_apart
+- additional_details
+- year_licensed
+- first_name
+- last_name
+- phone
+- email
+- brokerage
+- license_no
+- nar_id
+- presentation_link
+- business_card_link
+- reviews_links
+- website_link
+- social_media
+
+Add/save the following new profile-only fields inside profile_data JSON:
+- years_experience
+- transactions_last_12_months
+- primary_areas_served
+- avg_response_time
+- is_full_time
+- cities_served
+- counties_served
+- neighborhoods_served
+- areas_notes
+- review_1
+- review_2
+- review_3
+- awards_recognition
+- intro_video_url
+- video_caption
+- availability_status
+- evenings_available
+- weekends_available
+- communication_style
+- preferred_contact_method
+
+EDIT UI:
+Update resources/views/agent-presets/edit.blade.php to add these sections:
+1. Quick Highlights
+2. Areas Served
+3. Social Proof
+4. Video Intro
+5. Availability / Service Style
+
+All fields must be optional.
+transactions_last_12_months should be a direct optional number input.
+
+PUBLIC PROFILE DISPLAY:
+Create or update a separate profile/preview page that displays in this order:
+1. Agent Overview
+2. Quick Highlights
+3. Credentials
+4. Areas Served
+5. Social Proof
+6. Video Intro
+7. Presentation & Links
+8. Availability / Service Style
+9. Hire buttons for:
+   - Hire a Buyer’s Agent
+   - Hire a Seller’s Agent
+   - Hire a Tenant’s Agent
+   - Hire a Landlord Agent
+
+DO NOT DISPLAY ON PROFILE:
+- Services
+- Broker Compensation
+- Agency Agreement Terms
+- Role-specific strategy
+- Accept / Counter / Reject actions
+- Send Hire Request form
+
+ROUTING:
+Create a separate route for the public profile/preview, such as:
+/agent/{agentShortId}/profile
+
+This route should be viewable as a public profile.
+Do not reuse HireAgentDirectController@show for this page.
+
+IMPORTANT:
+Do not change HireAgentDirectController@confirm in this phase.
+Do not change AgentBidMapperService in this phase.
+Do not change WidgetController yet unless only updating its CTA link to the new profile route.
+
+AFTER COMPLETION, REPORT:
+1. Files changed
+2. Routes added/changed
+3. Fields added to profile_data save logic
+4. How to test Agent preview
+5. How to test public profile
+6. Confirmation that no existing hire/bid/final agreement logic was changed

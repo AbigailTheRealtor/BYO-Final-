@@ -387,6 +387,7 @@ class SellerOfferListing extends Component
     public $agent_nar_member_id = '';
     public $current_status = '';
     public $video_link = '';
+    public array $listing_ai_faq = [];
     public $embedUrl = null;
 
 
@@ -1850,6 +1851,7 @@ class SellerOfferListing extends Component
             $this->agent_nar_member_id = $auction->get->agent_nar_member_id ?? '';
             $this->current_status = $auction->get->current_status ?? '';
             $this->video_link = $auction->get->video_link;
+            $this->listing_ai_faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
             $this->photo = $auction->get->photo ?? null;
             $this->video = $auction->get->video ?? null;
 
@@ -2365,6 +2367,7 @@ class SellerOfferListing extends Component
         }
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
+        $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
 
         // Save photo - process new uploads; preserve existing saved filename on re-save
         if ($this->photo && !is_string($this->photo)) {

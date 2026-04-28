@@ -1,0 +1,79 @@
+PHASE 2 — ADD EDITABLE AI QUESTIONS TAB TO OFFERLISTING ONLY.
+
+Use:
+.local/ai_faq_component_compatibility_audit.md
+
+Goal:
+Add an editable AI Questions / Chatbot Knowledge Base final tab to the Create Regular Listing / OfferListing flows only.
+
+Only modify:
+resources/views/livewire/offer-listing/**
+app/Http/Livewire/OfferListing/**
+
+Do NOT modify:
+seller_property/**
+original Hire Agent flows
+routes
+dashboard
+bid/counter/accept logic
+database migrations
+
+Requirements:
+1. Add final tab labeled:
+AI Questions
+
+2. Add it to:
+- Seller OfferListing
+- Buyer OfferListing
+- Landlord OfferListing
+- Tenant OfferListing
+
+3. Create editable input partials using textarea fields bound to:
+wire:model.defer="listing_ai_faq.{question_key}"
+
+4. Use configs:
+- Seller: config('ai_faq_seller.questions') + addons
+- Buyer: config('ai_faq_buyer.questions') + addons
+- Landlord: config('ai_faq_landlord.questions') + addons
+- Tenant: config('tenant_ai_faq.questions') + commercial-only questions if applicable
+
+5. Property-type logic:
+- Show base questions for each role
+- Show addon questions only when property type matches visible_for
+- Do not assume Income = Residential
+- Do not assume Business Opportunity = Commercial unless config says so
+
+6. Add to all 8 OfferListing PHP components:
+- public array $listing_ai_faq = []
+- load logic
+- save logic
+
+7. Storage:
+- Seller/Buyer/Landlord: save/reload through existing meta system using key listing_ai_faq
+- Tenant: use the existing tenant listing_ai_faq JSON column / pattern documented in the audit
+
+8. Submit button:
+- AI Questions must be final tab
+- Submit/Finish should appear only on the AI Questions tab
+
+Safeguards:
+- Do not hardcode all questions directly into four parent blades.
+- Prefer shared editable partial(s).
+- Do not alter the read-only viewer component.
+- Do not change existing legacy AI Questions.
+- Do not touch seller_property/**.
+- Do not touch Hire Agent files.
+- No migrations.
+
+Verification:
+1. Seller Create Regular Listing shows AI Questions as final tab.
+2. Buyer Create Regular Listing shows AI Questions as final tab.
+3. Landlord Create Regular Listing shows AI Questions as final tab.
+4. Tenant Create Regular Listing shows AI Questions as final tab.
+5. Answers save and reload on edit.
+6. Property-specific addon questions appear only for matching property types.
+7. Original Hire Agent flows unchanged.
+8. seller_property/** unchanged.
+
+Write report to:
+.local/offerlisting_ai_questions_tab_phase2_report.md

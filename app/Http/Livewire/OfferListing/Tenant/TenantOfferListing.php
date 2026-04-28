@@ -502,7 +502,7 @@ class TenantOfferListing extends Component
     public $agent_nar_member_id = '';
     public $current_status = '';
     public $video_link = '';
-
+    public array $listing_ai_faq = [];
 
 
     // location and meeting details
@@ -3230,6 +3230,7 @@ class TenantOfferListing extends Component
             if (!empty($this->video_link)) {
                 $this->embedUrl = $this->getEmbedUrl($this->video_link);
             }
+            $this->listing_ai_faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
             $this->photo = $auction->get->photo ?? null;
             $this->current_status = $auction->get->current_status ?? '';
 
@@ -4292,6 +4293,7 @@ class TenantOfferListing extends Component
         }
         $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
+        $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
 
         // Save photo - handle new uploads, existing paths, and deletions
         if ($this->photoDeleted) {
