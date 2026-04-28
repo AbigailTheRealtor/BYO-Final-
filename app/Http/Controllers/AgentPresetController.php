@@ -9,6 +9,52 @@ use Illuminate\Support\Facades\Auth;
 
 class AgentPresetController extends Controller
 {
+    /**
+     * Public profile fields that are subject to the save-scope selector.
+     * These are the profile_data keys that describe the agent's public identity.
+     * Services, compensation, and agreement term keys are intentionally excluded.
+     */
+    protected const PROFILE_FIELDS = [
+        'bio',
+        'why_hire_you',
+        'what_sets_you_apart',
+        'marketing_plan',
+        'additional_details',
+        'year_licensed',
+        'first_name',
+        'last_name',
+        'phone',
+        'email',
+        'brokerage',
+        'license_no',
+        'nar_id',
+        'presentation_link',
+        'business_card_link',
+        'reviews_links',
+        'website_link',
+        'social_media',
+        'years_experience',
+        'transactions_last_12_months',
+        'primary_areas_served',
+        'avg_response_time',
+        'is_full_time',
+        'cities_served',
+        'counties_served',
+        'neighborhoods_served',
+        'areas_notes',
+        'review_1',
+        'review_2',
+        'review_3',
+        'awards_recognition',
+        'intro_video_url',
+        'video_caption',
+        'availability_status',
+        'evenings_available',
+        'weekends_available',
+        'communication_style',
+        'preferred_contact_method',
+    ];
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -57,12 +103,42 @@ class AgentPresetController extends Controller
             abort(404);
         }
 
-        $profile  = AgentDefaultProfile::findForAgent(Auth::id(), $role, $propertyType);
+        $userId   = Auth::id();
+        $profile  = AgentDefaultProfile::findForAgent($userId, $role, $propertyType);
         $data     = $profile?->profile_data ?? [];
         $services = AgentPresetCatalog::getServices($role, $propertyType);
 
         $selectedServices = $data['services'] ?? [];
         $otherServices    = $data['other_services'] ?? [];
+
+        // Autofill fallback: for any profile field that is missing or empty on
+        // the current preset, look up the most-recently-updated other preset
+        // that has that field filled and use its value as the display default.
+        // This does NOT persist anything — it is display-only until the agent saves.
+        $missingFields = [];
+        foreach (static::PROFILE_FIELDS as $field) {
+            $val = $data[$field] ?? null;
+            if ($val === null || $val === '' || $val === []) {
+                $missingFields[] = $field;
+            }
+        }
+
+        if (!empty($missingFields)) {
+            $otherPresets = AgentDefaultProfile::where('user_id', $userId)
+                ->when($profile !== null, fn ($q) => $q->where('id', '!=', $profile->id))
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            foreach ($missingFields as $field) {
+                foreach ($otherPresets as $otherPreset) {
+                    $val = $otherPreset->profile_data[$field] ?? null;
+                    if ($val !== null && $val !== '' && $val !== []) {
+                        $data[$field] = $val;
+                        break;
+                    }
+                }
+            }
+        }
 
         $roleLabel     = AgentDefaultProfile::roleLabel($role);
         $propertyLabel = AgentDefaultProfile::propertyLabel($propertyType);
@@ -91,6 +167,7 @@ class AgentPresetController extends Controller
         }
 
         $request->validate([
+            'profile_save_scope' => ['nullable', 'string', 'in:current_preset,current_role,all_roles'],
             'services'          => ['nullable', 'array'],
             'services.*'        => ['string', 'max:500'],
             'other_services'    => ['nullable', 'array'],
@@ -407,7 +484,39 @@ class AgentPresetController extends Controller
             'preferred_contact_method'      => $request->input('preferred_contact_method', ''),
         ];
 
-        AgentDefaultProfile::upsertForAgent(Auth::id(), $role, $propertyType, $profileData);
+        $userId = Auth::id();
+
+        AgentDefaultProfile::upsertForAgent($userId, $role, $propertyType, $profileData);
+
+        // Scope-aware propagation of public profile fields to other presets.
+        // Only the PROFILE_FIELDS keys are written to other records; all other
+        // profile_data keys (services, compensation, agreement terms) are untouched.
+        $scope = $request->input('profile_save_scope', 'current_preset');
+
+        if ($scope === 'current_role' || $scope === 'all_roles') {
+            $profileFields = array_intersect_key($profileData, array_flip(static::PROFILE_FIELDS));
+
+            $query = AgentDefaultProfile::where('user_id', $userId)
+                ->where(function ($q) use ($role, $propertyType) {
+                    $q->where('role_type', '!=', $role)
+                      ->orWhere('property_type', '!=', $propertyType);
+                });
+
+            if ($scope === 'current_role') {
+                $query->where('role_type', $role);
+            }
+
+            $otherPresets = $query->get();
+
+            foreach ($otherPresets as $otherPreset) {
+                $existing = $otherPreset->profile_data ?? [];
+                foreach ($profileFields as $field => $value) {
+                    $existing[$field] = $value;
+                }
+                $otherPreset->profile_data = $existing;
+                $otherPreset->save();
+            }
+        }
 
         return redirect()
             ->route('agent.presets.edit', ['role' => $role, 'propertyType' => $propertyType, 'saved' => 1]);

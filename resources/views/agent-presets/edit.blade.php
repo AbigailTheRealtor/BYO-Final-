@@ -217,6 +217,28 @@
         border-color: #198754;
         background: #f0faf4;
     }
+    .profile-save-scope-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: .25rem;
+        flex: 1;
+        min-width: 220px;
+        max-width: 420px;
+    }
+    .profile-save-scope-label {
+        font-size: .78rem;
+        font-weight: 600;
+        color: #444;
+        margin-bottom: 0;
+    }
+    .profile-save-scope-select {
+        font-size: .83rem;
+    }
+    .profile-save-scope-hint {
+        font-size: .72rem;
+        color: #6c757d;
+        line-height: 1.35;
+    }
 </style>
 @endpush
 
@@ -1834,6 +1856,21 @@
             <a href="{{ route('agent.presets.index') }}" class="btn btn-outline-secondary">
                 <i class="fa fa-times me-1"></i>Cancel
             </a>
+
+            <div class="profile-save-scope-wrap">
+                <label for="profile_save_scope" class="profile-save-scope-label">
+                    How would you like to save this profile information?
+                </label>
+                <select id="profile_save_scope" name="profile_save_scope" class="form-select form-select-sm profile-save-scope-select">
+                    <option value="current_preset" {{ old('profile_save_scope', 'current_preset') === 'current_preset' ? 'selected' : '' }}>This preset only</option>
+                    <option value="current_role" {{ old('profile_save_scope') === 'current_role' ? 'selected' : '' }}>All {{ ucfirst($role) }} presets</option>
+                    <option value="all_roles" {{ old('profile_save_scope') === 'all_roles' ? 'selected' : '' }}>All roles and property types</option>
+                </select>
+                <small class="profile-save-scope-hint">
+                    Scope applies only to public Agent Profile sections. Services, compensation, and agreement terms are always saved to this preset only.
+                </small>
+            </div>
+
             <button type="submit" class="btn btn-save-preset">
                 <i class="fa fa-save me-1"></i>Save Preset
             </button>
