@@ -285,6 +285,7 @@ class LandlordAuctionController extends Controller
             $landlord_auction->saveMeta('video_type', $request->video_type);
             $landlord_auction->saveMeta('youtube_video_link', $request->youtube_video_link);
             $landlord_auction->saveMeta('vimeo_video_link', $request->vimeo_video_link);
+            $landlord_auction->saveMeta("listing_ai_faq", json_encode($request->listing_ai_faq ?? []));
 
             $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
 
@@ -852,6 +853,7 @@ class LandlordAuctionController extends Controller
             $landlord_auction->saveMeta('video_type', $request->video_type);
             $landlord_auction->saveMeta('youtube_video_link', $request->youtube_video_link);
             $landlord_auction->saveMeta('vimeo_video_link', $request->vimeo_video_link);
+            $landlord_auction->saveMeta("listing_ai_faq", json_encode($request->listing_ai_faq ?? []));
 
             $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
             $allowedVideos = ['mp4', 'mov', 'avi', 'mkv', 'wmv', 'flv', 'webm', 'm4v'];

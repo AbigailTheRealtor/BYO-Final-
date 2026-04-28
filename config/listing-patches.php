@@ -7,6 +7,7 @@ return [
             '2' => 'landlord_auction.includes.patch-2',
             '3' => 'landlord_auction.includes.patch-3',
             '4' => 'landlord_auction.includes.patch-4',
+            '5' => 'landlord_auction.includes.patch-5',
         ]
     ],
 
@@ -16,6 +17,7 @@ return [
             '2' => 'landlord_auction.includes.edit.patch-2',
             '3' => 'landlord_auction.includes.edit.patch-3',
             '4' => 'landlord_auction.includes.edit.patch-4',
+            '5' => 'landlord_auction.includes.edit.patch-5',
         ]
     ],
 

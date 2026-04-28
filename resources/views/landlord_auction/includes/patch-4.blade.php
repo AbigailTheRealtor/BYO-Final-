@@ -898,17 +898,3 @@
 </div>
 
 
-<div class="d-flex justify-content-between form-group mt-4">
-    <div>
-        <a class="wizard-step-back btn btn-success btn-lg text-600" style="display: none;">Back</a>
-    </div>
-    <div>
-        <a class="wizard-step-next btn btn-success btn-lg text-600" style="display: none;">Next</a>
-        <button type="button" class="wizard-step-finish btn btn-success btn-lg text-600"
-            style="display: none;">Save</button>
-    </div>
-</div>
-<template class="roomDimensionTemp">
-    <input type="text" name="roomDimensions[]" data-type="" class="form-control mt-2 dynamic-room-input"
-        data-msg-required="">
-</template>
