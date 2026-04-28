@@ -41,6 +41,7 @@ return [
             '6' => 'seller_property.includes.edit.patch-6',
             '7' => 'seller_property.includes.edit.patch-7',
             '8' => 'seller_property.includes.edit.patch-8',
+            '9' => 'seller_property.includes.edit.patch-9',
         ]
     ]
 ];

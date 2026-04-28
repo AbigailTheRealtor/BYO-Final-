@@ -927,24 +927,38 @@
             ) {
               StepWizard.nextStep = 70;
               StepWizard.backStep = 68;
-            }else {
+            }
+            else if (StepWizard.currentStep == 43 && (property_type == 'Residential Property' || property_type == 'Income Property')) {
+              StepWizard.nextStep = 94;
+              StepWizard.backStep = 43;
+            }
+            else if (StepWizard.currentStep == 77 && (property_type == 'Commercial Property' || property_type == 'Business Opportunity')) {
+              StepWizard.nextStep = 94;
+              StepWizard.backStep = 77;
+            }
+            else {
               StepWizard.backStep = StepWizard.currentStep;
             }
             $('[ data-step="' + StepWizard.nextStep + '"]').addClass("active");
             StepWizard.setStep();
-            if (StepWizard.currentStep == 43 &&
-              (property_type == 'Residential Property' || property_type ==
-                'Income Property')
-            ) {
-              $('.wizard-step-next').hide();
-              $('.wizard-step-finish').show();
-            }
-            if (StepWizard.currentStep == 77 &&
-              (property_type == 'Commercial Property' || property_type ==
-                'Business Opportunity')
-            ) {
-              $('.wizard-step-next').hide();
-              $('.wizard-step-finish').show();
+            if (StepWizard.currentStep == 94) {
+              if (property_type == 'Commercial Property' || property_type == 'Income Property') {
+                $('.ai-faq-commercial-income-section').removeClass('d-none');
+                $('.ai-faq-business-section').addClass('d-none');
+                $('.ai-faq-vacant-section').addClass('d-none');
+              } else if (property_type == 'Business Opportunity') {
+                $('.ai-faq-commercial-income-section').addClass('d-none');
+                $('.ai-faq-business-section').removeClass('d-none');
+                $('.ai-faq-vacant-section').addClass('d-none');
+              } else if (property_type == 'Vacant Land') {
+                $('.ai-faq-commercial-income-section').addClass('d-none');
+                $('.ai-faq-business-section').addClass('d-none');
+                $('.ai-faq-vacant-section').removeClass('d-none');
+              } else {
+                $('.ai-faq-commercial-income-section').addClass('d-none');
+                $('.ai-faq-business-section').addClass('d-none');
+                $('.ai-faq-vacant-section').addClass('d-none');
+              }
             }
           }
         }

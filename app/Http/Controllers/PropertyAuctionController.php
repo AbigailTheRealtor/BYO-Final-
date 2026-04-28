@@ -679,6 +679,8 @@ class PropertyAuctionController extends Controller
                 $auction->saveMeta('disclosures', json_encode($disclosures));
             }
 
+            $auction->saveMeta("listing_ai_faq", json_encode($request->listing_ai_faq ?? []));
+
             DB::commit();
             // SellerPropertyAuctionCreated::dispatch($auction);
 
@@ -1362,6 +1364,8 @@ class PropertyAuctionController extends Controller
             //         $auction->saveMeta('audio', 'auction/audios/' . $audioName);
             //     }
             // }
+
+            $auction->saveMeta("listing_ai_faq", json_encode($request->listing_ai_faq ?? []));
 
             DB::commit();
             SellerPropertyAuctionUpdated::dispatch($auction);
