@@ -2541,6 +2541,45 @@
               </div>
             </div>
           </div>
+          {{-- ── Step 26: AI Questions / Chatbot Knowledge Base ── --}}
+          <div class="wizard-step" data-step="26">
+            <h4 class="mb-1">AI Questions / Chatbot Knowledge Base</h4>
+            <div class="alert alert-info mb-3" role="alert">
+              <i class="fa-solid fa-robot me-1"></i>
+              <strong>Internal only</strong> — these answers are never shown publicly. They help power an AI chatbot that landlords can use to learn more about your criteria. All fields are optional; answer only what you are comfortable sharing.
+            </div>
+            @php
+              $faqQuestions = config('tenant_ai_faq.questions');
+              $faqCategories = collect($faqQuestions)->where('commercial_only', false)->groupBy('category');
+              $commercialQuestions = collect($faqQuestions)->where('commercial_only', true)->groupBy('category');
+              $savedFaq = $auction->listing_ai_faq ?? [];
+            @endphp
+            @foreach ($faqCategories as $category => $questions)
+              <h5 class="mt-4 mb-2 border-bottom pb-1 text-primary">{{ $category }}</h5>
+              @foreach ($questions as $q)
+                <div class="form-group">
+                  <label class="fw-bold">{{ $q['label'] }}</label>
+                  <textarea name="ai_faq[{{ $q['key'] }}]" class="form-control" rows="2" placeholder="Optional — type your answer here">{{ $savedFaq[$q['key']] ?? '' }}</textarea>
+                </div>
+              @endforeach
+            @endforeach
+            <div class="commercialFieldss mt-3" style="{{ ($auction->get->property_type ?? '') === 'Commercial Property' ? '' : 'display:none;' }}">
+              <div class="alert alert-secondary" role="alert">
+                <i class="fa-solid fa-building me-1"></i>
+                <strong>Commercial Add-On Questions</strong> — the following questions apply to commercial listings only.
+              </div>
+              @foreach ($commercialQuestions as $category => $questions)
+                <h5 class="mt-4 mb-2 border-bottom pb-1 text-primary">{{ $category }}</h5>
+                @foreach ($questions as $q)
+                  <div class="form-group">
+                    <label class="fw-bold">{{ $q['label'] }}</label>
+                    <textarea name="ai_faq[{{ $q['key'] }}]" class="form-control" rows="2" placeholder="Optional — type your answer here">{{ $savedFaq[$q['key']] ?? '' }}</textarea>
+                  </div>
+                @endforeach
+              @endforeach
+            </div>
+          </div>
+          {{-- ── /Step 26 ── --}}
           <div class="d-flex justify-content-between form-group mt-4">
             <div>
               <a class="wizard-step-back btn btn-success btn-lg text-600" style="display: none;">Back</a>
@@ -2962,12 +3001,12 @@
         var comp = 0;
         if (property_type === 'Residential Property') {
           // Calculate progress for income and residential property steps (9 to 41)
-          comp = 20 + (((StepWizard.currentStep - 7) / (25 - 7)) * 80);
+          comp = 20 + (((StepWizard.currentStep - 7) / (26 - 7)) * 80);
         } else if (property_type === 'Commercial Property') {
-          comp = 20 + (((StepWizard.currentStep - 7) / (25 - 7)) * 80);
+          comp = 20 + (((StepWizard.currentStep - 7) / (26 - 7)) * 80);
         } else if (property_type === 'Vacant Land (Current Use)') {
           // Calculate progress for vacant land steps (77 to 91)
-          comp = 20 + (((StepWizard.currentStep - 7) / (25 - 7)) * 80);
+          comp = 20 + (((StepWizard.currentStep - 7) / (26 - 7)) * 80);
         } else {
           comp = ((StepWizard.currentStep - 1) / 8) * 20;
         }

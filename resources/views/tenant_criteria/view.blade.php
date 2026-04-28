@@ -30,6 +30,9 @@
 @section('content')
   @php
     $auth_id = auth()->user() ? auth()->user()->id : 0;
+    // NOTE: listing_ai_faq is intentionally excluded from this view.
+    // It is an internal-only field used by the AI chatbot and must never
+    // be rendered publicly on this page or any listing card/preview partial.
   @endphp
   <!-- Gallery Start Here  -->
   <div class="container listingDescription">

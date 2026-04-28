@@ -132,6 +132,19 @@ class TenantCriteriaAuctionController extends Controller
             $auction->saveMeta("agent_mls_id",$request->agent_mls_id);
             $auction->saveMeta("realStateAgent",$request->realStateAgent);
 
+            // AI FAQ / Chatbot Knowledge Base — stored privately, never shown publicly
+            if ($request->has('ai_faq')) {
+                $request->validate([
+                    'ai_faq'   => ['nullable', 'array'],
+                    'ai_faq.*' => ['nullable', 'string'],
+                ]);
+                $allowedKeys = array_column(config('tenant_ai_faq.questions'), 'key');
+                $rawFaq = array_intersect_key((array) $request->input('ai_faq'), array_flip($allowedKeys));
+                $faqData = array_map(fn($v) => ($v === '' || $v === null) ? null : (string) $v, $rawFaq);
+                $auction->listing_ai_faq = $faqData;
+                $auction->save();
+            }
+
             // update code
 
 
@@ -402,6 +415,19 @@ class TenantCriteriaAuctionController extends Controller
         $auction->saveMeta("agent_license_no",$request->agent_license_no);
         $auction->saveMeta("agent_mls_id",$request->agent_mls_id);
         $auction->saveMeta("realStateAgent",$request->realStateAgent);
+
+        // AI FAQ / Chatbot Knowledge Base — stored privately, never shown publicly
+        if ($request->has('ai_faq')) {
+            $request->validate([
+                'ai_faq'   => ['nullable', 'array'],
+                'ai_faq.*' => ['nullable', 'string'],
+            ]);
+            $allowedKeys = array_column(config('tenant_ai_faq.questions'), 'key');
+            $rawFaq = array_intersect_key((array) $request->input('ai_faq'), array_flip($allowedKeys));
+            $faqData = array_map(fn($v) => ($v === '' || $v === null) ? null : (string) $v, $rawFaq);
+            $auction->listing_ai_faq = $faqData;
+            $auction->save();
+        }
 
         $allowedPhotos = ['jpg', 'png', 'jpeg', 'gif', 'svg'];
 

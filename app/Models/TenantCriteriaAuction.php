@@ -13,6 +13,12 @@ class TenantCriteriaAuction extends Model
     protected $appends = ["get"];
     protected $with = ['meta'];
 
+    protected $fillable = ['listing_ai_faq'];
+
+    protected $casts = [
+        'listing_ai_faq' => 'array',
+    ];
+
     protected $attributes = [
         'is_approved' => true,
         'is_draft' => false,
