@@ -1616,3 +1616,354 @@
         </div>
     </div>
 </div>
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+<!-- NEW BUYER PURCHASING TERMS FIELDS                                       -->
+<!-- ─────────────────────────────────────────────────────────────────────── -->
+
+<div class="financing-section-header mt-5 mb-3 pb-2 border-bottom">
+    <h5 class="fw-bold text-primary mb-0">
+        <i class="fa-solid fa-file-signature me-2"></i>Additional Purchase Terms
+    </h5>
+</div>
+
+<!-- 1. Earnest Money / EMD Amount -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Earnest Money / EMD Amount:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the amount the Buyer is prepared to put down as an earnest money deposit (good faith deposit) to accompany a purchase offer.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-group">
+        <span class="input-group-text">$</span>
+        <input type="text" wire:model="earnest_money_amount" class="form-control"
+            placeholder="Enter earnest money deposit amount (e.g., 5000)"
+            data-error-id="earnest_money_amount_error"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+    <span class="error mt-2" id="earnest_money_amount_error"></span>
+</div>
+
+<!-- 2. Earnest Money Deposit Timing -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Earnest Money Deposit Timing:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select when the Buyer intends to deliver the earnest money deposit after acceptance.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="earnest_money_timing" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days">
+            <option value="">Select</option>
+            <option value="Upon Acceptance">Upon Acceptance</option>
+            <option value="Within 1 Business Day">Within 1 Business Day</option>
+            <option value="Within 2 Business Days">Within 2 Business Days</option>
+            <option value="Within 3 Business Days">Within 3 Business Days</option>
+            <option value="Within 5 Business Days">Within 5 Business Days</option>
+            <option value="Within 7 Days">Within 7 Days</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- 3. Due Diligence / Inspection Period -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Due Diligence / Inspection Period:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the number of days the Buyer requests for due diligence and property inspections after contract acceptance.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="inspection_period_days" class="form-control has-icon"
+            data-icon="fa-solid fa-magnifying-glass">
+            <option value="">Select</option>
+            <option value="5 Days">5 Days</option>
+            <option value="7 Days">7 Days</option>
+            <option value="10 Days">10 Days</option>
+            <option value="14 Days">14 Days</option>
+            <option value="15 Days">15 Days</option>
+            <option value="21 Days">21 Days</option>
+            <option value="30 Days">30 Days</option>
+            <option value="Waived">Waived</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- 4. Home Inspection Contingency -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Home Inspection Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer's offer will include a home inspection contingency. If waived, the Buyer accepts the property in its current condition.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="inspection_contingency_buyer" class="form-control has-icon"
+            data-icon="fa-solid fa-house-chimney-crack">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Waived">Waived</option>
+        </select>
+    </div>
+</div>
+
+<!-- 5. Appraisal Contingency -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Appraisal Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer's offer will be contingent on the property appraising at or above the purchase price.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="appraisal_contingency_buyer" class="form-control has-icon"
+            data-icon="fa-solid fa-scale-balanced">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Waived">Waived</option>
+        </select>
+    </div>
+</div>
+
+<!-- 6. Financing Contingency -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Financing Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the offer will be contingent on the Buyer securing financing. Not applicable for all-cash offers.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="financing_contingency_buyer" class="form-control has-icon"
+            data-icon="fa-solid fa-file-invoice-dollar">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Waived">Waived</option>
+            <option value="Not Applicable (Cash)">Not Applicable (Cash)</option>
+        </select>
+    </div>
+</div>
+
+<!-- 7. Financing Contingency Period -->
+@if ($financing_contingency_buyer === 'Yes')
+<div class="form-group mt-3">
+    <label class="fw-bold">Financing Contingency Period:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Buyer requires to secure financing approval (e.g., 21).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="financing_contingency_days_buyer" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days" min="1" max="365"
+            placeholder="Enter number of days for financing contingency (e.g., 21)">
+    </div>
+</div>
+@endif
+
+<!-- 8. Seller Contribution / Credit Requested -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Seller Contribution / Credit Requested:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer is requesting the Seller to contribute toward closing costs, repairs, or credits.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="seller_contribution" class="form-control has-icon"
+            data-icon="fa-solid fa-hand-holding-dollar">
+            <option value="">Select</option>
+            <option value="None">None</option>
+            <option value="Up to 1%">Up to 1%</option>
+            <option value="Up to 2%">Up to 2%</option>
+            <option value="Up to 3%">Up to 3%</option>
+            <option value="Up to 4%">Up to 4%</option>
+            <option value="Up to 5%">Up to 5%</option>
+            <option value="Negotiable / Other">Negotiable / Other</option>
+        </select>
+    </div>
+</div>
+
+<!-- 9. Seller Contribution Amount / Details (conditional) -->
+@if ($seller_contribution !== '' && $seller_contribution !== 'None')
+<div class="form-group mt-3">
+    <label class="fw-bold">Seller Contribution Amount / Details:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Provide additional details about the seller contribution or credit requested (e.g., specific dollar amount, intended use).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="seller_contribution_details" class="form-control has-icon"
+            data-icon="fa-solid fa-hand-holding-dollar" rows="3"
+            placeholder="Enter seller contribution details (e.g., $5,000 toward closing costs, credit for roof repair)"></textarea>
+    </div>
+</div>
+@endif
+
+<!-- 10. Possession Preference -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Possession Preference:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select when the Buyer would like to take possession of the property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="possession_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-key">
+            <option value="">Select</option>
+            <option value="At Closing">At Closing</option>
+            <option value="1–7 Days After Closing">1–7 Days After Closing</option>
+            <option value="8–14 Days After Closing">8–14 Days After Closing</option>
+            <option value="15–29 Days After Closing">15–29 Days After Closing</option>
+            <option value="30+ Days After Closing">30+ Days After Closing</option>
+            <option value="Seller Leaseback">Seller Leaseback</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- 11. Possession Details (conditional) -->
+@if ($possession_preference !== '' && $possession_preference !== 'At Closing')
+<div class="form-group mt-3">
+    <label class="fw-bold">Possession Details:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Provide any additional details about the desired possession timeline or arrangement.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="possession_details" class="form-control has-icon"
+            data-icon="fa-solid fa-key"
+            placeholder="Enter possession details (e.g., Seller leaseback up to 30 days at $100/day)">
+    </div>
+</div>
+@endif
+
+<!-- 12. Home Warranty Requested -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Home Warranty Requested:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer is requesting a home warranty and who should pay for it.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="home_warranty_requested" class="form-control has-icon"
+            data-icon="fa-solid fa-shield-halved">
+            <option value="">Select</option>
+            <option value="No">No</option>
+            <option value="Yes – Buyer Pays">Yes – Buyer Pays</option>
+            <option value="Yes – Seller Pays">Yes – Seller Pays</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- 13. Home Warranty Amount / Details (conditional) -->
+@if ($home_warranty_requested !== '' && $home_warranty_requested !== 'No')
+<div class="form-group mt-3">
+    <label class="fw-bold">Home Warranty Amount / Details:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the home warranty amount or any specific details about the coverage requested.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="home_warranty_details" class="form-control has-icon"
+            data-icon="fa-solid fa-shield-halved"
+            placeholder="Enter warranty details (e.g., $500 one-year home warranty, American Home Shield)">
+    </div>
+</div>
+@endif
+
+<!-- 14. As-Is Purchase -->
+<div class="form-group mt-3">
+    <label class="fw-bold">As-Is Purchase:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer is willing to purchase the property in its current as-is condition without requesting repairs.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="as_is_purchase" class="form-control has-icon"
+            data-icon="fa-solid fa-house-circle-check">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- 15. Property Inclusions -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Property Inclusions:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any items the Buyer expects to be included in the sale (e.g., appliances, fixtures, furniture).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="property_inclusions" class="form-control has-icon"
+            data-icon="fa-solid fa-list-check" rows="3"
+            placeholder="List items expected to be included (e.g., refrigerator, washer/dryer, outdoor furniture, shed)"></textarea>
+    </div>
+</div>
+
+<!-- 16. Property Exclusions -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Property Exclusions:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="List any items the Buyer expects to be excluded from the sale or that the Seller will take with them.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="property_exclusions" class="form-control has-icon"
+            data-icon="fa-solid fa-list-ul" rows="3"
+            placeholder="List items expected to be excluded (e.g., chandelier in dining room, heirloom fixtures)"></textarea>
+    </div>
+</div>
+
+<!-- 17. Closing Cost Responsibility -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Closing Cost Responsibility:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select how the Buyer expects closing costs to be allocated between Buyer and Seller.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="closing_cost_responsibility" class="form-control has-icon"
+            data-icon="fa-solid fa-file-invoice">
+            <option value="">Select</option>
+            <option value="Buyer Pays All">Buyer Pays All</option>
+            <option value="Seller Pays All">Seller Pays All</option>
+            <option value="Standard Split">Standard Split</option>
+            <option value="Negotiable">Negotiable</option>
+        </select>
+    </div>
+</div>
+
+<!-- 18. Additional Purchase Terms / Notes -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Additional Purchase Terms / Notes:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any additional purchase conditions, requests, or notes the Buyer wants sellers to be aware of.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="additional_purchase_terms" class="form-control has-icon"
+            data-icon="fa-solid fa-note-sticky" rows="4"
+            placeholder="Enter any additional terms, conditions, or notes (e.g., subject to sale of current home, specific contract addendums required)"></textarea>
+    </div>
+</div>

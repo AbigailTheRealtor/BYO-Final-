@@ -1,0 +1,177 @@
+TASK: Add an internal “AI Questions / Chatbot Knowledge Base” tab for Tenant Criteria property listings only.
+
+IMPORTANT LOCATION CLARIFICATION:
+This task applies ONLY to the Create a Listing / Property Listing workflow for Tenant Criteria listings.
+
+Do NOT edit:
+- Hire a Tenant’s Agent flow
+- Hire an Agent listings
+- Agent Hiring flows
+- Agent Bid forms
+- Broker Compensation forms
+- Agent Presets
+- Accepted Bid Summaries
+- Public listing pages
+- Dashboards
+- BidYourAgent hire-agent logic
+- Seller, Buyer, or Landlord listing flows
+
+This is ONLY for Tenant Criteria property listings that will later connect to BidYourOffer and the listing chatbot.
+
+GOAL:
+Allow the Tenant or Agent creating a Tenant Criteria listing to optionally answer common Landlord questions. These answers are internal only, not public, and will be used by the listing chatbot to answer Landlord questions accurately.
+
+SAFEGUARDS:
+- Add this as an optional internal tab/section only.
+- Do not remove, rename, or reorder existing tabs.
+- Do not modify existing Tenant listing fields outside this new AI Questions section.
+- Do not make any AI Questions required.
+- Do not display these questions or answers on public listing pages, listing cards, or listing previews.
+- Store answers in a separate structured JSON field named listing_ai_faq or chatbot_knowledge_base.
+- Do not mix AI Questions with Property Details, Leasing Terms, Services, Broker Compensation, or any Hire-an-Agent data.
+- Preserve save draft, edit listing, validation, and existing Tenant Criteria listing behavior.
+- Each answer should be nullable.
+- Answers must save with drafts and pre-fill when editing an existing Tenant Criteria listing.
+- Load this tab only for Tenant Criteria listings.
+
+TAB NAME:
+AI Questions / Chatbot Knowledge Base
+
+HELPER TEXT:
+Answer any optional questions below to help the listing chatbot respond to common Landlord questions. These answers are internal only and will not appear publicly on the listing page unless the chatbot is asked a related question.
+
+TENANT CRITERIA LISTING — LANDLORD FAQ QUESTIONS
+
+Category: Tenant Readiness & Motivation
+1. Is the Tenant actively looking to lease now?
+2. How soon does the Tenant want to move?
+3. Why is the Tenant moving?
+4. Is the Tenant relocating, downsizing, upsizing, changing jobs, starting school, or moving for another reason?
+5. Has the Tenant already viewed rental properties?
+6. Has the Tenant submitted applications or lease offers elsewhere?
+7. Is the Tenant under any move-in deadline?
+8. Is the Tenant flexible on location, property type, rent amount, or lease terms?
+
+Category: Income, Employment & Financial Strength
+9. What is the Tenant’s approximate monthly income?
+10. What is the Tenant’s employment status?
+11. How long has the Tenant been with their current employer or income source?
+12. Can the Tenant provide proof of income?
+13. Can the Tenant provide bank statements or financial documentation if requested?
+14. Does the Tenant meet common income requirements, such as 2.5x or 3x monthly rent?
+15. Does the Tenant have savings available for move-in funds?
+16. Is the Tenant able to pay first month’s rent, security deposit, and other move-in costs?
+
+Category: Credit, Background & Rental History
+17. What is the Tenant’s general credit profile?
+18. Is the Tenant willing to complete a credit check?
+19. Is the Tenant willing to complete a background check?
+20. Does the Tenant have prior rental history?
+21. Can the Tenant provide landlord references?
+22. Has the Tenant ever been evicted?
+23. Does the Tenant have any prior lease violations?
+24. Is the Tenant willing to explain any credit, background, or rental history issues?
+
+Category: Desired Property Criteria
+25. What type of rental property is the Tenant looking for?
+26. What locations, cities, counties, or neighborhoods is the Tenant considering?
+27. What bedroom and bathroom count does the Tenant prefer?
+28. What square footage range does the Tenant prefer?
+29. Does the Tenant prefer furnished or unfurnished?
+30. What property condition is acceptable?
+31. What features are must-haves?
+32. What features are deal-breakers?
+33. Is the Tenant interested in HOA, condo, apartment, single-family, duplex, or townhome rentals?
+
+Category: Lease Terms & Move-In
+34. What monthly rent range is the Tenant comfortable with?
+35. What is the maximum monthly rent the Tenant is willing to pay?
+36. What lease length does the Tenant prefer?
+37. Is the Tenant open to longer lease terms?
+38. Is the Tenant open to shorter lease terms?
+39. What move-in date does the Tenant prefer?
+40. Is the Tenant flexible on move-in date?
+41. Does the Tenant need to split move-in funds into payments?
+42. Is the Tenant requesting any rent concession, move-in special, or discount?
+43. Is the Tenant requesting renewal options?
+
+Category: Occupancy, Pets & Vehicles
+44. How many occupants will live in the property?
+45. Who will occupy the property?
+46. Does the Tenant have pets?
+47. What type, breed, weight, and number of pets does the Tenant have?
+48. Is the Tenant willing to pay pet deposit, pet fee, or monthly pet rent?
+49. Does the Tenant have vehicles?
+50. How many parking spaces does the Tenant need?
+51. Does the Tenant need garage, covered, assigned, guest, or oversized parking?
+
+Category: Utilities, Maintenance & Responsibilities
+52. What utilities does the Tenant prefer to have included?
+53. Is the Tenant willing to pay utilities separately?
+54. Is the Tenant willing to handle lawn care?
+55. Is the Tenant willing to handle pool care?
+56. Is the Tenant willing to handle pest control?
+57. Does the Tenant have any maintenance or accessibility needs?
+58. Is the Tenant willing to follow HOA, condo, community, or property rules?
+
+Category: Showing & Application Readiness
+59. Is the Tenant available for showings?
+60. How much notice does the Tenant need for showings?
+61. Is the Tenant available for virtual showings?
+62. Is the Tenant ready to apply quickly if interested?
+63. Can the Tenant provide application documents quickly?
+64. Who will be involved in the leasing decision?
+
+Category: Landlord High-Intent Questions
+65. Why should a Landlord consider this Tenant?
+66. What makes the Tenant a strong applicant?
+67. Is the Tenant serious and ready to move forward?
+68. Can the Tenant submit an application or lease offer quickly?
+69. What is the best way for a Landlord to respond to the Tenant?
+70. What does the Tenant need from a Landlord to move forward?
+
+COMMERCIAL TENANT ADD-ON QUESTIONS:
+Show these only for Commercial Tenant Criteria listings.
+
+71. What type of business will operate in the space?
+72. How long has the business been operating?
+73. Is the Tenant an existing business, startup, franchise, nonprofit, or professional practice?
+74. Is the Tenant leasing personally or through an entity?
+75. Can the Tenant provide business financials, bank statements, or proof of funds if requested?
+76. Does the Tenant have business credit or guarantor support?
+77. What type of commercial space does the Tenant need?
+78. What square footage range does the Tenant need?
+79. What lease type does the Tenant prefer: gross, modified gross, NNN, full service gross, percentage rent, or other?
+80. What base rent or rent per square foot is the Tenant comfortable with?
+81. Is the Tenant willing to pay CAM, taxes, insurance, maintenance, or additional rent?
+82. Does the Tenant need a CAM cap or expense limitation?
+83. What lease term does the Tenant prefer?
+84. Does the Tenant need renewal options?
+85. Does the Tenant need tenant improvements, buildout, white box, vanilla shell, or turnkey delivery?
+86. What buildout allowance or landlord work does the Tenant need?
+87. Does the Tenant need permits, licenses, zoning approval, franchise approval, corporate approval, or other contingencies?
+88. What signage rights does the Tenant need?
+89. What parking, loading, delivery, customer access, or employee access does the Tenant need?
+90. What hours of operation does the Tenant need?
+91. Does the Tenant need exclusive use rights or restrictions on competing businesses?
+92. Is the Tenant willing to provide a personal guarantee?
+93. Are there any commercial lease terms that are deal-breakers?
+
+CHATBOT REQUIREMENTS:
+- Store each answer with a stable question key.
+- Add internal aliases/search terms so the chatbot can match different user wording.
+- Example: tenant_income_strength should match “tenant income,” “proof of income,” “income requirement,” “can tenant afford rent,” and “tenant financial strength.”
+- Chatbot should check structured Tenant Criteria listing fields first, then AI Questions answers, then fallback.
+- Do not hallucinate answers.
+- If unanswered, chatbot should say the information was not provided and offer to connect the user or ask a follow-up.
+
+VERIFY:
+1. AI Questions tab appears only in Tenant Criteria Create/Edit Listing flow.
+2. It does not appear in Hire a Tenant’s Agent.
+3. It does not appear in Seller, Buyer, or Landlord listing flows.
+4. All fields are optional.
+5. Answers save in draft.
+6. Answers pre-fill when editing.
+7. Answers do not display publicly.
+8. Existing Tenant Criteria listing fields still work.
+9. No BidYourAgent hire-agent logic changed.
