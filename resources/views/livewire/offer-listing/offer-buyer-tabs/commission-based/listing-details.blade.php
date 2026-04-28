@@ -3,7 +3,7 @@
     <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
             <div>
-                <strong>📌 Provide the key details for this request, including the preferred Agent hire date and whether
+                <strong>📌 Provide the key details for this listing, including whether
                     the Buyer is currently represented by a Broker.</strong>
             </div>
         </div>
@@ -83,202 +83,9 @@
         </div>
     </div>
 
-    {{-- @isset($user_type)
-
-        <!-- User Type Selection -->
-        <!-- User Type Selection -->
-        <div class="form-group mb-4">
-            <label class="fw-bold mb-3">I am a:</label>
-            <div class="row">
-                <!-- Seller Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'seller' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'seller')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'seller')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeSeller" value="seller" {{ $user_type === 'seller' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeSeller">
-                                    <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <h5 class="mb-1">Seller</h5>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Buyer Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'buyer' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'buyer')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'buyer')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeBuyer" value="buyer" {{ $user_type === 'buyer' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeBuyer">
-                                    <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <h5 class="mb-1">Buyer</h5>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Landlord Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'landlord' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'landlord')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'landlord')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeLandlord" value="landlord"
-                                    {{ $user_type === 'landlord' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeLandlord">
-                                    <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <h5 class="mb-1">Landlord</h5>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tenant Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'tenant' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'tenant')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'tenant')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeTenant" value="tenant" {{ $user_type === 'tenant' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeTenant">
-                                    <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <h5 class="mb-1">Tenant</h5>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endisset --}}
-
-@isset($user_type)
-
-        <!-- User Type Selection -->
-        <div class="form-group mb-4 text-center">
-            <label class="fw-bold mb-3">Select Agent Type:</label>
-            <div class="row">
-                <!-- Seller Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'seller' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'seller')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'seller')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check p-0">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeSeller" value="seller" {{ $user_type === 'seller' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeSeller">
-                                    <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <p class="mb-1 user-selected">Hire a Seller’s Agent </p>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Buyer Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'buyer' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'buyer')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'buyer')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check p-0">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeBuyer" value="buyer" {{ $user_type === 'buyer' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeBuyer">
-                                    <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <p class="mb-1 user-selected" >Hire a Buyer’s Agent</p>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Landlord Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'landlord' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'landlord')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'landlord')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check p-0">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeLandlord" value="landlord"
-                                    {{ $user_type === 'landlord' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeLandlord">
-                                    <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <p class="mb-1 user-selected">Hire a Landlord’s Agent</p>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tenant Option -->
-                <div class="col-md-3 mb-3">
-                    <div class="card user-type-card {{ $user_type === 'tenant' ? 'active-user-type border-primary' : '' }}"
-                        wire:click="$set('user_type', 'tenant')" style="cursor: pointer;">
-                        <div class="card-body text-center position-relative">
-                            @if ($user_type === 'tenant')
-                                <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                    <i class="fas fa-check-circle"></i>
-                                </div>
-                            @endif
-                            <div class="form-check p-0">
-                                <input class="form-check-input card-check" type="radio" wire:model="user_type"
-                                    id="userTypeTenant" value="tenant" {{ $user_type === 'tenant' ? 'checked' : '' }}>
-                                <label class="form-check-label" for="userTypeTenant">
-                                    <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
-                                    <p class="mb-1 user-selected">Hire a Tenant’s Agent</p>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endisset
+    {{--
+    {{-- Select Agent Type section removed for Regular Listing flow --}} --}}
+    {{-- Select Agent Type section removed for Regular Listing flow --}}
 
     @if ($service_type === 'full_service')
         <div class="form-group mb-4">
@@ -420,23 +227,6 @@
             </div>
         @endif
     </div>
-    @if ($service_type === 'full_service')
-        <!--Desired Agent Hire Date -->
-        <div class="form-group">
-            <label class="fw-bold">Desired Agent Hire Date:<span class="text-danger">*</span>
-
-                <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Select the date the Buyer needs to hire an Agent.    ">
-                    <i class="fa-solid fa-circle-info"></i> </span>
-            </label>
-
-            <div class="input-cover">
-                <input type="date" wire:model="desired_agent_hire_date" class="form-control has-icon"
-                    data-icon="fa-regular fa-calendar-days" required>
-            </div>
-            <span class="error mt-2" id="desired_agent_hire_date_error"></span>
-        </div>
-    @endif
     <!-- Listing Date -->
     <div class="form-group">
         <label class="fw-bold">Listing Date:<span class="text-danger">*</span>

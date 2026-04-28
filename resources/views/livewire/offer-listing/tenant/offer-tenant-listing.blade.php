@@ -1735,7 +1735,7 @@ $lease_types = [
                                 type="button" role="tab"
                                 aria-controls="{{ $tabSlug }}"
                                 aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
-                                {{ ($isAgentUser && $tab === ($infoTabs[$user_type] ?? null)) ? 'Agent Credentials & Contact Info' : $tab }}
+                                {{ $tab }}
                             </button>
                         </li>
                         @endif
@@ -1764,9 +1764,7 @@ $lease_types = [
                                 data-bs-target="#information" type="button" role="tab"
                                 aria-controls="information"
                                 aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
-                                Agent Credentials & Contact Info
-                                @elseif ($user_type === 'tenant')
+                                @if ($user_type === 'tenant')
                                 Tenant Information
                                 @elseif($user_type === 'seller')
                                 Seller Information
