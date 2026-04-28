@@ -3819,8 +3819,7 @@ $lease_types = [
     };
     setTimeout(window._updateNextSubmitButtons, 300);
     
-    // Call on every tab click and Livewire update
-    document.addEventListener('shown.bs.tab', window._updateNextSubmitButtons);
+    // Call on every Livewire update
     if (typeof Livewire !== 'undefined') {
         Livewire.hook('message.processed', window._updateNextSubmitButtons);
     }
