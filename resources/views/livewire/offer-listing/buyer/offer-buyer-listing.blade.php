@@ -1000,7 +1000,7 @@
                                     @elseif($user_type === 'buyer')
                                         @include('livewire.offer-listing.offer-buyer-tabs.commission-based.purchasing-terms')
                                     @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.purchasing-terms')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.lease-terms')
                                     @endif
                                 </div>
 
