@@ -246,6 +246,7 @@ $auction_lengths_seller = [
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-tag"></i>
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
                 placeholder="Enter listing title (e.g., Need a Listing Agent in Tampa, FL to Sell My Property)"
@@ -273,6 +274,7 @@ $auction_lengths_seller = [
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Current Representation Status with Broker cannot be changed after the listing has been created.</p>
         @else
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-handshake"></i>
                 <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
                     data-icon="fa-solid fa-handshake" required>
                     <option value="">Select</option>
@@ -294,6 +296,7 @@ $auction_lengths_seller = [
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-regular fa-calendar-days"></i>
             <input type="date" wire:model="listing_date" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days" required>
         </div>
@@ -308,6 +311,7 @@ $auction_lengths_seller = [
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-regular fa-calendar-days"></i>
             <input type="date" wire:model="expiration_date" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days" required>
         </div>
@@ -330,6 +334,7 @@ $auction_lengths_seller = [
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
         @else
             <div class="input-cover">
+                <i class="input-icon fa-solid fa-file-lines"></i>
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                     data-icon="fa-solid fa-file-lines" required>
                     <option value="">Select</option>
@@ -376,6 +381,7 @@ $auction_lengths_seller = [
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-list"></i>
             <select wire:model="meeting_Preference" class="form-control has-icon" data-icon="fa-solid fa-list"
                 required>
                 <option value="">Select</option>

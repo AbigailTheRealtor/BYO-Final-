@@ -1,0 +1,166 @@
+READ-ONLY AUDIT ONLY. DO NOT MODIFY ANY FILES.
+
+Goal:
+Audit the current Create Listing forms on the agent dashboard for:
+
+1. Create Seller Listing:
+   - Residential
+   - Income
+   - Commercial
+   - Business Opportunity
+   - Vacant Land
+
+2. Create Landlord Listing:
+   - Residential Rental
+   - Commercial Lease
+
+I need the exact current tab structure and the exact questions/fields shown under each tab for each property type.
+
+Important safeguards:
+- Do not edit files.
+- Do not run migrations.
+- Do not rename tables.
+- Do not delete anything.
+- Do not change routes, controllers, Livewire components, Blade files, or database schema.
+- Do not “clean up” code.
+- Do not fix bugs during this audit.
+- If a file is unclear, report that instead of guessing.
+- If forms share one Livewire component or Blade partial, document the shared source and explain which conditional logic controls Seller vs Landlord and property type.
+- Stop after producing the report.
+
+Audit scope:
+Find the files/components responsible for the agent dashboard Create Listing flows, especially:
+- Create Seller Listing
+- Create Landlord Listing
+- Any shared Livewire component such as TenantAgentAuction.php or related listing creation component
+- Blade views/partials used for tabs, questions, conditional fields, property type sections, sale terms, lease terms, property details, broker compensation, services, additional details, and client/agent information.
+
+For each flow/property type, produce a report with this structure:
+
+# Create Listing Form Audit
+
+## 1. Files Reviewed
+List every file inspected, including:
+- Livewire components
+- Controllers
+- Blade views
+- Blade partials
+- Validation/request files if relevant
+- Model/database references only if needed to understand fields
+
+## 2. Seller Listing Forms
+
+### Seller - Residential
+For each tab:
+- Tab number/name
+- Exact section headings
+- Exact field labels/questions
+- Field type if identifiable: text, textarea, select, checkbox, radio, date, money, percent, file upload, etc.
+- Required vs optional if identifiable
+- Conditional display logic if identifiable
+- Placeholder/help text/tooltips if visible in the file
+
+### Seller - Income
+Same format.
+
+### Seller - Commercial
+Same format.
+
+### Seller - Business Opportunity
+Same format.
+
+### Seller - Vacant Land
+Same format.
+
+## 3. Landlord Listing Forms
+
+### Landlord - Residential Rental
+For each tab:
+- Tab number/name
+- Exact section headings
+- Exact field labels/questions
+- Field type if identifiable
+- Required vs optional if identifiable
+- Conditional display logic if identifiable
+- Placeholder/help text/tooltips if visible in the file
+
+### Landlord - Commercial Lease
+Same format.
+
+## 4. Shared vs Property-Type-Specific Fields
+Create a table with:
+- Field/question
+- Appears in which flow/property type
+- Tab location
+- Shared component/partial source
+- Notes
+
+## 5. Possible Duplicate Fields
+Identify fields that appear to collect the same information more than once, including:
+- Address/location fields
+- Property type/subtype fields
+- Price/rent/lease/sale terms
+- Financing/currency fields
+- HOA/association fields
+- Services requested
+- Broker compensation
+- AI FAQ/property Q&A
+- Showing/access fields
+- Owner/landlord/seller contact fields
+
+For each possible duplicate:
+- Field A
+- Field B
+- Where each appears
+- Whether they appear truly duplicate or serve different purposes
+- Recommendation: keep separate, merge, rename, or auto-populate
+
+## 6. Missing MLS-Core Areas To Check Later
+Do not add anything yet. Just flag whether these currently appear to exist:
+- Parcel ID / Tax ID
+- Legal description
+- Tax year
+- Annual taxes
+- Zoning
+- Section/Township/Range
+- Lot/block/plat
+- Flood zone
+- Utilities
+- Water/sewer
+- Heating/cooling
+- Road frontage / road surface
+- HOA/association
+- Occupancy status
+- Showing instructions
+- Lockbox/access
+- Parking
+- Waterfront/water access
+- Income/NOI/cap rate
+- Rent roll/unit mix
+- Commercial lease type
+- Tenant pays / owner pays
+- Pass-through expenses
+- Business financials
+- Business type
+- Licenses
+- Real estate included
+
+For each item, mark:
+- Present
+- Missing
+- Partially present
+- Unknown
+
+## 7. Final Summary
+Provide:
+- Total tabs found per flow/property type
+- Biggest missing areas
+- Biggest duplicate risks
+- Areas that should NOT be touched yet
+- Recommended next audit step
+
+Output:
+Write the full report to:
+.local/create_listing_form_audit.md
+
+Also print a concise executive summary in the Replit console/chat after writing the report.
