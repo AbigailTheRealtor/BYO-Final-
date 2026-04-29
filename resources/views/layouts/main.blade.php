@@ -160,7 +160,7 @@
         <div class="loader">
             <div class="loader-content">
                 <div class="loader-img align-self-center">
-                    <img src="{{ asset(get_setting('logo')) }}" alt="" />
+                    <img src="{{ asset(get_setting('logo')) }}" alt="" onerror="this.onerror=null; this.style.display='none';" />
                 </div>
             </div>
         </div>
