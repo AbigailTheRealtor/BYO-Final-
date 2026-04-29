@@ -255,7 +255,7 @@
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Bids</div>
     <a href="{{ route('tenant.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Tenant's Agent Bids</b>
                     @php $my_baa_count = auth()->user()->tenant_agent_auction_bid->count(); @endphp
@@ -267,7 +267,7 @@
     </a>
     <a href="{{ route('landlord.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Landlord's Agent Bids</b>
                     @php $my_lbaa_count = auth()->user()->landlord_agent_auction_bid->count(); @endphp
@@ -279,7 +279,7 @@
     </a>
     <a href="{{ route('buyer.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Buyer's Agent Bids</b>
                     @php $my_bbaa_count = auth()->user()->buyer_agent_auction_bid->count(); @endphp
@@ -291,7 +291,7 @@
     </a>
     <a href="{{ route('seller.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Seller's Agent Bids</b>
                     @php $my_sbaa_count = auth()->user()->seller_agent_auction_bid->count(); @endphp
@@ -307,7 +307,7 @@
     @if (auth()->user()->user_type === 'landlord')
     <a href="{{ route('myBids', 'hire-landlord-agent-bids') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-check-circle" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Agent Bids Received</b>
                     @php

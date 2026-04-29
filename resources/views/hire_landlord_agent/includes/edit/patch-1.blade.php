@@ -150,7 +150,7 @@
                     <option value="{{ $item['name'] }}" data-target=""
                         class="card flex-row {{ $item['class'] }}"
                         style="width:calc(33.33% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->auction_length) && $auction->get->auction_length === $item['name'] ? 'selected' : '' }} >
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->auction_length) && $auction->get->auction_length === $item['name'] ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -236,7 +236,7 @@
                     <option value="{{ $item['name'] }}" data-target=""
                         class="card flex-row {{ $item['class'] }}"
                         style="width:calc(33.33% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->property_items) && in_array($item['name'], $auction->get->property_items) ? 'selected' : ''}} >
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->property_items) && in_array($item['name'], $auction->get->property_items) ? 'selected' : ''}} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -275,7 +275,7 @@
                                 conference rooms or parking
                                 facilities?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->sharedAmenities) ? $auction->get->sharedAmenities : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="sharedAmenities"
+                                data-icon="fa-regular fa-circle-check" name="sharedAmenities"
                                 id="sharedAmenities" required />
                         </div>
                         <div class="form-group">
@@ -284,7 +284,7 @@
                                 building, and is 24/7
                                 access available?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->hoursOfOperation) ? $auction->get->hoursOfOperation : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="hoursOfOperation"
+                                data-icon="fa-regular fa-circle-check" name="hoursOfOperation"
                                 id="hoursOfOperation" required />
                         </div>
                         <div class="form-group">
@@ -292,7 +292,7 @@
                                 permitted uses for the
                                 space?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->zoningRestrictions) ? $auction->get->zoningRestrictions : ''}}"
-                                data-icon="fa-regular fa-check-circle"
+                                data-icon="fa-regular fa-circle-check"
                                 name="zoningRestrictions" id="zoningRestrictions" required />
                         </div>
                         <div class="form-group">
@@ -301,14 +301,14 @@
                                 for the commercial
                                 space?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->maintenanceHandling) ? $auction->get->maintenanceHandling : ''}}"
-                                data-icon="fa-regular fa-check-circle"
+                                data-icon="fa-regular fa-circle-check"
                                 name="maintenanceHandling" id="maintenanceHandling"
                                 required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">How are the utilities split?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->utilitiesSplit) ? $auction->get->utilitiesSplit : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="utilitiesSplit"
+                                data-icon="fa-regular fa-circle-check" name="utilitiesSplit"
                                 id="utilitiesSplit" required />
                         </div>
                         <div class="form-group">
@@ -316,28 +316,28 @@
                                 areas
                                 managed?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->areasManaged) ? $auction->get->areasManaged : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="areasManaged"
+                                data-icon="fa-regular fa-circle-check" name="areasManaged"
                                 required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">How is the layout of the commercial space
                                 configured?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->layoutConfiguration) ? $auction->get->layoutConfiguration : ''}}"
-                                data-icon="fa-regular fa-check-circle"
+                                data-icon="fa-regular fa-circle-check"
                                 name="layoutConfiguration" id="layoutConfiguration"
                                 required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">How much storage space is available?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->storageSpace) ? $auction->get->storageSpace : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="storageSpace"
+                                data-icon="fa-regular fa-circle-check" name="storageSpace"
                                 id="storageSpaceAvailable" required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">What is the size of the room the landlord
                                 intends to lease?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->sizeOfRoom) ? $auction->get->sizeOfRoom : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="sizeOfRoom"
+                                data-icon="fa-regular fa-circle-check" name="sizeOfRoom"
                                 id="roomSize" required />
                         </div>
                         <div class="form-group">
@@ -346,14 +346,14 @@
                                 in the building or
                                 surrounding area?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->neighboringTenants) ? $auction->get->neighboringTenants : ''}}"
-                                data-icon="fa-regular fa-check-circle"
+                                data-icon="fa-regular fa-circle-check"
                                 name="neighboringTenants" id="neighboringTenants" required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">Is there a designated reception
                                 area?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->designatedReceptionArea) ? $auction->get->designatedReceptionArea : ''}}"
-                                data-icon="fa-regular fa-check-circle"
+                                data-icon="fa-regular fa-circle-check"
                                 name="designatedReceptionArea" id="designatedReceptionArea"
                                 required />
                         </div>
@@ -365,7 +365,7 @@
                                 are there any
                                 restrictions?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->tenantsGuests) ? $auction->get->tenantsGuests : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="tenantsGuests"
+                                data-icon="fa-regular fa-circle-check" name="tenantsGuests"
                                 id="custom_property_condition" required />
                         </div>
                         <div class="form-group">
@@ -374,20 +374,20 @@
                                 living room, or
                                 backyard?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->commonAreas) ? $auction->get->commonAreas : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="commonAreas"
+                                data-icon="fa-regular fa-circle-check" name="commonAreas"
                                 id="custom_property_condition" required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">How are maintenance issues handled?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->maintenanceIssues) ? $auction->get->maintenanceIssues : ''}}"
-                                data-icon="fa-regular fa-check-circle"
+                                data-icon="fa-regular fa-circle-check"
                                 name="maintenanceIssues" id="custom_property_condition"
                                 required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold">How are the utilities split?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->utilitiesSplit) ? $auction->get->utilitiesSplit : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="utilitiesSplit"
+                                data-icon="fa-regular fa-circle-check" name="utilitiesSplit"
                                 id="custom_property_condition" required />
                         </div>
                         <div class="form-group">
@@ -395,28 +395,28 @@
                                 areas
                                 managed?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->areasManaged) ? $auction->get->areasManaged : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="areasManaged"
+                                data-icon="fa-regular fa-circle-check" name="areasManaged"
                                 id="custom_property_condition" required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold"> How much storage space is
                                 available?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->storageSpace) ? $auction->get->storageSpace : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="storageSpace"
+                                data-icon="fa-regular fa-circle-check" name="storageSpace"
                                 id="custom_property_condition" required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold"> Is there a private bathroom, or is it
                                 shared?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->privateBathroom) ? $auction->get->privateBathroom : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="privateBathroom"
+                                data-icon="fa-regular fa-circle-check" name="privateBathroom"
                                 id="custom_property_condition" required />
                         </div>
                         <div class="form-group">
                             <label class="fw-bold"> What is the size of the room the landlord
                                 intends to lease?</label>
                             <input type="text" class="form-control has-icon" value="{{isset($auction->get->sizeOfRoom) ? $auction->get->sizeOfRoom : ''}}"
-                                data-icon="fa-regular fa-check-circle" name="sizeOfRoom"
+                                data-icon="fa-regular fa-circle-check" name="sizeOfRoom"
                                 id="custom_property_condition" required />
                         </div>
                     </span>
@@ -454,7 +454,7 @@
                             conference rooms or parking
                             facilities?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->sharedAmenities) ? $auction->get->sharedAmenities : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="sharedAmenities"
+                            data-icon="fa-regular fa-circle-check" name="sharedAmenities"
                             id="sharedAmenities" required />
                     </div>
                     <div class="form-group">
@@ -463,7 +463,7 @@
                             building, and is 24/7
                             access available?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->hoursOfOperation) ? $auction->get->hoursOfOperation : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="hoursOfOperation"
+                            data-icon="fa-regular fa-circle-check" name="hoursOfOperation"
                             id="hoursOfOperation" required />
                     </div>
                     <div class="form-group">
@@ -471,7 +471,7 @@
                             permitted uses for the
                             space?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->zoningRestrictions) ? $auction->get->zoningRestrictions : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="zoningRestrictions"
+                            data-icon="fa-regular fa-circle-check" name="zoningRestrictions"
                             id="zoningRestrictions" required />
                     </div>
                     <div class="form-group">
@@ -480,13 +480,13 @@
                             for the commercial
                             space?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->maintenanceHandling) ? $auction->get->maintenanceHandling : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="maintenanceHandling"
+                            data-icon="fa-regular fa-circle-check" name="maintenanceHandling"
                             id="maintenanceHandling" required />
                     </div>
                     <div class="form-group">
                         <label class="fw-bold">How are the utilities split?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->utilitiesSplit) ? $auction->get->utilitiesSplit : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="utilitiesSplit"
+                            data-icon="fa-regular fa-circle-check" name="utilitiesSplit"
                             id="utilitiesSplit" required />
                     </div>
                     <div class="form-group">
@@ -494,27 +494,27 @@
                             areas
                             managed?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->areasManaged) ? $auction->get->areasManaged : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="areasManaged"
+                            data-icon="fa-regular fa-circle-check" name="areasManaged"
                             required />
                     </div>
                     <div class="form-group">
                         <label class="fw-bold">How is the layout of the commercial space
                             configured?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->layoutConfiguration) ? $auction->get->layoutConfiguration : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="layoutConfiguration"
+                            data-icon="fa-regular fa-circle-check" name="layoutConfiguration"
                             id="layoutConfiguration" required />
                     </div>
                     <div class="form-group">
                         <label class="fw-bold">How much storage space is available?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->storageSpace) ? $auction->get->storageSpace : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="storageSpace"
+                            data-icon="fa-regular fa-circle-check" name="storageSpace"
                             id="storageSpaceAvailable" required />
                     </div>
                     <div class="form-group">
                         <label class="fw-bold">What is the size of the room the landlord
                             intends to lease?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->sizeOfRoom) ? $auction->get->sizeOfRoom : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="sizeOfRoom"
+                            data-icon="fa-regular fa-circle-check" name="sizeOfRoom"
                             id="roomSize" required />
                     </div>
                     <div class="form-group">
@@ -523,14 +523,14 @@
                             in the building or
                             surrounding area?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->neighboringTenants) ? $auction->get->neighboringTenants : ''}}"
-                            data-icon="fa-regular fa-check-circle" name="neighboringTenants"
+                            data-icon="fa-regular fa-circle-check" name="neighboringTenants"
                             id="neighboringTenants" required />
                     </div>
                     <div class="form-group">
                         <label class="fw-bold">Is there a designated reception
                             area?</label>
                         <input type="text" class="form-control has-icon" value="{{isset($auction->get->designatedReceptionArea) ? $auction->get->designatedReceptionArea : ''}}"
-                            data-icon="fa-regular fa-check-circle"
+                            data-icon="fa-regular fa-circle-check"
                             name="designatedReceptionArea" id="designatedReceptionArea"
                             required />
                     </div>

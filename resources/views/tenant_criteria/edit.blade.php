@@ -455,7 +455,7 @@
                 style="justify-content: flex-start;" required>
                 @foreach ($listingType as $item)
                   <option value="{{ $item['name'] }}" data-target="" class="card flex-row"
-                    style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>' {{$auction->get->listingType == $item['name'] ? 'selected' : ''}}>
+                    style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>' {{$auction->get->listingType == $item['name'] ? 'selected' : ''}}>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -470,7 +470,7 @@
                 style="justify-content: flex-start;" required>
                 @foreach ($representation as $item)
                   <option value="{{ $item['name'] }}" data-target="" class="card flex-row "
-                    style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>' {{$auction->get->representation == $item['name'] ? 'selected' : ''}}>
+                    style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>' {{$auction->get->representation == $item['name'] ? 'selected' : ''}}>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -545,7 +545,7 @@
                   <option value=""></option>
                   @foreach ($property_items as $item)
                     <option value="{{ $item['name'] }}" data-target="" class="card flex-row {{ $item['class'] }}"
-                      style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'  {{in_array($item['name'], $auction->get->property_items) ? 'selected' : ''}}>
+                      style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'  {{in_array($item['name'], $auction->get->property_items) ? 'selected' : ''}}>
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -1559,7 +1559,7 @@
               <div class="form-group main dock_res_other_opt d-none">
                   <label class="fw-bold">Dock Description Needed:</label>
                   <input type="text" name="dockDescription" value="{{$auction->get->dockDescription}}" id=""
-                      class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -1675,7 +1675,7 @@
                 <option value="">Select</option>
                 @foreach ($Furnishings as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                    style="width:calc(25% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>' {{ isset($auction->get->Furnishings) && is_array($auction->get->Furnishings) && in_array($item['name'], $auction->get->Furnishings) ? 'selected' : '' }}>
+                    style="width:calc(25% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>' {{ isset($auction->get->Furnishings) && is_array($auction->get->Furnishings) && in_array($item['name'], $auction->get->Furnishings) ? 'selected' : '' }}>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -2046,7 +2046,7 @@
                 </label>
                 @php
                   $convictedRes = [
-                      ['target' => '.custom_convictedRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                      ['target' => '.custom_convictedRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                       ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
                 @endphp
@@ -2073,7 +2073,7 @@
                 </label>
                 @php
                   $evictedRes = [
-                      ['target' => '.custom_evictedRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                      ['target' => '.custom_evictedRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                       ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
                 @endphp
@@ -2099,7 +2099,7 @@
                 </label>
                 @php
                   $violationsRes = [
-                      ['target' => '.custom_prior_leaseRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                      ['target' => '.custom_prior_leaseRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                       ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
                 @endphp
@@ -2127,7 +2127,7 @@
                 </label>
                 @php
                   $landlordsRes = [
-                      ['target' => '.previousLnadRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                      ['target' => '.previousLnadRes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                       ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
                 @endphp
@@ -2194,7 +2194,7 @@
                       [
                           'target' => '.custom_convictedCommercial',
                           'name' => 'Yes',
-                          'icon' => 'fa-regular fa-check-circle',
+                          'icon' => 'fa-regular fa-circle-check',
                       ],
                       ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
@@ -2225,7 +2225,7 @@
                       [
                           'target' => '.custom_evictedCommercial',
                           'name' => 'Yes',
-                          'icon' => 'fa-regular fa-check-circle',
+                          'icon' => 'fa-regular fa-circle-check',
                       ],
                       ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
@@ -2256,7 +2256,7 @@
               </label>
               @php
                 $violationsRes = [
-                    ['target' => '.compensate', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                    ['target' => '.compensate', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                     ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                 ];
               @endphp
@@ -2310,7 +2310,7 @@
               </label>
               @php
                 $representedRes = [
-                    ['target' => '.represented', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                    ['target' => '.represented', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                     ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                 ];
               @endphp
@@ -2337,7 +2337,7 @@
                   //     ['name' => 'Other', 'target' => '.compensateOther'],
                   // ];
                   $representedOther = [
-                    ['target' => '.representedYesOpt', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                    ['target' => '.representedYesOpt', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                     ['target' => '.representedNoOpt', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                   ];
                 @endphp
@@ -2394,7 +2394,7 @@
                     //     ['name' => 'Other', 'target' => '.compensateReqOther'],
                     // ];
                     $tenantPaysOther = [
-                      ['target' => '.tenantPaysYesOpt', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                      ['target' => '.tenantPaysYesOpt', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                       ['target' => '.tenantPaysNoOpt', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                     ];
                   @endphp

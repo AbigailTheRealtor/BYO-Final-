@@ -33,7 +33,7 @@
         </form>
         <a href="{{ route('landlord.counter-terms', ['id' => data_get($bid, 'id')]) }}"
            class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-            <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+            <i class="fa fa-right-left me-1"></i> Counter Bid
         </a>
         <form action="{{ route('agent.landlord.auction.bid.reject', ['id' => data_get($bid, 'id')]) }}" method="POST" style="margin: 0;"
               onsubmit="return confirm('Are you sure you want to reject this bid?');">
@@ -49,7 +49,7 @@
 {{-- ── Accepted state ── --}}
 @if ($state === 'accepted')
 <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-    <i class="fa fa-check-circle me-1"></i>
+    <i class="fa fa-circle-check me-1"></i>
     @if ($isOwner) This bid has been accepted.
     @else {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted this bid.
     @endif
@@ -58,7 +58,7 @@
 @if ($__partialBidSummary && ($isOwner || data_get($bid, 'user_id') == Auth::id()))
 <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
     <a href="{{ route('accepted-bid-summary.view', $__partialBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
-        <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+        <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
     </a>
     @if (data_get($bid, 'user_id') == Auth::id() && !$__partialBidSummary->isAgentSigned())
     <a href="{{ route('accepted-bid-summary.sign-form', $__partialBidSummary->id) }}" class="btn btn-primary btn-sm">
@@ -81,7 +81,7 @@
 {{-- ── Rejected state ── --}}
 @elseif ($state === 'rejected')
 <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-    <i class="fa fa-times-circle me-1"></i>
+    <i class="fa fa-circle-xmark me-1"></i>
     @if ($isOwner) This bid has been rejected.
     @else {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected this bid.
     @endif
@@ -95,7 +95,7 @@
     $_landlordViewerSentLatest = ($isOwner && $isCounterFromOwner) || (!$isOwner && !$isCounterFromOwner);
 @endphp
 <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-    <i class="fa fa-exchange-alt me-1"></i>
+    <i class="fa fa-right-left me-1"></i>
     @if ($_landlordViewerSentLatest)
         <strong>Counter Offer Sent.</strong>
     @else
@@ -111,11 +111,11 @@
     {{-- Viewer sent latest — waiting: show Edit Counter Terms --}}
     @if ($isOwner)
     <a href="{{ route('landlord.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-        <i class="fa fa-edit me-1"></i> Edit Counter Terms
+        <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
     </a>
     @else
     <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => data_get($auction, 'id'), 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-        <i class="fa fa-edit me-1"></i> Edit Counter Terms
+        <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
     </a>
     @endif
     {{-- Accept / Counter Back / Reject are on View Counter Terms page only --}}

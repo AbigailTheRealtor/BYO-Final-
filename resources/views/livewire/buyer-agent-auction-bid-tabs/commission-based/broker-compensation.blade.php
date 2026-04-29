@@ -358,7 +358,7 @@
     </label>
     <div class="input-cover mt-2">
         <input type="number" wire:model="protection_period" class="form-control has-icon"
-            data-icon="fa-solid fa-shield-alt" placeholder="Enter protection period in days (e.g., 90)">
+            data-icon="fa-solid fa-shield-halved" placeholder="Enter protection period in days (e.g., 90)">
     </div>
     @error('protection_period')
         <span class="text-danger small">{{ $message }}</span>
@@ -376,7 +376,7 @@
     </label>
     <div class="input-cover mt-2">
         <select wire:model="early_termination_fee_option" class="form-control has-icon"
-            data-icon="fa-solid fa-exclamation-triangle">
+            data-icon="fa-solid fa-triangle-exclamation">
             <option value="">Select</option>
             <option value="yes">Yes</option>
             <option value="no">No</option>
@@ -463,7 +463,7 @@
     </label>
     <div class="input-cover mt-2">
         <select wire:model="agency_agreement_timeframe" class="form-control has-icon"
-            data-icon="fa-solid fa-calendar-alt">
+            data-icon="fa-solid fa-calendar-days">
             <option value="">Select</option>
             <option value="3 Months">3 Months</option>
             <option value="6 Months">6 Months</option>

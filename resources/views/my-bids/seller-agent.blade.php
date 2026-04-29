@@ -52,7 +52,7 @@
                                     </span>
                                 @endif
                                 <a href="{{ route('add_seller_agent_bid', $auction->id) }}?edit={{ $bid->id }}" class="btn btn-sm btn-primary me-2">
-                                    <i class="fa-solid fa-edit me-1"></i>View/Edit Bid
+                                    <i class="fa-solid fa-pen-to-square me-1"></i>View/Edit Bid
                                 </a>
                                 <a href="{{ route('seller.agent.auction.detail', $auction->id) }}" class="btn btn-sm btn-outline-secondary">
                                     Visit Listing

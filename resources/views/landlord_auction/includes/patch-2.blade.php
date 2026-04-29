@@ -103,12 +103,12 @@
     <span class="commercialFields">
         <div class="form-group">
             <label class="fw-bold">Zoning:</label>
-            <input type="text" name="zoning" class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+            <input type="text" name="zoning" class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                 required>
         </div>
         <div class="form-group">
             <label class="fw-bold">Tax Year:</label>
-            <input type="number" name="tax_year" class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+            <input type="number" name="tax_year" class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                 required>
         </div>
         <div class="form-group">
@@ -119,12 +119,12 @@
         <div class="form-group">
             <label class="fw-bold">Legal Description:</label>
             <input type="text" name="legal_description" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
         </div>
         <div class="form-group">
             <label class="fw-bold">Total Number of Parcels:</label>
             <input type="text" name="no_of_parcels" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
         </div>
         @php
             $additional = [
@@ -148,7 +148,7 @@
         <div class="form-group additionalTax  d-none">
             <label class="fw-bold">Additional Tax ID’s:</label>
             <input type="text" name="additional_tax_id" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
         </div>
     </span>
 </div>
@@ -303,7 +303,7 @@
                 <option value=""></option>
                 @foreach ($amenitiesFeatureRes as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -366,7 +366,7 @@
                 <option value="">Select</option>
                 @foreach ($amenitiesCommercial as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                         style="width:calc(33.3% - 10px);">
                         {{ $item['name'] }}
                     </option>
@@ -375,7 +375,7 @@
             <div class="form-group otherAmenitiesCommercial d-none">
                 <label class="fw-bold">Amenities and Property Features:</label>
                 <input type="text" class="form-control has-icon" name="otherAmenities"
-                    data-icon="fa-regular fa-check-circle" required />
+                    data-icon="fa-regular fa-circle-check" required />
             </div>
         </div>
     </span>
@@ -483,7 +483,7 @@
         <div class="form-group interiorFeatureOtherRes d-none">
             <label class="fw-bold">Interior Features:</label>
             <input type="text" name="interiorFeatureOther" id="floors_in_unit" placeholder=""
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
     </div>
 </div>
@@ -526,7 +526,7 @@
         <div class="form-group roomOtherRes d-none">
             <label class="fw-bold">Additional Rooms:</label>
             <input type="text" name="roomOther" id="number_of_buildings" placeholder=""
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
     </div>
 </div>
@@ -565,7 +565,7 @@
         <div class="form-group laundryOtherRes d-none">
             <label class="fw-bold">Laundry Features: </label>
             <input type="text" name="laundryOther" id="number_of_buildings" placeholder=""
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
     </div>
 </div>
@@ -653,7 +653,7 @@
         <div class="form-group  floorCoveringOtherRes d-none">
             <label class="fw-bold">Floor Covering:</label>
             <input type="text" name="floorConvringOther" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle">
+                data-icon="fa-regular fa-circle-check">
         </div>
     </div>
 </div>

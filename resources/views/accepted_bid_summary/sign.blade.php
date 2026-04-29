@@ -125,7 +125,7 @@
 
                             @if(session('doc_success'))
                             <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                                <i class="fa-solid fa-check-circle me-2"></i>{{ session('doc_success') }}
+                                <i class="fa-solid fa-circle-check me-2"></i>{{ session('doc_success') }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
@@ -145,14 +145,14 @@
 
                                             @if(!empty($existingDocs?->id_document_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-circle-check text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="id_document" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-circle-info me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -168,14 +168,14 @@
 
                                             @if(!empty($existingDocs?->proof_of_funds_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-circle-check text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="proof_of_funds" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-circle-info me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -192,14 +192,14 @@
 
                                             @if(!empty($existingDocs?->pre_approval_letter_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-circle-check text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="pre_approval_letter" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-circle-info me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -216,14 +216,14 @@
 
                                             @if(!empty($existingDocs?->proof_of_income_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-circle-check text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="proof_of_income" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-circle-info me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -311,7 +311,7 @@
                         </div>
                         <div class="card-body" style="padding: 24px;">
                             @if(!$sharedDocs || !$hasAnyDoc)
-                                <p class="text-muted mb-0"><i class="fa-solid fa-info-circle me-1"></i> No documents have been shared yet.</p>
+                                <p class="text-muted mb-0"><i class="fa-solid fa-circle-info me-1"></i> No documents have been shared yet.</p>
                             @else
                                 <div class="row g-3">
                                     @foreach($docTypes as $typeKey => $meta)
@@ -342,7 +342,7 @@
                                                 <a href="{{ $sharedDocs->property_record_link }}" target="_blank" rel="noopener" class="text-truncate d-block" style="font-size: 0.78rem;">{{ $sharedDocs->property_record_link }}</a>
                                             </div>
                                             <a href="{{ $sharedDocs->property_record_link }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success flex-shrink-0">
-                                                <i class="fa-solid fa-external-link-alt me-1"></i>Open
+                                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Open
                                             </a>
                                         </div>
                                     </div>

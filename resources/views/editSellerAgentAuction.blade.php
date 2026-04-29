@@ -286,7 +286,7 @@
                                                 <option value="{{ $item['name'] }}" {{selected($item['name'], @$auction->get->auction_length)}} data-target=""
                                                     class="card flex-row fw-bold {{ $item['class'] }}"
                                                     style="width:calc(33.33% - 10px);"
-                                                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                                     {{ $item['name'] }}
                                                 </option>
                                             @endforeach
@@ -362,7 +362,7 @@
                                             <option value="{{ $item['name'] }}" data-target=""
                                             {{selected($item['name'], @$auction->get->expectation)}}
                                                 class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -384,7 +384,7 @@
                                             <option value="{{ $item['name'] }}" class="card flex-row fw-bold"
                                             {{selected_in($item['name'], @$auction->get->prop_conditions)}}
                                                 style="width:calc(50% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -409,7 +409,7 @@
                                                 <option value="{{ $item['name'] }}" data-target=""
                                                 {{selected($item['name'], @$auction->get->special_sale)}}
                                                     class="card flex-row fw-bold" style="width:calc(50% - 10px);"
-                                                    data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;position:relative;top:-7px;"></i>'>
+                                                    data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;position:relative;top:-7px;"></i>'>
                                                     {{ $item['name'] }}
                                                 </option>
                                             @endforeach
@@ -433,7 +433,7 @@
                                             <option value="{{ $item['name'] }}" data-target=""
                                             {{selected($item['name'], @$auction->get->property_type)}}
                                                 class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -456,7 +456,7 @@
                                             <option value="{{ $item['name'] }}" data-target=""
                                             {{selected($item['name'], @$auction->get->selling_timeframe)}}
                                                 class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -479,7 +479,7 @@
                                             <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                             {{selected($item['name'], @$auction->get->listing_term)}}
                                                 class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -508,7 +508,7 @@
                                             <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                             {{selected($item['name'], @$auction->get->offered_commission)}}
                                                 class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -606,7 +606,7 @@
                                             <option value="{{ $item['name'] }}" data-target=""
                                             {{selected($item['name'], @$auction->get->need_cma)}}
                                                 class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                 {{ $item['name'] }}
                                             </option>
                                         @endforeach
@@ -716,7 +716,7 @@
                                                     <option value="{{ $financing->name }}" data-target=""
                                                         {{selected_in($financing->name, @$auction->get->financings)}}
                                                         class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                                        data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                                        data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                                         {{ $financing->name }}
                                                     </option>
                                                 @endforeach

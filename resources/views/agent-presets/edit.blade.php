@@ -273,7 +273,7 @@
 
     @if (request()->query('saved'))
         <div class="alert alert-success d-flex align-items-center justify-content-between gap-3 mb-4" role="alert">
-            <span><i class="fa fa-check-circle me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
+            <span><i class="fa fa-circle-check me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
             <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-success text-nowrap">
                 <i class="fa fa-eye me-1"></i>Preview Hire Me Page
             </a>
@@ -1708,7 +1708,7 @@
                     <label class="fw-bold">Protection Period Timeframe (Days)</label>
                     <div class="input-cover mt-2">
                         <input type="number" name="protection_period" class="form-control has-icon"
-                               data-icon="fa-solid fa-shield-alt"
+                               data-icon="fa-solid fa-shield-halved"
                                value="{{ old('protection_period', $data['protection_period'] ?? '') }}"
                                placeholder="Enter protection period in days (e.g., 90)">
                     </div>
@@ -1779,7 +1779,7 @@
                                placeholder="Enter retainer fee amount (e.g., 500)">
                     </div>
                     <div class="input-cover mt-2">
-                        <select name="retainer_fee_application" class="form-control has-icon" data-icon="fa-solid fa-check-circle">
+                        <select name="retainer_fee_application" class="form-control has-icon" data-icon="fa-solid fa-circle-check">
                             <option value="">Select application</option>
                             @if ($role === 'tenant')
                                 <option value="applied" {{ old('retainer_fee_application', $data['retainer_fee_application'] ?? '') == 'applied' ? 'selected' : '' }}>

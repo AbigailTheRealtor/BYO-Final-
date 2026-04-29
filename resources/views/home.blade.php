@@ -264,23 +264,23 @@
                 <h2 class="bya-section-title">Agents: Win More Clients</h2>
                 <p class="bya-section-sub mb-4">Showcase your expertise and let clients come to you.</p>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-check-circle bi-check"></i>
+                    <i class="fa fa-circle-check bi-check"></i>
                     <div><strong>Competitive Bidding.</strong> Submit your best commission, buyer's rebate, and services to win listings transparently.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-check-circle bi-check"></i>
+                    <i class="fa fa-circle-check bi-check"></i>
                     <div><strong>Match Score.</strong> Our platform matches your expertise — Residential, Income, Commercial, Business Opportunity, or Vacant Land — to the right listing.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-check-circle bi-check"></i>
+                    <i class="fa fa-circle-check bi-check"></i>
                     <div><strong>Hire Me Link & QR Code.</strong> Share a personal Hire Me landing page and QR code with clients anywhere.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-check-circle bi-check"></i>
+                    <i class="fa fa-circle-check bi-check"></i>
                     <div><strong>Referral Income.</strong> Earn referral fees by connecting other agents to opportunities on the platform.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-check-circle bi-check"></i>
+                    <i class="fa fa-circle-check bi-check"></i>
                     <div><strong>Video Presentations.</strong> Upload listing presentations, marketing materials, and business cards with every bid.</div>
                 </div>
                 <div class="mt-4">

@@ -114,7 +114,7 @@
                                         </a>
                                         @if(!$auction->is_approved)
                                         <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => $auction->get->user_type ?? '']) }}" class="btn btn-sm" style="border:1px solid #6c757d;color:#6c757d;background:transparent;">
-                                            <i class="fa-solid fa-pencil-alt me-1"></i>Edit Listing
+                                            <i class="fa-solid fa-pencil me-1"></i>Edit Listing
                                         </a>
                                         @endif
                                     </div>
@@ -196,7 +196,7 @@
                                                         <div class="row">
                                                             @if(count($brokerMismatches) > 0)
                                                             <div class="col-md-4 mb-2">
-                                                                <small class="fw-semibold text-danger"><i class="fa-solid fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
+                                                                <small class="fw-semibold text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
                                                                 <div class="mt-1" style="max-height:80px;overflow-y:auto;">
                                                                     @foreach(array_slice(array_keys($brokerMismatches), 0, 5) as $field)
                                                                         <span class="badge me-1 mb-1" style="background:#ffe6e6;color:#dc3545;font-size:0.7rem;">{{ ucwords(str_replace('_', ' ', $field)) }}</span>
@@ -251,7 +251,7 @@
                                                             </button>
                                                         </form>
                                                         <a href="{{ route('seller.counter-terms', $bid->id) }}" class="btn btn-sm" style="background:#ffc107;color:#000;border:none;">
-                                                            <i class="fa-solid fa-exchange-alt me-1"></i>Counter
+                                                            <i class="fa-solid fa-right-left me-1"></i>Counter
                                                         </a>
                                                         <form action="{{ route('rejectSABid') }}" method="POST" class="d-inline">
                                                             @csrf

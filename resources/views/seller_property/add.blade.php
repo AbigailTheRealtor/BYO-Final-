@@ -464,7 +464,7 @@
                   <option value=""></option>
                   @foreach ($timer_lengths as $item)
                     <option value="{{ $item['name'] }}" data-target="" class="card flex-row {{ $item['class'] }}"
-                      style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                      style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -516,7 +516,7 @@
                 @foreach ($seller_contract_options as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-column" style="width:calc(20% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -546,7 +546,7 @@
                   @foreach ($seller_contract_yes_no as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                       class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                      data-icon='<i class="fa-regular fa-circle-check"></i>'>
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -666,7 +666,7 @@
                     <option value="">Select</option>
                     @foreach ($term_financings as $item)
                       <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                         style="width:calc(33.3% - 10px);">
                         {{ $item['name'] }}
                       </option>
@@ -676,14 +676,14 @@
                   {{-- Other --}}
                   <div class="form-group otherFinancingAuction d-none">
                       <label class="fw-bold">Acceptable Currency/Financing:</label>
-                      <input type="text" name="otherFinancing"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="otherFinancing"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   {{-- Other --}}
                   {{-- NFTAuction  --}}
                   <div class="form-group nftAuction d-none">
                     <div class="form-group col-md-12">
                       <label class="fw-bold">What type of Non-Fungible Token (NFT) will the seller accept?</label>
-                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What percentage of the sales price will the seller accept in the form of a Non-Fungible Token (NFT)?</label>
@@ -699,7 +699,7 @@
                 <div class="form-group cryptoAuction d-none">
                   <div class="form-group col-md-12">
                     <label class="fw-bold">What type of cryptocurrency will the seller accept?</label>
-                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What percentage of the sales price will the seller accept in cryptocurrency?</label>
@@ -814,7 +814,7 @@
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What specific terms does the seller propose for the lease option?</label>
-                        <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                        <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -826,7 +826,7 @@
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What are the specific conditions or requirements outlined by the seller for the lease option?</label>
-                        <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                        <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group">
                       @php
@@ -857,7 +857,7 @@
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
-                        <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                        <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -869,7 +869,7 @@
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">What are the specific conditions or requirements outlined by the seller for the lease purchase?</label>
-                        <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                        <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>    
                     <div class="form-group">
                       @php
@@ -896,11 +896,11 @@
                   <div class="form-group assumableAuction d-none">
                     <div class="form-group col-md-12">
                       <label class="fw-bold">What assumable terms are being offered?</label>
-                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group col-md-12">
                         <label class="fw-bold">Are there any restrictions or qualifications for a buyer assuming the existing financing?</label>
-                        <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                        <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group col-md-12">
                       <label class="fw-bold">What is the interest rate of the assumable loan?</label>
@@ -961,7 +961,7 @@
                     </select>
                     <div class="form-group col-md-12 otherTradeAuction d-none">
                       <label class="fw-bold">Acceptable Exchange Item:</label>
-                      <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                     </div>
                   </div>
                   <div class="form-group col-md-12">
@@ -979,7 +979,7 @@
                   <div class="form-group col-md-12">
                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                     <input type="text" name="valueTrade" class="form-control has-icon"
-                      data-icon="fa-regular fa-check-circle" required>
+                      data-icon="fa-regular fa-circle-check" required>
                   </div>
                 </div>
                 {{-- Exchangetrade --}}
@@ -1111,7 +1111,7 @@
                   <option value="">Select</option>
                   @foreach ($term_financings as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                      data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                       style="width:calc(33.3% - 10px);">
                       {{ $item['name'] }}
                     </option>
@@ -1121,14 +1121,14 @@
                 {{-- Other --}}
                 <div class="form-group otherFinancing d-none">
                     <label class="fw-bold">Acceptable Currency/Financing:</label>
-                    <input type="text" name="otherFinancing"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="otherFinancing"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 {{-- Other --}}
                 {{-- NFT  --}}
                 <div class="form-group nft d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What type of Non-Fungible Token (NFT) will the seller accept?</label>
-                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What percentage of the sales price will the seller accept in the form of a Non-Fungible Token (NFT)?</label>
@@ -1144,7 +1144,7 @@
               <div class="form-group crypto d-none">
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What type of cryptocurrency will the seller accept?</label>
-                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What percentage of the sales price will the seller accept in cryptocurrency?</label>
@@ -1259,7 +1259,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease option?</label>
-                      <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -1271,7 +1271,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the seller for the lease option?</label>
-                      <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group">
                     @php
@@ -1302,7 +1302,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
-                      <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -1314,7 +1314,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the seller for the lease purchase?</label>
-                      <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>    
                   <div class="form-group">
                     @php
@@ -1341,11 +1341,11 @@
                 <div class="form-group assumable d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What assumable terms are being offered?</label>
-                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">Are there any restrictions or qualifications for a buyer assuming the existing financing?</label>
-                      <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                     <label class="fw-bold">What is the interest rate of the assumable loan?</label>
@@ -1398,7 +1398,7 @@
                   </select>
                   <div class="form-group col-md-12 otherTrade d-none">
                     <label class="fw-bold">Acceptable Exchange Item:</label>
-                    <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                 </div>
                 <div class="form-group col-md-12">
@@ -1416,7 +1416,7 @@
                 <div class="form-group col-md-12">
                   <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                   <input type="text" name="valueTrade" class="form-control has-icon"
-                    data-icon="fa-regular fa-check-circle" required>
+                    data-icon="fa-regular fa-circle-check" required>
                 </div>
               </div>
               {{-- Exchange/trade --}}
@@ -1640,18 +1640,18 @@
                   <option value=""></option>
                   @foreach ($property_items as $item)
                     <option value="{{ $item['name'] }}" data-target="{{$item['target']}}" class="card flex-row {{ $item['class'] }}"
-                      style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                      style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                       {{ $item['name'] }}
                     </option>
                   @endforeach
                 </select>
                 <div class="form-group otherVacant d-none">
                   <label class="fw-bold">Current Use: </label>
-                  <input type="text" name="otherProperty" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  <input type="text" name="otherProperty" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 <div class="form-group otherBusiness d-none">
                   <label class="fw-bold">Business Type: </label>
-                  <input type="text" name="otherProperty" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  <input type="text" name="otherProperty" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
               </div>
             </div>
@@ -1676,7 +1676,7 @@
                 <option value="">Select</option>
                 @foreach ($prop_conditions as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                    data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                     style="width:calc(50% - 10px);">
                     {{ $item['name'] }}
                   </option>
@@ -1684,7 +1684,7 @@
               </select>
               <div class="form-group otherConditionRes d-none">
                 <label class="fw-bold">Property Condition: </label>
-                <input type="text" name="otherCondition" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                <input type="text" name="otherCondition" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -1832,7 +1832,7 @@
               </div>
               <div class="form-group custom_leases_terms d-none">
                 <label class="fw-bold">Length of Lease:</label>
-                <input type="text" name="custom_leases_length" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="custom_leases_length" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
 
               <div class="form-group">
@@ -1850,7 +1850,7 @@
                 </select>
                 <div class="form-group otherTermLease d-none">
                   <label class="fw-bold">Terms of Lease:</label>
-                  <input type="text" name="otherTermLease" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="otherTermLease" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               @php
@@ -1871,7 +1871,7 @@
                 </select>
                 <div class="form-group otherTenantPayRes d-none">
                   <label class="fw-bold">Tenant Pays:</label>
-                  <input type="text" name="otherTenantPay" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="otherTenantPay" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               @php
@@ -1921,7 +1921,7 @@
                   <option value="">Select</option>
                   @foreach ($heated_sources as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-column"
+                      data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-column"
                       style="width:calc(33.3% - 10px);">
                       {{ $item['name'] }}
                     </option>
@@ -1984,7 +1984,7 @@
               <div class="form-group otherAppliancesRes d-none">
                 <label class="fw-bold">Appliances:</label>
                 <input type="text" name="otherAppliances" id="flood_zone_code" placeholder=""
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
             <div class="form-group fireplace">
@@ -2022,7 +2022,7 @@
                 <div class="form-group">
                   <label class="fw-bold">What furnishings are included in the purchase?</label>
                   <input type="text" name="furnishings_include" id="flood_zone_code" placeholder=""
-                    class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                    class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               @php
@@ -2120,7 +2120,7 @@
               </select>
               <div class="form-group otherInterior d-none">
                 <label class="fw-bold">Interior Features:</label>
-                <input type="text" name="otherInterior" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherInterior" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2319,7 +2319,7 @@
               </select>
               <div class="form-group otherFloorCoveringRes d-none">
                 <label class="fw-bold">Floor Covering:</label>
-                <input type="text" name="otherFloorCovering" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherFloorCovering" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2369,7 +2369,7 @@
               </select>
               <div class="form-group otherFoundationRes d-none">
                 <label class="fw-bold">Foundation:</label>
-                <input type="text" name="otherFoundation" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherFoundation" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2392,7 +2392,7 @@
               </select>
               <div class="form-group otherConstructionRes d-none">
                 <label class="fw-bold">Exterior Construction:</label>
-                <input type="text" name="otherConstruction" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherConstruction" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2440,7 +2440,7 @@
               </select>
               <div class="form-group otherExteriorRes d-none">
                 <label class="fw-bold">Exterior Features:</label>
-                <input type="text" name="otherExterior" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherExterior" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2505,7 +2505,7 @@
               </select>
               <div class="form-group otherLotFeaturesRes d-none">
                 <label class="fw-bold">Lot Features:</label>
-                <input type="text" name="otherLotFeature" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherLotFeature" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2620,7 +2620,7 @@
               </div>
               <div class="form-group d-none otherUnitType">
                 <label class="fw-bold">Unit Type:</label>
-                <input type="text" name="unitStructureOther" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="unitStructureOther" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2653,7 +2653,7 @@
               </select>
               <div class="form-group otherRoofRes d-none" >
                 <label class="fw-bold">Roof:</label>
-                <input type="text" name="otherRoof" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherRoof" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2676,7 +2676,7 @@
               </select>
               <div class="form-group otherSurfaceRes d-none" >
                 <label class="fw-bold">Road Surface Type:</label>
-                <input type="text" name="otherSurface" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherSurface" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -2820,7 +2820,7 @@
               <div class="form-group otherViewRes d-none">
                 <label class="fw-bold">View:</label>
                 <input type="text" name="otherView" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -3037,7 +3037,7 @@
               <div class="form-group otherUtilitiseRes d-none">
                 <label class="fw-bold">Utilities:</label>
                 <input type="text" name="otherUtilitise" id="legal_description" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
 
@@ -3059,7 +3059,7 @@
               <div class="form-group otherSewerRes d-none">
                 <label class="fw-bold">Sewer:</label>
                 <input type="text" name="otherSewer"  class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
 
@@ -3082,7 +3082,7 @@
               <div class="form-group otherWaterRes d-none">
                 <label class="fw-bold">Water:</label>
                 <input type="text" name="otherWater" id="legal_description" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -3106,7 +3106,7 @@
               <div class="form-group airConditionRes d-none">
                 <label class="fw-bold">Air Conditioning:</label>
                 <input type="text" name="otherAirCondition"  class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
             @php
@@ -3148,7 +3148,7 @@
               <div class="form-group otherHeatingFuelRes d-none">
                 <label class="fw-bold">Heating and Fuel:</label>
                 <input type="text" name="otherHeatingFuel"  class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -3473,12 +3473,12 @@
               <div class="form-group other-dock d-none">
                 <label class="fw-bold">Dock Description:</label>
                 <input type="text" name="custom_dock" id="custom_dock"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Dock Lift Capacity:</label>
                 <input type="text" name="dock_lift_capacity" id="dock_lift_capacity"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Dock Year Built:</label>
@@ -3639,7 +3639,7 @@
                 </select>
                 <div class="form-group otherAssocAmenitiesRes d-none">
                   <label class="fw-bold">Association Amenities: </label>
-                  <input type="text" name="otherAssocAmenities" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="otherAssocAmenities" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               @php
@@ -3686,13 +3686,13 @@
                 </select>
                 <div class="form-group otherFeeIncludeRes d-none">
                   <label class="fw-bold">Fee Includes:</label>
-                  <input type="text" name="otherFeeInclude" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="otherFeeInclude" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Amenities with Additional Fees:</label>
                 <input type="text" name="amenities_with_additional_fees"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
                 <div class="form-group">
@@ -3945,7 +3945,7 @@
             <div class="form-group otherOwnershipRes d-none">
               <label class="fw-bold">Ownership:</label>
               <input type="text" name="otherOwnership" id="custom_ownership" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle">
+                data-icon="fa-regular fa-circle-check">
             </div>
             @php
             $occupant_types = [['name' => 'Owner', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Tenant', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Vacant', 'target' => '', 'icon' => 'fa-regular fa-circle-check']];
@@ -4242,7 +4242,7 @@
                   <option value="">Select</option>
                   @foreach ($buildingVerificationOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4250,7 +4250,7 @@
               </div>
               <div class="form-group buildingVerOther d-none">
                 <label class="fw-bold">Building Verification:</label>
-                <input type="text" name="building_verification_other" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="building_verification_other" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
               @php
               $statusOpt = [
@@ -4264,7 +4264,7 @@
                   <option value="">Select</option>
                   @foreach ($statusOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4276,19 +4276,19 @@
               </div>
               <div class="form-group">
                 <label class="fw-bold">Version:</label>
-                <input type="text" name="green_version" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="green_version" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
               <div class="form-group">
                 <label class="fw-bold">Body:</label>
-                <input type="text" name="green_body" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="green_body" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
               <div class="form-group">
                 <label class="fw-bold">Metric:</label>
-                <input type="text" name="green_metric" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="green_metric" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
               <div class="form-group">
                 <label class="fw-bold">Rating:</label>
-                <input type="text" name="green_rating" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="green_rating" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
               @php
               $sourceOpt = [
@@ -4309,14 +4309,14 @@
                   <option value="">Select</option>
                   @foreach ($sourceOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
                 </select>
                 <div class="form-group sourceOther d-none">
                   <label class="fw-bold">Source:</label>
-                  <input type="text" name="green_source_other" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="green_source_other" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               <div class="form-group">
@@ -4340,7 +4340,7 @@
                   <option value="">Select</option>
                   @foreach ($sustainabilityOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4359,7 +4359,7 @@
                   <option value="">Select</option>
                   @foreach ($generationOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4386,7 +4386,7 @@
                   <option value="">Select</option>
                   @foreach ($waterOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4416,7 +4416,7 @@
                   <option value="">Select</option>
                   @foreach ($energyOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4437,7 +4437,7 @@
                   <option value="">Select</option>
                   @foreach ($landscapingOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4456,7 +4456,7 @@
                   <option value="">Select</option>
                   @foreach ($solarOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4479,7 +4479,7 @@
                   <option value="">Select</option>
                   @foreach ($disasterOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4511,7 +4511,7 @@
                   <option value="">Select</option>
                   @foreach ($airOpt as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" >
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" >
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -4962,7 +4962,7 @@
                   <option value="">Select</option>
                   @foreach ($heated_sources as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-column"
+                      data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-column"
                       style="width:calc(33.3% - 10px);">
                       {{ $item['name'] }}
                     </option>
@@ -5016,7 +5016,7 @@
                 multiple required>
                 <option value="">Select</option>
                 @foreach ($appliances as $item)
-                  <option value="{{ $item['name'] }}" data-icon='<i class="fa-regular fa-check-circle"></i>'
+                  <option value="{{ $item['name'] }}" data-icon='<i class="fa-regular fa-circle-check"></i>'
                     data-target="{{ $item['target'] }}" class="card flex-row"
                     style="width:calc(33.3% - 10px);">
                     {{ $item['name'] }}
@@ -5026,7 +5026,7 @@
               <div class="form-group otherAppliancesIncome d-none">
                 <label class="fw-bold">Appliances:</label>
                 <input type="text" name="otherAppliancesCom" id="flood_zone_code" placeholder=""
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -5052,7 +5052,7 @@
                 <div class="form-group">
                   <label class="fw-bold">What furnishings are included in the purchase?</label>
                   <input type="text" name="furnishings_include_com" id="flood_zone_code" placeholder=""
-                    class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                    class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               @php
@@ -5141,7 +5141,7 @@
               <div class="form-group">
                 <label class="fw-bold">Licenses:</label>
                 <input type="text" name="custom_licenses" id="custom_licenses" placeholder=""
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -5224,7 +5224,7 @@
             </div>
             <div class="form-group otherFloorCoveringCom d-none">
               <label class="fw-bold">Floor Covering:</label>
-              <input type="text" name="otherFloorCoveringCom" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+              <input type="text" name="otherFloorCoveringCom" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
             </div>
           </div>
           <div class="wizard-step" data-step="52">
@@ -5286,7 +5286,7 @@
             </div>
             <div class="form-group otherFoundationCom d-none">
               <label class="fw-bold">Foundation:</label>
-              <input type="text" name="otherFoundationCom" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+              <input type="text" name="otherFoundationCom" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
             </div>
           </div>
           <div class="wizard-step" data-step="54">
@@ -5309,7 +5309,7 @@
               <div class="form-group otherExteriorCon d-none">
                 <label class="fw-bold">Exterior Construction:</label>
                 <input type="text" name="otherConstructionCom" id="max_pet_weight" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle" required>
+                  data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -5377,7 +5377,7 @@
               </select>
               <div class="form-group otherLotFeatureCommercial d-none">
                 <label class="fw-bold">Lot Features:</label>
-                <input type="text" name="otherLotFeatureCom" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherLotFeatureCom" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -5411,7 +5411,7 @@
               </select>
               <div class="form-group otherStructures d-none">
                 <label class="fw-bold">Other Structures:</label>
-                <input type="text" name="custom_other_structures" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="custom_other_structures" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -5471,7 +5471,7 @@
               </select>
               <div class="form-group otherBuildingCommercial d-none">
                 <label class="fw-bold">Building Features:</label>
-                <input type="text" name="otherBuilding" placeholder="" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherBuilding" placeholder="" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -5495,7 +5495,7 @@
               </select>
               <div class="form-group otherAdjoiningCommercial d-none">
                 <label class="fw-bold">Adjoining Property:</label>
-                <input type="text" name="otherAdjoining" placeholder="" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherAdjoining" placeholder="" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -5517,7 +5517,7 @@
               </select>
               <div class="form-group otherRoofCommercial d-none" >
                 <label class="fw-bold">Roof:</label>
-                <input type="text" name="otherRoofCom" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                <input type="text" name="otherRoofCom" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -5540,7 +5540,7 @@
               </select>
               <div class="form-group otherSurfaceCommercial d-none" >
                 <label class="fw-bold">Road Surface Type:</label>
-                <input type="text" name="otherSurfaceCom" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                <input type="text" name="otherSurfaceCom" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -5562,7 +5562,7 @@
               </select>
               <div class="form-group otherFrontageCommercial d-none" >
                 <label class="fw-bold">Road Frontage:</label>
-                <input type="text" name="otherFrontage" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                <input type="text" name="otherFrontage" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -5626,7 +5626,7 @@
               </select>
               {{-- <div class="form-group parcelYesCommercial d-none">
                 <label class="fw-bold">Additional Parcels: </label>
-                <input type="text" name="parcelYes" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="parcelYes" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div> --}}
             </div>
             <div class="form-group">
@@ -5749,7 +5749,7 @@
               <div class="form-group otherUtilitiseCommercial d-none">
                 <label class="fw-bold">Utilities:</label>
                 <input type="text" name="otherUtilitiseCom" id="legal_description" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
             @php
@@ -5770,7 +5770,7 @@
               <div class="form-group otherSewerCommercial d-none">
                 <label class="fw-bold">Sewer:</label>
                 <input type="text" name="otherSewerCom"  class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
             @php
@@ -5799,7 +5799,7 @@
               <div class="form-group otherWaterCommercial d-none">
                 <label class="fw-bold">Water:</label>
                 <input type="text" name="otherWaterCom" id="legal_description" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle">
+                  data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -5822,7 +5822,7 @@
               </select>
               <div class="form-group otherAirConditionCom d-none">
                 <label class="fw-bold">Air Conditioning:</label>
-                <input type="text" name="otherAirConditionCom"  class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherAirConditionCom"  class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
             @php
@@ -5866,7 +5866,7 @@
               <div class="form-group otherHeatingFuelCom d-none">
                 <label class="fw-bold">Heating and Fuel:</label>
                 <input type="text" name="otherHeatingFuelCom"  class="form-control has-icon"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -6128,12 +6128,12 @@
               <div class="form-group other-dock-com d-none">
                 <label class="fw-bold">Dock Description:</label>
                 <input type="text" name="custom_dock" id="custom_dock"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Dock Lift Capacity:</label>
                 <input type="text" name="dock_lift_capacity" id="dock_lift_capacity"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Dock Year Built:</label>
@@ -6148,7 +6148,7 @@
               <div class="form-group">
                 <label class="fw-bold">Dock Maintenance Fee:</label>
                 <input type="number" name="dock_maintenance_fee" id="dock_maintenance_fee"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               @php
                 $feeFrequency = [['name' => 'Annual', 'target' => ''], ['name' => 'Monthly', 'target' => ''], ['name' => 'Quarterly', 'target' => ''], ['name' => 'N/A', 'target' => '']]
@@ -6203,7 +6203,7 @@
             <div class="form-group otherOwnershipCommercial">
               <label class="fw-bold">Ownership:</label>
               <input type="text" name="otherOwnership" id="custom_ownership" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
             </div>
             @php
               $occupantCommercial = [['name' => 'Owner', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Tenant', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Vacant', 'target' => '', 'icon' => 'fa-regular fa-circle-check']];
@@ -6354,7 +6354,7 @@
                 <div class="form-group otherSaleCommercial d-none">
                   <label class="fw-bold">Sale Includes:</label>
                   <input type="text" name="otherSale" class="form-control has-icon"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
             </div>
@@ -6958,7 +6958,7 @@
               </select>
               <div class="form-group otherLotFeatureVacant d-none">
                 <label class="fw-bold">Lot Features:</label>
-                <input type="text" name="otherLotFeatureVac" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="otherLotFeatureVac" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -6990,7 +6990,7 @@
               </select>
               <div class="form-group otherStructuresVac d-none">
                 <label class="fw-bold">Other Structures:</label>
-                <input type="text" name="custom_other_structures" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="custom_other_structures" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
           </div>
@@ -7060,7 +7060,7 @@
               </select>
               <div class="form-group otherFrontageVacant d-none">
                 <label class="fw-bold">Road Frontage:</label>
-                <input type="text" name="otherFrontage" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                <input type="text" name="otherFrontage" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -7093,7 +7093,7 @@
               </select>
               <div class="form-group otherSurfaceVacant d-none">
                 <label class="fw-bold">Road Surface Type:</label>
-                <input type="text" name="otherSurfaceVac" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                <input type="text" name="otherSurfaceVac" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
           </div>
@@ -7147,7 +7147,7 @@
               <div class="form-group otherUtilitiseVacant d-none">
                 <label class="fw-bold">Utilities:</label>
                 <input type="text" name="otherUtilitiseVac" id="legal_description" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle" required>
+                  data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
 
@@ -7176,7 +7176,7 @@
               <div class="form-group otherSewerVacant d-none">
                 <label class="fw-bold">Sewer:</label>
                 <input type="text" name="otherSewerVac" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle" required>
+                  data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
 
@@ -7205,7 +7205,7 @@
               <div class="form-group otherWaterVacant d-none">
                 <label class="fw-bold">Water:</label>
                 <input type="text" name="otherWaterVac" id="legal_description" class="form-control has-icon"
-                  data-icon="fa-regular fa-check-circle" required>
+                  data-icon="fa-regular fa-circle-check" required>
               </div>
             </div>
 
@@ -7574,12 +7574,12 @@
               <div class="form-group other-dock-vacant d-none">
                 <label class="fw-bold">Dock Description:</label>
                 <input type="text" name="custom_dock" id="custom_dock"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Dock Lift Capacity:</label>
                 <input type="text" name="dock_lift_capacity" id="dock_lift_capacity"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Dock Year Built:</label>
@@ -7650,7 +7650,7 @@
             <div class="form-group otherOwnershipVacant">
               <label class="fw-bold">Ownership:</label>
               <input type="text" name="otherOwnership" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
             </div>
           </div>
           <div class="wizard-step" data-step="88">
@@ -7775,7 +7775,7 @@
                 </select>
                 <div class="form-group otherAssocAmenitiesVacant d-none">
                   <label class="fw-bold">Association Amenities: </label>
-                  <input type="text" name="otherAssocAmenities_vac" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="otherAssocAmenities_vac" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               @php
@@ -7822,13 +7822,13 @@
                 </select>
                 <div class="form-group otherFeeIncludeVacant d-none">
                   <label class="fw-bold">Fee Includes:</label>
-                  <input type="text" name="otherFeeInclude_vac" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  <input type="text" name="otherFeeInclude_vac" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
               </div>
               <div class="form-group">
                 <label class="fw-bold">Amenities with Additional Fees:</label>
                 <input type="text" name="amenities_with_additional_fees_vac"
-                  class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                  class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
               <div class="form-group">
                 @php
@@ -7855,7 +7855,7 @@
                   <option value="">Select</option>
                   @foreach ($communityAssociationWaterFeatures as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>">
+                      style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>">
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -8080,7 +8080,7 @@
                 <div class="form-group additionalFeeYesVacant d-none">
                   <div class="form-group">
                     <label class="fw-bold">What is the fee for?</label>
-                    <input type="text" name="additionalFeeReason" id="additionalFeeReason" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                    <input type="text" name="additionalFeeReason" id="additionalFeeReason" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                   </div>
                   <div class="form-group">
                     <label class="fw-bold">Other Fee:</label>
@@ -10198,7 +10198,7 @@
                           `<div class="form-group ${targetName?.target?.slice(1)}-${option} d-none">
                               <label class="fw-bold">${labelText}</label>
                               <input type="text" name="${name}Other" data-option="${optionName}" class="form-control has-icon dynamic-room-input"
-                                  data-icon="fa-regular fa-check-circle" required>
+                                  data-icon="fa-regular fa-circle-check" required>
                           </div>` : ''
                           }
                       </div>

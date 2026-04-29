@@ -35,7 +35,7 @@ $auction_lengths_seller = [
                                     <i class="fa-solid fa-crown text-warning me-2 fs-5"></i>
                                     <h5 class="mb-0">Hire a Commission-Based Agent (Full Service)</h5>
                                     @if ($service_type === 'full_service')
-                                        <span class="ms-2 text-success"><i class="fa-solid fa-check-circle"></i></span>
+                                        <span class="ms-2 text-success"><i class="fa-solid fa-circle-check"></i></span>
                                     @endif
                                 </div>
                                 @if ($service_type === 'full_service')
@@ -70,7 +70,7 @@ $auction_lengths_seller = [
                                     <i class="fa-solid fa-file-invoice-dollar text-info me-2 fs-5"></i>
                                     <h5 class="mb-0">Hire a Flat Fee Agent (Limited Service)</h5>
                                     @if ($service_type === 'limited_service')
-                                        <span class="ms-2 text-success"><i class="fa-solid fa-check-circle"></i></span>
+                                        <span class="ms-2 text-success"><i class="fa-solid fa-circle-check"></i></span>
                                     @endif
                                 </div>
                                 @if ($service_type === 'limited_service')
@@ -102,7 +102,7 @@ $auction_lengths_seller = [
                     <div class="card user-type-card active-user-type border-primary" style="cursor: pointer;">
                         <div class="card-body text-center position-relative">
                             <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                <i class="fa-solid fa-check-circle"></i>
+                                <i class="fa-solid fa-circle-check"></i>
                             </div>
                             <i class="fa-solid fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
                             <p class="mb-1 user-selected">Create Seller Listing</p>
@@ -166,7 +166,7 @@ $auction_lengths_seller = [
                     <label class="btn btn-status btn-outline-success px-3 px-md-0 position-relative"
                         for="status-active" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="The listing is open to Agent bids and inquiries.">
-                        <span class="status-icon"><i class="fa-solid fa-check-circle me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-circle-check me-2"></i></span>
                         <span class="status-text">Active</span>
 
                         <span
@@ -211,11 +211,11 @@ $auction_lengths_seller = [
                         value="Expired" autocomplete="off" disabled>
                     <label class="btn btn-status btn-outline-secondary px-3 px-md-0 position-relative"
                         for="status-expired">
-                        <span class="status-icon"><i class="fa-solid fa-calendar-times me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-calendar-xmark me-2"></i></span>
                         <span class="status-text">Expired</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">
-                            <i class="fa-solid fa-calendar-times"></i>
+                            <i class="fa-solid fa-calendar-xmark"></i>
                         </span>
                     </label>
                     <span class="expired_tooltip">
@@ -331,7 +331,7 @@ $auction_lengths_seller = [
         @else
             <div class="input-cover">
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-alt" required>
+                    data-icon="fa-solid fa-file-lines" required>
                     <option value="">Select</option>
                     <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
                     <option value="Traditional">Traditional</option>

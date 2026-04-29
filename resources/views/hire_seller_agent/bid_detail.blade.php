@@ -178,7 +178,7 @@
         {{-- Accepted: banner + summary links --}}
         @if ($state === 'accepted')
         <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-            <i class="fa fa-check-circle me-1"></i>
+            <i class="fa fa-circle-check me-1"></i>
             @if (Auth::id() == $ownerId) This bid has been accepted.
             @else {{ trim($ownerFirst . ' ' . $ownerLast) }} accepted this bid.
             @endif
@@ -186,7 +186,7 @@
         @if ($absFooterBidSummary && (Auth::id() == $ownerId || data_get($bid, 'user_id') == Auth::id()))
         <div class="w-100 d-flex gap-2 flex-wrap justify-content-center">
             <a href="{{ route('accepted-bid-summary.view', $absFooterBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
-                <i class="fa fa-file-alt me-1"></i> View Accepted Bid Summary
+                <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
             </a>
             @if (data_get($bid, 'user_id') == Auth::id() && !$absFooterBidSummary->isAgentSigned())
             <a href="{{ route('accepted-bid-summary.sign-form', $absFooterBidSummary->id) }}" class="btn btn-primary btn-sm">
@@ -209,7 +209,7 @@
         {{-- Rejected --}}
         @elseif ($state === 'rejected')
         <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-            <i class="fa fa-times-circle me-1"></i>
+            <i class="fa fa-circle-xmark me-1"></i>
             @if (Auth::id() == $ownerId) This bid has been rejected.
             @else {{ trim($ownerFirst . ' ' . $ownerLast) }} rejected this bid.
             @endif
@@ -218,7 +218,7 @@
         {{-- Countered --}}
         @elseif ($state === 'countered')
         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-            <i class="fa fa-exchange-alt me-1"></i>
+            <i class="fa fa-right-left me-1"></i>
             @if ($_scViewerSentLatest) <strong>Counter Offer Sent.</strong>
             @else <strong>Counter Offer Received.</strong>
             @endif
@@ -254,7 +254,7 @@
         </form>
         <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn btn-primary"
            style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-            <i class="fa fa-exchange-alt me-1"></i> Counter Bid
+            <i class="fa fa-right-left me-1"></i> Counter Bid
         </a>
         <form action="{{ route('rejectSABid') }}" method="post" class="m-0"
               onsubmit="return confirm('Reject this bid?');">
@@ -276,7 +276,7 @@
         @if ($_scViewerSentLatest)
         <a href="{{ route('seller.counter-terms', ['id' => data_get($bid, 'id')]) }}"
            class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 14px;font-weight:600;font-size:0.85rem;">
-            <i class="fa fa-edit me-1"></i> Edit Counter Terms
+            <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
         </a>
         @endif
         @endif

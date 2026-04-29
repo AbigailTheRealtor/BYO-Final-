@@ -326,7 +326,7 @@
 
         <!-- Legal Notice -->
         <div class="alert alert-warning mt-3 p-2">
-            <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
             <span class="small">Note: Lease negotiation requires a formal agency relationship.</span>
         </div>
     </div>
@@ -427,7 +427,7 @@
 
         <!-- Legal Notice -->
         <div class="alert alert-warning mt-3 p-2">
-            <i class="fa-solid fa-exclamation-triangle me-2"></i>
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
             <span class="small">Note: These insights are informational and not legal or financial advice.</span>
         </div>
     </div>

@@ -112,13 +112,13 @@
         <div class="form-group">
             <label class="fw-bold">Zoning:</label>
             <input type="text" name="zoning" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required
+                data-icon="fa-regular fa-circle-check" required
                 value="{{ isset($auction->get->zoning) ? $auction->get->zoning : '' }}">
         </div>
         <div class="form-group">
             <label class="fw-bold">Tax Year:</label>
             <input type="text" name="tax_year" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required
+                data-icon="fa-regular fa-circle-check" required
                 value="{{ isset($auction->get->tax_year) ? $auction->get->tax_year : '' }}">
         </div>
         <div class="form-group">
@@ -130,13 +130,13 @@
         <div class="form-group">
             <label class="fw-bold">Legal Description:</label>
             <input type="text" name="legal_description" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required
+                data-icon="fa-regular fa-circle-check" required
                 value="{{ isset($auction->get->legal_description) ? $auction->get->legal_description : '' }}">
         </div>
         <div class="form-group">
             <label class="fw-bold">Total Number of Parcels:</label>
             <input type="text" name="no_of_parcels" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required
+                data-icon="fa-regular fa-circle-check" required
                 value="{{ isset($auction->get->no_of_parcels) ? $auction->get->no_of_parcels : '' }}">
         </div>
         @php
@@ -163,7 +163,7 @@
         <div class="form-group additionalTax  d-none">
             <label class="fw-bold">Additional Tax ID’s:</label>
             <input type="text" name="additional_tax_id" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required
+                data-icon="fa-regular fa-circle-check" required
                 value="{{ isset($auction->get->additional_tax_id) ? $auction->get->additional_tax_id : '' }}">
         </div>
     </span>
@@ -322,7 +322,7 @@
                 @foreach ($amenitiesFeatureRes as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                         class="card flex-row" style="width:calc(33.3% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>'
+                        data-icon='<i class="fa-regular fa-circle-check"></i>'
                         {{ isset($auction->get->amenities) && in_array($item['name'], json_decode($auction->get->amenities) ?? []) ? 'selected' : '' }}>
                         {{ $item['name'] }}
                     </option>
@@ -386,7 +386,7 @@
                 <option value="">Select</option>
                 @foreach ($amenitiesCommercial as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                         style="width:calc(33.3% - 10px);"
                         {{ isset($auction->get->amenities) && in_array($item['name'], json_decode($auction->get->amenities) ?? []) ? 'selected' : '' }}>
                         {{ $item['name'] }}
@@ -396,7 +396,7 @@
             <div class="form-group otherAmenitiesCommercial d-none">
                 <label class="fw-bold">Amenities and Property Features:</label>
                 <input type="text" class="form-control has-icon" name="otherAmenities"
-                    data-icon="fa-regular fa-check-circle" required
+                    data-icon="fa-regular fa-circle-check" required
                     value="{{ isset($auction->get->otherAmenities) ? $auction->get->otherAmenities : '' }}" />
             </div>
         </div>
@@ -507,7 +507,7 @@
         <div class="form-group interiorFeatureOtherRes d-none">
             <label class="fw-bold">Interior Features:</label>
             <input type="text" name="interiorFeatureOther" id="floors_in_unit" placeholder=""
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                 value="{{ isset($auction->get->interiorFeatureOther) ? $auction->get->interiorFeatureOther : '' }}">
         </div>
     </div>
@@ -553,7 +553,7 @@
         <div class="form-group roomOtherRes d-none">
             <label class="fw-bold">Additional Rooms:</label>
             <input type="text" name="roomOther" id="number_of_buildings" placeholder=""
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                 value="{{ isset($auction->get->roomOther) ? $auction->get->roomOther : '' }}">
         </div>
     </div>
@@ -594,7 +594,7 @@
         <div class="form-group laundryOtherRes d-none">
             <label class="fw-bold">Laundry Features: </label>
             <input type="text" name="laundryOther" id="number_of_buildings" placeholder=""
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                 value="{{ isset($auction->get->laundryOther) ? $auction->get->laundryOther : '' }}">
         </div>
     </div>
@@ -689,7 +689,7 @@
         <div class="form-group  floorCoveringOtherRes d-none">
             <label class="fw-bold">Floor Covering:</label>
             <input type="text" name="floorConvringOther" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle"
+                data-icon="fa-regular fa-circle-check"
                 value="{{ isset($auction->get->floorConvringOther) ? $auction->get->floorConvringOther : '' }}">
         </div>
     </div>

@@ -238,7 +238,7 @@
                                     @foreach ($addressSuggestions as $index => $suggestion)
                                         <li class="list-group-item {{ $highlightedAddressIndex === $index ? 'active' : '' }}"
                                             wire:click="selectAddressSuggestion('{{ $suggestion }}')">
-                                            <i class="fa-solid fa-map-marker-alt me-2"></i>
+                                            <i class="fa-solid fa-location-dot me-2"></i>
                                             {{ $suggestion }}
                                         </li>
                                     @endforeach

@@ -435,7 +435,7 @@
                     <option value="">Select</option>
                     @foreach ($buyer_prefered_timeframe as $item)
                       <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class=" card flex-row"
-                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                         {{ $item['name'] }}
                       </option>
                     @endforeach
@@ -452,7 +452,7 @@
                     @foreach ($commission_rates as $commission_rate)
                       <option value="{{ $commission_rate['name'] }}" data-target="{{ $commission_rate['target'] }}"
                         class="card flex-row" style="width:calc(33.3% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                        data-icon='<i class="fa-regular fa-circle-check"></i>'>
                         {{ $commission_rate['name'] }}
                       </option>
                     @endforeach

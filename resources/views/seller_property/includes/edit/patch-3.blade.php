@@ -18,7 +18,7 @@
       <div class="form-group airConditionRes d-none">
         <label class="fw-bold">Air Conditioning:</label>
         <input type="text" name="otherAirCondition" value="{{isset($auction->get->otherAirCondition) ? $auction->get->otherAirCondition : ''}}" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle">
+          data-icon="fa-regular fa-circle-check">
       </div>
     </div>
     @php
@@ -60,7 +60,7 @@
       <div class="form-group otherHeatingFuelRes d-none">
         <label class="fw-bold">Heating and Fuel:</label>
         <input type="text" name="otherHeatingFuel" value="{{isset($auction->get->otherHeatingFuel) ? $auction->get->otherHeatingFuel : ''}}" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle">
+          data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -393,12 +393,12 @@
       <div class="form-group other-dock d-none">
         <label class="fw-bold">Dock Description:</label>
         <input type="text" name="custom_dock" value="{{isset($auction->get->custom_dock) ? $auction->get->custom_dock : ''}}" id="custom_dock"
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
       <div class="form-group">
         <label class="fw-bold">Dock Lift Capacity:</label>
         <input type="text" name="dock_lift_capacity" value="{{isset($auction->get->dock_lift_capacity) ? $auction->get->dock_lift_capacity : ''}}" id="dock_lift_capacity"
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
       <div class="form-group">
         <label class="fw-bold">Dock Year Built:</label>
@@ -559,7 +559,7 @@
         </select>
         <div class="form-group otherAssocAmenitiesRes d-none">
           <label class="fw-bold">Association Amenities: </label>
-          <input type="text" name="otherAssocAmenities" {{isset($auction->get->otherAssocAmenities) && $auction->get->otherAssocAmenities == $item['name'] ? 'selected' : ''}} class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+          <input type="text" name="otherAssocAmenities" {{isset($auction->get->otherAssocAmenities) && $auction->get->otherAssocAmenities == $item['name'] ? 'selected' : ''}} class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
       </div>
       @php
@@ -606,13 +606,13 @@
         </select>
         <div class="form-group otherFeeIncludeRes d-none">
           <label class="fw-bold">Fee Includes:</label>
-          <input type="text" name="otherFeeInclude" value="{{isset($auction->get->otherFeeInclude) ? $auction->get->otherFeeInclude : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+          <input type="text" name="otherFeeInclude" value="{{isset($auction->get->otherFeeInclude) ? $auction->get->otherFeeInclude : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
       </div>
       <div class="form-group">
         <label class="fw-bold">Amenities with Additional Fees:</label>
         <input type="text" name="amenities_with_additional_fees" value="{{isset($auction->get->amenities_with_additional_fees) ? $auction->get->amenities_with_additional_fees : ''}}"
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
         <div class="form-group">
@@ -865,7 +865,7 @@
     <div class="form-group otherOwnershipRes d-none">
       <label class="fw-bold">Ownership:</label>
       <input type="text" name="otherOwnership" value="{{isset($auction->get->otherOwnership) ? $auction->get->otherOwnership : ''}}" id="custom_ownership" class="form-control has-icon"
-        data-icon="fa-regular fa-check-circle">
+        data-icon="fa-regular fa-circle-check">
     </div>
     @php
     $occupant_types = [['name' => 'Owner', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Tenant', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Vacant', 'target' => '', 'icon' => 'fa-regular fa-circle-check']];
@@ -1162,7 +1162,7 @@
           <option value="">Select</option>
           @foreach ($buildingVerificationOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->building_verification) && $auction->get->building_verification == $item['name'] ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->building_verification) && $auction->get->building_verification == $item['name'] ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1170,7 +1170,7 @@
       </div>
       <div class="form-group buildingVerOther d-none">
         <label class="fw-bold">Building Verification:</label>
-        <input type="text" name="building_verification_other" value="{{isset($auction->get->building_verification_other) ? $auction->get->building_verification_other : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle"/>
+        <input type="text" name="building_verification_other" value="{{isset($auction->get->building_verification_other) ? $auction->get->building_verification_other : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check"/>
       </div>
       @php
       $statusOpt = [
@@ -1184,7 +1184,7 @@
           <option value="">Select</option>
           @foreach ($statusOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_status) && $auction->get->green_status == $item['name'] ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_status) && $auction->get->green_status == $item['name'] ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1196,19 +1196,19 @@
       </div>
       <div class="form-group">
         <label class="fw-bold">Version:</label>
-        <input type="text" name="green_version" value="{{isset($auction->get->green_version) ? $auction->get->green_version : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="green_version" value="{{isset($auction->get->green_version) ? $auction->get->green_version : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
       <div class="form-group">
         <label class="fw-bold">Body:</label>
-        <input type="text" name="green_body" value="{{isset($auction->get->green_body) ? $auction->get->green_body : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="green_body" value="{{isset($auction->get->green_body) ? $auction->get->green_body : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
       <div class="form-group">
         <label class="fw-bold">Metric:</label>
-        <input type="text" name="green_metric" value="{{isset($auction->get->green_metric) ? $auction->get->green_metric : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="green_metric" value="{{isset($auction->get->green_metric) ? $auction->get->green_metric : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
       <div class="form-group">
         <label class="fw-bold">Rating:</label>
-        <input type="text" name="green_rating" value="{{isset($auction->get->green_rating) ? $auction->get->green_rating : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="green_rating" value="{{isset($auction->get->green_rating) ? $auction->get->green_rating : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
       @php
       $sourceOpt = [
@@ -1229,14 +1229,14 @@
           <option value="">Select</option>
           @foreach ($sourceOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_source) && $auction->get->green_source == $item['name'] ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_source) && $auction->get->green_source == $item['name'] ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
         </select>
         <div class="form-group sourceOther d-none">
           <label class="fw-bold">Source:</label>
-          <input type="text" name="green_source_other" value="{{isset($auction->get->green_source_other) ? $auction->get->green_source_other : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+          <input type="text" name="green_source_other" value="{{isset($auction->get->green_source_other) ? $auction->get->green_source_other : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
       </div>
       <div class="form-group">
@@ -1260,7 +1260,7 @@
           <option value="">Select</option>
           @foreach ($sustainabilityOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_sustainability) && in_array($item['name'], json_decode($auction->get->green_sustainability) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_sustainability) && in_array($item['name'], json_decode($auction->get->green_sustainability) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1279,7 +1279,7 @@
           <option value="">Select</option>
           @foreach ($generationOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_generation) && in_array($item['name'], json_decode($auction->get->green_generation) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_generation) && in_array($item['name'], json_decode($auction->get->green_generation) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1306,7 +1306,7 @@
           <option value="">Select</option>
           @foreach ($waterOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_water_features) && in_array($item['name'], json_decode($auction->get->green_water_features) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_water_features) && in_array($item['name'], json_decode($auction->get->green_water_features) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1336,7 +1336,7 @@
           <option value="">Select</option>
           @foreach ($energyOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_energy_features) && in_array($item['name'], json_decode($auction->get->green_energy_features) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_energy_features) && in_array($item['name'], json_decode($auction->get->green_energy_features) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1357,7 +1357,7 @@
           <option value="">Select</option>
           @foreach ($landscapingOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_landscaping) && in_array($item['name'], json_decode($auction->get->green_landscaping) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_landscaping) && in_array($item['name'], json_decode($auction->get->green_landscaping) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1376,7 +1376,7 @@
           <option value="">Select</option>
           @foreach ($solarOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_solar) && in_array($item['name'], json_decode($auction->get->green_solar) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_solar) && in_array($item['name'], json_decode($auction->get->green_solar) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1399,7 +1399,7 @@
           <option value="">Select</option>
           @foreach ($disasterOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_disaster) && in_array($item['name'], json_decode($auction->get->green_disaster) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_disaster) && in_array($item['name'], json_decode($auction->get->green_disaster) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach
@@ -1431,7 +1431,7 @@
           <option value="">Select</option>
           @foreach ($airOpt as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $target }}" class="card flex-row"
-              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-check-circle'></i>" {{isset($auction->get->green_air) && in_array($item['name'], json_decode($auction->get->green_air) ?? []) ? 'selected' : ''}}>
+              style="width:calc(33.3% - 10px);" data-icon="<i class='fa-regular fa-circle-check'></i>" {{isset($auction->get->green_air) && in_array($item['name'], json_decode($auction->get->green_air) ?? []) ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
           @endforeach

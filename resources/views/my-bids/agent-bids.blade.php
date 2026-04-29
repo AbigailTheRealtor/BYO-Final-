@@ -129,7 +129,7 @@
                     <div class="row">
                         @if(count($brokerMismatches) > 0)
                         <div class="col-md-4 mb-2">
-                            <small class="fw-semibold text-danger"><i class="fa-solid fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
+                            <small class="fw-semibold text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
                             <div class="mt-1" style="max-height: 80px; overflow-y: auto;">
                                 @foreach(array_slice($brokerMismatches, 0, 5) as $field => $vals)
                                     <span class="badge me-1 mb-1" style="background: #ffe6e6; color: #dc3545; font-size: 0.7rem;">{{ ucwords(str_replace('_', ' ', $field)) }}</span>
@@ -184,7 +184,7 @@
                         </button>
                     </form>
                     <a href="{{ route('tenant.counter-terms', $agentBid->id) }}" class="btn btn-sm" style="background: #ffc107; color: #000; border: none;">
-                        <i class="fa-solid fa-exchange-alt me-1"></i>Counter
+                        <i class="fa-solid fa-right-left me-1"></i>Counter
                     </a>
                     <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
                         @csrf

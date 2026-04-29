@@ -543,7 +543,7 @@
         </label>
         <div class="input-cover">
             <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
-                data-icon="fa-solid fa-exchange-alt"
+                data-icon="fa-solid fa-right-left"
                 placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
         </div>
     </div>
@@ -615,7 +615,7 @@
 <div class="financing-exchange-trade-section" wire:key="exchange-trade-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Exchange/Trade', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Exchange/Trade') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
-            <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
+            <i class="fa-solid fa-right-left me-2"></i>Exchange/Trade
         </h5>
     </div>
     <div class="form-group mt-3">
@@ -626,7 +626,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-exchange-alt">
+            <select wire:model="exchange_item" class="form-control has-icon" data-icon="fa-solid fa-right-left">
                 <option value="">Select</option>
                 <option value="Another Home">Another Home</option>
                 <option value="Artwork">Artwork</option>
@@ -643,7 +643,7 @@
         <div class="form-group">
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
-                    data-icon="fa-solid fa-exchange-alt"
+                    data-icon="fa-solid fa-right-left"
                     placeholder="Enter exchange item (e.g., Private Jet, Yacht, Luxury RV)">
             </div>
         </div>
@@ -723,7 +723,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
-                data-icon="fa-solid fa-exchange-alt"
+                data-icon="fa-solid fa-right-left"
                 placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)">
         </div>
     </div>
@@ -915,7 +915,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
+                data-icon="fa-solid fa-file-lines"
                 placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, Property must pass inspection)">
         </div>
     </div>
@@ -929,7 +929,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
+                data-icon="fa-solid fa-file-lines"
                 placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)">
         </div>
     </div>
@@ -944,7 +944,7 @@
         </label>
         <div class="input-cover">
             <select wire:model="lease_option_maintenance" class="form-control has-icon"
-                data-icon="fa-solid fa-tools">
+                data-icon="fa-solid fa-screwdriver-wrench">
                 <option value="">Select</option>
                 <option value="Seller">Seller</option>
                 <option value="Tenant-Buyer">Tenant-Buyer</option>
@@ -1091,7 +1091,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_conditions" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
+                data-icon="fa-solid fa-file-lines"
                 placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)">
         </div>
     </div>
@@ -1105,7 +1105,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_terms" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt"
+                data-icon="fa-solid fa-file-lines"
                 placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, Option to buy after 12 months)">
         </div>
     </div>
@@ -1120,7 +1120,7 @@
         </label>
         <div class="input-cover">
             <select wire:model="lease_purchase_maintenance" class="form-control has-icon"
-                data-icon="fa-solid fa-tools">
+                data-icon="fa-solid fa-screwdriver-wrench">
                 <option value="">Select</option>
                 <option value="Seller">Seller</option>
                 <option value="Tenant-Buyer">Tenant-Buyer</option>

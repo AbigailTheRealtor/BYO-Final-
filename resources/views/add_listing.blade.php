@@ -17,7 +17,7 @@
                         <div class="overlay"></div>
                         <div class="bg-none container position-absolute bottom-0 mb-3">
                             <div class="bg-white shadow text-dark mb-4 p-3 rounded-2">
-                                <div class="mb-2"><i class="fa fa-info-circle me-2"></i> Quick Tip</div>
+                                <div class="mb-2"><i class="fa fa-circle-info me-2"></i> Quick Tip</div>
                                 <p>Increase your page views with a catchy title!</p>
                             </div>
                             <button class="btn border-1 border-dark w-100 text-white p-3" type="button">Save</button>

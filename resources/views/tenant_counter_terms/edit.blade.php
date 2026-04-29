@@ -304,7 +304,7 @@
                   @foreach ($propFee as $item)
                     <option value="{{ $item['name'] }}" {{ $item['name'] == $counter->propFee ? 'selected' : '' }}
                       data-target="{{ $item['target'] }}" class="card flex-row" style="width:calc(33.3% - 10px);"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                      data-icon='<i class="fa-regular fa-circle-check"></i>'>
                       {{ $item['name'] }}
                     </option>
                   @endforeach

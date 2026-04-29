@@ -28,7 +28,7 @@
                 <span wire:loading wire:target="saveDraft">Saving…</span>
             </button>
             <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#049399;" wire:click="submitListing" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="submitListing"><i class="fa fa-check-circle me-1"></i>Publish Listing</span>
+                <span wire:loading.remove wire:target="submitListing"><i class="fa fa-circle-check me-1"></i>Publish Listing</span>
                 <span wire:loading wire:target="submitListing">Publishing…</span>
             </button>
         </div>
@@ -76,7 +76,7 @@
         {{-- PANEL 1: OVERVIEW --}}
         <div wire:ignore.self class="tab-pane fade show active" id="offer-panel-1" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-info-circle me-2"></i>Listing Overview</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-circle-info me-2"></i>Listing Overview</h6>
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Offer Type <span class="text-danger">*</span></label>
@@ -324,7 +324,7 @@
                         <span wire:loading wire:target="saveDraft">Saving…</span>
                     </button>
                     <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#049399;" wire:click="submitListing" wire:loading.attr="disabled">
-                        <span wire:loading.remove wire:target="submitListing"><i class="fa fa-check-circle me-1"></i>Publish Listing</span>
+                        <span wire:loading.remove wire:target="submitListing"><i class="fa fa-circle-check me-1"></i>Publish Listing</span>
                         <span wire:loading wire:target="submitListing">Publishing…</span>
                     </button>
                 </div>

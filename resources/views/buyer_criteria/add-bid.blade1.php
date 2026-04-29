@@ -245,7 +245,7 @@
                   <option value=""></option>
                   @foreach ($property_items as $item)
                     <option value="{{ $item['name'] }}" data-target="" class="card flex-row  {{ $item['class'] }}"
-                      style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                      style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                       {{ $item['name'] }}
                     </option>
                   @endforeach
@@ -352,7 +352,7 @@
             <div class="form-group">
               <label class="fw-bold">How many heated sqft does the property have?</label>
               <input type="number" name="min_sqft" id="min_sqft" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
             </div>
           </div>
           <div class="wizard-step">
@@ -482,7 +482,7 @@
                 <option value="">Select</option>
                 @foreach ($pet_types as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                    style="width:calc(50% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    style="width:calc(50% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -572,7 +572,7 @@
                 <option value="">Select</option>
                 @foreach ($prop_conditions as $item)
                   <option value="{{ $item['name'] }}" class="card flex-row" data-target="{{ $item['target'] }}"
-                    style="width:calc(50% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    style="width:calc(50% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -709,7 +709,7 @@
                 Offered Price:
               </label>
               <input type="text" name="max_price" id="max_price" placeholder="" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle">
+                data-icon="fa-regular fa-circle-check">
             </div>
 
           </div>
@@ -742,7 +742,7 @@
             <div class="form-group">
               <label class="fw-bold">Acceptable Escrow Deposit:</label>
               <input type="text" name="escrow_amount_percent" id="escrow_amount_percent"
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
             </div>
           </div>
 
@@ -759,7 +759,7 @@
                 @foreach ($contingencies as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -768,7 +768,7 @@
             <div class="form-group custom_contingencies d-none">
               <label>Inspection Period Offered:</label>
               <input type="text" name="custom_contingencies" id="custom_contingencies"
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
             </div>
           </div>
           <div class="wizard-step">
@@ -837,7 +837,7 @@
                 @foreach ($inspection_period as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -846,7 +846,7 @@
             <div class="form-group custom_period d-none">
               <label>Inspection Period Offered:</label>
               <input type="text" name="custom_period" id="custom_period" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
             </div>
           </div> --}}
 
@@ -862,7 +862,7 @@
               <label class="fw-bold">Offered Seller's Credit at Closing (Seller's Premium)
                 (Optional):</label>
               <input type="text" name="request_seller_premium" id="request_seller_premium"
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle" placeholder="e.g $5000 or 20%"
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check" placeholder="e.g $5000 or 20%"
                 required> --}}
           {{-- <select class="grid-picker" name="request_seller_premium" id="request_seller_premium"
                                 style="" required>
@@ -870,7 +870,7 @@
                                 @foreach ($request_seller_premium as $item)
                                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                         class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                        data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                 @endforeach
@@ -887,7 +887,7 @@
               <label class="fw-bold">Requested Buyer's Credit at Closing (Buyer's Premium)
                 (Optional):</label>
               <input type="text" name="request_buyer_premium" id="request_buyer_premium"
-                class="form-control has-icon" data-icon="fa-regular fa-check-circle" placeholder="e.g $5000 or 20%"
+                class="form-control has-icon" data-icon="fa-regular fa-circle-check" placeholder="e.g $5000 or 20%"
                 required>
               <select class="grid-picker" name="request_buyer_premium" id="request_buyer_premium"
                                 style="" required>
@@ -895,7 +895,7 @@
                                 @foreach ($request_buyer_premium as $item)
                                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                         class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                                        data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                 @endforeach
@@ -915,7 +915,7 @@
                 @foreach ($sell_days as $item)
                   <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-column fw-bold" style="width:calc(20% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                   </option>
                 @endforeach
@@ -924,7 +924,7 @@
             <div class="form-group custom_days d-none">
               <label>When does the Seller want to sell?</label>
               <input type="text" name="custom_days" id="custom_days" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
             </div>
 
           </div> --}}

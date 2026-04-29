@@ -321,7 +321,7 @@
                                             <i data-bs-container="body" tabindex="0" data-bs-toggle="popover"
                                                 data-bs-trigger="hover focus" data-bs-placement="top"
                                                 data-bs-content="Your unique account name. Must be 3 to 10 characters and can include lowercase letters, numbers, and hyphens."
-                                                class="fa fa-info-circle"></i>
+                                                class="fa fa-circle-info"></i>
                                             @if ($errors->has('user_name'))
                                                 <div class="error">{{ $errors->first('user_name') }}</div>
                                             @endif

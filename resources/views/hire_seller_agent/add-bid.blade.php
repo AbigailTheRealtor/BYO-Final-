@@ -339,7 +339,7 @@
                 @foreach ($listing_terms as $listing_term)
                   <option value="{{ $listing_term['name'] }}" data-target="{{ $listing_term['target'] }}"
                     class="card flex-row " style="width:calc(33.3% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $listing_term['name'] }}
                   </option>
                 @endforeach
@@ -662,7 +662,7 @@
               </label>
               <div class="input-cover mt-2">
                 <input type="number" name="protection_period" class="form-control has-icon"
-                  data-icon="fa-solid fa-shield-alt"
+                  data-icon="fa-solid fa-shield-halved"
                   placeholder="Enter protection period in days (e.g., 90)"
                   value="{{ old('protection_period', $get->protection_period ?? '') }}">
               </div>
@@ -679,7 +679,7 @@
               </label>
               <div class="input-cover mt-2">
                 <select x-model="early_termination_fee_option" name="early_termination_fee_option" class="form-control has-icon"
-                  data-icon="fa-solid fa-exclamation-triangle">
+                  data-icon="fa-solid fa-triangle-exclamation">
                   <option value="">Select</option>
                   <option value="yes">Yes</option>
                   <option value="no">No</option>
@@ -760,7 +760,7 @@
               </label>
               <div class="input-cover mt-2">
                 <select x-model="agency_agreement_timeframe" name="agency_agreement_timeframe" class="form-control has-icon"
-                  data-icon="fa-solid fa-calendar-alt">
+                  data-icon="fa-solid fa-calendar-days">
                   <option value="">Select</option>
                   <option value="3 Months">3 Months</option>
                   <option value="6 Months">6 Months</option>

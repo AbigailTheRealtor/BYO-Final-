@@ -571,7 +571,7 @@
                     @if (!empty($data['availability_status']))
                         <div class="col-sm-6">
                             <div class="profile-field-label">Availability</div>
-                            <span class="avail-tag"><i class="fa fa-check-circle me-1"></i>{{ $data['availability_status'] }}</span>
+                            <span class="avail-tag"><i class="fa fa-circle-check me-1"></i>{{ $data['availability_status'] }}</span>
                         </div>
                     @endif
                     @if (!empty($data['evenings_available']) || !empty($data['weekends_available']))
@@ -612,7 +612,7 @@
             <div class="profile-section-body">
                 <div class="hire-btn-grid">
                     <span class="hire-owner-note">
-                        <i class="fa fa-info-circle"></i>
+                        <i class="fa fa-circle-info"></i>
                         Clients will use this button to hire you — it is not active in preview mode.
                     </span>
                 </div>

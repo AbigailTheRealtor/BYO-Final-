@@ -296,7 +296,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select name="auction_length" id="auction_length" class="auction_length grid-picker" style="justify-content: flex-start;" required>
                                         <option value=""></option>
                                         @foreach ($auction_lengths as $item)
-                                        <option value="{{ $item['name'] }}" data-target="" class="card flex-row  {{ $item['class'] }}" style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="" class="card flex-row  {{ $item['class'] }}" style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -373,7 +373,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select name="property_items" id="property_items" class="property_items grid-picker" style="justify-content: flex-start;" multiple required>
                                         <option value=""></option>
                                         @foreach ($property_items as $item)
-                                        <option value="{{ $item['name'] }}" data-target="" class="card flex-row {{ $item['class'] }}" style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="" class="card flex-row {{ $item['class'] }}" style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -508,7 +508,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 <select name="tenant_require" id="tenant_require" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
                                     @foreach ($tenant_require as $item)
-                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                     @endforeach
@@ -526,7 +526,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select class="grid-picker" name="total_acreage" id="total_acreage" style="justify-content: flex-start;" required>
                                         <option value="">Select</option>
                                         @foreach ($acreageRes as $item)
-                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(25% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(25% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -537,7 +537,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                         <div class="wizard-step" data-step="13">
 
                             @php
-                            $garageOptions = [['target' => '.garageYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.garageNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.garageOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-check-circle']];
+                            $garageOptions = [['target' => '.garageYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.garageNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.garageOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-circle-check']];
                             @endphp
                             <div class="row align-items-end mt-4">
                                 <div class="col-md-12">
@@ -559,7 +559,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 </div>
                             </div>
                             @php
-                            $carportOptions = [['target' => '.carportOptionsYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.carportOptionsNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.carportOptionsOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-check-circle']];
+                            $carportOptions = [['target' => '.carportOptionsYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.carportOptionsNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.carportOptionsOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-circle-check']];
                             @endphp
                             <div class="row align-items-end mt-4">
                                 <div class="col-md-12">
@@ -584,7 +584,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
 
                             <div class="form-group removeResidential">
                                 @php
-                                $garageOption = [['target' => '.garageOptionYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.garageOptionNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.garageOptionOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-check-circle']];
+                                $garageOption = [['target' => '.garageOptionYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.garageOptionNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.garageOptionOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-circle-check']];
                                 @endphp
                                 <label class="fw-bold">Garage/Parking Features Needed?</label>
                                 <select name="garageOption" class="grid-picker" id="garage" style="justify-content: flex-start;" required>
@@ -601,7 +601,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                     <select class=" grid-picker" name="garage_parking" style="justify-content: flex-start;" required>
                                     <option value="">Select</option>
                                     @foreach ($garageParking as $total_acreage)
-                                    <option value="{{ $item['name'] }}" data-target="{{ $total_acreage['target'] }}" class="card flex-column" style="width:calc(25% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                    <option value="{{ $item['name'] }}" data-target="{{ $total_acreage['target'] }}" class="card flex-column" style="width:calc(25% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                         {{ $total_acreage['name'] }}
                                     </option>
                                     @endforeach
@@ -617,7 +617,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                         <div class="wizard-step" data-step="14">
 
                             @php
-                            $poolOptions = [['target' => '.poolYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.poolNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.poolOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-check-circle']];
+                            $poolOptions = [['target' => '.poolYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.poolNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.poolOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-circle-check']];
                             @endphp
                             <div class="row align-items-end mt-4 removeCommercial">
                                 <div class="col-md-12">
@@ -635,7 +635,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 </div>
                             </div>
                             @php
-                            $prefrenceOptions = [['target' => '.preferenceYesIncome', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.preferenceNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.preferenceOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-check-circle']];
+                            $prefrenceOptions = [['target' => '.preferenceYesIncome', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.preferenceNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.preferenceOptional', 'name' => 'Optional', 'icon' => 'fa-regular fa-circle-check']];
                             @endphp
                             <div class="row align-items-end mt-4">
                                 <div class="col-md-12">
@@ -651,7 +651,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     </div>
                                 </div>
                                 @php
-                                $ifYesPreference = [['target' => '', 'name' => 'City', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Garden', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Golf Course', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Greenbelt', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Mountain(s)', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Park', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Tennis Court', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Trees/Woods', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'Water', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.preferenceNo', 'name' => 'Beach', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.preferenceOtherIncome', 'name' => ' Other', 'icon' => 'fa-regular fa-check-circle']];
+                                $ifYesPreference = [['target' => '', 'name' => 'City', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Garden', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Golf Course', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Greenbelt', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Mountain(s)', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Park', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Tennis Court', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Trees/Woods', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'Water', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.preferenceNo', 'name' => 'Beach', 'icon' => 'fa-regular fa-circle-xmark'], ['target' => '.preferenceOtherIncome', 'name' => ' Other', 'icon' => 'fa-regular fa-circle-check']];
                                 @endphp
                                 <div class="select2-parent preferenceYesIncome d-none">
                                     <select name="prefrenceYes" class="grid-picker" id="" required>
@@ -670,7 +670,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                         </div>
                         <div class="wizard-step" data-step="15">
                             @php
-                            $petOptions = [['target' => '.petYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.petNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
+                            $petOptions = [['target' => '.petYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.petNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
                             @endphp
                             <div class="row align-items-end mt-4">
                                 <div class="col-md-12">
@@ -704,7 +704,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     </div>
                                     <div class="form-group">
                                         @php
-                                        $purchasing_props = [['target' => '.purchasingPropsYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '.purchasingPropsNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
+                                        $purchasing_props = [['target' => '.purchasingPropsYes', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '.purchasingPropsNo', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
                                         @endphp
                                         <label class="fw-bold" for="heated_sqft">Is the tenant eligible or interested in leasing a
                                             property in 55+ and over communities? </label>
@@ -738,7 +738,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select name="has_non_negotiable_terms" id="has_non_negotiable_terms" class="grid-picker" style="justify-content: flex-start;" required>
                                         <option value=""></option>
                                         @foreach ($non_negotialble as $item)
-                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -791,7 +791,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select name="has_non_negotiable_terms" id="negotiable_terms" class="grid-picker" style="justify-content: flex-start;" multiple required>
                                         <option value=""></option>
                                         @foreach ($non_negotialble_terms_commercial as $item)
-                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -821,7 +821,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select name="has_non_negotiable_terms" id="has_non_negotiable_terms" class="grid-picker" style="justify-content: flex-start;" required>
                                         <option value=""></option>
                                         @foreach ($non_negotialble as $item)
-                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -875,7 +875,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     <select name="non_negotiable_terms" id="negotiable_terms" class="grid-picker" style="justify-content: flex-start;" multiple required>
                                         <option value=""></option>
                                         @foreach ($non_negotialble_terms_residential as $item)
-                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                        <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                         @endforeach
@@ -922,7 +922,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 <select name="lease_for" id="lease_for" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
                                     @foreach ($lease_for as $item)
-                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                     @endforeach
@@ -948,7 +948,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 <select name="has_pets" id="has_pets" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
                                     @foreach ($has_pets as $item)
-                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                     @endforeach
@@ -974,7 +974,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 <select name="credit_score" id="credit_score" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
                                     @foreach ($credit_score as $item)
-                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                     @endforeach
@@ -992,7 +992,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     Has the tenant been evicted within the last 7 years?
                                 </label>
                                 @php
-                                $evicted = [['target' => '.custom_evicted', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
+                                $evicted = [['target' => '.custom_evicted', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
                                 @endphp
                                 <select name="evicted" id="evicted" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
@@ -1017,7 +1017,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     Has the tenant been convicted of a felony within the last 7 years?
                                 </label>
                                 @php
-                                $convicted = [['target' => '.custom_convicted', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
+                                $convicted = [['target' => '.custom_convicted', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark']];
                                 @endphp
                                 <select name="convicted" id="convicted" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
@@ -1055,7 +1055,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                 <select name="tenant_terms" id="tenant_terms" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>
                                     @foreach ($tenant_terms as $item)
-                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;"></i>'>
+                                    <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-column" style="width:calc(20% - 10px);" data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                     @endforeach
@@ -1075,7 +1075,7 @@ $yes_or_nos = [['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle
                                     property?
                                 </label>
                                 @php
-                                $find_property = [['target' => '.costom_find_property', 'id' => 'costom_find_property', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'], ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark', 'id' => '']];
+                                $find_property = [['target' => '.costom_find_property', 'id' => 'costom_find_property', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'], ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark', 'id' => '']];
                                 @endphp
                                 <select name="find_property" id="find_property" class="grid-picker" style="justify-content: flex-start;" required>
                                     <option value=""></option>

@@ -105,7 +105,7 @@
                         </button>
                     </form>
                     <a href="{{ route('seller.counter-terms', $agentBid->id) }}" class="btn btn-sm" style="background: #ffc107; color: #000; border: none;">
-                        <i class="fa-solid fa-exchange-alt me-1"></i>Counter
+                        <i class="fa-solid fa-right-left me-1"></i>Counter
                     </a>
                     <form action="{{ route('rejectSABid') }}" method="POST" class="d-inline">
                         @csrf

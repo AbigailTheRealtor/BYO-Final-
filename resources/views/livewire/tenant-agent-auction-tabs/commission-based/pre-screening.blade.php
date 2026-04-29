@@ -242,7 +242,7 @@
     <label class="fw-bold">Prior Eviction(s) in the Last 7 Years:</label>
     <div class="input-cover">
         <select wire:model="prior_eviction" class="form-control has-icon" id="prior_eviction"
-            data-icon="fa-solid fa-exclamation-triangle">
+            data-icon="fa-solid fa-triangle-exclamation">
             <option value="">Select</option>
             <option value="Yes">Yes</option>
             <option value="No">No</option>
@@ -267,7 +267,7 @@
     <label class="fw-bold">Prior Felony Conviction(s) in the Last 7 Years:</label>
     <div class="input-cover">
         <select wire:model="prior_felony" class="form-control has-icon" id="prior_felony"
-            data-icon="fa-solid fa-exclamation-triangle">
+            data-icon="fa-solid fa-triangle-exclamation">
             <option value="">Select</option>
             <option value="Yes">Yes</option>
             <option value="No">No</option>

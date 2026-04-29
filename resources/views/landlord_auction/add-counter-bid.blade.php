@@ -151,7 +151,7 @@
           <div class="wizard-step" data-step="8">
             <div class="form-group">
               <label class="fw-bold" for="offered_price">Offered Price:</label>
-              <input type="text" id="offered_price" name="offered_price" class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+              <input type="text" id="offered_price" name="offered_price" class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                 required>
             </div>
             @php
@@ -281,7 +281,7 @@
               </select>
               <div class="form-group evictionsYes d-none">
                 <label class="fw-bold" for="">Explain when and what for:</label>
-                <input type="text" name="evictionsYes" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                <input type="text" name="evictionsYes" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
               </div>
             </div>
             <div class="form-group">

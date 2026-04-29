@@ -284,7 +284,7 @@
 
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="fa fa-check-circle me-2"></i>{{ session('success') }}
+            <i class="fa fa-circle-check me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -329,15 +329,15 @@
                                 <div class="preset-meta">
                                     @if ($info['exists'])
                                         @if ($info['services'] > 0)
-                                            <span><i class="fa fa-check-circle text-success me-1"></i>{{ $info['services'] }} service{{ $info['services'] !== 1 ? 's' : '' }} selected</span><br>
+                                            <span><i class="fa fa-circle-check text-success me-1"></i>{{ $info['services'] }} service{{ $info['services'] !== 1 ? 's' : '' }} selected</span><br>
                                         @else
                                             <span class="text-warning"><i class="fa fa-exclamation-circle me-1"></i>No services selected</span><br>
                                         @endif
                                         @if ($info['has_bio'])
-                                            <span><i class="fa fa-check-circle text-success me-1"></i>Bio included</span>
-                                            @if ($info['has_creds']) &nbsp;&middot;&nbsp; <span><i class="fa fa-check-circle text-success me-1"></i>Credentials</span>@endif
+                                            <span><i class="fa fa-circle-check text-success me-1"></i>Bio included</span>
+                                            @if ($info['has_creds']) &nbsp;&middot;&nbsp; <span><i class="fa fa-circle-check text-success me-1"></i>Credentials</span>@endif
                                         @elseif ($info['has_creds'])
-                                            <span><i class="fa fa-check-circle text-success me-1"></i>Credentials included</span>
+                                            <span><i class="fa fa-circle-check text-success me-1"></i>Credentials included</span>
                                         @else
                                             <span class="text-muted"><i class="fa fa-circle-o me-1"></i>No bio or credentials</span>
                                         @endif

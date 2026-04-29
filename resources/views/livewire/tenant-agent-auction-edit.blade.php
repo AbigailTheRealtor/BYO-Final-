@@ -5137,7 +5137,7 @@
             toast.id = 'draft-saved-toast';
             toast.className = 'alert alert-success alert-dismissible mb-3';
             toast.style.cssText = 'position:sticky;top:70px;z-index:999;';
-            toast.innerHTML = '<i class="fa-solid fa-check-circle me-1"></i><span id="draft-saved-msg"></span>'
+            toast.innerHTML = '<i class="fa-solid fa-circle-check me-1"></i><span id="draft-saved-msg"></span>'
                 + '<button type="button" class="btn-close" onclick="this.parentElement.style.display=\'none\'"></button>';
             var firstChild = container.firstElementChild;
             if (firstChild) container.insertBefore(toast, firstChild); else container.appendChild(toast);

@@ -120,7 +120,7 @@
       </select>
       <div class="form-group otherLotFeatureVacant d-none">
         <label class="fw-bold">Lot Features:</label>
-        <input type="text" name="otherLotFeatureVac" value="{{isset($auction->get->otherLotFeatureVac) ? $auction->get->otherLotFeatureVac : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherLotFeatureVac" value="{{isset($auction->get->otherLotFeatureVac) ? $auction->get->otherLotFeatureVac : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -152,7 +152,7 @@
       </select>
       <div class="form-group otherStructuresVac d-none">
         <label class="fw-bold">Other Structures:</label>
-        <input type="text" name="custom_other_structures" value="{{isset($auction->get->custom_other_structures) ? $auction->get->custom_other_structures : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="custom_other_structures" value="{{isset($auction->get->custom_other_structures) ? $auction->get->custom_other_structures : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -222,7 +222,7 @@
       </select>
       <div class="form-group otherFrontageVacant d-none">
         <label class="fw-bold">Road Frontage:</label>
-        <input type="text" name="otherFrontage" value="{{isset($auction->get->otherFrontage) ? $auction->get->otherFrontage : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+        <input type="text" name="otherFrontage" value="{{isset($auction->get->otherFrontage) ? $auction->get->otherFrontage : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
   </div>
@@ -255,7 +255,7 @@
       </select>
       <div class="form-group otherSurfaceVacant d-none">
         <label class="fw-bold">Road Surface Type:</label>
-        <input type="text" name="otherSurfaceVac" value="{{isset($auction->get->otherSurfaceVac) ? $auction->get->otherSurfaceVac : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+        <input type="text" name="otherSurfaceVac" value="{{isset($auction->get->otherSurfaceVac) ? $auction->get->otherSurfaceVac : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
   </div>
@@ -309,7 +309,7 @@
       <div class="form-group otherUtilitiseVacant d-none">
         <label class="fw-bold">Utilities:</label>
         <input type="text" name="otherUtilitiseVac" value="{{isset($auction->get->otherUtilitiseVac) ? $auction->get->otherUtilitiseVac : ''}}" id="legal_description" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle" required>
+          data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
 
@@ -338,7 +338,7 @@
       <div class="form-group otherSewerVacant d-none">
         <label class="fw-bold">Sewer:</label>
         <input type="text" name="otherSewerVac" value="{{isset($auction->get->otherSewerVac) ? $auction->get->otherSewerVac : ''}}" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle" required>
+          data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
 
@@ -367,7 +367,7 @@
       <div class="form-group otherWaterVacant d-none">
         <label class="fw-bold">Water:</label>
         <input type="text" name="otherWaterVac" value="{{isset($auction->get->otherWaterVac) ? $auction->get->otherWaterVac : ''}}" id="legal_description" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle" required>
+          data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
 

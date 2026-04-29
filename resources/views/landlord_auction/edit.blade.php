@@ -1006,7 +1006,7 @@
                             `<div class="form-group ${targetName?.target?.slice(1)} ${roomTypeBackendData[name] === 'Other' ? '' : 'd-none'}">
                                 <label class="fw-bold">${labelText}</label>
                                 <input type="text" name="${name}Other" id="dynamic-input-${name}-${optionName}" data-option="${optionName}" value="${roomTypeBackendData[name + 'Other']}" class="form-control has-icon dynamic-room-input"
-                                    data-icon="fa-regular fa-check-circle" required>
+                                    data-icon="fa-regular fa-circle-check" required>
                             </div>`;
     
                         const dropdownHtml = `

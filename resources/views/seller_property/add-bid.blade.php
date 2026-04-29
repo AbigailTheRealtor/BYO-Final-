@@ -211,7 +211,7 @@
                   <option value="">Select</option>
                   @foreach ($term_financings as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                      data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                       style="width:calc(33.3% - 10px);">
                       {{ $item['name'] }}
                     </option>
@@ -228,7 +228,7 @@
                 <div class="form-group nftAuction d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What type of Non-Fungible Token (NFT) does the buyer have?</label>
-                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What percentage of the purchase price will the buyer use as a Non-Fungible Token (NFT)?</label>
@@ -244,7 +244,7 @@
               <div class="form-group cryptoAuction d-none">
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What type of Cryptocurrency does the buyer have?</label>
-                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What percentage of the purchase price will be used with Cryptocurrency?</label>
@@ -373,7 +373,7 @@
                     <label class="fw-bold">Has the buyer experienced any recent changes in their financial situation that may affect their
                       ability to make mortgage payments?</label>
                     <input type="text" name="financial_situation" id="financial_situation" class="form-control has-icon"
-                      data-icon="fa-regular fa-check-circle" required>
+                      data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group">
                     <label class="fw-bold">How long has the buyer been employed at their current job?</label>
@@ -383,12 +383,12 @@
                   <div class="form-group">
                     <label class="fw-bold">Can the buyer provide details about their employment history over the past few years?</label>
                     <input type="text" name="employement_detail" id="employement_detail" class="form-control has-icon"
-                      data-icon="fa-regular fa-check-circle" required>
+                      data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group">
                     <label class="fw-bold">Does the buyer foresee any changes in their employment status or income in the near future?</label>
                     <input type="text" name="employement_status_change" id="employement_status_change" class="form-control has-icon"
-                      data-icon="fa-regular fa-check-circle" required>
+                      data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group">
                     <label class="fw-bold">What is the buyer’s current gross monthly income?</label>
@@ -415,7 +415,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the buyer propose for the lease option?</label>
-                      <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -427,7 +427,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the buyer for the lease purchase?</label>
-                      <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group">
                     @php
@@ -460,7 +460,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the buyer propose for the lease purchase?</label>
-                      <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -472,7 +472,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the buyer for the lease option?</label>
-                      <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div> 
                   <div class="form-group">
                     @php
@@ -499,7 +499,7 @@
               <div class="form-group assumableAuction d-none">
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What assumable terms are being offered?</label>
-                    <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 @php
                 $downPay = [
@@ -548,7 +548,7 @@
                       <label class="fw-bold">Has the buyer experienced any recent changes in their financial situation that may affect their
                         ability to make mortgage payments?</label>
                       <input type="text" name="assumable_financial_situation" id="assumable_financial_situation" class="form-control has-icon"
-                        data-icon="fa-regular fa-check-circle" required>
+                        data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group">
                       <label class="fw-bold">How long has the buyer been employed at their current job?</label>
@@ -558,12 +558,12 @@
                     <div class="form-group">
                       <label class="fw-bold">Can the buyer provide details about their employment history over the past few years?</label>
                       <input type="text" name="assumable_employement_detail" id="assumable_employement_detail" class="form-control has-icon"
-                        data-icon="fa-regular fa-check-circle" required>
+                        data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group">
                       <label class="fw-bold">Does the buyer foresee any changes in their employment status or income in the near future?</label>
                       <input type="text" name="assumable_employement_status_change" id="assumable_employement_status_change" class="form-control has-icon"
-                        data-icon="fa-regular fa-check-circle" required>
+                        data-icon="fa-regular fa-circle-check" required>
                     </div>
                     <div class="form-group">
                       <label class="fw-bold">What is the buyer’s current gross monthly income?</label>
@@ -610,7 +610,7 @@
                   </select>
                   <div class="form-group col-md-12 otherTradeAuction d-none">
                     <label class="fw-bold">Acceptable Exchange Item:</label>
-                    <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                 </div>
                 <div class="form-group col-md-12">
@@ -628,7 +628,7 @@
                 <div class="form-group col-md-12">
                   <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                   <input type="text" name="valueTrade" class="form-control has-icon"
-                    data-icon="fa-regular fa-check-circle" required>
+                    data-icon="fa-regular fa-circle-check" required>
                 </div>
               </div>
               {{-- Exchange/Trade --}}
@@ -747,8 +747,8 @@
                 $buyerRepresentedOpt = [
                   ['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], 
                   ['name' => 'No', 'target' => '', 'icon' => 'fa-regular fa-circle-xmark'],
-                  ['name' => 'Negotiable', 'target' => '', 'icon' => 'fa-regular fa-check-circle'],
-                  ['name' => 'No compensation was offered', 'target' => '', 'icon' => 'fa-regular fa-check-circle'],
+                  ['name' => 'Negotiable', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
+                  ['name' => 'No compensation was offered', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
                 ];
                 @endphp
                 <div class="form-group">
@@ -791,10 +791,10 @@
                   <div class="form-group buyer-agent-commission d-none">
                     @php
                     $agentCommissionOpt = [
-                      ['name' => '2%', 'target' => '', 'icon' => 'fa-regular fa-check-circle'], 
-                      ['name' => '2.5%', 'target' => '', 'icon' => 'fa-regular fa-check-circle'],
-                      ['name' => '3%', 'target' => '', 'icon' => 'fa-regular fa-check-circle'],
-                      ['name' => 'Other', 'target' => '.agent-commission-other', 'icon' => 'fa-regular fa-check-circle'],
+                      ['name' => '2%', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], 
+                      ['name' => '2.5%', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
+                      ['name' => '3%', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
+                      ['name' => 'Other', 'target' => '.agent-commission-other', 'icon' => 'fa-regular fa-circle-check'],
                     ];
                     @endphp
                     <div class="form-group">

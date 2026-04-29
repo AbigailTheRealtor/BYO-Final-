@@ -69,7 +69,7 @@
             @else
                 <div class="mt-2 mb-3">
                     <a href="{{ $presentation_link }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                        <i class="fa-solid fa-external-link-alt me-1"></i> Open Video Link
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> Open Video Link
                     </a>
                 </div>
             @endif
@@ -110,7 +110,7 @@
             @endphp
             <div class="form-group mb-3">
                 <label class="fw-bold text-success">
-                    <i class="fa-solid fa-check-circle me-1"></i> Uploaded Business Card:
+                    <i class="fa-solid fa-circle-check me-1"></i> Uploaded Business Card:
                 </label>
                 <div class="mt-2">
                     <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
@@ -128,7 +128,7 @@
                                     {{ Str::limit($bcFileName, 25) }}
                                 </span>
                                 <a href="{{ asset('storage/' . $existingBusinessCard) }}" target="_blank" class="small text-primary">
-                                    <i class="fa-solid fa-external-link-alt"></i> View
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> View
                                 </a>
                             </div>
                         </div>
@@ -137,7 +137,7 @@
                             wire:click="removeExistingBusinessCard"
                             wire:loading.attr="disabled"
                             title="Remove this file">
-                            <i class="fa-solid fa-trash-alt"></i>
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 </div>
@@ -276,7 +276,7 @@
                 @if (!empty($existingFiles))
                     <div class="form-group mb-3">
                         <label class="fw-bold text-success">
-                            <i class="fa-solid fa-check-circle me-1"></i> Uploaded Files:
+                            <i class="fa-solid fa-circle-check me-1"></i> Uploaded Files:
                         </label>
                         <div class="mt-2">
                             @foreach ($promoMaterials[$idx]['files'] as $fileIdx => $file)
@@ -301,7 +301,7 @@
                                                     {{ Str::limit($fileName, 25) }}
                                                 </span>
                                                 <a href="{{ asset('storage/' . $file) }}" target="_blank" class="small text-primary">
-                                                    <i class="fa-solid fa-external-link-alt"></i> View
+                                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> View
                                                 </a>
                                             </div>
                                         </div>
@@ -310,7 +310,7 @@
                                             wire:click="removeExistingFile({{ $idx }}, {{ $fileIdx }})"
                                             wire:loading.attr="disabled"
                                             title="Remove this file">
-                                            <i class="fa-solid fa-trash-alt"></i>
+                                            <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </div>
                                 @endif
@@ -332,7 +332,7 @@
                             id="promo-materials-{{ $idx }}">
                     </div>
                     <small class="text-muted">Upload one or more files (PDF, JPG, JPEG, PNG, WEBP, DOC, PPT)</small>
-                    <small class="text-info d-block"><i class="fa-solid fa-info-circle"></i> Tip: If upload fails, use the link field above instead.</small>
+                    <small class="text-info d-block"><i class="fa-solid fa-circle-info"></i> Tip: If upload fails, use the link field above instead.</small>
                     @error('promoMaterials.' . $idx . '.files')
                         <small class="text-danger d-block">{{ $message }}</small>
                     @enderror

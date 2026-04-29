@@ -141,7 +141,7 @@
         <div class="form-group">
             <label>Maintenance issues are handled by:</label>
             <div class="input-cover">
-                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                     <option value="">Select</option>
                     <option value="Landlord">Landlord</option>
                     <option value="Property Manager">Property Manager</option>
@@ -172,7 +172,7 @@
         <div class="form-group">
             <label>Guests are:</label>
             <div class="input-cover">
-                <select wire:model="guests_allowed" class="form-control has-icon" data-icon="fa-solid fa-user-friends">
+                <select wire:model="guests_allowed" class="form-control has-icon" data-icon="fa-solid fa-user-group">
                     <option value="">Select</option>
                     <option value="Allowed">Allowed</option>
                     <option value="Not Allowed">Not Allowed</option>
@@ -199,7 +199,7 @@
         <div class="form-group">
             <label>Maintenance issues are handled by:</label>
             <div class="input-cover">
-                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                     <option value="">Select</option>
                     <option value="Landlord">Landlord</option>
                     <option value="Property Manager">Property Manager</option>

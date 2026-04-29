@@ -51,7 +51,7 @@
         <div class="form-group other_heated_res d-none">
             <label class="fw-bold"> Sqft Heated Source:</label>
             <input type="text" class="form-control has-icon" name="other_heated_sqft" value="{{isset($auction->get->other_heated_sqft) ? $auction->get->other_heated_sqft : ''}}"
-                data-icon="fa-regular fa-check-circle" id="custom_property_condition"
+                data-icon="fa-regular fa-circle-check" id="custom_property_condition"
                 required />
         </div>
     </span>
@@ -84,7 +84,7 @@
         <div class="form-group other_lease_commercial d-none">
             <label class="fw-bold"> Sqft Total Source: </label>
             <input type="text" class="form-control has-icon" name="other_lease_sqft" value="{{isset($auction->get->other_lease_sqft) ? $auction->get->other_lease_sqft : ''}}"
-                data-icon="fa-regular fa-check-circle" id="custom_property_condition"
+                data-icon="fa-regular fa-circle-check" id="custom_property_condition"
                 required />
         </div>
     </span>
@@ -213,7 +213,7 @@
                 [
                     'name' => 'Yes',
                     'target' => '.poolYesRes',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
                 [
                     'name' => 'No',
@@ -244,7 +244,7 @@
                 @foreach ($poolRes as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                         class="card flex-column " style="width:calc(33.3% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->pool) && $auction->get->pool === $item['name'] ? 'selected' : '' }} >
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->pool) && $auction->get->pool === $item['name'] ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -256,56 +256,56 @@
                 placeholder="Enter Heated Square Footage" id="pool"
                 class="form-control has-icon"
                 data-msg-required="Please Enter Heated Square Footage"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
         </div>
     </div>
     </span>
     <div class="row align-items-end mt-4">
         @php
             $views = [
-                ['target' => '', 'name' => 'City', 'icon' => 'fa-regular fa-check-circle'],
+                ['target' => '', 'name' => 'City', 'icon' => 'fa-regular fa-circle-check'],
                 [
                     'target' => '',
                     'name' => 'Garden',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
                 [
                     'target' => '',
                     'name' => 'Golf Course',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
                 [
                     'target' => '',
                     'name' => 'Greenbelt',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
                 [
                     'target' => '',
                     'name' => 'Mountain(s)',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
-                ['target' => '', 'name' => 'Park', 'icon' => 'fa-regular fa-check-circle'],
+                ['target' => '', 'name' => 'Park', 'icon' => 'fa-regular fa-circle-check'],
                 [
                     'target' => '',
                     'name' => 'Tennis Court',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
                 [
                     'target' => '',
                     'name' => 'Trees/Woods',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
-                ['target' => '', 'name' => 'Water', 'icon' => 'fa-regular fa-check-circle'],
+                ['target' => '', 'name' => 'Water', 'icon' => 'fa-regular fa-circle-check'],
                 [
                     'target' => '.preferenceNo',
                     'name' => 'Beach',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
-                ['target' => '', 'name' => 'Pool', 'icon' => 'fa-regular fa-check-circle'],
+                ['target' => '', 'name' => 'Pool', 'icon' => 'fa-regular fa-circle-check'],
                 [
                     'target' => '.viewOther',
                     'name' => ' Other',
-                    'icon' => 'fa-regular fa-check-circle',
+                    'icon' => 'fa-regular fa-circle-check',
                 ],
             ];
         @endphp
@@ -324,7 +324,7 @@
                 <label class="fw-bold" for="">View:</label>
                 <input type="text" name="viewOther" id="total_acreage" value="{{isset($auction->get->viewOther) ? $auction->get->viewOther : ''}}"
                     class="form-control has-icon hide_arrow"
-                    data-icon="fa-regular fa-check-circle" required>
+                    data-icon="fa-regular fa-circle-check" required>
             </div>
         </div>
     </div>
@@ -337,7 +337,7 @@
                     [
                         'target' => '.garageOptionYes',
                         'name' => 'Yes',
-                        'icon' => 'fa-regular fa-check-circle',
+                        'icon' => 'fa-regular fa-circle-check',
                     ],
                     [
                         'target' => '.garageOptionNo',
@@ -452,7 +452,7 @@
                 <option value="{{ $appliance['name'] }}"
                     data-target="{{ $appliance['target'] }}" class="card flex-row"
                     style="width:calc(33.33% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->appliances) && in_array($appliance['name'], $auction->get->appliances) ? 'selected' : '' }} >
+                    data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->appliances) && in_array($appliance['name'], $auction->get->appliances) ? 'selected' : '' }} >
                     {{ $appliance['name'] }}
                 </option>
             @endforeach
@@ -461,7 +461,7 @@
     <div class="form-group cutom_appliances d-none">
         <label class="fw-bold">Appliances: </label>
         <input type="text" class="form-control has-icon" name="otherAppliances" value="{{isset($auction->get->otherAppliances) ? $auction->get->otherAppliances : ''}}"
-            data-icon="fa-regular fa-check-circle" id="cutom_appliances" required />
+            data-icon="fa-regular fa-circle-check" id="cutom_appliances" required />
     </div>
 </div>
 <div class="wizard-step" data-step="16" data-old="19">
@@ -484,7 +484,7 @@
                 @foreach ($Furnishings as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                         class="card flex-row" style="width:calc(33.33% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->furnishings) && in_array($item['name'], $auction->get->furnishings) ? 'selected' : '' }} >
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->furnishings) && in_array($item['name'], $auction->get->furnishings) ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach

@@ -49,7 +49,7 @@
                 <option value=""></option>
                 @foreach ($amenitiesFeatureCommercial as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row" 
-                    style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->amenities) && in_array($item['name'], $auction->get->amenities) ? 'selected' : '' }} >
+                    style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->amenities) && in_array($item['name'], $auction->get->amenities) ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -60,7 +60,7 @@
                 Features:
             </label>
             <input type="text" name="otherAmenities" id="custom_non_negotiable_terms" value="{{isset($auction->get->otherAmenities) ? $auction->get->otherAmenities : ''}}"
-                placeholder="" class="form-control" data-icon="fa-regular fa-check-circle"
+                placeholder="" class="form-control" data-icon="fa-regular fa-circle-check"
                 required>
         </div>
     </span>
@@ -115,7 +115,7 @@
                 <option value=""></option>
                 @foreach ($amenitiesFeatureRes as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                        class="card flex-row" style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->amenities) && in_array($item['name'], $auction->get->amenities) ? 'selected' : '' }} >
+                        class="card flex-row" style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->amenities) && in_array($item['name'], $auction->get->amenities) ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -126,7 +126,7 @@
             </label>
             <input type="text" name="otherAmenities" id="custom_negotiable_terms" value="{{isset($auction->get->otherAmenities) ? $auction->get->otherAmenities : ''}}"
                 placeholder="" class="form-control has-icon"
-                data-icon="fa-regular fa-check-circle" required>
+                data-icon="fa-regular fa-circle-check" required>
         </div>
     </span>
 </div>
@@ -163,7 +163,7 @@
             @foreach ($rent_includes as $item)
                 <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-row" style="width:calc(33.33% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->rent_include) && in_array($item['name'], $auction->get->rent_include) ? 'selected' : '' }} >
+                    data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->rent_include) && in_array($item['name'], $auction->get->rent_include) ? 'selected' : '' }} >
                     {{ $item['name'] }}
                 </option>
             @endforeach
@@ -172,7 +172,7 @@
     <div class="form-group rent_include d-none">
         <label class="fw-bold">Rent Includes: </label>
         <input type="text" class="form-control has-icon" name="other_rent_include" value="{{isset($auction->get->other_rent_include) ? $auction->get->other_rent_include : ''}}"
-            data-icon="fa-regular fa-check-circle" id="rent_include" required />
+            data-icon="fa-regular fa-circle-check" id="rent_include" required />
     </div>
 </div>
 <div class="wizard-step" data-step="19" data-old="22">
@@ -205,7 +205,7 @@
             @foreach ($tenantPays as $item)
                 <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-row" style="width:calc(33.33% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->tenantPays) && in_array($item['name'], json_decode($auction->get->tenantPays, true) ?? []) ? 'selected' : '' }} >
+                    data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->tenantPays) && in_array($item['name'], json_decode($auction->get->tenantPays, true) ?? []) ? 'selected' : '' }} >
                     {{ $item['name'] }}
                 </option>
             @endforeach
@@ -214,7 +214,7 @@
     <div class="form-group otherTenantPays d-none">
         <label class="fw-bold">Tenant Pays: </label>
         <input type="text" class="form-control has-icon" placeholder="" value="{{isset($auction->get->otherTenantPays) ? $auction->get->otherTenantPays : ''}}"
-            name="otherTenantPays" data-icon="fa-regular fa-check-circle" id="rent_include"
+            name="otherTenantPays" data-icon="fa-regular fa-circle-check" id="rent_include"
             required />
     </div>
     @php
@@ -249,7 +249,7 @@
             @foreach ($ownerPays as $item)
                 <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                     class="card flex-row" style="width:calc(33.33% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->ownerPays) && in_array($item['name'], json_decode($auction->get->ownerPays, true) ?? []) ? 'selected' : '' }} >
+                    data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->ownerPays) && in_array($item['name'], json_decode($auction->get->ownerPays, true) ?? []) ? 'selected' : '' }} >
                     {{ $item['name'] }}
                 </option>
             @endforeach
@@ -258,7 +258,7 @@
     <div class="form-group otherOwnerPays d-none">
         <label class="fw-bold">Owner Pays:</label>
         <input type="text" class="form-control has-icon" placeholder="" value="{{isset($auction->get->otherOwnerPays) ? $auction->get->otherOwnerPays : ''}}"
-            name="otherOwnerPays" data-icon="fa-regular fa-check-circle" id="rent_include"
+            name="otherOwnerPays" data-icon="fa-regular fa-circle-check" id="rent_include"
             required />
     </div>
 
@@ -333,7 +333,7 @@
         </label>
         @php
             $propertyLoc = [
-                ['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-check-circle'],
+                ['name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
                 ['name' => 'No', 'target' => '', 'icon' => 'fa-regular fa-circle-xmark'],
             ];
         @endphp
@@ -372,7 +372,7 @@
                     <option value="{{ $item['name'] }}"
                         data-target="{{ $item['target'] }}" class="card flex-row"
                         style="width:calc(33.33% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->leaseAmount) && $auction->get->leaseAmount == $item['name'] ? 'selected' : '' }} >
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->leaseAmount) && $auction->get->leaseAmount == $item['name'] ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -409,7 +409,7 @@
                     <option value="{{ $item['name'] }}"
                         data-target="{{ $item['target'] }}" class="card flex-row"
                         style="width:calc(33.33% - 10px);"
-                        data-icon='<i class="fa-regular fa-check-circle"></i>' {{isset($auction->get->leaseAmount) && $auction->get->leaseAmount == $item['name'] ? 'selected' : '' }} >
+                        data-icon='<i class="fa-regular fa-circle-check"></i>' {{isset($auction->get->leaseAmount) && $auction->get->leaseAmount == $item['name'] ? 'selected' : '' }} >
                         {{ $item['name'] }}
                     </option>
                 @endforeach

@@ -17,7 +17,7 @@
       </select>
       <div class="form-group otherAirConditionCom d-none">
         <label class="fw-bold">Air Conditioning:</label>
-        <input type="text" name="otherAirConditionCom" value="{{isset($auction->get->otherAirConditionCom) ? $auction->get->otherAirConditionCom : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherAirConditionCom" value="{{isset($auction->get->otherAirConditionCom) ? $auction->get->otherAirConditionCom : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
     @php
@@ -61,7 +61,7 @@
       <div class="form-group otherHeatingFuelCom d-none">
         <label class="fw-bold">Heating and Fuel:</label>
         <input type="text" name="otherHeatingFuelCom" value="{{isset($auction->get->otherHeatingFuelCom) ? $auction->get->otherHeatingFuelCom : ''}}" class="form-control has-icon"
-            data-icon="fa-regular fa-check-circle">
+            data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -323,12 +323,12 @@
       <div class="form-group other-dock-com d-none">
         <label class="fw-bold">Dock Description:</label>
         <input type="text" name="custom_dock" value="{{isset($auction->get->custom_dock) ? $auction->get->custom_dock : ''}}" id="custom_dock"
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
       <div class="form-group">
         <label class="fw-bold">Dock Lift Capacity:</label>
         <input type="text" name="dock_lift_capacity" value="{{isset($auction->get->dock_lift_capacity) ? $auction->get->dock_lift_capacity : ''}}" id="dock_lift_capacity"
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
       <div class="form-group">
         <label class="fw-bold">Dock Year Built:</label>
@@ -343,7 +343,7 @@
       <div class="form-group">
         <label class="fw-bold">Dock Maintenance Fee:</label>
         <input type="number" name="dock_maintenance_fee" value="{{isset($auction->get->dock_maintenance_fee) ? $auction->get->dock_maintenance_fee : ''}}" id="dock_maintenance_fee"
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
       @php
         $feeFrequency = [['name' => 'Annual', 'target' => ''], ['name' => 'Monthly', 'target' => ''], ['name' => 'Quarterly', 'target' => ''], ['name' => 'N/A', 'target' => '']]
@@ -398,7 +398,7 @@
     <div class="form-group otherOwnershipCommercial">
       <label class="fw-bold">Ownership:</label>
       <input type="text" name="otherOwnership" value="{{isset($auction->get->otherOwnership) ? $auction->get->otherOwnership : ''}}" id="custom_ownership" class="form-control has-icon"
-        data-icon="fa-regular fa-check-circle" required>
+        data-icon="fa-regular fa-circle-check" required>
     </div>
     @php
       $occupantCommercial = [['name' => 'Owner', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Tenant', 'target' => '', 'icon' => 'fa-regular fa-circle-check'], ['name' => 'Vacant', 'target' => '', 'icon' => 'fa-regular fa-circle-check']];
@@ -549,7 +549,7 @@
         <div class="form-group otherSaleCommercial d-none">
           <label class="fw-bold">Sale Includes:</label>
           <input type="text" name="otherSale" value="{{isset($auction->get->otherSale) ? $auction->get->otherSale : ''}}" class="form-control has-icon"
-            data-icon="fa-regular fa-check-circle">
+            data-icon="fa-regular fa-circle-check">
         </div>
       </div>
     </div>

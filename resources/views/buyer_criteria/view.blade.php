@@ -2052,7 +2052,7 @@
                                                     </div>
                                                     @endif
                                                     <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                                        <i class="fa fa-info-circle me-1"></i>Added services or terms do not increase either score. Commission and fee details are not visible to competing agents.
+                                                        <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score. Commission and fee details are not visible to competing agents.
                                                     </div>
                                                 </div>
                                                 @endif

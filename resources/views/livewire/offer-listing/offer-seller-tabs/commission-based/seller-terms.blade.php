@@ -653,7 +653,7 @@
         </label>
         <div class="input-cover">
             <input type="text" wire:model="crypto_exchange_method" class="form-control has-icon"
-                data-icon="fa-solid fa-exchange-alt"
+                data-icon="fa-solid fa-right-left"
                 placeholder="Enter how crypto will be valued (e.g., Spot price at closing, Coinbase exchange rate)">
         </div>
     </div>
@@ -726,7 +726,7 @@
 <div id="seller-financing-exchange-section" wire:ignore.self style="display: {{ in_array('Exchange/Trade', $offered_financing ?? []) ? 'block' : 'none' }}">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
         <h5 class="fw-bold text-primary mb-0">
-            <i class="fa-solid fa-exchange-alt me-2"></i>Exchange/Trade
+            <i class="fa-solid fa-right-left me-2"></i>Exchange/Trade
         </h5>
     </div>
 
@@ -742,7 +742,7 @@
             $eiArr = is_array($exchange_item) ? $exchange_item : (is_string($exchange_item) && trim($exchange_item) !== '' ? (json_decode($exchange_item, true) ?? [$exchange_item]) : []);
         @endphp
         <div class="input-cover" wire:ignore>
-            <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-exchange-alt" data-selected='@json($eiArr)' multiple>
+            <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-right-left" data-selected='@json($eiArr)' multiple>
                 @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $eiOpt)
                     <option value="{{ $eiOpt }}" {{ in_array($eiOpt, $eiArr) ? 'selected' : '' }}>{{ $eiOpt }}</option>
                 @endforeach
@@ -754,7 +754,7 @@
         <div class="form-group">
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
-                    data-icon="fa-solid fa-exchange-alt"
+                    data-icon="fa-solid fa-right-left"
                     placeholder="Enter exchange item (e.g., Private Jet, Yacht, Luxury RV)">
             </div>
         </div>
@@ -833,7 +833,7 @@
 
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
-                data-icon="fa-solid fa-exchange-alt"
+                data-icon="fa-solid fa-right-left"
                 placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)">
         </div>
     </div>
@@ -1054,7 +1054,7 @@
         </label>
         <div class="input-cover">
             <select wire:model="lease_option_maintenance" class="form-control has-icon"
-                data-icon="fa-solid fa-tools">
+                data-icon="fa-solid fa-screwdriver-wrench">
                 <option value="">Select</option>
                 <option value="Seller">Seller</option>
                 <option value="Tenant-Buyer">Tenant-Buyer</option>
@@ -1229,7 +1229,7 @@
         </label>
         <div class="input-cover">
             <select wire:model="lease_purchase_maintenance" class="form-control has-icon"
-                data-icon="fa-solid fa-tools">
+                data-icon="fa-solid fa-screwdriver-wrench">
                 <option value="">Select</option>
                 <option value="Seller">Seller</option>
                 <option value="Tenant-Buyer">Tenant-Buyer</option>

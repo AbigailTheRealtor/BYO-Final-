@@ -193,7 +193,7 @@
                                     ? $rlUrl : 'https://' . $rlUrl;
                             @endphp
                             <a href="{{ $rlHref }}" target="_blank" class="text-primary text-decoration-none">
-                                <i class="fa fa-external-link-alt me-1"></i>
+                                <i class="fa fa-arrow-up-right-from-square me-1"></i>
                                 {{ !empty($rlText) ? $rlText : $rlUrl }}
                             </a>
                         </div>
@@ -516,7 +516,7 @@
             @if (data_get($bid, 'get.additional_details'))
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-file-alt me-2"></i>Additional Details
+                    <i class="fa fa-file-lines me-2"></i>Additional Details
                 </h6>
                 <div class="field-value">{{ data_get($bid, 'get.additional_details') }}</div>
             </div>
@@ -750,7 +750,7 @@
                     @if (!empty($svsMissingDisplay))
                     <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
                         <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                            <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($svsMissingDisplay) }})
+                            <i class="fa fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($svsMissingDisplay) }})
                         </div>
                         <ul class="mb-0" style="padding-left: 1.5rem; list-style: disc;">
                             @foreach ($svsMissingDisplay as $missingSvc)
@@ -780,7 +780,7 @@
                         }
                     @endphp
                     <a href="{{ $presentationLink }}" target="_blank" class="text-primary text-decoration-none">
-                        <i class="fa fa-external-link-alt me-1"></i>Watch Presentation
+                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Watch Presentation
                     </a>
                 </div>
                 @endif
@@ -808,7 +808,7 @@
                         }
                     @endphp
                     <a href="{{ $businessCardLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                        <i class="fa fa-external-link-alt me-1"></i>View Business Card (Link)
+                        <i class="fa fa-arrow-up-right-from-square me-1"></i>View Business Card (Link)
                     </a>
                     @endif
 
@@ -873,7 +873,7 @@
                                 }
                             @endphp
                             <a href="{{ $materialLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                                <i class="fa fa-external-link-alt me-1"></i>Open Link
+                                <i class="fa fa-arrow-up-right-from-square me-1"></i>Open Link
                             </a>
                         </div>
                         @endif
@@ -999,7 +999,7 @@
         </form>
         <a href="{{ route('tenant.counter-terms', $bid->id) }}" class="btn btn-primary"
            style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-            <i class="fa-solid fa-exchange-alt me-1"></i>Counter Bid
+            <i class="fa-solid fa-right-left me-1"></i>Counter Bid
         </a>
         <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
             @csrf

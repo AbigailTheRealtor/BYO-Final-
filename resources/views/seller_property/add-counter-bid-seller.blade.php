@@ -427,7 +427,7 @@
                   <option value="">Select</option>
                   @foreach ($term_financings as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-                      data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-row"
+                      data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-row"
                       style="width:calc(33.3% - 10px);">
                       {{ $item['name'] }}
                     </option>
@@ -437,14 +437,14 @@
                 {{-- Other --}}
                 <div class="form-group otherFinancing d-none">
                     <label class="fw-bold">Acceptable Currency/Financing:</label>
-                    <input type="text" name="otherFinancing"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="otherFinancing"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 {{-- Other --}}
                 {{-- NFT  --}}
                 <div class="form-group nft d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What type of Non-Fungible Token (NFT) will the seller accept?</label>
-                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="type_of_NFT_accepted" id="type_of_NFT_accepted" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What percentage of the sales price will the seller accept in the form of a Non-Fungible Token (NFT)?</label>
@@ -460,7 +460,7 @@
               <div class="form-group crypto d-none">
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What type of cryptocurrency will the seller accept?</label>
-                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="cryptocurrency_type" id="cryptocurrency_type" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                 </div>
                 <div class="form-group col-md-12">
                     <label class="fw-bold">What percentage of the sales price will the seller accept in cryptocurrency?</label>
@@ -568,7 +568,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease option?</label>
-                      <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_option_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -580,7 +580,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the seller for the lease option?</label>
-                      <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_option_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group">
                     @php
@@ -611,7 +611,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
-                      <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_purchase_terms" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the proposed duration of the lease?</label>
@@ -623,7 +623,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the seller for the lease purchase?</label>
-                      <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input name="lease_purchase_conditions" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>    
                   <div class="form-group">
                     @php
@@ -650,11 +650,11 @@
                 <div class="form-group assumable d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What assumable terms are being offered?</label>
-                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="assumable_terms_offered"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">Are there any restrictions or qualifications for a buyer assuming the existing financing?</label>
-                      <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                      <input type="text" name="restrictions_or_qualifications"  class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                   <div class="form-group col-md-12">
                     <label class="fw-bold">What is the interest rate of the assumable loan?</label>
@@ -711,7 +711,7 @@
                   </select>
                   <div class="form-group col-md-12 otherTrade d-none">
                     <label class="fw-bold">Acceptable Exchange Item:</label>
-                    <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                    <input type="text" name="otherTrade" class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                   </div>
                 </div>
                 <div class="form-group col-md-12">
@@ -729,7 +729,7 @@
                 <div class="form-group col-md-12">
                   <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                   <input type="text" name="valueTrade" class="form-control has-icon"
-                    data-icon="fa-regular fa-check-circle" required>
+                    data-icon="fa-regular fa-circle-check" required>
                 </div>
               </div>
               {{-- Exchange/trade --}}

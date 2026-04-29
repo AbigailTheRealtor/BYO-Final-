@@ -28,7 +28,7 @@
             </div>
         </div>
         <a href="{{ $data['edit_route'] }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-edit me-1"></i>Edit Listing
+            <i class="fa fa-pen-to-square me-1"></i>Edit Listing
         </a>
     </div>
 
@@ -235,7 +235,7 @@
             <i class="fa fa-arrow-left me-1"></i>Back to My Offer Listings
         </a>
         <a href="{{ $data['edit_route'] }}" class="btn btn-sm text-white" style="background:#049399;">
-            <i class="fa fa-edit me-1"></i>Edit Listing
+            <i class="fa fa-pen-to-square me-1"></i>Edit Listing
         </a>
     </div>
 

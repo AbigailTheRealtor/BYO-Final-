@@ -97,7 +97,7 @@
         <div class="form-group payment_timing_days d-none ">
             <label class="fw-bold">Payment Timing for Broker Fees:</label>
             <input type="number" class="form-control has-icon" placeholder=""
-                name="payment_timing_days" data-icon="fa-regular fa-check-circle" value="{{isset($auction->get->payment_timing_days) ? $auction->get->payment_timing_days : '' }}" required />
+                name="payment_timing_days" data-icon="fa-regular fa-circle-check" value="{{isset($auction->get->payment_timing_days) ? $auction->get->payment_timing_days : '' }}" required />
         </div>                                
     </div>
 </div>
@@ -124,7 +124,7 @@
         <div class="form-group early_termination_yes d-none ">
             <label class="fw-bold">Early Termination:</label>
             <input type="number" class="form-control has-icon" placeholder=""
-                name="early_termination_amount" data-icon="fa-regular fa-check-circle" value="{{isset($auction->get->early_termination_amount) ? $auction->get->early_termination_amount : '' }}" required />
+                name="early_termination_amount" data-icon="fa-regular fa-circle-check" value="{{isset($auction->get->early_termination_amount) ? $auction->get->early_termination_amount : '' }}" required />
         </div>                                
     </div>
 
@@ -150,7 +150,7 @@
         <div class="form-group protection_period_yes d-none ">
             <label class="fw-bold">Protection Period:</label>
             <input type="number" class="form-control has-icon" placeholder=""
-                name="protection_period_days" data-icon="fa-regular fa-check-circle" value="{{isset($auction->get->protection_period_days) ? $auction->get->protection_period_days : '' }}" required />
+                name="protection_period_days" data-icon="fa-regular fa-circle-check" value="{{isset($auction->get->protection_period_days) ? $auction->get->protection_period_days : '' }}" required />
         </div>                        
     </div>
 </div>
@@ -199,7 +199,7 @@
             <div class="form-group compensation_new_lease_amount d-none ">
                 <label class="fw-bold">What compensation will the owner provide to the listing broker for a new lease or lease renewal?</label>
                 <input type="number" class="form-control has-icon" placeholder=""
-                    name="compensation_new_lease_amount" data-icon="fa-regular fa-check-circle" value="{{isset($auction->get->compensation_new_lease_amount) ? $auction->get->compensation_new_lease_amount : '' }}" required />
+                    name="compensation_new_lease_amount" data-icon="fa-regular fa-circle-check" value="{{isset($auction->get->compensation_new_lease_amount) ? $auction->get->compensation_new_lease_amount : '' }}" required />
             </div> 
         </div>                                
     </div>

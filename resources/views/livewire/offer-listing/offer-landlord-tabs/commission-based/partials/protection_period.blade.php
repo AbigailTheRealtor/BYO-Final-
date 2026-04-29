@@ -11,7 +11,7 @@
         </label>
         <div class="input-cover mt-2">
             <input type="number" wire:model.lazy="protection_period" class="form-control has-icon"
-                data-icon="fa-solid fa-shield-alt" placeholder="Enter protection period in days (e.g., 90)">
+                data-icon="fa-solid fa-shield-halved" placeholder="Enter protection period in days (e.g., 90)">
         </div>
     </div>
 @endif
@@ -28,7 +28,7 @@
         </label>
         <div class="input-cover mt-2">
             <input type="number" wire:model.lazy="protection_period" class="form-control has-icon"
-                data-icon="fa-solid fa-shield-alt" placeholder="Enter protection period in days (e.g., 90)">
+                data-icon="fa-solid fa-shield-halved" placeholder="Enter protection period in days (e.g., 90)">
         </div>
     </div>
 @endif

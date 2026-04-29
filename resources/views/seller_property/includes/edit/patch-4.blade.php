@@ -206,7 +206,7 @@
           <option value="">Select</option>
           @foreach ($heated_sources as $item)
             <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
-              data-icon='<i class="fa-regular fa-check-circle"></i>' class="card flex-column"
+              data-icon='<i class="fa-regular fa-circle-check"></i>' class="card flex-column"
               style="width:calc(33.3% - 10px);" {{isset($auction->get->heated_source_com) && $auction->get->heated_source_com == $item['name'] ? 'selected' : ''}}>
               {{ $item['name'] }}
             </option>
@@ -260,7 +260,7 @@
         multiple required>
         <option value="">Select</option>
         @foreach ($appliances as $item)
-          <option value="{{ $item['name'] }}" data-icon='<i class="fa-regular fa-check-circle"></i>'
+          <option value="{{ $item['name'] }}" data-icon='<i class="fa-regular fa-circle-check"></i>'
             data-target="{{ $item['target'] }}" class="card flex-row"
             style="width:calc(33.3% - 10px);" {{isset($auction->get->appliances) && in_array($item['name'], json_decode($auction->get->appliances, true) ?? []) ? 'selected' : ''}}>
             {{ $item['name'] }}
@@ -270,7 +270,7 @@
       <div class="form-group otherAppliancesIncome d-none">
         <label class="fw-bold">Appliances:</label>
         <input type="text" name="otherAppliancesCom" value="{{isset($auction->get->otherAppliancesCom) ? $auction->get->otherAppliancesCom : ''}}" id="flood_zone_code" placeholder=""
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -296,7 +296,7 @@
         <div class="form-group">
           <label class="fw-bold">What furnishings are included in the purchase?</label>
           <input type="text" name="furnishings_include_com" value="{{isset($auction->get->furnishings_include_com) ? $auction->get->furnishings_include_com : ''}}" id="flood_zone_code" placeholder=""
-            class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+            class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
       </div>
       @php
@@ -385,7 +385,7 @@
       <div class="form-group">
         <label class="fw-bold">Licenses:</label>
         <input type="text" name="custom_licenses" value="{{isset($auction->get->custom_licenses) ? $auction->get->custom_licenses : ''}}" id="custom_licenses" placeholder=""
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
   </div>
@@ -468,7 +468,7 @@
     </div>
     <div class="form-group otherFloorCoveringCom d-none">
       <label class="fw-bold">Floor Covering:</label>
-      <input type="text" name="otherFloorCoveringCom" value="{{isset($auction->get->otherFloorCoveringCom) ? $auction->get->otherFloorCoveringCom : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+      <input type="text" name="otherFloorCoveringCom" value="{{isset($auction->get->otherFloorCoveringCom) ? $auction->get->otherFloorCoveringCom : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
     </div>
   </div>
   <div class="wizard-step" data-step="52">
@@ -530,7 +530,7 @@
     </div>
     <div class="form-group otherFoundationCom d-none">
       <label class="fw-bold">Foundation:</label>
-      <input type="text" name="otherFoundationCom" value="{{isset($auction->get->otherFoundationCom) ? $auction->get->otherFoundationCom : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+      <input type="text" name="otherFoundationCom" value="{{isset($auction->get->otherFoundationCom) ? $auction->get->otherFoundationCom : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
     </div>
   </div>
   <div class="wizard-step" data-step="54">
@@ -553,7 +553,7 @@
       <div class="form-group otherExteriorCon d-none">
         <label class="fw-bold">Exterior Construction:</label>
         <input type="text" name="otherConstructionCom" value="{{isset($auction->get->otherConstructionCom) ? $auction->get->otherConstructionCom : ''}}" id="max_pet_weight" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle" required>
+          data-icon="fa-regular fa-circle-check" required>
       </div>
     </div>
   </div>

@@ -11,7 +11,7 @@
         </label>
         <div class="input-cover mt-2">
             <select wire:model.lazy="early_termination_fee_option" class="form-control has-icon"
-                data-icon="fa-solid fa-exclamation-triangle">
+                data-icon="fa-solid fa-triangle-exclamation">
                 <option value="">Select</option>
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
@@ -30,7 +30,7 @@ this agreement ends.">
         </label>
         <div class="input-cover mt-2">
             <select wire:model.lazy="early_termination_fee_option" class="form-control has-icon"
-                data-icon="fa-solid fa-exclamation-triangle">
+                data-icon="fa-solid fa-triangle-exclamation">
                 <option value="">Select</option>
                 <option value="yes">Yes</option>
                 <option value="no">No</option>

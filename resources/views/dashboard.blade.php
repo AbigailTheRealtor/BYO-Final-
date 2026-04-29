@@ -481,7 +481,7 @@
                                                    target="_blank"
                                                    class="btn btn-sm btn-outline-secondary"
                                                    style="font-size:.78rem;white-space:nowrap;">
-                                                    <i class="fa fa-external-link-alt me-1"></i>Open Link
+                                                    <i class="fa fa-arrow-up-right-from-square me-1"></i>Open Link
                                                 </a>
                                             </div>
 
@@ -631,11 +631,11 @@
                                             <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert" id="notification-{{ $notification->id }}">
                                                 <div>
                                                     @if($type === 'bid_accepted' || $type === 'counter_bid_accepted')
-                                                        <i class="fa-solid fa-check-circle text-success me-2"></i>
+                                                        <i class="fa-solid fa-circle-check text-success me-2"></i>
                                                     @elseif($type === 'bid_countered' || $type === 'counter_bid_submitted')
-                                                        <i class="fa-solid fa-exchange-alt text-warning me-2"></i>
+                                                        <i class="fa-solid fa-right-left text-warning me-2"></i>
                                                     @elseif($type === 'bid_rejected')
-                                                        <i class="fa-solid fa-times-circle text-danger me-2"></i>
+                                                        <i class="fa-solid fa-circle-xmark text-danger me-2"></i>
                                                     @elseif($type === 'bid_submitted' || $type === 'bid_received')
                                                         <i class="fa-solid fa-gavel text-primary me-2"></i>
                                                     @else

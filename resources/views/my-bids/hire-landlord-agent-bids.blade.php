@@ -98,7 +98,7 @@
                     <div class="row">
                         @if(count($brokerMismatches) > 0)
                         <div class="col-md-4 mb-2">
-                            <small class="fw-semibold text-danger"><i class="fa-solid fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
+                            <small class="fw-semibold text-danger"><i class="fa-solid fa-triangle-exclamation me-1"></i>Term Differences ({{ count($brokerMismatches) }})</small>
                             <div class="mt-1" style="max-height: 80px; overflow-y: auto;">
                                 @foreach(array_slice(array_keys($brokerMismatches), 0, 5) as $field)
                                     <span class="badge me-1 mb-1" style="background: #ffe6e6; color: #dc3545; font-size: 0.7rem;">{{ ucwords(str_replace('_', ' ', $field)) }}</span>

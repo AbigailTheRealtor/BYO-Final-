@@ -153,7 +153,7 @@
                 <option value=""></option>
                 @foreach ($auction_lengths as $item)
                     <option value="{{ $item['name'] }}" data-target="" class="card flex-row {{ $item['class'] }}"
-                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -223,7 +223,7 @@
                 <option value=""></option>
                 @foreach ($property_items as $item)
                     <option value="{{ $item['name'] }}" data-target="" class="card flex-row {{ $item['class'] }}"
-                        style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                        style="width:calc(33.33% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -245,7 +245,7 @@
             <option value=""></option>
             @foreach ($leasePropOption as $item)
                 <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                    style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item['name'] }}
                 </option>
             @endforeach
@@ -255,29 +255,29 @@
                 <label class="fw-bold">Are tenants allowed to have guests, and if so, are there any
                     restrictions?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">Can tenants use common areas like the kitchen, living room, or
                     backyard?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">How are maintenance issues handled?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">How are the utilities split?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">How is cleaning and maintenance of common areas managed?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">How much storage space is available?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">Is there a private bathroom, or is it shared?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
                 <label class="fw-bold">What is the size of the room the landlord intends to lease?</label>
                 <input class="form-control has-icon" type="text" name="singleRoom[]"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
             </div>
         </span>
         <span class="commercialFields">
@@ -472,7 +472,7 @@
                 <div class="form-group">
                     <label class="fw-bold">Terms of Lease:</label>
                     <input type="text" name="other_lease_terms" id="other_lease_terms"
-                        class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+                        class="form-control has-icon" data-icon="fa-regular fa-circle-check">
                 </div>
             </div>
         </div>
@@ -572,7 +572,7 @@
             <div class="form-group landlordPaysOther d-none">
                 <label class="fw-bold">Landlord Pays:</label>
                 <input type="text" name="landlordPaysOther" id="owner_pays" class="form-control has-icon"
-                    data-icon="fa-regular fa-check-circle">
+                    data-icon="fa-regular fa-circle-check">
             </div>
         </div>
     </span>
@@ -998,7 +998,7 @@
                 <option value="">Select</option>
                 @foreach ($petsRes as $item)
                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}" class="card flex-row"
-                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                        style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                         {{ $item['name'] }}
                     </option>
                 @endforeach
@@ -1040,7 +1040,7 @@
             @foreach ($offer_occupants_accept as $oca)
                 <option value="{{ $oca['name'] }}" data-target="{{ $oca['target'] }}"
                     class="card flex-row pt-0 pb-0" style="width:calc(10% - 10px);"
-                    data-icon='<i class="fa-regular fa-check-circle" style="font-size:24px;position:relative;top:-5px;"></i>'>
+                    data-icon='<i class="fa-regular fa-circle-check" style="font-size:24px;position:relative;top:-5px;"></i>'>
                     {{ $oca['name'] }}
                 </option>
             @endforeach
@@ -1049,7 +1049,7 @@
             <label class="fw-bold" for="custom_occupants">How many occupants will the landlord
                 accept?</label>
             <input type="number" name="custom_occupants" placeholder="" id="custom_occupants"
-                class="form-control has-icon hide_arrow" data-icon="fa-regular fa-check-circle">
+                class="form-control has-icon hide_arrow" data-icon="fa-regular fa-circle-check">
         </div>
     </div>
     <div class="form-group">
@@ -1062,7 +1062,7 @@
             <option value="">Select</option>
             @foreach ($creditScoreRes as $item)
                 <option value="{{ $item }}" data-target="" class="card flex-row"
-                    style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                    style="width:calc(33.3% - 10px);" data-icon='<i class="fa-regular fa-circle-check"></i>'>
                     {{ $item }}
                 </option>
             @endforeach

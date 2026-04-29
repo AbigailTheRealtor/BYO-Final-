@@ -14,7 +14,7 @@
             </div>
 
             <div class="alert alert-info mb-4">
-                <i class="fa-solid fa-info-circle me-2"></i>
+                <i class="fa-solid fa-circle-info me-2"></i>
                 <strong>Bidding Period:</strong> The bidding period creates a structured window for competitive bids. You can view other Agents' Offered Services and Terms Match summaries below. Agent identities and compensation details remain confidential.
             </div>
 

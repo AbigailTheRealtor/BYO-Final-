@@ -8,7 +8,7 @@
                                                             <i class="fa fa-chart-pie me-2"></i>Match Summary
                                                         </h6>
                                                         <p class="small text-muted mb-3">
-                                                            <i class="fa fa-info-circle me-1"></i>
+                                                            <i class="fa fa-circle-info me-1"></i>
                                                             <strong>Original Match</strong> compares this bid to the Landlord's original listing request.<br>
                                                             <strong>Counter Match</strong> compares this bid to the Landlord's most recent counteroffer.<br>
                                                             Added services or terms do not increase either score.
@@ -72,7 +72,7 @@
                                                             </span>
                                                         </div>
                                                         <p class="small text-muted mb-3">
-                                                            <i class="fa fa-info-circle me-1"></i>Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                                            <i class="fa fa-circle-info me-1"></i>Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
                                                             Comparing to: <strong>{{ $baselineLabel }}</strong>
                                                         </p>
                                                         <div class="row g-3">
@@ -118,7 +118,7 @@
                                                     </div>
                                                     @else
                                                     <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-                                                        <i class="fa fa-info-circle me-1"></i>No match data available for this listing.
+                                                        <i class="fa fa-circle-info me-1"></i>No match data available for this listing.
                                                     </div>
                                                     @endif
                                                     {{-- ========== END MATCH SCORE PANEL ========== --}}
@@ -198,7 +198,7 @@
                                                                     <a href="{{ $rlFinal }}"
                                                                         target="_blank"
                                                                         class="text-primary text-decoration-none">
-                                                                        <i class="fa fa-external-link-alt me-1"></i>
+                                                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>
                                                                         {{ !empty($rlText) ? $rlText : $rlUrlVal }}
                                                                     </a>
                                                                 </div>
@@ -300,7 +300,7 @@
                                                                 @if ($hlShortId)
                                                                 <a href="{{ route('agent.profile.public', $hlShortId) }}" target="_blank"
                                                                    class="text-decoration-none small" style="color:#049399;">
-                                                                    <i class="fa fa-external-link-alt me-1"></i>View Full Profile
+                                                                    <i class="fa fa-arrow-up-right-from-square me-1"></i>View Full Profile
                                                                 </a>
                                                                 @endif
                                                             </div>
@@ -744,7 +744,7 @@
                                                     @if (data_get($bid, 'get.additional_details'))
                                                     <div class="mb-5">
                                                         <h6 class="section-header">
-                                                            <i class="fa fa-info-circle me-2"></i>Additional Details
+                                                            <i class="fa fa-circle-info me-2"></i>Additional Details
                                                         </h6>
                                                         <div class="text-muted" style="font-style: italic;">
                                                             {{ data_get($bid, 'get.additional_details') }}
@@ -1044,7 +1044,7 @@
                                                             @if (!empty($modalMissingSvcs))
                                                             <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
                                                                 <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                                                                    <i class="fa fa-times-circle me-2"></i>Services Requested But Agent Did Not Include ({{ count($modalMissingSvcs) }})
+                                                                    <i class="fa fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($modalMissingSvcs) }})
                                                                 </div>
                                                                 <ul class="mb-0" style="padding-left: 1.5rem; list-style: disc;">
                                                                     @foreach ($modalMissingSvcs as $missingSvc)
@@ -1108,7 +1108,7 @@
                                                                     target="_blank"
                                                                     class="text-primary text-decoration-none">
                                                                     <i
-                                                                        class="fa fa-external-link-alt me-1"></i>
+                                                                        class="fa fa-arrow-up-right-from-square me-1"></i>
                                                                     Watch Presentation
                                                                 </a>
                                                             </div>
@@ -1179,7 +1179,7 @@
                                                                     target="_blank"
                                                                     class="text-primary text-decoration-none">
                                                                     <i
-                                                                        class="fa fa-external-link-alt me-1"></i>
+                                                                        class="fa fa-arrow-up-right-from-square me-1"></i>
                                                                     View Business Card
                                                                 </a>
                                                             </div>
@@ -1221,7 +1221,7 @@
                                                                 </div>
                                                                 @else
                                                                 <div class="d-flex align-items-center p-3 border rounded bg-light">
-                                                                    <i class="fa fa-file-alt fa-2x text-muted me-3"></i>
+                                                                    <i class="fa fa-file-lines fa-2x text-muted me-3"></i>
                                                                     <div class="flex-grow-1">
                                                                         <div class="fw-medium">Business Card File</div>
                                                                         <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
@@ -1313,7 +1313,7 @@
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         class="btn btn-outline-primary btn-sm">
-                                                                        <i class="fa fa-external-link-alt me-1"></i>
+                                                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>
                                                                         Open Link
                                                                     </a>
                                                                 </div>

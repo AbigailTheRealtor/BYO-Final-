@@ -426,7 +426,7 @@
                   </label>
                   @php
                     $representedRes = [
-                        ['target' => '.commission', 'name' => 'Yes', 'icon' => 'fa-regular fa-check-circle'],
+                        ['target' => '.commission', 'name' => 'Yes', 'icon' => 'fa-regular fa-circle-check'],
                         ['target' => '', 'name' => 'No', 'icon' => 'fa-regular fa-circle-xmark'],
                         ['target' => '', 'name' => 'Not Applicable', 'icon' => 'fa-regular fa-circle-xmark'],
                     ];

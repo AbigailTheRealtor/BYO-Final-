@@ -423,7 +423,7 @@
 
     {{-- <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
-            <i class="fa-solid fa-info-circle me-2"></i>
+            <i class="fa-solid fa-circle-info me-2"></i>
             <div>
                 These services are provided under a commission-based, full-service buyer representation agreement. The
                 agent may assist with business search, site visits, offer preparation, document coordination, and
@@ -585,7 +585,7 @@
 
     {{-- <div class="alert alert-info bg-light-info border-info mb-4">
         <div class="d-flex align-items-center">
-            <i class="fa-solid fa-info-circle me-2"></i>
+            <i class="fa-solid fa-circle-info me-2"></i>
             <div>
                 These services are provided under a commission-based, full-service buyer representation agreement. The
                 agent may assist with locating vacant land, reviewing comparable properties, submitting offers, and

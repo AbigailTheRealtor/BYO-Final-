@@ -724,7 +724,7 @@
                                 @foreach ($property_items as $item)
                                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                         class="card flex-row {{ $item['class'] }}" style="width:calc(33.33% - 10px);"
-                                        data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                 @endforeach
@@ -732,12 +732,12 @@
                             <div class="form-group businessOther d-none">
                                 <label class="fw-bold">Business Type:</label>
                                 <input type="text" name="businessOther" id="" class="form-control has-icon"
-                                    data-icon="fa-regular fa-check-circle" placeholder="">
+                                    data-icon="fa-regular fa-circle-check" placeholder="">
                             </div>
                             <div class="form-group vacantOther d-none">
                                 <label class="fw-bold">Current Use:</label>
                                 <input type="text" name="vacantOther" id="" class="form-control has-icon"
-                                    data-icon="fa-regular fa-check-circle" placeholder="">
+                                    data-icon="fa-regular fa-circle-check" placeholder="">
                             </div>
                         </div>
                     </div>
@@ -1000,7 +1000,7 @@
                                 <div class="form-group exchange_items_other_opt d-none">
                                     <label class="fw-bold">Acceptable Exchange Item:</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the estimated value of the acceptable exchange/trade
@@ -1012,7 +1012,7 @@
                                     <label class="fw-bold">What is the condition of the item the buyer is looking to
                                         exchange?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">How much cash will the buyer use on top of the Exchange/Trade
@@ -1023,7 +1023,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                             {{-- exchange/trade --}}
@@ -1034,7 +1034,7 @@
                                         [
                                             'target' => '.customOptResYes',
                                             'name' => 'Yes',
-                                            'icon' => 'fa-regular fa-check-circle',
+                                            'icon' => 'fa-regular fa-circle-check',
                                         ],
                                         [
                                             'target' => '.customOptResNo',
@@ -1073,7 +1073,7 @@
                                                 [
                                                     'target' => '',
                                                     'name' => 'Yes',
-                                                    'icon' => 'fa-regular fa-check-circle',
+                                                    'icon' => 'fa-regular fa-circle-check',
                                                 ],
                                                 [
                                                     'target' => '',
@@ -1109,7 +1109,7 @@
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
                                         option?</label><br>
                                     <input type="text" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the proposed duration of the lease?</label><br>
@@ -1127,7 +1127,7 @@
                                         buyer for the lease
                                         option?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 @php
                                     $leaseOptionsResOpt = [
@@ -1174,7 +1174,7 @@
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
                                         purchase?</label><br>
                                     <input type="text" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the proposed duration of the lease?</label><br>
@@ -1192,7 +1192,7 @@
                                         buyer for the lease
                                         purchase?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 @php
                                     $leasePurchaseResOpt = [
@@ -1396,7 +1396,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">What type of Cryptocurrency does the buyer have?</label><br>
                                     <input type="text" name="cryptocurrency[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What percentage of the sales price will be used with
@@ -1418,7 +1418,7 @@
                                 <label class="fw-bold">What type of Non-Fungible Token (NFT) is the buyer
                                     offering?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
-                                    data-icon="fa-regular fa-check-circle">
+                                    data-icon="fa-regular fa-circle-check">
                                 <label class="fw-bold">What percentage of the sales price will the buyer offer as an
                                     Non-Fungible Token (NFT)?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
@@ -1460,7 +1460,7 @@
                                     @foreach ($contingencyRes as $item)
                                         <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                             class="card flex-row" style="width:calc(33.3% - 10px);"
-                                            data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                            data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                     @endforeach
@@ -1488,7 +1488,7 @@
                                 <div class="form-group contOtherRes d-none">
                                     <label class="fw-bold">Offered Contingency:</label>
                                     <input type="number" name="contingenciesOffered" id="custom_contingencies"
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                     <label class="fw-bold">Offered Contingency (days):</label>
                                     <input type="number" name="contingenciesOfferDays" id="custom_contingencies"
                                         class="form-control has-icon" data-icon="fa-regular fa-calendar-days" required>
@@ -1670,7 +1670,7 @@
                                     @foreach ($unit_types as $unity_type)
                                         <option value="{{ $unity_type['name'] }}" class="card flex-row"
                                             data-target="{{ $unity_type['target'] }}" style="width:calc(50% - 10px);"
-                                            data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                            data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $unity_type['name'] }}
                                         </option>
                                     @endforeach
@@ -1679,7 +1679,7 @@
                                     <label class="fw-bold">Please Enter the Buyer's Preferred Income Property
                                         Criteria:</label>
                                     <input type="text" name="otherBuyerIncome" id="minimum_annual_net_income"
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                             <div class="form-group">
@@ -1927,7 +1927,7 @@
                                 <div class="form-group viewOtherRes d-none">
                                     <label class="fw-bold">View Preference: </label>
                                     <input type="text" name="viewOther" id="" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle" required>
+                                        data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                         </div>
@@ -2274,7 +2274,7 @@
                                 <div class="form-group dock_res_other_opt d-none">
                                     <label class="fw-bold">Dock Description Needed:</label>
                                     <input type="text" name="dockDescription" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                             {{-- <div class="form-group">
@@ -2451,7 +2451,7 @@
                                         <label class="fw-bold">Air Conditioning:
                                         </label>
                                         <input type="text" name="otherAirCondition" id="non_negotiable_factors"
-                                            class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                                            class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                                             required>
                                     </div>
                                 </div>
@@ -2496,7 +2496,7 @@
                                         <label class="fw-bold">Heating and Fuel:
                                         </label>
                                         <input type="text" name="otherFuel" id="non_negotiable_factors"
-                                            class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                                            class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                                             required>
                                     </div>
                                 </div>
@@ -2667,7 +2667,7 @@
                                         is seeking?
                                     </label>
                                     <input type="text" name="negotiableOther" id="non_negotiable_factors"
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                         </div>
@@ -3128,7 +3128,7 @@
                                 <div class="form-group exchange_items_other_opt2 d-none">
                                     <label class="fw-bold">Acceptable Exchange Item:</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the estimated value of the acceptable exchange/trade
@@ -3140,7 +3140,7 @@
                                     <label class="fw-bold">What is the condition of the item the buyer is looking to
                                         exchange?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">How much cash will the buyer use on top of the Exchange/Trade
@@ -3151,7 +3151,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                             {{-- exchange/trade --}}
@@ -3162,7 +3162,7 @@
                                         [
                                             'target' => '.customOptCommercialYes',
                                             'name' => 'Yes',
-                                            'icon' => 'fa-regular fa-check-circle',
+                                            'icon' => 'fa-regular fa-circle-check',
                                         ],
                                         [
                                             'target' => '.customOptCommercialNo',
@@ -3202,7 +3202,7 @@
                                                 [
                                                     'target' => '',
                                                     'name' => 'Yes',
-                                                    'icon' => 'fa-regular fa-check-circle',
+                                                    'icon' => 'fa-regular fa-circle-check',
                                                 ],
                                                 [
                                                     'target' => '',
@@ -3238,7 +3238,7 @@
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
                                         option?</label><br>
                                     <input type="text" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the proposed duration of the lease?</label><br>
@@ -3256,7 +3256,7 @@
                                         buyer for the lease
                                         option?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 @php
                                     $leaseOptionsComOpt = [
@@ -3303,7 +3303,7 @@
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
                                         purchase?</label><br>
                                     <input type="text" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the proposed duration of the lease?</label><br>
@@ -3321,7 +3321,7 @@
                                         buyer for the lease
                                         purchase?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 @php
                                     $leasePurchaseComOpt = [
@@ -3524,7 +3524,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">What type of Cryptocurrency does the buyer have?</label><br>
                                     <input type="text" name="cryptocurrency[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What percentage of the sales price will be used with
@@ -3546,7 +3546,7 @@
                                 <label class="fw-bold">What type of Non-Fungible Token (NFT) is the buyer
                                     offering?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
-                                    data-icon="fa-regular fa-check-circle">
+                                    data-icon="fa-regular fa-circle-check">
                                 <label class="fw-bold">What percentage of the sales price will the buyer offer as an
                                     Non-Fungible Token (NFT)?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
@@ -3588,7 +3588,7 @@
                                     @foreach ($contingencyRes as $item)
                                         <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                             class="card flex-row" style="width:calc(33.3% - 10px);"
-                                            data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                            data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                     @endforeach
@@ -3616,7 +3616,7 @@
                                 <div class="form-group contOtherCommercial d-none">
                                     <label class="fw-bold">Offered Contingency:</label>
                                     <input type="number" name="contingenciesOffered" id="custom_contingencies"
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                     <label class="fw-bold">Offered Contingency (days):</label>
                                     <input type="number" name="contingenciesOfferDays" id="custom_contingencies"
                                         class="form-control has-icon" data-icon="fa-regular fa-calendar-days" required>
@@ -3700,7 +3700,7 @@
                                 @foreach ($contingencyRes as $item)
                                     <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                         class="card flex-row" style="width:calc(33.3% - 10px);"
-                                        data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                        data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                         {{ $item['name'] }}
                                     </option>
                                 @endforeach
@@ -4111,7 +4111,7 @@
                                         <label class="fw-bold">Air Conditioning:
                                         </label>
                                         <input type="text" name="otherAirCondition" id="non_negotiable_factors"
-                                            class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                                            class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                                             required>
                                     </div>
                                 </div>
@@ -4158,7 +4158,7 @@
                                         <label class="fw-bold">Heating and Fuel:
                                         </label>
                                         <input type="text" name="otherFuel" id="non_negotiable_factors"
-                                            class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                                            class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                                             required>
                                     </div>
                                 </div>
@@ -4226,7 +4226,7 @@
                             <div class="form-group viewOtherCommercial d-none">
                                 <label class="fw-bold">View Preference: </label>
                                 <input type="text" name="viewOther" id=""
-                                    class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                    class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                             </div>
                         </div>
                     </div>
@@ -4572,7 +4572,7 @@
                                 <div class="form-group dock_res_other_opt2 d-none">
                                     <label class="fw-bold">Dock Description Needed:</label>
                                     <input type="text" name="dockDescription" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                         </span>
@@ -4801,7 +4801,7 @@
                                 <label class="fw-bold">What non-negotiable amenities or property features is the buyer is
                                     seeking?</label>
                                 <input type="text" name="non_negotiable_factors" id="non_negotiable_factors"
-                                    class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                    class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                             </div>
                         </div>
                     </div>
@@ -4933,7 +4933,7 @@
                                 <div class="form-group conditionsVacantOther">
                                     <label class="fw-bold">Acceptable Property Condition:</label>
                                     <input type="text" name="propConditionOther" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle"
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check"
                                         placeholder="">
                                 </div>
                             </div>
@@ -5036,7 +5036,7 @@
                                 <div class="form-group exchange_items_other_opt3 d-none">
                                     <label class="fw-bold">Acceptable Exchange Item:</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the estimated value of the acceptable exchange/trade
@@ -5048,7 +5048,7 @@
                                     <label class="fw-bold">What is the condition of the item the buyer is looking to
                                         exchange?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">How much cash will the buyer use on top of the Exchange/Trade
@@ -5059,7 +5059,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                             {{-- exchange/trade --}}
@@ -5070,7 +5070,7 @@
                                         [
                                             'target' => '.customOptVacantYes',
                                             'name' => 'Yes',
-                                            'icon' => 'fa-regular fa-check-circle',
+                                            'icon' => 'fa-regular fa-circle-check',
                                         ],
                                         [
                                             'target' => '.customOptVacantNo',
@@ -5110,7 +5110,7 @@
                                                 [
                                                     'target' => '',
                                                     'name' => 'Yes',
-                                                    'icon' => 'fa-regular fa-check-circle',
+                                                    'icon' => 'fa-regular fa-circle-check',
                                                 ],
                                                 [
                                                     'target' => '',
@@ -5146,7 +5146,7 @@
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
                                         option?</label><br>
                                     <input type="text" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the proposed duration of the lease?</label><br>
@@ -5164,7 +5164,7 @@
                                         buyer for the lease
                                         option?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 @php
                                     $leaseOptionsVacOpt = [
@@ -5211,7 +5211,7 @@
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
                                         purchase?</label><br>
                                     <input type="text" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the proposed duration of the lease?</label><br>
@@ -5229,7 +5229,7 @@
                                         buyer for the lease
                                         purchase?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 @php
                                     $leasePurchaseVacOpt = [
@@ -5432,7 +5432,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">What type of Cryptocurrency does the buyer have?</label><br>
                                     <input type="text" name="cryptocurrency[]" class="form-control has-icon"
-                                        data-icon="fa-regular fa-check-circle">
+                                        data-icon="fa-regular fa-circle-check">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What percentage of the sales price will be used with
@@ -5454,7 +5454,7 @@
                                 <label class="fw-bold">What type of Non-Fungible Token (NFT) is the buyer
                                     offering?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
-                                    data-icon="fa-regular fa-check-circle">
+                                    data-icon="fa-regular fa-circle-check">
                                 <label class="fw-bold">What percentage of the sales price will the buyer offer as an
                                     Non-Fungible Token (NFT)?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
@@ -5496,7 +5496,7 @@
                                     @foreach ($contingencyRes as $item)
                                         <option value="{{ $item['name'] }}" data-target="{{ $item['target'] }}"
                                             class="card flex-row" style="width:calc(33.3% - 10px);"
-                                            data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                            data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                             {{ $item['name'] }}
                                         </option>
                                     @endforeach
@@ -5524,7 +5524,7 @@
                                 <div class="form-group contOtherVacant d-none">
                                     <label class="fw-bold">Offered Contingency:</label>
                                     <input type="number" name="contingenciesOffered" id="custom_contingencies"
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                     <label class="fw-bold">Offered Contingency (days):</label>
                                     <input type="number" name="contingenciesOfferDays" id="custom_contingencies"
                                         class="form-control has-icon" data-icon="fa-regular fa-calendar-days" required>
@@ -6334,7 +6334,7 @@
                                 <div class="form-group dock_vac_other_opt d-none">
                                     <label class="fw-bold">Dock Description Needed:</label>
                                     <input type="text" name="dockDescription" id=""
-                                        class="form-control has-icon" data-icon="fa-regular fa-check-circle" required>
+                                        class="form-control has-icon" data-icon="fa-regular fa-circle-check" required>
                                 </div>
                             </div>
                         </span>

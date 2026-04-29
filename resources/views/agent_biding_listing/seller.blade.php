@@ -154,7 +154,7 @@
                                                 @if(count($brokerMismatches) > 0)
                                                 <div class="col-md-4 mb-2">
                                                     <small class="fw-semibold text-danger">
-                                                        <i class="fa-solid fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})
+                                                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Term Differences ({{ count($brokerMismatches) }})
                                                     </small>
                                                     <div class="mt-1">
                                                         @foreach(array_slice($brokerMismatches, 0, 5) as $field => $vals)
@@ -225,12 +225,12 @@
                                             @elseif($bidStatus === 'Countered')
                                                 <a href="{{ route('hire.seller.agent.auction.bid.view-counter', $userBid->id) }}"
                                                    class="btn btn-sm" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-size:.8rem;">
-                                                    <i class="fa-solid fa-exchange-alt me-1"></i>View Counter Terms
+                                                    <i class="fa-solid fa-right-left me-1"></i>View Counter Terms
                                                 </a>
                                             @elseif($bidStatus === 'Active')
                                                 <a href="{{ route('add_seller_agent_bid', $auction->id) }}"
                                                    class="btn btn-sm btn-outline-secondary" style="font-size:.8rem;">
-                                                    <i class="fa-solid fa-edit me-1"></i>Edit Bid
+                                                    <i class="fa-solid fa-pen-to-square me-1"></i>Edit Bid
                                                 </a>
                                             @endif
                                         </div>

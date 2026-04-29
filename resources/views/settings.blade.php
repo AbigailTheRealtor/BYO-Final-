@@ -19,7 +19,7 @@
 
                             @if(session('profile_success'))
                             <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
-                                <i class="fa-solid fa-check-circle me-2"></i><strong>{{ session('profile_success') }}</strong>
+                                <i class="fa-solid fa-circle-check me-2"></i><strong>{{ session('profile_success') }}</strong>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
@@ -33,7 +33,7 @@
 
                             @if(session('password_error'))
                             <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert" style="border-left: 4px solid #e65c00;">
-                                <strong><i class="fa-solid fa-exclamation-triangle me-2"></i>Password Not Updated</strong><br>
+                                <strong><i class="fa-solid fa-triangle-exclamation me-2"></i>Password Not Updated</strong><br>
                                 <span style="font-size: 0.92rem;">{{ session('password_error') }}</span>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
@@ -267,7 +267,7 @@
                             {{-- ── 5. Delete Account (always-visible danger zone) ── --}}
                             <div class="settings-danger-zone mt-2 mb-4 p-4" style="border: 1px solid #f5c6cb; border-radius: 10px; background: #fff5f5;">
                                 <h6 style="color: #842029; font-weight: 700; margin-bottom: 0.5rem;">
-                                    <i class="fa-solid fa-trash-alt me-2"></i>Delete Account
+                                    <i class="fa-solid fa-trash-can me-2"></i>Delete Account
                                 </h6>
                                 <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.25rem;">This action will deactivate your account and log you out. All your listings and bids will be deactivated.</p>
                                 <p style="color: #842029; font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem;">This cannot be undone. To confirm, type <code style="background:#fce4e4; padding: 1px 5px; border-radius:3px; color:#842029;">DELETE</code> below.</p>
@@ -285,7 +285,7 @@
                                                 id="btn-delete-account"
                                                 class="settings-delete-btn"
                                                 disabled>
-                                            <i class="fa-solid fa-trash-alt me-2"></i>Delete My Account
+                                            <i class="fa-solid fa-trash-can me-2"></i>Delete My Account
                                         </button>
                                     </div>
                                     <p id="delete-hint" style="color: #aaa; font-size: 0.8rem; margin-top: 0.4rem; display: none;">

@@ -203,7 +203,7 @@
                                                     {{ selected($item['name'], @$auction->get->referral_fee) }}
                                                     data-target="{{ $item['target'] }}" class="card flex-row"
                                                     style="width:calc(33.3% - 10px);"
-                                                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                                     {{ $item['name'] }}
                                                 </option>
                                             @endforeach
@@ -418,7 +418,7 @@
                                                     {{ selected($item['name'], @$auction->get->auction_length) }}
                                                     data-target="" class="card flex-row fw-bold {{ $item['class'] }}"
                                                     style="width:calc(33.33% - 10px);"
-                                                    data-icon='<i class="fa-regular fa-check-circle"></i>'>
+                                                    data-icon='<i class="fa-regular fa-circle-check"></i>'>
                                                     {{ $item['name'] }}
                                                 </option>
                                             @endforeach

@@ -1611,7 +1611,7 @@
                             `<div class="form-group ${targetName?.target?.slice(1)}-${option} ${roomDetailsData ? (roomTypeBackendData[name] === 'Other' ? '' : 'd-none') : ''}">
                                 <label class="fw-bold">${labelText}</label>
                                 <input type="text" name="${name}Other" data-option="${optionName}" value="${roomDetailsData ? roomTypeBackendData[name + 'Other'] : ''}" class="form-control has-icon dynamic-room-input" id="dynamic-input-${name}-${optionName}"
-                                    data-icon="fa-regular fa-check-circle" required>
+                                    data-icon="fa-regular fa-circle-check" required>
                             </div>` : ''
                             }
                         </div>

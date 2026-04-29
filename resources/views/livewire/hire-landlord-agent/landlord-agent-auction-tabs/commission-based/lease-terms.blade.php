@@ -127,7 +127,7 @@
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -195,7 +195,7 @@
                 </span>
                 <div class="input-cover">
                     <select wire:model="guests_allowed" class="form-control has-icon"
-                        data-icon="fa-solid fa-user-friends">
+                        data-icon="fa-solid fa-user-group">
                         <option value="">Select</option>
                         <option value="Allowed">Allowed</option>
                         <option value="Not Allowed">Not Allowed</option>
@@ -244,7 +244,7 @@
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -400,7 +400,7 @@
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -559,7 +559,7 @@
                 </span>
                 <div class="input-cover">
                     <select wire:model="guests_allowed" class="form-control has-icon"
-                        data-icon="fa-solid fa-user-friends">
+                        data-icon="fa-solid fa-user-group">
                         <option value="">Select</option>
                         <option value="Allowed">Allowed</option>
                         <option value="Not Allowed">Not Allowed</option>
@@ -607,7 +607,7 @@
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -799,7 +799,7 @@
         <div class="form-group">
             <label class="fw-bold">Maintenance and repairs are handled by:</label>
             <div class="input-cover">
-                <select wire:model="maintenance_handler" class="form-control has-icon" data-icon="fa-solid fa-tools">
+                <select wire:model="maintenance_handler" class="form-control has-icon" data-icon="fa-solid fa-screwdriver-wrench">
                     <option value="">Select</option>
                     <option value="Landlord">Landlord</option>
                     <option value="Property Manager">Property Manager</option>
@@ -906,7 +906,7 @@
 <label class="fw-bold">Please specify other expense paid by Tenant:</label>
 <div class="input-cover">
     <input type="text" wire:model="tenant_pays_other" class="form-control has-icon"
-        data-icon="fa-solid fa-pencil-alt" placeholder="Enter other expense paid by Tenant (e.g., HVAC maintenance)">
+        data-icon="fa-solid fa-pencil" placeholder="Enter other expense paid by Tenant (e.g., HVAC maintenance)">
 </div>
 </div> --}}
 
@@ -991,7 +991,7 @@
     <label class="fw-bold">Please specify other expense paid by Owner:</label>
     <div class="input-cover">
         <input type="text" wire:model="owner_pays_other" class="form-control has-icon"
-            data-icon="fa-solid fa-pencil-alt" placeholder="Enter expense paid by Owner (e.g., elevator maintenance)">
+            data-icon="fa-solid fa-pencil" placeholder="Enter expense paid by Owner (e.g., elevator maintenance)">
     </div>
 </div>
 
@@ -1053,7 +1053,7 @@
     </span>
     <div class="input-cover" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-calendar-alt input-icon2" multiple required>
+            data-icon="fa-solid fa-calendar-days input-icon2" multiple required>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1073,7 +1073,7 @@
         {{-- <label class="fw-bold">Other Lease Term:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_lease_term" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar-alt" placeholder="Enter desired lease term (e.g., 8 Months)">
+                data-icon="fa-solid fa-calendar-days" placeholder="Enter desired lease term (e.g., 8 Months)">
         </div>
     </div>
 

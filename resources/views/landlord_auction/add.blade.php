@@ -1001,7 +1001,7 @@
                             `<div class="form-group ${targetName?.target?.slice(1)} d-none">
                                 <label class="fw-bold">${labelText}</label>
                                 <input type="text" name="${name}Other" data-option="${optionName}" class="form-control has-icon dynamic-room-input"
-                                    data-icon="fa-regular fa-check-circle" required>
+                                    data-icon="fa-regular fa-circle-check" required>
                             </div>` : ''
                             }
                         </div>

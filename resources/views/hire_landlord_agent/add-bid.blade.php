@@ -474,7 +474,7 @@
                             <div class="form-group payment_timing_days d-none ">
                                 <label class="fw-bold">Payment Timing for Broker Fees:</label>
                                 <input type="number" class="form-control has-icon" placeholder=""
-                                    name="payment_timing_days" data-icon="fa-regular fa-check-circle" required />
+                                    name="payment_timing_days" data-icon="fa-regular fa-circle-check" required />
                             </div>                                
                         </div>
                     </div>
@@ -502,7 +502,7 @@
                             <div class="form-group early_termination_yes d-none ">
                                 <label class="fw-bold">Early Termination:</label>
                                 <input type="number" class="form-control has-icon" placeholder=""
-                                    name="early_termination_amount" data-icon="fa-regular fa-check-circle" required />
+                                    name="early_termination_amount" data-icon="fa-regular fa-circle-check" required />
                             </div>                                
                         </div>
                         <div class="form-group">
@@ -527,7 +527,7 @@
                             <div class="form-group protection_period_yes d-none ">
                                 <label class="fw-bold">Protection Period:</label>
                                 <input type="number" class="form-control has-icon" placeholder=""
-                                    name="protection_period_days" data-icon="fa-regular fa-check-circle" required />
+                                    name="protection_period_days" data-icon="fa-regular fa-circle-check" required />
                             </div>                        
                         </div>
                     </div>
@@ -574,7 +574,7 @@
                                 <div class="form-group compensation_new_lease_amount d-none ">
                                     <label class="fw-bold">What compensation will the owner provide to the listing broker for a new lease or lease renewal?</label>
                                     <input type="number" class="form-control has-icon" placeholder=""
-                                        name="compensation_new_lease_amount" data-icon="fa-regular fa-check-circle" required />
+                                        name="compensation_new_lease_amount" data-icon="fa-regular fa-circle-check" required />
                                 </div> 
                             </div>                                
                         </div>
@@ -912,7 +912,7 @@
                         <div class="form-group">
                           @php
                             $hireNowterms = [
-                                    [ 'name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-check-circle'],
+                                    [ 'name' => 'Yes', 'target' => '', 'icon' => 'fa-regular fa-circle-check'],
                                     [ 'name' => 'No', 'target' => '', 'icon' => 'fa-regular fa-circle-xmark'],
                             ]
                           @endphp

@@ -9,7 +9,7 @@
     </label>
     <div class="input-cover mt-2">
         <select wire:model.lazy="agency_agreement_timeframe" class="form-control has-icon"
-            data-icon="fa-solid fa-calendar-alt">
+            data-icon="fa-solid fa-calendar-days">
             <option value="">Select</option>
             <option value="3 Months">3 Months</option>
             <option value="6 Months">6 Months</option>

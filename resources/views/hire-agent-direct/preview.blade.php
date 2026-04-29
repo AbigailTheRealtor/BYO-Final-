@@ -421,7 +421,7 @@
 
             {{-- ── Process notice ─────────────────────────────────── --}}
             <div class="process-notice">
-                <i class="fa fa-info-circle me-2"></i>
+                <i class="fa fa-circle-info me-2"></i>
                 <strong>Submitting this request does not finalize an agreement.</strong>
                 The agent will receive your request, and both parties may accept, counter, or reject terms
                 before anything is finalized. Once both sides agree, you will sign the agreement digitally

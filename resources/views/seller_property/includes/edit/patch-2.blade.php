@@ -52,7 +52,7 @@
       <div class="form-group otherAppliancesRes d-none">
         <label class="fw-bold">Appliances:</label>
         <input type="text" name="otherAppliances" value="{{isset($auction->get->otherAppliances) ? $auction->get->otherAppliances : ''}}" id="flood_zone_code" placeholder=""
-          class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+          class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
     <div class="form-group fireplace">
@@ -90,7 +90,7 @@
         <div class="form-group">
           <label class="fw-bold">What furnishings are included in the purchase?</label>
           <input type="text" name="furnishings_include" value="{{isset($auction->get->furnishings_include) ? $auction->get->furnishings_include : ''}}" id="flood_zone_code" placeholder=""
-            class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+            class="form-control has-icon" data-icon="fa-regular fa-circle-check">
         </div>
       </div>
       @php
@@ -188,7 +188,7 @@
       </select>
       <div class="form-group otherInterior d-none">
         <label class="fw-bold">Interior Features:</label>
-        <input type="text" name="otherInterior" value="{{isset($auction->get->otherInterior) ? $auction->get->otherInterior : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherInterior" value="{{isset($auction->get->otherInterior) ? $auction->get->otherInterior : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -387,7 +387,7 @@
       </select>
       <div class="form-group otherFloorCoveringRes d-none">
         <label class="fw-bold">Floor Covering:</label>
-        <input type="text" name="otherFloorCovering" value="{{isset($auction->get->otherFloorCovering) ? $auction->get->otherFloorCovering : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherFloorCovering" value="{{isset($auction->get->otherFloorCovering) ? $auction->get->otherFloorCovering : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -437,7 +437,7 @@
       </select>
       <div class="form-group otherFoundationRes d-none">
         <label class="fw-bold">Foundation:</label>
-        <input type="text" name="otherFoundation" value="{{isset($auction->get->otherFoundation) ? $auction->get->otherFoundation : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherFoundation" value="{{isset($auction->get->otherFoundation) ? $auction->get->otherFoundation : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -460,7 +460,7 @@
       </select>
       <div class="form-group otherConstructionRes d-none">
         <label class="fw-bold">Exterior Construction:</label>
-        <input type="text" name="otherConstruction" value="{{isset($auction->get->otherConstruction) ? $auction->get->otherConstruction : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherConstruction" value="{{isset($auction->get->otherConstruction) ? $auction->get->otherConstruction : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -508,7 +508,7 @@
       </select>
       <div class="form-group otherExteriorRes d-none">
         <label class="fw-bold">Exterior Features:</label>
-        <input type="text" name="otherExterior" value="{{isset($auction->get->otherExterior) ? $auction->get->otherExterior : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherExterior" value="{{isset($auction->get->otherExterior) ? $auction->get->otherExterior : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -573,7 +573,7 @@
       </select>
       <div class="form-group otherLotFeaturesRes d-none">
         <label class="fw-bold">Lot Features:</label>
-        <input type="text" name="otherLotFeature" value="{{isset($auction->get->otherLotFeature) ? $auction->get->otherLotFeature : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherLotFeature" value="{{isset($auction->get->otherLotFeature) ? $auction->get->otherLotFeature : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -688,7 +688,7 @@
       </div>
       <div class="form-group d-none otherUnitType">
         <label class="fw-bold">Unit Type:</label>
-        <input type="text" name="unitStructureOther" value="{{isset($auction->get->unitStructureOther) ? $auction->get->unitStructureOther : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="unitStructureOther" value="{{isset($auction->get->unitStructureOther) ? $auction->get->unitStructureOther : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -721,7 +721,7 @@
       </select>
       <div class="form-group otherRoofRes d-none" >
         <label class="fw-bold">Roof:</label>
-        <input type="text" name="otherRoof" value="{{isset($auction->get->otherRoof) ? $auction->get->otherRoof : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherRoof" value="{{isset($auction->get->otherRoof) ? $auction->get->otherRoof : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -744,7 +744,7 @@
       </select>
       <div class="form-group otherSurfaceRes d-none" >
         <label class="fw-bold">Road Surface Type:</label>
-        <input type="text" name="otherSurface" value="{{isset($auction->get->otherSurface) ? $auction->get->otherSurface : ''}}" class="form-control has-icon" data-icon="fa-regular fa-check-circle">
+        <input type="text" name="otherSurface" value="{{isset($auction->get->otherSurface) ? $auction->get->otherSurface : ''}}" class="form-control has-icon" data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -888,7 +888,7 @@
       <div class="form-group otherViewRes d-none">
         <label class="fw-bold">View:</label>
         <input type="text" name="otherView" value="{{isset($auction->get->otherView) ? $auction->get->otherView : ''}}" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle">
+          data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
@@ -1105,7 +1105,7 @@
       <div class="form-group otherUtilitiseRes d-none">
         <label class="fw-bold">Utilities:</label>
         <input type="text" name="otherUtilitise" value="{{isset($auction->get->otherUtilitise) ? $auction->get->otherUtilitise : ''}}" id="legal_description" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle">
+          data-icon="fa-regular fa-circle-check">
       </div>
     </div>
 
@@ -1127,7 +1127,7 @@
       <div class="form-group otherSewerRes d-none">
         <label class="fw-bold">Sewer:</label>
         <input type="text" name="otherSewer" value="{{isset($auction->get->otherSewer) ? $auction->get->otherSewer : ''}}" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle">
+          data-icon="fa-regular fa-circle-check">
       </div>
     </div>
 
@@ -1150,7 +1150,7 @@
       <div class="form-group otherWaterRes d-none">
         <label class="fw-bold">Water:</label>
         <input type="text" name="otherWater" value="{{isset($auction->get->otherWater) ? $auction->get->otherWater : ''}}" id="legal_description" class="form-control has-icon"
-          data-icon="fa-regular fa-check-circle">
+          data-icon="fa-regular fa-circle-check">
       </div>
     </div>
   </div>
