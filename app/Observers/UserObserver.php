@@ -16,9 +16,7 @@ class UserObserver
             $user->user_name = $user->email ?? uniqid('user_');
         }
 
-        if (empty($user->phone_number)) {
-            $user->phone_number = $user->phone ?? '';
-        }
+        // phone_number column does not exist in the schema; 'phone' is the actual column.
     }
 
     public function retrieved(User $user)

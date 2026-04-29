@@ -13,15 +13,21 @@ class AddAiShareTokenToBuyerCriteriaAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
-            $table->string('ai_share_token', 64)->nullable()->unique()->after('id');
-        });
+        if (Schema::hasTable('buyer_criteria_auctions') &&
+            ! Schema::hasColumn('buyer_criteria_auctions', 'ai_share_token')) {
+            Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
+                $table->string('ai_share_token', 64)->nullable()->unique()->after('id');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
-            $table->dropColumn('ai_share_token');
-        });
+        if (Schema::hasTable('buyer_criteria_auctions') &&
+            Schema::hasColumn('buyer_criteria_auctions', 'ai_share_token')) {
+            Schema::table('buyer_criteria_auctions', function (Blueprint $table) {
+                $table->dropColumn('ai_share_token');
+            });
+        }
     }
 }

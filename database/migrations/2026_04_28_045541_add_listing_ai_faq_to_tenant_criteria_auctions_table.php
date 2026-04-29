@@ -13,9 +13,13 @@ class AddListingAiFaqToTenantCriteriaAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('tenant_criteria_auctions', function (Blueprint $table) {
-            $table->json('listing_ai_faq')->nullable()->after('updated_at');
-        });
+        // tenant_criteria_auctions has no standalone CREATE migration; guard defensively.
+        if (Schema::hasTable('tenant_criteria_auctions') &&
+            ! Schema::hasColumn('tenant_criteria_auctions', 'listing_ai_faq')) {
+            Schema::table('tenant_criteria_auctions', function (Blueprint $table) {
+                $table->json('listing_ai_faq')->nullable()->after('updated_at');
+            });
+        }
     }
 
     /**
@@ -25,8 +29,11 @@ class AddListingAiFaqToTenantCriteriaAuctionsTable extends Migration
      */
     public function down()
     {
-        Schema::table('tenant_criteria_auctions', function (Blueprint $table) {
-            $table->dropColumn('listing_ai_faq');
-        });
+        if (Schema::hasTable('tenant_criteria_auctions') &&
+            Schema::hasColumn('tenant_criteria_auctions', 'listing_ai_faq')) {
+            Schema::table('tenant_criteria_auctions', function (Blueprint $table) {
+                $table->dropColumn('listing_ai_faq');
+            });
+        }
     }
 }

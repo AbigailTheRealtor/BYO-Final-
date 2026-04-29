@@ -13,15 +13,21 @@ class AddAiShareTokenToPropertyAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('property_auctions', function (Blueprint $table) {
-            $table->string('ai_share_token', 64)->nullable()->unique()->after('id');
-        });
+        if (Schema::hasTable('property_auctions') &&
+            ! Schema::hasColumn('property_auctions', 'ai_share_token')) {
+            Schema::table('property_auctions', function (Blueprint $table) {
+                $table->string('ai_share_token', 64)->nullable()->unique()->after('id');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('property_auctions', function (Blueprint $table) {
-            $table->dropColumn('ai_share_token');
-        });
+        if (Schema::hasTable('property_auctions') &&
+            Schema::hasColumn('property_auctions', 'ai_share_token')) {
+            Schema::table('property_auctions', function (Blueprint $table) {
+                $table->dropColumn('ai_share_token');
+            });
+        }
     }
 }

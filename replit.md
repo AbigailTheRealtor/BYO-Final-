@@ -39,6 +39,17 @@ The Phase-5 Widget/Embed layer adds a lightweight, **public, auth-free** read-on
 
 The **My Referrals** agent page (`/agent/my-referrals`, named `agent.my-referrals`) is served by `AgentReferralPageController` and provides a full, filterable referral activity view for agents. It shows summary metric cards (Clicks, Signups, Listings, Hires) drawn from the stored `agent_referral_links` counters, plus a per-row activity table built by merging four read-only queries: `referral_visits` (clicks, LEFT JOIN users on `visitor_user_id`), `users` (signups via `referred_by_agent_id`), all five listing tables (listings via `referring_agent_id`), and `accepted_bid_summaries` (hires via `referring_agent_id`). A `?stage=` GET parameter filters to clicks/signups/listings/hires or shows all. A "My Referrals" sidebar item appears in the agent-only "Referral Dashboard" sidenav section. The page is strictly read-only and does not touch any attribution logic or counters.
 
+## Test-Safe Schema Baseline
+
+The following conventions are in place so that `User::factory()->create()` and feature tests work reliably without `RefreshDatabase` failures:
+
+- **`users.user_type` check constraint** includes `'agent'` (added by migration `2026_04_29_000001_add_agent_to_users_user_type_check`). The base `create_users_table` migration also reflects this so `migrate:fresh` on a blank DB is correct.
+- **`UserObserver::creating()`** no longer sets `phone_number` (the DB column is `phone`; `phone_number` column does not exist until migration `2024_10_15_130859` runs).
+- **`UserFactory`** provides all NOT NULL columns directly or via observer/DB defaults. States: `asAgent()`, `asAdmin()`, `asBuyerAgent()`, `asSellerAgent()`. Supply `short_id` as an override to `create()` when deterministic URLs are needed.
+- **Five `2026_04_28` migrations** that lacked `hasTable`/`hasColumn` guards have been hardened. Two target tables with no CREATE migration (`tenant_criteria_auctions`, `landlord_auctions`) — these migrations silently skip when those tables do not exist.
+- **Feature tests** use `DatabaseTransactions` (not `RefreshDatabase`) because several migrations are still pending; `DatabaseTransactions` wraps each test in a single transaction (including DDL in PostgreSQL) and rolls everything back on teardown.
+- **Tables migrated for the test environment** (were pending): `user_meta`, `agent_default_profiles`, `settings`, `notifications`.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.

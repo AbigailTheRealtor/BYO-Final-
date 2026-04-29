@@ -13,15 +13,22 @@ class AddAiShareTokenToLandlordAuctionsTable extends Migration
      */
     public function up()
     {
-        Schema::table('landlord_auctions', function (Blueprint $table) {
-            $table->string('ai_share_token', 64)->nullable()->unique()->after('id');
-        });
+        // landlord_auctions has no standalone CREATE migration; guard defensively.
+        if (Schema::hasTable('landlord_auctions') &&
+            ! Schema::hasColumn('landlord_auctions', 'ai_share_token')) {
+            Schema::table('landlord_auctions', function (Blueprint $table) {
+                $table->string('ai_share_token', 64)->nullable()->unique()->after('id');
+            });
+        }
     }
 
     public function down()
     {
-        Schema::table('landlord_auctions', function (Blueprint $table) {
-            $table->dropColumn('ai_share_token');
-        });
+        if (Schema::hasTable('landlord_auctions') &&
+            Schema::hasColumn('landlord_auctions', 'ai_share_token')) {
+            Schema::table('landlord_auctions', function (Blueprint $table) {
+                $table->dropColumn('ai_share_token');
+            });
+        }
     }
 }

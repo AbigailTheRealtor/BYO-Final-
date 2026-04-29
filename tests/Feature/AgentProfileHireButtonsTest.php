@@ -5,108 +5,74 @@ namespace Tests\Feature;
 use App\Models\AgentDefaultProfile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
+/**
+ * Feature tests for the hire-button section of the agent public profile page.
+ *
+ * Prerequisites (all satisfied by the test-safe schema baseline):
+ *   - migration 2026_04_29_000001: users_user_type_check includes 'agent'
+ *   - migration 2024_08_19_183330: user_meta table exists  (User eager-load)
+ *   - migration 2026_03_25_221827: agent_default_profiles table exists
+ *   - migration 2022_12_19_121313: settings table exists   (page render)
+ *   - migration 2025_11_19_134433: notifications table exists (auth layout)
+ *   - UserObserver::creating() no longer tries to set phone_number
+ *   - UserFactory::asAgent() state sets user_type = 'agent'
+ */
 class AgentProfileHireButtonsTest extends TestCase
 {
     use DatabaseTransactions;
-
-    // -------------------------------------------------------------------------
-    // Suite setup
-    // -------------------------------------------------------------------------
-
-    /**
-     * Temporarily expand the users_user_type_check constraint to include 'agent'
-     * so that test agent users can be inserted.
-     *
-     * The constraint is an immediate CHECK on user_type. In production only
-     * ('admin','buyer','seller','buyer_agent','seller_agent') are allowed, but
-     * AgentProfileController::show() queries WHERE user_type = 'agent', which
-     * means real agent rows pre-date the constraint or were inserted via a path
-     * that bypassed it. We need to create test rows with this type.
-     *
-     * PostgreSQL DDL is fully transactional: DatabaseTransactions wraps each
-     * test in a single BEGIN/ROLLBACK, so the constraint change and all data
-     * inserted in makeAgent()/makeProfile() are rolled back automatically when
-     * the test ends — no manual teardown required.
-     */
-    protected function setUp(): void
-    {
-        parent::setUp(); // DatabaseTransactions::setUp() begins the transaction here.
-
-        DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_user_type_check');
-        DB::statement("ALTER TABLE users ADD CONSTRAINT users_user_type_check CHECK (
-            user_type IN ('admin','buyer','seller','buyer_agent','seller_agent','agent')
-        )");
-    }
 
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
     /**
-     * Create an agent user with a known hex short_id so the route constraint
-     * ([0-9a-f]+) is satisfied and the controller can resolve it.
+     * Create an agent user with a known hex short_id.
      *
-     * Inserts via DB::table() rather than User::create() or the factory to
-     * bypass UserObserver::creating(), which writes the non-existent column
-     * "phone_number" (the real column is "phone") and causes a DB error.
+     * We supply short_id explicitly so that URL assertions are deterministic.
+     * UserObserver::creating() skips short_id generation when the attribute is
+     * already set, and fills user_name from the factory-generated email.
      */
     private function makeAgent(string $shortId = 'deadbeef1234'): User
     {
-        $unique = Str::random(8);
-        $now    = now();
-
-        $id = DB::table('users')->insertGetId([
-            'first_name'        => 'Test',
-            'last_name'         => 'Agent',
-            'name'              => 'Test Agent',
-            'user_name'         => "testagent_{$unique}",
-            'email'             => "agent_{$unique}@test-hire.example",
-            'email_verified_at' => $now,
-            'password'          => Hash::make('password'),
-            'remember_token'    => Str::random(10),
-            'user_type'         => 'agent',
-            'short_id'          => $shortId,
-            'created_at'        => $now,
-            'updated_at'        => $now,
-        ]);
-
-        return User::find($id);
+        return User::factory()->asAgent()->create(['short_id' => $shortId]);
     }
 
     /**
      * Create an AgentDefaultProfile for the given agent.
-     * Pass a non-empty $services array to make the preset "valid" (renders a hire button).
-     * Pass an empty array to simulate a preset that has no services configured.
+     *
+     * Pass a non-empty $services array to make the preset "valid"
+     * (renders a hire button). Pass [] to simulate a preset with no services.
      */
-    private function makeProfile(User $agent, string $role, string $propertyType, array $services = []): AgentDefaultProfile
-    {
+    private function makeProfile(
+        User   $agent,
+        string $role,
+        string $propertyType,
+        array  $services = [],
+    ): AgentDefaultProfile {
         return AgentDefaultProfile::create([
-            'user_id'      => $agent->id,
-            'role_type'    => $role,
+            'user_id'       => $agent->id,
+            'role_type'     => $role,
             'property_type' => $propertyType,
-            'profile_data' => ['services' => $services],
+            'profile_data'  => ['services' => $services],
         ]);
     }
 
-    /** Canonical profile URL for a given short_id. */
+    /** Canonical profile URL for the default test agent. */
     private function profileUrl(string $shortId = 'deadbeef1234'): string
     {
         return "/agent/{$shortId}/profile";
     }
 
-    /** Expected hire URL for a given combination. */
+    /** Expected hire URL for a given agent / role / property-type combination. */
     private function hireUrl(string $shortId, string $role, string $propertyType): string
     {
         return "/hire/{$shortId}/{$role}/{$propertyType}";
     }
 
     // =========================================================================
-    // Test 1 — Single valid preset → direct <a> link
+    // Test 1 — Single valid preset → direct <a> link, no picker
     // =========================================================================
 
     public function test_single_valid_preset_renders_direct_link(): void
@@ -119,14 +85,14 @@ class AgentProfileHireButtonsTest extends TestCase
         $response->assertStatus(200);
 
         // A direct <a> tag pointing to the correct hire URL must be present.
-        $expectedHref = $this->hireUrl('deadbeef1234', 'seller', 'residential');
-        $response->assertSee($expectedHref, false);
+        $response->assertSee($this->hireUrl('deadbeef1234', 'seller', 'residential'), false);
 
         // The property-type picker (<details>) must NOT be rendered when there
         // is only one valid option for the role.
-        // Note: 'property-type-picker' alone appears in the page's JS snippet
-        // (querySelectorAll selector). We check the full class attribute string,
-        // which is unique to the rendered <details> element.
+        //
+        // We check the full class attribute string rather than the bare class
+        // name because 'property-type-picker' also appears in the page's
+        // @push('scripts') JS snippet (querySelectorAll selector).
         $response->assertDontSee('hire-picker-wrap property-type-picker', false);
     }
 
@@ -138,7 +104,6 @@ class AgentProfileHireButtonsTest extends TestCase
     {
         $agent = $this->makeAgent();
 
-        // Two valid presets under the same role — must trigger the picker.
         $this->makeProfile($agent, 'seller', 'residential', ['List property on MLS']);
         $this->makeProfile($agent, 'seller', 'income',      ['Manage income property listing']);
 
@@ -147,17 +112,12 @@ class AgentProfileHireButtonsTest extends TestCase
         $response->assertStatus(200);
 
         // The <details> picker element must be present.
-        // Use the full class attribute string to avoid matching the JS selector.
         $response->assertSee('hire-picker-wrap property-type-picker', false);
 
         // Both property-type URLs must appear inside the picker.
         $response->assertSee($this->hireUrl('deadbeef1234', 'seller', 'residential'), false);
         $response->assertSee($this->hireUrl('deadbeef1234', 'seller', 'income'), false);
 
-        // The direct <a> link pattern (only present for single-option roles)
-        // must NOT be the sole rendering — the picker wraps both options.
-        // Verify both links are reachable from within the picker element by
-        // confirming each href string appears exactly in the rendered HTML.
         $html = $response->getContent();
         $this->assertStringContainsString('hire-picker-wrap', $html);
     }
@@ -180,8 +140,7 @@ class AgentProfileHireButtonsTest extends TestCase
         $response->assertSee('Clients will use this button to hire you', false);
 
         // No functional hire link must be rendered for the owner.
-        $hireHref = $this->hireUrl('deadbeef1234', 'seller', 'residential');
-        $response->assertDontSee($hireHref, false);
+        $response->assertDontSee($this->hireUrl('deadbeef1234', 'seller', 'residential'), false);
 
         // The picker element must not be rendered either.
         $response->assertDontSee('hire-picker-wrap property-type-picker', false);
@@ -194,34 +153,29 @@ class AgentProfileHireButtonsTest extends TestCase
     public function test_preset_with_no_services_is_excluded_from_hire_buttons(): void
     {
         $agent = $this->makeAgent();
-
-        // A profile with an empty services list is not valid — no button.
-        $this->makeProfile($agent, 'seller', 'residential', []);
+        $this->makeProfile($agent, 'seller', 'residential', []); // empty services
 
         $response = $this->get($this->profileUrl());
 
         $response->assertStatus(200);
 
         // No hire button or picker must appear because there are no valid presets.
-        // We check for the HTML attribute form 'class="hire-btn"' because the bare
-        // string 'hire-btn' also appears in the view's inline <style> CSS rules.
+        // We check the HTML attribute form 'class="hire-btn"' because the bare
+        // string 'hire-btn' also appears in the view's inline <style> CSS block.
         $response->assertDontSee('class="hire-btn"', false);
         $response->assertDontSee($this->hireUrl('deadbeef1234', 'seller', 'residential'), false);
     }
 
     // =========================================================================
-    // Test 5 — Mixed: one role with services, one without → only valid shown
+    // Test 5 — Mixed presets: only the valid one produces a button
     // =========================================================================
 
     public function test_only_presets_with_services_produce_hire_buttons(): void
     {
         $agent = $this->makeAgent();
 
-        // Valid preset for seller/residential.
         $this->makeProfile($agent, 'seller', 'residential', ['List property on MLS']);
-
-        // Empty preset for buyer/residential — must be excluded.
-        $this->makeProfile($agent, 'buyer', 'residential', []);
+        $this->makeProfile($agent, 'buyer',  'residential', []); // invalid — no services
 
         $response = $this->get($this->profileUrl());
 
@@ -235,7 +189,7 @@ class AgentProfileHireButtonsTest extends TestCase
     }
 
     // =========================================================================
-    // Test 6 — Multi-role: each role with one preset → each renders direct link
+    // Test 6 — Multi-role: each role with one preset → separate direct links
     // =========================================================================
 
     public function test_multiple_roles_with_single_preset_each_render_separate_direct_links(): void
@@ -260,17 +214,15 @@ class AgentProfileHireButtonsTest extends TestCase
     }
 
     // =========================================================================
-    // Test 7 — Profile page is publicly accessible (no login required)
+    // Test 7 — Profile page is publicly accessible without login
     // =========================================================================
 
     public function test_profile_page_is_publicly_accessible_without_login(): void
     {
         $agent = $this->makeAgent();
 
-        // Visit as a completely unauthenticated guest.
         $response = $this->get($this->profileUrl());
 
-        // Must return 200, not 401/403/302.
         $response->assertStatus(200);
     }
 
