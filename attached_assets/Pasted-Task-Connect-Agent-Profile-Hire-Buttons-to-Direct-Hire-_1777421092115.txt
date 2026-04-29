@@ -1,0 +1,107 @@
+Task — Connect Agent Profile Hire Buttons to Direct Hire Preset Flow
+
+GOAL:
+Make Hire buttons on the public Agent Profile start a structured Direct Hire flow using the agent’s presets.
+
+IMPORTANT SAFEGUARDS:
+- Do NOT modify HireAgentDirectController confirm logic.
+- Do NOT modify AgentBidMapperService.
+- Do NOT modify existing bid/counter/accepted summary flows.
+- Do NOT change how listings or bids are created.
+- Do NOT remove existing /hire/{...} routes.
+- This is routing + UX flow only.
+
+CURRENT STATE:
+- Public profile exists at /agent/{agentShortId}/profile
+- Hire buttons are rendered (one per role)
+- Presets exist per role/property type
+
+REQUIREMENTS:
+
+1. HIRE BUTTON CLICK (ROLE LEVEL)
+When user clicks:
+- Hire Buyer Agent
+- Hire Seller Agent
+- Hire Tenant Agent
+- Hire Landlord Agent
+
+Route them to a new step:
+→ Role-specific preset selection page OR direct routing if only one preset exists
+
+2. PROPERTY TYPE HANDLING
+
+If the agent has:
+- Only ONE valid preset for that role → go directly to that preset
+- MULTIPLE presets → show property type selection
+
+Example:
+Buyer →
+   Residential
+   Income
+   Commercial
+
+Only show property types where:
+- A preset exists
+- AND it has services
+
+3. ROUTING
+
+After role + property type is selected:
+
+Route to existing:
+→ /hire/{agentShortId}/{role}/{propertyType}
+
+Do NOT create a new hire system.
+
+4. LOGIN HANDLING
+
+- If user is NOT logged in:
+   Allow viewing profile
+   Require login ONLY when they proceed to hire route
+
+- Preserve redirect after login
+
+5. AGENT SELF-PROTECTION
+
+- If agent clicks their own Hire button:
+   Show message:
+   “You are viewing your own profile. Clients will use this button to hire you.”
+   Do NOT trigger self-hire error
+
+6. NO DATA CREATION YET
+
+- Do NOT create listing
+- Do NOT create bid
+- Only route into existing hire flow
+
+7. UI REQUIREMENTS
+
+- Clean selection UI (role → property type)
+- No services shown yet
+- No compensation shown yet
+
+TESTING:
+
+1. Public user:
+   - Can view profile
+   - Click Hire → select property type → reach hire route
+
+2. Logged-out user:
+   - Can view profile
+   - Prompted to login before hire step
+   - Returns correctly
+
+3. Agent:
+   - Can click buttons without 403 error
+   - Does NOT trigger hire flow
+
+4. Preset filtering:
+   - Only valid presets appear
+   - No empty service presets shown
+
+AFTER:
+Report:
+- Routes used
+- Files modified
+- Flow diagram
+- Any edge cases
