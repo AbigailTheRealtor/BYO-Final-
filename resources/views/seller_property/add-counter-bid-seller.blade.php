@@ -343,7 +343,7 @@
                 <div class="form-group ">
                   <label class="fw-bold" for="buy_now_price" required>Price:</label>
                   <input type="number"  name="price" placeholder="" id="buy_now_price"
-                    class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar"
+                    class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar-sign"
                     data-msg-required="Please enter Buy Now Price">
                 </div>
                 <div class="form-group ">
@@ -607,7 +607,7 @@
                 <div class="form-group leasePurchase d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the seller's desired offering price for a lease purchase?</label>
-                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
@@ -716,7 +716,7 @@
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">What is the estimated value of the acceptable exchange/trade item? </label>
-                  <input type="text" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                  <input type="text" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">Are there specific criteria or conditions for the type of item the seller is willing to exchange/trade?</label>

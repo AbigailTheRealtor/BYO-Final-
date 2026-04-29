@@ -163,7 +163,7 @@
                             </ul>
                         </li>
                         <li>
-                            <div class="mode"><i class="fa fa-moon-o"></i></div>
+                            <div class="mode"><i class="fa fa-moon"></i></div>
                         </li>
                         <li class="onhover-dropdown"><i data-feather="message-square"></i>
                             <ul class="chat-dropdown onhover-show-div">

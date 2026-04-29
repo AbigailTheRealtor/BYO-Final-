@@ -268,7 +268,7 @@
                     <span><i class="fa fa-building me-1"></i>{{ $data['brokerage'] }}</span><br>
                 @endif
                 @if (!empty($data['license_no']))
-                    <span><i class="fa fa-id-card-o me-1"></i>License #{{ $data['license_no'] }}</span><br>
+                    <span><i class="fa fa-id-card me-1"></i>License #{{ $data['license_no'] }}</span><br>
                 @endif
                 @if (!empty($data['bio']))
                     <span style="margin-top:.5rem;display:block;opacity:.9;">{{ Str::limit($data['bio'], 180) }}</span>
@@ -360,7 +360,7 @@
     @endphp
     @if ($hasCredentials)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-id-card-o"></i> Credentials</div>
+            <div class="profile-section-header"><i class="fa fa-id-card"></i> Credentials</div>
             <div class="profile-section-body">
                 <div class="row g-3">
                     @if (!empty($data['license_no']))
@@ -517,7 +517,7 @@
                     <div class="mb-2">
                         <div class="profile-field-label">Presentation</div>
                         <a href="{{ $data['presentation_link'] }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                            <i class="fa fa-file-text-o me-1"></i>View Presentation
+                            <i class="fa fa-file-lines me-1"></i>View Presentation
                         </a>
                     </div>
                 @endif
@@ -525,7 +525,7 @@
                     <div class="mb-2">
                         <div class="profile-field-label">Business Card / Headshot</div>
                         <a href="{{ $data['business_card_link'] }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                            <i class="fa fa-id-card-o me-1"></i>View
+                            <i class="fa fa-id-card me-1"></i>View
                         </a>
                     </div>
                 @endif
@@ -608,7 +608,7 @@
     {{-- ── HIRE BUTTONS ─────────────────────────────────────────────── --}}
     @if ($isOwnerPreview && count($hireButtons) > 0)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-handshake-o"></i> Hire This Agent</div>
+            <div class="profile-section-header"><i class="fa fa-handshake"></i> Hire This Agent</div>
             <div class="profile-section-body">
                 <div class="hire-btn-grid">
                     <span class="hire-owner-note">
@@ -620,7 +620,7 @@
         </div>
     @elseif (!$isOwnerPreview && count($hireButtons) > 0)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-handshake-o"></i> Hire This Agent</div>
+            <div class="profile-section-header"><i class="fa fa-handshake"></i> Hire This Agent</div>
             <div class="profile-section-body">
                 <p class="text-muted small mb-3">Select the role you'd like to hire {{ $agentDisplayName }} for:</p>
                 <div class="hire-btn-grid">

@@ -15,7 +15,7 @@
         -moz-appearance: textfield;
         }
 
-        .fa-dollar {
+        .fa-dollar-sign {
             padding: 0 20px;
             background: #facd34;
             color: #fff;
@@ -204,10 +204,10 @@
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-calendar"></i> Year Built: {{@$auction->year_built}} </div>
                             @endif
                             @if(@$auction->pool)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-swimming-pool"></i> Pool: {{@$auction->pool}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-person-swimming"></i> Pool: {{@$auction->pool}} </div>
                             @endif
                             @if(@$auction->pool_type)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-swimming-pool"></i> Pool: {{@$auction->pool_type}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-person-swimming"></i> Pool: {{@$auction->pool_type}} </div>
                             @endif
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-car"></i> Carport: {{@$auction->carport}} </div>
                             <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-warehouse"></i> Garage: {{@$auction->garage}} </div>
@@ -982,7 +982,7 @@
                         <div class="form-group">
                             <label for="price">Price:</label>
                             <div class="d-flex align-items-baseline">
-                                <i class="fa fa-dollar"></i>
+                                <i class="fa fa-dollar-sign"></i>
                                 <input type="number" class="form-control border-start-0" name="price" id="price" min="0" required placeholder="0.00">
                             </div>
                         </div>
@@ -1002,7 +1002,7 @@
                         <div class="form-group">
                             <label for="escrow_amount">Escrow Amount:</label>
                             <div class="d-flex align-items-baseline">
-                                <i class="fa fa-dollar"></i>
+                                <i class="fa fa-dollar-sign"></i>
                                 <input type="number" class="form-control border-start-0" name="escrow_amount" id="escrow_amount" min="0" required placeholder="0.00">
                             </div>
                         </div>

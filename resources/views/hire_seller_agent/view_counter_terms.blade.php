@@ -1135,7 +1135,7 @@
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $sellerCounter->id }}">
                                 <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fa-solid fa-times me-2"></i>Reject
+                                    <i class="fa-solid fa-xmark me-2"></i>Reject
                                 </button>
                             </form>
                             @elseif($activeStage === 'seller_needs_response')
@@ -1179,7 +1179,7 @@
                                 @csrf
                                 <input type="hidden" name="counter_term_id" value="{{ $agentCounterBack->id }}">
                                 <button type="submit" class="btn" style="background-color:#dc3545;border:2px solid #dc3545;color:#fff;padding:10px 20px;font-weight:600;">
-                                    <i class="fa-solid fa-times me-2"></i>Reject
+                                    <i class="fa-solid fa-xmark me-2"></i>Reject
                                 </button>
                             </form>
                             @elseif($activeStage === 'agent_needs_response')

@@ -61,7 +61,7 @@
                                                     :class="openSection !== 'account' && 'collapsed'"
                                                     @click="openSection = openSection === 'account' ? null : 'account'"
                                                     >
-                                                <i class="fa-solid fa-user-circle me-2 text-muted"></i>Account Information
+                                                <i class="fa-solid fa-circle-user me-2 text-muted"></i>Account Information
                                             </button>
                                         </h2>
                                         <div x-show="openSection === 'account'" x-transition style="display:none;">
@@ -162,7 +162,7 @@
                                                     :class="openSection !== 'prefs' && 'collapsed'"
                                                     @click="openSection = openSection === 'prefs' ? null : 'prefs'"
                                                     >
-                                                <i class="fa-solid fa-sliders-h me-2 text-muted"></i>Preferences
+                                                <i class="fa-solid fa-sliders me-2 text-muted"></i>Preferences
                                             </button>
                                         </h2>
                                         <div x-show="openSection === 'prefs'" x-transition style="display:none;">
@@ -172,7 +172,7 @@
                                                         <label class="form-label fw-semibold">Preferred Contact Method</label>
                                                         @php $prefContact = $user->preferred_contact_method; @endphp
                                                         <div class="d-flex flex-column gap-2 mt-1">
-                                                            @foreach(['Call' => 'fa-solid fa-phone', 'Text' => 'fa-solid fa-sms', 'Email' => 'fa-solid fa-envelope'] as $method => $icon)
+                                                            @foreach(['Call' => 'fa-solid fa-phone', 'Text' => 'fa-solid fa-message-sms', 'Email' => 'fa-solid fa-envelope'] as $method => $icon)
                                                             <div class="form-check">
                                                                 <input class="form-check-input" type="radio"
                                                                        name="preferred_contact_method"

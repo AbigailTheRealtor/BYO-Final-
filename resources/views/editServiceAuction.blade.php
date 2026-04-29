@@ -240,7 +240,7 @@
                                     </label>
                                     <div class="input-group">
                                         <div class="input-group-text p-0">
-                                        {{-- <i class="fa fa-dollar" id="basic-addon1"></i> --}}
+                                        {{-- <i class="fa fa-dollar-sign" id="basic-addon1"></i> --}}
                                         <select name="min_price_in" class="form-select" style="background-color: #e9ecef; border: 0;">
                                             <option value="$">$</option>
                                             <option value="%">%</option>

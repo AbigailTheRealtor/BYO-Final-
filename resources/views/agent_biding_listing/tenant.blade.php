@@ -258,7 +258,7 @@
                                                     @csrf
                                                     <input type="hidden" name="bid_id" value="{{ $userBid->id }}">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:.8rem;">
-                                                        <i class="fa-solid fa-times me-1"></i>Withdraw
+                                                        <i class="fa-solid fa-xmark me-1"></i>Withdraw
                                                     </button>
                                                 </form>
                                             @endif

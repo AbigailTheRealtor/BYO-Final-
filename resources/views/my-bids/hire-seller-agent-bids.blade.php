@@ -112,7 +112,7 @@
                         <input type="hidden" name="bid_id" value="{{ $agentBid->id }}">
                         <input type="hidden" name="auction_id" value="{{ $agentBid->auction->id }}">
                         <button type="submit" class="btn btn-sm" style="background: #dc3545; color: #fff; border: none;" onclick="return confirm('Reject this bid?')">
-                            <i class="fa-solid fa-times me-1"></i>Reject
+                            <i class="fa-solid fa-xmark me-1"></i>Reject
                         </button>
                     </form>
                 @elseif($bidStatus === 'Countered')

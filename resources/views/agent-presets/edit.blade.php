@@ -348,7 +348,7 @@
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger custom-service-remove flex-shrink-0"
                                         title="Remove this service">
-                                    <i class="fa fa-times"></i>
+                                    <i class="fa fa-xmark"></i>
                                 </button>
                             </div>
                         @endforeach
@@ -424,7 +424,7 @@
                  data-preset-toggle="section-creds"
                  aria-expanded="false"
                  aria-controls="section-creds">
-                <i class="fa fa-id-card-o section-icon"></i>
+                <i class="fa fa-id-card section-icon"></i>
                 Agent Credentials
                 <i class="fa fa-chevron-down toggle-icon"></i>
             </div>
@@ -790,7 +790,7 @@
                  data-preset-toggle="section-compensation"
                  aria-expanded="false"
                  aria-controls="section-compensation">
-                <i class="fa fa-dollar section-icon"></i>
+                <i class="fa fa-dollar-sign section-icon"></i>
                 Broker Compensation &amp; Agency Agreement Terms
                 <i class="fa fa-chevron-down toggle-icon"></i>
             </div>
@@ -1854,7 +1854,7 @@
         {{-- ── STICKY SAVE BAR ──────────────────────────────────────────────── --}}
         <div class="sticky-save-bar">
             <a href="{{ route('agent.presets.index') }}" class="btn btn-outline-secondary">
-                <i class="fa fa-times me-1"></i>Cancel
+                <i class="fa fa-xmark me-1"></i>Cancel
             </a>
 
             <div class="profile-save-scope-wrap">
@@ -2025,7 +2025,7 @@
             removeBtn.type = 'button';
             removeBtn.className = 'btn btn-sm btn-outline-danger custom-service-remove flex-shrink-0';
             removeBtn.title = 'Remove this service';
-            removeBtn.innerHTML = '<i class="fa fa-times"></i>';
+            removeBtn.innerHTML = '<i class="fa fa-xmark"></i>';
             removeBtn.addEventListener('click', function () {
                 row.parentNode.removeChild(row);
             });

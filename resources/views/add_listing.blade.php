@@ -356,7 +356,7 @@
                                             <span class="text-danger">*</span>
                                         </label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar" id="basic-addon1"></i>
+                                            <i class="fa fa-dollar-sign" id="basic-addon1"></i>
                                             <input type="number" class="form-control border-start-0 mb-0"
                                                 name="starting_price" min="0" required placeholder="0.00"
                                                 value="{{ @$auction->starting_price }}">
@@ -371,7 +371,7 @@
                                             Buy Now Price
                                         </label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar" id="basic-addon1"></i>
+                                            <i class="fa fa-dollar-sign" id="basic-addon1"></i>
                                             <input type="number" name="buy_now_price"
                                                 class="form-control border-start-0 mb-0" min="0"
                                                 placeholder="0.00" value="{{ @$auction->buy_now_price }}">
@@ -385,7 +385,7 @@
                                             Reserve Price
                                         </label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar" id="basic-addon1"></i>
+                                            <i class="fa fa-dollar-sign" id="basic-addon1"></i>
                                             <input type="number" class="form-control border-start-0 mb-0"
                                                 name="reserve_price" min="0" placeholder="0.00"
                                                 value="{{ @$auction->reserve_price }}">
@@ -1273,7 +1273,7 @@
                                             style="position: relative;">
                                             <div class="text-center my-4">
                                                 <label for="photo" class="d-grid ">
-                                                    <i class="fa fa-file-image-o fs-3"></i><span
+                                                    <i class="fa fa-file-image fs-3"></i><span
                                                         class="small opacity-50 mt-2">add new</span>
                                                 </label>
                                             </div>
@@ -1304,7 +1304,7 @@
                                             style="position: relative;">
                                             <div class="text-center my-4">
                                                 <label for="photo" class="d-grid ">
-                                                    <i class="fa fa-file-video-o fs-3"></i><span
+                                                    <i class="fa fa-file-video fs-3"></i><span
                                                         class="small opacity-50 mt-2">add new</span>
                                                 </label>
                                             </div>
@@ -1334,7 +1334,7 @@
                                             style="position: relative;">
                                             <div class="text-center my-4">
                                                 <label for="photo" class="d-grid ">
-                                                    <i class="fa fa-file-video-o fs-3"></i><span
+                                                    <i class="fa fa-file-video fs-3"></i><span
                                                         class="small opacity-50 mt-2">add new</span>
                                                 </label>
                                             </div>
@@ -1397,7 +1397,7 @@
                                 <div class="form-group mt-4">
                                     <div class="locationCard col-sm-12 col-md-3 col-lg-3 rounded-2">
                                         <div class="d-grid text-center my-4" data-bs-toggle="modal"
-                                            data-bs-target="#myLocation"><i class="fa fa-file-video-o fs-3"></i><span
+                                            data-bs-target="#myLocation"><i class="fa fa-file-video fs-3"></i><span
                                                 class="small opacity-50 mt-2">add new</span></div>
                                     </div>
                                 </div>
@@ -1414,7 +1414,7 @@
                                 <div class="form-group mt-4">
                                     <div class="locationCard col-sm-12 col-md-3 col-lg-3 rounded-2">
                                         <div class="d-grid text-center my-4" data-bs-toggle="modal"
-                                            data-bs-target="#myLocation"><i class="fa fa-file-audio-o fs-3"></i><span
+                                            data-bs-target="#myLocation"><i class="fa fa-file-audio fs-3"></i><span
                                                 class="small opacity-50 mt-2">add new</span></div>
                                     </div>
                                 </div>

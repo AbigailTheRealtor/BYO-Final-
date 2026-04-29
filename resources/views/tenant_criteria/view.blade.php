@@ -525,26 +525,26 @@
               @else
                 <h4>Tenant’s Information:</h4>
               @endif
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>First Name:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>First Name:</strong>
                 {{ @$auction->get->agent_first_name }}
               </div>
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>Last Name:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Last Name:</strong>
                 {{ @$auction->get->agent_last_name }}
               </div>
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>Phone Number:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Phone Number:</strong>
                 {{ @$auction->get->agent_phone }}
               </div>
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>Email:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Email:</strong>
                 {{ @$auction->get->agent_email }}
               </div>
               @if ($user->user_type == 'agent')
-                <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>Brokerage:</strong>
+                <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Brokerage:</strong>
                   {{ @$auction->get->agent_brokerage }}
                 </div>
-                <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>Real Estate License#:</strong>
+                <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Real Estate License#:</strong>
                   {{ @$auction->get->agent_license_no }}
                 </div>
-                <div class="col-md-12 col-12 mt-2"><i class="fa fa-check-square-o"></i> <strong>NAR Member ID (NRDS ID):</strong>
+                <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>NAR Member ID (NRDS ID):</strong>
                   {{ @$auction->get->agent_mls_id }}
                 </div>
               @endif

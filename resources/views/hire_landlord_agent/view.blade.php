@@ -71,7 +71,7 @@
         -moz-appearance: textfield;
     }
 
-    .fa-dollar,
+    .fa-dollar-sign,
     .fa-percent {
         padding: 0 20px;
         background: #facd34;

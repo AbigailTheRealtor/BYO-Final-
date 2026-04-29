@@ -11,7 +11,7 @@
                 @if($offer_type === 'sale')   <i class="fa fa-tag me-2" style="color:#049399;"></i>Sale Offer Listing
                 @elseif($offer_type === 'rental') <i class="fa fa-home me-2" style="color:#049399;"></i>Rental Offer Listing
                 @elseif($offer_type === 'lease')  <i class="fa fa-key me-2" style="color:#049399;"></i>Lease Offer Listing
-                @else <i class="fa fa-file-text-o me-2" style="color:#049399;"></i>New Offer Listing
+                @else <i class="fa fa-file-lines me-2" style="color:#049399;"></i>New Offer Listing
                 @endif
             </h4>
             <p class="text-muted mb-0 small">
@@ -156,7 +156,7 @@
         {{-- PANEL 2: FINANCIAL TERMS --}}
         <div wire:ignore.self class="tab-pane fade" id="offer-panel-2" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-dollar me-2"></i>Financial Terms</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-dollar-sign me-2"></i>Financial Terms</h6>
 
             {{-- Sale fields --}}
             <div id="offer-sale-fields">
@@ -284,7 +284,7 @@
         {{-- PANEL 4: REVIEW & CUSTOM TERMS --}}
         <div wire:ignore.self class="tab-pane fade" id="offer-panel-4" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-check-square-o me-2"></i>Review &amp; Custom Terms</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-square-check me-2"></i>Review &amp; Custom Terms</h6>
 
             <div class="border rounded p-3 mb-4 bg-light">
                 <div class="row g-2 small">

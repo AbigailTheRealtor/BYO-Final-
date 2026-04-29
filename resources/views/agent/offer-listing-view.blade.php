@@ -9,7 +9,7 @@
                 <i class="fa fa-arrow-left me-1"></i>My Offer Listings
             </a>
             <h4 class="fw-bold mb-0 mt-1">
-                <i class="fa fa-file-text-o me-2" style="color:#049399;"></i>
+                <i class="fa fa-file-lines me-2" style="color:#049399;"></i>
                 {{ $data['title'] ?: ('Offer Listing #' . $data['id']) }}
             </h4>
             <div class="d-flex align-items-center gap-2 mt-1">
@@ -83,7 +83,7 @@
     {{-- Financial Terms --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-dollar me-2" style="color:#049399;"></i>Financial Terms
+            <i class="fa fa-dollar-sign me-2" style="color:#049399;"></i>Financial Terms
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -136,7 +136,7 @@
     {{-- Contingencies --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-check-square-o me-2" style="color:#049399;"></i>Contingencies
+            <i class="fa fa-square-check me-2" style="color:#049399;"></i>Contingencies
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -210,7 +210,7 @@
     @if($data['custom_terms'] || $data['notes'])
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-file-text-o me-2" style="color:#049399;"></i>Additional Terms &amp; Notes
+            <i class="fa fa-file-lines me-2" style="color:#049399;"></i>Additional Terms &amp; Notes
         </div>
         <div class="card-body">
             @if($data['custom_terms'])

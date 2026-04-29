@@ -399,7 +399,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-bar-chart-o"></i>
+                                            <i class="fa fa-chart-bar"></i>
                                         </div>
                                         <div class="file-name">
                                             Annual report 2014.xls
@@ -516,7 +516,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-bar-chart-o"></i>
+                                            <i class="fa fa-chart-bar"></i>
                                         </div>
                                         <div class="file-name">
                                             Annual report 2014.xls
@@ -633,7 +633,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-bar-chart-o"></i>
+                                            <i class="fa fa-chart-bar"></i>
                                         </div>
                                         <div class="file-name">
                                             Annual report 2014.xls

@@ -885,13 +885,13 @@ This page should redirect and never be used.
                                             @endforeach
                                         </select>
                                         {{-- <input type="number" class="form-control has-icon" name="ideal_price"
-                                            min="0" required placeholder="0.00" data-icon="fa-solid fa-dollar"
+                                            min="0" required placeholder="0.00" data-icon="fa-solid fa-dollar-sign"
                                             value="{{ @$auction->get->ideal_price }}"> --}}
                                     </div>
                                     <div class="form-group custom_ideal_price @if (@$auction->get->custom_ideal_price == '' || @$auction->get->custom_ideal_price == 'null') d-none @endif ">
                                         <label>Bedrooms</label>
                                         <input type="number" class="form-control has-icon"
-                                            placeholder="0.00" name="custom_ideal_price" data-icon="fa-solid fa-dollar"
+                                            placeholder="0.00" name="custom_ideal_price" data-icon="fa-solid fa-dollar-sign"
                                             id="custom_ideal_price" value="{{ @$auction->get->custom_ideal_price }}" required/>
                                     </div>
                                 </div>

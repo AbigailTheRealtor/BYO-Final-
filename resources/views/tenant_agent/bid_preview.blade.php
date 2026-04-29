@@ -767,7 +767,7 @@
             @if (data_get($bid, 'get.presentation_link') || data_get($bid, 'get.video_upload') || data_get($bid, 'get.business_card_link') || data_get($bid, 'get.business_card') || data_get($bid, 'get.promoMaterials'))
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-photo-video me-2"></i>Agent Presentation & Promotional Materials
+                    <i class="fa fa-photo-film me-2"></i>Agent Presentation & Promotional Materials
                 </h6>
 
                 @if (data_get($bid, 'get.presentation_link'))
@@ -1008,7 +1008,7 @@
             <button type="submit" class="btn btn-danger"
                     style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;"
                     onclick="return confirm('Reject this bid?')">
-                <i class="fa-solid fa-times me-1"></i>Reject Bid
+                <i class="fa-solid fa-xmark me-1"></i>Reject Bid
             </button>
         </form>
         @elseif($bidStatus === 'Countered')

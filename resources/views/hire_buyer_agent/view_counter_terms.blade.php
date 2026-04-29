@@ -691,7 +691,7 @@
                                 <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
-                                    <i class="fa-solid fa-times me-2"></i>Reject
+                                    <i class="fa-solid fa-xmark me-2"></i>Reject
                                 </button>
                             </form>
                             @endif
@@ -720,7 +720,7 @@
                                 <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Reject this counter offer from the agent?')">
-                                    <i class="fa-solid fa-times me-2"></i>Reject
+                                    <i class="fa-solid fa-xmark me-2"></i>Reject
                                 </button>
                             </form>
                             @else

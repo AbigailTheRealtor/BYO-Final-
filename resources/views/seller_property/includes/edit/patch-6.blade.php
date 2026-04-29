@@ -453,7 +453,7 @@
         <div class="form-group">
           <label class="fw-bold">Monthly Rental Amount:</label>
           <input type="number" name="monthly_rental_ammount_com" value="{{isset($auction->get->monthly_rental_ammount_com) ? $auction->get->monthly_rental_ammount_com : ''}}" id="monthly_rental_ammount" 
-            class="form-control has-icon" data-icon="fa-solid fa-dollar">
+            class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
         </div>
         <div class="form-group">
           <label class="fw-bold">Days Notice to Tenant if not Renewing:</label>
@@ -502,12 +502,12 @@
     <div class="form-group">
       <label class="fw-bold">Annual Expense:</label>
       <input type="number" name="annual_expenses" value="{{isset($auction->get->annual_expenses) ? $auction->get->annual_expenses : ''}}" id="annual_expenses" class="form-control has-icon"
-        data-icon="fa-solid fa-dollar" >
+        data-icon="fa-solid fa-dollar-sign" >
     </div>
     <div class="form-group">
       <label class="fw-bold">Annual TTL Schedule Income:</label>
       <input type="number" name="annual_ttl_schedule_income" value="{{isset($auction->get->annual_ttl_schedule_income) ? $auction->get->annual_ttl_schedule_income : ''}}" id="annual_ttl_schedule_income"
-        class="form-control has-icon" data-icon="fa-solid fa-dollar">
+        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
     </div>
     <div class="form-group">
       <label class="fw-bold">Annual Income Type:</label>

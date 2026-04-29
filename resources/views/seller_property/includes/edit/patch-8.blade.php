@@ -564,7 +564,7 @@
       <div class="form-group ccdVacant d-none">
         <label class="fw-bold">Annual CDD Fee:</label>
         <input type="number" name="annual_cdd_fee_vac" value="{{isset($auction->get->annual_cdd_fee_vac) ? $auction->get->annual_cdd_fee_vac : ''}}" id="annual_cdd_fee" class="form-control has-icon"
-          data-icon="fa-solid fa-dollar ">
+          data-icon="fa-solid fa-dollar-sign ">
       </div>
       <div class="form-group">
           @php
@@ -588,7 +588,7 @@
       <div class="form-group landLeaseVacant d-none">
         <label class="fw-bold">Annual Land Lease Fee:</label>
         <input type="number" name="land_lease_fee_vac" value="{{isset($auction->get->land_lease_fee_vac) ? $auction->get->land_lease_fee_vac : ''}}" id="land_lease_fee" class="form-control has-icon"
-          data-icon="fa-solid fa-dollar ">
+          data-icon="fa-solid fa-dollar-sign ">
       </div>
     </div>
         <div class="form-group">

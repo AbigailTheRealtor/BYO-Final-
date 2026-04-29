@@ -81,7 +81,7 @@
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-dollar text-primary me-2"></i>Referral Income</h5>
+                    <h5 class="fw-bold"><i class="fa fa-dollar-sign text-primary me-2"></i>Referral Income</h5>
                     <p class="text-muted small mt-2 mb-0">Refer clients to other agents and earn a referral fee upon closing. Agents can also be listed specifically as referral agents on the platform — a new income stream with no extra legwork.</p>
                 </div>
             </div>

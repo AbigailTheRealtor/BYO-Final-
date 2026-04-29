@@ -349,7 +349,7 @@
                                         provide the service?</label>
                                     <input type="number" step="0.01" placeholder="0.00" name="offerer_commission"
                                         id="offerer_commission" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar" value="{{ @$auction->get->offerer_commission }}"
+                                        data-icon="fa-solid fa-dollar-sign" value="{{ @$auction->get->offerer_commission }}"
                                         required>
                                 </div>
 
@@ -476,7 +476,7 @@
                                     <div class="form-group">
                                         <label class="fw-bold">Brokerage:</label>
                                         <input type="text" name="brokerage" id="brokerage"
-                                            class="form-control has-icon" data-icon="fa-solid fa-dollar"
+                                            class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
                                             placeholder="Enter brokerage" value="{{ @$auction->get->brokerage }}">
                                     </div>
 

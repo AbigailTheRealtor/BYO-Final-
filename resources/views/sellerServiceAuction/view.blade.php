@@ -15,7 +15,7 @@
             -moz-appearance: textfield;
         }
 
-        /* .fa-dollar,
+        /* .fa-dollar-sign,
             .fa-percent {
                 padding: 0 20px;
                 background: #facd34;
@@ -92,18 +92,18 @@
                         <hr />
                         <h4>Features</h4>
                         <div class="row" style="flex-wrap: wrap;">
-                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-dot-circle-o"></i> City:
+                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> City:
                                 {{ @$auction->city->name }} </div>
-                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-dot-circle-o"></i> County:
+                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> County:
                                 {{ @$auction->county->name }} </div>
-                            {{-- <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-dot-circle-o"></i> State: {{ @$auction->state->name }} </div> --}}
+                            {{-- <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> State: {{ @$auction->state->name }} </div> --}}
 
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa fa-money"></i> Price Seller is
+                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa fa-money-bill"></i> Price Seller is
                                 willing to accept:
                                 ${{ number_format($auction->price, 0, '.', '') }}
                             </div>
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa fa-dot-circle-o"></i> When does the
+                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> When does the
                                 service need to take place?
                                 {{ $carbon::parse($auction->required_at)->format('M d, Y h:i a') }} </div>
                         </div>
@@ -667,7 +667,7 @@
                                         <label>Brokerage: <span class="text-danger">*</span></label>
                                         {{-- <div class="input-group">
                                             <div class="input-group-text">
-                                                <i class="fa fa-dollar"></i>
+                                                <i class="fa fa-dollar-sign"></i>
                                             </div> --}}
                                             <input type="text" class="form-control" name="brokerage"
                                                 id="brokerage" required

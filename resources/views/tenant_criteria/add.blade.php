@@ -648,7 +648,7 @@
               <h4>Tenant’s Leasing Terms: </h4>
               <label class="fw-bold">Maximum Monthly Lease Price:</label>
               <input type="number" step="0.01" placeholder="0.00" name="monthly_price" id="monthly_price"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
             </div>
             <span class="resFields">
               @php
@@ -2028,7 +2028,7 @@
                 <label class="fw-bold">What is the household monthly net income of the tenant?</label>
                 <input type="number" step="0.01" placeholder="0.00" min="1"
                   name="monthly_household_income" id="monthly_household_income" class="form-control has-icon"
-                  data-icon="fa-solid fa-dollar">
+                  data-icon="fa-solid fa-dollar-sign">
               </div>
               <div class="form-group">
                 <label class="fw-bold">
@@ -2173,7 +2173,7 @@
                 <label class="fw-bold">What is the monthly household net income?</label>
                 <input type="number" step="0.01" placeholder="0.00" min="1"
                   name="monthly_household_income" id="monthly_household_income" class="form-control has-icon"
-                  data-icon="fa-solid fa-dollar">
+                  data-icon="fa-solid fa-dollar-sign">
               </div>
               <div class="form-group">
                 <label class="fw-bold">

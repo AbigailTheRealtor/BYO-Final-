@@ -173,12 +173,12 @@
               <label class="fw-bold" for="price">Offered Price:</label>
               @if ($page_data['auction']->get->auction_type == 'Auction Listing')
               <input type="number" step="0.01" name="price" placeholder="0.00" id="price"
-              class="form-control has-icon" data-icon="fa-solid fa-dollar"
+              class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
               data-msg-required="Please enter Price" min="{{$startingPrice}}" autofocus required>
               <small>(Minimum starting price is {{$startingPrice}})</small>
               @else
               <input type="number" step="0.01" name="price" placeholder="0.00" id="price"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar"
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
                 data-msg-required="Please enter Price" autofocus required>
               @endif
             </div>
@@ -411,7 +411,7 @@
                 <div class="form-group leaseOptionAuction d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the buyer’s desired option purchase price?</label>
-                      <input type="number" name="desired_offering_price" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="desired_offering_price" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the buyer propose for the lease option?</label>
@@ -423,7 +423,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the monthly payment amount the buyer is seeking for the lease option?</label>
-                      <input type="number" name="monthly_payment_amount" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="monthly_payment_amount" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the buyer for the lease purchase?</label>
@@ -456,7 +456,7 @@
                 <div class="form-group leasePurchaseAuction d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the buyer’s desired lease purchase price?</label>
-                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the buyer propose for the lease purchase?</label>
@@ -468,7 +468,7 @@
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the monthly payment amount the buyer is seeking for the lease purchase?</label>
-                      <input type="number" name="monthly_payment_amount_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="monthly_payment_amount_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What are the specific conditions or requirements outlined by the buyer for the lease option?</label>
@@ -615,7 +615,7 @@
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">What is the estimated value of the acceptable exchange/trade item?</label>
-                  <input type="number" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                  <input type="number" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">Are there specific criteria or conditions for the type of item the seller is willing to exchange/trade?</label>
@@ -635,7 +635,7 @@
             <div class="form-group">
               <label class="fw-bold">Offered Escrow Deposit:</label>
               <input type="number" name="escrow_amount" id="term_escrow_amount" placeholder=""
-                class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
             </div>
             <div class="form-group">
               <label class="fw-bold" for="closing_date">Offered Closing Date:</label>

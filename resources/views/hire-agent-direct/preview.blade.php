@@ -234,8 +234,8 @@
                 <h3>{{ $agentDisplayName }}</h3>
                 <div class="agent-meta">
                     @if($agentBrokerage)<i class="fa fa-building me-1"></i>{{ $agentBrokerage }}<br>@endif
-                    @if($agentLicense)<i class="fa fa-id-card-o me-1"></i>License&nbsp;#{{ $agentLicense }}<br>@endif
-                    <i class="fa fa-envelope-o me-1"></i>{{ $agent->email }}
+                    @if($agentLicense)<i class="fa fa-id-card me-1"></i>License&nbsp;#{{ $agentLicense }}<br>@endif
+                    <i class="fa fa-envelope me-1"></i>{{ $agent->email }}
                 </div>
                 <div class="mt-2">
                     <span class="role-pill">{{ $roleLabel }}</span>
@@ -283,7 +283,7 @@
 
         @if(!empty($mapped['marketing_plan']))
         <div class="preview-section">
-            <div class="preview-section-header"><i class="fa fa-line-chart"></i> Marketing Plan</div>
+            <div class="preview-section-header"><i class="fa fa-chart-line"></i> Marketing Plan</div>
             <div class="preview-section-body">
                 <div class="bio-block">{{ $mapped['marketing_plan'] }}</div>
             </div>
@@ -301,7 +301,7 @@
             {{-- ── Services ──────────────────────────────────────── --}}
             <div class="preview-section">
                 <div class="preview-section-header">
-                    <i class="fa fa-check-square-o"></i> Services Included in This Agent's Proposal
+                    <i class="fa fa-square-check"></i> Services Included in This Agent's Proposal
                 </div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-3">
@@ -361,7 +361,7 @@
             @if(count($compRows) > 0)
             <div class="preview-section">
                 <div class="preview-section-header">
-                    <i class="fa fa-file-text-o"></i> Proposed Broker Compensation &amp; Agreement Terms
+                    <i class="fa fa-file-lines"></i> Proposed Broker Compensation &amp; Agreement Terms
                 </div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-3">
@@ -440,7 +440,7 @@
             @else
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                     <button type="submit" id="hire-direct-submit" class="confirm-btn btn">
-                        <i class="fa fa-handshake-o me-2"></i>Start Direct Hire Request
+                        <i class="fa fa-handshake me-2"></i>Start Direct Hire Request
                     </button>
                     <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">
                         Cancel

@@ -910,7 +910,7 @@
     <div class="form-group">
       <label class="fw-bold">Taxes (Annual Amount):</label>
       <input type="number" name="taxes_annual_amount" value="{{isset($auction->get->taxes_annual_amount) ? $auction->get->taxes_annual_amount : ''}}" id="taxes_annual_ammount"
-        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
     </div>
     <div class="form-group ">
       @php
@@ -1028,7 +1028,7 @@
         <div class="form-group anual_cdd_fee_residential_and_income d-none">
           <label class="fw-bold">Annual CDD Fee:</label>
           <input type="number" name="annual_cdd_fee" value="{{isset($auction->get->annual_cdd_fee) ? $auction->get->annual_cdd_fee : ''}}" id="annual_cdd_fee" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar ">
+            data-icon="fa-solid fa-dollar-sign ">
         </div>
         <div class="form-group">
           @php
@@ -1052,7 +1052,7 @@
         <div class="form-group land_lease_fee_residential_and_income d-none">
           <label class="fw-bold">Annual Land Lease Fee:</label>
           <input type="number" name="land_lease_fee" value="{{isset($auction->get->land_lease_fee) ? $auction->get->land_lease_fee : ''}}" id="land_lease_fee" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar ">
+            data-icon="fa-solid fa-dollar-sign ">
         </div>
       </div>
     </div>

@@ -15,7 +15,7 @@
             -moz-appearance: textfield;
         }
 
-        .fa-dollar,
+        .fa-dollar-sign,
         .fa-percent {
             padding: 0 20px;
             background: #facd34;
@@ -88,7 +88,7 @@
                             </div>
                             <div class="col-md-4 col-6 fw-bold"><i class="fa fa-calculator"></i> Heated Sqft:
                                 {{ @$auction->get->sqft }} </div>
-                            <div class="col-md-4 col-6 fw-bold"><i class="fa fa-money"></i>Ideal Price:
+                            <div class="col-md-4 col-6 fw-bold"><i class="fa fa-money-bill"></i>Ideal Price:
                                 ${{ number_format(@$auction->get->ideal_price, 0, '.', '') }} </div>
 
                             <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -748,7 +748,7 @@
                                     <div class="col-md-6">
                                         <label>Brokerage: <span class="text-danger">*</span></label>
                                         {{-- <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar"></i> --}}
+                                            <i class="fa fa-dollar-sign"></i> --}}
                                         <input type="text" class="form-control" name="brokerage" id="brokerage"
                                             required value="{{ old('brokerage') }}">
                                         {{-- </div> --}}
@@ -807,7 +807,7 @@
                                     <div class="col-md-6">
                                         <label>Offering Price $: <span class="text-danger">*</span></label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar"></i>
+                                            <i class="fa fa-dollar-sign"></i>
                                             <input type="number" class="form-control border-start-0" name="price"
                                                 id="price" min="0" placeholder="0.00"
                                                 value="{{ old('price') }}">

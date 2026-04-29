@@ -1497,7 +1497,7 @@
           What price does the landlord want to ideally list the property for? *
         </label>
         <input type="text" name="cma_q1" id="cma_q1" class="form-control has-icon"
-          data-icon="fa-solid fa-dollar" placeholder="0.00" required>
+          data-icon="fa-solid fa-dollar-sign" placeholder="0.00" required>
       </div>
     </div>
 

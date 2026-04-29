@@ -530,7 +530,7 @@
 
                 <div class="input-cover">
                     <input type="text" wire:model="space_features" class="form-control has-icon"
-                        data-icon="fa-solid fa-th-large"
+                        data-icon="fa-solid fa-table-cells-large"
                         placeholder="Enter layout (e.g., Open Floor Plan, Private Offices)">
                 </div>
             </div>
@@ -820,7 +820,7 @@
 
             <div class="input-cover">
                 <input type="text" wire:model="space_features" class="form-control has-icon"
-                    data-icon="fa-solid fa-th-large"
+                    data-icon="fa-solid fa-table-cells-large"
                     placeholder="Enter layout (e.g., Open Floor Plan, Private Offices)">
             </div>
         </div>

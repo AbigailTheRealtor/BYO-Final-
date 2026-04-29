@@ -12,13 +12,13 @@
                     <ul class="nav-submenu menu-content">
                         {{-- <li><a class="submenu-title" href="javascript:void(0)">color version<span class="sub-arrow"><i class="fa fa-chevron-right"></i></span></a> --}}
                         {{-- <ul class="nav-sub-childmenu submenu-content"> --}}
-                        <li><a href="{{ route('admin.buyer') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Buyer</a></li>
-                        {{-- <li><a href="{{ route('admin.buyerAgent') }}" class="fw-bold"><i class="fa fa-circle-o"></i> Buyer Agent</a></li> --}}
-                        <li><a href="{{ route('admin.seller') }}" class="fw-bold"><i class="fa fa-circle-o"></i> Seller</a></li>
-                        {{-- <li><a href="{{ route('admin.sellerAgent') }}" class="fw-bold"><i class="fa fa-circle-o"></i> Seller Agent</a></li> --}}
-                        <li><a href="{{ route('admin.agent') }}" class="fw-bold"><i class="fa fa-circle-o"></i> Agent</a></li>
-                        <li><a href="{{ route('admin.userRequest') }}" class="fw-bold"><i class="fa fa-circle-o"></i> Pending Approval</a></li>
-                        <li><a href="{{ route('admin.addAdmin') }}" class="fw-bold"><i class="fa fa-circle-o"></i> Admin Users</a></li>
+                        <li><a href="{{ route('admin.buyer') }}" class="fw-bold" ><i class="fa fa-circle"></i> Buyer</a></li>
+                        {{-- <li><a href="{{ route('admin.buyerAgent') }}" class="fw-bold"><i class="fa fa-circle"></i> Buyer Agent</a></li> --}}
+                        <li><a href="{{ route('admin.seller') }}" class="fw-bold"><i class="fa fa-circle"></i> Seller</a></li>
+                        {{-- <li><a href="{{ route('admin.sellerAgent') }}" class="fw-bold"><i class="fa fa-circle"></i> Seller Agent</a></li> --}}
+                        <li><a href="{{ route('admin.agent') }}" class="fw-bold"><i class="fa fa-circle"></i> Agent</a></li>
+                        <li><a href="{{ route('admin.userRequest') }}" class="fw-bold"><i class="fa fa-circle"></i> Pending Approval</a></li>
+                        <li><a href="{{ route('admin.addAdmin') }}" class="fw-bold"><i class="fa fa-circle"></i> Admin Users</a></li>
                         {{-- </ul> --}}
                         {{-- </li> --}}
                     </ul>
@@ -27,17 +27,17 @@
 
                 <li><a class="nav-link menu-title" href="#"><i class="icofont icofont-growth me-2"></i> <span>Auctions</span></a>
                     <ul class="nav-submenu menu-content">
-                        <li><a href="{{ route('admin.propertyAuctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Seller's Property</a></li>
-                        <li><a href="{{ route('admin.criteriaAuctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Buyer's Criteria</a></li>
-                        <li><a href="{{ route('admin.tenant.criteria.list') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Tenant's Criteria</a></li>
-                        <li><a href="{{ route('admin.serviceAuctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Agent Service Needed</a></li>
-                        {{-- <li><a href="{{ route('admin.sellerServiceAuctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Seller Service Auctions</a></li> --}}
-                        <li><a href="{{ route('admin.sellerAgentAuctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Hire Seller's Agent</a></li>
-                        <li><a href="{{ route('admin.buyerAgentAuctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Hire Buyer's Agent</a></li>
-                        <li><a href="{{ route('admin.landlord.auctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Auctions for Landlords</a></li>
-                        <li><a href="{{ route('admin.landlord.agent.auctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Hire Landlord's Agent</a></li>
-                        <li><a href="{{ route('admin.tenant.agent.auctions') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Hire Tenant's Agent</a></li>
-                        <li><a href="{{ route('admin.offerListings') }}" class="fw-bold" ><i class="fa fa-circle-o"></i> Offer Listings</a></li>
+                        <li><a href="{{ route('admin.propertyAuctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Seller's Property</a></li>
+                        <li><a href="{{ route('admin.criteriaAuctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Buyer's Criteria</a></li>
+                        <li><a href="{{ route('admin.tenant.criteria.list') }}" class="fw-bold" ><i class="fa fa-circle"></i> Tenant's Criteria</a></li>
+                        <li><a href="{{ route('admin.serviceAuctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Agent Service Needed</a></li>
+                        {{-- <li><a href="{{ route('admin.sellerServiceAuctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Seller Service Auctions</a></li> --}}
+                        <li><a href="{{ route('admin.sellerAgentAuctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Hire Seller's Agent</a></li>
+                        <li><a href="{{ route('admin.buyerAgentAuctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Hire Buyer's Agent</a></li>
+                        <li><a href="{{ route('admin.landlord.auctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Auctions for Landlords</a></li>
+                        <li><a href="{{ route('admin.landlord.agent.auctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Hire Landlord's Agent</a></li>
+                        <li><a href="{{ route('admin.tenant.agent.auctions') }}" class="fw-bold" ><i class="fa fa-circle"></i> Hire Tenant's Agent</a></li>
+                        <li><a href="{{ route('admin.offerListings') }}" class="fw-bold" ><i class="fa fa-circle"></i> Offer Listings</a></li>
                         <li><a href="{{ route('admin.referrals.index') }}" class="fw-bold" ><i class="fa fa-share-alt me-1"></i> Referral Tracking</a></li>
                     </ul>
                 </li>

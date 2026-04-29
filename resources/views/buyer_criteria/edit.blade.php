@@ -1006,7 +1006,7 @@
                                     <label class="fw-bold">What is the estimated value of the acceptable exchange/trade
                                         item?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the condition of the item the buyer is looking to
@@ -1018,7 +1018,7 @@
                                     <label class="fw-bold">How much cash will the buyer use on top of the Exchange/Trade
                                         item?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
@@ -1103,7 +1103,7 @@
                                     <label class="fw-bold">What is the buyer's desired offering price for a lease
                                         option?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
@@ -1120,7 +1120,7 @@
                                     <label class="fw-bold">What is the monthly payment amount the buyer is
                                         offering?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What are the specific conditions or requirements outlined by the
@@ -1158,7 +1158,7 @@
                                 <div class="form-group lease_options_res_opt_yes d-none">
                                     <label class="fw-bold">How much is the offered option fee?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                             </div>
                             {{-- Lease Options --}}
@@ -1168,7 +1168,7 @@
                                     <label class="fw-bold">What is the buyer's desired offering price for a lease
                                         purchase?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
@@ -1185,7 +1185,7 @@
                                     <label class="fw-bold">What is the monthly payment amount the buyer is
                                         offering?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What are the specific conditions or requirements outlined by the
@@ -1223,7 +1223,7 @@
                                 <div class="form-group lease_options_res_opt_yes d-none">
                                     <label class="fw-bold">How much is the offered option fee?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                             </div>
                             {{-- Lease Purchase --}}
@@ -1426,7 +1426,7 @@
                                 <label class="fw-bold">What percentage of the sales price will the buyer offer as
                                     cash?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
-                                    data-icon="fa-solid fa-dollar">
+                                    data-icon="fa-solid fa-dollar-sign">
                             </div>
                             {{-- NFT --}}
                             {{-- Desired Price and Terms: --}}
@@ -3134,7 +3134,7 @@
                                     <label class="fw-bold">What is the estimated value of the acceptable exchange/trade
                                         item?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the condition of the item the buyer is looking to
@@ -3146,7 +3146,7 @@
                                     <label class="fw-bold">How much cash will the buyer use on top of the Exchange/Trade
                                         item?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
@@ -3232,7 +3232,7 @@
                                     <label class="fw-bold">What is the buyer's desired offering price for a lease
                                         option?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
@@ -3249,7 +3249,7 @@
                                     <label class="fw-bold">What is the monthly payment amount the buyer is
                                         offering?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What are the specific conditions or requirements outlined by the
@@ -3287,7 +3287,7 @@
                                 <div class="form-group lease_options_com_opt_yes d-none">
                                     <label class="fw-bold">How much is the offered option fee?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                             </div>
                             {{-- Lease Options --}}
@@ -3297,7 +3297,7 @@
                                     <label class="fw-bold">What is the buyer's desired offering price for a lease
                                         purchase?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
@@ -3314,7 +3314,7 @@
                                     <label class="fw-bold">What is the monthly payment amount the buyer is
                                         offering?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What are the specific conditions or requirements outlined by the
@@ -3352,7 +3352,7 @@
                                 <div class="form-group lease_options_com_opt_yes d-none">
                                     <label class="fw-bold">How much is the offered option fee?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                             </div>
                             {{-- Lease Purchase --}}
@@ -3394,7 +3394,7 @@
                                         </div>
                                         <input type="text" name="sellerFinancing[]" value=""
                                             data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar" />
+                                            data-icon="fa-solid fa-dollar-sign" />
                                     </div>
                                     <div class="col-12 form-group">
                                         <label class="fw-bold" for="interestRate">Desired Interest Rate:</label>
@@ -3554,7 +3554,7 @@
                                 <label class="fw-bold">What percentage of the sales price will the buyer offer as
                                     cash?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
-                                    data-icon="fa-solid fa-dollar">
+                                    data-icon="fa-solid fa-dollar-sign">
                             </div>
                             {{-- NFT --}}
                             {{-- Desired Price and Terms: --}}
@@ -3682,7 +3682,7 @@
                     {{-- <div class="wizard-step" data-step="26">
                         <label class="fw-bold">Escrow Amount Offered:</label>
                         <input type="text" name="escrow_amount" id="escrow_amount" class="form-control has-icon"
-                            data-icon="fa-solid fa-dollar" required>
+                            data-icon="fa-solid fa-dollar-sign" required>
                         <div class="form-group">
                             @php
                                 $contingencyRes = [
@@ -5042,7 +5042,7 @@
                                     <label class="fw-bold">What is the estimated value of the acceptable exchange/trade
                                         item?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What is the condition of the item the buyer is looking to
@@ -5054,7 +5054,7 @@
                                     <label class="fw-bold">How much cash will the buyer use on top of the Exchange/Trade
                                         item?</label>
                                     <input type="text" name="trade[]" data-type="" id=""
-                                        class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                                        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">How is the value of the exchange/trade item determined?</label>
@@ -5140,7 +5140,7 @@
                                     <label class="fw-bold">What is the buyer's desired offering price for a lease
                                         option?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
@@ -5157,7 +5157,7 @@
                                     <label class="fw-bold">What is the monthly payment amount the buyer is
                                         offering?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What are the specific conditions or requirements outlined by the
@@ -5195,7 +5195,7 @@
                                 <div class="form-group lease_options_vac_opt_yes d-none">
                                     <label class="fw-bold">How much is the offered option fee?</label><br>
                                     <input type="number" name="leaseOptions[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                             </div>
                             {{-- Lease Options --}}
@@ -5205,7 +5205,7 @@
                                     <label class="fw-bold">What is the buyer's desired offering price for a lease
                                         purchase?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What specific terms does the buyer propose for the lease
@@ -5222,7 +5222,7 @@
                                     <label class="fw-bold">What is the monthly payment amount the buyer is
                                         offering?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                                 <div class="form-group">
                                     <label class="fw-bold">What are the specific conditions or requirements outlined by the
@@ -5260,7 +5260,7 @@
                                 <div class="form-group lease_options_vac_opt_yes d-none">
                                     <label class="fw-bold">How much is the offered option fee?</label><br>
                                     <input type="number" name="leasePurchase[]" class="form-control has-icon"
-                                        data-icon="fa-solid fa-dollar">
+                                        data-icon="fa-solid fa-dollar-sign">
                                 </div>
                             </div>
                             {{-- Lease Purchase --}}
@@ -5302,7 +5302,7 @@
                                         </div>
                                         <input type="text" name="sellerFinancing[]" value=""
                                             data-target="{{ $item['target'] }}" class="form-control has-icon"
-                                            data-icon="fa-solid fa-dollar" />
+                                            data-icon="fa-solid fa-dollar-sign" />
                                     </div>
                                     <div class="col-12 form-group">
                                         <label class="fw-bold" for="interestRate">Desired Interest Rate:</label>
@@ -5462,7 +5462,7 @@
                                 <label class="fw-bold">What percentage of the sales price will the buyer offer as
                                     cash?</label><br>
                                 <input type="text" name="nft[]" class="form-control has-icon"
-                                    data-icon="fa-solid fa-dollar">
+                                    data-icon="fa-solid fa-dollar-sign">
                             </div>
                             {{-- NFT --}}
                             {{-- Desired Price and Terms: --}}

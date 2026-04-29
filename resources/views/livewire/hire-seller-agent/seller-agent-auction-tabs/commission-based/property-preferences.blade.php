@@ -1632,7 +1632,7 @@
             </span>
             <div class="input-cover">
                 <input type="number" wire:model="number_of_units" class="form-control has-icon"
-                    data-icon="fa-solid fa-th-large" placeholder="Enter total number of this unit type (e.g., 4)">
+                    data-icon="fa-solid fa-table-cells-large" placeholder="Enter total number of this unit type (e.g., 4)">
             </div>
             <span class="error mt-2" id="number_of_units_error"></span>
         </div>
@@ -1790,7 +1790,7 @@
                         <div class="input-cover">
                             <input type="number"
                                 wire:model="unit_type_configurations.{{ $index }}.number_of_units"
-                                class="form-control has-icon" data-icon="fa-solid fa-th-large"
+                                class="form-control has-icon" data-icon="fa-solid fa-table-cells-large"
                                 placeholder="Enter total number of this unit type (e.g., 4)">
                         </div>
 

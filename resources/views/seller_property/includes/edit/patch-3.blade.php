@@ -920,7 +920,7 @@
         <div class="form-group">
           <label class="fw-bold">Monthly Rental Amount:</label>
           <input type="number" name="monthly_rental_ammount" value="{{isset($auction->get->monthly_rental_ammount) ? $auction->get->monthly_rental_ammount : ''}}" id="monthly_rental_ammount" 
-            class="form-control has-icon" data-icon="fa-solid fa-dollar">
+            class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
         </div>
         <div class="form-group">
           <label class="fw-bold">Days Notice to Tenant if not Renewing:</label>

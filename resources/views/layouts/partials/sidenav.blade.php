@@ -82,7 +82,7 @@
     @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('agent.hire-listings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-handshake-o" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-handshake" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Hire Agent Listings</b>
                     @php
@@ -101,7 +101,7 @@
     @can('offer-playoff')
     <a href="{{ route('agent.offer-listings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-file-text-o" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa fa-file-lines" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Offer Listings</b>
                     @php

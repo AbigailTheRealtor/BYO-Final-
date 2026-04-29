@@ -124,13 +124,13 @@
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-handshake-o text-primary me-2"></i>Your Interests First</h5>
+                    <h5 class="fw-bold"><i class="fa fa-handshake text-primary me-2"></i>Your Interests First</h5>
                     <p class="text-muted small mt-2 mb-0">A dedicated Buyer's agent represents you — not the Seller. Hire an agent whose goals align with yours and who is competing to earn your business.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-dollar text-primary me-2"></i>Free for Buyers</h5>
+                    <h5 class="fw-bold"><i class="fa fa-dollar-sign text-primary me-2"></i>Free for Buyers</h5>
                     <p class="text-muted small mt-2 mb-0">Posting is completely free. The Seller pays real estate commissions — you just pick the best agent for your needs and potentially earn a rebate at closing.</p>
                 </div>
             </div>

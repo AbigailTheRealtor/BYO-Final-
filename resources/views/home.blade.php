@@ -347,7 +347,7 @@
             </div>
             <div class="col-md-4">
                 <div class="bya-referral-card">
-                    <h6><i class="fa fa-handshake-o me-2"></i>Referral Income</h6>
+                    <h6><i class="fa fa-handshake me-2"></i>Referral Income</h6>
                     <p class="text-muted small mt-2">Refer clients to other agents and earn a referral fee upon closing. Agents can also be hired specifically as referral agents on the platform.</p>
                 </div>
             </div>

@@ -268,7 +268,7 @@
             @csrf
             <button type="submit" class="btn btn-danger"
                     style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
-                <i class="fa fa-times me-1"></i> Reject Bid
+                <i class="fa fa-xmark me-1"></i> Reject Bid
             </button>
         </form>
         @endif

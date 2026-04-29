@@ -608,7 +608,7 @@
                                     </label>
                                     <input type="number" name="concession" value="{{ @$auction->get->concession }}"
                                         placeholder="0.00" id="concession" min="0" max=".05" step=".01"
-                                        class="form-control has-icon search_places" data-icon="fa-solid fa-dollar"
+                                        class="form-control has-icon search_places" data-icon="fa-solid fa-dollar-sign"
                                         data-msg-required="">
                                 </div>
                                 <small>(Available in all the states except: Alaska, Oregon, Kansas, Missouri, Oklahoma,
@@ -709,7 +709,7 @@
                                         <input type="number" name="preapproval_amount"
                                             value="{{ @$auction->get->preapproval_amount }}" placeholder="0.00"
                                             id="preapproval_amount" class="form-control has-icon search_places"
-                                            data-icon="fa-solid fa-dollar">
+                                            data-icon="fa-solid fa-dollar-sign">
                                     </div>
                                 </div>
 
@@ -719,7 +719,7 @@
                                         <input type="number" name="cash_budget"
                                             value="{{ @$auction->get->cash_budget }}" placeholder="0.00"
                                             id="cash_budget" class="form-control mt-4 has-icon search_places"
-                                            data-icon="fa-solid fa-dollar">
+                                            data-icon="fa-solid fa-dollar-sign">
                                     </div>
                                     <div class="col-md-6 form-group">
                                         <label class="fw-bold">What percentage of the purchase price does the buyer plan to
@@ -737,7 +737,7 @@
                                         <input type="number" name="cryptocurrency_value"
                                             value="{{ @$auction->get->cryptocurrency_value }}" placeholder="5000"
                                             id="cryptocurrency_value" class="form-control has-icon search_places"
-                                            data-icon="fa-solid fa-dollar">
+                                            data-icon="fa-solid fa-dollar-sign">
                                     </div>
                                     <div class="col-md-6 form-group">
                                         <label class="fw-bold">If the buyer intends to make a purchase using
@@ -746,7 +746,7 @@
                                         <input type="number" name="cryptocurrency_putdown_plan"
                                             value="{{ @$auction->get->cryptocurrency_putdown_plan }}" placeholder="5000"
                                             id="cryptocurrency_putdown_plan" class="form-control has-icon search_places"
-                                            data-icon="fa-solid fa-dollar">
+                                            data-icon="fa-solid fa-dollar-sign">
                                     </div>
                                 </div>
 
@@ -788,7 +788,7 @@
                                 <div class="form-group custom_amount @if (@$auction->get->custom_amount == '' || @$auction->get->custom_amount == 'null') d-none @endif ">
                                     <label>When is Buyer looking to purchase?</label>
                                     <input type="text" class="form-control has-icon" placeholder="Enter Amount"
-                                        name="custom_amount" data-icon="fa-solid fa-dollar" id="custom_amount" required
+                                        name="custom_amount" data-icon="fa-solid fa-dollar-sign" id="custom_amount" required
                                         value="{{ @$auction->get->custom_amount }}" />
                                 </div>
 

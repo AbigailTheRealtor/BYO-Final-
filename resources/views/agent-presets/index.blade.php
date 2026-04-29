@@ -339,10 +339,10 @@
                                         @elseif ($info['has_creds'])
                                             <span><i class="fa fa-circle-check text-success me-1"></i>Credentials included</span>
                                         @else
-                                            <span class="text-muted"><i class="fa fa-circle-o me-1"></i>No bio or credentials</span>
+                                            <span class="text-muted"><i class="fa fa-circle me-1"></i>No bio or credentials</span>
                                         @endif
                                         @if ($info['updated_at'])
-                                            <div class="preset-updated"><i class="fa fa-clock-o me-1"></i>Updated {{ $info['updated_at']->diffForHumans() }}</div>
+                                            <div class="preset-updated"><i class="fa fa-clock me-1"></i>Updated {{ $info['updated_at']->diffForHumans() }}</div>
                                         @endif
                                     @else
                                         <span class="text-muted">No preset saved yet. Click Edit to create one.</span>

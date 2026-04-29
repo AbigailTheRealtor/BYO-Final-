@@ -194,24 +194,24 @@
       <div class="form-group ">
         <label class="fw-bold" for="buy_now_price" required>Buy Now Price:</label>
         <input type="number"  name="buy_now_price" value="{{isset($auction->get->buy_now_price) ? $auction->get->buy_now_price : ''}}"  id="buy_now_price"
-          class="form-control has-icon" data-icon="fa-solid fa-dollar"
+          class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
           data-msg-required="Please enter Buy Now Price">
       </div>
       <div class="form-group ">
         <label class="fw-bold" for="reserve_price" required>Buy Now Price Per Sqft:</label>
         <input type="number" name="buy_now_price_per_sqfeet" value="{{isset($auction->get->buy_now_price_per_sqfeet) ? $auction->get->buy_now_price_per_sqfeet : ''}}"  id="reserve_price"
-          class="form-control has-icon" data-icon="fa-solid fa-dollar">
+          class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
       </div>
       <div class="form-group ">
         <label class="fw-bold" for="starting_price" required>Starting Price:</label>
         <input type="number"  name="starting_price" value="{{isset($auction->get->starting_price) ? $auction->get->starting_price : ''}}"  id="starting_price"
-          class="form-control has-icon" data-icon="fa-solid fa-dollar"
+          class="form-control has-icon" data-icon="fa-solid fa-dollar-sign"
           data-msg-required="Please enter Starting Price">
       </div>
       <div class="form-group ">
         <label class="fw-bold" for="reserve_price" required>Reserve Price:</label>
         <input type="number"  name="reserve_price" value="{{isset($auction->get->reserve_price) ? $auction->get->reserve_price : ''}}"  id="reserve_price"
-          class="form-control has-icon" data-icon="fa-solid fa-dollar">
+          class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
       </div>
       <div class="form-group row ">
         <div class="form-group">
@@ -492,7 +492,7 @@
           <div class="form-group leasePurchaseAuction d-none">
             <div class="form-group col-md-12">
               <label class="fw-bold">What is the seller's desired offering price for a lease purchase?</label>
-              <input type="number" name="desired_offering_price_lease_purchase" value="{{isset($auction->get->desired_offering_price_lease_purchase) ? $auction->get->desired_offering_price_lease_purchase : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+              <input type="number" name="desired_offering_price_lease_purchase" value="{{isset($auction->get->desired_offering_price_lease_purchase) ? $auction->get->desired_offering_price_lease_purchase : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
             </div>
             <div class="form-group col-md-12">
                 <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
@@ -605,7 +605,7 @@
           </div>
           <div class="form-group col-md-12">
             <label class="fw-bold">What is the estimated value of the acceptable exchange/trade item? </label>
-            <input type="number" name="estimatedTrade" value="{{isset($auction->get->estimatedTrade) ? $auction->get->estimatedTrade : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+            <input type="number" name="estimatedTrade" value="{{isset($auction->get->estimatedTrade) ? $auction->get->estimatedTrade : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
           </div>
           <div class="form-group col-md-12">
             <label class="fw-bold">Are there specific criteria or conditions for the type of item the seller is willing to exchange/trade?</label>
@@ -659,7 +659,7 @@
         <div class="form-group ">
           <label class="fw-bold" for="buy_now_price" required>Price:</label>
           <input type="number" name="price" value="{{isset($auction->get->price) ? $auction->get->price : ''}}" placeholder="" id="buy_now_price"
-            class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar"
+            class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar-sign"
             data-msg-required="Please enter Buy Now Price" required>
         </div>
         <div class="form-group ">
@@ -940,7 +940,7 @@
         <div class="form-group leasePurchase d-none">
           <div class="form-group col-md-12">
               <label class="fw-bold">What is the seller's desired offering price for a lease purchase?</label>
-              <input type="number" name="desired_offering_price_lease_purchase" value="{{isset($auction->get->desired_offering_price_lease_purchase) ? $auction->get->desired_offering_price_lease_purchase : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+              <input type="number" name="desired_offering_price_lease_purchase" value="{{isset($auction->get->desired_offering_price_lease_purchase) ? $auction->get->desired_offering_price_lease_purchase : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
           </div>
           <div class="form-group col-md-12">
               <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
@@ -1045,7 +1045,7 @@
         </div>
         <div class="form-group col-md-12">
           <label class="fw-bold">What is the estimated value of the acceptable exchange/trade item? </label>
-          <input type="number" name="estimatedTrade" value="{{isset($auction->get->estimatedTrade) ? $auction->get->estimatedTrade : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+          <input type="number" name="estimatedTrade" value="{{isset($auction->get->estimatedTrade) ? $auction->get->estimatedTrade : ''}}" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
         </div>
         <div class="form-group col-md-12">
           <label class="fw-bold">Are there specific criteria or conditions for the type of item the seller is willing to exchange/trade?</label>

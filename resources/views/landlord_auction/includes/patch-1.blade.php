@@ -1074,7 +1074,7 @@
             What is the minimum net income a household must earn to qualify for the rental?
         </label>
         <input type="number" name="offer_min_net_income" id="offer_min_net_income"
-            class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar">
+            class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar-sign">
     </div>
     <div class="form-group">
         @php

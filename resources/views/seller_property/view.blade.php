@@ -223,7 +223,7 @@
       -moz-appearance: textfield;
     }
 
-    .fa-dollar {
+    .fa-dollar-sign {
       padding: 0 20px;
       background: #facd34;
       color: #fff;

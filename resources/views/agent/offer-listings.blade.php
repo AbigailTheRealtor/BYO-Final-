@@ -5,7 +5,7 @@
     {{-- Header --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h4 class="fw-bold mb-1"><i class="fa fa-file-text-o me-2" style="color:#049399;"></i>My Offer Listings</h4>
+            <h4 class="fw-bold mb-1"><i class="fa fa-file-lines me-2" style="color:#049399;"></i>My Offer Listings</h4>
             <p class="text-muted small mb-0">All your offer, rental, and lease listings in one place.</p>
         </div>
         <div class="dropdown">
@@ -38,7 +38,7 @@
     @if($listings->isEmpty())
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
-            <div style="font-size:2.5rem;color:#ccc;" class="mb-3"><i class="fa fa-file-text-o"></i></div>
+            <div style="font-size:2.5rem;color:#ccc;" class="mb-3"><i class="fa fa-file-lines"></i></div>
             <h6 class="text-muted">No offer listings found</h6>
             <p class="text-muted small mb-3">
                 @if($filter === 'all')

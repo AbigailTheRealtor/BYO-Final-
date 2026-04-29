@@ -697,7 +697,7 @@
                                             <span class="text-danger">*</span>
                                         </label>
                                         <input type="number" class="form-control has-icon" name="ideal_price"
-                                            min="0" required placeholder="0.00" data-icon="fa-solid fa-dollar"
+                                            min="0" required placeholder="0.00" data-icon="fa-solid fa-dollar-sign"
                                             value="{{@$auction->get->ideal_price}}">
                                     </div>
                                 </div>

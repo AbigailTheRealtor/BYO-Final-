@@ -299,7 +299,7 @@
               <div class="form-group ">
                 <label class="fw-bold" for="buy_now_price" required>Price:</label>
                 <input type="number"  name="price" placeholder="" id="buy_now_price"
-                  class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar"
+                  class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar-sign"
                   data-msg-required="Please enter Buy Now Price">
               </div>
               <div class="form-group ">
@@ -563,7 +563,7 @@
                 <div class="form-group leasePurchase d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the seller's desired offering price for a lease purchase?</label>
-                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
@@ -672,7 +672,7 @@
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">What is the estimated value of the acceptable exchange/trade item? </label>
-                  <input type="text" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                  <input type="text" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">Are there specific criteria or conditions for the type of item the seller is willing to exchange/trade?</label>
@@ -2056,7 +2056,7 @@
             <div class="form-group">
               <label class="fw-bold">Taxes (Annual Amount):</label>
               <input type="text" name="taxes_annual_amount" id="taxes_annual_ammount"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
             </div>
             <div class="form-group ">
               @php
@@ -2174,7 +2174,7 @@
                 <div class="form-group anual_cdd_fee_residential_and_income d-none">
                   <label class="fw-bold">Annual CDD Fee:</label>
                   <input type="number" name="annual_cdd_fee" id="annual_cdd_fee" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar ">
+                    data-icon="fa-solid fa-dollar-sign ">
                 </div>
                 <div class="form-group">
                   @php
@@ -2198,7 +2198,7 @@
                 <div class="form-group land_lease_fee_residential_and_income d-none">
                   <label class="fw-bold">Annual Land Lease Fee:</label>
                   <input type="text" name="land_lease_fee" id="land_lease_fee" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar ">
+                    data-icon="fa-solid fa-dollar-sign ">
                 </div>
               </div>
             </div>
@@ -3334,7 +3334,7 @@
                 <div class="form-group">
                   <label class="fw-bold">Monthly Rental Amount:</label>
                   <input type="number" name="monthly_rental_ammount" id="monthly_rental_ammount" 
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
                 </div>
                 <div class="form-group">
                   <label class="fw-bold">Days Notice to Tenant if not Renewing:</label>
@@ -4906,7 +4906,7 @@
             <div class="form-group">
               <label class="fw-bold">Taxes (Annual Amount):</label>
               <input type="text" name="taxes_annual_amount_com" id="taxes_annual_ammount"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar">
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
             </div>
             <div class="form-group ">
               @php
@@ -5548,7 +5548,7 @@
                 <div class="form-group">
                   <label class="fw-bold">Monthly Rental Amount:</label>
                   <input type="number" name="monthly_rental_ammount_com" id="monthly_rental_ammount" 
-                    class="form-control has-icon" data-icon="fa-solid fa-dollar">
+                    class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
                 </div>
                 <div class="form-group">
                   <label class="fw-bold">Days Notice to Tenant if not Renewing:</label>
@@ -5567,12 +5567,12 @@
             <div class="form-group">
               <label class="fw-bold">Operating Expenses:</label>
               <input type="text" name="operating_expenses" id="operating_expenses"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar ">
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign ">
             </div>
             <div class="form-group">
               <label class="fw-bold">Net Operating Income:</label>
               <input type="text" name="net_operating_income" id="net_operating_income"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar">
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
             </div>
             <div class="form-group">
               <label class="fw-bold">Net Operating Income Type:</label>
@@ -5597,12 +5597,12 @@
             <div class="form-group">
               <label class="fw-bold">Annual Expense:</label>
               <input type="text" name="annual_expenses" id="annual_expenses" class="form-control has-icon"
-                data-icon="fa-solid fa-dollar" >
+                data-icon="fa-solid fa-dollar-sign" >
             </div>
             <div class="form-group">
               <label class="fw-bold">Annual TTL Schedule Income:</label>
               <input type="text" name="annual_ttl_schedule_income" id="annual_ttl_schedule_income"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar">
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
             </div>
             <div class="form-group">
               <label class="fw-bold">Annual Income Type:</label>
@@ -6449,7 +6449,7 @@
             <div class="form-group">
               <label class="fw-bold">Taxes (Annual Amount):</label>
               <input type="text" name="taxes_annual_amount_vac" id="taxes_annual_ammount"
-                class="form-control has-icon" data-icon="fa-solid fa-dollar">
+                class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
             </div>
             <div class="form-group ">
               @php
@@ -7078,7 +7078,7 @@
               <div class="form-group ccdVacant d-none">
                 <label class="fw-bold">Annual CDD Fee:</label>
                 <input type="text" name="annual_cdd_fee_vac" id="annual_cdd_fee" class="form-control has-icon"
-                  data-icon="fa-solid fa-dollar ">
+                  data-icon="fa-solid fa-dollar-sign ">
               </div>
               <div class="form-group">
                   @php
@@ -7102,7 +7102,7 @@
               <div class="form-group landLeaseVacant d-none">
                 <label class="fw-bold">Annual Land Lease Fee:</label>
                 <input type="text" name="land_lease_fee_vac" id="land_lease_fee" class="form-control has-icon"
-                  data-icon="fa-solid fa-dollar ">
+                  data-icon="fa-solid fa-dollar-sign ">
               </div>
             </div>
                 <div class="form-group">
@@ -7575,7 +7575,7 @@
               <div class="form-group ">
                 <label class="fw-bold" for="buy_now_price" required>Price:</label>
                 <input type="number"  name="price" placeholder="" id="buy_now_price"
-                  class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar"
+                  class="form-control has-icon hide_arrow" data-icon="fa-solid fa-dollar-sign"
                   data-msg-required="Please enter Buy Now Price">
               </div>
               <div class="form-group ">
@@ -7839,7 +7839,7 @@
                 <div class="form-group leasePurchase d-none">
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What is the seller's desired offering price for a lease purchase?</label>
-                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                      <input type="number" name="desired_offering_price_lease_purchase" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                   </div>
                   <div class="form-group col-md-12">
                       <label class="fw-bold">What specific terms does the seller propose for the lease purchase?</label>
@@ -7948,7 +7948,7 @@
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">What is the estimated value of the acceptable exchange/trade item? </label>
-                  <input type="text" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar" required>
+                  <input type="text" name="estimatedTrade" class="form-control has-icon" data-icon="fa-solid fa-dollar-sign" required>
                 </div>
                 <div class="form-group col-md-12">
                   <label class="fw-bold">Are there specific criteria or conditions for the type of item the seller is willing to exchange/trade?</label>
@@ -8128,7 +8128,7 @@
   <template class="add_new_lease">
     <tr>
       <td><input type="text" name="lease_unit[]" placeholder="Uint" data-type="unit"
-          class="form-control has-icon search_places" data-icon="fa-solid fa-tree-unit"></td>
+          class="form-control has-icon search_places" data-icon="fa-solid fa-tree"></td>
     </tr>
   </template>
   <template class="sqft mt-1"><input type="text" name="heatedSqft[]" placeholder="Heated Sqft"

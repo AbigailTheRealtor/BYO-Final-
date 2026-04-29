@@ -289,7 +289,7 @@
     <div class="form-group">
       <label class="fw-bold">Taxes (Annual Amount):</label>
       <input type="text" name="taxes_annual_amount_com" value="{{isset($auction->get->taxes_annual_amount_com) ? $auction->get->taxes_annual_amount_com : ''}}" id="taxes_annual_ammount"
-        class="form-control has-icon" data-icon="fa-solid fa-dollar">
+        class="form-control has-icon" data-icon="fa-solid fa-dollar-sign">
     </div>
     <div class="form-group ">
       @php

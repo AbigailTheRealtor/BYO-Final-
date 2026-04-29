@@ -43,7 +43,7 @@
         -moz-appearance: textfield;
     }
 
-    .fa-dollar,
+    .fa-dollar-sign,
     .fa-percent {
         padding: 0 20px;
         background: #facd34;
@@ -3677,7 +3677,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                                                 <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-times me-1"></i> Reject Bid
+                                                                    <i class="fa fa-xmark me-1"></i> Reject Bid
                                                                 </button>
                                                             </form>
                                                         </div>
