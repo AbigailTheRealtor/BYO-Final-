@@ -23,7 +23,7 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('user_type',['admin','buyer','seller','buyer_agent','seller_agent','agent']);
+            $table->enum('user_type',['admin','buyer','seller','buyer_agent','seller_agent','agent','tenant']);
             // $table->string('account_type')->nullable();
             $table->string('mls_id')->nullable();
             $table->string('phone')->nullable();

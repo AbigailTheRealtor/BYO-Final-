@@ -5,100 +5,117 @@ namespace Database\Seeders;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * Development / test account seeder.
+ *
+ * Uses firstOrCreate() so it is fully idempotent — safe to re-run at any time
+ * without duplicating rows. UserObserver fires on create(), so short_id and
+ * user_name are auto-generated if the row does not yet exist.
+ *
+ * Run manually:   php artisan db:seed --class=UserSeeder
+ * Run via script: scripts/post-merge.sh calls this automatically.
+ */
 class UserSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
-     *
-     * @return void
+     * Dev accounts.  password for all: 12345678
      */
-    public function run()
+    private array $accounts = [
+        // ── Admin ──────────────────────────────────────────────
+        [
+            'first_name' => 'Admin',
+            'last_name'  => 'User',
+            'name'       => 'Admin User',
+            'email'      => 'admin@exp.com',
+            'user_type'  => 'admin',
+            'is_approved'=> true,
+            'is_super'   => true,
+        ],
+        // ── Seller ─────────────────────────────────────────────
+        [
+            'first_name' => 'John',
+            'last_name'  => 'Seller',
+            'name'       => 'John Seller',
+            'email'      => 'seller@exp.com',
+            'user_type'  => 'seller',
+        ],
+        // ── Seller Agent ────────────────────────────────────────
+        [
+            'first_name' => 'John',
+            'last_name'  => 'Seller Agent',
+            'name'       => 'John Seller Agent',
+            'email'      => 'seller_agent@exp.com',
+            'user_type'  => 'seller_agent',
+            'mls_id'     => 'SA1001',
+        ],
+        // ── Buyer ──────────────────────────────────────────────
+        [
+            'first_name' => 'John',
+            'last_name'  => 'Buyer',
+            'name'       => 'John Buyer',
+            'email'      => 'buyer@exp.com',
+            'user_type'  => 'buyer',
+        ],
+        // ── Buyer Agent ─────────────────────────────────────────
+        [
+            'first_name' => 'John',
+            'last_name'  => 'Buyer Agent',
+            'name'       => 'John Buyer Agent',
+            'email'      => 'buyer_agent@exp.com',
+            'user_type'  => 'buyer_agent',
+            'mls_id'     => 'BA1001',
+        ],
+        // ── Tenant ─────────────────────────────────────────────
+        [
+            'first_name' => 'Tenant',
+            'last_name'  => 'User',
+            'name'       => 'Tenant User',
+            'email'      => 'tenant@exp.com',
+            'user_type'  => 'tenant',
+        ],
+        // ── Agent accounts ──────────────────────────────────────
+        [
+            'first_name' => 'John',
+            'last_name'  => 'Agent',
+            'name'       => 'John Agent',
+            'email'      => 'john@exp.com',
+            'user_type'  => 'agent',
+        ],
+        [
+            'first_name' => 'John',
+            'last_name'  => 'Long',
+            'name'       => 'John Long',
+            'email'      => 'johnlong@exp.com',
+            'user_type'  => 'agent',
+        ],
+        [
+            'first_name' => 'Abigail',
+            'last_name'  => 'Baschuk',
+            'name'       => 'Abigail Baschuk',
+            'email'      => 'abigailbaschuk@gmail.com',
+            'user_type'  => 'agent',
+        ],
+    ];
+
+    public function run(): void
     {
-        User::insert([
-            [
-                'first_name' => 'Admin',
-                'last_name' => 'User',
-                'name' => 'Admin User',
-                'user_name' => 'admin',
-                'email' => 'admin@exp.com',
-                'password' => Hash::make('12345678'),
-                'user_type' => 'admin',
-                'mls_id' => null,
-                'email_verified_at' => Carbon::now()->toDateTimeString(),
-                'is_approved' => true,
-                'is_super' => true,
-                'created_at' => Carbon::now()->toDateTimeString(),
-            ],
-            [
-                'first_name' => 'John',
-                'last_name' => 'Seller',
-                'name' => 'John Seller',
-                'user_name' => 'john',
-                'email' => 'seller@exp.com',
-                'password' => Hash::make('12345678'),
-                'user_type' => 'seller',
-                'mls_id' => '',
-                'email_verified_at' => Carbon::now()->toDateTimeString(),
-                'is_approved' => true,
-                'is_super' => false,
-                'created_at' => Carbon::now()->toDateTimeString(),
-            ],
-            [
-                'first_name' => 'John',
-                'last_name' => 'Seller Agent',
-                'name' => 'John Seller Agent',
-                'user_name' => 'john',
-                'email' => 'seller_agent@exp.com',
-                'password' => Hash::make('12345678'),
-                'user_type' => 'seller_agent',
-                'mls_id' => 'SA1001',
-                'email_verified_at' => Carbon::now()->toDateTimeString(),
-                'is_approved' => true,
-                'is_super' => false,
-                'created_at' => Carbon::now()->toDateTimeString(),
-            ],
-            [
-                'first_name' => 'John',
-                'last_name' => 'Buyer',
-                'name' => 'John Buyer',
-                'user_name' => 'john',
-                'email' => 'buyer@exp.com',
-                'password' => Hash::make('12345678'),
-                'user_type' => 'buyer',
-                'mls_id' => '',
-                'email_verified_at' => Carbon::now()->toDateTimeString(),
-                'is_approved' => true,
-                'is_super' => false,
-                'created_at' => Carbon::now()->toDateTimeString(),
-            ],
-            [
-                'first_name' => 'John',
-                'last_name' => 'Buyer Agent',
-                'name' => 'John Buyer Agent',
-                'user_name' => 'john',
-                'email' => 'buyer_agent@exp.com',
-                'password' => Hash::make('12345678'),
-                'user_type' => 'buyer_agent',
-                'mls_id' => 'BA1001',
-                'email_verified_at' => Carbon::now()->toDateTimeString(),
-                'is_approved' => true,
-                'is_super' => false,
-                'created_at' => Carbon::now()->toDateTimeString(),
-            ],
-        ]);
-        /* $user = new User();
-        $user->first_name = 'John';
-        $user->last_name = 'Doe';
-        $user->name = 'John Doe';
-        $user->user_name = 'john';
-        $user->email = 'john@exp.com';
-        $user->password = Hash::make('12345678');
-        $user->user_type = 'seller_agent';
-        $user->mls_id = 'SA1001';
-        $user->email_verified_at = Carbon::now()->toDateTimeString();
-        $user->save(); */
+        $now = Carbon::now()->toDateTimeString();
+
+        foreach ($this->accounts as $acct) {
+            // firstOrCreate fires UserObserver on create, so short_id and
+            // user_name are auto-populated for new rows.
+            User::firstOrCreate(
+                ['email' => $acct['email']],
+                array_merge([
+                    'password'           => Hash::make('12345678'),
+                    'email_verified_at'  => $now,
+                    'is_approved'        => $acct['is_approved'] ?? false,
+                    'is_super'           => $acct['is_super']    ?? false,
+                    'mls_id'             => $acct['mls_id']      ?? null,
+                ], $acct)
+            );
+        }
     }
 }

@@ -50,6 +50,31 @@ The following conventions are in place so that `User::factory()->create()` and f
 - **Feature tests** use `DatabaseTransactions` (not `RefreshDatabase`) because several migrations are still pending; `DatabaseTransactions` wraps each test in a single transaction (including DDL in PostgreSQL) and rolls everything back on teardown.
 - **Tables migrated for the test environment** (were pending): `user_meta`, `agent_default_profiles`, `settings`, `notifications`.
 
+## Development Accounts
+
+All accounts use password `12345678`. Managed by `database/seeders/UserSeeder.php` (idempotent — safe to re-run anytime). To restore after a DB reset: `php artisan db:seed --class=UserSeeder`.
+
+| Email | user_type | Purpose |
+|---|---|---|
+| admin@exp.com | admin | Admin panel |
+| seller@exp.com | seller | Seller listings |
+| seller_agent@exp.com | seller_agent | Seller agent bids |
+| buyer@exp.com | buyer | Buyer listings |
+| buyer_agent@exp.com | buyer_agent | Buyer agent bids |
+| tenant@exp.com | tenant | Tenant criteria listings |
+| john@exp.com | agent | General agent account |
+| johnlong@exp.com | agent | Agent profile / Hire Me page testing |
+| abigailbaschuk@gmail.com | agent | Agent preset & direct hire testing |
+
+## Database Reset — Known Risk & Safeguards
+
+**Root cause (April 2026):** Replit's managed PostgreSQL container (`helium:5432`) was cold-restarted between sessions, wiping all rows. The table schema was re-created by subsequent migration runs, but no seed data was preserved. No destructive commands (`migrate:fresh`, `db:wipe`) were run in code or shell history.
+
+**Safeguards in place:**
+- `UserSeeder` uses `firstOrCreate()` — idempotent, never duplicates rows.
+- `scripts/post-merge.sh` runs `php artisan db:seed --class=UserSeeder` automatically after every code merge, so dev accounts survive merges even after a DB reset.
+- If the DB is wiped manually or by a platform restart, run `php artisan db:seed --class=UserSeeder` to restore all dev accounts.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.
