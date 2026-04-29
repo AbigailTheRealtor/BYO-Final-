@@ -1,0 +1,344 @@
+READ-ONLY AUDIT ONLY. DO NOT MODIFY FILES.
+
+Goal:
+Audit Create Seller Listing and Create Landlord Listing against this MLS-aligned field checklist. Identify which fields already exist, which are missing, and which appear duplicated.
+
+Scope:
+Seller:
+- Residential
+- Income
+- Commercial
+- Business Opportunity
+- Vacant Land
+
+Landlord:
+- Residential Rental
+- Commercial Lease
+
+Use this MLS-aligned checklist:
+
+UNIVERSAL MLS CORE — all Seller/Landlord property types:
+- Tax ID / Parcel Number
+- Tax Year
+- Annual Taxes
+- Legal Description
+- Section
+- Township
+- Range
+- Plat Book/Page
+- Block/Parcel
+- Lot Number
+- Alt Key/Folio
+- Legal Subdivision Name
+- Complex/Community Name
+- Zoning
+- Future Land Use
+- Flood Zone Code
+- Flood Zone Date
+- Flood Zone Panel
+- Lot Dimensions
+- Lot Size Square Footage
+- Lot Size Acres
+- Total Acreage
+- Additional Parcels
+- Additional Tax IDs
+- Road Surface Type
+- Road Responsibility
+- Water Source
+- Sewer Type
+- Utilities
+- Heating/Fuel
+- Air Conditioning
+- Parking Features
+- Garage/Carport
+- Occupancy Status
+- Showing Instructions
+- Showing Considerations
+- Lockbox/Access Method
+- Public Remarks
+- Realtor/Internal Remarks
+- Driving Directions
+- Virtual Tour Link
+- Documents & Disclosures
+- HOA/Association Y/N
+- Association Approval Required
+- Association/Manager Contact Info
+
+SELLER — Residential:
+- Property Style/Subtype
+- New Construction
+- Property Condition
+- Year Built
+- Beds
+- Full Baths
+- Half Baths
+- SqFt Heated
+- SqFt Total
+- SqFt Heated Source
+- SqFt Total Source
+- Roof
+- Foundation
+- Exterior Construction
+- Exterior Features
+- Interior Features
+- Appliances Included
+- Flooring
+- Laundry Features
+- Furnishings
+- Pool Y/N
+- Pool Features
+- Spa Y/N
+- Water Access
+- Water View
+- Water Frontage
+- Water Extras
+- Dock Y/N
+- In-Law Suite Y/N
+- Pets Allowed / Restrictions
+- Lease Restrictions
+- Can Property Be Leased
+- Minimum Lease Period
+- Existing Lease/Tenant
+- Monthly Rental Amount
+- Lease End Date
+
+SELLER — Income:
+- Total Number of Units
+- Total Number of Buildings
+- Annual Gross Income
+- Annual Net Income / NOI
+- Annual Expenses
+- Financial Source
+- Total Monthly Rent
+- Total Monthly Expenses
+- Unit Mix / Unit Type
+- Beds per Unit
+- Baths per Unit
+- Expected Rent
+- Occupied Units
+- SqFt per Unit
+- Number Electric Meters
+- Number Water Meters
+- Individually Metered Utilities
+- Existing Tenant/Tenant Phone
+
+SELLER — Commercial Sale:
+- Commercial Property Style/Use Code
+- Sale Includes
+- Gross Scheduled Income
+- Annual Gross Income
+- Net Operating Income
+- Cap Rate
+- Vacancy Rate
+- Annual Expenses
+- Annual Income Type
+- NOI Type
+- Number of Tenants
+- Tenant Count
+- Single Tenant / Multi Tenant / Vacant
+- Total Parking Spaces
+- Total Number of Buildings
+- Total Units on Property
+- Office/Retail SqFt
+- Flex Space SqFt
+- Net Leasable SqFt if applicable
+- Ceiling Height
+- Door Height
+- Door Width
+- Eaves Height
+- Garage Door Height
+- Bays Dock High
+- Bays Grade Level
+- Bays Dock Well
+- Building Features
+- Electrical Service
+- Space Type
+- Space Classification
+- Restrooms
+- Offices
+- Conference/Meeting Rooms
+- Condo Fees/Term
+- Management Type
+- Property Manager Contact
+
+SELLER — Business Opportunity:
+- Business Name
+- Business Type
+- Real Estate Included
+- Year Established
+- Licenses
+- Sale Includes
+- Annual Gross Income
+- Gross Scheduled Income
+- Net Operating Income
+- Cap Rate
+- Annual Expenses
+- Annual Income Type
+- NOI Type
+- Number of Tenants
+- Tenant Count
+- Total Parking Spaces
+- Ownership Type
+- Management Type
+- Property Manager Contact
+- Space Type
+- Space Classification
+- Restrooms
+- Offices
+- Conference/Meeting Rooms
+- Hotel/Motel Rooms if applicable
+- Licenses Included or Required
+- Furniture/Fixtures/Equipment Included
+
+SELLER — Vacant Land:
+- Current Use / Property Style
+- Road Frontage
+- Front Footage
+- Designated Builder Y/N
+- Easements
+- Current Adjacent Use
+- Fencing
+- Vegetation
+- Other Structures
+- Farm Type
+- Horse Amenities
+- Number of Wells
+- Number of Septics
+- State Land Use Code
+- County Land Use Code
+- County Property Use Code
+- State Property Use Code
+- Buildable Y/N
+- Environmental Restricted Area
+- Wetlands
+- Utilities Available/Nearby
+- Water Access/View/Frontage
+- Dock Y/N
+
+LANDLORD — Residential Rental:
+- Rent Price
+- Lease Amount Frequency
+- Lease Term
+- Minimum Lease
+- Long Term Y/N
+- Date Available
+- Application Fee
+- Additional Applicant Fee
+- Minimum Security Deposit
+- Security Deposit Terms
+- Rent Includes
+- Tenant Pays
+- Terms of Lease
+- Seasonal Rent
+- Off-Season Rent
+- Weeks Available
+- Months Available
+- Property Style/Subtype
+- Beds
+- Baths
+- SqFt Heated
+- SqFt Total
+- Appliances Included
+- Furnishings
+- Pets Allowed
+- Pet Deposit
+- Non-Refundable Pet Fee
+- Monthly Pet Fee
+- Breed Restrictions
+- Max Pet Weight
+- Pet Restrictions Source
+- HOA/Association Approval Fee for Tenants
+- Association Fees for Tenants
+- Parking Fee for Tenants
+- Security Deposit Fee for Tenants
+- Occupant Type
+- Possession
+- Driving Directions
+- Showing Instructions
+
+LANDLORD — Commercial Lease:
+- Lease Price
+- Lease Price Unit
+- Lease Amount Frequency
+- Lease Term
+- Terms of Lease
+- Commercial Transaction Terms
+- Owner Pays
+- Tenant Pays
+- Initial Pass-Through Expenses
+- Pass-Through Expense Includes
+- Pass-Through Expense Type
+- Annual Rate Increase
+- Improvement Allowance
+- Lease Option
+- Purchase Option
+- Renewal Option
+- Sale-Leaseback
+- Pre-Leasing
+- Sub-Leasing
+- Net Leasable SqFt
+- Property Style/Use Code
+- Total Monthly Amount
+- Number of Tenants
+- Single Tenant / Multi Tenant / Vacant
+- Total Number of Buildings
+- Total Units on Property
+- Office/Retail SqFt
+- Flex Space SqFt
+- Ceiling Height
+- Door Height
+- Door Width
+- Eaves Height
+- Garage Door Height
+- Bays Dock High
+- Bays Grade Level
+- Bays Dock Well
+- Electrical Service
+- Building Features
+- Space Type
+- Space Classification
+- Restrooms
+- Offices
+- Conference/Meeting Rooms
+- Condo Fees/Term
+- Management Type
+- Property Manager Contact
+- Occupant Type
+- Possession
+- Driving Directions
+- Showing Instructions
+
+Audit output needed:
+For each checklist item, mark:
+- Present
+- Missing
+- Partially Present
+- Duplicate/Overlapping
+- Unknown
+
+For each missing field, recommend:
+- Must Add Before Launch
+- Should Add Soon
+- Optional/Later
+
+For each duplicate/overlap, recommend:
+- Keep separate
+- Merge
+- Rename
+- Auto-fill
+- Remove
+
+Also identify:
+- Fields that should be structured dropdowns/checkboxes instead of text inputs
+- Fields that should be shared across all property types
+- Fields that should be property-type-specific
+- Fields that should feed the AI Knowledge Base automatically instead of being asked again in AI questions
+
+Output:
+Write report to:
+.local/tasks/seller_landlord_mls_gap_duplicate_audit.md
+
+Print executive summary with:
+- Top missing fields
+- Top duplicate risks
+- Recommended first implementation batch
