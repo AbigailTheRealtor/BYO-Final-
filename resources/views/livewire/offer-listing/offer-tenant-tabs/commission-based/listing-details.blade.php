@@ -163,7 +163,7 @@
                 <a href="{{ route('offer.listing.seller') }}" class="text-decoration-none">
                     <div class="card user-type-card" style="cursor: pointer;">
                         <div class="card-body text-center position-relative">
-                            <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <i class="fa-solid fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
                             <p class="mb-1 user-selected">Create Seller Listing</p>
                         </div>
                     </div>
@@ -187,7 +187,7 @@
                 <a href="{{ route('offer.listing.landlord') }}" class="text-decoration-none">
                     <div class="card user-type-card" style="cursor: pointer;">
                         <div class="card-body text-center position-relative">
-                            <i class="fas fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <i class="fa-solid fa-user-tie fa-2x mb-2" style="color: #0ce7ef;"></i>
                             <p class="mb-1 user-selected">Create Landlord Listing</p>
                         </div>
                     </div>
