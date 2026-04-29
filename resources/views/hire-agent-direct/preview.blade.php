@@ -6,30 +6,85 @@
         max-width: 860px;
         margin: 0 auto;
     }
-    .agent-card-header {
-        background: #f8f9fa;
-        border: 1px solid #e0e0e0;
+    /* ── Owner preview banner ── */
+    .owner-preview-banner {
+        background: linear-gradient(90deg, #facd34 0%, #f5b800 100%);
+        color: #1a1a1a;
         border-radius: 10px;
-        padding: 24px;
-        margin-bottom: 24px;
+        padding: .9rem 1.25rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        font-weight: 600;
+        font-size: .92rem;
     }
-    .agent-card-header h3 {
+    /* ── Page header ── */
+    .page-intro h4 {
         font-size: 1.35rem;
         font-weight: 700;
-        margin-bottom: 4px;
+        margin-bottom: .3rem;
+    }
+    .page-intro .page-subheading {
+        color: #5a6a72;
+        font-size: .93rem;
+        line-height: 1.6;
+        max-width: 680px;
+    }
+    /* ── Agent card ── */
+    .agent-card-header {
+        background: linear-gradient(135deg, #049399 0%, #036b70 100%);
+        color: #fff;
+        border-radius: 12px;
+        padding: 1.5rem 1.75rem;
+        margin-bottom: 1.5rem;
+    }
+    .agent-card-header h3 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: .2rem;
+        color: #fff;
     }
     .agent-card-header .agent-meta {
-        color: #6c757d;
-        font-size: .9rem;
+        font-size: .88rem;
+        opacity: .88;
+        line-height: 1.7;
     }
-    .section-label {
-        font-weight: 600;
-        font-size: .85rem;
+    .agent-card-header .role-pill {
+        display: inline-block;
+        background: rgba(255,255,255,.2);
+        border-radius: 20px;
+        padding: .15rem .7rem;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        margin-top: .4rem;
+    }
+    /* ── Section chrome ── */
+    .preview-section {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        margin-bottom: 1.25rem;
+        overflow: hidden;
+    }
+    .preview-section-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: .7rem 1.25rem;
+        font-weight: 700;
+        font-size: .87rem;
+        display: flex;
+        align-items: center;
+        gap: .45rem;
+        color: #333;
         text-transform: uppercase;
         letter-spacing: .04em;
-        color: #6c757d;
-        margin-bottom: 8px;
     }
+    .preview-section-header i { color: #049399; }
+    .preview-section-body { padding: 1.2rem 1.4rem; }
+    /* ── Service checkboxes ── */
     .service-checkbox-list {
         display: flex;
         flex-wrap: wrap;
@@ -48,21 +103,53 @@
         font-size: .9rem;
     }
     .service-checkbox-list .service-item:has(input:checked) {
-        border-color: #facd34;
-        background: #fffdf0;
+        border-color: #049399;
+        background: #f0fafa;
     }
     .service-checkbox-list .service-item input[type="checkbox"] {
-        accent-color: #facd34;
+        accent-color: #049399;
     }
+    /* ── Text content blocks ── */
     .bio-block {
-        background: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 16px 20px;
-        margin-bottom: 16px;
+        background: #f8f9fa;
+        border-left: 3px solid #049399;
+        border-radius: 4px;
+        padding: .85rem 1.1rem;
         font-size: .92rem;
         color: #333;
+        line-height: 1.65;
     }
+    /* ── Compensation table ── */
+    .comp-table {
+        width: 100%;
+        font-size: .9rem;
+        border-collapse: collapse;
+    }
+    .comp-table tr:not(:last-child) td { border-bottom: 1px solid #f0f0f0; }
+    .comp-table td { padding: .55rem .25rem; vertical-align: top; }
+    .comp-table td:first-child {
+        width: 45%;
+        color: #6c757d;
+        font-size: .82rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        padding-right: 1rem;
+    }
+    .comp-table td:last-child { color: #1a1a1a; }
+    /* ── Notice block ── */
+    .process-notice {
+        background: #f0fafa;
+        border: 1px solid #c8e8ea;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        font-size: .9rem;
+        color: #1a3b3e;
+        line-height: 1.65;
+        margin-bottom: 1.25rem;
+    }
+    .process-notice strong { color: #049399; }
+    /* ── Unavailable notice ── */
     .unavailable-notice {
         background: #fff3cd;
         border: 1px solid #ffc107;
@@ -70,50 +157,19 @@
         padding: 20px;
         margin-bottom: 24px;
     }
-    .what-next-block {
-        background: #f0f9f0;
-        border: 1px solid #c3e6cb;
-        border-radius: 8px;
-        padding: 18px 22px;
-        margin-bottom: 24px;
-        font-size: .92rem;
-    }
-    .what-next-block h6 {
-        font-weight: 700;
-        color: #1a5c2a;
-        margin-bottom: 10px;
-    }
-    .what-next-block ol {
-        margin: 0;
-        padding-left: 20px;
-        color: #2d4f36;
-        line-height: 1.7;
-    }
+    /* ── Submit button ── */
     .confirm-btn {
-        background: #facd34;
+        background: #049399;
         border: none;
-        border-radius: 6px;
+        border-radius: 7px;
         padding: 12px 36px;
         font-weight: 700;
         font-size: 1rem;
-        color: #1a1a1a;
+        color: #fff;
         transition: opacity .15s;
     }
     .confirm-btn:hover:not(:disabled) { opacity: .85; }
     .confirm-btn:disabled { opacity: .55; cursor: not-allowed; }
-    .role-badge {
-        display: inline-block;
-        background: #facd34;
-        color: #1a1a1a;
-        font-size: .78rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: .05em;
-        border-radius: 4px;
-        padding: 2px 10px;
-        margin-left: 8px;
-        vertical-align: middle;
-    }
 </style>
 @endpush
 
@@ -121,26 +177,39 @@
 <div class="buyerOfferContentDetails py-4">
 <div class="container hire-direct-wrap">
 
-    {{-- Page Header — Fix 6: include agent name --}}
     @php
-        $agentFullName = trim(($agent->first_name ?? '') . ' ' . ($agent->last_name ?? ''));
+        $agentFullName   = trim(($mapped['first_name'] ?? '') . ' ' . ($mapped['last_name'] ?? ''));
         $agentDisplayName = $agentFullName ?: ($agent->name ?? 'This Agent');
+        $roleLabel        = \App\Models\AgentDefaultProfile::roleLabel($role);
+        $propLabel        = \App\Models\AgentDefaultProfile::propertyLabel($propertyType);
+        $agentBrokerage   = $mapped['brokerage']  ?? '';
+        $agentLicense     = $mapped['license_no'] ?? '';
     @endphp
-    <div class="mb-4">
+
+    {{-- ── Owner preview banner ─────────────────────────────────── --}}
+    @if ($isOwnerPreview)
+        <div class="owner-preview-banner">
+            <i class="fa fa-eye fa-lg"></i>
+            <span>
+                You are previewing your own Direct Hire page.
+                Clients will use this page to start a hire request.
+            </span>
+        </div>
+    @endif
+
+    {{-- ── Breadcrumb + page heading ──────────────────────────────── --}}
+    <div class="mb-4 page-intro">
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb small">
                 <li class="breadcrumb-item"><a href="{{ url('/') }}">Home</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('search.agents') }}">Browse Agents</a></li>
-                <li class="breadcrumb-item active">Hire {{ $agentDisplayName }}</li>
+                <li class="breadcrumb-item active">Review Agent Terms</li>
             </ol>
         </nav>
-        <h4 class="fw-bold mb-1">
-            Hire {{ $agentDisplayName }}
-            <span class="role-badge">{{ \App\Models\AgentDefaultProfile::roleLabel($role) }}</span>
-        </h4>
-        <p class="text-muted small mb-0">
-            You are reviewing this agent's proposed offer directly.
-            Confirm below to send your hire request — nothing is final until both sides agree and sign.
+        <h4>Review This Agent's Proposed Terms</h4>
+        <p class="page-subheading">
+            These services and terms are based on {{ $agentDisplayName }}'s saved preset.
+            You can submit the request as-is or request changes after the Direct Hire request is created.
         </p>
     </div>
 
@@ -152,43 +221,37 @@
         </div>
     @endif
 
-    {{-- Agent summary card --}}
+    {{-- ── Agent summary card ──────────────────────────────────────── --}}
     <div class="agent-card-header">
-        <div class="d-flex align-items-start gap-3">
+        <div class="d-flex align-items-center gap-3">
             <div style="flex-shrink:0">
                 <img src="{{ asset('images/avatar/'.($agent->avatar ?? 'default.png')) }}"
                      onerror="this.src='{{ asset('images/avatar/default.png') }}'"
                      alt="Agent avatar"
-                     style="width:70px;height:70px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;">
+                     style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);">
             </div>
             <div>
-                <h3>{{ $agentDisplayName }}
-                    <span style="font-size:.85rem;font-weight:400;color:#6c757d;">
-                        — {{ \App\Models\AgentDefaultProfile::roleLabel($role) }}
-                    </span>
-                </h3>
+                <h3>{{ $agentDisplayName }}</h3>
                 <div class="agent-meta">
-                    @if($agent->brokerage) {{ $agent->brokerage }}&nbsp;&bull;&nbsp; @endif
-                    @if($agent->license_no) Lic. {{ $agent->license_no }}&nbsp;&bull;&nbsp; @endif
-                    {{ $agent->email }}
+                    @if($agentBrokerage)<i class="fa fa-building me-1"></i>{{ $agentBrokerage }}<br>@endif
+                    @if($agentLicense)<i class="fa fa-id-card-o me-1"></i>License&nbsp;#{{ $agentLicense }}<br>@endif
+                    <i class="fa fa-envelope-o me-1"></i>{{ $agent->email }}
                 </div>
-                <div class="mt-1">
-                    <span class="badge bg-secondary" style="font-size:.75rem;">
-                        {{ \App\Models\AgentDefaultProfile::propertyLabel($propertyType) }}
-                    </span>
+                <div class="mt-2">
+                    <span class="role-pill">{{ $roleLabel }}</span>
+                    <span class="role-pill ms-1" style="background:rgba(255,255,255,.12);">{{ $propLabel }}</span>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- Fix 1: Unavailable state — no preset OR empty services --}}
+    {{-- ── Unavailable state ────────────────────────────────────────── --}}
     @if(!$presetValid)
         <div class="unavailable-notice">
             @if(!$profile)
                 <strong>Profile not available.</strong>
                 {{ $agentDisplayName }} has not set up a hiring profile for
-                <em>{{ \App\Models\AgentDefaultProfile::roleLabel($role) }}</em> /
-                <em>{{ \App\Models\AgentDefaultProfile::propertyLabel($propertyType) }}</em>.
+                <em>{{ $roleLabel }}</em> / <em>{{ $propLabel }}</em>.
             @else
                 <strong>Profile not ready.</strong>
                 {{ $agentDisplayName }} has not finished setting up their services yet for this role.
@@ -196,31 +259,38 @@
             <div class="mt-2 text-muted small">Please contact them directly or browse other agents.</div>
         </div>
         <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">← Back to Browse Agents</a>
+
     @else
 
-        {{-- Agent overview --}}
+        {{-- ── Agent overview sections ─────────────────────────────── --}}
         @if(!empty($mapped['bio']))
-        <div class="mb-3">
-            <div class="section-label">About This Agent</div>
-            <div class="bio-block">{{ $mapped['bio'] }}</div>
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa fa-user"></i> About This Agent</div>
+            <div class="preview-section-body">
+                <div class="bio-block">{{ $mapped['bio'] }}</div>
+            </div>
         </div>
         @endif
 
         @if(!empty($mapped['why_hire_you']))
-        <div class="mb-3">
-            <div class="section-label">Why Hire Me</div>
-            <div class="bio-block">{{ $mapped['why_hire_you'] }}</div>
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa fa-star"></i> Why Hire Me</div>
+            <div class="preview-section-body">
+                <div class="bio-block">{{ $mapped['why_hire_you'] }}</div>
+            </div>
         </div>
         @endif
 
         @if(!empty($mapped['marketing_plan']))
-        <div class="mb-3">
-            <div class="section-label">Marketing Plan</div>
-            <div class="bio-block">{{ $mapped['marketing_plan'] }}</div>
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa fa-line-chart"></i> Marketing Plan</div>
+            <div class="preview-section-body">
+                <div class="bio-block">{{ $mapped['marketing_plan'] }}</div>
+            </div>
         </div>
         @endif
 
-        {{-- Fix 2 (frontend): disable button on submit; pass one-time token --}}
+        {{-- ── FORM ───────────────────────────────────────────────── --}}
         <form method="POST"
               id="hire-direct-form"
               action="{{ route('hire.agent.direct.confirm', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}"
@@ -228,96 +298,170 @@
             @csrf
             <input type="hidden" name="_hire_token" value="{{ $submitToken }}">
 
-            {{-- Services Section — only shown when presetValid (services is non-empty) --}}
-            <div class="mb-4">
-                <div class="section-label">Included Services</div>
-                <p class="text-muted small mb-2">
-                    These are the services {{ $agentDisplayName }} includes in their offer.
-                    Uncheck any you do not need.
-                </p>
-                <div class="service-checkbox-list">
-                    @foreach($agentServices as $svc)
-                    <label class="service-item">
-                        <input type="checkbox"
-                               name="services[]"
-                               value="{{ $svc }}"
-                               checked>
-                        {{ $svc }}
-                    </label>
-                    @endforeach
+            {{-- ── Services ──────────────────────────────────────── --}}
+            <div class="preview-section">
+                <div class="preview-section-header">
+                    <i class="fa fa-check-square-o"></i> Services Included in This Agent's Proposal
                 </div>
-                @error('services') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-                @error('services.*') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                <div class="preview-section-body">
+                    <p class="text-muted small mb-3">
+                        These are the services {{ $agentDisplayName }} has included in their standing offer.
+                        Uncheck any you do not need — only services from this preset can be selected.
+                    </p>
+                    <div class="service-checkbox-list">
+                        @foreach($agentServices as $svc)
+                        <label class="service-item">
+                            <input type="checkbox"
+                                   name="services[]"
+                                   value="{{ $svc }}"
+                                   checked>
+                            {{ $svc }}
+                        </label>
+                        @endforeach
+                    </div>
+                    @error('services') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+                    @error('services.*') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+                </div>
             </div>
 
-            {{-- Property Address --}}
-            <div class="mb-4">
-                <div class="section-label">Property Address <span class="text-danger">*</span></div>
-                <p class="text-muted small mb-2">
-                    Enter the address of the property this hire request relates to.
-                </p>
-                <input type="text"
-                       name="address"
-                       class="form-control @error('address') is-invalid @enderror"
-                       placeholder="e.g. 123 Main St, Miami, FL 33101"
-                       value="{{ old('address') }}"
-                       required>
-                @error('address')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+            {{-- ── Broker Compensation & Agency Terms preview ────── --}}
+            @php
+                $compLabels = [
+                    'agency_agreement_timeframe'     => 'Agreement Timeframe',
+                    'protection_period'              => 'Protection Period',
+                    'commission_structure'           => 'Commission Structure',
+                    'purchase_fee_type'              => 'Fee Type',
+                    'purchase_fee_flat'              => 'Flat Fee',
+                    'purchase_fee_percentage'        => 'Commission Percentage',
+                    'commission_structure_type'      => 'Commission Type',
+                    'retainer_fee_option'            => 'Retainer Fee',
+                    'retainer_fee_amount'            => 'Retainer Amount',
+                    'retainer_fee_application'       => 'Retainer Application',
+                    'early_termination_fee_option'   => 'Early Termination Fee',
+                    'early_termination_fee_amount'   => 'Early Termination Amount',
+                    'lease_fee_type'                 => 'Lease Fee Type',
+                    'lease_fee_flat'                 => 'Lease Fee (Flat)',
+                    'lease_fee_percentage'           => 'Lease Fee (%)',
+                    'interested_lease_option_agreement' => 'Lease Option Agreement',
+                    'purchase_type'                  => 'Purchase Type',
+                    'interested_purchase_fee_type'   => 'Purchase Fee Type',
+                    'nominal'                        => 'Nominal Fee',
+                    'additional_details'             => 'Additional Terms Notes',
+                ];
+                $compRows = [];
+                foreach ($compLabels as $key => $label) {
+                    $val = $mapped[$key] ?? '';
+                    if (is_array($val)) { $val = implode(', ', array_filter($val)); }
+                    $val = trim((string) $val);
+                    if ($val !== '' && strtolower($val) !== 'none') {
+                        $compRows[$label] = $val;
+                    }
+                }
+            @endphp
+            @if(count($compRows) > 0)
+            <div class="preview-section">
+                <div class="preview-section-header">
+                    <i class="fa fa-file-text-o"></i> Proposed Broker Compensation &amp; Agreement Terms
+                </div>
+                <div class="preview-section-body">
+                    <p class="text-muted small mb-3">
+                        These are the compensation and agreement terms from the agent's preset.
+                        This is a preview only — actual terms may be negotiated after submission.
+                    </p>
+                    <table class="comp-table">
+                        @foreach($compRows as $label => $value)
+                        <tr>
+                            <td>{{ $label }}</td>
+                            <td>{{ $value }}</td>
+                        </tr>
+                        @endforeach
+                    </table>
+                </div>
+            </div>
+            @endif
+
+            {{-- ── Property Address ───────────────────────────────── --}}
+            <div class="preview-section">
+                <div class="preview-section-header"><i class="fa fa-map-marker"></i> Property Address</div>
+                <div class="preview-section-body">
+                    <p class="text-muted small mb-2">
+                        Enter the address of the property this hire request relates to.
+                    </p>
+                    <input type="text"
+                           name="address"
+                           class="form-control @error('address') is-invalid @enderror"
+                           placeholder="e.g. 123 Main St, Miami, FL 33101"
+                           value="{{ old('address') }}"
+                           @if($isOwnerPreview) disabled @endif
+                           required>
+                    @error('address')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
-            {{-- Additional Requested Services --}}
-            <div class="mb-4">
-                <div class="section-label">Additional Requests (Optional)</div>
-                <p class="text-muted small mb-2">
-                    Anything extra you'd like to note. These are requests only — the agent's offer
-                    determines what is formally included.
-                </p>
-                <textarea name="additional_requested"
-                          class="form-control @error('additional_requested') is-invalid @enderror"
-                          rows="3"
-                          placeholder="e.g. I'd also like weekly progress reports, staging consultation, etc.">{{ old('additional_requested') }}</textarea>
-                @error('additional_requested')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
+            {{-- ── Additional Services Requested ──────────────────── --}}
+            <div class="preview-section">
+                <div class="preview-section-header"><i class="fa fa-plus-circle"></i> Additional Services Requested</div>
+                <div class="preview-section-body">
+                    <p class="text-muted small mb-2">
+                        Optional. List any additional services you would like this agent to consider.
+                        These are requests only — the agent's preset determines what is formally included.
+                    </p>
+                    <textarea name="additional_requested"
+                              class="form-control @error('additional_requested') is-invalid @enderror"
+                              rows="3"
+                              placeholder="List any additional services you would like this Agent to consider."
+                              @if($isOwnerPreview) disabled @endif>{{ old('additional_requested') }}</textarea>
+                    @error('additional_requested')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
-            {{-- Fix 4: replaced "create a listing" wording --}}
-            {{-- Fix 5: What happens next section --}}
-            <div class="what-next-block mb-4">
-                <h6>What happens next</h6>
-                <ol>
-                    <li>Your request is sent directly to {{ $agentDisplayName }} with their proposed terms.</li>
-                    <li>You can review the offer and choose to <strong>accept</strong>, request changes with a <strong>counter</strong>, or <strong>decline</strong> — no obligation yet.</li>
-                    <li>Once both sides agree on the terms, you will <strong>sign the agreement digitally</strong> to make it official.</li>
-                </ol>
+            {{-- ── Process notice ─────────────────────────────────── --}}
+            <div class="process-notice">
+                <i class="fa fa-info-circle me-2"></i>
+                <strong>Submitting this request does not finalize an agreement.</strong>
+                The agent will receive your request, and both parties may accept, counter, or reject terms
+                before anything is finalized. Once both sides agree, you will sign the agreement digitally
+                to make it official.
             </div>
 
-            {{-- Submit --}}
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                <button type="submit" id="hire-direct-submit" class="confirm-btn btn">
-                    Send Hire Request to {{ $agentDisplayName }}
-                </button>
-                <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">
-                    Cancel
-                </a>
-            </div>
+            {{-- ── Submit / Owner preview state ──────────────────── --}}
+            @if($isOwnerPreview)
+                <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
+                    <i class="fa fa-eye fa-lg"></i>
+                    <span>
+                        You are previewing your own Direct Hire page.
+                        Clients will use this page to start a hire request — the submit button is not active in preview mode.
+                    </span>
+                </div>
+            @else
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <button type="submit" id="hire-direct-submit" class="confirm-btn btn">
+                        <i class="fa fa-handshake-o me-2"></i>Start Direct Hire Request
+                    </button>
+                    <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                </div>
+            @endif
+
         </form>
     @endif
 
 </div>
 </div>
 
-{{-- Fix 2 (frontend): disable button immediately on submit to prevent double-click --}}
 <script>
 function hireDirectSubmit(form) {
     var btn = document.getElementById('hire-direct-submit');
-    if (btn.disabled) {
+    if (!btn || btn.disabled) {
         return false;
     }
     btn.disabled = true;
-    btn.textContent = 'Sending…';
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Sending…';
     return true;
 }
 </script>

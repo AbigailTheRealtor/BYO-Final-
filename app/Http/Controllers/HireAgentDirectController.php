@@ -132,10 +132,8 @@ class HireAgentDirectController extends Controller
             ->where('user_type', 'agent')
             ->firstOrFail();
 
-        // Prevent self-hire
-        if (Auth::id() === $agent->id) {
-            abort(403, 'You cannot hire yourself.');
-        }
+        // Owner preview: agent may view their own page but cannot submit (confirm() still aborts).
+        $isOwnerPreview = Auth::id() === $agent->id;
 
         // Load the agent's preset for this role + property type
         $profile = AgentDefaultProfile::findForAgentWithFallback(
@@ -155,7 +153,9 @@ class HireAgentDirectController extends Controller
         // Preset is only usable when it exists AND has at least one service
         $presetValid = $profile !== null && count($agentServices) > 0;
 
-        // Fix 2 — generate a one-time submit token for backend duplicate protection
+        // Generate a one-time submit token for backend duplicate protection.
+        // Generated even in owner-preview mode so the session key is always set;
+        // the confirm() method will reject any submission from the agent themselves.
         $submitToken = bin2hex(random_bytes(16));
         session(['hire_direct_token' => $submitToken]);
 
@@ -167,7 +167,8 @@ class HireAgentDirectController extends Controller
             'mapped',
             'agentServices',
             'presetValid',
-            'submitToken'
+            'submitToken',
+            'isOwnerPreview'
         ));
     }
 
