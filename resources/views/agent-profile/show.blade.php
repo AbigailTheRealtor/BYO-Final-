@@ -632,7 +632,7 @@
                                 <span class="hire-role-badge">{{ $btn['options'][0]['propLabel'] }}</span>
                             </a>
                         @else
-                            <details class="hire-picker-wrap">
+                            <details class="hire-picker-wrap property-type-picker">
                                 <summary class="hire-btn">
                                     <i class="fa fa-arrow-right"></i>
                                     {{ $btn['roleLabel'] }}
@@ -654,4 +654,18 @@
     @endif
 
 </div>
+@push('scripts')
+<script>
+(function () {
+    document.addEventListener('click', function (e) {
+        document.querySelectorAll('details.property-type-picker').forEach(function (picker) {
+            if (!picker.contains(e.target)) {
+                picker.removeAttribute('open');
+            }
+        });
+    });
+}());
+</script>
+@endpush
+
 @endsection
