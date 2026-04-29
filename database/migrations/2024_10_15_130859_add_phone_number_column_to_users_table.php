@@ -15,7 +15,7 @@ class AddPhoneNumberColumnToUsersTable extends Migration
     {
         if (Schema::hasTable('users') && !Schema::hasColumn('users', 'phone_number')) {
             Schema::table('users', function (Blueprint $table) {
-                $table->string('phone_number')->after('email');
+                $table->string('phone_number')->nullable()->after('email');
             });
         }
     }
