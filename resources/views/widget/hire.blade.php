@@ -123,7 +123,7 @@
         </div>
         <div>
             <a href="{{ $hireUrl }}" target="_top" class="byo-cta">
-                View Agent Profile
+                Hire This Agent
             </a>
             <div class="byo-footer">
                 Powered by <a href="{{ url('/') }}" target="_top">BidYourOffer</a>

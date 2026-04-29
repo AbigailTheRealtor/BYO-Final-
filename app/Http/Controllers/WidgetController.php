@@ -71,8 +71,10 @@ class WidgetController extends Controller
         $roleLabel         = self::ROLE_LABELS[$role]                       ?? ucfirst($role) . ' Agent';
         $propertyTypeLabel = self::PROPERTY_TYPE_LABELS[$propertyType]      ?? ucwords(str_replace('_', ' ', $propertyType));
         $serviceCount      = count($services);
-        $hireUrl           = route('agent.profile.public', [
+        $hireUrl           = route('hire.agent.public', [
             'agentShortId' => $agentShortId,
+            'role'         => $role,
+            'propertyType' => $propertyType,
         ]);
 
         return response()->view('widget.hire', compact(
