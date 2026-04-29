@@ -1,0 +1,95 @@
+READ-ONLY AUDIT FIRST — DO NOT EDIT YET.
+
+ISSUE:
+On Agent-created listing pages:
+- /offer-listing/seller
+- /offer-listing/landlord
+
+Tab 1 → Listing Details is still missing the teal left-side field icons for:
+- Listing Title
+- Current Representation Status with Broker
+- Listing Date
+- Expiration Date
+- Listing Type
+- Meeting Preference
+
+Buyer/Tenant appear to have the icons, but Seller/Landlord do not.
+
+GOAL OF THIS AUDIT:
+Find the exact files and exact Blade blocks being rendered for:
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant
+
+DO NOT:
+- Edit files
+- Change CSS
+- Clear cache as a “fix”
+- Modify Livewire logic
+- Modify database
+- Modify routes
+
+AUDIT STEPS:
+
+1. Identify the route definitions for:
+   /offer-listing/seller
+   /offer-listing/buyer
+   /offer-listing/landlord
+   /offer-listing/tenant
+
+Report:
+- route name
+- controller or Livewire component
+- Blade view used
+
+2. Trace the render path:
+For each role, identify:
+- controller/component class
+- render() method
+- returned Blade file
+- any included partials
+
+3. Search the codebase for these exact strings:
+- "Need a Listing Agent in Tampa, FL to Sell My Property"
+- "Need a Leasing Agent in Tampa, FL to Rent Out My Property"
+- "Need a Buyer’s Agent in Tampa, FL to Help Me Purchase a Property"
+- "Need a Rental Agent in Tampa, FL to Help Me Find a Rental Property"
+- "Current Representation Status with Broker"
+- "Meeting Preference"
+
+Report every file and line number where these appear.
+
+4. Compare Buyer/Tenant markup vs Seller/Landlord markup for the six fields:
+- Listing Title
+- Current Representation Status with Broker
+- Listing Date
+- Expiration Date
+- Listing Type
+- Meeting Preference
+
+Specifically report whether each field has:
+- wrapper div for icon input
+- icon element
+- input/select padding class
+- same class names as Buyer/Tenant
+
+5. Check if there are duplicate sections:
+Search for multiple versions of:
+- Seller Listing Details
+- Landlord Listing Details
+- Buyer Listing Details
+- Tenant Listing Details
+
+This is important because previous edits may have changed an unused duplicate block.
+
+6. Check browser-rendered source if possible:
+Use curl or route render command for /offer-listing/seller and /offer-listing/landlord and confirm whether the expected icon classes are actually present in the HTML.
+
+7. Output ONLY the audit report:
+- Exact active file for each role
+- Exact inactive/duplicate files found, if any
+- Why previous fix did not show up
+- Exact lines that need editing
+- Recommended minimal fix
+- Do not apply the fix until approved
