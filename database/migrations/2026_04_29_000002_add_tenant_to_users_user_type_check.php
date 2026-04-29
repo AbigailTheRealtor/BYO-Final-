@@ -21,6 +21,9 @@ class AddTenantToUsersUserTypeCheck extends Migration
         if (! Schema::hasTable('users')) {
             return;
         }
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
 
         DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_user_type_check');
         DB::statement("ALTER TABLE users ADD CONSTRAINT users_user_type_check
@@ -30,6 +33,9 @@ class AddTenantToUsersUserTypeCheck extends Migration
     public function down(): void
     {
         if (! Schema::hasTable('users')) {
+            return;
+        }
+        if (DB::getDriverName() !== 'pgsql') {
             return;
         }
 

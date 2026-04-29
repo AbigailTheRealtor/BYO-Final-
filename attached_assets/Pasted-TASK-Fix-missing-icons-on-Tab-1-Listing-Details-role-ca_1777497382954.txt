@@ -1,0 +1,75 @@
+TASK: Fix missing icons on Tab 1 Listing Details role cards for Agent-created listings.
+
+ISSUE:
+On the Agent create listing flow, Tab 1 → Listing Details → Select Listing Type cards:
+- Create Buyer Listing icon displays correctly
+- Create Tenant Listing icon displays correctly
+- Create Seller Listing icon is missing/wrong
+- Create Landlord Listing icon is missing/wrong
+
+GOAL:
+Make the icons display consistently for all four cards:
+- Create Seller Listing
+- Create Buyer Listing
+- Create Landlord Listing
+- Create Tenant Listing
+
+FILES TO AUDIT FIRST:
+- resources/views/**/*
+- app/Livewire/**/*
+- public/**/*
+- any Blade partial used for the listing type selector/cards
+
+DO NOT:
+- Change database schema
+- Change listing creation logic
+- Change tab order
+- Change field names
+- Change validation
+- Change role/property-type logic
+- Change existing text/labels/tooltips
+- Remove any icons that already work
+- Rewrite the whole page
+
+DO:
+1. Find the exact Blade/Livewire view that renders the “Select Listing Type” cards in the Agent-created listing flow.
+2. Compare the icon markup/classes for:
+   - Seller
+   - Buyer
+   - Landlord
+   - Tenant
+3. Identify why Seller and Landlord icons do not render while Buyer and Tenant do.
+4. Fix only the missing/wrong icon markup or class names.
+5. Use the same icon system already used on the page.
+6. Keep icon sizing/color/style consistent with Buyer and Tenant.
+7. Confirm all four cards show visible icons.
+8. Confirm role switching still works.
+
+LIKELY THINGS TO CHECK:
+- Font Awesome class mismatch
+- Missing `fas`, `fa`, or icon prefix
+- Invalid icon name
+- Conditional role icon map missing seller/landlord keys
+- Different component path for Agent-created listings vs user-created listings
+- CSS hiding specific icons
+- Typo in role names: seller vs Seller, landlord vs Landlord
+
+TEST / VERIFY:
+- Log in as agent
+- Open Agent-created listing flow
+- Go to Tab 1: Listing Details
+- Click each listing type:
+  - Seller
+  - Buyer
+  - Landlord
+  - Tenant
+- Confirm each card shows an icon above the label
+- Confirm selected card checkmark still works
+- Confirm no layout shift or broken styling
+
+OUTPUT:
+- Exact file changed
+- Root cause
+- Before/after explanation
+- Confirmation that all four icons render
+- Confirmation no production logic changed
