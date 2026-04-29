@@ -147,15 +147,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/hire-listings', [AgentController::class, 'hireListings'])->name('agent.hire-listings');
     Route::get('/agent/offer-listings', [AgentController::class, 'offerListings'])->name('agent.offer-listings')->middleware('offerPlayoffAccess');
 
-    // Phase-2 Hire-Me direct entry — preview (GET) + confirm/create (POST)
-    Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'show'])->name('hire.agent.direct.preview');
+    // Phase-2 Hire-Me direct entry — confirm/create (POST) only; GET preview is public below
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}', [\App\Http\Controllers\HireAgentDirectController::class, 'confirm'])->name('hire.agent.direct.confirm');
-
-    // Phase-4 Clean public Hire Me URL — resolves agent by short_id, redirects to existing direct flow
-    // Constraint [0-9a-f]+ ensures no collision with /hire/agent/..., /hire/seller/..., etc.
-    Route::get('/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'showPublic'])
-        ->name('hire.agent.public')
-        ->where('agentShortId', '[0-9a-f]+');
 
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
@@ -183,6 +176,15 @@ Route::middleware('auth')->group(function () {
 // Public agent profile — fully public, no auth required.
 Route::get('/agent/{agentShortId}/profile', [\App\Http\Controllers\AgentProfileController::class, 'show'])
     ->name('agent.profile.public')
+    ->where('agentShortId', '[0-9a-f]+');
+
+// Phase-2 Hire-Me direct entry — preview (GET), public, no auth required.
+Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'show'])->name('hire.agent.direct.preview');
+
+// Phase-4 Clean public Hire Me URL — resolves agent by short_id, redirects to existing direct flow
+// Constraint [0-9a-f]+ ensures no collision with /hire/agent/..., /hire/seller/..., etc.
+Route::get('/hire/{agentShortId}/{role}/{propertyType?}', [\App\Http\Controllers\HireAgentDirectController::class, 'showPublic'])
+    ->name('hire.agent.public')
     ->where('agentShortId', '[0-9a-f]+');
 
 // Widget — public, no auth. Read-only teaser card embeddable via iframe.
