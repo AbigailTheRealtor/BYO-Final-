@@ -872,7 +872,6 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
-                                    @if (!in_array($tab, ['Services', 'Broker Compensation']))
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -884,7 +883,6 @@
                                             {{ $tab }}
                                         </button>
                                     </li>
-                                    @endif
                                 @endforeach
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"

@@ -357,12 +357,6 @@
                             <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
-                @elseif ($property_type === 'Opportunity')
-                    @foreach ($property_items_buyer as $item)
-                        @if (str_contains($item['class'], 'opportunity-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
-                        @endif
-                    @endforeach
                 @elseif ($property_type === 'Vacant Land')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'vacant-land-length'))
