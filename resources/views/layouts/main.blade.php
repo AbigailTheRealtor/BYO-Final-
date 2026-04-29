@@ -198,23 +198,23 @@
     <div class="nav-footer-nav position-fixed bottom-0 container index-layer">
         <ul class=" d-flex align-items-center justify-content-between ps-0">
             <li>
-                <a href="{{ route('sellerWorks') }}"> <i class="fa fa-home"></i> <span>Seller</span></a>
+                <a href="{{ route('sellerWorks') }}"> <i class="fa-solid fa-home"></i> <span>Seller</span></a>
             </li>
 
             <li>
-                <a href="{{ route('sellerWorksAgent') }}"> <i class="fa fa-home"></i><span> Seller’s Agent</span></a>
+                <a href="{{ route('sellerWorksAgent') }}"> <i class="fa-solid fa-home"></i><span> Seller’s Agent</span></a>
             </li>
 
             <li>
-                <a href="{{ route('add-listing') }}" class="add-listing"><i class="fa fa-plus text-white"></i> </a>
+                <a href="{{ route('add-listing') }}" class="add-listing"><i class="fa-solid fa-plus text-white"></i> </a>
             </li>
 
             <li>
-                <a href="{{ route('buyerWorks') }}"> <i class="fa fa-home"></i><span>Buyer</span></a>
+                <a href="{{ route('buyerWorks') }}"> <i class="fa-solid fa-home"></i><span>Buyer</span></a>
             </li>
 
             <li>
-                <a href="{{ route('buyerWorksAgent') }}"> <i class="fa fa-home"></i><span>Buyer’s Agent</span></a>
+                <a href="{{ route('buyerWorksAgent') }}"> <i class="fa-solid fa-home"></i><span>Buyer’s Agent</span></a>
             </li>
         </ul>
     </div>

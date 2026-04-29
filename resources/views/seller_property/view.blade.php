@@ -3155,7 +3155,7 @@
               <img class="w-100" src="https://bidyouroffer.com/wp-content/uploads/2022/09/map-placeholder.jpg"
                 alt="">
               <div class="right position-absolute">
-                <button class="btn btn-sm"><i class="fa fa-map-marker"></i> View Map</button>
+                <button class="btn btn-sm"><i class="fa-solid fa-map-marker"></i> View Map</button>
                 <button class="btn btn-sm">Get Direction</button>
 
               </div>
@@ -3175,11 +3175,11 @@
                       Agent
                       Details</b></a><span></span>
                   <span class="start opacity-50">
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
                   </span>
                 </p>
                 <p class="mb-0">...</p>
@@ -3624,7 +3624,7 @@
 
         </div>
         <button class="btn w-100 mt-0">
-          <span class="bid m-0"><i class="fa fa-user"></i> </span>
+          <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
         <!-- End  -->
         <!-- Details Of Items -->
@@ -3656,7 +3656,7 @@
             </ul>
             <p class="small opacity-8">Or copy link</p>
             <div class="field">
-              <i class="fa fa-link"></i>
+              <i class="fa-solid fa-link"></i>
               <input type="text" readonly="" id="copylink"
                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
               <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

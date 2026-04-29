@@ -141,7 +141,7 @@
             <div class="col-12">
                 <div class="card border-0 bg-light rounded-3 p-5 text-center">
                     <div class="text-muted">
-                        <i class="fa fa-home fa-3x mb-3 opacity-25"></i>
+                        <i class="fa-solid fa-home fa-3x mb-3 opacity-25"></i>
                         <h5 class="fw-semibold">No listings found</h5>
                         <p class="small mb-0">No properties match your current search. Try adjusting your filters or check back for new listings.</p>
                     </div>

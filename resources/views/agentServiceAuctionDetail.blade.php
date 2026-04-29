@@ -93,19 +93,19 @@
                         <hr />
                         <h4>Features</h4>
                         <div class="row" style="flex-wrap: wrap;">
-                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> City:
+                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa-solid fa-circle-dot"></i> City:
                                 {{ @$auction->city->name }} </div>
-                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> County:
+                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa-solid fa-circle-dot"></i> County:
                                 {{ @$auction->county->name }} </div>
-                            {{-- <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> State: {{ @$auction->state->name }} </div> --}}
-                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> Service:
+                            {{-- <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa-solid fa-circle-dot"></i> State: {{ @$auction->state->name }} </div> --}}
+                            <div class="col-md-6 col-6 pt-2 fw-bold"><i class="fa-solid fa-circle-dot"></i> Service:
                                 {{ @$auction->service->name }} </div>
 
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa fa-money-bill"></i> Minimum Price Agent is
+                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-solid fa-money-bill"></i> Minimum Price Agent is
                                 willing to accept:
                                 {{ @$auction->min_price_in=="$"?"$":"" }}{{ number_format(@$auction->min_price, 2, '.', ',') }}{{ @$auction->min_price_in=="%"?"%":"" }}
                             </div>
-                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa fa-circle-dot"></i> When does the
+                            <div class="col-md-12 col-12 pt-2 fw-bold"><i class="fa-solid fa-circle-dot"></i> When does the
                                 service need to take place?
                                 {{ $carbon::parse(@$auction->required_at)->format('M d, Y h:i a') }} </div>
                         </div>
@@ -174,7 +174,7 @@
                                 src="https://bidyouroffer.com/wp-content/uploads/2022/09/map-placeholder.jpg"
                                 alt="">
                             <div class="right position-absolute">
-                                <button class="btn btn-sm"><i class="fa fa-map-marker"></i> View Map</button>
+                                <button class="btn btn-sm"><i class="fa-solid fa-map-marker"></i> View Map</button>
                                 <button class="btn btn-sm">Get Direction</button>
 
                             </div>
@@ -200,11 +200,11 @@
                                 <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
                                             Details</b></a><span></span>
                                     <span class="start opacity-50">
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
                                     </span>
                                 </p>
                                 <p class="mb-0">...</p>
@@ -455,7 +455,7 @@
                     </div>
                 </div>
                 <button class="btn w-100 mt-0">
-                    <span class="bid m-0"><i class="fa fa-user"></i> </span>
+                    <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
                 </button>
                 <!-- End  -->
                 <!-- Social Details  -->
@@ -482,7 +482,7 @@
                         </ul>
                         <p class="small opacity-8">Or copy link</p>
                         <div class="field">
-                            <i class="fa fa-link"></i>
+                            <i class="fa-solid fa-link"></i>
                             <input type="text" readonly="" id="copylink"
                                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
                             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"
@@ -681,7 +681,7 @@
                                         <label>Brokerage: <span class="text-danger">*</span></label>
                                         {{-- <div class="input-group">
                                             <div class="input-group-text">
-                                                <i class="fa fa-dollar-sign"></i>
+                                                <i class="fa-solid fa-dollar-sign"></i>
                                             </div> --}}
                                             <input type="text" class="form-control" name="brokerage"
                                                 id="brokerage" required
@@ -760,7 +760,7 @@
                                     <div class="col-md-6">
                                         <label>Offering Price %: <span class="text-danger">*</span></label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-percent"></i>
+                                            <i class="fa-solid fa-percent"></i>
                                             <input type="number" class="form-control border-start-0"
                                                 name="price_percent" id="price_percent" min="0" max="100"
                                                 required placeholder="0.00" value="{{ old('price_percent') }}">

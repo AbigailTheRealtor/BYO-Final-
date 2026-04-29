@@ -859,7 +859,7 @@
                                             {{-- {{auth()->user()->avatar}} --}}
                                             <p class="fw-bold">{{ auth()->user()->name }}</p>
                                         </div>
-                                        {{-- <i class="fa fa-chevron-down expand-button" aria-hidden="true"></i> --}}
+                                        {{-- <i class="fa-solid fa-chevron-down expand-button" aria-hidden="true"></i> --}}
                                         {{-- <div id="status-options">
                                         <ul>
                                             <li id="status-online" class="active"><span class="status-circle"></span>
@@ -877,17 +877,17 @@
                                         </ul>
                                     </div> --}}
                                         {{-- <div id="expanded">
-                                        <label for="twitter"><i class="fa fa-facebook fa-fw" aria-hidden="true"></i></label>
+                                        <label for="twitter"><i class="fa-brands fa-facebook fa-fw" aria-hidden="true"></i></label>
                                         <input name="twitter" type="text" value="mikeross" />
-                                        <label for="twitter"><i class="fa fa-twitter fa-fw" aria-hidden="true"></i></label>
+                                        <label for="twitter"><i class="fa-brands fa-twitter fa-fw" aria-hidden="true"></i></label>
                                         <input name="twitter" type="text" value="ross81" />
-                                        <label for="twitter"><i class="fa fa-instagram fa-fw" aria-hidden="true"></i></label>
+                                        <label for="twitter"><i class="fa-brands fa-instagram fa-fw" aria-hidden="true"></i></label>
                                         <input name="twitter" type="text" value="mike.ross" />
                                     </div> --}}
                                     </div>
                                 </div>
                                 {{-- <div id="search">
-                                <label for=""><i class="fa fa-search" aria-hidden="true"></i></label>
+                                <label for=""><i class="fa-solid fa-search" aria-hidden="true"></i></label>
                                 <input type="text" placeholder="Search contacts..." />
                             </div> --}}
                                 <div id="contacts" >
@@ -978,9 +978,9 @@
                                     </ul>
                                 </div>
                                 {{-- <div id="bottom-bar">
-                                <button id="addcontact"><i class="fa fa-user-plus fa-fw" aria-hidden="true"></i>
+                                <button id="addcontact"><i class="fa-solid fa-user-plus fa-fw" aria-hidden="true"></i>
                                     <span>Add contact</span></button>
-                                <button id="settings"><i class="fa fa-cog fa-fw" aria-hidden="true"></i>
+                                <button id="settings"><i class="fa-solid fa-cog fa-fw" aria-hidden="true"></i>
                                     <span>Settings</span></button>
                             </div> --}}
                             </div>
@@ -1102,7 +1102,7 @@
                                 <div class="message-input">
                                     <div class="wrap d-flex">
                                         <input type="text" id="input-text" placeholder="Write your message..." />
-                                        {{-- <i class="fa fa-paperclip attachment" aria-hidden="true"></i> --}}
+                                        {{-- <i class="fa-solid fa-paperclip attachment" aria-hidden="true"></i> --}}
                                         <button class="submit mb-0"><i class="fa-solid fa-paper-plane"
                                                 aria-hidden="true"></i></button>
                                     </div>
@@ -1113,7 +1113,7 @@
                             <div class="d-flex w-100">
                                 <div class="d-flex mt-5 pt-5 h4 justify-content-center w-100">
                                     <div style="width:300px; text-align: center;">
-                                        <i class="fa fa-comment text-primary fa-6x btn-block mb-4"
+                                        <i class="fa-solid fa-comment text-primary fa-6x btn-block mb-4"
                                             style="color:#34465c !important;"></i>
                                         <p class="fw-bold">You have no chat history.</p>
                                     </div>

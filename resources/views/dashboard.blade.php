@@ -202,10 +202,10 @@
                                                         @endif
                                                         <div class="d-flex flex-wrap gap-3" style="font-size:.78rem;color:#666;">
                                                             @if($agent && $agent->email)
-                                                                <span><i class="fa fa-envelope me-1 opacity-50"></i>{{ $agent->email }}</span>
+                                                                <span><i class="fa-solid fa-envelope me-1 opacity-50"></i>{{ $agent->email }}</span>
                                                             @endif
                                                             @if($agent && $agent->phone)
-                                                                <span><i class="fa fa-phone me-1 opacity-50"></i>{{ $agent->phone }}</span>
+                                                                <span><i class="fa-solid fa-phone me-1 opacity-50"></i>{{ $agent->phone }}</span>
                                                             @endif
                                                         </div>
                                                     </div>
@@ -335,7 +335,7 @@
                                     $agentRoleConfig = [
                                         'tenant' => [
                                             'label'        => "Hire Tenant's Agent",
-                                            'icon'         => '<i class="fa fa-key" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'icon'         => '<i class="fa-solid fa-key" style="width:20px;height:20px;font-size:18px;"></i>',
                                             'color'        => '#0d6efd',
                                             'bidsRoute'    => 'tenant.biding.auctions.list',
                                             'createRoute'  => 'hire.agent.auction',
@@ -343,7 +343,7 @@
                                         ],
                                         'landlord' => [
                                             'label'        => "Hire Landlord's Agent",
-                                            'icon'         => '<i class="fa fa-building" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'icon'         => '<i class="fa-solid fa-building" style="width:20px;height:20px;font-size:18px;"></i>',
                                             'color'        => '#198754',
                                             'bidsRoute'    => 'landlord.biding.auctions.list',
                                             'createRoute'  => 'hire.agent.auction',
@@ -351,7 +351,7 @@
                                         ],
                                         'buyer' => [
                                             'label'        => "Hire Buyer's Agent",
-                                            'icon'         => '<i class="fa fa-search" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'icon'         => '<i class="fa-solid fa-search" style="width:20px;height:20px;font-size:18px;"></i>',
                                             'color'        => '#6f42c1',
                                             'bidsRoute'    => 'buyer.biding.auctions.list',
                                             'createRoute'  => 'hire.agent.auction',
@@ -359,7 +359,7 @@
                                         ],
                                         'seller' => [
                                             'label'        => "Hire Seller's Agent",
-                                            'icon'         => '<i class="fa fa-gavel" style="width:20px;height:20px;font-size:18px;"></i>',
+                                            'icon'         => '<i class="fa-solid fa-gavel" style="width:20px;height:20px;font-size:18px;"></i>',
                                             'color'        => '#dc3545',
                                             'bidsRoute'    => 'seller.biding.auctions.list',
                                             'createRoute'  => 'hire.agent.auction',
@@ -475,13 +475,13 @@
                                                         style="font-size:.78rem;white-space:nowrap;"
                                                         data-url="{{ $referralLink['url'] }}"
                                                         title="Copy referral link to clipboard">
-                                                    <i class="fa fa-copy me-1"></i>Copy Link
+                                                    <i class="fa-solid fa-copy me-1"></i>Copy Link
                                                 </button>
                                                 <a href="{{ $referralLink['url'] }}"
                                                    target="_blank"
                                                    class="btn btn-sm btn-outline-secondary"
                                                    style="font-size:.78rem;white-space:nowrap;">
-                                                    <i class="fa fa-arrow-up-right-from-square me-1"></i>Open Link
+                                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Open Link
                                                 </a>
                                             </div>
 
@@ -615,7 +615,7 @@
                                     @if($notifications->isEmpty())
                                         <div class="card border-0 bg-light rounded-3 p-4 text-center">
                                             <div class="text-muted">
-                                                <i class="fa fa-bell-slash fa-2x mb-2 opacity-25"></i>
+                                                <i class="fa-solid fa-bell-slash fa-2x mb-2 opacity-25"></i>
                                                 <p class="mb-1 fw-semibold">No notices yet</p>
                                                 <p class="small mb-0">When agents bid on your listings or activity occurs, you'll see updates here.</p>
                                             </div>
@@ -689,7 +689,7 @@
 
     function showCopied() {
         var orig = btn.innerHTML;
-        btn.innerHTML = '<i class="fa fa-check me-1"></i>Copied!';
+        btn.innerHTML = '<i class="fa-solid fa-check me-1"></i>Copied!';
         btn.classList.add('text-success');
         setTimeout(function () {
             btn.innerHTML = orig;

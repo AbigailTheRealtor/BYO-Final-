@@ -2037,11 +2037,11 @@ $auser = $auctionUser::find(@$auction->user_id);
                 <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
                             Details</b></a><span></span>
                     <span class="start opacity-50">
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
-                        <i class="fa fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
+                        <i class="fa-solid fa-star"></i>
                     </span>
                 </p>
                 <p class="mb-0">...</p>
@@ -2121,7 +2121,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                 default       => 'status-expired',
             };
         @endphp
-        <span class="status-pill {{ $_statusPillClass }}"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
+        <span class="status-pill {{ $_statusPillClass }}"><i class="fa-solid {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
     </div>
     @endif
 
@@ -2132,7 +2132,7 @@ $auser = $auctionUser::find(@$auction->user_id);
     <div class="mb-2">
         <a href="{{ route('landlord.hire.agent.auction.edit', ['auctionId' => $auction->id]) }}" 
            class="btn btn-outline-primary btn-sm">
-            <i class="fa fa-pen-to-square me-1"></i> Edit Listing
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
         </a>
         {{-- PDF download button hidden from UI (backend route preserved) --}}
     </div>
@@ -2158,7 +2158,7 @@ $auser = $auctionUser::find(@$auction->user_id);
     @if ($auction->is_sold && ($acceptedBid || $acceptedCounterBid))
     <div class="alert alert-success mb-3" style="border-left: 4px solid #28a745;">
         <div class="d-flex align-items-center">
-            <i class="fa fa-circle-check me-3" style="font-size: 28px; color: #28a745;"></i>
+            <i class="fa-solid fa-circle-check me-3" style="font-size: 28px; color: #28a745;"></i>
             <div class="flex-grow-1">
                 <h5 class="mb-1 fw-bold">🎉 Agent Selected!</h5>
                 @if($acceptedCounterBid)
@@ -2167,7 +2167,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                         {{ $acceptedCounterBid->user->first_name ?? '' }} {{ $acceptedCounterBid->user->last_name ?? '' }}
                     </p>
                     <small class="text-muted">
-                        <i class="fa fa-calendar-check"></i>
+                        <i class="fa-solid fa-calendar-check"></i>
                         Accepted on {{ \Carbon\Carbon::parse($acceptedCounterBid->accepted_date)->format('M j, Y g:i A') }}
                     </small>
                 @elseif($acceptedBid)
@@ -2176,7 +2176,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                         {{ $acceptedBid->user->first_name ?? '' }} {{ $acceptedBid->user->last_name ?? '' }}
                     </p>
                     <small class="text-muted">
-                        <i class="fa fa-calendar-check"></i>
+                        <i class="fa-solid fa-calendar-check"></i>
                         Accepted on {{ \Carbon\Carbon::parse($acceptedBid->accepted_date)->format('M j, Y g:i A') }}
                     </small>
                 @endif
@@ -2309,7 +2309,7 @@ $auser = $auctionUser::find(@$auction->user_id);
             @endif
         @else
             <div class="alert alert-success text-center mt-2 mb-0 p-2">
-                <strong><i class="fa fa-circle-check"></i> Bidding Closed - Agent Selected</strong>
+                <strong><i class="fa-solid fa-circle-check"></i> Bidding Closed - Agent Selected</strong>
             </div>
         @endif
 
@@ -2324,7 +2324,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                 @if ($userHasBid)
                 {{-- User already placed a bid --}}
                 <div class="alert alert-info text-center mb-2">
-                    <i class="fa fa-circle-check"></i> You have already placed a bid
+                    <i class="fa-solid fa-circle-check"></i> You have already placed a bid
                 </div>
                 <div class="status-pill status-disabled w-100 d-flex justify-content-between">
                     <span>Bid Already Placed</span>
@@ -2340,17 +2340,17 @@ $auser = $auctionUser::find(@$auction->user_id);
                 @endif
             @elseif($auction->status === 'Hired Agent' || $isSold)
                 <div class="alert alert-success text-center mb-2">
-                    <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
+                    <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
                 </div>
                 <div class="status-pill status-hired w-100 d-flex justify-content-center">
-                    <i class="fa fa-trophy me-2"></i>Hired Agent
+                    <i class="fa-solid fa-trophy me-2"></i>Hired Agent
                 </div>
             @elseif($isPending)
                 <div class="alert alert-warning text-center mb-2">
-                    <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+                    <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
                 </div>
                 <div class="status-pill status-pending w-100 d-flex justify-content-center">
-                    <i class="fa fa-pause-circle me-2"></i>Pending
+                    <i class="fa-solid fa-pause-circle me-2"></i>Pending
                 </div>
             @else
             {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
@@ -2358,7 +2358,7 @@ $auser = $auctionUser::find(@$auction->user_id);
             {{-- BP: "Bidding Ended" already rendered by the timer block above — no duplicate needed --}}
             @else
                 <div class="alert alert-secondary text-center mb-2">
-                    <i class="fa fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+                    <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
                 </div>
             @endif
             @endif
@@ -2567,7 +2567,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                  data-target="bidCollapse-{{ data_get($bid, 'id') }}"
                                  aria-expanded="false">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                    <i class="fa-solid fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
                                     <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
                                 </div>
                                 <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
@@ -2585,7 +2585,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 @php $latestOwnerCounterFromLandlord = ($latestOwnerCounter->user_id == data_get($auction, 'user_id')); @endphp
                                 <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                      style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
-                                    <i class="fa fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
+                                    <i class="fa-solid fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
                                         @if ($isListingOwner && $latestOwnerCounterFromLandlord)
                                             <strong>Counter Offer Sent.</strong>
@@ -2607,15 +2607,15 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 {{-- WAITING: single row — View CT + Edit CT --}}
                                 <div class="d-flex gap-2 align-items-center mb-2">
                                     <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                        <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                     </a>
                                     @if ($isListingOwner)
                                     <a href="{{ route('landlord.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                     </a>
                                     @else
                                     <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                     </a>
                                     @endif
                                 </div>
@@ -2623,7 +2623,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 {{-- RESPONSE: View CT only — Accept/Counter Back/Reject are on View Counter Terms page --}}
                                 <div class="d-flex align-items-center mb-2">
                                     <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                        <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                     </a>
                                 </div>
                                 @endif
@@ -2682,7 +2682,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                     {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
                                     <div class="mb-2">
                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                         </span>
                                     </div>
                                     <div class="row g-2 mb-2">
@@ -2722,13 +2722,13 @@ $auser = $auctionUser::find(@$auction->user_id);
                                         </div>
                                     </div>
                                     <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                        <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score.
+                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
                                     </div>
                                     @else
                                     {{-- SINGLE SCORE fallback --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Score
+                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                         </span>
                                         <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
                                             {{ $totalScore }}%
@@ -2759,7 +2759,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                         </div>
                                     </div>
                                     <div class="mt-2 small text-muted">
-                                        <i class="fa fa-circle-info me-1"></i>Compared to: {{ $baselineLabel }}
+                                        <i class="fa-solid fa-circle-info me-1"></i>Compared to: {{ $baselineLabel }}
                                     </div>
                                     <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
                                         Match Score compares this bid only to the Landlord's original request. Added services or added terms are shown for transparency but do not increase the score.
@@ -2776,7 +2776,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 </a>
                                 @else
                                 <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                    <i class="fa fa-lock me-1"></i> Full bid details are private
+                                    <i class="fa-solid fa-lock me-1"></i> Full bid details are private
                                 </span>
                                 @endif
                                 <!-- Edit Bid button for bid owner -->
@@ -2784,19 +2784,19 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
                                     <a href="{{ route('agent.landlord.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}"
                                        class="btn btn-primary bid-action-btn">
-                                        <i class="fa fa-pen-to-square me-1"></i> Edit Bid
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Bid
                                     </a>
                                 </div>
                                 @elseif ($isBidOwner && $isExpired)
                                 <div class="mt-3">
                                     <span class="text-muted small">
-                                        <i class="fa fa-clock me-1"></i> Bidding has ended - edit unavailable
+                                        <i class="fa-solid fa-clock me-1"></i> Bidding has ended - edit unavailable
                                     </span>
                                 </div>
                                 @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
                                 <div class="mt-3">
                                     <span class="text-muted small">
-                                        <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
+                                        <i class="fa-solid fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
                                     </span>
                                 </div>
                                 @endif
@@ -2816,7 +2816,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     <h5 class="modal-title"
                                                         id="privateDataModalLabel{{ data_get($bid, 'id') }}"
                                                         style="font-weight: 600;">
-                                                        <i class="fa fa-lock me-2"></i> Private
+                                                        <i class="fa-solid fa-lock me-2"></i> Private
                                                         Compensation & Agreement Terms
                                                     </h5>
                                                 </div>
@@ -2846,7 +2846,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                     {{-- Confidential notice --}}
                                                     <div class="w-100 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                                                        <i class="fa fa-shield-halved me-2"></i>
+                                                        <i class="fa-solid fa-shield-halved me-2"></i>
                                                         <strong>Confidential:</strong> This information is private and only visible to you.
                                                     </div>
 
@@ -3294,7 +3294,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     @if ($ctHasBrokerComp)
                                                     <div class="mb-4">
                                                         <h6 class="mb-3" style="font-weight: 600; color: #049399; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
                                                         {{-- A) Landlord's Broker Lease Fee --}}
@@ -3445,7 +3445,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     {{-- Additional Details --}}
                                                     @if (!empty($allMeta['additional_details']))
                                                     <div class="mb-3">
-                                                        <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa fa-circle-info me-1"></i>Additional Details</div>
+                                                        <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa-solid fa-circle-info me-1"></i>Additional Details</div>
                                                         @php $ctAddDetailsChg = $ctIsChanged($allMeta['additional_details'], 'additional_details'); @endphp
                                                         <div class="ps-3" style="font-size: 12px; {{ $ctAddDetailsChg ? $ctChangedStyle : '' }}">{{ $allMeta['additional_details'] }}{!! $ctAddDetailsChg ? $ctChangedBadge : '' !!}</div>
                                                     </div>
@@ -3518,7 +3518,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 
                                                     <div class="mb-4" style="margin-top: 20px;">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                            <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
                                                         </h6>
 
                                                         @if ($hasCtSvcs)
@@ -3535,7 +3535,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                             @php $svcAdded = $ctSvcIsAdded($svc); @endphp
                                                                             @if ($svcAdded)
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                                <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $svc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                                <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $svc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                             </li>
                                                                             @else
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $svc }}</li>
@@ -3575,7 +3575,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                                         @php $otherAdded = $ctOtherIsAdded($otherSvc); @endphp
                                                                         @if ($otherAdded)
                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                            <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherSvc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                            <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherSvc }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                         </li>
                                                                         @else
                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherSvc }}</li>
@@ -3588,17 +3588,17 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                             @if (!empty($ctRemovedDisplay) || !empty($ctOtherRemovedDisplay))
                                                             <div class="mb-3 mt-3 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
                                                                 <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
-                                                                    <i class="fa fa-minus-circle me-1"></i>Removed Services
+                                                                    <i class="fa-solid fa-minus-circle me-1"></i>Removed Services
                                                                 </div>
                                                                 <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
                                                                     @foreach ($ctRemovedDisplay as $rSvc)
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa fa-circle-xmark me-1"></i>{{ $rSvc }}
+                                                                        <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
                                                                     </li>
                                                                     @endforeach
                                                                     @foreach ($ctOtherRemovedDisplay as $rSvc)
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                        <i class="fa fa-circle-xmark me-1"></i>{{ $rSvc }}
+                                                                        <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
                                                                     </li>
                                                                     @endforeach
                                                                 </ul>
@@ -3646,7 +3646,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                                     <div class="mt-3 pt-3 border-top">
                                                         {{-- Actions are on View Counter Terms page only --}}
                                                         <a href="{{ route('landlord.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                         </a>
                                                     </div>
                                                     @endif
@@ -3716,7 +3716,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                 <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
                                     <div class="mb-2">
                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                         </span>
                                     </div>
                                     <div class="row g-2 mb-2">
@@ -3749,7 +3749,7 @@ $auser = $auctionUser::find(@$auction->user_id);
                                         @endif
                                     </div>
                                     <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                        <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score.
+                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
                                     </div>
                                 </div>
                                 @endif
@@ -3769,7 +3769,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         </div>
 </div>
 <button class="btn w-100 mt-0">
-    <span class="bid m-0"><i class="fa fa-user"></i> </span>
+    <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>
 <div class="p-4 card">
     <p class="text-600">Share this link via</p>
@@ -3796,7 +3796,7 @@ $auser = $auctionUser::find(@$auction->user_id);
         </ul>
         <p class="small opacity-8">Or copy link</p>
         <div class="field">
-            <i class="fa fa-link"></i>
+            <i class="fa-solid fa-link"></i>
             <input type="text" readonly="" id="copylink"
                 value="{{ route('landlord.agent.auction.view', $auction->id) }}">
             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

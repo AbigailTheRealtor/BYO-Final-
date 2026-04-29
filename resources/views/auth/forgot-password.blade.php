@@ -32,7 +32,7 @@
                         @csrf
                         <div class="form-group position-relative">
                           <input type="text" class="form-control" placeholder="Email" name="email" id="email" value="" autocomplete="current-password">
-                          <i class="fa fa-envelope"></i>
+                          <i class="fa-solid fa-envelope"></i>
                         </div>
 
 

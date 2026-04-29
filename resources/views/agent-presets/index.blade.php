@@ -254,27 +254,27 @@
 <div class="preset-hub-wrap py-4 px-3">
 
     <div class="page-hero">
-        <h1><i class="fa fa-sliders me-2"></i>My Offer Presets</h1>
+        <h1><i class="fa-solid fa-sliders me-2"></i>My Offer Presets</h1>
         <p>Presets define the services and terms you offer by role and property type. Once saved, each preset generates a personal Hire Me link you can share directly with clients — and an embeddable widget card you can place on your own website.</p>
     </div>
 
     <div class="how-it-works">
         <div class="how-it-works-item">
-            <div class="how-it-works-icon"><i class="fa fa-sliders"></i></div>
+            <div class="how-it-works-icon"><i class="fa-solid fa-sliders"></i></div>
             <div class="how-it-works-text">
                 <strong>1. Build a Preset</strong>
                 <span>Select services, add your bio and credentials for a specific role &amp; property type.</span>
             </div>
         </div>
         <div class="how-it-works-item">
-            <div class="how-it-works-icon"><i class="fa fa-link"></i></div>
+            <div class="how-it-works-icon"><i class="fa-solid fa-link"></i></div>
             <div class="how-it-works-text">
                 <strong>2. Share Your Hire Me Link</strong>
                 <span>Send the link to clients. They click it and hire you directly — no search needed.</span>
             </div>
         </div>
         <div class="how-it-works-item">
-            <div class="how-it-works-icon"><i class="fa fa-code"></i></div>
+            <div class="how-it-works-icon"><i class="fa-solid fa-code"></i></div>
             <div class="how-it-works-text">
                 <strong>3. Embed on Your Website</strong>
                 <span>Copy the embed code and paste it on your site to show a live Hire Me card.</span>
@@ -284,7 +284,7 @@
 
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
-            <i class="fa fa-circle-check me-2"></i>{{ session('success') }}
+            <i class="fa-solid fa-circle-check me-2"></i>{{ session('success') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
@@ -311,7 +311,7 @@
         @endphp
         <div class="preset-role-group">
             <div class="preset-role-title" style="color: {{ $meta['color'] }}">
-                <i class="fa {{ $meta['icon'] }} me-2"></i>{{ $meta['label'] }} Presets
+                <i class="fa-solid {{ $meta['icon'] }} me-2"></i>{{ $meta['label'] }} Presets
             </div>
             <div class="row g-3">
                 @foreach ($presets[$role] as $propertyType => $info)
@@ -329,20 +329,20 @@
                                 <div class="preset-meta">
                                     @if ($info['exists'])
                                         @if ($info['services'] > 0)
-                                            <span><i class="fa fa-circle-check text-success me-1"></i>{{ $info['services'] }} service{{ $info['services'] !== 1 ? 's' : '' }} selected</span><br>
+                                            <span><i class="fa-solid fa-circle-check text-success me-1"></i>{{ $info['services'] }} service{{ $info['services'] !== 1 ? 's' : '' }} selected</span><br>
                                         @else
-                                            <span class="text-warning"><i class="fa fa-exclamation-circle me-1"></i>No services selected</span><br>
+                                            <span class="text-warning"><i class="fa-solid fa-exclamation-circle me-1"></i>No services selected</span><br>
                                         @endif
                                         @if ($info['has_bio'])
-                                            <span><i class="fa fa-circle-check text-success me-1"></i>Bio included</span>
-                                            @if ($info['has_creds']) &nbsp;&middot;&nbsp; <span><i class="fa fa-circle-check text-success me-1"></i>Credentials</span>@endif
+                                            <span><i class="fa-solid fa-circle-check text-success me-1"></i>Bio included</span>
+                                            @if ($info['has_creds']) &nbsp;&middot;&nbsp; <span><i class="fa-solid fa-circle-check text-success me-1"></i>Credentials</span>@endif
                                         @elseif ($info['has_creds'])
-                                            <span><i class="fa fa-circle-check text-success me-1"></i>Credentials included</span>
+                                            <span><i class="fa-solid fa-circle-check text-success me-1"></i>Credentials included</span>
                                         @else
-                                            <span class="text-muted"><i class="fa fa-circle me-1"></i>No bio or credentials</span>
+                                            <span class="text-muted"><i class="fa-solid fa-circle me-1"></i>No bio or credentials</span>
                                         @endif
                                         @if ($info['updated_at'])
-                                            <div class="preset-updated"><i class="fa fa-clock me-1"></i>Updated {{ $info['updated_at']->diffForHumans() }}</div>
+                                            <div class="preset-updated"><i class="fa-solid fa-clock me-1"></i>Updated {{ $info['updated_at']->diffForHumans() }}</div>
                                         @endif
                                     @else
                                         <span class="text-muted">No preset saved yet. Click Edit to create one.</span>
@@ -352,7 +352,7 @@
                             <div class="preset-actions">
                                 <a href="{{ route('agent.presets.edit', [$role, $propertyType]) }}"
                                    class="btn btn-outline-secondary btn-edit-preset w-100">
-                                    <i class="fa fa-pencil me-1"></i>{{ $info['exists'] ? 'Edit Preset' : 'Create Preset' }}
+                                    <i class="fa-solid fa-pencil me-1"></i>{{ $info['exists'] ? 'Edit Preset' : 'Create Preset' }}
                                 </a>
                                 @if ($info['exists'] && $info['services'] > 0)
                                     @php
@@ -368,14 +368,14 @@
                                                 class="btn btn-outline btn-copy-hire"
                                                 title="Copy link to share directly with clients"
                                                 data-hire-url="{{ $fullHireUrl }}">
-                                            <i class="fa fa-copy me-1"></i>Copy Link
+                                            <i class="fa-solid fa-copy me-1"></i>Copy Link
                                         </button>
                                         <a href="{{ route('agent.profile.public', ['agentShortId' => $agentShortId]) }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="btn btn-open-hire"
                                            title="Preview your public agent profile">
-                                            <i class="fa fa-external-link me-1"></i>Open
+                                            <i class="fa-solid fa-external-link me-1"></i>Open
                                         </a>
                                     </div>
                                     <div class="action-cluster-label" style="margin-top:.75rem">Embed on your website</div>
@@ -384,14 +384,14 @@
                                                 class="btn btn-outline btn-copy-embed"
                                                 title="Copy the iframe snippet to paste into your website"
                                                 data-embed-code="{{ $embedCode }}">
-                                            <i class="fa fa-code me-1"></i>Copy Embed Code
+                                            <i class="fa-solid fa-code me-1"></i>Copy Embed Code
                                         </button>
                                         <a href="{{ $widgetUrl }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="btn btn-outline btn-open-widget"
                                            title="See what your embedded card looks like">
-                                            <i class="fa fa-eye me-1"></i>Preview
+                                            <i class="fa-solid fa-eye me-1"></i>Preview
                                         </a>
                                     </div>
                                     <div class="preset-embed-note">
@@ -399,7 +399,7 @@
                                     </div>
                                 @elseif ($info['exists'] && $info['services'] === 0)
                                     <div class="preset-inactive-note mt-2">
-                                        <i class="fa fa-lock me-1"></i>Complete your services to activate this Hire Me link.
+                                        <i class="fa-solid fa-lock me-1"></i>Complete your services to activate this Hire Me link.
                                     </div>
                                 @endif
                             </div>
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var orig = self.innerHTML;
 
             function showCopied() {
-                self.innerHTML = '<i class="fa fa-check me-1"></i>Copied!';
+                self.innerHTML = '<i class="fa-solid fa-check me-1"></i>Copied!';
                 self.classList.add('copied');
                 setTimeout(function () {
                     self.innerHTML = orig;
@@ -461,7 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var orig = self.innerHTML;
 
             function showCopied() {
-                self.innerHTML = '<i class="fa fa-check me-1"></i>Embed code copied!';
+                self.innerHTML = '<i class="fa-solid fa-check me-1"></i>Embed code copied!';
                 self.classList.add('copied');
                 setTimeout(function () {
                     self.innerHTML = orig;

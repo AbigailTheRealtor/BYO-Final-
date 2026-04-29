@@ -127,7 +127,7 @@
             <div class="col-12">
                 <div class="card border-0 bg-light rounded-3 p-5 text-center">
                     <div class="text-muted">
-                        <i class="fa fa-search fa-3x mb-3 opacity-25"></i>
+                        <i class="fa-solid fa-search fa-3x mb-3 opacity-25"></i>
                         <h5 class="fw-semibold">No listings found</h5>
                         <p class="small mb-0">No Buyers or Tenants have posted criteria listings in this category yet. Check back soon or broaden your search.</p>
                     </div>

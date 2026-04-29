@@ -179,7 +179,7 @@
                                         @inject('carbon', 'Carbon\Carbon')
                                         <input type="text" name="required_at" id="required_at" required readonly class="form-control datetimepicker" value="{{$carbon::parse($auction->required_at)->format('Y-m-d h:i A')}}">
                                         <label class="input-group-text" for="required_at">
-                                            <i class="fa fa-calendar"></i>
+                                            <i class="fa-solid fa-calendar"></i>
                                         </label>
                                       </div>
 
@@ -197,7 +197,7 @@
                                     </label>
                                     <div class="input-group">
                                         <div class="input-group-text p-0">
-                                        {{-- <i class="fa fa-dollar-sign" id="basic-addon1"></i> --}}
+                                        {{-- <i class="fa-solid fa-dollar-sign" id="basic-addon1"></i> --}}
                                         <select name="min_price_in" class="form-control" style="background-color: #e9ecef; border: 0;">
                                             <option value="$">$</option>
                                             {{-- <option value="%">%</option> --}}

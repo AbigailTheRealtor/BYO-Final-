@@ -77,19 +77,19 @@
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-bullseye text-primary me-2"></i>Inbound Opportunities</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-bullseye text-primary me-2"></i>Inbound Opportunities</h5>
                     <p class="text-muted small mt-2 mb-0">Buyers come to you. Browse open listings from motivated clients who have posted their criteria and are actively looking for representation — no cold calling needed.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-handshake text-primary me-2"></i>Qualified Client Intent</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-handshake text-primary me-2"></i>Qualified Client Intent</h5>
                     <p class="text-muted small mt-2 mb-0">Every listing comes with pre-qualified Buyer intent. Clients post their criteria, timeline, and financing status upfront — so you know exactly who you're bidding for before you commit.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-dollar-sign text-primary me-2"></i>No Upfront Cost</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-dollar-sign text-primary me-2"></i>No Upfront Cost</h5>
                     <p class="text-muted small mt-2 mb-0">BidYourAgent receives a referral fee from you at closing. No cost until the deal closes — a risk-free way to grow your pipeline with motivated clients.</p>
                 </div>
             </div>

@@ -1267,7 +1267,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 <div class="col-md-6 col-6 pt-2 fw-bold">Video Link:
                     <span class="removeBold">
                         <a href="{{ $videoLink }}" target="_blank" rel="noopener noreferrer">
-                            <i class="fa fa-video me-1"></i> Watch Video
+                            <i class="fa-solid fa-video me-1"></i> Watch Video
                         </a>
                     </span>
                 </div>
@@ -1293,11 +1293,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                     <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
                                 Details</b></a><span></span>
                         <span class="start opacity-50">
-                            <i class="fa fa-star"></i>
-                            <i class="fa fa-star"></i>
-                            <i class="fa fa-star"></i>
-                            <i class="fa fa-star"></i>
-                            <i class="fa fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
                         </span>
                     </p>
                     <p class="mb-0">...</p>
@@ -1378,7 +1378,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 default       => 'status-expired',
             };
         @endphp
-        <span class="status-pill {{ $_statusPillClass }}"><i class="fa {{ $statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
+        <span class="status-pill {{ $_statusPillClass }}"><i class="fa-solid {{ $statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
     </div>
     @endif
 
@@ -1393,7 +1393,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     <div class="mb-3">
         <a href="{{ route('hire.agent.auction.edit', ['auctionId' => $auction->id, 'user_type' => 'tenant']) }}" 
            class="btn btn-outline-primary btn-sm">
-            <i class="fa fa-pen-to-square me-1"></i> Edit Listing
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
         </a>
         {{-- PDF download button hidden from UI (backend route preserved) --}}
     </div>
@@ -1532,7 +1532,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if ($userHasBid)
         {{-- User already placed a bid --}}
         <div class="alert alert-info text-center mb-2">
-            <i class="fa fa-circle-check"></i> You have already placed a bid
+            <i class="fa-solid fa-circle-check"></i> You have already placed a bid
         </div>
         <div class="status-pill status-disabled w-100 d-flex justify-content-between">
             <span>Bid Already Placed</span>
@@ -1542,7 +1542,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         {{-- Optional: Allow editing their bid --}}
         <!-- <button class="btn w-100 btn-outline-primary mt-2"
                 onclick="window.location='{{ route('agent.tenant.agent.auction.bid', @$auction->id) }}';">
-                <i class="fa fa-pen-to-square"></i> Edit Your Bid
+                <i class="fa-solid fa-pen-to-square"></i> Edit Your Bid
             </button> -->
         @else
         {{-- User can place a bid --}}
@@ -1554,17 +1554,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         @elseif($auction->status === 'Hired Agent' || $auction->is_sold)
         <div class="alert alert-success text-center mb-2">
-            <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
+            <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
         </div>
         <div class="status-pill status-hired w-100 d-flex justify-content-center">
-            <i class="fa fa-trophy me-2"></i>Hired Agent
+            <i class="fa-solid fa-trophy me-2"></i>Hired Agent
         </div>
         @elseif($auction->status === 'Pending')
         <div class="alert alert-warning text-center mb-2">
-            <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+            <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
         </div>
         <div class="status-pill status-pending w-100 d-flex justify-content-center">
-            <i class="fa fa-pause-circle me-2"></i>Pending
+            <i class="fa-solid fa-pause-circle me-2"></i>Pending
         </div>
         @else
         {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
@@ -1572,7 +1572,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         {{-- BP: "Bidding Ended" already rendered by the timer block above — no duplicate needed --}}
         @else
         <div class="alert alert-secondary text-center mb-2">
-            <i class="fa fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+            <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
         </div>
         @endif
         @endif
@@ -1637,11 +1637,11 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         @if ($isAgentViewer && !$isListingOwner)
             @if ($isBiddingPeriodListing && !$isExpired && !$userHasBid)
             <div class="alert alert-warning small mb-3 py-2">
-                <i class="fa fa-circle-info me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view competing bids (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
+                <i class="fa-solid fa-circle-info me-1"></i> <strong>Bidding Period:</strong> Submit your bid to view competing bids (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
             </div>
             @elseif ($isBiddingPeriodListing && !$isExpired && $userHasBid && $otherBidsExist)
             <div class="alert alert-info small mb-3 py-2">
-                <i class="fa fa-eye me-1"></i> <strong>Bidding Period:</strong> Competing bids are visible below (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
+                <i class="fa-solid fa-eye me-1"></i> <strong>Bidding Period:</strong> Competing bids are visible below (Offered Services and Terms Match summaries only). Agent identities and compensation details remain confidential.
             </div>
             {{-- 🔹 INLINE COMPETING BIDS DISPLAY --}}
             @php
@@ -1650,7 +1650,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             @endphp
             @if(count($competingBids) > 0)
             <div class="mb-4">
-                <h6 class="fw-bold mb-3" style="color: #049399;"><i class="fa fa-users me-2"></i>Competing Bids ({{ count($competingBids) }})</h6>
+                <h6 class="fw-bold mb-3" style="color: #049399;"><i class="fa-solid fa-users me-2"></i>Competing Bids ({{ count($competingBids) }})</h6>
                 @foreach($competingBids as $compBid)
                 <div class="card mb-3" style="border-radius: 10px; border: 1px solid #e0e0e0;">
                     <div class="card-header d-flex justify-content-between align-items-center" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0; border-radius: 10px 10px 0 0; padding: 12px 16px;">
@@ -2068,7 +2068,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                  data-target="bidCollapse-{{ data_get($bid, 'id') }}"
                                  aria-expanded="false">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                    <i class="fa-solid fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
                                     <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
                                 </div>
                                 <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusLabel }}</span>
@@ -2085,7 +2085,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 @if ($hasAnyCounter && ($isListingOwner || $isBidOwner))
                                 <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                      style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
-                                    <i class="fa fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
+                                    <i class="fa-solid fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                     <div>
                                         @if ($isListingOwner && $latestCounterByOwner)
                                             <strong>Counter Offer Sent.</strong>
@@ -2107,17 +2107,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 {{-- WAITING: single row — View CT + Edit CT --}}
                                 <div class="d-flex gap-2 align-items-center mb-2">
                                     <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                        <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                     </a>
                                     <a href="{{ $isListingOwner ? route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) : route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                     </a>
                                 </div>
                                 @else
                                 {{-- RESPONSE: View CT only — Accept/Counter Back/Reject are on View Counter Terms page --}}
                                 <div class="d-flex align-items-center mb-2">
                                     <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                        <i class="fa fa-eye me-1"></i> View Counter Terms
+                                        <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                     </a>
                                 </div>
                                 @endif
@@ -2180,7 +2180,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     {{-- DUAL SCORE: Original Match + Latest Counter Match side-by-side --}}
                                     <div class="mb-2">
                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                         </span>
                                     </div>
                                     <div class="row g-2 mb-2">
@@ -2220,14 +2220,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         </div>
                                     </div>
                                     <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                        <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score.
+                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
                                     </div>
 
                                     @else
                                     {{-- SINGLE SCORE (no counter in this bid's context) --}}
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Score
+                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                         </span>
                                         <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
                                             {{ $totalScore }}%
@@ -2258,7 +2258,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         </div>
                                     </div>
                                     <div class="mt-2 small text-muted">
-                                        <i class="fa fa-circle-info me-1"></i>Compared to: {{ $baselineLabel }}
+                                        <i class="fa-solid fa-circle-info me-1"></i>Compared to: {{ $baselineLabel }}
                                     </div>
                                     <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
                                         Match Score compares this bid only to the Tenant's original request. Added services or added terms are shown for transparency but do not increase the score.
@@ -2276,7 +2276,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 </a>
                                 @else
                                 <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                    <i class="fa fa-lock me-1"></i> Full bid details are private
+                                    <i class="fa-solid fa-lock me-1"></i> Full bid details are private
                                 </span>
                                 @endif
                                 
@@ -2285,7 +2285,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
                                     <a href="{{ route('agent.tenant.agent.auction.bid', $auction->id) }}?edit={{ data_get($bid, 'id') }}" 
                                        class="btn btn-primary bid-action-btn">
-                                        <i class="fa fa-pen-to-square me-1"></i> Edit Bid
+                                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Bid
                                     </a>
                                     <form action="{{ route('tenant.hire.agent.auction.bid.withdraw') }}" method="POST" 
                                           onsubmit="return confirm('Are you sure you want to withdraw your bid? This action cannot be undone.');"
@@ -2293,20 +2293,20 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         @csrf
                                         <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                         <button type="submit" class="btn btn-danger bid-action-btn">
-                                            <i class="fa fa-circle-xmark me-1"></i> Withdraw Bid
+                                            <i class="fa-solid fa-circle-xmark me-1"></i> Withdraw Bid
                                         </button>
                                     </form>
                                 </div>
                                 @elseif ($isBidOwner && $isExpired)
                                 <div class="mt-3">
                                     <span class="text-muted small">
-                                        <i class="fa fa-clock me-1"></i> Bidding has ended - edit/withdraw unavailable
+                                        <i class="fa-solid fa-clock me-1"></i> Bidding has ended - edit/withdraw unavailable
                                     </span>
                                 </div>
                                 @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
                                 <div class="mt-3">
                                     <span class="text-muted small">
-                                        <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit/withdraw unavailable
+                                        <i class="fa-solid fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit/withdraw unavailable
                                     </span>
                                     @if($bidAccepted === 'accepted')
                                     @php
@@ -2315,16 +2315,16 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                     @if($bidOwnerSummary)
                                     <div class="d-flex gap-2 flex-wrap mt-2">
                                         <a href="{{ route('accepted-bid-summary.view', $bidOwnerSummary->id) }}" class="btn btn-outline-primary btn-sm">
-                                            <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
+                                            <i class="fa-solid fa-file-lines me-1"></i> View Accepted Bid Summary
                                         </a>
                                         @if(!$bidOwnerSummary->isAgentSigned())
                                         <a href="{{ route('accepted-bid-summary.sign-form', $bidOwnerSummary->id) }}" class="btn btn-primary btn-sm">
-                                            <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                            <i class="fa-solid fa-signature me-1"></i> Agent: E-Sign Acknowledgement
                                         </a>
                                         @endif
                                         @if($bidOwnerSummary->isFullySigned())
                                         <a href="{{ route('accepted-bid-summary.download-pdf', $bidOwnerSummary->id) }}" class="btn btn-success btn-sm">
-                                            <i class="fa fa-download me-1"></i> Download Signed PDF
+                                            <i class="fa-solid fa-download me-1"></i> Download Signed PDF
                                         </a>
                                         @endif
                                     </div>
@@ -2353,7 +2353,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                 <div class="match-score-summary mb-3 p-2" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 8px; border: 1px solid #dee2e6; font-size: 0.88rem;">
                                     <div class="mb-2">
                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                         </span>
                                     </div>
                                     <div class="row g-2 mb-2">
@@ -2386,7 +2386,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                         @endif
                                     </div>
                                     <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                        <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score.
+                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
                                     </div>
                                 </div>
                                 @endif
@@ -2413,7 +2413,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <h5 class="modal-title"
                                                         id="privateDataModalLabel{{ data_get($bid, 'id') }}"
                                                         style="font-weight: 600;">
-                                                        <i class="fa fa-lock me-2"></i> Private
+                                                        <i class="fa-solid fa-lock me-2"></i> Private
                                                         Compensation & Agreement Terms
                                                     </h5>
                                                 </div>
@@ -2427,10 +2427,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if ($showDualScore && $originalScore && $latestCounterScore)
                                                         {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
                                                         <h6 class="mb-2" style="color: #1a3a5c; font-weight: 600;">
-                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                                         </h6>
                                                         <p class="small text-muted mb-3">
-                                                            <i class="fa fa-circle-info me-1"></i>
+                                                            <i class="fa-solid fa-circle-info me-1"></i>
                                                             <strong>Original Match</strong> compares this bid to the Tenant's original listing request.<br>
                                                             <strong>Counter Match</strong> compares this bid to the Tenant's most recent counteroffer.<br>
                                                             Added services or terms do not increase either score.
@@ -2488,14 +2488,14 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         {{-- SINGLE SCORE --}}
                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                                <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                                             </h6>
                                                             <span class="badge" style="background: {{ $getScoreColor($totalScore) }}; font-size: 1.1rem; padding: 8px 16px;">
                                                                 {{ $totalScore }}% Match
                                                             </span>
                                                         </div>
                                                         <p class="small text-muted mb-3">
-                                                            <i class="fa fa-circle-info me-1"></i>Match Score compares this bid only to the Tenant's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                                            <i class="fa-solid fa-circle-info me-1"></i>Match Score compares this bid only to the Tenant's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
                                                             Comparing to: <strong>{{ $baselineLabel }}</strong>
                                                         </p>
                                                         <div class="row g-3">
@@ -2542,7 +2542,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     </div>
                                                     @else
                                                     <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-                                                        <i class="fa fa-circle-info me-1"></i>No match data available for this listing.
+                                                        <i class="fa-solid fa-circle-info me-1"></i>No match data available for this listing.
                                                     </div>
                                                     @endif
                                                     {{-- ========== END MATCH SCORE PANEL ========== --}}
@@ -2552,7 +2552,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <div class="mb-5">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-user-tie me-2"></i>Agent
+                                                            <i class="fa-solid fa-user-tie me-2"></i>Agent
                                                             Overview & Qualifications
                                                         </h6>
 
@@ -2625,7 +2625,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         target="_blank"
                                                                         class="text-primary text-decoration-none">
                                                                         <i
-                                                                            class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                            class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                         {{ !empty($rlText) ? $rlText : $rlUrlVal }}
                                                                     </a>
                                                                 </div>
@@ -2650,7 +2650,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     class="text-primary text-decoration-none">
-                                                                    <i class="fa fa-globe me-1"></i>
+                                                                    <i class="fa-solid fa-globe me-1"></i>
                                                                     Visit Website
                                                                 </a>
                                                             </div>
@@ -2744,12 +2744,12 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                              style="background:#f0fafa;border:1px solid #b2e0e0;border-radius:8px;border-left:4px solid #049399;">
                                                             <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap" style="gap:6px;">
                                                                 <span class="fw-semibold" style="color:#049399;font-size:0.9rem;">
-                                                                    <i class="fa fa-star me-1"></i>Agent Highlights
+                                                                    <i class="fa-solid fa-star me-1"></i>Agent Highlights
                                                                 </span>
                                                                 @if ($hlShortId)
                                                                 <a href="{{ route('agent.profile.public', $hlShortId) }}" target="_blank"
                                                                    class="text-decoration-none small" style="color:#049399;">
-                                                                    <i class="fa fa-arrow-up-right-from-square me-1"></i>View Full Profile
+                                                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View Full Profile
                                                                 </a>
                                                                 @endif
                                                             </div>
@@ -2781,7 +2781,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             </div>
                                                             @if ($hlReview)
                                                             <div class="mt-2 pt-2" style="border-top:1px dashed #b2e0e0;">
-                                                                <div class="small text-muted mb-1"><i class="fa fa-quote-left me-1"></i>Featured Review</div>
+                                                                <div class="small text-muted mb-1"><i class="fa-solid fa-quote-left me-1"></i>Featured Review</div>
                                                                 <div class="fst-italic text-muted small" style="font-size:0.88rem;">{{ $hlReview }}</div>
                                                             </div>
                                                             @endif
@@ -2806,7 +2806,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     <div class="mb-5">
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
                                                         @php
@@ -2963,7 +2963,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @if (data_get($bid, 'get.additional_details'))
                                                     <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-circle-info me-2"></i>Additional Details
+                                                            <i class="fa-solid fa-circle-info me-2"></i>Additional Details
                                                         </h6>
                                                         <div class="text-muted" style="font-style: italic;">
                                                             {{ data_get($bid, 'get.additional_details') }}
@@ -3188,7 +3188,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     
                                                     <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                            <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
                                                         </h6>
                                                         
                                                         @if ($hasAnyBidServices)
@@ -3227,7 +3227,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @if (!empty($missingServices))
                                                             <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
                                                                 <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                                                                    <i class="fa fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
+                                                                    <i class="fa-solid fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
                                                                 </div>
                                                                 <ul class="mb-0" style="padding-left: 1.2rem;">
                                                                     @foreach ($missingServices as $missingSvc)
@@ -3251,7 +3251,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i
-                                                                class="fa fa-chart-line me-2"></i>Agent
+                                                                class="fa-solid fa-chart-line me-2"></i>Agent
                                                             Presentation & Promotional Materials
                                                         </h6>
 
@@ -3292,7 +3292,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     target="_blank"
                                                                     class="text-primary text-decoration-none">
                                                                     <i
-                                                                        class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                        class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                     Watch Presentation
                                                                 </a>
                                                             </div>
@@ -3317,7 +3317,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <div
                                                                     class="text-muted">
                                                                     <i
-                                                                        class="fa fa-video me-1"></i>
+                                                                        class="fa-solid fa-video me-1"></i>
                                                                     Video file uploaded
                                                                 </div>
                                                                 @endif
@@ -3345,7 +3345,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
                                                                     class="btn btn-outline-primary btn-sm">
-                                                                    <i class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                    <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                     View Business Card (Link)
                                                                 </a>
                                                             </div>
@@ -3377,27 +3377,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 </div>
                                                                 <div class="d-flex gap-2 mt-2">
                                                                     <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                                                                        <i class="fa fa-expand me-1"></i> View Full Size
+                                                                        <i class="fa-solid fa-expand me-1"></i> View Full Size
                                                                     </a>
                                                                     <a href="{{ $businessCardUrl }}" download class="btn btn-outline-success btn-sm">
-                                                                        <i class="fa fa-download me-1"></i> Download
+                                                                        <i class="fa-solid fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                                 @else
                                                                 <div class="d-flex align-items-center p-3 border rounded bg-light">
-                                                                    <i class="fa fa-file-lines fa-2x text-muted me-3"></i>
+                                                                    <i class="fa-solid fa-file-lines fa-2x text-muted me-3"></i>
                                                                     <div class="flex-grow-1">
                                                                         <div class="fw-medium">Business Card File</div>
                                                                         <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
                                                                     </div>
                                                                     <a href="{{ $businessCardUrl }}" download class="btn btn-outline-primary btn-sm">
-                                                                        <i class="fa fa-download me-1"></i> Download
+                                                                        <i class="fa-solid fa-download me-1"></i> Download
                                                                     </a>
                                                                 </div>
                                                                 @endif
                                                                 @else
                                                                 <div class="text-muted">
-                                                                    <i class="fa fa-id-card me-1"></i>
+                                                                    <i class="fa-solid fa-id-card me-1"></i>
                                                                     Business card uploaded
                                                                 </div>
                                                                 @endif
@@ -3445,7 +3445,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <div class="mb-3 p-3 border rounded bg-light">
                                                                 @if (!empty($matType))
                                                                 <div class="fw-medium mb-2" style="color: #049399; font-size: 1rem;">
-                                                                    <i class="fa fa-folder-open me-1"></i>
+                                                                    <i class="fa-solid fa-folder-open me-1"></i>
                                                                     {{ $matType }}
                                                                     @if ($matType === 'Other' && !empty($matOther))
                                                                     - {{ $matOther }}
@@ -3465,7 +3465,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         class="btn btn-outline-primary btn-sm">
-                                                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                         Open Link
                                                                     </a>
                                                                 </div>
@@ -3501,7 +3501,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                                 @else
                                                                                 <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
                                                                                     style="width: 60px; height: 60px;">
-                                                                                    <i class="fa fa-file fa-lg text-muted"></i>
+                                                                                    <i class="fa-solid fa-file fa-lg text-muted"></i>
                                                                                 </div>
                                                                                 @endif
                                                                                 <div class="flex-grow-1 overflow-hidden">
@@ -3510,10 +3510,10 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                                 </div>
                                                                                 <div class="d-flex gap-1 ms-2">
                                                                                     <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="View">
-                                                                                        <i class="fa fa-eye"></i>
+                                                                                        <i class="fa-solid fa-eye"></i>
                                                                                     </a>
                                                                                     <a href="{{ $fileUrl }}" download class="btn btn-sm btn-outline-success" title="Download">
-                                                                                        <i class="fa fa-download"></i>
+                                                                                        <i class="fa-solid fa-download"></i>
                                                                                     </a>
                                                                                 </div>
                                                                             </div>
@@ -3527,13 +3527,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             @endif
                                                             @endforeach
                                                             @else
-                                                            <div class="text-muted"><i class="fa fa-circle-info me-1"></i> Not provided</div>
+                                                            <div class="text-muted"><i class="fa-solid fa-circle-info me-1"></i> Not provided</div>
                                                             @endif
                                                         </div>
                                                         @else
                                                         <div class="mb-4">
                                                             <div class="fw-semibold mb-2" style="color: #049399;">Marketing Materials:</div>
-                                                            <div class="text-muted"><i class="fa fa-circle-info me-1"></i> Not provided</div>
+                                                            <div class="text-muted"><i class="fa-solid fa-circle-info me-1"></i> Not provided</div>
                                                         </div>
                                                         @endif
                                                     </div>
@@ -3545,7 +3545,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         <h6 class="mb-3"
                                                             style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                                             <i
-                                                                class="fa fa-address-card me-2"></i>Agent
+                                                                class="fa-solid fa-address-card me-2"></i>Agent
                                                             Credentials and Contact Information
                                                         </h6>
 
@@ -3643,7 +3643,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     style="background: #fafafa; border-top: 1px solid #e0e0e0; padding: 20px;">
                                                     <div class="w-100 mb-3 p-3 text-center"
                                                         style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                                                        <i class="fa fa-shield me-2"></i>
+                                                        <i class="fa-solid fa-shield me-2"></i>
                                                         <strong>Confidential:</strong> This information
                                                         is private and only visible to you{{ $isListingOwner ? ' as the listing owner' : '' }}.
                                                     </div>
@@ -3662,13 +3662,13 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                                                 <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-check me-1"></i> Accept Bid
+                                                                    <i class="fa-solid fa-check me-1"></i> Accept Bid
                                                                 </button>
                                                             </form>
                                                             
                                                             <a href="{{ route('tenant.counter-terms', ['id' => data_get($bid, 'id')]) }}" 
                                                                class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-                                                                <i class="fa fa-right-left me-1"></i> Counter Bid
+                                                                <i class="fa-solid fa-right-left me-1"></i> Counter Bid
                                                             </a>
                                                             
                                                             <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" style="margin: 0;"
@@ -3677,42 +3677,42 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                                                 <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                    <i class="fa fa-xmark me-1"></i> Reject Bid
+                                                                    <i class="fa-solid fa-xmark me-1"></i> Reject Bid
                                                                 </button>
                                                             </form>
                                                         </div>
                                                         @elseif ($isTraditionalListing && $isExpired)
                                                         {{-- Traditional listing has expired --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-clock me-1"></i> Listing has expired - no further actions available. You can extend the expiration date by editing the listing.
+                                                            <i class="fa-solid fa-clock me-1"></i> Listing has expired - no further actions available. You can extend the expiration date by editing the listing.
                                                         </div>
                                                         @endif
                                                     @elseif ($isListingOwner && $hasAnyCounter && $latestCounterByOwner && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                                     {{-- Owner submitted the latest counter — waiting for agent to respond --}}
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-right-left me-1"></i> <strong>Counter Offer Sent.</strong>
+                                                        <i class="fa-solid fa-right-left me-1"></i> <strong>Counter Offer Sent.</strong>
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                         <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                         </a>
                                                         <a href="{{ route('tenant.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                            <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                                            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                                         </a>
                                                     </div>
                                                     @elseif ($isListingOwner && $hasAnyCounter && $latestCounterByAgent && $bidAccepted !== 'accepted' && $bidAccepted !== 'rejected')
                                                     {{-- Agent sent latest counter — owner: View CT only --}}
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-right-left me-1"></i> <strong>Counter Offer Received.</strong>
+                                                        <i class="fa-solid fa-right-left me-1"></i> <strong>Counter Offer Received.</strong>
                                                     </div>
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                         <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                         </a>
                                                     </div>
                                                     @elseif ($isListingOwner && $bidAccepted === 'accepted')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-                                                        <i class="fa fa-circle-check me-1"></i> This bid has been accepted
+                                                        <i class="fa-solid fa-circle-check me-1"></i> This bid has been accepted
                                                     </div>
                                                     @php
                                                         $acceptedBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first();
@@ -3720,27 +3720,27 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @if($acceptedBidSummary)
                                                     <div class="d-flex gap-2 flex-wrap justify-content-center mt-2 mb-3">
                                                         <a href="{{ route('accepted-bid-summary.view', $acceptedBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
-                                                            <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
+                                                            <i class="fa-solid fa-file-lines me-1"></i> View Accepted Bid Summary
                                                         </a>
                                                         @if(!$acceptedBidSummary->isTenantSigned())
                                                         <a href="{{ route('accepted-bid-summary.sign-form', $acceptedBidSummary->id) }}" class="btn btn-primary btn-sm">
-                                                            <i class="fa fa-signature me-1"></i> Tenant: E-Sign Acknowledgement
+                                                            <i class="fa-solid fa-signature me-1"></i> Tenant: E-Sign Acknowledgement
                                                         </a>
                                                         @endif
                                                         @if($acceptedBidSummary->isFullySigned())
                                                         <a href="{{ route('accepted-bid-summary.download-pdf', $acceptedBidSummary->id) }}" class="btn btn-success btn-sm">
-                                                            <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                            <i class="fa-solid fa-download me-1"></i> Download Signed PDF
                                                         </a>
                                                         @endif
                                                     </div>
                                                     @endif
                                                     @elseif ($isListingOwner && $bidAccepted === 'rejected')
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-                                                        <i class="fa fa-circle-xmark me-1"></i> This bid has been rejected
+                                                        <i class="fa-solid fa-circle-xmark me-1"></i> This bid has been rejected
                                                     </div>
                                                     @elseif ($isListingOwner && $isExpired)
                                                     <div class="w-100 mb-3 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                        <i class="fa fa-clock me-1"></i> Auction has expired - no further actions available
+                                                        <i class="fa-solid fa-clock me-1"></i> Auction has expired - no further actions available
                                                     </div>
                                                     @endif
 
@@ -3751,48 +3751,48 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if ($latestCounterByOwner)
                                                         {{-- Owner submitted the latest counter — agent should respond --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-right-left me-1"></i>
+                                                            <i class="fa-solid fa-right-left me-1"></i>
                                                             <strong>Counter Offer Received.</strong>
                                                         </div>
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                             <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                                <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                             </a>
                                                         </div>
                                                         @elseif ($latestCounterByAgent)
                                                         {{-- Agent submitted the latest counter — waiting for owner to respond --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                            <i class="fa fa-right-left me-1"></i>
+                                                            <i class="fa-solid fa-right-left me-1"></i>
                                                             <strong>Counter Offer Sent.</strong>
                                                         </div>
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                             <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                                <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                             </a>
                                                             <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                                                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                                             </a>
                                                         </div>
                                                         @endif
                                                         @elseif ($bidAccepted === 'accepted')
                                                         {{-- Accepted: agent sees summary links --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-                                                            <i class="fa fa-circle-check me-1"></i> Your bid has been accepted.
+                                                            <i class="fa-solid fa-circle-check me-1"></i> Your bid has been accepted.
                                                         </div>
                                                         @php $agentFooterBidSummary = \App\Models\AcceptedBidSummary::where('accepted_bid_id', data_get($bid, 'id'))->where('agent_user_id', data_get($bid, 'user_id'))->first(); @endphp
                                                         @if ($agentFooterBidSummary)
                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2 mb-3">
                                                             <a href="{{ route('accepted-bid-summary.view', $agentFooterBidSummary->id) }}" class="btn btn-outline-primary btn-sm">
-                                                                <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
+                                                                <i class="fa-solid fa-file-lines me-1"></i> View Accepted Bid Summary
                                                             </a>
                                                             @if (!$agentFooterBidSummary->isAgentSigned())
                                                             <a href="{{ route('accepted-bid-summary.sign-form', $agentFooterBidSummary->id) }}" class="btn btn-primary btn-sm">
-                                                                <i class="fa fa-signature me-1"></i> E-Sign Acknowledgement
+                                                                <i class="fa-solid fa-signature me-1"></i> E-Sign Acknowledgement
                                                             </a>
                                                             @endif
                                                             @if ($agentFooterBidSummary->isFullySigned())
                                                             <a href="{{ route('accepted-bid-summary.download-pdf', $agentFooterBidSummary->id) }}" class="btn btn-success btn-sm">
-                                                                <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                                <i class="fa-solid fa-download me-1"></i> Download Signed PDF
                                                             </a>
                                                             @endif
                                                         </div>
@@ -3800,7 +3800,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @elseif ($bidAccepted === 'rejected')
                                                         {{-- Rejected --}}
                                                         <div class="w-100 mb-3 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-                                                            <i class="fa fa-circle-xmark me-1"></i> Your bid has been rejected.
+                                                            <i class="fa-solid fa-circle-xmark me-1"></i> Your bid has been rejected.
                                                         </div>
                                                         @else
                                                         {{-- Pending: no counter yet, agent waits --}}
@@ -4186,7 +4186,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     !empty($allMeta['additional_details']))
                                                     <div class="mb-4">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                         </h6>
 
                                                         {{-- A) Tenant's Broker Compensation --}}
@@ -4333,7 +4333,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     {{-- Additional Details --}}
                                                     @if (!empty($allMeta['additional_details']))
                                                     <div class="mb-3">
-                                                        <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa fa-circle-info me-1"></i>Additional Details</div>
+                                                        <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa-solid fa-circle-info me-1"></i>Additional Details</div>
                                                         @php $addDetailsChanged = $isChanged($allMeta['additional_details'], 'additional_details'); @endphp
                                                         <div class="ps-3" style="font-size: 12px; {{ $addDetailsChanged ? $changedStyle : '' }}">{{ $allMeta['additional_details'] }}{!! $addDetailsChanged ? $changedBadge : '' !!}</div>
                                                     </div>
@@ -4540,7 +4540,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @if ($hasAnyCounterServices)
                                                     <div class="mb-5">
                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                            <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
                                                         </h6>
                                                         
                                                         @foreach ($servicesConfig as $category => $catServices)
@@ -4560,7 +4560,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         @if ($serviceDisplay !== null)
                                                                             @if ($tnSvcIsAdded($serviceDisplay))
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                                <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $serviceDisplay }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                                <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $serviceDisplay }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                             </li>
                                                                             @else
                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $serviceDisplay }}</li>
@@ -4579,7 +4579,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                 @foreach ($other_services as $otherService)
                                                                     @if ($tnOtherIsAdded($otherService))
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                        <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherService }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                        <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherService }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                     </li>
                                                                     @else
                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
@@ -4592,17 +4592,17 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                         @if (!empty($tnRemovedDisplay) || !empty($tnOtherRemovedDisplay))
                                                         <div class="mb-3 mt-2 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
                                                             <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
-                                                                <i class="fa fa-minus-circle me-1"></i>Removed Services
+                                                                <i class="fa-solid fa-minus-circle me-1"></i>Removed Services
                                                             </div>
                                                             <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
                                                                 @foreach ($tnRemovedDisplay as $rSvc)
                                                                 <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                    <i class="fa fa-circle-xmark me-1"></i>{{ $rSvc }}
+                                                                    <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
                                                                 </li>
                                                                 @endforeach
                                                                 @foreach ($tnOtherRemovedDisplay as $rSvc)
                                                                 <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                    <i class="fa fa-circle-xmark me-1"></i>{{ $rSvc }}
+                                                                    <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
                                                                 </li>
                                                                 @endforeach
                                                             </ul>
@@ -4646,7 +4646,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                     @if ($showCounterActions)
                                                     <div class="mt-3 pt-3 border-top">
                                                         <a href="{{ route('tenant.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                            <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                            <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                         </a>
                                                     </div>
                                                     @endif
@@ -4720,7 +4720,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
 </div>
 <button class="btn w-100 mt-0">
-    <span class="bid m-0"><i class="fa fa-user"></i> </span>
+    <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
 </button>
 <div class="p-4 card">
     <p class="text-600">Share this link via</p>
@@ -4747,7 +4747,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </ul>
         <p class="small opacity-8">Or copy link</p>
         <div class="field">
-            <i class="fa fa-link"></i>
+            <i class="fa-solid fa-link"></i>
             <input type="text" readonly="" id="copylink"
                 value="{{ route('tenant.agent.view.auction.view', $auction->id) }}">
             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

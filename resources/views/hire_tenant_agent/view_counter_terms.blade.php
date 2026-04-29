@@ -775,7 +775,7 @@
                                 <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('tenant.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @endif
                         @elseif($viewerRole === 'agent' && $bidIsTerminal)
@@ -809,7 +809,7 @@
                                 <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('tenant.edit-counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @endif
                         @elseif($viewerRole === 'tenant' && $bidIsTerminal)

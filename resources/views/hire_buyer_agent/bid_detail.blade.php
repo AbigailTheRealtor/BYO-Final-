@@ -177,14 +177,14 @@
         {{-- Expired notice --}}
         @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold && $isTraditionalListing && $isExpired)
         <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-            <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available.
+            <i class="fa-solid fa-clock me-1"></i> Listing has expired — no further actions available.
         </div>
         @endif
 
         {{-- Accepted: banner + summary links --}}
         @if ($mfStateB === 'accepted')
         <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-            <i class="fa fa-circle-check me-1"></i>
+            <i class="fa-solid fa-circle-check me-1"></i>
             @if ($mfIsOwnerB) This bid has been accepted.
             @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} accepted this bid.
             @endif
@@ -192,21 +192,21 @@
         @if ($mfBidSummaryB && ($mfIsOwnerB || data_get($bid, 'user_id') == Auth::id()))
         <div class="w-100 d-flex gap-2 flex-wrap justify-content-center">
             <a href="{{ route('accepted-bid-summary.view', $mfBidSummaryB->id) }}" class="btn btn-outline-primary btn-sm">
-                <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
+                <i class="fa-solid fa-file-lines me-1"></i> View Accepted Bid Summary
             </a>
             @if (data_get($bid, 'user_id') == Auth::id() && !$mfBidSummaryB->isAgentSigned())
             <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
-                <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                <i class="fa-solid fa-signature me-1"></i> Agent: E-Sign Acknowledgement
             </a>
             @endif
             @if ($mfIsOwnerB && !$mfBidSummaryB->isTenantSigned())
             <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
-                <i class="fa fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
+                <i class="fa-solid fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
             </a>
             @endif
             @if ($mfBidSummaryB->isFullySigned())
             <a href="{{ route('accepted-bid-summary.download-pdf', $mfBidSummaryB->id) }}" class="btn btn-success btn-sm">
-                <i class="fa fa-download me-1"></i> Download Signed PDF
+                <i class="fa-solid fa-download me-1"></i> Download Signed PDF
             </a>
             @endif
         </div>
@@ -215,7 +215,7 @@
         {{-- Rejected --}}
         @elseif ($mfStateB === 'rejected')
         <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-            <i class="fa fa-circle-xmark me-1"></i>
+            <i class="fa-solid fa-circle-xmark me-1"></i>
             @if ($mfIsOwnerB) This bid has been rejected.
             @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} rejected this bid.
             @endif
@@ -224,7 +224,7 @@
         {{-- Countered --}}
         @elseif ($mfStateB === 'countered')
         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-            <i class="fa fa-right-left me-1"></i>
+            <i class="fa-solid fa-right-left me-1"></i>
             @if ($_mfBuyerViewerSentLatest) <strong>Counter Offer Sent.</strong>
             @else <strong>Counter Offer Received.</strong>
             @endif
@@ -255,12 +255,12 @@
             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
             <button type="submit" class="btn btn-success"
                     style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
-                <i class="fa fa-check me-1"></i> Accept Bid
+                <i class="fa-solid fa-check me-1"></i> Accept Bid
             </button>
         </form>
         <a href="{{ route('buyer.counter-terms', data_get($bid, 'id')) }}" class="btn btn-primary"
            style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-            <i class="fa fa-right-left me-1"></i> Counter Bid
+            <i class="fa-solid fa-right-left me-1"></i> Counter Bid
         </a>
         <form action="{{ route('buyer.hire.agent.auction.bid.reject') }}" method="POST" class="m-0"
               onsubmit="return confirm('Reject this bid?');">
@@ -269,7 +269,7 @@
             <input type="hidden" name="auction_id" value="{{ $auction->id }}">
             <button type="submit" class="btn btn-danger"
                     style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;">
-                <i class="fa fa-xmark me-1"></i> Reject Bid
+                <i class="fa-solid fa-xmark me-1"></i> Reject Bid
             </button>
         </form>
         @endif
@@ -277,12 +277,12 @@
         @if ($mfStateB === 'countered')
         <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}"
            class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 14px;font-weight:600;font-size:0.85rem;">
-            <i class="fa fa-eye me-1"></i> View Counter Terms
+            <i class="fa-solid fa-eye me-1"></i> View Counter Terms
         </a>
         @if ($_mfBuyerViewerSentLatest)
         <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}"
            class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 14px;font-weight:600;font-size:0.85rem;">
-            <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+            <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
         </a>
         @endif
         @endif

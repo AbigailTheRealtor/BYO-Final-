@@ -125,7 +125,7 @@
                       <div class="card-body bg-white">
                         <h5 class="text-700 mb-4"><a href="https://bidyouroffer.com/listing/no-timer-6/"
                             target="_blank" class="text-dark">{{$pa->address}}</a></h5>
-                        <div class="alert alert-success small"><i class="fa fa-check"></i> Your auction is fully
+                        <div class="alert alert-success small"><i class="fa-solid fa-check"></i> Your auction is fully
                           updated.</div>
                       </div>
                     </div>

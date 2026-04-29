@@ -316,7 +316,7 @@
                                 <div class="form-group custom_bedrooms d-none">
                                     <label>Write Custom Bedrooms *</label>
                                     <input type="text" class="form-control has-icon"
-                                        placeholder="Write Custom Bedrooms" name="custom_bedrooms" data-icon="fa fa-bed"
+                                        placeholder="Write Custom Bedrooms" name="custom_bedrooms" data-icon="fa-solid fa-bed"
                                         id="custom_bedrooms" required />
                                 </div>
                             </div>

@@ -1029,7 +1029,7 @@
                                 <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('landlord.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @else
                             {{-- Landlord sent the latest counter — agent can respond --}}
@@ -1087,7 +1087,7 @@
                                 <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('landlord.edit-counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @endif
                         @elseif($viewerRole === 'landlord' && $bidIsTerminal)

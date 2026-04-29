@@ -72,23 +72,23 @@
                         <hr />
                         <h4>Features</h4>
                         <div class="row" style="flex-wrap: wrap;">
-                            <div class="col-md-4 col-6 fw-bold"><i class="fa fa-bed"></i> Bedrooms:
+                            <div class="col-md-4 col-6 fw-bold"><i class="fa-solid fa-bed"></i> Bedrooms:
                                 @if (@$auction->get->custom_bedrooms != '' && @$auction->get->custom_bedrooms != 'null')
                                     {{ @$auction->get->custom_bedrooms }}
                                 @else
                                     {{ @$auction->get->bedrooms }}
                                 @endif
                             </div>
-                            <div class="col-md-4 col-6 fw-bold"><i class="fa fa-bath"></i> Bathrooms:
+                            <div class="col-md-4 col-6 fw-bold"><i class="fa-solid fa-bath"></i> Bathrooms:
                                 @if (@$auction->get->custom_bathrooms != '' && @$auction->get->custom_bathrooms != 'null')
                                     {{ @$auction->get->custom_bathrooms }}
                                 @else
                                     {{ @$auction->get->bathrooms }}
                                 @endif
                             </div>
-                            <div class="col-md-4 col-6 fw-bold"><i class="fa fa-calculator"></i> Heated Sqft:
+                            <div class="col-md-4 col-6 fw-bold"><i class="fa-solid fa-calculator"></i> Heated Sqft:
                                 {{ @$auction->get->sqft }} </div>
-                            <div class="col-md-4 col-6 fw-bold"><i class="fa fa-money-bill"></i>Ideal Price:
+                            <div class="col-md-4 col-6 fw-bold"><i class="fa-solid fa-money-bill"></i>Ideal Price:
                                 ${{ number_format(@$auction->get->ideal_price, 0, '.', '') }} </div>
 
                             <div class="col-md-12 col-12 fw-bold"><i class="fa-regular fa-check-square"></i>
@@ -207,7 +207,7 @@
                                 src="https://bidyouroffer.com/wp-content/uploads/2022/09/map-placeholder.jpg"
                                 alt="">
                             <div class="right position-absolute">
-                                <button class="btn btn-sm"><i class="fa fa-map-marker"></i> View Map</button>
+                                <button class="btn btn-sm"><i class="fa-solid fa-map-marker"></i> View Map</button>
                                 <button class="btn btn-sm">Get Direction</button>
 
                             </div>
@@ -233,11 +233,11 @@
                                 <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>Seller
                                             Details</b></a><span></span>
                                     <span class="start opacity-50">
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
                                     </span>
                                 </p>
                                 <p class="mb-0">...</p>
@@ -520,7 +520,7 @@
                     </div>
                 </div>
                 <button class="btn w-100 mt-0">
-                    <span class="bid m-0"><i class="fa fa-user"></i> </span>
+                    <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
                 </button>
                 <!-- End  -->
                 <!-- Social Details  -->
@@ -547,7 +547,7 @@
                         </ul>
                         <p class="small opacity-8">Or copy link</p>
                         <div class="field">
-                            <i class="fa fa-link"></i>
+                            <i class="fa-solid fa-link"></i>
                             <input type="text" readonly="" id="copylink"
                                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
                             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"
@@ -748,7 +748,7 @@
                                     <div class="col-md-6">
                                         <label>Brokerage: <span class="text-danger">*</span></label>
                                         {{-- <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar-sign"></i> --}}
+                                            <i class="fa-solid fa-dollar-sign"></i> --}}
                                         <input type="text" class="form-control" name="brokerage" id="brokerage"
                                             required value="{{ old('brokerage') }}">
                                         {{-- </div> --}}
@@ -780,7 +780,7 @@
                                     <div class="col-md-6">
                                         <label>Commission Offered %: <span class="text-danger">*</span></label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-percent"></i>
+                                            <i class="fa-solid fa-percent"></i>
                                             <input type="number" class="form-control border-start-0"
                                                 name="price_percent" id="price_percent" min="0" max="100"
                                                 required placeholder="0.00" value="{{ old('price_percent') }}">
@@ -807,7 +807,7 @@
                                     <div class="col-md-6">
                                         <label>Offering Price $: <span class="text-danger">*</span></label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar-sign"></i>
+                                            <i class="fa-solid fa-dollar-sign"></i>
                                             <input type="number" class="form-control border-start-0" name="price"
                                                 id="price" min="0" placeholder="0.00"
                                                 value="{{ old('price') }}">

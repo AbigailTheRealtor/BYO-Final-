@@ -136,7 +136,7 @@
 
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-user-tie me-2"></i>Agent Overview & Qualifications
+                    <i class="fa-solid fa-user-tie me-2"></i>Agent Overview & Qualifications
                 </h6>
 
                 @if (data_get($bid, 'get.bio'))
@@ -193,7 +193,7 @@
                                     ? $rlUrl : 'https://' . $rlUrl;
                             @endphp
                             <a href="{{ $rlHref }}" target="_blank" class="text-primary text-decoration-none">
-                                <i class="fa fa-arrow-up-right-from-square me-1"></i>
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                 {{ !empty($rlText) ? $rlText : $rlUrl }}
                             </a>
                         </div>
@@ -214,7 +214,7 @@
                             }
                         @endphp
                         <a href="{{ $websiteLink }}" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">
-                            <i class="fa fa-globe me-1"></i>Visit Website
+                            <i class="fa-solid fa-globe me-1"></i>Visit Website
                         </a>
                     </div>
                 </div>
@@ -362,7 +362,7 @@
                  data_get($bid, 'get.brokerage_relationship'))
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                    <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                 </h6>
 
                 {{-- A) Tenant's Broker Compensation --}}
@@ -516,7 +516,7 @@
             @if (data_get($bid, 'get.additional_details'))
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-file-lines me-2"></i>Additional Details
+                    <i class="fa-solid fa-file-lines me-2"></i>Additional Details
                 </h6>
                 <div class="field-value">{{ data_get($bid, 'get.additional_details') }}</div>
             </div>
@@ -714,7 +714,7 @@
 
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-list-check me-2"></i>Offered Services
+                    <i class="fa-solid fa-list-check me-2"></i>Offered Services
                 </h6>
 
                 @if ($hasAnyBidServices)
@@ -750,7 +750,7 @@
                     @if (!empty($svsMissingDisplay))
                     <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
                         <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                            <i class="fa fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($svsMissingDisplay) }})
+                            <i class="fa-solid fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($svsMissingDisplay) }})
                         </div>
                         <ul class="mb-0" style="padding-left: 1.5rem; list-style: disc;">
                             @foreach ($svsMissingDisplay as $missingSvc)
@@ -767,7 +767,7 @@
             @if (data_get($bid, 'get.presentation_link') || data_get($bid, 'get.video_upload') || data_get($bid, 'get.business_card_link') || data_get($bid, 'get.business_card') || data_get($bid, 'get.promoMaterials'))
             <div class="mb-5">
                 <h6 class="section-header">
-                    <i class="fa fa-photo-film me-2"></i>Agent Presentation & Promotional Materials
+                    <i class="fa-solid fa-photo-film me-2"></i>Agent Presentation & Promotional Materials
                 </h6>
 
                 @if (data_get($bid, 'get.presentation_link'))
@@ -780,7 +780,7 @@
                         }
                     @endphp
                     <a href="{{ $presentationLink }}" target="_blank" class="text-primary text-decoration-none">
-                        <i class="fa fa-arrow-up-right-from-square me-1"></i>Watch Presentation
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Watch Presentation
                     </a>
                 </div>
                 @endif
@@ -808,7 +808,7 @@
                         }
                     @endphp
                     <a href="{{ $businessCardLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                        <i class="fa fa-arrow-up-right-from-square me-1"></i>View Business Card (Link)
+                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View Business Card (Link)
                     </a>
                     @endif
 
@@ -826,7 +826,7 @@
                         </a>
                         @else
                         <a href="{{ $businessCardUrl }}" download class="btn btn-outline-primary btn-sm">
-                            <i class="fa fa-download me-1"></i>Download Business Card
+                            <i class="fa-solid fa-download me-1"></i>Download Business Card
                         </a>
                         @endif
                     </div>
@@ -859,7 +859,7 @@
                     <div class="mb-3 p-3 border rounded bg-light">
                         @if (!empty($matType))
                         <div class="fw-medium mb-2" style="color: #049399;">
-                            <i class="fa fa-folder-open me-1"></i>{{ $matType }}
+                            <i class="fa-solid fa-folder-open me-1"></i>{{ $matType }}
                             @if ($matType === 'Other' && !empty($matOther)) - {{ $matOther }} @endif
                         </div>
                         @endif
@@ -873,7 +873,7 @@
                                 }
                             @endphp
                             <a href="{{ $materialLink }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                                <i class="fa fa-arrow-up-right-from-square me-1"></i>Open Link
+                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>Open Link
                             </a>
                         </div>
                         @endif
@@ -896,7 +896,7 @@
                                     </a>
                                     @else
                                     <div class="bg-light rounded d-flex align-items-center justify-content-center me-2" style="width: 50px; height: 50px;">
-                                        <i class="fa fa-file fa-lg text-muted"></i>
+                                        <i class="fa-solid fa-file fa-lg text-muted"></i>
                                     </div>
                                     @endif
                                     <div class="flex-grow-1 overflow-hidden">
@@ -904,7 +904,7 @@
                                         <small class="text-muted">{{ strtoupper($fileExtension) }}</small>
                                     </div>
                                     <a href="{{ $fileUrl }}" download class="btn btn-sm btn-outline-success" title="Download">
-                                        <i class="fa fa-download"></i>
+                                        <i class="fa-solid fa-download"></i>
                                     </a>
                                 </div>
                             </div>
@@ -922,7 +922,7 @@
 
             <div class="mb-4">
                 <h6 class="section-header">
-                    <i class="fa fa-address-card me-2"></i>Agent Credentials & Contact Information
+                    <i class="fa-solid fa-address-card me-2"></i>Agent Credentials & Contact Information
                 </h6>
 
                 <div class="row">

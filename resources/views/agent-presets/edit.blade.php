@@ -246,42 +246,42 @@
 <div class="preset-edit-wrap py-4 px-3" x-ignore>
 
     <div class="preset-header">
-        <h1><i class="fa fa-sliders me-2"></i>Edit Preset: {{ $roleLabel }}</h1>
+        <h1><i class="fa-solid fa-sliders me-2"></i>Edit Preset: {{ $roleLabel }}</h1>
         <p>Property type: <strong>{{ $propertyLabel }}</strong> &nbsp;&middot;&nbsp; Changes save to your default profile and auto-fill future bids.</p>
     </div>
 
     <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
         <a href="{{ route('agent.presets.index') }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-arrow-left me-1"></i>Back to All Presets
+            <i class="fa-solid fa-arrow-left me-1"></i>Back to All Presets
         </a>
         @if ($profileExists)
             <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-outline-info">
-                <i class="fa fa-eye me-1"></i>Open Hire Me Page
+                <i class="fa-solid fa-eye me-1"></i>Open Hire Me Page
             </a>
             <button type="button"
                     class="btn btn-sm btn-outline btn-copy-hire-edit"
                     data-hire-url="{{ $hireMeUrl }}"
                     title="Copy your Hire Me link to share with clients">
-                <i class="fa fa-copy me-1"></i>Copy Hire Me Link
+                <i class="fa-solid fa-copy me-1"></i>Copy Hire Me Link
             </button>
         @else
             <button type="button" class="btn btn-sm btn-outline-info" disabled title="Save this preset first to preview your Hire Me page">
-                <i class="fa fa-eye me-1"></i>Open Hire Me Page
+                <i class="fa-solid fa-eye me-1"></i>Open Hire Me Page
             </button>
         @endif
     </div>
 
     @if (request()->query('saved'))
         <div class="alert alert-success d-flex align-items-center justify-content-between gap-3 mb-4" role="alert">
-            <span><i class="fa fa-circle-check me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
+            <span><i class="fa-solid fa-circle-check me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
             <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-success text-nowrap">
-                <i class="fa fa-eye me-1"></i>Preview Hire Me Page
+                <i class="fa-solid fa-eye me-1"></i>Preview Hire Me Page
             </a>
         </div>
     @endif
 
     <div id="preset-error-summary" class="d-none alert alert-danger d-flex align-items-center gap-2 mb-4" role="alert" aria-live="polite">
-        <i class="fa fa-exclamation-circle flex-shrink-0"></i>
+        <i class="fa-solid fa-exclamation-circle flex-shrink-0"></i>
         <span id="preset-error-summary-text"></span>
     </div>
 
@@ -294,10 +294,10 @@
                  data-preset-toggle="section-services"
                  aria-expanded="true"
                  aria-controls="section-services">
-                <i class="fa fa-list-ul section-icon"></i>
+                <i class="fa-solid fa-list-ul section-icon"></i>
                 Services
                 <span class="section-req-badge req">Required</span>
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             {{-- No Bootstrap collapse class — section is visible by default via normal block display --}}
             <div class="preset-section-body" id="section-services">
@@ -332,7 +332,7 @@
                         <span class="form-label-sm mb-0">Additional Services</span>
                         <button type="button" id="add-custom-service-btn"
                                 class="btn btn-sm btn-outline-secondary">
-                            <i class="fa fa-plus me-1"></i>Add Custom Service
+                            <i class="fa-solid fa-plus me-1"></i>Add Custom Service
                         </button>
                     </div>
                     <div class="form-hint mb-2">Enter any custom services not listed above — these are included alongside your checked services when pre-filling bids.</div>
@@ -348,7 +348,7 @@
                                 <button type="button"
                                         class="btn btn-sm btn-outline-danger custom-service-remove flex-shrink-0"
                                         title="Remove this service">
-                                    <i class="fa fa-xmark"></i>
+                                    <i class="fa-solid fa-xmark"></i>
                                 </button>
                             </div>
                         @endforeach
@@ -363,10 +363,10 @@
                  data-preset-toggle="section-overview"
                  aria-expanded="true"
                  aria-controls="section-overview">
-                <i class="fa fa-user section-icon"></i>
+                <i class="fa-solid fa-user section-icon"></i>
                 Agent Overview
                 <span class="section-req-badge rec">Recommended</span>
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             {{-- No Bootstrap collapse class — section is visible by default via normal block display --}}
             <div class="preset-section-body" id="section-overview">
@@ -424,9 +424,9 @@
                  data-preset-toggle="section-creds"
                  aria-expanded="false"
                  aria-controls="section-creds">
-                <i class="fa fa-id-card section-icon"></i>
+                <i class="fa-solid fa-id-card section-icon"></i>
                 Agent Credentials
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-creds">
                 <p class="form-hint mb-3">These fields pre-fill your contact and license information in bid forms.</p>
@@ -490,9 +490,9 @@
                  data-preset-toggle="section-links"
                  aria-expanded="false"
                  aria-controls="section-links">
-                <i class="fa fa-link section-icon"></i>
+                <i class="fa-solid fa-link section-icon"></i>
                 Presentation &amp; Links
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-links">
                 <div class="mb-3">
@@ -545,9 +545,9 @@
                  data-preset-toggle="section-highlights"
                  aria-expanded="false"
                  aria-controls="section-highlights">
-                <i class="fa fa-star section-icon"></i>
+                <i class="fa-solid fa-star section-icon"></i>
                 Quick Highlights
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-highlights">
                 <p class="form-hint mb-3">These at-a-glance stats appear on your public profile. All optional.</p>
@@ -604,9 +604,9 @@
                  data-preset-toggle="section-areas"
                  aria-expanded="false"
                  aria-controls="section-areas">
-                <i class="fa fa-map-marker section-icon"></i>
+                <i class="fa-solid fa-map-marker section-icon"></i>
                 Areas Served
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-areas">
                 <p class="form-hint mb-3">Detailed geographic areas you serve. All optional.</p>
@@ -647,9 +647,9 @@
                  data-preset-toggle="section-social-proof"
                  aria-expanded="false"
                  aria-controls="section-social-proof">
-                <i class="fa fa-quote-left section-icon"></i>
+                <i class="fa-solid fa-quote-left section-icon"></i>
                 Social Proof
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-social-proof">
                 <p class="form-hint mb-3">Client testimonials and recognition that appear on your public profile. All optional.</p>
@@ -690,9 +690,9 @@
                  data-preset-toggle="section-video"
                  aria-expanded="false"
                  aria-controls="section-video">
-                <i class="fa fa-play-circle section-icon"></i>
+                <i class="fa-solid fa-play-circle section-icon"></i>
                 Video Intro
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-video">
                 <p class="form-hint mb-3">A short intro video embedded on your public profile. All optional.</p>
@@ -722,9 +722,9 @@
                  data-preset-toggle="section-availability"
                  aria-expanded="false"
                  aria-controls="section-availability">
-                <i class="fa fa-calendar section-icon"></i>
+                <i class="fa-solid fa-calendar section-icon"></i>
                 Availability &amp; Service Style
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-availability">
                 <p class="form-hint mb-3">Let clients know how and when you work. All optional.</p>
@@ -790,9 +790,9 @@
                  data-preset-toggle="section-compensation"
                  aria-expanded="false"
                  aria-controls="section-compensation">
-                <i class="fa fa-dollar-sign section-icon"></i>
+                <i class="fa-solid fa-dollar-sign section-icon"></i>
                 Broker Compensation &amp; Agency Agreement Terms
-                <i class="fa fa-chevron-down toggle-icon"></i>
+                <i class="fa-solid fa-chevron-down toggle-icon"></i>
             </div>
             <div class="preset-section-body preset-closed" id="section-compensation">
                 <p class="text-muted mb-4 small">These defaults will pre-fill the compensation fields in bid forms when submitting bids. All fields are optional.</p>
@@ -1854,7 +1854,7 @@
         {{-- ── STICKY SAVE BAR ──────────────────────────────────────────────── --}}
         <div class="sticky-save-bar">
             <a href="{{ route('agent.presets.index') }}" class="btn btn-outline-secondary">
-                <i class="fa fa-xmark me-1"></i>Cancel
+                <i class="fa-solid fa-xmark me-1"></i>Cancel
             </a>
 
             <div class="profile-save-scope-wrap">
@@ -1872,7 +1872,7 @@
             </div>
 
             <button type="submit" class="btn btn-save-preset">
-                <i class="fa fa-save me-1"></i>Save Preset
+                <i class="fa-solid fa-save me-1"></i>Save Preset
             </button>
         </div>
 
@@ -2025,7 +2025,7 @@
             removeBtn.type = 'button';
             removeBtn.className = 'btn btn-sm btn-outline-danger custom-service-remove flex-shrink-0';
             removeBtn.title = 'Remove this service';
-            removeBtn.innerHTML = '<i class="fa fa-xmark"></i>';
+            removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
             removeBtn.addEventListener('click', function () {
                 row.parentNode.removeChild(row);
             });
@@ -2073,7 +2073,7 @@
             var orig = self.innerHTML;
 
             function showCopied() {
-                self.innerHTML = '<i class="fa fa-check me-1"></i>Copied!';
+                self.innerHTML = '<i class="fa-solid fa-check me-1"></i>Copied!';
                 self.classList.add('copied');
                 setTimeout(function () {
                     self.innerHTML = orig;

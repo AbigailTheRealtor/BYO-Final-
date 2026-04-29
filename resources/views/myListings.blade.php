@@ -150,7 +150,7 @@ $roles = [
     [
         'key'       => 'tenant',
         'label'     => "Tenant's Agent",
-        'icon'      => 'fa fa-home',
+        'icon'      => 'fa-solid fa-home',
         'listings'  => $tenantListings,
         'listRoute' => 'tenant.agent.auctions.list',
         'viewRoute' => 'tenant.agent.auction.view',
@@ -158,7 +158,7 @@ $roles = [
     [
         'key'       => 'landlord',
         'label'     => "Landlord's Agent",
-        'icon'      => 'fa fa-building',
+        'icon'      => 'fa-solid fa-building',
         'listings'  => $landlordListings,
         'listRoute' => 'landlord.agent.auctions.list',
         'viewRoute' => 'landlord.agent.auction.view',
@@ -166,7 +166,7 @@ $roles = [
     [
         'key'       => 'buyer',
         'label'     => "Buyer's Agent",
-        'icon'      => 'fa fa-user',
+        'icon'      => 'fa-solid fa-user',
         'listings'  => $buyerListings,
         'listRoute' => 'buyer.agent.auctions.list',
         'viewRoute' => 'buyer.view-auction',
@@ -174,7 +174,7 @@ $roles = [
     [
         'key'       => 'seller',
         'label'     => "Seller's Agent",
-        'icon'      => 'fa fa-sign-out',
+        'icon'      => 'fa-solid fa-sign-out',
         'listings'  => $sellerListings,
         'listRoute' => 'hireSellerAgentHireAuctions',
         'viewRoute' => 'seller.agent.auction.detail',
@@ -211,7 +211,7 @@ $grandTotal = $tenantListings->count() + $landlordListings->count() + $buyerList
 
                             @if($grandTotal === 0)
                                 <div class="text-center py-5 text-muted">
-                                    <i class="fa fa-folder-open" style="font-size:2.5rem;opacity:.35;"></i>
+                                    <i class="fa-solid fa-folder-open" style="font-size:2.5rem;opacity:.35;"></i>
                                     <p class="mt-3 mb-1 fw-semibold">No listings yet</p>
                                     <p class="small">Use <strong>+ New Listing</strong> on the dashboard to create your first listing.</p>
                                     <a href="{{ route('dashboard') }}" class="btn btn-sm mt-1" style="background:#049399;color:#fff;">Go to Dashboard</a>

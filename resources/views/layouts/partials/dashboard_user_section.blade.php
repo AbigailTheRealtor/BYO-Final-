@@ -59,11 +59,11 @@
                             <div class="text-muted small">{{ $user_type }} &bull; {{ auth()->user()->email }}</div>
                             <div class="mt-1">
                                 <span class="text-warning opacity-75" style="font-size:.75rem;">
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
-                                    <i class="fa fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
+                                    <i class="fa-solid fa-star"></i>
                                 </span>
                             </div>
                         </div>
@@ -74,40 +74,40 @@
                     @if (auth()->user() && in_array(auth()->user()->user_type, ['buyer', 'landlord', 'tenant', 'seller']))
                         <span class="dropdown">
                             <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Hire Agent <i class="fa fa-angle-down ms-1"></i>
+                                Hire Agent <i class="fa-solid fa-angle-down ms-1"></i>
                             </button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Hire Tenant's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Hire Tenant's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Hire Landlord's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa-solid fa-building me-2 text-muted"></i>Hire Landlord's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Hire Buyer's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa-solid fa-search me-2 text-muted"></i>Hire Buyer's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa-solid fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a>
                                 </li>
                             </ul>
                         </span>
                     @elseif(auth()->user() && auth()->user()->user_type == 'agent')
                         <span class="dropdown">
                             <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Hire Agent <i class="fa fa-angle-down ms-1"></i>
+                                Hire Agent <i class="fa-solid fa-angle-down ms-1"></i>
                             </button>
                             <ul class="dropdown-menu" style="margin-top:0px;">
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Hire Tenant's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Hire Tenant's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Hire Landlord's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa-solid fa-building me-2 text-muted"></i>Hire Landlord's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Hire Buyer's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa-solid fa-search me-2 text-muted"></i>Hire Buyer's Agent</a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a>
+                                    <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa-solid fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a>
                                 </li>
                             </ul>
                         </span>

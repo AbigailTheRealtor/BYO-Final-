@@ -241,10 +241,10 @@
 
     @if ($isOwnerPreview)
         <div class="preview-banner">
-            <i class="fa fa-eye"></i>
+            <i class="fa-solid fa-eye"></i>
             <span>Preview Mode — This is how your public profile appears to clients.</span>
             <a href="{{ route('agent.presets.index') }}" class="btn btn-sm btn-dark ms-auto">
-                <i class="fa fa-arrow-left me-1"></i>Back to Presets
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Presets
             </a>
         </div>
     @endif
@@ -265,10 +265,10 @@
             <h1>{{ $agentDisplayName }}</h1>
             <div class="hero-meta">
                 @if (!empty($data['brokerage']))
-                    <span><i class="fa fa-building me-1"></i>{{ $data['brokerage'] }}</span><br>
+                    <span><i class="fa-solid fa-building me-1"></i>{{ $data['brokerage'] }}</span><br>
                 @endif
                 @if (!empty($data['license_no']))
-                    <span><i class="fa fa-id-card me-1"></i>License #{{ $data['license_no'] }}</span><br>
+                    <span><i class="fa-solid fa-id-card me-1"></i>License #{{ $data['license_no'] }}</span><br>
                 @endif
                 @if (!empty($data['bio']))
                     <span style="margin-top:.5rem;display:block;opacity:.9;">{{ Str::limit($data['bio'], 180) }}</span>
@@ -280,7 +280,7 @@
     @if (!empty($data['why_hire_you']) || !empty($data['what_sets_you_apart']))
         <div class="profile-section">
             <div class="profile-section-header">
-                <i class="fa fa-user"></i> About This Agent
+                <i class="fa-solid fa-user"></i> About This Agent
             </div>
             <div class="profile-section-body">
                 @if (!empty($data['bio']))
@@ -305,7 +305,7 @@
         </div>
     @elseif (!empty($data['bio']))
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-user"></i> About This Agent</div>
+            <div class="profile-section-header"><i class="fa-solid fa-user"></i> About This Agent</div>
             <div class="profile-section-body">
                 <div class="profile-field-value">{{ $data['bio'] }}</div>
             </div>
@@ -321,7 +321,7 @@
     @endphp
     @if ($hasHighlights)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-star"></i> Quick Highlights</div>
+            <div class="profile-section-header"><i class="fa-solid fa-star"></i> Quick Highlights</div>
             <div class="profile-section-body">
                 <div class="highlight-grid">
                     @if (!empty($data['years_experience']))
@@ -360,7 +360,7 @@
     @endphp
     @if ($hasCredentials)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-id-card"></i> Credentials</div>
+            <div class="profile-section-header"><i class="fa-solid fa-id-card"></i> Credentials</div>
             <div class="profile-section-body">
                 <div class="row g-3">
                     @if (!empty($data['license_no']))
@@ -400,7 +400,7 @@
     @endphp
     @if ($hasAreas)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-map-marker"></i> Areas Served</div>
+            <div class="profile-section-header"><i class="fa-solid fa-map-marker"></i> Areas Served</div>
             <div class="profile-section-body">
                 @if (!empty($data['primary_areas_served']))
                     <div class="mb-3">
@@ -447,11 +447,11 @@
     @endphp
     @if ($hasProof)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-quote-left"></i> Social Proof</div>
+            <div class="profile-section-header"><i class="fa-solid fa-quote-left"></i> Social Proof</div>
             <div class="profile-section-body">
                 @foreach ($reviews as $review)
                     <div class="review-block">
-                        <i class="fa fa-quote-left text-muted me-2" style="font-size:.75rem;"></i>{{ $review }}
+                        <i class="fa-solid fa-quote-left text-muted me-2" style="font-size:.75rem;"></i>{{ $review }}
                     </div>
                 @endforeach
                 @if (!empty($data['awards_recognition']))
@@ -484,7 +484,7 @@
             }
         @endphp
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-play-circle"></i> Video Intro</div>
+            <div class="profile-section-header"><i class="fa-solid fa-play-circle"></i> Video Intro</div>
             <div class="profile-section-body">
                 @if ($embedUrl)
                     <div class="video-embed-wrap">
@@ -494,7 +494,7 @@
                     </div>
                 @else
                     <a href="{{ $videoUrl }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                        <i class="fa fa-external-link me-1"></i>Watch Intro Video
+                        <i class="fa-solid fa-external-link me-1"></i>Watch Intro Video
                     </a>
                 @endif
                 @if (!empty($data['video_caption']))
@@ -511,13 +511,13 @@
     @endphp
     @if ($hasLinks)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-link"></i> Presentation &amp; Links</div>
+            <div class="profile-section-header"><i class="fa-solid fa-link"></i> Presentation &amp; Links</div>
             <div class="profile-section-body">
                 @if (!empty($data['presentation_link']))
                     <div class="mb-2">
                         <div class="profile-field-label">Presentation</div>
                         <a href="{{ $data['presentation_link'] }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                            <i class="fa fa-file-lines me-1"></i>View Presentation
+                            <i class="fa-solid fa-file-lines me-1"></i>View Presentation
                         </a>
                     </div>
                 @endif
@@ -525,7 +525,7 @@
                     <div class="mb-2">
                         <div class="profile-field-label">Business Card / Headshot</div>
                         <a href="{{ $data['business_card_link'] }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                            <i class="fa fa-id-card me-1"></i>View
+                            <i class="fa-solid fa-id-card me-1"></i>View
                         </a>
                     </div>
                 @endif
@@ -535,7 +535,7 @@
                         <div>
                             @foreach ($data['website_link'] as $url)
                                 <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                                    <i class="fa fa-globe me-1"></i>{{ $url }}
+                                    <i class="fa-solid fa-globe me-1"></i>{{ $url }}
                                 </a>
                             @endforeach
                         </div>
@@ -547,7 +547,7 @@
                         <div>
                             @foreach ($data['social_media'] as $url)
                                 <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="link-pill">
-                                    <i class="fa fa-share-alt me-1"></i>{{ $url }}
+                                    <i class="fa-solid fa-share-alt me-1"></i>{{ $url }}
                                 </a>
                             @endforeach
                         </div>
@@ -565,13 +565,13 @@
     @endphp
     @if ($hasAvail)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-calendar"></i> Availability &amp; Service Style</div>
+            <div class="profile-section-header"><i class="fa-solid fa-calendar"></i> Availability &amp; Service Style</div>
             <div class="profile-section-body">
                 <div class="row g-3">
                     @if (!empty($data['availability_status']))
                         <div class="col-sm-6">
                             <div class="profile-field-label">Availability</div>
-                            <span class="avail-tag"><i class="fa fa-circle-check me-1"></i>{{ $data['availability_status'] }}</span>
+                            <span class="avail-tag"><i class="fa-solid fa-circle-check me-1"></i>{{ $data['availability_status'] }}</span>
                         </div>
                     @endif
                     @if (!empty($data['evenings_available']) || !empty($data['weekends_available']))
@@ -608,11 +608,11 @@
     {{-- ── HIRE BUTTONS ─────────────────────────────────────────────── --}}
     @if ($isOwnerPreview && count($hireButtons) > 0)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-handshake"></i> Hire This Agent</div>
+            <div class="profile-section-header"><i class="fa-solid fa-handshake"></i> Hire This Agent</div>
             <div class="profile-section-body">
                 <div class="hire-btn-grid">
                     <span class="hire-owner-note">
-                        <i class="fa fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                         Clients will use this button to hire you — it is not active in preview mode.
                     </span>
                 </div>
@@ -620,28 +620,28 @@
         </div>
     @elseif (!$isOwnerPreview && count($hireButtons) > 0)
         <div class="profile-section">
-            <div class="profile-section-header"><i class="fa fa-handshake"></i> Hire This Agent</div>
+            <div class="profile-section-header"><i class="fa-solid fa-handshake"></i> Hire This Agent</div>
             <div class="profile-section-body">
                 <p class="text-muted small mb-3">Select the role you'd like to hire {{ $agentDisplayName }} for:</p>
                 <div class="hire-btn-grid">
                     @foreach ($hireButtons as $btn)
                         @if ($btn['direct'])
                             <a href="{{ $btn['options'][0]['url'] }}" class="hire-btn">
-                                <i class="fa fa-arrow-right"></i>
+                                <i class="fa-solid fa-arrow-right"></i>
                                 {{ $btn['roleLabel'] }}
                                 <span class="hire-role-badge">{{ $btn['options'][0]['propLabel'] }}</span>
                             </a>
                         @else
                             <details class="hire-picker-wrap property-type-picker">
                                 <summary class="hire-btn">
-                                    <i class="fa fa-arrow-right"></i>
+                                    <i class="fa-solid fa-arrow-right"></i>
                                     {{ $btn['roleLabel'] }}
-                                    <i class="fa fa-caret-down hire-role-badge" style="font-size:.8rem;background:none;padding:0;"></i>
+                                    <i class="fa-solid fa-caret-down hire-role-badge" style="font-size:.8rem;background:none;padding:0;"></i>
                                 </summary>
                                 <div class="hire-picker-options">
                                     @foreach ($btn['options'] as $opt)
                                         <a href="{{ $opt['url'] }}" class="hire-picker-option">
-                                            <i class="fa fa-home me-1" style="width:1rem;text-align:center;"></i>{{ $opt['propLabel'] }}
+                                            <i class="fa-solid fa-home me-1" style="width:1rem;text-align:center;"></i>{{ $opt['propLabel'] }}
                                         </a>
                                     @endforeach
                                 </div>

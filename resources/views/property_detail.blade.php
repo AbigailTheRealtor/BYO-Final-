@@ -192,31 +192,31 @@
                         <h4>Features</h4>
                         <div class="row" style="flex-wrap: wrap;">
                             @if(@$auction->bedroom)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-bed"></i> Bedrooms: {{@$auction->bedroom->name}}</div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-bed"></i> Bedrooms: {{@$auction->bedroom->name}}</div>
                             @endif
                             @if(@$auction->bathroom)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-bath"></i> Bathrooms: {{@$auction->bathroom->name}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-bath"></i> Bathrooms: {{@$auction->bathroom->name}} </div>
                             @endif
                             @if(@$auction->heated_sqft)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-calculator"></i> Heated Sqft: {{@$auction->heated_sqft}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-calculator"></i> Heated Sqft: {{@$auction->heated_sqft}} </div>
                             @endif
                             @if(@$auction->year_built)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-calendar"></i> Year Built: {{@$auction->year_built}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-calendar"></i> Year Built: {{@$auction->year_built}} </div>
                             @endif
                             @if(@$auction->pool)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-person-swimming"></i> Pool: {{@$auction->pool}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-person-swimming"></i> Pool: {{@$auction->pool}} </div>
                             @endif
                             @if(@$auction->pool_type)
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-person-swimming"></i> Pool: {{@$auction->pool_type}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-person-swimming"></i> Pool: {{@$auction->pool_type}} </div>
                             @endif
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-car"></i> Carport: {{@$auction->carport}} </div>
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-warehouse"></i> Garage: {{@$auction->garage}} </div>
-                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa fa-warehouse"></i> Garage Spaces: {{@$auction->garage_spaces}} </div>
-                            <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa fa-circle-dot"></i> Special Sale Provision: {{@$auction->sale_provision}} </div>
-                            <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa fa-circle-dot"></i> Listing Service Type: {{@$auction->service_type}} </div>
-                            {{-- <div class="col-md-3 fw-bold"><i class="fa fa-water"></i> Water View: {{@$auction->water_view}} </div>
-                            <div class="col-md-3 fw-bold"><i class="fa fa-water"></i> Water Extra: {{@$auction->water_extras}} </div>
-                            <div class="col-md-6 fw-bold"><i class="fa fa-check"></i> HOA/Community Association: {{@$auction->hoa_association}} </div> --}}
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-car"></i> Carport: {{@$auction->carport}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-warehouse"></i> Garage: {{@$auction->garage}} </div>
+                            <div class="col-md-4 col-6 fw-bold mt-1 mb-1"><i class="fa-solid fa-warehouse"></i> Garage Spaces: {{@$auction->garage_spaces}} </div>
+                            <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-solid fa-circle-dot"></i> Special Sale Provision: {{@$auction->sale_provision}} </div>
+                            <div class="col-md-12 col-12 fw-bold mt-1 mb-1"><i class="fa-solid fa-circle-dot"></i> Listing Service Type: {{@$auction->service_type}} </div>
+                            {{-- <div class="col-md-3 fw-bold"><i class="fa-solid fa-water"></i> Water View: {{@$auction->water_view}} </div>
+                            <div class="col-md-3 fw-bold"><i class="fa-solid fa-water"></i> Water Extra: {{@$auction->water_extras}} </div>
+                            <div class="col-md-6 fw-bold"><i class="fa-solid fa-check"></i> HOA/Community Association: {{@$auction->hoa_association}} </div> --}}
 
                         </div>
                         <hr>
@@ -379,7 +379,7 @@
                                 src="https://bidyouroffer.com/wp-content/uploads/2022/09/map-placeholder.jpg"
                                 alt="">
                             <div class="right position-absolute">
-                                <button class="btn btn-sm"><i class="fa fa-map-marker"></i> View Map</button>
+                                <button class="btn btn-sm"><i class="fa-solid fa-map-marker"></i> View Map</button>
                                 <button class="btn btn-sm">Get Direction</button>
 
                             </div>
@@ -397,11 +397,11 @@
                             <div>
                                 <p class="mb-0"><a href="{{route('author',[@$auction->user_id])}}"><b>Seller Details</b></a><span></span>
                                     <span class="start opacity-50">
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
                                     </span>
                                 </p>
                                 <p class="mb-0">...</p>
@@ -725,7 +725,7 @@
                     </div>
                 </div>
                 <button class="btn w-100 mt-0">
-                    <span class="bid m-0"><i class="fa fa-user"></i> </span>
+                    <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
                 </button>
                 <!-- End  -->
                 <!-- Details Of Items -->
@@ -813,7 +813,7 @@
                         </ul>
                         <p class="small opacity-8">Or copy link</p>
                         <div class="field">
-                            <i class="fa fa-link"></i>
+                            <i class="fa-solid fa-link"></i>
                             <input type="text" readonly="" id="copylink"
                                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
                             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"
@@ -982,7 +982,7 @@
                         <div class="form-group">
                             <label for="price">Price:</label>
                             <div class="d-flex align-items-baseline">
-                                <i class="fa fa-dollar-sign"></i>
+                                <i class="fa-solid fa-dollar-sign"></i>
                                 <input type="number" class="form-control border-start-0" name="price" id="price" min="0" required placeholder="0.00">
                             </div>
                         </div>
@@ -1002,7 +1002,7 @@
                         <div class="form-group">
                             <label for="escrow_amount">Escrow Amount:</label>
                             <div class="d-flex align-items-baseline">
-                                <i class="fa fa-dollar-sign"></i>
+                                <i class="fa-solid fa-dollar-sign"></i>
                                 <input type="number" class="form-control border-start-0" name="escrow_amount" id="escrow_amount" min="0" required placeholder="0.00">
                             </div>
                         </div>

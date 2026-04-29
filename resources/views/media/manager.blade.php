@@ -300,7 +300,7 @@
                                     <a>
                                         <span class="corner"></span>
                                         <div class="icon">
-                                            <i class="fa fa-file"></i>
+                                            <i class="fa-solid fa-file"></i>
                                         </div>
                                         <div class="file-name">
                                             Document_2014.doc
@@ -350,7 +350,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-music"></i>
+                                            <i class="fa-solid fa-music"></i>
                                         </div>
                                         <div class="file-name">
                                             Michal Jackson.mp3
@@ -383,7 +383,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="img-responsive fa fa-film"></i>
+                                            <i class="img-responsive fa-solid fa-film"></i>
                                         </div>
                                         <div class="file-name">
                                             Monica's birthday.mpg4
@@ -399,7 +399,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-chart-bar"></i>
+                                            <i class="fa-solid fa-chart-bar"></i>
                                         </div>
                                         <div class="file-name">
                                             Annual report 2014.xls
@@ -415,7 +415,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-file"></i>
+                                            <i class="fa-solid fa-file"></i>
                                         </div>
                                         <div class="file-name">
                                             Document_2014.doc
@@ -467,7 +467,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-music"></i>
+                                            <i class="fa-solid fa-music"></i>
                                         </div>
                                         <div class="file-name">
                                             Michal Jackson.mp3
@@ -500,7 +500,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="img-responsive fa fa-film"></i>
+                                            <i class="img-responsive fa-solid fa-film"></i>
                                         </div>
                                         <div class="file-name">
                                             Monica's birthday.mpg4
@@ -516,7 +516,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-chart-bar"></i>
+                                            <i class="fa-solid fa-chart-bar"></i>
                                         </div>
                                         <div class="file-name">
                                             Annual report 2014.xls
@@ -532,7 +532,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-file"></i>
+                                            <i class="fa-solid fa-file"></i>
                                         </div>
                                         <div class="file-name">
                                             Document_2014.doc
@@ -584,7 +584,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-music"></i>
+                                            <i class="fa-solid fa-music"></i>
                                         </div>
                                         <div class="file-name">
                                             Michal Jackson.mp3
@@ -617,7 +617,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="img-responsive fa fa-film"></i>
+                                            <i class="img-responsive fa-solid fa-film"></i>
                                         </div>
                                         <div class="file-name">
                                             Monica's birthday.mpg4
@@ -633,7 +633,7 @@
                                         <span class="corner"></span>
 
                                         <div class="icon">
-                                            <i class="fa fa-chart-bar"></i>
+                                            <i class="fa-solid fa-chart-bar"></i>
                                         </div>
                                         <div class="file-name">
                                             Annual report 2014.xls

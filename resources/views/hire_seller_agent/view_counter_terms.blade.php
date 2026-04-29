@@ -1094,7 +1094,7 @@
                     @if($ctAddlDetails)
                     <div class="mb-4">
                         <h6 class="mb-2" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                            <i class="fa fa-file-lines me-2"></i>Broker Additional Terms
+                            <i class="fa-solid fa-file-lines me-2"></i>Broker Additional Terms
                         </h6>
                         <div class="ps-3 text-muted">{{ $ctAddlDetails }}</div>
                     </div>
@@ -1145,7 +1145,7 @@
                             </div>
                             <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
                                class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @else
                             <div class="alert alert-secondary mb-0">
@@ -1189,13 +1189,13 @@
                             </div>
                             <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
                                class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @else
                             {{-- No counter yet; seller creates initial counter --}}
                             <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
                                class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Submit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Submit Counter Terms
                             </a>
                             @endif
                         @elseif($viewerRole === 'seller' && $bidIsTerminal)
@@ -1212,17 +1212,17 @@
 
                     @else
                     <div class="alert alert-info">
-                        <i class="fa fa-circle-info me-2"></i>
+                        <i class="fa-solid fa-circle-info me-2"></i>
                         No counter terms have been submitted for this bid yet.
                     </div>
                     @if($viewerRole === 'seller' && !$bidIsTerminal)
                     <a href="{{ route('seller.counter-terms', ['id' => $bid->id]) }}"
                        class="btn mt-3 me-2" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:10px 20px;font-weight:600;">
-                        <i class="fa fa-pen-to-square me-2"></i>Submit Counter Terms
+                        <i class="fa-solid fa-pen-to-square me-2"></i>Submit Counter Terms
                     </a>
                     @endif
                     <a href="{{ route('seller.agent.auction.detail', $auction->id) }}" class="btn btn-outline-secondary mt-2">
-                        <i class="fa fa-arrow-left me-1"></i> Back to Listing
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back to Listing
                     </a>
                     @endif
                 </div>

@@ -68,7 +68,7 @@
         </div>
         <div class="step-item">
             <div class="step-num">8</div>
-            <div><strong>Free for Buyers.</strong> The Seller pays the real estate commission — not you. Going directly to the Seller's listing agent doesn't save you money; that agent represents both sides. Use BidYourAgent to find a Buyer's agent who represents your best interests. BidYourAgent receives a referral fee from the hired agent at closing. <a href="{{ route('buyerDetails') }}">Learn more <i class="fa fa-arrow-right"></i></a></div>
+            <div><strong>Free for Buyers.</strong> The Seller pays the real estate commission — not you. Going directly to the Seller's listing agent doesn't save you money; that agent represents both sides. Use BidYourAgent to find a Buyer's agent who represents your best interests. BidYourAgent receives a referral fee from the hired agent at closing. <a href="{{ route('buyerDetails') }}">Learn more <i class="fa-solid fa-arrow-right"></i></a></div>
         </div>
     </div>
 </section>
@@ -81,29 +81,29 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <ul class="list-unstyled text-muted small">
-                    <li><i class="fa fa-check text-success me-2"></i>Single-family residences</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Townhouses &amp; villas</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Condominiums &amp; condo-hotels</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Duplexes, triplexes &amp; quadplexes</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Manufactured, mobile &amp; modular homes</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Single-family residences</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Townhouses &amp; villas</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Condominiums &amp; condo-hotels</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Duplexes, triplexes &amp; quadplexes</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Manufactured, mobile &amp; modular homes</li>
                 </ul>
             </div>
             <div class="col-md-4">
                 <ul class="list-unstyled text-muted small">
-                    <li><i class="fa fa-check text-success me-2"></i>5+ unit residential buildings</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Agriculture &amp; farms</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Office, industrial &amp; retail</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Mixed-use &amp; hotel/motel</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Warehouse &amp; restaurant</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>5+ unit residential buildings</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Agriculture &amp; farms</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Office, industrial &amp; retail</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Mixed-use &amp; hotel/motel</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Warehouse &amp; restaurant</li>
                 </ul>
             </div>
             <div class="col-md-4">
                 <ul class="list-unstyled text-muted small">
-                    <li><i class="fa fa-check text-success me-2"></i>Business opportunities</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Vacant land</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Pre-construction &amp; new construction</li>
-                    <li><i class="fa fa-check text-success me-2"></i>REO/bank-owned properties</li>
-                    <li><i class="fa fa-check text-success me-2"></i>Short sales &amp; probate properties</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Business opportunities</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Vacant land</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Pre-construction &amp; new construction</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>REO/bank-owned properties</li>
+                    <li><i class="fa-solid fa-check text-success me-2"></i>Short sales &amp; probate properties</li>
                 </ul>
             </div>
         </div>
@@ -118,19 +118,19 @@
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-eye text-primary me-2"></i>Full Transparency</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-eye text-primary me-2"></i>Full Transparency</h5>
                     <p class="text-muted small mt-2 mb-0">Every agent bid is visible — commission, rebate, marketing strategy, and services. Compare side by side and make an informed decision.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-handshake text-primary me-2"></i>Your Interests First</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-handshake text-primary me-2"></i>Your Interests First</h5>
                     <p class="text-muted small mt-2 mb-0">A dedicated Buyer's agent represents you — not the Seller. Hire an agent whose goals align with yours and who is competing to earn your business.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-dollar-sign text-primary me-2"></i>Free for Buyers</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-dollar-sign text-primary me-2"></i>Free for Buyers</h5>
                     <p class="text-muted small mt-2 mb-0">Posting is completely free. The Seller pays real estate commissions — you just pick the best agent for your needs and potentially earn a rebate at closing.</p>
                 </div>
             </div>

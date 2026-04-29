@@ -135,7 +135,7 @@
                         <a class="a" href="#" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fa-solid fa-user-large text-black"></i>
                             {{ auth()->user()->name }}
-                            <i class="fa fa-angle-down"></i>
+                            <i class="fa-solid fa-angle-down"></i>
                         </a>
 
                         <div class="dropdown-menu">
@@ -241,27 +241,27 @@
             <span class="dropdown">
                 <span class="item" type="span" data-bs-toggle="dropdown" aria-expanded="false">How It Works</span>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa fa-angle-right"></i> For Sellers</a></li>
-                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa fa-angle-right"></i> For Seller's Agents</a></li>
-                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa fa-angle-right"></i> For Buyers</a></li>
-                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa fa-angle-right"></i> For Buyer's Agents</a></li>
+                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa-solid fa-angle-right"></i> For Sellers</a></li>
+                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> For Seller's Agents</a></li>
+                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa-solid fa-angle-right"></i> For Buyers</a></li>
+                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> For Buyer's Agents</a></li>
                 </ul>
             </span>
             <span class="dropdown">
                 <span class="item" type="span" data-bs-toggle="dropdown" aria-expanded="false">For Clients</span>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa fa-angle-right"></i> Sellers</a></li>
-                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa fa-angle-right"></i> Buyers</a></li>
-                    <li><a class="dropdown-item" href="{{ route('sellerDetails') }}"><i class="fa fa-angle-right"></i> Seller Details</a></li>
-                    <li><a class="dropdown-item" href="{{ route('buyerDetails') }}"><i class="fa fa-angle-right"></i> Buyer Details</a></li>
+                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa-solid fa-angle-right"></i> Sellers</a></li>
+                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa-solid fa-angle-right"></i> Buyers</a></li>
+                    <li><a class="dropdown-item" href="{{ route('sellerDetails') }}"><i class="fa-solid fa-angle-right"></i> Seller Details</a></li>
+                    <li><a class="dropdown-item" href="{{ route('buyerDetails') }}"><i class="fa-solid fa-angle-right"></i> Buyer Details</a></li>
                 </ul>
             </span>
             <span class="dropdown">
                 <span class="item" type="span" data-bs-toggle="dropdown" aria-expanded="false">For Agents</span>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa fa-angle-right"></i> Seller's Agents</a></li>
-                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa fa-angle-right"></i> Buyer's Agents</a></li>
-                    <li><a class="dropdown-item" href="{{ route('search.agents') }}"><i class="fa fa-angle-right"></i> Browse Agents</a></li>
+                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> Seller's Agents</a></li>
+                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> Buyer's Agents</a></li>
+                    <li><a class="dropdown-item" href="{{ route('search.agents') }}"><i class="fa-solid fa-angle-right"></i> Browse Agents</a></li>
                 </ul>
             </span>
             <a class="item" href="{{ route('searchListing') }}">Browse Listings</a>
@@ -276,10 +276,10 @@
                 <span class="dropdown">
                     <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
                     <ul class="dropdown-menu" style="margin-top:0px;">
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa-solid fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa-solid fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa-solid fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
                     </ul>
                 </span>
             @elseif (auth()->user() && auth()->user()->user_type == 'seller')
@@ -292,10 +292,10 @@
                 <span class="dropdown">
                     <button class="btn btn-primary" type="button" data-bs-toggle="dropdown" aria-expanded="false">Hire Agent</button>
                     <ul class="dropdown-menu" style="margin-top:0px;">
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
-                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa-solid fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa-solid fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
+                        <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa-solid fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
                     </ul>
                 </span>
             @elseif (!auth()->user())
@@ -329,10 +329,10 @@
                             <span class="dropdown">
                                 <span type="span" data-bs-toggle="dropdown" aria-expanded="false">How It Works</span>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa fa-angle-right"></i> For Sellers</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa fa-angle-right"></i> For Seller's Agents</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa fa-angle-right"></i> For Buyers</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa fa-angle-right"></i> For Buyer's Agents</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa-solid fa-angle-right"></i> For Sellers</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> For Seller's Agents</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa-solid fa-angle-right"></i> For Buyers</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> For Buyer's Agents</a></li>
                                 </ul>
                             </span>
                         </li>
@@ -340,10 +340,10 @@
                             <span class="dropdown">
                                 <span type="span" data-bs-toggle="dropdown" aria-expanded="false">For Clients</span>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa fa-angle-right"></i> Sellers</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa fa-angle-right"></i> Buyers</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('sellerDetails') }}"><i class="fa fa-angle-right"></i> Seller Details</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('buyerDetails') }}"><i class="fa fa-angle-right"></i> Buyer Details</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('sellerWorks') }}"><i class="fa-solid fa-angle-right"></i> Sellers</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('buyerWorks') }}"><i class="fa-solid fa-angle-right"></i> Buyers</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('sellerDetails') }}"><i class="fa-solid fa-angle-right"></i> Seller Details</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('buyerDetails') }}"><i class="fa-solid fa-angle-right"></i> Buyer Details</a></li>
                                 </ul>
                             </span>
                         </li>
@@ -351,9 +351,9 @@
                             <span class="dropdown">
                                 <span type="span" data-bs-toggle="dropdown" aria-expanded="false">For Agents</span>
                                 <ul class="dropdown-menu">
-                                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa fa-angle-right"></i> Seller's Agents</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa fa-angle-right"></i> Buyer's Agents</a></li>
-                                    <li><a class="dropdown-item" href="{{ route('search.agents') }}"><i class="fa fa-angle-right"></i> Browse Agents</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('sellerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> Seller's Agents</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('buyerWorksAgent') }}"><i class="fa-solid fa-angle-right"></i> Buyer's Agents</a></li>
+                                    <li><a class="dropdown-item" href="{{ route('search.agents') }}"><i class="fa-solid fa-angle-right"></i> Browse Agents</a></li>
                                 </ul>
                             </span>
                         </li>

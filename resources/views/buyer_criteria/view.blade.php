@@ -203,7 +203,7 @@
                     @if ($auction->user_id == auth()->user()->id)
                         <div class="d-flex justify-content-end align-content-center">
                             <a href="{{route('buyer_agent.auction.edit', $auction->id)}}" class="btn btn-success btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing</a>
-                            <a href="{{ route('buyer.listings.download', $auction->id) }}" class="btn btn-outline-secondary btn-sm px-3 mb-3 me-2"><i class="fa fa-download me-1"></i>Download Listing Snapshot (PDF)</a>
+                            <a href="{{ route('buyer.listings.download', $auction->id) }}" class="btn btn-outline-secondary btn-sm px-3 mb-3 me-2"><i class="fa-solid fa-download me-1"></i>Download Listing Snapshot (PDF)</a>
                         </div>
                     @endif
                 </div>
@@ -1399,11 +1399,11 @@
                                 <p class="mb-0"><a href="{{ route('author', [@$auction->user_id]) }}"><b>User
                                             Details</b></a><span></span>
                                     <span class="start opacity-50">
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
                                     </span>
                                 </p>
                                 <p class="mb-0">...</p>
@@ -1992,7 +1992,7 @@
                                                     {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
                                                     <div class="mb-2">
                                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                                         </span>
                                                     </div>
                                                     <div class="row g-2 mb-2">
@@ -2029,7 +2029,7 @@
                                                     {{-- SINGLE SCORE --}}
                                                     <div class="mb-2">
                                                         <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                                            <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                            <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                                         </span>
                                                     </div>
                                                     <div class="p-2 rounded mb-2" style="background: #fff; border: 1px solid #dee2e6;">
@@ -2052,7 +2052,7 @@
                                                     </div>
                                                     @endif
                                                     <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                                        <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score. Commission and fee details are not visible to competing agents.
+                                                        <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score. Commission and fee details are not visible to competing agents.
                                                     </div>
                                                 </div>
                                                 @endif
@@ -2068,7 +2068,7 @@
                     </div>
                 </div>
                 <button class="btn w-100 mt-0">
-                    <span class="bid m-0"><i class="fa fa-user"></i> </span>
+                    <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
                 </button>
                 <!-- End  -->
                 <!-- Social Details  -->
@@ -2098,7 +2098,7 @@
                         </ul>
                         <p class="small opacity-8">Or copy link</p>
                         <div class="field">
-                            <i class="fa fa-link"></i>
+                            <i class="fa-solid fa-link"></i>
                             <input type="text" readonly="" id="copylink"
                                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
                             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

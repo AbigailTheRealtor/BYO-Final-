@@ -222,7 +222,7 @@
         <div class="row g-4">
             <div class="col-sm-6 col-lg-3">
                 <div class="bya-role-card">
-                    <div class="role-icon"><i class="fa fa-home"></i></div>
+                    <div class="role-icon"><i class="fa-solid fa-home"></i></div>
                     <h5>Sellers</h5>
                     <p class="text-muted small">Post your property details and let agents bid to list it. Compare commissions, marketing strategies, and track record before you sign anything.</p>
                     <a href="{{ route('sellerWorks') }}" class="btn btn-sm btn-outline-primary mt-2">Learn More</a>
@@ -230,7 +230,7 @@
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="bya-role-card">
-                    <div class="role-icon"><i class="fa fa-search"></i></div>
+                    <div class="role-icon"><i class="fa-solid fa-search"></i></div>
                     <h5>Buyers</h5>
                     <p class="text-muted small">Define your buying criteria and receive agent bids. Hire the agent who offers the best rebate, services, and local expertise for your purchase.</p>
                     <a href="{{ route('buyerWorks') }}" class="btn btn-sm btn-outline-primary mt-2">Learn More</a>
@@ -238,7 +238,7 @@
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="bya-role-card">
-                    <div class="role-icon"><i class="fa fa-building"></i></div>
+                    <div class="role-icon"><i class="fa-solid fa-building"></i></div>
                     <h5>Landlords</h5>
                     <p class="text-muted small">Need to rent or manage a property? Post your rental listing and receive competitive bids from agents who specialize in property management.</p>
                     <a href="{{ route('sellerWorks') }}" class="btn btn-sm btn-outline-primary mt-2">Learn More</a>
@@ -246,7 +246,7 @@
             </div>
             <div class="col-sm-6 col-lg-3">
                 <div class="bya-role-card">
-                    <div class="role-icon"><i class="fa fa-key"></i></div>
+                    <div class="role-icon"><i class="fa-solid fa-key"></i></div>
                     <h5>Tenants</h5>
                     <p class="text-muted small">Looking for a rental? Share your criteria and get agents competing to find you the right property — at no cost to you.</p>
                     <a href="{{ route('buyerWorks') }}" class="btn btn-sm btn-outline-primary mt-2">Learn More</a>
@@ -264,23 +264,23 @@
                 <h2 class="bya-section-title">Agents: Win More Clients</h2>
                 <p class="bya-section-sub mb-4">Showcase your expertise and let clients come to you.</p>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-circle-check bi-check"></i>
+                    <i class="fa-solid fa-circle-check bi-check"></i>
                     <div><strong>Competitive Bidding.</strong> Submit your best commission, buyer's rebate, and services to win listings transparently.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-circle-check bi-check"></i>
+                    <i class="fa-solid fa-circle-check bi-check"></i>
                     <div><strong>Match Score.</strong> Our platform matches your expertise — Residential, Income, Commercial, Business Opportunity, or Vacant Land — to the right listing.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-circle-check bi-check"></i>
+                    <i class="fa-solid fa-circle-check bi-check"></i>
                     <div><strong>Hire Me Link & QR Code.</strong> Share a personal Hire Me landing page and QR code with clients anywhere.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-circle-check bi-check"></i>
+                    <i class="fa-solid fa-circle-check bi-check"></i>
                     <div><strong>Referral Income.</strong> Earn referral fees by connecting other agents to opportunities on the platform.</div>
                 </div>
                 <div class="bya-benefit-item">
-                    <i class="fa fa-circle-check bi-check"></i>
+                    <i class="fa-solid fa-circle-check bi-check"></i>
                     <div><strong>Video Presentations.</strong> Upload listing presentations, marketing materials, and business cards with every bid.</div>
                 </div>
                 <div class="mt-4">
@@ -335,19 +335,19 @@
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="bya-referral-card">
-                    <h6><i class="fa fa-qrcode me-2"></i>QR Code Widget</h6>
+                    <h6><i class="fa-solid fa-qrcode me-2"></i>QR Code Widget</h6>
                     <p class="text-muted small mt-2">Generate a personalized QR code linked to your Hire Me profile. Share it on business cards, flyers, or anywhere clients might find you.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="bya-referral-card">
-                    <h6><i class="fa fa-link me-2"></i>Hire Me Landing Page</h6>
+                    <h6><i class="fa-solid fa-link me-2"></i>Hire Me Landing Page</h6>
                     <p class="text-muted small mt-2">Your own Hire Me link showcases your services, reviews, and contact info. Clients can post a listing directly from your page.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="bya-referral-card">
-                    <h6><i class="fa fa-handshake me-2"></i>Referral Income</h6>
+                    <h6><i class="fa-solid fa-handshake me-2"></i>Referral Income</h6>
                     <p class="text-muted small mt-2">Refer clients to other agents and earn a referral fee upon closing. Agents can also be hired specifically as referral agents on the platform.</p>
                 </div>
             </div>

@@ -2078,11 +2078,11 @@
                                 <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
                                             Details</b></a><span></span>
                                     <span class="start opacity-50">
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
-                                        <i class="fa fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
+                                        <i class="fa-solid fa-star"></i>
                                     </span>
                                 </p>
                                 <p class="mb-0">...</p>
@@ -2164,7 +2164,7 @@
                             default       => 'status-expired',
                         };
                     @endphp
-                    <span class="status-pill {{ $_statusPillClass }}"><i class="fa {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
+                    <span class="status-pill {{ $_statusPillClass }}"><i class="fa-solid {{ $_statusIcon }} me-1"></i>Status: {{ $_displayStatusLabel }}</span>
                 </div>
                 @endif
 
@@ -2175,7 +2175,7 @@
                 <div class="mb-2">
                     <a href="{{ route('buyer.edit-auction', ['auctionId' => $auction->id]) }}" 
                        class="btn btn-outline-primary btn-sm">
-                        <i class="fa fa-pen-to-square me-1"></i> Edit Listing
+                        <i class="fa-solid fa-pen-to-square me-1"></i> Edit Listing
                     </a>
                 </div>
                 @endif
@@ -2316,7 +2316,7 @@
         @if ($userHasBid)
         {{-- User already placed a bid --}}
         <div class="alert alert-info text-center mb-2">
-            <i class="fa fa-circle-check"></i> You have already placed a bid
+            <i class="fa-solid fa-circle-check"></i> You have already placed a bid
         </div>
         <div class="status-pill status-disabled w-100 d-flex justify-content-between">
             <span>Bid Already Placed</span>
@@ -2326,7 +2326,7 @@
         {{-- Optional: Allow editing their bid --}}
         <!-- <button class="btn w-100 btn-outline-primary mt-2"
                 onclick="window.location='{{ route('agent.tenant.agent.auction.bid', @$auction->id) }}';">
-                <i class="fa fa-pen-to-square"></i> Edit Your Bid
+                <i class="fa-solid fa-pen-to-square"></i> Edit Your Bid
             </button> -->
         @else
         {{-- User can place a bid --}}
@@ -2339,17 +2339,17 @@
 
         @elseif($auction->status === 'Hired Agent' || $isSold)
         <div class="alert alert-success text-center mb-2">
-            <i class="fa fa-trophy"></i> <strong>An agent has been hired</strong>
+            <i class="fa-solid fa-trophy"></i> <strong>An agent has been hired</strong>
         </div>
         <div class="status-pill status-hired w-100 d-flex justify-content-center">
-            <i class="fa fa-trophy me-2"></i>Hired Agent
+            <i class="fa-solid fa-trophy me-2"></i>Hired Agent
         </div>
         @elseif($auction->status === 'Pending')
         <div class="alert alert-warning text-center mb-2">
-            <i class="fa fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
+            <i class="fa-solid fa-pause-circle"></i> <strong>This listing is pending &mdash; not accepting new bids</strong>
         </div>
         <div class="status-pill status-pending w-100 d-flex justify-content-center">
-            <i class="fa fa-pause-circle me-2"></i>Pending
+            <i class="fa-solid fa-pause-circle me-2"></i>Pending
         </div>
         @else
         {{-- Expiry catch-all: distinguish BP (timer already showed "Bidding Ended") from Traditional --}}
@@ -2357,7 +2357,7 @@
         {{-- BP: "Bidding Ended" already rendered by the timer block above — no duplicate needed --}}
         @else
         <div class="alert alert-secondary text-center mb-2">
-            <i class="fa fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
+            <i class="fa-solid fa-calendar-xmark me-1"></i> <strong>This listing has expired</strong>
         </div>
         @endif
         @endif
@@ -2502,7 +2502,7 @@
                                         data-target="bidCollapse-{{ $bidId }}"
                                         aria-expanded="false">
                                         <div class="d-flex align-items-center gap-2">
-                                            <i class="fa fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
+                                            <i class="fa-solid fa-chevron-down bid-chevron" style="transition: transform 0.3s; color: #1a3a5c;"></i>
                                             <h5 class="mb-0" style="font-weight: 700; color: #1a3a5c; font-size: 1.4rem;">Agent {{ $agentNumber }}</h5>
                                         </div>
                                         <span style="font-weight: 600; color: {{ $bidStatusColor }}; font-size: 1.1rem;">{{ $bidStatusDisplay }}</span>
@@ -2562,7 +2562,7 @@
                                             @if (($latestAgentCounter || $latestBuyerCounter) && ($isListingOwner || $isBidOwner))
                                             <div class="alert d-flex align-items-start gap-2 mb-3 py-2 px-3"
                                                  style="background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107; border-radius: 6px; font-size: 0.9rem;">
-                                                <i class="fa fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
+                                                <i class="fa-solid fa-right-left mt-1" style="color: #e6a800; flex-shrink: 0;"></i>
                                                 <div>
                                                     @if ($_buyerCardLatestFromOwner && $isListingOwner)
                                                         <strong>Counter Offer Sent.</strong>
@@ -2583,15 +2583,15 @@
                                             {{-- WAITING: single row — View CT + Edit CT --}}
                                             <div class="d-flex gap-2 align-items-center mb-2">
                                                 <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                    <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                 </a>
                                                 @if ($isListingOwner)
                                                 <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                    <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                                 </a>
                                                 @else
                                                 <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                    <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                                 </a>
                                                 @endif
                                             </div>
@@ -2599,7 +2599,7 @@
                                             {{-- RESPONSE: View CT only — Accept/Counter Back/Reject are on View Counter Terms page --}}
                                             <div class="d-flex align-items-center mb-2">
                                                 <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                    <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                 </a>
                                             </div>
                                             @endif
@@ -2663,7 +2663,7 @@
                                                 {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
                                                 <div class="mb-2">
                                                     <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                                        <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                        <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                                     </span>
                                                 </div>
                                                 <div class="row g-2 mb-2">
@@ -2697,13 +2697,13 @@
                                                     </div>
                                                 </div>
                                                 <div class="small" style="color: #6c757d; font-style: italic; font-size: 0.76rem;">
-                                                    <i class="fa fa-circle-info me-1"></i>Added services or terms do not increase either score.
+                                                    <i class="fa-solid fa-circle-info me-1"></i>Added services or terms do not increase either score.
                                                 </div>
                                                 @else
                                                 {{-- SINGLE SCORE --}}
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;">
-                                                        <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                        <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                                     </span>
                                                     <span class="badge" style="background: {{ $scoreColor }}; font-size: 1rem; padding: 6px 12px; color: white;">
                                                         {{ $overallScore }}%
@@ -2734,7 +2734,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="mt-2 small text-muted">
-                                                    <i class="fa fa-circle-info me-1"></i>Compared to: {{ $buyerBaselineLabel }}
+                                                    <i class="fa-solid fa-circle-info me-1"></i>Compared to: {{ $buyerBaselineLabel }}
                                                 </div>
                                                 <div class="mt-1 small" style="color: #6c757d; font-style: italic; font-size: 0.78rem;">
                                                     Match Score compares this bid to the Buyer's original request. Added services or terms do not increase the score.
@@ -2758,7 +2758,7 @@
                                             </a>
                                             @else
                                             <span style="color: #888; font-style: italic; font-size: 0.95rem;">
-                                                <i class="fa fa-lock me-1"></i> Private - visible only to listing creator
+                                                <i class="fa-solid fa-lock me-1"></i> Private - visible only to listing creator
                                             </span>
                                             @endif
 
@@ -2766,19 +2766,19 @@
                                             @if ($canEditWithdraw)
                                             <div class="d-flex gap-2 mt-3 justify-content-end align-items-center">
                                                 <a href="{{ route('agent.buyer.agent.auction.bid', $auction->id) }}?edit={{ $bidId }}" class="btn btn-primary bid-action-btn">
-                                                    <i class="fa fa-pen-to-square me-1"></i> Edit Bid
+                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Bid
                                                 </a>
                                             </div>
                                             @elseif ($isBidOwner && $isExpired)
                                             <div class="mt-3">
                                                 <span class="text-muted small">
-                                                    <i class="fa fa-clock me-1"></i> Bidding has ended - edit unavailable
+                                                    <i class="fa-solid fa-clock me-1"></i> Bidding has ended - edit unavailable
                                                 </span>
                                             </div>
                                             @elseif ($isBidOwner && ($bidAccepted === 'accepted' || $bidAccepted === 'rejected'))
                                             <div class="mt-3">
                                                 <span class="text-muted small">
-                                                    <i class="fa fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
+                                                    <i class="fa-solid fa-lock me-1"></i> Bid {{ $bidAccepted }} - edit unavailable
                                                 </span>
                                                 @if($bidAccepted === 'accepted')
                                                 @php
@@ -2787,16 +2787,16 @@
                                                 @if($bidOwnerSummary)
                                                 <div class="d-flex gap-2 flex-wrap mt-2">
                                                     <a href="{{ route('accepted-bid-summary.view', $bidOwnerSummary->id) }}" class="btn btn-outline-primary btn-sm">
-                                                        <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
+                                                        <i class="fa-solid fa-file-lines me-1"></i> View Accepted Bid Summary
                                                     </a>
                                                     @if(!$bidOwnerSummary->isAgentSigned())
                                                     <a href="{{ route('accepted-bid-summary.sign-form', $bidOwnerSummary->id) }}" class="btn btn-primary btn-sm">
-                                                        <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                                        <i class="fa-solid fa-signature me-1"></i> Agent: E-Sign Acknowledgement
                                                     </a>
                                                     @endif
                                                     @if($bidOwnerSummary->isFullySigned())
                                                     <a href="{{ route('accepted-bid-summary.download-pdf', $bidOwnerSummary->id) }}" class="btn btn-success btn-sm">
-                                                        <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                        <i class="fa-solid fa-download me-1"></i> Download Signed PDF
                                                     </a>
                                                     @endif
                                                 </div>
@@ -2823,7 +2823,7 @@
                                                                         <h5 class="modal-title"
                                                                             id="privateDataModalLabel{{ data_get($bid, 'id') }}"
                                                                             style="font-weight: 600;">
-                                                                            <i class="fa fa-lock me-2"></i> Private
+                                                                            <i class="fa-solid fa-lock me-2"></i> Private
                                                                             Compensation & Agreement Terms
                                                                         </h5>
                                                                     </div>
@@ -2853,7 +2853,7 @@
 
                                                                         {{-- Confidential notice --}}
                                                                         <div class="w-100 p-3 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                                                                            <i class="fa fa-shield-halved me-2"></i>
+                                                                            <i class="fa-solid fa-shield-halved me-2"></i>
                                                                             <strong>Confidential:</strong> This information is private and only visible to you.
                                                                         </div>
 
@@ -2861,7 +2861,7 @@
                                                                         @if ($mfStateB === '0' && $mfIsOwnerB && !$isSold)
                                                                             @if ($isTraditionalListing && $isExpired)
                                                                             <div class="w-100 p-2 text-center" style="background: #ffc107; border-radius: 6px; color: #856404;">
-                                                                                <i class="fa fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
+                                                                                <i class="fa-solid fa-clock me-1"></i> Listing has expired — no further actions available. You can extend the expiration date by editing the listing.
                                                                             </div>
                                                                             @else
                                                                             <div class="d-flex gap-3 justify-content-center align-items-center w-100" style="flex-wrap: nowrap;">
@@ -2871,12 +2871,12 @@
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                                                                     <button type="submit" class="btn btn-success" style="padding: 10px 20px; font-size: 0.95rem; background-color: #28a745 !important; border-color: #28a745 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                                        <i class="fa fa-check me-1"></i> Accept Bid
+                                                                                        <i class="fa-solid fa-check me-1"></i> Accept Bid
                                                                                     </button>
                                                                                 </form>
                                                                                 <a href="{{ route('buyer.counter-terms', data_get($bid, 'id')) }}"
                                                                                    class="btn btn-primary" style="padding: 10px 20px; font-size: 0.95rem; background-color: #0d6efd !important; border-color: #0d6efd !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-                                                                                    <i class="fa fa-right-left me-1"></i> Counter Bid
+                                                                                    <i class="fa-solid fa-right-left me-1"></i> Counter Bid
                                                                                 </a>
                                                                                 <form action="{{ route('buyer.hire.agent.auction.bid.reject') }}" method="POST" style="margin: 0;"
                                                                                       onsubmit="return confirm('Are you sure you want to reject this bid?');">
@@ -2884,7 +2884,7 @@
                                                                                     <input type="hidden" name="bid_id" value="{{ data_get($bid, 'id') }}">
                                                                                     <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                                                                     <button type="submit" class="btn btn-danger" style="padding: 10px 20px; font-size: 0.95rem; background-color: #dc3545 !important; border-color: #dc3545 !important; color: #fff !important; min-width: 130px; height: 42px; display: inline-flex; align-items: center; justify-content: center;">
-                                                                                        <i class="fa fa-xmark me-1"></i> Reject Bid
+                                                                                        <i class="fa-solid fa-xmark me-1"></i> Reject Bid
                                                                                     </button>
                                                                                 </form>
                                                                             </div>
@@ -2894,7 +2894,7 @@
                                                                         {{-- ── Accepted state ── --}}
                                                                         @if ($mfStateB === 'accepted')
                                                                         <div class="w-100 p-2 text-center" style="background: #d4edda; border-radius: 6px; color: #155724;">
-                                                                            <i class="fa fa-circle-check me-1"></i>
+                                                                            <i class="fa-solid fa-circle-check me-1"></i>
                                                                             @if ($mfIsOwnerB) This bid has been accepted.
                                                                             @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} accepted this bid.
                                                                             @endif
@@ -2903,21 +2903,21 @@
                                                                         @if ($mfBidSummaryB && ($mfIsOwnerB || data_get($bid, 'user_id') == Auth::id()))
                                                                         <div class="d-flex gap-2 flex-wrap justify-content-center w-100 mt-2">
                                                                             <a href="{{ route('accepted-bid-summary.view', $mfBidSummaryB->id) }}" class="btn btn-outline-primary btn-sm">
-                                                                                <i class="fa fa-file-lines me-1"></i> View Accepted Bid Summary
+                                                                                <i class="fa-solid fa-file-lines me-1"></i> View Accepted Bid Summary
                                                                             </a>
                                                                             @if (data_get($bid, 'user_id') == Auth::id() && !$mfBidSummaryB->isAgentSigned())
                                                                             <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
-                                                                                <i class="fa fa-signature me-1"></i> Agent: E-Sign Acknowledgement
+                                                                                <i class="fa-solid fa-signature me-1"></i> Agent: E-Sign Acknowledgement
                                                                             </a>
                                                                             @endif
                                                                             @if ($mfIsOwnerB && !$mfBidSummaryB->isTenantSigned())
                                                                             <a href="{{ route('accepted-bid-summary.sign-form', $mfBidSummaryB->id) }}" class="btn btn-primary btn-sm">
-                                                                                <i class="fa fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
+                                                                                <i class="fa-solid fa-signature me-1"></i> Buyer: E-Sign Acknowledgement
                                                                             </a>
                                                                             @endif
                                                                             @if ($mfBidSummaryB->isFullySigned())
                                                                             <a href="{{ route('accepted-bid-summary.download-pdf', $mfBidSummaryB->id) }}" class="btn btn-success btn-sm">
-                                                                                <i class="fa fa-download me-1"></i> Download Signed PDF
+                                                                                <i class="fa-solid fa-download me-1"></i> Download Signed PDF
                                                                             </a>
                                                                             @endif
                                                                         </div>
@@ -2926,7 +2926,7 @@
                                                                         {{-- ── Rejected state ── --}}
                                                                         @elseif ($mfStateB === 'rejected')
                                                                         <div class="w-100 p-2 text-center" style="background: #f8d7da; border-radius: 6px; color: #721c24;">
-                                                                            <i class="fa fa-circle-xmark me-1"></i>
+                                                                            <i class="fa-solid fa-circle-xmark me-1"></i>
                                                                             @if ($mfIsOwnerB) This bid has been rejected.
                                                                             @else {{ trim($mfOwnerFirstB . ' ' . $mfOwnerLastB) }} rejected this bid.
                                                                             @endif
@@ -2940,7 +2940,7 @@
                                                                                                      || ($isBidOwner   && !$_buyerCardLatestFromOwner);
                                                                         @endphp
                                                                         <div class="w-100 p-2 text-center" style="background: #fff3cd; border-radius: 6px; color: #856404;">
-                                                                            <i class="fa fa-right-left me-1"></i>
+                                                                            <i class="fa-solid fa-right-left me-1"></i>
                                                                             @if ($_mfBuyerViewerSentLatest)
                                                                                 <strong>Counter Offer Sent.</strong>
                                                                             @else
@@ -2951,15 +2951,15 @@
                                                                             @if ($_mfBuyerViewerSentLatest)
                                                                             {{-- Viewer sent latest — waiting: View CT + Edit CT --}}
                                                                             <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                                                <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                                             </a>
                                                                             <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                                <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                                                                <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                                                             </a>
                                                                             @else
                                                                             {{-- Other party sent latest: View CT only — actions on View Counter Terms page --}}
                                                                             <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                                <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                                                <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                                             </a>
                                                                             @endif
                                                                         </div>
@@ -3033,14 +3033,14 @@
                                                                 </button>
                                                                 <div class="modal-header text-white" style="background: #049399; border-bottom: none; padding: 15px 20px; border-radius: 10px 10px 0 0;">
                                                                     <h5 class="modal-title" id="limitedBidModalLabel{{ data_get($bid, 'id') }}" style="font-weight: 600;">
-                                                                        <i class="fa fa-handshake me-2"></i> Services & Broker Compensation Terms
+                                                                        <i class="fa-solid fa-handshake me-2"></i> Services & Broker Compensation Terms
                                                                     </h5>
                                                                 </div>
                                                                 <div class="modal-body" style="background: #fafafa; padding: 25px;">
 
                                                                     {{-- Anonymous Notice --}}
                                                                     <div class="alert mb-4" style="background: #e8f4f5; color: #049399; border: none; border-radius: 6px;">
-                                                                        <i class="fa fa-user-secret me-2"></i>
+                                                                        <i class="fa-solid fa-user-secret me-2"></i>
                                                                         <strong>Anonymous Bid:</strong> Agent identity is not displayed to other agents.
                                                                     </div>
 
@@ -3049,7 +3049,7 @@
                                                                     <div class="match-score-panel mb-4 p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
                                                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                                                             <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                                                                <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                                                <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                                                             </h6>
                                                                             <span class="badge" style="background: {{ $cardGetScoreColor($overallScore) }}; font-size: 1.1rem; padding: 8px 16px;">
                                                                                 {{ $overallScore }}% Match
@@ -3094,7 +3094,7 @@
                                                                     </div>
                                                                     @else
                                                                     <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-                                                                        <i class="fa fa-circle-info me-1"></i>No match data available for this listing.
+                                                                        <i class="fa-solid fa-circle-info me-1"></i>No match data available for this listing.
                                                                     </div>
                                                                     @endif
 
@@ -3109,7 +3109,7 @@
                                                                         data_get($bid, 'get.brokerage_relationship'))
                                                                     <div class="mb-5">
                                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                                            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                                         </h6>
 
                                                                         {{-- A) Buyer's Broker Compensation --}}
@@ -3122,7 +3122,7 @@
                                                                                     <span class="fw-semibold">Buyer's Broker Commission Structure:</span>
                                                                                     <span style="{{ $limitedIsMismatch('commission_structure') ? $limitedMismatchStyle : '' }}">
                                                                                         {{ data_get($bid, 'get.commission_structure') }}
-                                                                                        @if($limitedIsMismatch('commission_structure')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif
+                                                                                        @if($limitedIsMismatch('commission_structure')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
                                                                                     </span>
                                                                                 </li>
                                                                                 @endif
@@ -3131,7 +3131,7 @@
                                                                                     <span class="fw-semibold">Buyer's Broker Purchase Fee:</span>
                                                                                     <span style="{{ $limitedCheckPurchaseFeeFieldMismatch() ? $limitedMismatchStyle : '' }}">
                                                                                         {{ $limitedPurchaseFeeDisplay }}
-                                                                                        @if($limitedCheckPurchaseFeeFieldMismatch()) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif
+                                                                                        @if($limitedCheckPurchaseFeeFieldMismatch()) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
                                                                                     </span>
                                                                                 </li>
                                                                                 @endif
@@ -3149,7 +3149,7 @@
                                                                                     <span class="fw-semibold">Interested in Lease Option:</span>
                                                                                     <span style="{{ $limitedIsMismatch('interested_lease_option') ? $limitedMismatchStyle : '' }}">
                                                                                         {{ data_get($bid, 'get.interested_lease_option') }}
-                                                                                        @if($limitedIsMismatch('interested_lease_option')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif
+                                                                                        @if($limitedIsMismatch('interested_lease_option')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
                                                                                     </span>
                                                                                 </li>
                                                                                 @endif
@@ -3158,7 +3158,7 @@
                                                                                     <span class="fw-semibold">Interested in Lease-Option Agreement:</span>
                                                                                     <span style="{{ $limitedIsMismatch('interested_lease_option_agreement') ? $limitedMismatchStyle : '' }}">
                                                                                         {{ data_get($bid, 'get.interested_lease_option_agreement') }}
-                                                                                        @if($limitedIsMismatch('interested_lease_option_agreement')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif
+                                                                                        @if($limitedIsMismatch('interested_lease_option_agreement')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif
                                                                                     </span>
                                                                                 </li>
                                                                                 @endif
@@ -3174,25 +3174,25 @@
                                                                                 @if (data_get($bid, 'get.protection_period'))
                                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                                     <span class="fw-semibold">Protection Period:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('protection_period') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.protection_period') }} @if($limitedIsMismatch('protection_period')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
+                                                                                    <span style="{{ $limitedIsMismatch('protection_period') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.protection_period') }} @if($limitedIsMismatch('protection_period')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
                                                                                 </li>
                                                                                 @endif
                                                                                 @if (data_get($bid, 'get.early_termination_fee_option'))
                                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                                     <span class="fw-semibold">Early Termination Fee:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('early_termination_fee_option') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.early_termination_fee_option') }} @if($limitedIsMismatch('early_termination_fee_option')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
+                                                                                    <span style="{{ $limitedIsMismatch('early_termination_fee_option') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.early_termination_fee_option') }} @if($limitedIsMismatch('early_termination_fee_option')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
                                                                                 </li>
                                                                                 @endif
                                                                                 @if (data_get($bid, 'get.retainer_fee_option'))
                                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                                     <span class="fw-semibold">Retainer Fee:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('retainer_fee_option') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.retainer_fee_option') }} @if($limitedIsMismatch('retainer_fee_option')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
+                                                                                    <span style="{{ $limitedIsMismatch('retainer_fee_option') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.retainer_fee_option') }} @if($limitedIsMismatch('retainer_fee_option')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
                                                                                 </li>
                                                                                 @endif
                                                                                 @if (data_get($bid, 'get.agency_agreement_timeframe'))
                                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                                     <span class="fw-semibold">Agency Agreement Timeframe:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('agency_agreement_timeframe') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.agency_agreement_timeframe') }} @if($limitedIsMismatch('agency_agreement_timeframe')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
+                                                                                    <span style="{{ $limitedIsMismatch('agency_agreement_timeframe') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.agency_agreement_timeframe') }} @if($limitedIsMismatch('agency_agreement_timeframe')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
                                                                                 </li>
                                                                                 @endif
                                                                             </ul>
@@ -3206,7 +3206,7 @@
                                                                             <ul class="list-unstyled ps-3 mb-0">
                                                                                 <li class="mb-1 d-flex justify-content-between align-items-start">
                                                                                     <span class="fw-semibold">Acceptable Brokerage Relationship:</span>
-                                                                                    <span style="{{ $limitedIsMismatch('brokerage_relationship') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.brokerage_relationship') }} @if($limitedIsMismatch('brokerage_relationship')) <i class="fa fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
+                                                                                    <span style="{{ $limitedIsMismatch('brokerage_relationship') ? $limitedMismatchStyle : '' }}">{{ data_get($bid, 'get.brokerage_relationship') }} @if($limitedIsMismatch('brokerage_relationship')) <i class="fa-solid fa-triangle-exclamation text-danger ms-1"></i> @endif</span>
                                                                                 </li>
                                                                             </ul>
                                                                         </div>
@@ -3219,7 +3219,7 @@
                                                                     @if (!empty($limitedBidSvcs))
                                                                     <div class="mb-4">
                                                                         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                            <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                                            <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
                                                                         </h6>
                                                                         @if (!empty($limitedOrderedSvcs))
                                                                             @foreach ($limitedOrderedSvcs as $catName => $catSrvs)
@@ -3811,7 +3811,7 @@
     !empty($allMeta['additional_details_broker']))
     <div class="mb-4">
         <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-            <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+            <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
         </h6>
 
         {{-- A) Buyer's Broker Compensation --}}
@@ -4057,7 +4057,7 @@
                                                                             {{-- Additional Details --}}
                                                                             @if (!empty($allMeta['additional_details']))
                                                                             <div class="mb-3">
-                                                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa fa-circle-info me-1"></i>Additional Details</div>
+                                                                                <div class="fw-semibold mb-1" style="color: #049399; font-size: 13px;"><i class="fa-solid fa-circle-info me-1"></i>Additional Details</div>
                                                                                 @php $addDetailsChanged = $isChanged($allMeta['additional_details'], 'additional_details'); @endphp
                                                                                 <div class="ps-3" style="font-size: 12px; {{ $addDetailsChanged ? $changedStyle : '' }}">{{ $allMeta['additional_details'] }}{!! $addDetailsChanged ? $changedBadge : '' !!}</div>
                                                                             </div>
@@ -4067,7 +4067,7 @@
                                                                             @if ($hasAnyCounterServices)
                                                                             <div class="mb-5">
                                                                                 <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                                                                    <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                                                    <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
                                                                                 </h6>
 
                                                                                 @foreach ($ctrBuyerCategories as $catName => $catServices)
@@ -4086,7 +4086,7 @@
                                                                                                 @if ($serviceDisplay !== null)
                                                                                                     @if ($ctrSvcIsAdded($serviceDisplay))
                                                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                                                        <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $serviceDisplay }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                                                        <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $serviceDisplay }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                                                     </li>
                                                                                                     @else
                                                                                                     <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $serviceDisplay }}</li>
@@ -4105,7 +4105,7 @@
                                                                                         @foreach ($ctrOtherSvcsForRender as $otherService)
                                                                                             @if ($ctrOtherIsAdded($otherService))
                                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px; background-color: #fff3cd; padding: 1px 4px; border-radius: 3px;">
-                                                                                                <i class="fa fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherService }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
+                                                                                                <i class="fa-solid fa-plus-circle me-1" style="color: #856404;"></i>{{ $otherService }} <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Added</span>
                                                                                             </li>
                                                                                             @else
                                                                                             <li style="font-size: 0.9rem; margin-bottom: 4px;">{{ $otherService }}</li>
@@ -4118,17 +4118,17 @@
                                                                                 @if (!empty($ctrRemovedSvcs) || !empty($ctrOtherRemovedFull))
                                                                                 <div class="mb-3 mt-2 p-3" style="background-color: #fff5f5; border-radius: 6px; border: 1px solid #f5c6cb;">
                                                                                     <div class="fw-bold mb-1" style="color: #dc3545; font-size: 0.95rem;">
-                                                                                        <i class="fa fa-minus-circle me-1"></i>Removed Services
+                                                                                        <i class="fa-solid fa-minus-circle me-1"></i>Removed Services
                                                                                     </div>
                                                                                     <ul class="services mb-0" style="margin-top: 0.5rem; padding-left: 1.2rem; list-style: none;">
                                                                                         @foreach ($ctrRemovedSvcs as $rSvc)
                                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                                            <i class="fa fa-circle-xmark me-1"></i>{{ $rSvc }}
+                                                                                            <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
                                                                                         </li>
                                                                                         @endforeach
                                                                                         @foreach ($ctrOtherRemovedFull as $rSvc)
                                                                                         <li style="font-size: 0.9rem; margin-bottom: 4px; color: #dc3545;">
-                                                                                            <i class="fa fa-circle-xmark me-1"></i>{{ $rSvc }}
+                                                                                            <i class="fa-solid fa-circle-xmark me-1"></i>{{ $rSvc }}
                                                                                         </li>
                                                                                         @endforeach
                                                                                     </ul>
@@ -4173,11 +4173,11 @@
                                                         <div class="mt-3 pt-3 border-top">
                                                             <div class="d-flex gap-2 flex-wrap justify-content-center w-100">
                                                                 <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', data_get($bid, 'id')) }}" class="btn" style="background-color:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                    <i class="fa fa-eye me-1"></i> View Counter Terms
+                                                                    <i class="fa-solid fa-eye me-1"></i> View Counter Terms
                                                                 </a>
                                                                 @if ($isOwner)
                                                                 <a href="{{ route('buyer.edit-counter-terms', ['id' => data_get($bid, 'id')]) }}" class="btn" style="background-color:#049399;border:2px solid #049399;color:#fff;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                                                                    <i class="fa fa-pen-to-square me-1"></i> Edit Counter Terms
+                                                                    <i class="fa-solid fa-pen-to-square me-1"></i> Edit Counter Terms
                                                                 </a>
                                                                 @endif
                                                             </div>
@@ -4253,7 +4253,7 @@
             </div>{{-- end rightCol sidebar --}}
         </div>{{-- end main row --}}
         <button class="btn w-100 mt-0">
-            <span class="bid m-0"><i class="fa fa-user"></i> </span>
+            <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
         <div class="p-4 card">
                     <p class="text-600">Share this link via</p>
@@ -4280,7 +4280,7 @@
                         </ul>
                         <p class="small opacity-8">Or copy link</p>
                         <div class="field">
-                            <i class="fa fa-link"></i>
+                            <i class="fa-solid fa-link"></i>
                             <input type="text" readonly="" id="copylink"
                                 value="{{ route('buyer.view-auction', $auction->id) }}">
                             <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

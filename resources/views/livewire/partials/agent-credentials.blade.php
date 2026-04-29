@@ -1,4 +1,4 @@
-<h3><i class="fa fa-id-badge me-2 text-muted"></i>Agent Credentials &amp; Contact Info</h3>
+<h3><i class="fa-solid fa-id-badge me-2 text-muted"></i>Agent Credentials &amp; Contact Info</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">

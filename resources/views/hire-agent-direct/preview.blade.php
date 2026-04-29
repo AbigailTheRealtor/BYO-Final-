@@ -189,7 +189,7 @@
     {{-- ── Owner preview banner ─────────────────────────────────── --}}
     @if ($isOwnerPreview)
         <div class="owner-preview-banner">
-            <i class="fa fa-eye fa-lg"></i>
+            <i class="fa-solid fa-eye fa-lg"></i>
             <span>
                 You are previewing your own Direct Hire page.
                 Clients will use this page to start a hire request.
@@ -233,9 +233,9 @@
             <div>
                 <h3>{{ $agentDisplayName }}</h3>
                 <div class="agent-meta">
-                    @if($agentBrokerage)<i class="fa fa-building me-1"></i>{{ $agentBrokerage }}<br>@endif
-                    @if($agentLicense)<i class="fa fa-id-card me-1"></i>License&nbsp;#{{ $agentLicense }}<br>@endif
-                    <i class="fa fa-envelope me-1"></i>{{ $agent->email }}
+                    @if($agentBrokerage)<i class="fa-solid fa-building me-1"></i>{{ $agentBrokerage }}<br>@endif
+                    @if($agentLicense)<i class="fa-solid fa-id-card me-1"></i>License&nbsp;#{{ $agentLicense }}<br>@endif
+                    <i class="fa-solid fa-envelope me-1"></i>{{ $agent->email }}
                 </div>
                 <div class="mt-2">
                     <span class="role-pill">{{ $roleLabel }}</span>
@@ -265,7 +265,7 @@
         {{-- ── Agent overview sections ─────────────────────────────── --}}
         @if(!empty($mapped['bio']))
         <div class="preview-section">
-            <div class="preview-section-header"><i class="fa fa-user"></i> About This Agent</div>
+            <div class="preview-section-header"><i class="fa-solid fa-user"></i> About This Agent</div>
             <div class="preview-section-body">
                 <div class="bio-block">{{ $mapped['bio'] }}</div>
             </div>
@@ -274,7 +274,7 @@
 
         @if(!empty($mapped['why_hire_you']))
         <div class="preview-section">
-            <div class="preview-section-header"><i class="fa fa-star"></i> Why Hire Me</div>
+            <div class="preview-section-header"><i class="fa-solid fa-star"></i> Why Hire Me</div>
             <div class="preview-section-body">
                 <div class="bio-block">{{ $mapped['why_hire_you'] }}</div>
             </div>
@@ -283,7 +283,7 @@
 
         @if(!empty($mapped['marketing_plan']))
         <div class="preview-section">
-            <div class="preview-section-header"><i class="fa fa-chart-line"></i> Marketing Plan</div>
+            <div class="preview-section-header"><i class="fa-solid fa-chart-line"></i> Marketing Plan</div>
             <div class="preview-section-body">
                 <div class="bio-block">{{ $mapped['marketing_plan'] }}</div>
             </div>
@@ -301,7 +301,7 @@
             {{-- ── Services ──────────────────────────────────────── --}}
             <div class="preview-section">
                 <div class="preview-section-header">
-                    <i class="fa fa-square-check"></i> Services Included in This Agent's Proposal
+                    <i class="fa-solid fa-square-check"></i> Services Included in This Agent's Proposal
                 </div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-3">
@@ -361,7 +361,7 @@
             @if(count($compRows) > 0)
             <div class="preview-section">
                 <div class="preview-section-header">
-                    <i class="fa fa-file-lines"></i> Proposed Broker Compensation &amp; Agreement Terms
+                    <i class="fa-solid fa-file-lines"></i> Proposed Broker Compensation &amp; Agreement Terms
                 </div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-3">
@@ -382,7 +382,7 @@
 
             {{-- ── Property Address ───────────────────────────────── --}}
             <div class="preview-section">
-                <div class="preview-section-header"><i class="fa fa-map-marker"></i> Property Address</div>
+                <div class="preview-section-header"><i class="fa-solid fa-map-marker"></i> Property Address</div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-2">
                         Enter the address of the property this hire request relates to.
@@ -402,7 +402,7 @@
 
             {{-- ── Additional Services Requested ──────────────────── --}}
             <div class="preview-section">
-                <div class="preview-section-header"><i class="fa fa-plus-circle"></i> Additional Services Requested</div>
+                <div class="preview-section-header"><i class="fa-solid fa-plus-circle"></i> Additional Services Requested</div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-2">
                         Optional. List any additional services you would like this agent to consider.
@@ -421,7 +421,7 @@
 
             {{-- ── Process notice ─────────────────────────────────── --}}
             <div class="process-notice">
-                <i class="fa fa-circle-info me-2"></i>
+                <i class="fa-solid fa-circle-info me-2"></i>
                 <strong>Submitting this request does not finalize an agreement.</strong>
                 The agent will receive your request, and both parties may accept, counter, or reject terms
                 before anything is finalized. Once both sides agree, you will sign the agreement digitally
@@ -431,7 +431,7 @@
             {{-- ── Submit / Owner preview state ──────────────────── --}}
             @if($isOwnerPreview)
                 <div class="alert alert-warning d-flex align-items-center gap-2" role="alert">
-                    <i class="fa fa-eye fa-lg"></i>
+                    <i class="fa-solid fa-eye fa-lg"></i>
                     <span>
                         You are previewing your own Direct Hire page.
                         Clients will use this page to start a hire request — the submit button is not active in preview mode.
@@ -440,7 +440,7 @@
             @else
                 <div class="d-flex align-items-center gap-3 flex-wrap">
                     <button type="submit" id="hire-direct-submit" class="confirm-btn btn">
-                        <i class="fa fa-handshake me-2"></i>Start Direct Hire Request
+                        <i class="fa-solid fa-handshake me-2"></i>Start Direct Hire Request
                     </button>
                     <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">
                         Cancel
@@ -461,7 +461,7 @@ function hireDirectSubmit(form) {
         return false;
     }
     btn.disabled = true;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Sending…';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending…';
     return true;
 }
 </script>

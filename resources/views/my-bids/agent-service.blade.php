@@ -65,7 +65,7 @@
                                             </div>
                                             <div class="col-md-4">
                                                 <button class="w-75" type="button"><i
-                                                        class="fa fa-spinner fa-spin text-light me-2"></i>
+                                                        class="fa-solid fa-spinner fa-spin text-light me-2"></i>
                                                     Waiting </button>
                                             </div>
                                         </div>

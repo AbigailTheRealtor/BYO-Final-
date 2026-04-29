@@ -81,10 +81,10 @@
                     {{-- <ul>
                         <li>
                             <form class="form-inline search-form">
-                                <div class="search-bg"><i class="fa fa-search"></i>
+                                <div class="search-bg"><i class="fa-solid fa-search"></i>
                                     <input class="form-control-plaintext" placeholder="Search here.....">
                                 </div>
-                            </form><span class="d-sm-none mobile-search search-bg"><i class="fa fa-search"></i></span>
+                            </form><span class="d-sm-none mobile-search search-bg"><i class="fa-solid fa-search"></i></span>
                         </li>
                     </ul> --}}
                     <h3>{{$title??""}}</h3>
@@ -99,7 +99,7 @@
                                 <div class="form-group mb-0">
                                     <div class="input-group">
                                         <div class="input-group-prepend"><span class="input-group-text"><i
-                                                    class="fa fa-search"></i></span></div>
+                                                    class="fa-solid fa-search"></i></span></div>
                                         <input class="form-control" type="text"
                                             placeholder="Search for bookmark...">
                                     </div>
@@ -163,7 +163,7 @@
                             </ul>
                         </li>
                         <li>
-                            <div class="mode"><i class="fa fa-moon"></i></div>
+                            <div class="mode"><i class="fa-solid fa-moon"></i></div>
                         </li>
                         <li class="onhover-dropdown"><i data-feather="message-square"></i>
                             <ul class="chat-dropdown onhover-show-div">

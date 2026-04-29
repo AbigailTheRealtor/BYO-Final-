@@ -110,22 +110,22 @@
                                         <li><h6 class="dropdown-header">Choose a role</h6></li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}">
-                                                <i class="fa fa-key me-2 text-muted"></i> Hire Tenant's Agent
+                                                <i class="fa-solid fa-key me-2 text-muted"></i> Hire Tenant's Agent
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}">
-                                                <i class="fa fa-building me-2 text-muted"></i> Hire Landlord's Agent
+                                                <i class="fa-solid fa-building me-2 text-muted"></i> Hire Landlord's Agent
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}">
-                                                <i class="fa fa-search me-2 text-muted"></i> Hire Buyer's Agent
+                                                <i class="fa-solid fa-search me-2 text-muted"></i> Hire Buyer's Agent
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}">
-                                                <i class="fa fa-gavel me-2 text-muted"></i> Hire Seller's Agent
+                                                <i class="fa-solid fa-gavel me-2 text-muted"></i> Hire Seller's Agent
                                             </a>
                                         </li>
                                     </ul>
@@ -168,7 +168,7 @@
                             {{-- Table --}}
                             @if($listings->isEmpty())
                                 <div class="hub-empty">
-                                    <i class="fa fa-clipboard-list fa-4x mb-3 d-block"></i>
+                                    <i class="fa-solid fa-clipboard-list fa-4x mb-3 d-block"></i>
                                     <h5>No listings found</h5>
                                     <p>You don't have any listings in this category yet.</p>
                                     <a href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}" class="btn hub-create-btn mt-2">

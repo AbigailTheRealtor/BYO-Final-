@@ -33,11 +33,11 @@
                                         <span class="star opacity-50" data-bs-container="body" tabindex="0"
                                             data-bs-toggle="popover" data-bs-trigger="hover focus" data-bs-placement="top"
                                             data-bs-content="0 stars based on 0 reviews.">
-                                            <i class="fa fa-star"></i>
-                                            <i class="fa fa-star"></i>
-                                            <i class="fa fa-star"></i>
-                                            <i class="fa fa-star"></i>
-                                            <i class="fa fa-star"></i>
+                                            <i class="fa-solid fa-star"></i>
+                                            <i class="fa-solid fa-star"></i>
+                                            <i class="fa-solid fa-star"></i>
+                                            <i class="fa-solid fa-star"></i>
+                                            <i class="fa-solid fa-star"></i>
                                         </span>
                                     </p>
                                     <span class="mb-0 opacity-50"><b class="span">{{ $user_type }}</b><span
@@ -90,7 +90,7 @@
                                         @if ($user->email_verified_at)
                                             <span class="mb-0"><span
                                                     class="onlinebadge online text-dark badge border px-2 bg-white"><i
-                                                        class="fa fa-award text-success"></i> Email Verified</span></span>
+                                                        class="fa-solid fa-award text-success"></i> Email Verified</span></span>
                                         @else
                                             <span class="mb-0"><span
                                                     class="onlinebadge online text-dark badge border px-2 bg-white"> Not

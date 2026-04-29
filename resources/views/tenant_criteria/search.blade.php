@@ -56,7 +56,7 @@
                         <label class="form-check-label" for="hasBid">Has Bids</label>
                     </div>
                     <div class="form-check form-control-lg form-switch p-0">
-                        <i class="fa fa-heart"></i>
+                        <i class="fa-solid fa-heart"></i>
                         <label class="form-check-label" for="flexSwitchCheckChecked">Favorites</label>
                     </div> --}}
                     </div>

@@ -321,7 +321,7 @@
                                             <i data-bs-container="body" tabindex="0" data-bs-toggle="popover"
                                                 data-bs-trigger="hover focus" data-bs-placement="top"
                                                 data-bs-content="Your unique account name. Must be 3 to 10 characters and can include lowercase letters, numbers, and hyphens."
-                                                class="fa fa-circle-info"></i>
+                                                class="fa-solid fa-circle-info"></i>
                                             @if ($errors->has('user_name'))
                                                 <div class="error">{{ $errors->first('user_name') }}</div>
                                             @endif
@@ -360,23 +360,23 @@
         <div class="col-12">
             <ul class="d-flex align-items-center justify-content-between ps-0">
                 <li>
-                    <a href="sellerWork.html"> <i class="fa fa-home"></i> <span>Seller</span></a>
+                    <a href="sellerWork.html"> <i class="fa-solid fa-home"></i> <span>Seller</span></a>
                 </li>
 
                 <li>
-                    <a href="sellerWorkAgent.html"> <i class="fa fa-home"></i><span> Seller’s Agent</span></a>
+                    <a href="sellerWorkAgent.html"> <i class="fa-solid fa-home"></i><span> Seller’s Agent</span></a>
                 </li>
 
                 <li>
-                    <a href="addListing.html" class="add-listing"><i class="fa fa-plus text-white"></i> </a>
+                    <a href="addListing.html" class="add-listing"><i class="fa-solid fa-plus text-white"></i> </a>
                 </li>
 
                 <li>
-                    <a href="buyerWork.html"> <i class="fa fa-home"></i><span>Buyer</span></a>
+                    <a href="buyerWork.html"> <i class="fa-solid fa-home"></i><span>Buyer</span></a>
                 </li>
 
                 <li>
-                    <a href="buyerWorkAgent.html"> <i class="fa fa-home"></i><span>Buyer’s Agent</span></a>
+                    <a href="buyerWorkAgent.html"> <i class="fa-solid fa-home"></i><span>Buyer’s Agent</span></a>
                 </li>
             </ul>
         </div>

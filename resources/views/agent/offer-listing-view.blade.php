@@ -6,10 +6,10 @@
     <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
         <div>
             <a href="{{ $data['hub_route'] }}" class="text-muted small text-decoration-none">
-                <i class="fa fa-arrow-left me-1"></i>My Offer Listings
+                <i class="fa-solid fa-arrow-left me-1"></i>My Offer Listings
             </a>
             <h4 class="fw-bold mb-0 mt-1">
-                <i class="fa fa-file-lines me-2" style="color:#049399;"></i>
+                <i class="fa-solid fa-file-lines me-2" style="color:#049399;"></i>
                 {{ $data['title'] ?: ('Offer Listing #' . $data['id']) }}
             </h4>
             <div class="d-flex align-items-center gap-2 mt-1">
@@ -28,14 +28,14 @@
             </div>
         </div>
         <a href="{{ $data['edit_route'] }}" class="btn btn-sm btn-outline-secondary">
-            <i class="fa fa-pen-to-square me-1"></i>Edit Listing
+            <i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing
         </a>
     </div>
 
     {{-- Property Details --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-home me-2" style="color:#049399;"></i>Property Details
+            <i class="fa-solid fa-home me-2" style="color:#049399;"></i>Property Details
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -83,7 +83,7 @@
     {{-- Financial Terms --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-dollar-sign me-2" style="color:#049399;"></i>Financial Terms
+            <i class="fa-solid fa-dollar-sign me-2" style="color:#049399;"></i>Financial Terms
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -136,7 +136,7 @@
     {{-- Contingencies --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-square-check me-2" style="color:#049399;"></i>Contingencies
+            <i class="fa-solid fa-square-check me-2" style="color:#049399;"></i>Contingencies
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -177,7 +177,7 @@
     {{-- Key Dates --}}
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-calendar me-2" style="color:#049399;"></i>Key Dates
+            <i class="fa-solid fa-calendar me-2" style="color:#049399;"></i>Key Dates
         </div>
         <div class="card-body">
             <div class="row g-3">
@@ -210,7 +210,7 @@
     @if($data['custom_terms'] || $data['notes'])
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
-            <i class="fa fa-file-lines me-2" style="color:#049399;"></i>Additional Terms &amp; Notes
+            <i class="fa-solid fa-file-lines me-2" style="color:#049399;"></i>Additional Terms &amp; Notes
         </div>
         <div class="card-body">
             @if($data['custom_terms'])
@@ -232,10 +232,10 @@
     {{-- Footer actions --}}
     <div class="d-flex gap-2 justify-content-end">
         <a href="{{ $data['hub_route'] }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fa fa-arrow-left me-1"></i>Back to My Offer Listings
+            <i class="fa-solid fa-arrow-left me-1"></i>Back to My Offer Listings
         </a>
         <a href="{{ $data['edit_route'] }}" class="btn btn-sm text-white" style="background:#049399;">
-            <i class="fa fa-pen-to-square me-1"></i>Edit Listing
+            <i class="fa-solid fa-pen-to-square me-1"></i>Edit Listing
         </a>
     </div>
 

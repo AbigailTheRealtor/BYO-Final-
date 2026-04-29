@@ -38,7 +38,7 @@
                 @csrf
               <div class="form-group position-relative">
                 <input type="text" class="form-control" placeholder="Email" name="email" id="user_login" value="{{old('email')}}" autocomplete="current-password" />
-                <i class="fa fa-envelope"></i>
+                <i class="fa-solid fa-envelope"></i>
                 @if($errors->has('email'))
                     <div class="error">{{ $errors->first('email') }}</div>
               @endif
@@ -46,8 +46,8 @@
 
               <div class="form-group position-relative">
                 <input type="password" placeholder="Password" class="form-control" name="password" id="upassword" value="" autocomplete="current-password" />
-                <i class="fa fa-lock"></i>
-                <i class="fa fa-eye" id="show-password"></i>
+                <i class="fa-solid fa-lock"></i>
+                <i class="fa-solid fa-eye" id="show-password"></i>
                 @if($errors->has('password'))
                     <div class="error">{{ $errors->first('password') }}</div>
               @endif
@@ -76,12 +76,12 @@
             <div class="row justify-content-center mt-4">
               <div class="col-lg-6 col-12">
                 <a href="{{route('facebook.login')}}" class="btn btn-sm fb-btn w-100">
-                  <i class="fa fa-facebook"></i>
+                  <i class="fa-brands fa-facebook"></i>
                 </a>
               </div>
               <div class="col-lg-6 col-12">
                 <a href="{{route('google.login')}}" class="btn btn-sm google-btn w-100">
-                  <i class="fa fa-google"></i>
+                  <i class="fa-brands fa-google"></i>
                 </a>
               </div>
             </div> --}}
@@ -96,23 +96,23 @@
         <div class="col-12">
           <ul class="d-flex align-items-center justify-content-between ps-0">
             <li>
-              <a href="sellerWork.html"> <i class="fa fa-home"></i> <span>Seller</span></a>
+              <a href="sellerWork.html"> <i class="fa-solid fa-home"></i> <span>Seller</span></a>
             </li>
 
             <li>
-              <a href="sellerWorkAgent.html"> <i class="fa fa-home"></i><span> Seller’s Agent</span></a>
+              <a href="sellerWorkAgent.html"> <i class="fa-solid fa-home"></i><span> Seller’s Agent</span></a>
             </li>
 
             <li>
-              <a href="addListing.html" class="add-listing"><i class="fa fa-plus text-white"></i> </a>
+              <a href="addListing.html" class="add-listing"><i class="fa-solid fa-plus text-white"></i> </a>
             </li>
 
             <li>
-              <a href="buyerWork.html"> <i class="fa fa-home"></i><span>Buyer</span></a>
+              <a href="buyerWork.html"> <i class="fa-solid fa-home"></i><span>Buyer</span></a>
             </li>
 
             <li>
-              <a href="buyerWorkAgent.html"> <i class="fa fa-home"></i><span>Buyer’s Agent</span></a>
+              <a href="buyerWorkAgent.html"> <i class="fa-solid fa-home"></i><span>Buyer’s Agent</span></a>
             </li>
           </ul>
         </div>

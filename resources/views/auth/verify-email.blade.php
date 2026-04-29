@@ -24,7 +24,7 @@
             </div>
             <div class="col-8 confirmOtp rightCol position-relative">
                 <div class="loader position-absolute top-50 start-50">
-                    <i class="fa fa-spinner fa-3x fa-spin"></i>
+                    <i class="fa-solid fa-spinner fa-3x fa-spin"></i>
 
                 </div>
 
@@ -36,7 +36,7 @@
                     <form method="POST" action="{{ route('verification.send') }}">
                         @csrf
                         <div class="section1 text-center">
-                            <i class="fa fa-envelope"></i>
+                            <i class="fa-solid fa-envelope"></i>
                             <h4 class="mt-4">Please verify your email address.</h4>
                             <p> We have sent a verification code to the email below;<br><span
                                     style="font-size:12px; color:red;">Please check your Spam.</span> </p>

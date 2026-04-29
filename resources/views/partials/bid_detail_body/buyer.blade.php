@@ -5,10 +5,10 @@
                                                                             @if ($cardShowDualScore && $cardOriginalScore && $cardLatestCounterScore)
                                                                             {{-- DUAL SCORE: Original Match + Latest Counter Match --}}
                                                                             <h6 class="mb-2" style="color: #1a3a5c; font-weight: 600;">
-                                                                                <i class="fa fa-chart-pie me-2"></i>Match Summary
+                                                                                <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                                                             </h6>
                                                                             <p class="small text-muted mb-3">
-                                                                                <i class="fa fa-circle-info me-1"></i>
+                                                                                <i class="fa-solid fa-circle-info me-1"></i>
                                                                                 <strong>Original Match</strong> compares this bid to the Buyer's original listing request.<br>
                                                                                 <strong>Counter Match</strong> compares this bid to the Buyer's most recent counteroffer.<br>
                                                                                 Added services or terms do not increase either score.
@@ -66,14 +66,14 @@
                                                                             {{-- SINGLE SCORE --}}
                                                                             <div class="d-flex justify-content-between align-items-center mb-2">
                                                                                 <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-                                                                                    <i class="fa fa-chart-pie me-2"></i>Match Score
+                                                                                    <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                                                                 </h6>
                                                                                 <span class="badge" style="background: {{ $scoreColor }}; font-size: 1.1rem; padding: 8px 16px;">
                                                                                     {{ $overallScore }}% Match
                                                                                 </span>
                                                                             </div>
                                                                             <p class="small text-muted mb-3">
-                                                                                <i class="fa fa-circle-info me-1"></i>Match Score compares this bid only to the Buyer's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                                                                <i class="fa-solid fa-circle-info me-1"></i>Match Score compares this bid only to the Buyer's original request. Added services or added terms are shown for transparency but do not increase the score.<br>
                                                                                 Comparing to: <strong>{{ $buyerBaselineLabel }}</strong>
                                                                             </p>
                                                                             <div class="row g-3">
@@ -119,7 +119,7 @@
                                                                         </div>
                                                                         @else
                                                                         <div class="text-muted text-center py-3 mb-4" style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-                                                                            <i class="fa fa-circle-info me-1"></i>No match data available for this listing.
+                                                                            <i class="fa-solid fa-circle-info me-1"></i>No match data available for this listing.
                                                                         </div>
                                                                         @endif
                                                                         {{-- ========== END MATCH SCORE PANEL ========== --}}
@@ -127,7 +127,7 @@
                                                                         <!-- 1. Agent Overview & Qualifications -->
                                                                         <div class="mb-5">
                                                                             <h6 class="section-header">
-                                                                                <i class="fa fa-user-tie me-2"></i>Agent
+                                                                                <i class="fa-solid fa-user-tie me-2"></i>Agent
                                                                                 Overview & Qualifications
                                                                             </h6>
 
@@ -204,7 +204,7 @@
                                                                                                         target="_blank"
                                                                                                         rel="noopener noreferrer"
                                                                                                         class="text-primary text-decoration-none">
-                                                                                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                                                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                                                         {{ !empty($rlText) ? $rlText : $rlUrlVal }}
                                                                                                     </a>
                                                                                                 </div>
@@ -224,7 +224,7 @@
                                                                                             target="_blank"
                                                                                             class="text-primary text-decoration-none">
                                                                                             <i
-                                                                                                class="fa fa-globe me-1"></i>
+                                                                                                class="fa-solid fa-globe me-1"></i>
                                                                                             Visit Website
                                                                                         </a>
                                                                                     </div>
@@ -307,12 +307,12 @@
                                                                                  style="background:#f0fafa;border:1px solid #b2e0e0;border-radius:8px;border-left:4px solid #049399;">
                                                                                 <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap" style="gap:6px;">
                                                                                     <span class="fw-semibold" style="color:#049399;font-size:0.9rem;">
-                                                                                        <i class="fa fa-star me-1"></i>Agent Highlights
+                                                                                        <i class="fa-solid fa-star me-1"></i>Agent Highlights
                                                                                     </span>
                                                                                     @if ($hlShortId)
                                                                                     <a href="{{ route('agent.profile.public', $hlShortId) }}" target="_blank"
                                                                                        class="text-decoration-none small" style="color:#049399;">
-                                                                                        <i class="fa fa-arrow-up-right-from-square me-1"></i>View Full Profile
+                                                                                        <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>View Full Profile
                                                                                     </a>
                                                                                     @endif
                                                                                 </div>
@@ -344,7 +344,7 @@
                                                                                 </div>
                                                                                 @if ($hlReview)
                                                                                 <div class="mt-2 pt-2" style="border-top:1px dashed #b2e0e0;">
-                                                                                    <div class="small text-muted mb-1"><i class="fa fa-quote-left me-1"></i>Featured Review</div>
+                                                                                    <div class="small text-muted mb-1"><i class="fa-solid fa-quote-left me-1"></i>Featured Review</div>
                                                                                     <div class="fst-italic text-muted small" style="font-size:0.88rem;">{{ $hlReview }}</div>
                                                                                 </div>
                                                                                 @endif
@@ -367,7 +367,7 @@
                                                                             data_get($bid, 'get.brokerage_relationship'))
                                                                         <div class="mb-5">
                                                                             <h6 class="section-header">
-                                                                                <i class="fa fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                                                                <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                                                                             </h6>
 
                                                                             @php
@@ -567,7 +567,7 @@
                                                                         @if (data_get($bid, 'get.additional_details'))
                                                                             <div class="mb-5">
                                                                                 <h6 class="section-header">
-                                                                                    <i class="fa fa-circle-info me-2"></i>Additional Details
+                                                                                    <i class="fa-solid fa-circle-info me-2"></i>Additional Details
                                                                                 </h6>
                                                                                 <div class="text-muted" style="font-style: italic;">
                                                                                     {{ data_get($bid, 'get.additional_details') }}
@@ -916,7 +916,7 @@
                                                                         @if ($hasBuyerServices)
                                                                         <div class="mb-5">
                                                                             <h6 class="section-header">
-                                                                                <i class="fa fa-clipboard-list me-2"></i>Offered Services
+                                                                                <i class="fa-solid fa-clipboard-list me-2"></i>Offered Services
                                                                             </h6>
                                                                             @php
                                                                                 $normalizeSvcStr = function(string $s): string {
@@ -977,7 +977,7 @@
                                                                             @if (!empty($missingServices))
                                                                             <div class="mt-4 p-3" style="background-color: #ffe6e6; border-radius: 8px; border: 1px solid #dc3545;">
                                                                                 <div class="fw-bold mb-2" style="color: #721c24; font-size: 0.95rem;">
-                                                                                    <i class="fa fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
+                                                                                    <i class="fa-solid fa-circle-xmark me-2"></i>Services Requested But Agent Did Not Include ({{ count($missingServices) }})
                                                                                 </div>
                                                                                 <ul class="mb-0" style="padding-left: 1.5rem; list-style: disc;">
                                                                                     @foreach ($missingServices as $buyerMissingSvc)
@@ -998,7 +998,7 @@
                                                                             <div class="mb-5">
                                                                                 <h6 class="section-header">
                                                                                     <i
-                                                                                        class="fa fa-chart-line me-2"></i>Agent
+                                                                                        class="fa-solid fa-chart-line me-2"></i>Agent
                                                                                     Presentation & Promotional Materials
                                                                                 </h6>
 
@@ -1039,7 +1039,7 @@
                                                                                                     target="_blank"
                                                                                                     class="text-primary text-decoration-none">
                                                                                                     <i
-                                                                                                        class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                                                        class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                                                     Watch Presentation
                                                                                                 </a>
                                                                                             </div>
@@ -1064,7 +1064,7 @@
                                                                                                     <div
                                                                                                         class="text-muted">
                                                                                                         <i
-                                                                                                            class="fa fa-video me-1"></i>
+                                                                                                            class="fa-solid fa-video me-1"></i>
                                                                                                         Video file uploaded
                                                                                                     </div>
                                                                                                 @endif
@@ -1110,7 +1110,7 @@
                                                                                                     target="_blank"
                                                                                                     class="text-primary text-decoration-none">
                                                                                                     <i
-                                                                                                        class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                                                        class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                                                     View Business Card
                                                                                                 </a>
                                                                                             </div>
@@ -1144,21 +1144,21 @@
                                                                                                         </div>
                                                                                                         <div class="d-flex gap-2 mt-2">
                                                                                                             <a href="{{ $businessCardUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary btn-sm">
-                                                                                                                <i class="fa fa-expand me-1"></i> View Full Size
+                                                                                                                <i class="fa-solid fa-expand me-1"></i> View Full Size
                                                                                                             </a>
                                                                                                             <a href="{{ $businessCardUrl }}" download class="btn btn-outline-success btn-sm">
-                                                                                                                <i class="fa fa-download me-1"></i> Download
+                                                                                                                <i class="fa-solid fa-download me-1"></i> Download
                                                                                                             </a>
                                                                                                         </div>
                                                                                                     @else
                                                                                                         <div class="d-flex align-items-center p-3 border rounded bg-light">
-                                                                                                            <i class="fa fa-file-lines fa-2x text-muted me-3"></i>
+                                                                                                            <i class="fa-solid fa-file-lines fa-2x text-muted me-3"></i>
                                                                                                             <div class="flex-grow-1">
                                                                                                                 <div class="fw-medium">Business Card File</div>
                                                                                                                 <small class="text-muted">{{ strtoupper($businessCardExtension) }} file</small>
                                                                                                             </div>
                                                                                                             <a href="{{ $businessCardUrl }}" download class="btn btn-outline-primary btn-sm">
-                                                                                                                <i class="fa fa-download me-1"></i> Download
+                                                                                                                <i class="fa-solid fa-download me-1"></i> Download
                                                                                                             </a>
                                                                                                         </div>
                                                                                                     @endif
@@ -1166,7 +1166,7 @@
                                                                                                     <div
                                                                                                         class="text-muted">
                                                                                                         <i
-                                                                                                            class="fa fa-id-card me-1"></i>
+                                                                                                            class="fa-solid fa-id-card me-1"></i>
                                                                                                         Business card
                                                                                                         uploaded
                                                                                                     </div>
@@ -1249,7 +1249,7 @@
                                                                                                                 target="_blank"
                                                                                                                 rel="noopener noreferrer"
                                                                                                                 class="btn btn-outline-primary btn-sm">
-                                                                                                                <i class="fa fa-arrow-up-right-from-square me-1"></i>
+                                                                                                                <i class="fa-solid fa-arrow-up-right-from-square me-1"></i>
                                                                                                                 Open Link
                                                                                                             </a>
                                                                                                         </div>
@@ -1306,7 +1306,7 @@
                                                                                                                                 @else
                                                                                                                                     <div class="bg-light rounded d-flex align-items-center justify-content-center me-2"
                                                                                                                                         style="width: 60px; height: 60px;">
-                                                                                                                                        <i class="fa fa-file fa-lg text-muted"></i>
+                                                                                                                                        <i class="fa-solid fa-file fa-lg text-muted"></i>
                                                                                                                                     </div>
                                                                                                                                 @endif
                                                                                                                                 <div class="flex-grow-1 overflow-hidden">
@@ -1315,10 +1315,10 @@
                                                                                                                                 </div>
                                                                                                                                 <div class="d-flex gap-1 ms-2">
                                                                                                                                     <a href="{{ $fileUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary" title="View">
-                                                                                                                                        <i class="fa fa-eye"></i>
+                                                                                                                                        <i class="fa-solid fa-eye"></i>
                                                                                                                                     </a>
                                                                                                                                     <a href="{{ $fileUrl }}" download class="btn btn-sm btn-outline-success" title="Download">
-                                                                                                                                        <i class="fa fa-download"></i>
+                                                                                                                                        <i class="fa-solid fa-download"></i>
                                                                                                                                     </a>
                                                                                                                                 </div>
                                                                                                                             </div>
@@ -1340,7 +1340,7 @@
                                                                         <div class="mb-4">
                                                                             <h6 class="section-header">
                                                                                 <i
-                                                                                    class="fa fa-address-card me-2"></i>Agent
+                                                                                    class="fa-solid fa-address-card me-2"></i>Agent
                                                                                 Information
                                                                             </h6>
 

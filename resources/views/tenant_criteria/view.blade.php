@@ -525,26 +525,26 @@
               @else
                 <h4>Tenant’s Information:</h4>
               @endif
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>First Name:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>First Name:</strong>
                 {{ @$auction->get->agent_first_name }}
               </div>
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Last Name:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>Last Name:</strong>
                 {{ @$auction->get->agent_last_name }}
               </div>
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Phone Number:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>Phone Number:</strong>
                 {{ @$auction->get->agent_phone }}
               </div>
-              <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Email:</strong>
+              <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>Email:</strong>
                 {{ @$auction->get->agent_email }}
               </div>
               @if ($user->user_type == 'agent')
-                <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Brokerage:</strong>
+                <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>Brokerage:</strong>
                   {{ @$auction->get->agent_brokerage }}
                 </div>
-                <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>Real Estate License#:</strong>
+                <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>Real Estate License#:</strong>
                   {{ @$auction->get->agent_license_no }}
                 </div>
-                <div class="col-md-12 col-12 mt-2"><i class="fa fa-square-check"></i> <strong>NAR Member ID (NRDS ID):</strong>
+                <div class="col-md-12 col-12 mt-2"><i class="fa-solid fa-square-check"></i> <strong>NAR Member ID (NRDS ID):</strong>
                   {{ @$auction->get->agent_mls_id }}
                 </div>
               @endif
@@ -558,11 +558,11 @@
               <div>
                 <p class="mb-0"><a href="{{ route('author', [@$auction->user_id]) }}"><b>User Details</b></a><span></span>
                   <span class="start opacity-50">
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
                   </span>
                 </p>
                 <p class="mb-0">...</p>
@@ -917,7 +917,7 @@
           </div>
         </div>
         <button class="btn w-100 mt-0">
-          <span class="bid m-0"><i class="fa fa-user"></i> </span>
+          <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
         <!-- End  -->
         <!-- Social Details  -->
@@ -947,7 +947,7 @@
             </ul>
             <p class="small opacity-8">Or copy link</p>
             <div class="field">
-              <i class="fa fa-link"></i>
+              <i class="fa-solid fa-link"></i>
               <input type="text" readonly="" id="copylink"
                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
               <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

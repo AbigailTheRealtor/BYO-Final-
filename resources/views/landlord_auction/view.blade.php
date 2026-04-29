@@ -1424,11 +1424,11 @@
                 <p class="mb-0"><a href="{{ route('author', [@$auction->user_id]) }}"><b>User
                       Details</b></a><span></span>
                   <span class="start opacity-50">
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
+                    <i class="fa-solid fa-star"></i>
                   </span>
                 </p>
                 <p class="mb-0">...</p>
@@ -1533,7 +1533,7 @@
                           <div>
                             <div class="d-flex justify-content-center align-items-center w-100">
                               <a href="{{route('landlord.auction.bid.view', $bid->id)}}" style="color: blue">
-                                  View <i class="fa fa-eye"></i>
+                                  View <i class="fa-solid fa-eye"></i>
                               </a>
                             </div>
                             <table class="table table-bordered">
@@ -1643,7 +1643,7 @@
                                             @foreach ($allBids as $key => $countBid)
                                             <div class="d-flex justify-content-center align-items-center w-100">
                                               <a href="{{route('landlord.auction.bid.view', $countBid->id)}}" style="color: blue">
-                                                  View <i class="fa fa-eye"></i>
+                                                  View <i class="fa-solid fa-eye"></i>
                                               </a>
                                             </div>
                                               @if(isset($countBid->get->first_name))
@@ -1738,7 +1738,7 @@
           </div>
         </div>
         <button class="btn w-100 mt-0">
-          <span class="bid m-0"><i class="fa fa-user"></i> </span>
+          <span class="bid m-0"><i class="fa-solid fa-user"></i> </span>
         </button>
         <!-- End  -->
         <!-- Social Details  -->
@@ -1768,7 +1768,7 @@
             </ul>
             <p class="small opacity-8">Or copy link</p>
             <div class="field">
-              <i class="fa fa-link"></i>
+              <i class="fa-solid fa-link"></i>
               <input type="text" readonly="" id="copylink"
                 value="https://bidyouroffer.com/listing/534-pinellas-bayway-s-204-tierra-verde-fl-33715-4/">
               <button class="btn-primary btn-sm text-600 js-copy-link text-center border-0"

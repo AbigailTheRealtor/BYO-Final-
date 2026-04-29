@@ -22,7 +22,7 @@
                             {{-- Page Header --}}
                             <div class="mb-3">
                                 <a href="{{ route('agent.hire-listings') }}" class="back-link">
-                                    <i class="fa fa-arrow-left me-1"></i> My Hire Agent Listings
+                                    <i class="fa-solid fa-arrow-left me-1"></i> My Hire Agent Listings
                                 </a>
                                 <h4 class="mt-2 mb-0">Hire Landlord's Agent — My Bids</h4>
                                 <p class="page-subtitle mb-0">Listings where you've placed bids to represent Landlords.</p>

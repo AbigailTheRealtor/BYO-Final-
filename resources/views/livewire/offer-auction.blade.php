@@ -8,10 +8,10 @@
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
             <h4 class="mb-1 fw-bold">
-                @if($offer_type === 'sale')   <i class="fa fa-tag me-2" style="color:#049399;"></i>Sale Offer Listing
-                @elseif($offer_type === 'rental') <i class="fa fa-home me-2" style="color:#049399;"></i>Rental Offer Listing
-                @elseif($offer_type === 'lease')  <i class="fa fa-key me-2" style="color:#049399;"></i>Lease Offer Listing
-                @else <i class="fa fa-file-lines me-2" style="color:#049399;"></i>New Offer Listing
+                @if($offer_type === 'sale')   <i class="fa-solid fa-tag me-2" style="color:#049399;"></i>Sale Offer Listing
+                @elseif($offer_type === 'rental') <i class="fa-solid fa-home me-2" style="color:#049399;"></i>Rental Offer Listing
+                @elseif($offer_type === 'lease')  <i class="fa-solid fa-key me-2" style="color:#049399;"></i>Lease Offer Listing
+                @else <i class="fa-solid fa-file-lines me-2" style="color:#049399;"></i>New Offer Listing
                 @endif
             </h4>
             <p class="text-muted mb-0 small">
@@ -24,11 +24,11 @@
         </div>
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-outline-secondary btn-sm" wire:click="saveDraft" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="saveDraft"><i class="fa fa-save me-1"></i>Save Draft</span>
+                <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i>Save Draft</span>
                 <span wire:loading wire:target="saveDraft">Saving…</span>
             </button>
             <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#049399;" wire:click="submitListing" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="submitListing"><i class="fa fa-circle-check me-1"></i>Publish Listing</span>
+                <span wire:loading.remove wire:target="submitListing"><i class="fa-solid fa-circle-check me-1"></i>Publish Listing</span>
                 <span wire:loading wire:target="submitListing">Publishing…</span>
             </button>
         </div>
@@ -76,7 +76,7 @@
         {{-- PANEL 1: OVERVIEW --}}
         <div wire:ignore.self class="tab-pane fade show active" id="offer-panel-1" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-circle-info me-2"></i>Listing Overview</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa-solid fa-circle-info me-2"></i>Listing Overview</h6>
 
             <div class="mb-3">
                 <label class="form-label fw-semibold">Offer Type <span class="text-danger">*</span></label>
@@ -86,7 +86,7 @@
                         <input class="visually-hidden" type="radio" id="ot_{{ $val }}" wire:model="offer_type" value="{{ $val }}">
                         <label class="btn btn-outline-secondary px-3 py-2" for="ot_{{ $val }}"
                             style="{{ $offer_type === $val ? 'background:#049399;color:#fff;border-color:#049399;' : '' }}">
-                            <i class="fa fa-{{ $icon }} me-1"></i>{{ $lbl }}
+                            <i class="fa-solid fa-{{ $icon }} me-1"></i>{{ $lbl }}
                         </label>
                     </div>
                     @endforeach
@@ -147,7 +147,7 @@
             <div class="d-flex justify-content-end mt-2">
                 <button type="button" class="btn btn-sm text-white" style="background:#049399;"
                     onclick="offerWizardGoTo('offer-tab-2')">
-                    Next: Financial Terms <i class="fa fa-arrow-right ms-1"></i>
+                    Next: Financial Terms <i class="fa-solid fa-arrow-right ms-1"></i>
                 </button>
             </div>
         </div>
@@ -156,7 +156,7 @@
         {{-- PANEL 2: FINANCIAL TERMS --}}
         <div wire:ignore.self class="tab-pane fade" id="offer-panel-2" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-dollar-sign me-2"></i>Financial Terms</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa-solid fa-dollar-sign me-2"></i>Financial Terms</h6>
 
             {{-- Sale fields --}}
             <div id="offer-sale-fields">
@@ -223,10 +223,10 @@
 
             <div class="d-flex justify-content-between mt-2">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="offerWizardGoTo('offer-tab-1')">
-                    <i class="fa fa-arrow-left me-1"></i> Back
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back
                 </button>
                 <button type="button" class="btn btn-sm text-white" style="background:#049399;" onclick="offerWizardGoTo('offer-tab-3')">
-                    Next: Contingencies &amp; Dates <i class="fa fa-arrow-right ms-1"></i>
+                    Next: Contingencies &amp; Dates <i class="fa-solid fa-arrow-right ms-1"></i>
                 </button>
             </div>
         </div>
@@ -235,7 +235,7 @@
         {{-- PANEL 3: CONTINGENCIES & DATES --}}
         <div wire:ignore.self class="tab-pane fade" id="offer-panel-3" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-calendar me-2"></i>Contingencies &amp; Dates</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa-solid fa-calendar me-2"></i>Contingencies &amp; Dates</h6>
 
             <div class="mb-3">
                 <div class="form-check form-switch">
@@ -272,10 +272,10 @@
             </div>
             <div class="d-flex justify-content-between mt-2">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="offerWizardGoTo('offer-tab-2')">
-                    <i class="fa fa-arrow-left me-1"></i> Back
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back
                 </button>
                 <button type="button" class="btn btn-sm text-white" style="background:#049399;" onclick="offerWizardGoTo('offer-tab-4')">
-                    Next: Review &amp; Terms <i class="fa fa-arrow-right ms-1"></i>
+                    Next: Review &amp; Terms <i class="fa-solid fa-arrow-right ms-1"></i>
                 </button>
             </div>
         </div>
@@ -284,7 +284,7 @@
         {{-- PANEL 4: REVIEW & CUSTOM TERMS --}}
         <div wire:ignore.self class="tab-pane fade" id="offer-panel-4" role="tabpanel">
         <div class="card border-0 shadow-sm p-4">
-            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa fa-square-check me-2"></i>Review &amp; Custom Terms</h6>
+            <h6 class="fw-bold mb-3" style="color:#049399;"><i class="fa-solid fa-square-check me-2"></i>Review &amp; Custom Terms</h6>
 
             <div class="border rounded p-3 mb-4 bg-light">
                 <div class="row g-2 small">
@@ -316,15 +316,15 @@
 
             <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="offerWizardGoTo('offer-tab-3')">
-                    <i class="fa fa-arrow-left me-1"></i> Back
+                    <i class="fa-solid fa-arrow-left me-1"></i> Back
                 </button>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-secondary btn-sm" wire:click="saveDraft" wire:loading.attr="disabled">
-                        <span wire:loading.remove wire:target="saveDraft"><i class="fa fa-save me-1"></i>Save Draft</span>
+                        <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i>Save Draft</span>
                         <span wire:loading wire:target="saveDraft">Saving…</span>
                     </button>
                     <button type="button" class="btn btn-sm text-white fw-semibold" style="background:#049399;" wire:click="submitListing" wire:loading.attr="disabled">
-                        <span wire:loading.remove wire:target="submitListing"><i class="fa fa-circle-check me-1"></i>Publish Listing</span>
+                        <span wire:loading.remove wire:target="submitListing"><i class="fa-solid fa-circle-check me-1"></i>Publish Listing</span>
                         <span wire:loading wire:target="submitListing">Publishing…</span>
                     </button>
                 </div>

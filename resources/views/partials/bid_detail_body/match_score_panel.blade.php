@@ -25,7 +25,7 @@
      style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px; border: 1px solid #dee2e6;">
     <div class="d-flex justify-content-between align-items-center mb-2">
         <h6 class="mb-0" style="color: #1a3a5c; font-weight: 600;">
-            <i class="fa fa-chart-pie me-2"></i>Match Score
+            <i class="fa-solid fa-chart-pie me-2"></i>Match Score
         </h6>
         <span class="badge"
               style="background: {{ $ms_overall_color }}; font-size: 1.1rem; padding: 8px 16px; color: #fff;">
@@ -33,7 +33,7 @@
         </span>
     </div>
     <p class="small text-muted mb-3">
-        <i class="fa fa-circle-info me-1"></i>Match Score compares this bid to the original listing request. Added services or terms are shown for transparency but do not increase the score.<br>
+        <i class="fa-solid fa-circle-info me-1"></i>Match Score compares this bid to the original listing request. Added services or terms are shown for transparency but do not increase the score.<br>
         Comparing to: <strong>{{ $ms_baseline_label ?? 'Your Listing Terms' }}</strong>
     </p>
     <div class="row g-3">
@@ -96,6 +96,6 @@
 @else
 <div class="text-muted text-center py-3 mb-4"
      style="font-size: 0.92rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; padding: 16px;">
-    <i class="fa fa-circle-info me-1"></i>No match data available for this listing.
+    <i class="fa-solid fa-circle-info me-1"></i>No match data available for this listing.
 </div>
 @endif

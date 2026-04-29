@@ -69,19 +69,19 @@
         <div class="row g-4">
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-bullseye text-primary me-2"></i>Inbound Opportunities</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-bullseye text-primary me-2"></i>Inbound Opportunities</h5>
                     <p class="text-muted small mt-2 mb-0">Clients come to you. Browse open listings from motivated Sellers, Buyers, Landlords, and Tenants — and bid to represent them. No cold calling required.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-eye text-primary me-2"></i>Transparent Negotiation</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-eye text-primary me-2"></i>Transparent Negotiation</h5>
                     <p class="text-muted small mt-2 mb-0">Every agent bid is visible to the client. Compete honestly on commission, services, and expertise. Clients can accept, counter, or decline any bid — giving you a clear path to closing.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h5 class="fw-bold"><i class="fa fa-dollar-sign text-primary me-2"></i>Referral Income</h5>
+                    <h5 class="fw-bold"><i class="fa-solid fa-dollar-sign text-primary me-2"></i>Referral Income</h5>
                     <p class="text-muted small mt-2 mb-0">Refer clients to other agents and earn a referral fee upon closing. Agents can also be listed specifically as referral agents on the platform — a new income stream with no extra legwork.</p>
                 </div>
             </div>
@@ -101,19 +101,19 @@
         <div class="row g-4 mt-2">
             <div class="col-md-4">
                 <div class="why-card">
-                    <h6 class="fw-bold"><i class="fa fa-qrcode text-primary me-2"></i>QR Code Widget</h6>
+                    <h6 class="fw-bold"><i class="fa-solid fa-qrcode text-primary me-2"></i>QR Code Widget</h6>
                     <p class="text-muted small mt-2 mb-0">Generate a personalized QR code linked to your Hire Me profile. Share it on business cards, flyers, yard signs, or anywhere clients might find you.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h6 class="fw-bold"><i class="fa fa-link text-primary me-2"></i>Hire Me Landing Page</h6>
+                    <h6 class="fw-bold"><i class="fa-solid fa-link text-primary me-2"></i>Hire Me Landing Page</h6>
                     <p class="text-muted small mt-2 mb-0">Your personalized Hire Me page showcases your services, reviews, and contact details. Clients can post a listing directly from your page, making it easy to convert referrals.</p>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="why-card">
-                    <h6 class="fw-bold"><i class="fa fa-star text-primary me-2"></i>Match Score Visibility</h6>
+                    <h6 class="fw-bold"><i class="fa-solid fa-star text-primary me-2"></i>Match Score Visibility</h6>
                     <p class="text-muted small mt-2 mb-0">Keep your agent profile complete and up to date. A higher Match Score means your bids appear more prominently to clients whose listings align with your specialization.</p>
                 </div>
             </div>

@@ -5,17 +5,17 @@
     {{-- Header --}}
     <div class="d-flex align-items-center justify-content-between mb-4">
         <div>
-            <h4 class="fw-bold mb-1"><i class="fa fa-file-lines me-2" style="color:#049399;"></i>My Offer Listings</h4>
+            <h4 class="fw-bold mb-1"><i class="fa-solid fa-file-lines me-2" style="color:#049399;"></i>My Offer Listings</h4>
             <p class="text-muted small mb-0">All your offer, rental, and lease listings in one place.</p>
         </div>
         <div class="dropdown">
             <button class="btn btn-sm text-white dropdown-toggle" style="background:#049399;" type="button" data-bs-toggle="dropdown">
-                <i class="fa fa-plus me-1"></i>New Offer Listing
+                <i class="fa-solid fa-plus me-1"></i>New Offer Listing
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'sale']) }}"><i class="fa fa-tag me-2 text-muted"></i>Sale (Purchase Offer)</a></li>
-                <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'rental']) }}"><i class="fa fa-home me-2 text-muted"></i>Rental Offer</a></li>
-                <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'lease']) }}"><i class="fa fa-key me-2 text-muted"></i>Lease Offer</a></li>
+                <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'sale']) }}"><i class="fa-solid fa-tag me-2 text-muted"></i>Sale (Purchase Offer)</a></li>
+                <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'rental']) }}"><i class="fa-solid fa-home me-2 text-muted"></i>Rental Offer</a></li>
+                <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'lease']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Lease Offer</a></li>
             </ul>
         </div>
     </div>
@@ -38,7 +38,7 @@
     @if($listings->isEmpty())
     <div class="card border-0 shadow-sm">
         <div class="card-body text-center py-5">
-            <div style="font-size:2.5rem;color:#ccc;" class="mb-3"><i class="fa fa-file-lines"></i></div>
+            <div style="font-size:2.5rem;color:#ccc;" class="mb-3"><i class="fa-solid fa-file-lines"></i></div>
             <h6 class="text-muted">No offer listings found</h6>
             <p class="text-muted small mb-3">
                 @if($filter === 'all')
@@ -48,7 +48,7 @@
                 @endif
             </p>
             <a href="{{ route('offer.listing.create', ['offer_type' => 'sale']) }}" class="btn btn-sm text-white" style="background:#049399;">
-                <i class="fa fa-plus me-1"></i>Create Your First Offer Listing
+                <i class="fa-solid fa-plus me-1"></i>Create Your First Offer Listing
             </a>
         </div>
     </div>
@@ -111,14 +111,14 @@
                             <div class="btn-group btn-group-sm">
                                 @if($listing['_draft'])
                                 <a href="{{ $listing['draft_route'] }}" class="btn btn-outline-secondary">
-                                    <i class="fa fa-pen-to-square me-1"></i>Continue Draft
+                                    <i class="fa-solid fa-pen-to-square me-1"></i>Continue Draft
                                 </a>
                                 @else
                                 <a href="{{ $listing['view_route'] }}" class="btn btn-outline-primary">
-                                    <i class="fa fa-eye me-1"></i>View
+                                    <i class="fa-solid fa-eye me-1"></i>View
                                 </a>
                                 <a href="{{ $listing['edit_route'] }}" class="btn btn-outline-secondary">
-                                    <i class="fa fa-pen-to-square me-1"></i>Edit
+                                    <i class="fa-solid fa-pen-to-square me-1"></i>Edit
                                 </a>
                                 @endif
                             </div>

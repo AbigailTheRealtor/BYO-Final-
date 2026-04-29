@@ -56,7 +56,7 @@
 
             {{-- Confidential notice — identical across all roles --}}
             <div class="w-100 p-2 text-center" style="background: #e8f4f5; border-radius: 6px; color: #049399;">
-                <i class="fa fa-shield-halved me-2"></i>
+                <i class="fa-solid fa-shield-halved me-2"></i>
                 <strong>Confidential:</strong> This information is private and only visible to you.
             </div>
 

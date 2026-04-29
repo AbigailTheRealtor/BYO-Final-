@@ -93,7 +93,7 @@
             <div class="col-12">
                 <div class="card border-0 bg-light rounded-3 p-5 text-center">
                     <div class="text-muted">
-                        <i class="fa fa-users fa-3x mb-3 opacity-25"></i>
+                        <i class="fa-solid fa-users fa-3x mb-3 opacity-25"></i>
                         <h5 class="fw-semibold">No agents found</h5>
                         <p class="small mb-0">There are no agents matching your search yet. Check back soon or adjust your filters.</p>
                     </div>

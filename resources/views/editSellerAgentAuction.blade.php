@@ -318,7 +318,7 @@
                                 <div class="form-group custom_bedrooms @if(@$auction->get->custom_bedrooms=="" || @$auction->get->custom_bedrooms=="null") d-none @endif ">
                                     <label>Write Custom Bedrooms *</label>
                                     <input type="text" class="form-control has-icon"
-                                        placeholder="Write Custom Bedrooms" name="custom_bedrooms" data-icon="fa fa-bed"
+                                        placeholder="Write Custom Bedrooms" name="custom_bedrooms" data-icon="fa-solid fa-bed"
                                         id="custom_bedrooms" required value="{{@$auction->get->custom_bedrooms}}"/>
                                 </div>
                             </div>

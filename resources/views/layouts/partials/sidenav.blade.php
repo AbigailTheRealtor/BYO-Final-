@@ -16,16 +16,16 @@
                 <button class="btn w-100 fw-semibold" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="background:#049399 !important;border-color:#049399 !important;color:#fff !important;">+ Create Hire Agent Listing</button>
                 <ul class="dropdown-menu w-100">
                     <li><h6 class="dropdown-header">Hire Agent Listings</h6></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
-                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'tenant']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Hire Tenant's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'landlord']) }}"><i class="fa-solid fa-building me-2 text-muted"></i>Hire Landlord's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}"><i class="fa-solid fa-search me-2 text-muted"></i>Hire Buyer's Agent</a></li>
+                    <li><a class="dropdown-item" href="{{ route('hire.agent.auction', ['user_type' => 'seller']) }}"><i class="fa-solid fa-gavel me-2 text-muted"></i>Hire Seller's Agent</a></li>
                     @can('offer-playoff')
                     <li><hr class="dropdown-divider"></li>
                     <li><h6 class="dropdown-header">Offer Listings</h6></li>
-                    <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'sale']) }}"><i class="fa fa-tag me-2 text-muted"></i>Sale (Purchase Offer)</a></li>
-                    <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'rental']) }}"><i class="fa fa-home me-2 text-muted"></i>Rental Offer</a></li>
-                    <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'lease']) }}"><i class="fa fa-key me-2 text-muted"></i>Lease Offer</a></li>
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'sale']) }}"><i class="fa-solid fa-tag me-2 text-muted"></i>Sale (Purchase Offer)</a></li>
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'rental']) }}"><i class="fa-solid fa-home me-2 text-muted"></i>Rental Offer</a></li>
+                    <li><a class="dropdown-item" href="{{ route('offer.listing.create', ['offer_type' => 'lease']) }}"><i class="fa-solid fa-key me-2 text-muted"></i>Lease Offer</a></li>
                     @endcan
                 </ul>
             </div>
@@ -64,7 +64,7 @@
     @if (in_array(auth()->user()->user_type, ['seller']))
     <a href="{{ route('myAuctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Property Listings</b>
                     @php
@@ -82,7 +82,7 @@
     @if (in_array(auth()->user()->user_type, ['agent']))
     <a href="{{ route('agent.hire-listings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-handshake" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-handshake" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Hire Agent Listings</b>
                     @php
@@ -101,7 +101,7 @@
     @can('offer-playoff')
     <a href="{{ route('agent.offer-listings') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-file-lines" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-file-lines" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Offer Listings</b>
                     @php
@@ -116,7 +116,7 @@
     @endcan
     <a href="{{ route('agent.presets.index') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-sliders" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-sliders" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Offer Presets</b></div>
                 <div class="opacity-50 text-400 small">Default services &amp; bio per role &amp; property type.</div>
@@ -129,7 +129,7 @@
     @if (in_array(auth()->user()->user_type, ['seller']))
     <a href="{{ route('hireSellerAgentHireAuctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Seller's Agent</b>
                     @php
@@ -148,7 +148,7 @@
     @if (in_array(auth()->user()->user_type, ['buyer']))
     <a href="{{ route('buyer.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
                     @php
@@ -167,7 +167,7 @@
     @if (in_array(auth()->user()->user_type, ['landlord']))
     <a href="{{ route('landlord.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Landlord's Agent</b>
                     @php
@@ -186,7 +186,7 @@
     @if (in_array(auth()->user()->user_type, ['tenant']))
     <a href="{{ route('tenant.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-gavel" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Tenant's Agent</b>
                     @php
@@ -202,7 +202,7 @@
     </a>
     <a href="{{ route('landlord.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-building" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Landlord's Agent</b>
                     @php
@@ -218,7 +218,7 @@
     </a>
     <a href="{{ route('buyer.agent.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-home" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Buyer's Agent</b>
                     @php
@@ -234,7 +234,7 @@
     </a>
     <a href="{{ route('hireSellerAgentHireAuctions') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-sign-out" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-sign-out" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Hire Seller's Agent</b>
                     @php
@@ -255,7 +255,7 @@
     <div class="small text-uppercase text-muted fw-bold px-3 pt-3 pb-1" style="letter-spacing:.07em;font-size:.7rem;">My Bids</div>
     <a href="{{ route('tenant.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Tenant's Agent Bids</b>
                     @php $my_baa_count = auth()->user()->tenant_agent_auction_bid->count(); @endphp
@@ -267,7 +267,7 @@
     </a>
     <a href="{{ route('landlord.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Landlord's Agent Bids</b>
                     @php $my_lbaa_count = auth()->user()->landlord_agent_auction_bid->count(); @endphp
@@ -279,7 +279,7 @@
     </a>
     <a href="{{ route('buyer.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Buyer's Agent Bids</b>
                     @php $my_bbaa_count = auth()->user()->buyer_agent_auction_bid->count(); @endphp
@@ -291,7 +291,7 @@
     </a>
     <a href="{{ route('seller.biding.auctions.list') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Seller's Agent Bids</b>
                     @php $my_sbaa_count = auth()->user()->seller_agent_auction_bid->count(); @endphp
@@ -307,7 +307,7 @@
     @if (auth()->user()->user_type === 'landlord')
     <a href="{{ route('myBids', 'hire-landlord-agent-bids') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-circle-check" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>Agent Bids Received</b>
                     @php
@@ -331,7 +331,7 @@
     @if (auth()->user()->user_type === 'seller')
     <a href="{{ route('seller.agents') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Agents</b></div>
                 <div class="opacity-50 text-400 small">View and communicate with your hired agents.</div>
@@ -342,7 +342,7 @@
     @if (auth()->user()->user_type === 'buyer')
     <a href="{{ route('buyer.agents') }}">
         <div class="d-flex flex-row p-3 border-end border-bottom">
-            <div class="me-3"><i class="fa fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
+            <div class="me-3"><i class="fa-solid fa-users" style="font-size:1.1rem;line-height:1.5rem;"></i></div>
             <div class="w-100">
                 <div class="text-600 mb-1"><b>My Agents</b></div>
                 <div class="opacity-50 text-400 small">View and communicate with your hired agents.</div>

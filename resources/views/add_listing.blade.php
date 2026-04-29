@@ -17,7 +17,7 @@
                         <div class="overlay"></div>
                         <div class="bg-none container position-absolute bottom-0 mb-3">
                             <div class="bg-white shadow text-dark mb-4 p-3 rounded-2">
-                                <div class="mb-2"><i class="fa fa-circle-info me-2"></i> Quick Tip</div>
+                                <div class="mb-2"><i class="fa-solid fa-circle-info me-2"></i> Quick Tip</div>
                                 <p>Increase your page views with a catchy title!</p>
                             </div>
                             <button class="btn border-1 border-dark w-100 text-white p-3" type="button">Save</button>
@@ -126,14 +126,14 @@
                                         <label class="mt-2">Where are you located? </label>
                                         <div class="locationCard col-sm-12 col-md-3 col-lg-3 rounded-2">
                                             <div class="d-grid text-center my-4" data-bs-toggle="modal"
-                                                data-bs-target="#myLocation"><i class="fa fa-map-marker fs-3"></i><span
+                                                data-bs-target="#myLocation"><i class="fa-solid fa-map-marker fs-3"></i><span
                                                     class="small opacity-50 mt-2">Change</span></div>
                                         </div>
                                     </div> --}}
                                 </div>
                                 <div class="rightFooter">
                                     <button class="btn btn-lg text-600 btnNext position-absolute" type="submit">Next <i
-                                            class="fa fa-arrow-right ms-2"></i></button>
+                                            class="fa-solid fa-arrow-right ms-2"></i></button>
                                 </div>
                             </form>
                         </div>
@@ -221,10 +221,10 @@
                                 <div class="rightFooter">
                                     <a href="{{ route('add-listing') . '?step=1&id=' . $id }}"
                                         class="btn btn-lg text-600 btnPrevious position-absolute" type="button"><i
-                                            class="fa fa-arrow-left me-2"></i> Previous
+                                            class="fa-solid fa-arrow-left me-2"></i> Previous
                                     </a>
                                     <button class="btn btn-lg text-600 btnNext position-absolute " type="submit">Next <i
-                                            class="fa fa-arrow-right ms-2"></i></button>
+                                            class="fa-solid fa-arrow-right ms-2"></i></button>
                                 </div>
 
                             </form>
@@ -356,7 +356,7 @@
                                             <span class="text-danger">*</span>
                                         </label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar-sign" id="basic-addon1"></i>
+                                            <i class="fa-solid fa-dollar-sign" id="basic-addon1"></i>
                                             <input type="number" class="form-control border-start-0 mb-0"
                                                 name="starting_price" min="0" required placeholder="0.00"
                                                 value="{{ @$auction->starting_price }}">
@@ -371,7 +371,7 @@
                                             Buy Now Price
                                         </label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar-sign" id="basic-addon1"></i>
+                                            <i class="fa-solid fa-dollar-sign" id="basic-addon1"></i>
                                             <input type="number" name="buy_now_price"
                                                 class="form-control border-start-0 mb-0" min="0"
                                                 placeholder="0.00" value="{{ @$auction->buy_now_price }}">
@@ -385,7 +385,7 @@
                                             Reserve Price
                                         </label>
                                         <div class="d-flex align-items-baseline">
-                                            <i class="fa fa-dollar-sign" id="basic-addon1"></i>
+                                            <i class="fa-solid fa-dollar-sign" id="basic-addon1"></i>
                                             <input type="number" class="form-control border-start-0 mb-0"
                                                 name="reserve_price" min="0" placeholder="0.00"
                                                 value="{{ @$auction->reserve_price }}">
@@ -1240,10 +1240,10 @@
                                 <div class="rightFooter">
                                     <a href="{{ route('add-listing') . '?step=2&id=' . $id }}"
                                         class="btn btn-lg text-600 btnPrevious position-absolute" type="button"><i
-                                            class="fa fa-arrow-left me-2"></i>Previous
+                                            class="fa-solid fa-arrow-left me-2"></i>Previous
                                     </a>
                                     <button class="btn btn-lg text-600 btnNext position-absolute " type="submit">Next <i
-                                            class="fa fa-arrow-right ms-2"></i></button>
+                                            class="fa-solid fa-arrow-right ms-2"></i></button>
                                 </div>
                             </form>
                         </div>
@@ -1273,7 +1273,7 @@
                                             style="position: relative;">
                                             <div class="text-center my-4">
                                                 <label for="photo" class="d-grid ">
-                                                    <i class="fa fa-file-image fs-3"></i><span
+                                                    <i class="fa-solid fa-file-image fs-3"></i><span
                                                         class="small opacity-50 mt-2">add new</span>
                                                 </label>
                                             </div>
@@ -1304,7 +1304,7 @@
                                             style="position: relative;">
                                             <div class="text-center my-4">
                                                 <label for="photo" class="d-grid ">
-                                                    <i class="fa fa-file-video fs-3"></i><span
+                                                    <i class="fa-solid fa-file-video fs-3"></i><span
                                                         class="small opacity-50 mt-2">add new</span>
                                                 </label>
                                             </div>
@@ -1334,7 +1334,7 @@
                                             style="position: relative;">
                                             <div class="text-center my-4">
                                                 <label for="photo" class="d-grid ">
-                                                    <i class="fa fa-file-video fs-3"></i><span
+                                                    <i class="fa-solid fa-file-video fs-3"></i><span
                                                         class="small opacity-50 mt-2">add new</span>
                                                 </label>
                                             </div>
@@ -1353,10 +1353,10 @@
                                 <div class="rightFooter">
                                     <a href="{{ route('add-listing') . '?step=3&id=' . $id }}"
                                         class="btn btn-lg text-600 btnPrevious position-absolute" type="button"><i
-                                            class="fa fa-arrow-left me-2"></i>Previous
+                                            class="fa-solid fa-arrow-left me-2"></i>Previous
                                     </a>
                                     <button class="btn btn-lg text-600 btnNext position-absolute " type="submit">Next <i
-                                            class="fa fa-arrow-right ms-2"></i></button>
+                                            class="fa-solid fa-arrow-right ms-2"></i></button>
                                 </div>
                             </form>
                         </div>
@@ -1380,7 +1380,7 @@
                                 <div class="form-group mt-4">
                                     <div class="locationCard col-sm-12 col-md-3 col-lg-3 rounded-2">
                                         <div class="d-grid text-center my-4" data-bs-toggle="modal"
-                                            data-bs-target="#myLocation"><i class="fa fa-image fs-3"></i><span
+                                            data-bs-target="#myLocation"><i class="fa-solid fa-image fs-3"></i><span
                                                 class="small opacity-50 mt-2">add new</span></div>
                                     </div>
                                 </div>
@@ -1397,7 +1397,7 @@
                                 <div class="form-group mt-4">
                                     <div class="locationCard col-sm-12 col-md-3 col-lg-3 rounded-2">
                                         <div class="d-grid text-center my-4" data-bs-toggle="modal"
-                                            data-bs-target="#myLocation"><i class="fa fa-file-video fs-3"></i><span
+                                            data-bs-target="#myLocation"><i class="fa-solid fa-file-video fs-3"></i><span
                                                 class="small opacity-50 mt-2">add new</span></div>
                                     </div>
                                 </div>
@@ -1414,17 +1414,17 @@
                                 <div class="form-group mt-4">
                                     <div class="locationCard col-sm-12 col-md-3 col-lg-3 rounded-2">
                                         <div class="d-grid text-center my-4" data-bs-toggle="modal"
-                                            data-bs-target="#myLocation"><i class="fa fa-file-audio fs-3"></i><span
+                                            data-bs-target="#myLocation"><i class="fa-solid fa-file-audio fs-3"></i><span
                                                 class="small opacity-50 mt-2">add new</span></div>
                                     </div>
                                 </div>
                             </div>
                             <div class="rightFooter">
                                 <button class="btn btn-lg text-600 btnPrevious position-absolute" type="button"><i
-                                        class="fa fa-arrow-left me-2"></i>Back
+                                        class="fa-solid fa-arrow-left me-2"></i>Back
                                 </button>
                                 <button class="btn btn-lg text-600 btnNext position-absolute" type="button">Next <i
-                                        class="fa fa-arrow-right ms-2"></i></button>
+                                        class="fa-solid fa-arrow-right ms-2"></i></button>
                             </div>
                         </div>
                         <!-- Tab6  -->
@@ -1478,7 +1478,7 @@
                                 </div>
                                 <div class="rightFooter">
                                     {{-- <button class="btn btn-lg text-600 btnPrevious position-absolute" type="button"><i
-                                        class="fa fa-arrow-left me-2"></i>Back
+                                        class="fa-solid fa-arrow-left me-2"></i>Back
                                 </button> --}}
                                     <button style="background:#049399!important;color:#fff;"
                                         class="btn btn-lg text-600 btnNext position-absolute"

@@ -48,7 +48,7 @@
 
                 <div class="row">
                     <div class="form-group col-md-6">
-                        <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Save</button>
+                        <button type="submit" class="btn btn-success"><i class="fa-solid fa-save"></i> Save</button>
                     </div>
                 </div>
             </div>

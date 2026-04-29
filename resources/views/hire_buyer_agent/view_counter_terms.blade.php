@@ -633,7 +633,7 @@
                         @if (!empty($counterData['additional_details_broker']))
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">
-                                <i class="fa fa-file-lines me-2"></i>Broker Additional Terms
+                                <i class="fa-solid fa-file-lines me-2"></i>Broker Additional Terms
                             </h6>
                             <p class="mb-0 ps-3 text-muted">{{ $counterData['additional_details_broker'] }}</p>
                         </div>
@@ -671,7 +671,7 @@
                                 <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @else
                             {{-- Buyer sent the latest counter — agent can respond --}}
@@ -728,7 +728,7 @@
                                 <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
-                                <i class="fa fa-pen-to-square me-2"></i>Edit Counter Terms
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Edit Counter Terms
                             </a>
                             @endif
                         @elseif($viewerRole === 'buyer' && $bidIsTerminal)

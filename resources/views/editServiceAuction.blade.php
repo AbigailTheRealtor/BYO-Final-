@@ -209,7 +209,7 @@
                                     <div class="input-group mb-3">
                                         <input type="text" name="required_at" id="required_at" required readonly class="form-control datetimepicker" value="{{$carbon::parse(@$auction->required_at)->format('Y-m-d h:i A')}}">
                                         <label class="input-group-text" for="required_at">
-                                            <i class="fa fa-calendar"></i>
+                                            <i class="fa-solid fa-calendar"></i>
                                         </label>
                                       </div>
 
@@ -240,7 +240,7 @@
                                     </label>
                                     <div class="input-group">
                                         <div class="input-group-text p-0">
-                                        {{-- <i class="fa fa-dollar-sign" id="basic-addon1"></i> --}}
+                                        {{-- <i class="fa-solid fa-dollar-sign" id="basic-addon1"></i> --}}
                                         <select name="min_price_in" class="form-select" style="background-color: #e9ecef; border: 0;">
                                             <option value="$">$</option>
                                             <option value="%">%</option>
@@ -262,7 +262,7 @@
                                     </label>
                                     <div class="input-group">
                                         <div class="input-group-text">
-                                        <i class="fa fa-percent" id="basic-addon1"></i>
+                                        <i class="fa-solid fa-percent" id="basic-addon1"></i>
                                         </div>
 
                                         <input type="number" class="form-control border-start-0 mb-0" name="min_price_percent"
@@ -404,7 +404,7 @@ Address where the agent needs to meet:"}}</textarea>
                                 @if (@$auction->video)
                                         <div class="col-md-4" style="position: relative;">
                                             <div style="position: absolute; top:10px; right: 30px; background: rgba(255,255,255,0.8); border:1px solid #e0e0e0; z-index:9999;">
-                                            <a href="{{route('agent.service.auction.video.remove', @$auction->id)}}" style="cursor: pointer; color:red; padding:5px 10px;"><i class="fa fa-trash"></i></a>
+                                            <a href="{{route('agent.service.auction.video.remove', @$auction->id)}}" style="cursor: pointer; color:red; padding:5px 10px;"><i class="fa-solid fa-trash"></i></a>
                                             </div>
                                             <video class="video-fluid" controls playsinline muted style="width: 100%;">
                                                 <source src="{{ asset('auction/videos/' . @$auction->video) }}" type="video/mp4">
