@@ -72,11 +72,11 @@ class AgentProfileController extends Controller
 
         $profiles = AgentDefaultProfile::where('user_id', $agent->id)->get();
 
-        // Build one Hire button per role. For each role, iterate property types in
-        // catalog order and use the first one that has a valid preset with services.
+        // Build hire button data per role. For each role, collect ALL property
+        // types that have a valid preset with at least one service configured.
         $hireButtons = [];
         foreach (AgentPresetCatalog::getRoles() as $role) {
-            $primaryPropertyType = null;
+            $validOptions = [];
             foreach (AgentPresetCatalog::getPropertyTypes($role) as $propertyType) {
                 $profile = $profiles->first(function ($p) use ($role, $propertyType) {
                     return $p->role_type === $role && $p->property_type === $propertyType;
@@ -86,21 +86,23 @@ class AgentProfileController extends Controller
                 }
                 $services = HireAgentDirectController::resolveServices($profile);
                 if (count($services) > 0) {
-                    $primaryPropertyType = $propertyType;
-                    break;
+                    $validOptions[] = [
+                        'propertyType' => $propertyType,
+                        'propLabel'    => AgentDefaultProfile::propertyLabel($propertyType),
+                        'url'          => route('hire.agent.public', [
+                            'agentShortId' => $agentShortId,
+                            'role'         => $role,
+                            'propertyType' => $propertyType,
+                        ]),
+                    ];
                 }
             }
-            if ($primaryPropertyType !== null) {
+            if (count($validOptions) > 0) {
                 $hireButtons[] = [
-                    'role'         => $role,
-                    'propertyType' => $primaryPropertyType,
-                    'roleLabel'    => AgentDefaultProfile::roleLabel($role),
-                    'propLabel'    => AgentDefaultProfile::propertyLabel($primaryPropertyType),
-                    'url'          => route('hire.agent.public', [
-                        'agentShortId' => $agentShortId,
-                        'role'         => $role,
-                        'propertyType' => $primaryPropertyType,
-                    ]),
+                    'role'      => $role,
+                    'roleLabel' => AgentDefaultProfile::roleLabel($role),
+                    'options'   => $validOptions,
+                    'direct'    => count($validOptions) === 1,
                 ];
             }
         }

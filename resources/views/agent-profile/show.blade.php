@@ -163,6 +163,53 @@
         border-radius: 4px;
         padding: .1rem .4rem;
     }
+    .hire-picker-wrap {
+        display: inline-block;
+        position: relative;
+    }
+    .hire-picker-wrap > summary {
+        list-style: none;
+        cursor: pointer;
+    }
+    .hire-picker-wrap > summary::-webkit-details-marker { display: none; }
+    .hire-picker-options {
+        position: absolute;
+        top: calc(100% + .35rem);
+        left: 0;
+        background: #fff;
+        border: 1px solid #c8e8ea;
+        border-radius: 8px;
+        box-shadow: 0 4px 14px rgba(0,0,0,.1);
+        min-width: 220px;
+        z-index: 100;
+        padding: .35rem 0;
+    }
+    .hire-picker-option {
+        display: block;
+        padding: .5rem 1rem;
+        font-size: .88rem;
+        font-weight: 600;
+        color: #036b70;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background .12s;
+    }
+    .hire-picker-option:hover {
+        background: #f0fafa;
+        color: #024e52;
+    }
+    .hire-owner-note {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        background: #f8f9fa;
+        border: 1px dashed #ced4da;
+        border-radius: 7px;
+        padding: .55rem 1.1rem;
+        font-size: .88rem;
+        color: #6c757d;
+        font-style: italic;
+    }
     .link-pill {
         display: inline-block;
         background: #f0fafa;
@@ -559,18 +606,47 @@
     @endif
 
     {{-- ── HIRE BUTTONS ─────────────────────────────────────────────── --}}
-    @if (count($hireButtons) > 0)
+    @if ($isOwnerPreview && count($hireButtons) > 0)
+        <div class="profile-section">
+            <div class="profile-section-header"><i class="fa fa-handshake-o"></i> Hire This Agent</div>
+            <div class="profile-section-body">
+                <div class="hire-btn-grid">
+                    <span class="hire-owner-note">
+                        <i class="fa fa-info-circle"></i>
+                        Clients will use this button to hire you — it is not active in preview mode.
+                    </span>
+                </div>
+            </div>
+        </div>
+    @elseif (!$isOwnerPreview && count($hireButtons) > 0)
         <div class="profile-section">
             <div class="profile-section-header"><i class="fa fa-handshake-o"></i> Hire This Agent</div>
             <div class="profile-section-body">
                 <p class="text-muted small mb-3">Select the role you'd like to hire {{ $agentDisplayName }} for:</p>
                 <div class="hire-btn-grid">
                     @foreach ($hireButtons as $btn)
-                        <a href="{{ $btn['url'] }}" class="hire-btn">
-                            <i class="fa fa-arrow-right"></i>
-                            {{ $btn['roleLabel'] }}
-                            <span class="hire-role-badge">{{ $btn['propLabel'] }}</span>
-                        </a>
+                        @if ($btn['direct'])
+                            <a href="{{ $btn['options'][0]['url'] }}" class="hire-btn">
+                                <i class="fa fa-arrow-right"></i>
+                                {{ $btn['roleLabel'] }}
+                                <span class="hire-role-badge">{{ $btn['options'][0]['propLabel'] }}</span>
+                            </a>
+                        @else
+                            <details class="hire-picker-wrap">
+                                <summary class="hire-btn">
+                                    <i class="fa fa-arrow-right"></i>
+                                    {{ $btn['roleLabel'] }}
+                                    <i class="fa fa-caret-down hire-role-badge" style="font-size:.8rem;background:none;padding:0;"></i>
+                                </summary>
+                                <div class="hire-picker-options">
+                                    @foreach ($btn['options'] as $opt)
+                                        <a href="{{ $opt['url'] }}" class="hire-picker-option">
+                                            <i class="fa fa-home me-1" style="width:1rem;text-align:center;"></i>{{ $opt['propLabel'] }}
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </details>
+                        @endif
                     @endforeach
                 </div>
             </div>
