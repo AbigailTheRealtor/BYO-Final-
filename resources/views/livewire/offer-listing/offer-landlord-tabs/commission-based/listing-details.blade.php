@@ -199,7 +199,7 @@ $auction_lengths_seller = [
                     <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative"
                         for="status-hired" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="An Agent has been selected and the listing is closed to new bids.">
-                        <span class="status-icon"><i class="fas fa-user-tie me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-user-tie me-2"></i></span>
                         <span class="status-text">Hired Agent</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
