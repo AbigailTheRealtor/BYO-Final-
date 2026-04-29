@@ -273,7 +273,7 @@
                                                                                                         target="_blank"
                                                                                                         class="text-primary text-decoration-none">
                                                                                                         <i
-                                                                                                            class="fab fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
+                                                                                                            class="fa-brands fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
                                                                                                         @if (!empty($socialArray['text']))
                                                                                                             {{ $socialArray['text'] }}
                                                                                                         @else

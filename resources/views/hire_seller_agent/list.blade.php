@@ -103,7 +103,7 @@
                                                     {{ $auction->bids->count() }} Bid{{ $auction->bids->count() != 1 ? 's' : '' }}
                                                 </span>
                                             </div>
-                                            <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                            <i class="fa-solid" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
                                         </div>
                                     </div>
 

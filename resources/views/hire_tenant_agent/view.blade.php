@@ -2699,7 +2699,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                         target="_blank"
                                                                         class="text-primary text-decoration-none">
                                                                         <i
-                                                                            class="fab fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
+                                                                            class="fa-brands fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
                                                                         @if (!empty($socialArray['text']))
                                                                         {{ $socialArray['text'] }}
                                                                         @else
@@ -4730,19 +4730,19 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
     <div class="card-social">
         <ul class="icons">
             <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
-                <i class="fab fa-facebook-f"></i>
+                <i class="fa-brands fa-facebook-f"></i>
             </a>
             <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
-                <i class="fab fa-twitter"></i>
+                <i class="fa-brands fa-twitter"></i>
             </a>
             <a href="">
-                <i class="fab fa-instagram"></i>
+                <i class="fa-brands fa-instagram"></i>
             </a>
             <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
-                <i class="fab fa-pinterest"></i>
+                <i class="fa-brands fa-pinterest"></i>
             </a>
             <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode(route('tenant.agent.view.auction.view', $auction->id)) }}" target="_blank" rel="noopener">
-                <i class="fab fa-linkedin"></i>
+                <i class="fa-brands fa-linkedin"></i>
             </a>
         </ul>
         <p class="small opacity-8">Or copy link</p>

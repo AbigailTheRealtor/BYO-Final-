@@ -235,7 +235,7 @@
                             }
                             @endphp
                             <a href="{{ $socialUrl }}" target="_blank" class="text-primary text-decoration-none">
-                                <i class="fab fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
+                                <i class="fa-brands fa-{{ strtolower($socialArray['platform']) }} me-1"></i>
                                 {{ !empty($socialArray['text']) ? $socialArray['text'] : $socialArray['platform'] }}
                             </a>
                         </div>

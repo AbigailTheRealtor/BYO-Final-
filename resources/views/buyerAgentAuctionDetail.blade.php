@@ -4263,19 +4263,19 @@
                     <div class="card-social">
                         <ul class="icons">
                             <a href="https://www.facebook.com/sharer/sharer.php?u={{ urlencode(route('buyer.view-auction', $auction->id)) }}" target="_blank" rel="noopener">
-                                <i class="fab fa-facebook-f"></i>
+                                <i class="fa-brands fa-facebook-f"></i>
                             </a>
                             <a href="https://twitter.com/intent/tweet?url={{ urlencode(route('buyer.view-auction', $auction->id)) }}" target="_blank" rel="noopener">
-                                <i class="fab fa-twitter"></i>
+                                <i class="fa-brands fa-twitter"></i>
                             </a>
                             <a href="">
-                                <i class="fab fa-instagram"></i>
+                                <i class="fa-brands fa-instagram"></i>
                             </a>
                             <a href="https://pinterest.com/pin/create/button/?url={{ urlencode(route('buyer.view-auction', $auction->id)) }}" target="_blank" rel="noopener">
-                                <i class="fab fa-pinterest"></i>
+                                <i class="fa-brands fa-pinterest"></i>
                             </a>
                             <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ urlencode(route('buyer.view-auction', $auction->id)) }}" target="_blank" rel="noopener">
-                                <i class="fab fa-linkedin"></i>
+                                <i class="fa-brands fa-linkedin"></i>
                             </a>
                         </ul>
                         <p class="small opacity-8">Or copy link</p>
