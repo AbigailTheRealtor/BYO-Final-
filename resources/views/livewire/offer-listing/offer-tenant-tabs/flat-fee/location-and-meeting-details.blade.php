@@ -6,7 +6,7 @@
         <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
+            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
             autocomplete="off" placeholder="Enter city">
 
         <!-- City Suggestions Dropdown -->
@@ -17,7 +17,7 @@
                         <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCitySuggestion('{{ $suggestion }}')"
                             wire:key="city-suggestion-{{ $index }}">
-                            <i class="fas fa-city me-2 text-muted"></i>
+                            <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -35,7 +35,7 @@
         @if (count($cities) > 0)
             @foreach ($cities as $index => $city)
                 <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
-                    <i class="fas fa-city me-2"></i>
+                    <i class="fa-solid fa-city me-2"></i>
                     {{ $city }}
                     <button type="button" class="byo-pill-remove ms-2"
                         wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
@@ -64,7 +64,7 @@
                         <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCountySuggestion('{{ $suggestion }}')"
                             wire:key="county-suggestion-{{ $index }}">
-                            <i class="fas fa-map me-2 text-muted"></i>
+                            <i class="fa-solid fa-map me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -82,7 +82,7 @@
         @if (count($counties) > 0)
             @foreach ($counties as $index => $county)
                 <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
-                    <i class="fas fa-map me-2"></i>
+                    <i class="fa-solid fa-map me-2"></i>
                     {{ $county }}
                     <button type="button" class="byo-pill-remove ms-2"
                         wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
@@ -137,7 +137,7 @@
                 In-Person Meeting Details:
                 <small class="text-muted" data-bs-toggle="tooltip"
                     title="Specify the date and time for the in-person meeting related to the selected service(s). This will be visible to the agent before they accept the job.">
-                    <i class="fas fa-comment-dots text-primary"></i>
+                    <i class="fa-solid fa-comment-dots text-primary"></i>
                 </small>
             </h5>
 
@@ -238,7 +238,7 @@
                                     @foreach ($addressSuggestions as $index => $suggestion)
                                         <li class="list-group-item {{ $highlightedAddressIndex === $index ? 'active' : '' }}"
                                             wire:click="selectAddressSuggestion('{{ $suggestion }}')">
-                                            <i class="fas fa-map-marker-alt me-2"></i>
+                                            <i class="fa-solid fa-map-marker-alt me-2"></i>
                                             {{ $suggestion }}
                                         </li>
                                     @endforeach
@@ -274,7 +274,7 @@
                 Deadline for Service Completion (if no in-person meeting is required):
                 <small class="text-muted" data-bs-toggle="tooltip"
                     title="This is the date and time by which the agent should complete the selected service(s) if no in-person meeting is required.">
-                    <i class="fas fa-comment-dots text-primary"></i>
+                    <i class="fa-solid fa-comment-dots text-primary"></i>
                 </small>
             </h5>
             <!-- Date -->

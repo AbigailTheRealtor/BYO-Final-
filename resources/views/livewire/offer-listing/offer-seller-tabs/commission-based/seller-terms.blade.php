@@ -1039,7 +1039,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
-                data-icon="fas fa-clipboard-list"
+                data-icon="fa-solid fa-clipboard-list"
                 placeholder="Enter specific terms for the lease option (e.g., Buyer may conduct inspections during lease term)">
         </div>
     </div>
@@ -1214,7 +1214,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <input wire:model="lease_purchase_terms" class="form-control has-icon" data-icon="fas fa-clipboard-list"
+            <input wire:model="lease_purchase_terms" class="form-control has-icon" data-icon="fa-solid fa-clipboard-list"
                 placeholder="Enter specific terms proposed for the lease purchase (e.g., Rent credits apply toward purchase)">
         </div>
     </div>

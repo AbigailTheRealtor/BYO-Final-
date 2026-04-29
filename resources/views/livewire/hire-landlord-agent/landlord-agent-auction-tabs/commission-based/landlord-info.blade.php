@@ -75,7 +75,7 @@
         <div class="input-cover" wire:key="photo-input-stable">
             <div class="input-group">
                 <input type="file" wire:model="photo" id="photo-input" class="form-control has-icon"
-                    data-icon="fas fa-camera" accept="image/*">
+                    data-icon="fa-solid fa-camera" accept="image/*">
             </div>
         </div>
         <span id="photo-error" class="text-danger" style="display: none;"></span>
@@ -115,7 +115,7 @@
         <div class="input-cover">
             <div class="input-group">
                 <input type="file" wire:model="video" id="video-input" class="form-control has-icon"
-                    data-icon="fas fa-video" accept="video/*">
+                    data-icon="fa-solid fa-video" accept="video/*">
             </div>
         </div>
         <span id="video-error" class="text-danger" style="display: none;"></span>

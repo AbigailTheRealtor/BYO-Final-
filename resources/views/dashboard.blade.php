@@ -631,15 +631,15 @@
                                             <div class="alert alert-info d-flex justify-content-between align-items-center mb-2" role="alert" id="notification-{{ $notification->id }}">
                                                 <div>
                                                     @if($type === 'bid_accepted' || $type === 'counter_bid_accepted')
-                                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                                        <i class="fa-solid fa-check-circle text-success me-2"></i>
                                                     @elseif($type === 'bid_countered' || $type === 'counter_bid_submitted')
-                                                        <i class="fas fa-exchange-alt text-warning me-2"></i>
+                                                        <i class="fa-solid fa-exchange-alt text-warning me-2"></i>
                                                     @elseif($type === 'bid_rejected')
-                                                        <i class="fas fa-times-circle text-danger me-2"></i>
+                                                        <i class="fa-solid fa-times-circle text-danger me-2"></i>
                                                     @elseif($type === 'bid_submitted' || $type === 'bid_received')
-                                                        <i class="fas fa-gavel text-primary me-2"></i>
+                                                        <i class="fa-solid fa-gavel text-primary me-2"></i>
                                                     @else
-                                                        <i class="fas fa-bell me-2"></i>
+                                                        <i class="fa-solid fa-bell me-2"></i>
                                                     @endif
                                                     <span>{{ $message }}</span>
                                                     @if($listingId)

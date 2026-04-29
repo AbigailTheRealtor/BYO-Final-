@@ -160,7 +160,7 @@
         <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
+            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
             autocomplete="off" placeholder="Enter city or cities">
 
 
@@ -172,7 +172,7 @@
                         <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCitySuggestion('{{ $suggestion }}')"
                             wire:key="city-suggestion-{{ $index }}">
-                            <i class="fas fa-city me-2 text-muted"></i>
+                            <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -190,7 +190,7 @@
         @if (count($cities) > 0)
             @foreach ($cities as $index => $city)
                 <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
-                    <i class="fas fa-city me-2"></i>
+                    <i class="fa-solid fa-city me-2"></i>
                     {{ $city }}
                     <button type="button" class="byo-pill-remove ms-2"
                         wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
@@ -225,7 +225,7 @@
                         <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCountySuggestion('{{ $suggestion }}')"
                             wire:key="county-suggestion-{{ $index }}">
-                            <i class="fas fa-map me-2 text-muted"></i>
+                            <i class="fa-solid fa-map me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -248,7 +248,7 @@
         @if (count($counties) > 0)
             @foreach ($counties as $index => $county)
                 <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
-                    <i class="fas fa-map me-2"></i>
+                    <i class="fa-solid fa-map me-2"></i>
                     {{ $county }}
                     <button type="button" class="byo-pill-remove ms-2"
                         wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
@@ -999,7 +999,7 @@
 
 
         <div class="input-cover">
-            <select wire:model="real_estate_purchase" class="form-control has-icon" data-icon="fas fa-building"
+            <select wire:model="real_estate_purchase" class="form-control has-icon" data-icon="fa-solid fa-building"
                 required>
                 <option value="">Select</option>
                 <option value="Real Estate Building and Business">
@@ -1028,7 +1028,7 @@
 
         <div class="input-cover" wire:ignore>
             <select id="assets" class="form-control has-icon select2-multiple"
-                data-icon="fas fa-building input-icon2" multiple>
+                data-icon="fa-solid fa-building input-icon2" multiple>
                 <option value="Goodwill and Business Name" {{ in_array('Goodwill and Business Name', $assets ?? []) ? 'selected' : '' }}>
                     Goodwill and Business Name
                 </option>
@@ -1060,7 +1060,7 @@
 @if (in_array($property_type, ['Income', 'Commercial', 'Business']))
 <div class="form-group other_assets {{ in_array('Other', $assets ?? []) ? '' : 'd-none' }}" wire:key="other-assets-wrapper">
     <div class="input-cover">
-        <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fas fa-building"
+        <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fa-solid fa-building"
             placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
     </div>
     <span class="error mt-2" id="assets_other_error"></span>
@@ -1080,7 +1080,7 @@
         </label>
 
         <div class="input-cover">
-            <select wire:model="unit_size" id="unit_size" class="form-control has-icon" data-icon="fas fa-building">
+            <select wire:model="unit_size" id="unit_size" class="form-control has-icon" data-icon="fa-solid fa-building">
                 <option value="">Select</option>
                 <option value="1-4 Units">1–4 Units</option>
                 <option value="5-10 Units">5–10 Units</option>
@@ -1093,7 +1093,7 @@
         <div class="form-group" wire:key="unit-size-other-wrapper">
             <div class="input-cover">
                 <input type="text" wire:model.defer="unit_size_other" class="form-control has-icon"
-                    data-icon="fas fa-building" placeholder="Enter acceptable number of units (e.g., 15 Units)">
+                    data-icon="fa-solid fa-building" placeholder="Enter acceptable number of units (e.g., 15 Units)">
             </div>
         </div>
     @endif

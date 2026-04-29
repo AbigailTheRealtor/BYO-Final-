@@ -22,7 +22,7 @@
 <div class="container py-4">
     <div class="mb-3">
         <a href="{{ $backUrl }}" class="back-link">
-            <i class="fas fa-arrow-left me-2"></i>{{ $backLabel }}
+            <i class="fa-solid fa-arrow-left me-2"></i>{{ $backLabel }}
         </a>
     </div>
 
@@ -32,10 +32,10 @@
         <div class="bid-preview-header">
             <div class="d-flex justify-content-between align-items-start flex-wrap">
                 <div>
-                    <h4 class="mb-2"><i class="fas fa-user-tie me-2"></i>{{ $headerTitle }}</h4>
+                    <h4 class="mb-2"><i class="fa-solid fa-user-tie me-2"></i>{{ $headerTitle }}</h4>
                     <div class="opacity-75">
-                        <span class="me-3"><i class="fas fa-home me-1"></i>{{ $roleLabel }}</span>
-                        <span><i class="fas fa-tag me-1"></i>Listing #{{ $listingId }}</span>
+                        <span class="me-3"><i class="fa-solid fa-home me-1"></i>{{ $roleLabel }}</span>
+                        <span><i class="fa-solid fa-tag me-1"></i>Listing #{{ $listingId }}</span>
                     </div>
                 </div>
                 <div class="text-end mt-2 mt-md-0">
@@ -65,7 +65,7 @@
 
             {{-- Back button — LEFT --}}
             <a href="{{ $backUrl }}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left me-1"></i>{{ $backLabel }}
+                <i class="fa-solid fa-arrow-left me-1"></i>{{ $backLabel }}
             </a>
 
             {{-- Role-specific action buttons — RIGHT --}}

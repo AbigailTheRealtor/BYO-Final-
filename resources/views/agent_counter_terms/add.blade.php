@@ -194,7 +194,7 @@
                 <label class="fw-bold">What is the fee that the agent charges to secure a property for the tenant?
                 </label>
                 <input type="text" class="form-control has-icon" name="agentChargeOther"
-                  data-icon="fas fa-dollar-sign">
+                  data-icon="fa-solid fa-dollar-sign">
               </div>
             </div>
           </div>
@@ -219,7 +219,7 @@
               </select>
               <div class="form-group agentFeeYes d-none">
                 <label class="fw-bold">What is the cancellation fee to the tenant?</label>
-                <input type="text" class="form-control has-icon" name="agentFeeOther" data-icon="fas fa-dollar-sign">
+                <input type="text" class="form-control has-icon" name="agentFeeOther" data-icon="fa-solid fa-dollar-sign">
               </div>
             </div>
           </div>

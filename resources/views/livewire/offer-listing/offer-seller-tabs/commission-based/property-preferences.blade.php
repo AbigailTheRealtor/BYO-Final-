@@ -457,7 +457,7 @@
             wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
             wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
             class="form-control has-icon @error('property_city') is-invalid @enderror" 
-            data-icon="fas fa-city"
+            data-icon="fa-solid fa-city"
             autocomplete="off" 
             placeholder="Enter city"
             required>
@@ -469,7 +469,7 @@
                         <li class="list-group-item {{ ($highlightedPropertyCityIndex ?? -1) === $index ? 'bg-light' : '' }}"
                             wire:click="selectPropertyCitySuggestion('{{ $suggestion }}')"
                             wire:key="property-city-suggestion-{{ $index }}">
-                            <i class="fas fa-city me-2 text-muted"></i>
+                            <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -555,7 +555,7 @@
             <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
                 wire:keydown.arrow-up.prevent="decrementHighlight('City')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-                class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
+                class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
                 autocomplete="off" placeholder="Enter city or cities">
 
             <!-- City Suggestions Dropdown -->
@@ -566,7 +566,7 @@
                             <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
                                 wire:click="selectCitySuggestion('{{ $suggestion }}')"
                                 wire:key="city-suggestion-{{ $index }}">
-                                <i class="fas fa-city me-2 text-muted"></i>
+                                <i class="fa-solid fa-city me-2 text-muted"></i>
                                 {{ $suggestion }}
                             </li>
                         @endforeach
@@ -584,7 +584,7 @@
             @if (count($cities) > 0)
                 @foreach ($cities as $index => $city)
                     <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
-                        <i class="fas fa-city me-2"></i>
+                        <i class="fa-solid fa-city me-2"></i>
                         {{ $city }}
                         <button type="button" class="byo-pill-remove ms-2"
                             wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
@@ -609,7 +609,7 @@
             <input type="text" wire:model="zip_code" wire:keydown.enter.prevent="selectZipCodeSuggestion()"
                 wire:keydown.arrow-up.prevent="decrementHighlight('ZipCode')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('ZipCode')"
-                class="form-control has-icon @error('zip_code') is-invalid @enderror" data-icon="fas fa-map-pin"
+                class="form-control has-icon @error('zip_code') is-invalid @enderror" data-icon="fa-solid fa-map-pin"
                 autocomplete="off" placeholder="Enter one or more ZIP codes">
 
             @if (count($zipCodeSuggestions) > 0)
@@ -619,7 +619,7 @@
                             <li class="list-group-item {{ $highlightedZipCodeIndex === $index ? 'bg-light' : '' }}"
                                 wire:click="selectZipCodeSuggestion('{{ $suggestion }}')"
                                 wire:key="zip-suggestion-{{ $index }}">
-                                <i class="fas fa-map-pin me-2 text-muted"></i>
+                                <i class="fa-solid fa-map-pin me-2 text-muted"></i>
                                 {{ $suggestion }}
                             </li>
                         @endforeach
@@ -637,7 +637,7 @@
             @if (count($zipCodes) > 0)
                 @foreach ($zipCodes as $index => $zip)
                     <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="zip-badge-{{ $index }}">
-                        <i class="fas fa-map-pin me-2"></i>
+                        <i class="fa-solid fa-map-pin me-2"></i>
                         {{ $zip }}
                         <button type="button" class="byo-pill-remove ms-2"
                             wire:click="removeZipCode({{ $index }})" aria-label="Remove">&times;</button>
@@ -959,7 +959,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="sqft_heated_source" class="form-control has-icon" data-icon="fas fa-ruler">
+            <select wire:model="sqft_heated_source" class="form-control has-icon" data-icon="fa-solid fa-ruler">
                 <option value="">Select</option>
                 <option value="Appraisal">Appraisal</option>
                 <option value="Builder">Builder</option>
@@ -1426,7 +1426,7 @@
         </span>
 
         <div class="input-cover">
-            <select wire:model="real_estate_purchase" class="form-control has-icon" data-icon="fas fa-building"
+            <select wire:model="real_estate_purchase" class="form-control has-icon" data-icon="fa-solid fa-building"
                 required>
                 <option value="">Select</option>
                 <option value="Real Estate Building and Business">Real Estate Building and Business </option>
@@ -1463,7 +1463,7 @@
     <div class="form-group other_assets mt-3" style="{{ (is_array($business_assets) && in_array('Other', $business_assets)) ? 'display:block;' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
-                data-icon="fas fa-building"
+                data-icon="fa-solid fa-building"
                 placeholder=" Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
         </div>
     </div>

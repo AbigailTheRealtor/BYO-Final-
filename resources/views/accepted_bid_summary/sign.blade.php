@@ -108,7 +108,7 @@
                         <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9ecef; padding: 18px 24px;">
                             <div>
                                 <h5 class="mb-1" style="color: #1a3a5c; font-weight: 700;">
-                                    <i class="fas fa-file-upload me-2" style="color: #0d6efd;"></i>
+                                    <i class="fa-solid fa-file-upload me-2" style="color: #0d6efd;"></i>
                                     Optional Document Sharing
                                     <span class="badge ms-2" style="background: #e8f0fe; color: #0d6efd; font-size: 0.72rem; font-weight: 600; border-radius: 20px; padding: 3px 10px;">Recommended</span>
                                 </h5>
@@ -125,7 +125,7 @@
 
                             @if(session('doc_success'))
                             <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
-                                <i class="fas fa-check-circle me-2"></i>{{ session('doc_success') }}
+                                <i class="fa-solid fa-check-circle me-2"></i>{{ session('doc_success') }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
@@ -139,20 +139,20 @@
                                     <div class="col-md-6">
                                         <div class="doc-upload-card p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
-                                                <i class="fas fa-id-card me-1 text-muted"></i> Government-Issued ID
+                                                <i class="fa-solid fa-id-card me-1 text-muted"></i> Government-Issued ID
                                             </label>
                                             <p class="text-muted mb-2" style="font-size: 0.8rem;">Driver's license, passport, or state ID</p>
 
                                             @if(!empty($existingDocs?->id_document_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="id_document" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -162,20 +162,20 @@
                                     <div class="col-md-6">
                                         <div class="doc-upload-card p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
-                                                <i class="fas fa-dollar-sign me-1 text-muted"></i> Proof of Funds
+                                                <i class="fa-solid fa-dollar-sign me-1 text-muted"></i> Proof of Funds
                                             </label>
                                             <p class="text-muted mb-2" style="font-size: 0.8rem;">Bank statement or asset account statement</p>
 
                                             @if(!empty($existingDocs?->proof_of_funds_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="proof_of_funds" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -186,20 +186,20 @@
                                     <div class="col-md-6">
                                         <div class="doc-upload-card p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
-                                                <i class="fas fa-file-signature me-1 text-muted"></i> Pre-Approval Letter
+                                                <i class="fa-solid fa-file-signature me-1 text-muted"></i> Pre-Approval Letter
                                             </label>
                                             <p class="text-muted mb-2" style="font-size: 0.8rem;">Mortgage pre-approval from a lender</p>
 
                                             @if(!empty($existingDocs?->pre_approval_letter_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="pre_approval_letter" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -210,20 +210,20 @@
                                     <div class="col-md-6">
                                         <div class="doc-upload-card p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
-                                                <i class="fas fa-file-invoice-dollar me-1 text-muted"></i> Proof of Income
+                                                <i class="fa-solid fa-file-invoice-dollar me-1 text-muted"></i> Proof of Income
                                             </label>
                                             <p class="text-muted mb-2" style="font-size: 0.8rem;">Pay stub, offer letter, or bank statements</p>
 
                                             @if(!empty($existingDocs?->proof_of_income_path))
                                             <div class="d-flex align-items-center mb-2 p-2 rounded" style="background: #d1e7dd; font-size: 0.82rem;">
-                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <i class="fa-solid fa-check-circle text-success me-2"></i>
                                                 <span class="text-success fw-semibold">File uploaded</span>
                                                 <span class="ms-auto text-muted">Replace below</span>
                                             </div>
                                             @endif
 
                                             <input type="file" class="form-control form-control-sm doc-file-input" name="proof_of_income" accept=".pdf,.jpg,.jpeg,.png">
-                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fas fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
+                                            <div class="doc-file-hint text-muted mt-1" style="font-size: 0.76rem;"><i class="fa-solid fa-info-circle me-1"></i>Accepted: PDF, JPG, PNG &middot; Max 20 MB</div>
                                             <div class="doc-file-error text-danger mt-1 d-none" style="font-size: 0.78rem;"></div>
                                         </div>
                                     </div>
@@ -234,7 +234,7 @@
                                     <div class="col-md-6">
                                         <div class="doc-upload-card p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
                                             <label class="form-label fw-semibold mb-1" style="font-size: 0.9rem;">
-                                                <i class="fas fa-link me-1 text-muted"></i> Property Record Link
+                                                <i class="fa-solid fa-link me-1 text-muted"></i> Property Record Link
                                             </label>
                                             <p class="text-muted mb-2" style="font-size: 0.8rem;">Paste a public county property appraiser or property record link related to this property.</p>
                                             <input
@@ -252,7 +252,7 @@
 
                                 <div class="d-flex align-items-center mt-4 gap-3 flex-wrap">
                                     <button type="submit" class="btn btn-primary px-4" id="signSaveDocsBtn" style="font-weight: 600;" disabled>
-                                        <i class="fas fa-cloud-upload-alt me-2"></i>Save Documents
+                                        <i class="fa-solid fa-cloud-upload-alt me-2"></i>Save Documents
                                     </button>
                                     <span class="text-muted" id="signSaveDocsBtnHint" style="font-size: 0.82rem;">
                                         Select at least one file to enable saving.
@@ -274,10 +274,10 @@
             @if($userRole === 'agent')
             @php
                 $docTypes = [
-                    'id_document'         => ['label' => 'Government-Issued ID',  'icon' => 'fas fa-id-card'],
-                    'proof_of_funds'      => ['label' => 'Proof of Funds',         'icon' => 'fas fa-dollar-sign'],
-                    'pre_approval_letter' => ['label' => 'Pre-Approval Letter',    'icon' => 'fas fa-file-signature'],
-                    'proof_of_income'     => ['label' => 'Proof of Income',        'icon' => 'fas fa-file-invoice-dollar'],
+                    'id_document'         => ['label' => 'Government-Issued ID',  'icon' => 'fa-solid fa-id-card'],
+                    'proof_of_funds'      => ['label' => 'Proof of Funds',         'icon' => 'fa-solid fa-dollar-sign'],
+                    'pre_approval_letter' => ['label' => 'Pre-Approval Letter',    'icon' => 'fa-solid fa-file-signature'],
+                    'proof_of_income'     => ['label' => 'Proof of Income',        'icon' => 'fa-solid fa-file-invoice-dollar'],
                 ];
                 $pathMap = [
                     'id_document'         => 'id_document_path',
@@ -301,7 +301,7 @@
                         <div class="card-header bg-white d-flex justify-content-between align-items-center" style="border-bottom: 1px solid #e9ecef; padding: 18px 24px;">
                             <div>
                                 <h5 class="mb-1" style="color: #1a3a5c; font-weight: 700;">
-                                    <i class="fas fa-folder-open me-2" style="color: #198754;"></i>
+                                    <i class="fa-solid fa-folder-open me-2" style="color: #198754;"></i>
                                     Shared Documents
                                 </h5>
                                 <p class="mb-0 text-muted" style="font-size: 0.88rem;">
@@ -311,7 +311,7 @@
                         </div>
                         <div class="card-body" style="padding: 24px;">
                             @if(!$sharedDocs || !$hasAnyDoc)
-                                <p class="text-muted mb-0"><i class="fas fa-info-circle me-1"></i> No documents have been shared yet.</p>
+                                <p class="text-muted mb-0"><i class="fa-solid fa-info-circle me-1"></i> No documents have been shared yet.</p>
                             @else
                                 <div class="row g-3">
                                     @foreach($docTypes as $typeKey => $meta)
@@ -327,7 +327,7 @@
                                                 <a href="{{ route('accepted-bid-summary.download-document', ['id' => $summary->id, 'type' => $typeKey]) }}"
                                                    target="_blank"
                                                    class="btn btn-sm btn-outline-success flex-shrink-0">
-                                                    <i class="fas fa-eye me-1"></i>View
+                                                    <i class="fa-solid fa-eye me-1"></i>View
                                                 </a>
                                             </div>
                                         </div>
@@ -336,13 +336,13 @@
                                     @if(!empty($sharedDocs->property_record_link))
                                     <div class="col-md-6">
                                         <div class="p-3 rounded d-flex align-items-center gap-3" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
-                                            <i class="fas fa-link fa-lg text-success"></i>
+                                            <i class="fa-solid fa-link fa-lg text-success"></i>
                                             <div class="flex-grow-1 overflow-hidden">
                                                 <div class="fw-semibold" style="font-size: 0.9rem;">Property Record Link</div>
                                                 <a href="{{ $sharedDocs->property_record_link }}" target="_blank" rel="noopener" class="text-truncate d-block" style="font-size: 0.78rem;">{{ $sharedDocs->property_record_link }}</a>
                                             </div>
                                             <a href="{{ $sharedDocs->property_record_link }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success flex-shrink-0">
-                                                <i class="fas fa-external-link-alt me-1"></i>Open
+                                                <i class="fa-solid fa-external-link-alt me-1"></i>Open
                                             </a>
                                         </div>
                                     </div>
@@ -466,14 +466,14 @@
 
     // Ensure the button always shows the correct label on page load
     // (guards against a previous submit that didn't redirect, leaving a spinner)
-    saveBtn.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Save Documents';
+    saveBtn.innerHTML = '<i class="fa-solid fa-cloud-upload-alt me-2"></i>Save Documents';
 
     // Re-run validation on load so enabled/disabled state is always correct
     validateAndSync();
 
     form.addEventListener('submit', function () {
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving\u2026';
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Saving\u2026';
     });
 })();
 </script>

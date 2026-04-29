@@ -116,7 +116,7 @@
                     </div>
                     <div class="social">
                         <button class="notification-btn" onclick="toggleDropdown()">
-                            <i class="fas fa-bell"></i>
+                            <i class="fa-solid fa-bell"></i>
                         </button>
                         <a href=""><i class="fa-brands fa-facebook"></i></a>
                         <a href=""><i class="fa-brands fa-twitter"></i></a>

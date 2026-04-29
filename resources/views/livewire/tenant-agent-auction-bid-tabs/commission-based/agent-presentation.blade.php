@@ -18,7 +18,7 @@
 <div class="card mb-4 border-primary">
 
     <div class="card-header bg-primary text-white">
-        <i class="fas fa-video me-2"></i> Virtual Agent Presentation
+        <i class="fa-solid fa-video me-2"></i> Virtual Agent Presentation
     </div>
     <div class="card-body">
         <!-- Video URL -->
@@ -69,7 +69,7 @@
             @else
                 <div class="mt-2 mb-3">
                     <a href="{{ $presentation_link }}" target="_blank" class="btn btn-outline-primary btn-sm">
-                        <i class="fas fa-external-link-alt me-1"></i> Open Video Link
+                        <i class="fa-solid fa-external-link-alt me-1"></i> Open Video Link
                     </a>
                 </div>
             @endif
@@ -81,7 +81,7 @@
 <!-- Business Card Section -->
 <div class="card mb-4 border-success">
     <div class="card-header bg-success text-white">
-        <i class="fas fa-address-card me-2"></i> Business Card
+        <i class="fa-solid fa-address-card me-2"></i> Business Card
     </div>
 
     <div class="card-body">
@@ -110,7 +110,7 @@
             @endphp
             <div class="form-group mb-3">
                 <label class="fw-bold text-success">
-                    <i class="fas fa-check-circle me-1"></i> Uploaded Business Card:
+                    <i class="fa-solid fa-check-circle me-1"></i> Uploaded Business Card:
                 </label>
                 <div class="mt-2">
                     <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
@@ -121,14 +121,14 @@
                                     class="me-2" 
                                     style="max-width: 80px; max-height: 80px; object-fit: cover; border-radius: 4px;">
                             @else
-                                <i class="fas fa-file-{{ $bcFileExt === 'pdf' ? 'pdf text-danger' : 'alt text-secondary' }} fa-2x me-2"></i>
+                                <i class="fa-solid fa-file-{{ $bcFileExt === 'pdf' ? 'pdf text-danger' : 'alt text-secondary' }} fa-2x me-2"></i>
                             @endif
                             <div>
                                 <span class="text-truncate d-block" style="max-width: 200px;" title="{{ $bcFileName }}">
                                     {{ Str::limit($bcFileName, 25) }}
                                 </span>
                                 <a href="{{ asset('storage/' . $existingBusinessCard) }}" target="_blank" class="small text-primary">
-                                    <i class="fas fa-external-link-alt"></i> View
+                                    <i class="fa-solid fa-external-link-alt"></i> View
                                 </a>
                             </div>
                         </div>
@@ -137,7 +137,7 @@
                             wire:click="removeExistingBusinessCard"
                             wire:loading.attr="disabled"
                             title="Remove this file">
-                            <i class="fas fa-trash-alt"></i>
+                            <i class="fa-solid fa-trash-alt"></i>
                         </button>
                     </div>
                 </div>
@@ -193,7 +193,7 @@
 <!-- Marketing Materials Section -->
 <div class="card mb-4 border-info">
     <div class="card-header bg-info text-white">
-        <i class="fas fa-bullhorn me-2"></i> Marketing Materials
+        <i class="fa-solid fa-bullhorn me-2"></i> Marketing Materials
     </div>
 
     <div class="card-body">
@@ -276,7 +276,7 @@
                 @if (!empty($existingFiles))
                     <div class="form-group mb-3">
                         <label class="fw-bold text-success">
-                            <i class="fas fa-check-circle me-1"></i> Uploaded Files:
+                            <i class="fa-solid fa-check-circle me-1"></i> Uploaded Files:
                         </label>
                         <div class="mt-2">
                             @foreach ($promoMaterials[$idx]['files'] as $fileIdx => $file)
@@ -294,14 +294,14 @@
                                                     class="me-2" 
                                                     style="max-width: 50px; max-height: 50px; object-fit: cover; border-radius: 4px;">
                                             @else
-                                                <i class="fas fa-file-{{ $fileExt === 'pdf' ? 'pdf text-danger' : 'alt text-secondary' }} fa-2x me-2"></i>
+                                                <i class="fa-solid fa-file-{{ $fileExt === 'pdf' ? 'pdf text-danger' : 'alt text-secondary' }} fa-2x me-2"></i>
                                             @endif
                                             <div>
                                                 <span class="text-truncate d-block" style="max-width: 200px;" title="{{ $fileName }}">
                                                     {{ Str::limit($fileName, 25) }}
                                                 </span>
                                                 <a href="{{ asset('storage/' . $file) }}" target="_blank" class="small text-primary">
-                                                    <i class="fas fa-external-link-alt"></i> View
+                                                    <i class="fa-solid fa-external-link-alt"></i> View
                                                 </a>
                                             </div>
                                         </div>
@@ -310,7 +310,7 @@
                                             wire:click="removeExistingFile({{ $idx }}, {{ $fileIdx }})"
                                             wire:loading.attr="disabled"
                                             title="Remove this file">
-                                            <i class="fas fa-trash-alt"></i>
+                                            <i class="fa-solid fa-trash-alt"></i>
                                         </button>
                                     </div>
                                 @endif

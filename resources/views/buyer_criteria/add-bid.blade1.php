@@ -781,7 +781,7 @@
               <label class="fw-bold">What is the desired number of days for the seller to complete the closing process?
               </label>
               <input type="number" name="number_of_days" id="number_of_days" class="form-control has-icon"
-                data-icon="fas fa-calendar-day" required>
+                data-icon="fa-solid fa-calendar-day" required>
             </div>
           </div>
           <div class="wizard-step">

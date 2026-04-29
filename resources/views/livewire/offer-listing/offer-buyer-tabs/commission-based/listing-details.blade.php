@@ -23,10 +23,10 @@
                                 {{ $service_type === 'full_service' ? 'checked' : '' }}>
                             <label class="form-check-label fw-bold" for="fullService">
                                 <div class="d-flex align-items-center commission-based-agent">
-                                    <i class="fas fa-crown text-warning me-2 fs-5"></i>
+                                    <i class="fa-solid fa-crown text-warning me-2 fs-5"></i>
                                     <h5 class="mb-0">Hire a Commission-Based Agent (Full Service)</h5>
                                     @if ($service_type === 'full_service')
-                                        <span class="ms-2 text-success"><i class="fas fa-check-circle"></i></span>
+                                        <span class="ms-2 text-success"><i class="fa-solid fa-check-circle"></i></span>
                                     @endif
                                 </div>
                                 @if ($service_type === 'full_service')
@@ -58,10 +58,10 @@
                                 {{ $service_type === 'limited_service' ? 'checked' : '' }}>
                             <label class="form-check-label fw-bold" for="limitedService">
                                 <div class="d-flex align-items-center">
-                                    <i class="fas fa-file-invoice-dollar text-info me-2 fs-5"></i>
+                                    <i class="fa-solid fa-file-invoice-dollar text-info me-2 fs-5"></i>
                                     <h5 class="mb-0">Hire a Flat Fee Agent (Limited Service)</h5>
                                     @if ($service_type === 'limited_service')
-                                        <span class="ms-2 text-success"><i class="fas fa-check-circle"></i></span>
+                                        <span class="ms-2 text-success"><i class="fa-solid fa-check-circle"></i></span>
                                     @endif
                                 </div>
                                 @if ($service_type === 'limited_service')
@@ -105,9 +105,9 @@
                     <div class="card user-type-card active-user-type border-primary" style="cursor: pointer;">
                         <div class="card-body text-center position-relative">
                             <div class="position-absolute top-0 end-0 mt-2 me-2 text-success">
-                                <i class="fas fa-check-circle"></i>
+                                <i class="fa-solid fa-check-circle"></i>
                             </div>
-                            <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <i class="fa-solid fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
                             <p class="mb-1 user-selected">Create Buyer Listing</p>
                         </div>
                     </div>
@@ -131,7 +131,7 @@
                 <a href="{{ route('offer.listing.tenant') }}" class="text-decoration-none">
                     <div class="card user-type-card" style="cursor: pointer;">
                         <div class="card-body text-center position-relative">
-                            <i class="fas fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
+                            <i class="fa-solid fa-user fa-2x mb-2" style="color: #0ce7ef;"></i>
                             <p class="mb-1 user-selected">Create Tenant Listing</p>
                         </div>
                     </div>
@@ -157,12 +157,12 @@
                     <label class="btn btn-status btn-outline-success px-3 px-md-4 position-relative"
                         for="status-active" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="The listing is open to Agent bids and inquiries.">
-                        <span class="status-icon"><i class="fas fa-check-circle me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-check-circle me-2"></i></span>
                         <span class="status-text">Active</span>
 
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success">
-                            <i class="fas fa-bolt"></i>
+                            <i class="fa-solid fa-bolt"></i>
                         </span>
                     </label>
                 </div>
@@ -173,11 +173,11 @@
                     <label class="btn btn-status btn-outline-warning px-3 px-md-4 position-relative"
                         for="status-pending" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="The client is reviewing bids or negotiating with Agents. New bids cannot be submitted.">
-                        <span class="status-icon"><i class="fas fa-clock me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-clock me-2"></i></span>
                         <span class="status-text">Pending</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background-color:#d97706;color:#fff;">
-                            <i class="fas fa-exclamation"></i>
+                            <i class="fa-solid fa-exclamation"></i>
                         </span>
                     </label>
                 </div>
@@ -192,7 +192,7 @@
                         <span class="status-text">Hired Agent</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
-                            <i class="fas fa-handshake"></i>
+                            <i class="fa-solid fa-handshake"></i>
                         </span>
                     </label>
                 </div>
@@ -202,11 +202,11 @@
                         value="Expired" autocomplete="off" disabled>
                     <label class="btn btn-status btn-outline-secondary px-3 px-md-4 position-relative"
                         for="status-expired">
-                        <span class="status-icon"><i class="fas fa-calendar-times me-2"></i></span>
+                        <span class="status-icon"><i class="fa-solid fa-calendar-times me-2"></i></span>
                         <span class="status-text">Expired</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary">
-                            <i class="fas fa-calendar-times"></i>
+                            <i class="fa-solid fa-calendar-times"></i>
                         </span>
                     </label>
                     <span class="expired_tooltip">

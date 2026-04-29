@@ -113,11 +113,11 @@
     <label class="fw-bold"> Leasing Space:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the type of space the Tenant is open to leasing.">
-        <i class="fas fa-circle-info"></i>
+        <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
   <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
-            data-icon="fas fa-building input-icon2" multiple required>
+            data-icon="fa-solid fa-building input-icon2" multiple required>
 
             @foreach ($acceptable_leasing_space as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
@@ -133,7 +133,7 @@
         <div class="form-group">
             <label>Restrictions include:</label>
             <div class="input-cover">
-                <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fas fa-ban"
+                <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fa-solid fa-ban"
                     placeholder="Enter details (e.g., visiting hours, overnight stay rules)">
             </div>
         </div>
@@ -141,7 +141,7 @@
         <div class="form-group">
             <label>Maintenance issues are handled by:</label>
             <div class="input-cover">
-                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fas fa-tools">
+                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
                     <option value="">Select</option>
                     <option value="Landlord">Landlord</option>
                     <option value="Property Manager">Property Manager</option>
@@ -155,7 +155,7 @@
             <label>Maintenance response time is typically:</label>
             <div class="input-cover">
                 <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                    data-icon="fas fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
+                    data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
             </div>
         </div>
 
@@ -163,7 +163,7 @@
             <label>Storage space available include:</label>
             <div class="input-cover">
                 <input type="text" wire:model="storage_space" class="form-control has-icon"
-                    data-icon="fas fa-warehouse" placeholder="Enter size or type, (e.g., closet, basement section, garage shelf)">
+                    data-icon="fa-solid fa-warehouse" placeholder="Enter size or type, (e.g., closet, basement section, garage shelf)">
             </div>
         </div>
     @endif
@@ -172,7 +172,7 @@
         <div class="form-group">
             <label>Guests are:</label>
             <div class="input-cover">
-                <select wire:model="guests_allowed" class="form-control has-icon" data-icon="fas fa-user-friends">
+                <select wire:model="guests_allowed" class="form-control has-icon" data-icon="fa-solid fa-user-friends">
                     <option value="">Select</option>
                     <option value="Allowed">Allowed</option>
                     <option value="Not Allowed">Not Allowed</option>
@@ -183,7 +183,7 @@
         <div class="form-group">
             <label>Restrictions include:</label>
             <div class="input-cover">
-                <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fas fa-ban"
+                <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fa-solid fa-ban"
                     placeholder="Enter details (e.g., visiting hours, overnight stay rules)">
             </div>
         </div>
@@ -192,14 +192,14 @@
             <label>Tenants have access to common areas such as:</label>
             <div class="input-cover">
                 <input type="text" wire:model="common_areas_access" class="form-control has-icon"
-                    data-icon="fas fa-door-open" placeholder="Enter common areas (e.g., kitchen, living room,backyard)">
+                    data-icon="fa-solid fa-door-open" placeholder="Enter common areas (e.g., kitchen, living room,backyard)">
             </div>
         </div>
 
         <div class="form-group">
             <label>Maintenance issues are handled by:</label>
             <div class="input-cover">
-                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fas fa-tools">
+                <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
                     <option value="">Select</option>
                     <option value="Landlord">Landlord</option>
                     <option value="Property Manager">Property Manager</option>
@@ -213,14 +213,14 @@
             <label>Maintenance response time is typically:</label>
             <div class="input-cover">
                 <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                    data-icon="fas fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
+                    data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
             </div>
         </div>
 
         <div class="form-group">
             <label>Utilities:</label>
             <div class="input-cover">
-                <select wire:model="utilities" class="form-control has-icon" data-icon="fas fa-bolt">
+                <select wire:model="utilities" class="form-control has-icon" data-icon="fa-solid fa-bolt">
                     <option value="">Select</option>
                     <option value="Included in Rent">Included in Rent</option>
                     <option value="Split Among Tenants">Split Among Tenants</option>
@@ -233,7 +233,7 @@
             <label>Common areas are cleaned and maintained:</label>
             <div class="input-cover">
                 <input type="text" wire:model="common_areas_cleaning" class="form-control has-icon"
-                    data-icon="fas fa-broom" placeholder="Enter frequency and by whom (e.g., weekly by landlord)">
+                    data-icon="fa-solid fa-broom" placeholder="Enter frequency and by whom (e.g., weekly by landlord)">
             </div>
         </div>
 
@@ -241,14 +241,14 @@
             <label>Storage space available include:</label>
             <div class="input-cover">
                 <input type="text" wire:model="storage_space" class="form-control has-icon"
-                    data-icon="fas fa-warehouse" placeholder="Enter size or type, (e.g., closet, basement section, garage shelf)">
+                    data-icon="fa-solid fa-warehouse" placeholder="Enter size or type, (e.g., closet, basement section, garage shelf)">
             </div>
         </div>
 
         <div class="form-group">
             <label>Bathroom facilities:</label>
             <div class="input-cover">
-                <select wire:model="bathroom_facilities" class="form-control has-icon" data-icon="fas fa-bath">
+                <select wire:model="bathroom_facilities" class="form-control has-icon" data-icon="fa-solid fa-bath">
                     <option value="">Select</option>
                     <option value="Private">Private</option>
                     <option value="Shared">Shared</option>
@@ -260,7 +260,7 @@
             <label>The room available for lease is approximately:</label>
             <div class="input-cover">
                 <input type="text" wire:model="room_size" class="form-control has-icon"
-                    data-icon="fas fa-ruler-combined" placeholder="Enter square footage (e.g., 300 sqft)">
+                    data-icon="fa-solid fa-ruler-combined" placeholder="Enter square footage (e.g., 300 sqft)">
             </div>
         </div>
     @endif

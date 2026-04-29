@@ -326,7 +326,7 @@
 
         <!-- Legal Notice -->
         <div class="alert alert-warning mt-3 p-2">
-            <i class="fas fa-exclamation-triangle me-2"></i>
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
             <span class="small">Note: Lease negotiation requires a formal agency relationship.</span>
         </div>
     </div>
@@ -427,7 +427,7 @@
 
         <!-- Legal Notice -->
         <div class="alert alert-warning mt-3 p-2">
-            <i class="fas fa-exclamation-triangle me-2"></i>
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
             <span class="small">Note: These insights are informational and not legal or financial advice.</span>
         </div>
     </div>
@@ -479,7 +479,7 @@
             @if($index > 0)
             <button type="button" class="btn btn-sm btn-danger mt-2"
                     wire:click="removeService({{ $index }})">
-                <i class="fas fa-trash me-1"></i> Remove Service
+                <i class="fa-solid fa-trash me-1"></i> Remove Service
             </button>
             @endif
         </div>
@@ -488,7 +488,7 @@
         <!-- Add Service Button -->
         <button type="button" class="btn btn-sm btn-primary mt-3"
                 wire:click="addService">
-            <i class="fas fa-plus me-1"></i> Add Another Service
+            <i class="fa-solid fa-plus me-1"></i> Add Another Service
         </button>
 
         <!-- Totals Section -->
@@ -496,7 +496,7 @@
             <div class="form-group">
                 <label class="fw-bold">
                     Flat Fee Amount (Total):
-                    <i class="fas fa-comment ms-2 text-primary"
+                    <i class="fa-solid fa-comment ms-2 text-primary"
                        data-bs-toggle="tooltip"
                        title="Enter the total flat fee amount you agree to pay the Broker for the selected service(s)"></i>
                 </label>
@@ -510,7 +510,7 @@
             <div class="form-group mt-3">
                 <label class="fw-bold">
                     Marketing Materials Fee (Total):
-                    <i class="fas fa-comment ms-2 text-primary"
+                    <i class="fa-solid fa-comment ms-2 text-primary"
                        data-bs-toggle="tooltip"
                        title="Enter the total marketing materials fee amount you agree to pay the Broker for the selected service(s). This fee is for additional materials such as paid ads, mailers, postage, promotional materials, etc."></i>
                 </label>

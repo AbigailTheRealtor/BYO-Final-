@@ -9,7 +9,7 @@
             compensation you're offering for the Agent's time, expertise, and any associated marketing-related expenses.
         </p>
         <div class="alert alert-warning mt-3">
-            <i class="fas fa-exclamation-triangle me-2"></i>
+            <i class="fa-solid fa-exclamation-triangle me-2"></i>
             <strong>Important Service Disclaimer:</strong> These services are offered under a limited flat-fee
             arrangement and do not create a
             brokerage or agency relationship unless otherwise agreed to in writing. Agents may provide administrative or
@@ -548,7 +548,7 @@
                     @if ($index > 0)
                         <button type="button" class="btn btn-sm btn-danger mt-2"
                             wire:click="removeService({{ $index }})">
-                            <i class="fas fa-trash me-1"></i> Remove Service
+                            <i class="fa-solid fa-trash me-1"></i> Remove Service
                         </button>
                     @endif
                 </div>
@@ -556,7 +556,7 @@
 
             <!-- Add Service Button -->
             <button type="button" class="btn btn-sm btn-primary mt-3" wire:click="addService">
-                <i class="fas fa-plus me-1"></i> Add Another Service
+                <i class="fa-solid fa-plus me-1"></i> Add Another Service
             </button>
 
             <!-- Totals Section -->
@@ -564,7 +564,7 @@
                 <div class="form-group">
                     <label class="fw-bold">
                         Flat Fee Amount (Total):
-                        <i class="fas fa-comment-dots text-primary" data-bs-toggle="tooltip"
+                        <i class="fa-solid fa-comment-dots text-primary" data-bs-toggle="tooltip"
                             title="This total auto-calculates as you enter amounts for individual services. You may
 also manually enter one total flat fee to cover all selected services instead."></i>
                     </label>
@@ -1156,7 +1156,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                     @if ($index > 0)
                         <button type="button" class="btn btn-sm btn-danger mt-2"
                             wire:click="removeService({{ $index }})">
-                            <i class="fas fa-trash me-1"></i> Remove Service
+                            <i class="fa-solid fa-trash me-1"></i> Remove Service
                         </button>
                     @endif
                 </div>
@@ -1164,7 +1164,7 @@ also manually enter one total flat fee to cover all selected services instead.">
 
             <!-- Add Service Button -->
             <button type="button" class="btn btn-sm btn-primary mt-3" wire:click="addService">
-                <i class="fas fa-plus me-1"></i> Add Another Service
+                <i class="fa-solid fa-plus me-1"></i> Add Another Service
             </button>
 
             <!-- Totals Section -->
@@ -1172,7 +1172,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 <div class="form-group">
                     <label class="fw-bold">
                         Flat Fee Amount (Total):
-                        <i class="fas fa-comment-dots text-primary" data-bs-toggle="tooltip"
+                        <i class="fa-solid fa-comment-dots text-primary" data-bs-toggle="tooltip"
                             title="This total auto-calculates as you enter amounts for individual services. You may
 also manually enter one total flat fee to cover all selected services instead."></i>
                     </label>
@@ -1457,7 +1457,7 @@ also manually enter one total flat fee to cover all selected services instead.">
         </div>
         <div class="card-body">
             <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> Note: Services may be provided by the Agent or a third-party vendor. Flat fee includes service and coordination. Any use of a vendor will be disclosed.
+                <i class="fa-solid fa-info-circle"></i> Note: Services may be provided by the Agent or a third-party vendor. Flat fee includes service and coordination. Any use of a vendor will be disclosed.
             </div>
 
             <!-- Professional photography -->
@@ -1996,7 +1996,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                     @if ($index > 0)
                         <button type="button" class="btn btn-sm btn-danger mt-2"
                             wire:click="removeService({{ $index }})">
-                            <i class="fas fa-trash me-1"></i> Remove Service
+                            <i class="fa-solid fa-trash me-1"></i> Remove Service
                         </button>
                     @endif
                 </div>
@@ -2004,7 +2004,7 @@ also manually enter one total flat fee to cover all selected services instead.">
 
             <!-- Add Service Button -->
             <button type="button" class="btn btn-sm btn-primary mt-3" wire:click="addService">
-                <i class="fas fa-plus me-1"></i> Add Another Service
+                <i class="fa-solid fa-plus me-1"></i> Add Another Service
             </button>
 
             <!-- Totals Section -->
@@ -2012,7 +2012,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 <div class="form-group">
                     <label class="fw-bold">
                         Flat Fee Amount (Total):
-                        <i class="fas fa-comment-dots text-primary" data-bs-toggle="tooltip"
+                        <i class="fa-solid fa-comment-dots text-primary" data-bs-toggle="tooltip"
                             title="This total auto-calculates as you enter amounts for individual services. You may
 also manually enter one total flat fee to cover all selected services instead."></i>
                     </label>
@@ -2267,7 +2267,7 @@ also manually enter one total flat fee to cover all selected services instead.">
     </div>
     <div class="card-body">
         <div class="alert alert-info mb-4">
-            <i class="fas fa-info-circle me-2"></i>
+            <i class="fa-solid fa-info-circle me-2"></i>
             Note: Services may be provided by the Agent or a third-party vendor. Flat fee includes service and coordination. Any use of a vendor will be disclosed.
         </div>
 
@@ -2813,14 +2813,14 @@ also manually enter one total flat fee to cover all selected services instead.">
                     @if ($index > 0)
                         <button type="button" class="btn btn-sm btn-danger mt-2"
                             wire:click="removeService({{ $index }})">
-                            <i class="fas fa-trash me-1"></i> Remove Service
+                            <i class="fa-solid fa-trash me-1"></i> Remove Service
                         </button>
                     @endif
                 </div>
             @endforeach
 
             <button type="button" class="btn btn-sm btn-primary mt-3" wire:click="addService">
-                <i class="fas fa-plus me-1"></i> Add Another Service
+                <i class="fa-solid fa-plus me-1"></i> Add Another Service
             </button>
 
             <!-- Totals Section -->
@@ -2828,7 +2828,7 @@ also manually enter one total flat fee to cover all selected services instead.">
                 <div class="form-group">
                     <label class="fw-bold">
                         Flat Fee Amount (Total):
-                        <i class="fas fa-comment-dots text-primary" data-bs-toggle="tooltip"
+                        <i class="fa-solid fa-comment-dots text-primary" data-bs-toggle="tooltip"
                             title="This total auto-calculates as you enter amounts for individual services. You may
 also manually enter one total flat fee to cover all selected services instead."></i>
                     </label>

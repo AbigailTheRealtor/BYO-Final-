@@ -19,21 +19,21 @@
 
                             @if(session('profile_success'))
                             <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
-                                <i class="fas fa-check-circle me-2"></i><strong>{{ session('profile_success') }}</strong>
+                                <i class="fa-solid fa-check-circle me-2"></i><strong>{{ session('profile_success') }}</strong>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
 
                             @if(session('password_success'))
                             <div class="alert alert-success alert-dismissible fade show mb-2" role="alert">
-                                <i class="fas fa-key me-2"></i>{{ session('password_success') }}
+                                <i class="fa-solid fa-key me-2"></i>{{ session('password_success') }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
 
                             @if(session('password_error'))
                             <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert" style="border-left: 4px solid #e65c00;">
-                                <strong><i class="fas fa-exclamation-triangle me-2"></i>Password Not Updated</strong><br>
+                                <strong><i class="fa-solid fa-exclamation-triangle me-2"></i>Password Not Updated</strong><br>
                                 <span style="font-size: 0.92rem;">{{ session('password_error') }}</span>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
@@ -41,7 +41,7 @@
 
                             @if(session('error'))
                             <div class="alert alert-danger alert-dismissible fade show mb-2" role="alert">
-                                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                                <i class="fa-solid fa-exclamation-circle me-2"></i>{{ session('error') }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                             @endif
@@ -61,7 +61,7 @@
                                                     :class="openSection !== 'account' && 'collapsed'"
                                                     @click="openSection = openSection === 'account' ? null : 'account'"
                                                     >
-                                                <i class="fas fa-user-circle me-2 text-muted"></i>Account Information
+                                                <i class="fa-solid fa-user-circle me-2 text-muted"></i>Account Information
                                             </button>
                                         </h2>
                                         <div x-show="openSection === 'account'" x-transition style="display:none;">
@@ -98,7 +98,7 @@
                                                     :class="openSection !== 'profile' && 'collapsed'"
                                                     @click="openSection = openSection === 'profile' ? null : 'profile'"
                                                     >
-                                                <i class="fas fa-id-card me-2 text-muted"></i>Profile Details
+                                                <i class="fa-solid fa-id-card me-2 text-muted"></i>Profile Details
                                             </button>
                                         </h2>
                                         <div x-show="openSection === 'profile'" x-transition style="display:none;">
@@ -133,7 +133,7 @@
                                                             @else
                                                                 <div class="rounded-circle border d-flex align-items-center justify-content-center bg-light"
                                                                      style="width: 72px; height: 72px; flex-shrink: 0; position: relative; overflow: hidden;">
-                                                                    <i class="fas fa-user text-muted" style="font-size: 1.6rem;"></i>
+                                                                    <i class="fa-solid fa-user text-muted" style="font-size: 1.6rem;"></i>
                                                                     <img id="profile-photo-preview" src="" alt=""
                                                                          style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover;">
                                                                 </div>
@@ -162,7 +162,7 @@
                                                     :class="openSection !== 'prefs' && 'collapsed'"
                                                     @click="openSection = openSection === 'prefs' ? null : 'prefs'"
                                                     >
-                                                <i class="fas fa-sliders-h me-2 text-muted"></i>Preferences
+                                                <i class="fa-solid fa-sliders-h me-2 text-muted"></i>Preferences
                                             </button>
                                         </h2>
                                         <div x-show="openSection === 'prefs'" x-transition style="display:none;">
@@ -172,7 +172,7 @@
                                                         <label class="form-label fw-semibold">Preferred Contact Method</label>
                                                         @php $prefContact = $user->preferred_contact_method; @endphp
                                                         <div class="d-flex flex-column gap-2 mt-1">
-                                                            @foreach(['Call' => 'fas fa-phone', 'Text' => 'fas fa-sms', 'Email' => 'fas fa-envelope'] as $method => $icon)
+                                                            @foreach(['Call' => 'fa-solid fa-phone', 'Text' => 'fa-solid fa-sms', 'Email' => 'fa-solid fa-envelope'] as $method => $icon)
                                                             <div class="form-check">
                                                                 <input class="form-check-input" type="radio"
                                                                        name="preferred_contact_method"
@@ -204,7 +204,7 @@
                                                     </div>
                                                     <div class="col-12">
                                                         <div class="p-3 rounded" style="background: #f0f9ff; border: 1px solid #bde0fe;">
-                                                            <i class="fas fa-bell me-2" style="color: #049399;"></i>
+                                                            <i class="fa-solid fa-bell me-2" style="color: #049399;"></i>
                                                             <strong style="color: #1a3a5c;">Email Notifications</strong>
                                                             <p class="mb-0 mt-1 text-muted small">
                                                                 You will receive email notifications for important activity,
@@ -225,7 +225,7 @@
                                                     :class="openSection !== 'security' && 'collapsed'"
                                                     @click="openSection = openSection === 'security' ? null : 'security'"
                                                     >
-                                                <i class="fas fa-lock me-2 text-muted"></i>Privacy &amp; Security
+                                                <i class="fa-solid fa-lock me-2 text-muted"></i>Privacy &amp; Security
                                             </button>
                                         </h2>
                                         <div x-show="openSection === 'security'" x-transition style="display:none;">
@@ -258,7 +258,7 @@
                                 <div class="d-flex justify-content-end mt-2 mb-2">
                                     <button type="submit" class="btn btn-lg px-5"
                                             style="background: #049399; color: #fff; border: none; border-radius: 8px; font-weight: 600;">
-                                        <i class="fas fa-save me-2"></i>Save Changes
+                                        <i class="fa-solid fa-save me-2"></i>Save Changes
                                     </button>
                                 </div>
 
@@ -267,7 +267,7 @@
                             {{-- ── 5. Delete Account (always-visible danger zone) ── --}}
                             <div class="settings-danger-zone mt-2 mb-4 p-4" style="border: 1px solid #f5c6cb; border-radius: 10px; background: #fff5f5;">
                                 <h6 style="color: #842029; font-weight: 700; margin-bottom: 0.5rem;">
-                                    <i class="fas fa-trash-alt me-2"></i>Delete Account
+                                    <i class="fa-solid fa-trash-alt me-2"></i>Delete Account
                                 </h6>
                                 <p style="color: #6c757d; font-size: 0.9rem; margin-bottom: 0.25rem;">This action will deactivate your account and log you out. All your listings and bids will be deactivated.</p>
                                 <p style="color: #842029; font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem;">This cannot be undone. To confirm, type <code style="background:#fce4e4; padding: 1px 5px; border-radius:3px; color:#842029;">DELETE</code> below.</p>
@@ -285,7 +285,7 @@
                                                 id="btn-delete-account"
                                                 class="settings-delete-btn"
                                                 disabled>
-                                            <i class="fas fa-trash-alt me-2"></i>Delete My Account
+                                            <i class="fa-solid fa-trash-alt me-2"></i>Delete My Account
                                         </button>
                                     </div>
                                     <p id="delete-hint" style="color: #aaa; font-size: 0.8rem; margin-top: 0.4rem; display: none;">

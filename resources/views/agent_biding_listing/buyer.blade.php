@@ -50,7 +50,7 @@
 
                             @if($auctions->isEmpty())
                                 <div class="text-center text-muted py-5">
-                                    <i class="fas fa-inbox fa-3x mb-3 d-block opacity-25"></i>
+                                    <i class="fa-solid fa-inbox fa-3x mb-3 d-block opacity-25"></i>
                                     <p class="fw-semibold mb-1">No listings found for this status.</p>
                                     <p class="small mb-0">Switch the filter above or browse live Buyer's Agent listings to place a bid.</p>
                                 </div>
@@ -120,7 +120,7 @@
                                                 {{ $bidStatus }}
                                             </span>
                                             <span class="badge" style="background:{{ $totalScoreColor }};color:#fff;padding:6px 12px;border-radius:4px;">
-                                                <i class="fas fa-chart-pie me-1"></i>{{ $totalScore }}% Match
+                                                <i class="fa-solid fa-chart-pie me-1"></i>{{ $totalScore }}% Match
                                             </span>
                                             @else
                                             <span class="badge bg-secondary" style="padding:6px 12px;border-radius:4px;">No Bid Placed</span>
@@ -154,7 +154,7 @@
                                                 @if(count($brokerMismatches) > 0)
                                                 <div class="col-md-4 mb-2">
                                                     <small class="fw-semibold text-danger">
-                                                        <i class="fas fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})
+                                                        <i class="fa-solid fa-exclamation-triangle me-1"></i>Term Differences ({{ count($brokerMismatches) }})
                                                     </small>
                                                     <div class="mt-1">
                                                         @foreach(array_slice($brokerMismatches, 0, 5) as $field => $vals)
@@ -171,7 +171,7 @@
                                                 @if(count($servicesAdded) > 0)
                                                 <div class="col-md-4 mb-2">
                                                     <small class="fw-semibold" style="color:#28a745;">
-                                                        <i class="fas fa-plus-circle me-1"></i>Extra Services ({{ count($servicesAdded) }})
+                                                        <i class="fa-solid fa-plus-circle me-1"></i>Extra Services ({{ count($servicesAdded) }})
                                                     </small>
                                                     <div class="mt-1">
                                                         @foreach(array_slice($servicesAdded, 0, 3) as $svc)
@@ -186,7 +186,7 @@
                                                 @if(count($servicesMissing) > 0)
                                                 <div class="col-md-4 mb-2">
                                                     <small class="fw-semibold" style="color:#ffc107;">
-                                                        <i class="fas fa-minus-circle me-1"></i>Not Offered ({{ count($servicesMissing) }})
+                                                        <i class="fa-solid fa-minus-circle me-1"></i>Not Offered ({{ count($servicesMissing) }})
                                                     </small>
                                                     <div class="mt-1">
                                                         @foreach(array_slice($servicesMissing, 0, 3) as $svc)
@@ -209,28 +209,28 @@
                                         <div>
                                             <a href="{{ route('buyer.view-auction', $auction->id) }}"
                                                class="btn btn-sm btn-outline-secondary" style="font-size:.8rem;">
-                                                <i class="fas fa-building me-1"></i>View Listing
+                                                <i class="fa-solid fa-building me-1"></i>View Listing
                                             </a>
                                         </div>
                                         <div class="d-flex gap-2 flex-wrap justify-content-end">
                                             <a href="{{ route('buyer.agent.bid.detail', $userBid->id) }}"
                                                class="btn btn-sm" style="background:#fff;border:1px solid #049399;color:#049399;font-size:.8rem;">
-                                                <i class="fas fa-eye me-1"></i>View Bid
+                                                <i class="fa-solid fa-eye me-1"></i>View Bid
                                             </a>
                                             @if($bidStatus === 'Accepted')
                                                 <a href="{{ route('buyer.view-auction', $auction->id) }}"
                                                    class="btn btn-sm" style="background:#28a745;color:#fff;font-size:.8rem;">
-                                                    <i class="fas fa-file-contract me-1"></i>View Summary
+                                                    <i class="fa-solid fa-file-contract me-1"></i>View Summary
                                                 </a>
                                             @elseif($bidStatus === 'Countered')
                                                 <a href="{{ route('agent.buyer.agent.auction.bid.view-counter', $userBid->id) }}"
                                                    class="btn btn-sm" style="background:#fff3cd;color:#856404;border:1px solid #ffc107;font-size:.8rem;">
-                                                    <i class="fas fa-exchange-alt me-1"></i>View Counter Terms
+                                                    <i class="fa-solid fa-exchange-alt me-1"></i>View Counter Terms
                                                 </a>
                                             @elseif($bidStatus === 'Active')
                                                 <a href="{{ route('agent.buyer.agent.auction.bid', $auction->id) }}"
                                                    class="btn btn-sm btn-outline-secondary" style="font-size:.8rem;">
-                                                    <i class="fas fa-edit me-1"></i>Edit Bid
+                                                    <i class="fa-solid fa-edit me-1"></i>Edit Bid
                                                 </a>
                                             @endif
                                         </div>

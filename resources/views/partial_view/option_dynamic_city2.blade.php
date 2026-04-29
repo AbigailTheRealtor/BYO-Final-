@@ -17,12 +17,12 @@
     </div>
     <div class="input-group-append" style="padding: 9px;">
         <span class="input-group-text add_city_row" ><i
-                class="fas fa-plus"></i></span>
+                class="fa-solid fa-plus"></i></span>
 
     </div>
     <div class="input-group-append" style="padding: 9px;">
         <span class="input-group-text remove_city_row" ><i
-                class="fas fa-minus"></i></span>
+                class="fa-solid fa-minus"></i></span>
     </div>
 </div>
 

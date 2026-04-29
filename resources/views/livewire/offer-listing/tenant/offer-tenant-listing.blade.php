@@ -1625,7 +1625,7 @@ $lease_types = [
                                             data-bs-dismiss="modal"
                                             wire:click="deleteDraft('{{ $draft->id }}')" wire:ignore.self
                                             onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fa-solid fa-trash"></i>
                                         </button>
                                     </div>
                                     @endforeach
@@ -1639,7 +1639,7 @@ $lease_types = [
                                 <button type="button" class="btn btn-danger" style="background-color: #dc3545; color: #fff; border-color: #dc3545;" data-bs-dismiss="modal"
                                     wire:click="deleteAllDrafts" wire:ignore.self
                                     onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
-                                    <i class="fas fa-trash me-1"></i> Delete All Drafts
+                                    <i class="fa-solid fa-trash me-1"></i> Delete All Drafts
                                 </button>
                             </div>
                         </div>
@@ -2017,7 +2017,7 @@ $lease_types = [
                                 <div class="d-flex justify-content-between set-button">
 
                                     <button type="button" class="btn btn-outline-primary" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
-                                        <span wire:loading.remove wire:target="saveDraft"><i class="fas fa-save me-1"></i> Save Draft</span>
+                                        <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
                                         <span wire:loading wire:target="saveDraft">Saving...</span>
                                     </button>
 

@@ -176,7 +176,7 @@
         </div>
     @endforeach
     <button type="button" wire:click="addSocialMedia" class="btn btn-primary btn-sm" style="background-color: #0d6efd !important; border-color: #0d6efd !important; color: #ffffff !important;">
-        <i class="fas fa-plus"></i> Add Social Media
+        <i class="fa-solid fa-plus"></i> Add Social Media
     </button>
 </div>
 

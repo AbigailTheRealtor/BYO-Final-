@@ -259,7 +259,7 @@ This page should redirect and never be used.
                                     <label class="fw-bold">Property City</label>
                                     <input type="text" name="property_city" placeholder="Enter property city"
                                         id="property_city" value="{{ @$auction->get->property_city }}"
-                                        class="form-control has-icon" data-icon="fas fa-city">
+                                        class="form-control has-icon" data-icon="fa-solid fa-city">
                                 </div>
 
                                 <div class="form-group">

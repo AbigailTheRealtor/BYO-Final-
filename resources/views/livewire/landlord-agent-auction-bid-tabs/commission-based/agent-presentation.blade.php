@@ -10,7 +10,7 @@
 <div class="card mb-4 border-primary">
 
     <div class="card-header bg-primary text-white">
-        <i class="fas fa-video me-2"></i> Virtual Agent Presentation
+        <i class="fa-solid fa-video me-2"></i> Virtual Agent Presentation
     </div>
     <div class="card-body">
         <!-- Video URL -->
@@ -107,7 +107,7 @@
 <!-- Business Card Section -->
 <div class="card mb-4 border-success">
     <div class="card-header bg-success text-white">
-        <i class="fas fa-address-card me-2"></i> Business Card
+        <i class="fa-solid fa-address-card me-2"></i> Business Card
     </div>
 
     <div class="card-body">
@@ -176,7 +176,7 @@
 <!-- Marketing Materials Section -->
 <div class="card mb-4 border-info">
     <div class="card-header bg-info text-white">
-        <i class="fas fa-bullhorn me-2"></i> Marketing Materials
+        <i class="fa-solid fa-bullhorn me-2"></i> Marketing Materials
     </div>
 
     <div class="card-body">

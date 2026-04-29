@@ -39,7 +39,7 @@
         <input type="text" wire:model="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
+            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
             autocomplete="off" placeholder="Enter city">
 
         @if (count($citySuggestions) > 0)
@@ -49,7 +49,7 @@
                         <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCitySuggestion('{{ $suggestion }}')"
                             wire:key="city-suggestion-{{ $index }}">
-                            <i class="fas fa-city me-2 text-muted"></i>
+                            <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -79,7 +79,7 @@
                         <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCountySuggestion('{{ $suggestion }}')"
                             wire:key="county-suggestion-{{ $index }}">
-                            <i class="fas fa-map me-2 text-muted"></i>
+                            <i class="fa-solid fa-map me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -105,7 +105,7 @@
         <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fas fa-city"
+            class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
             autocomplete="off" placeholder="Enter city or cities">
 
         <!-- City Suggestions Dropdown -->
@@ -116,7 +116,7 @@
                         <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCitySuggestion('{{ $suggestion }}')"
                             wire:key="city-suggestion-{{ $index }}">
-                            <i class="fas fa-city me-2 text-muted"></i>
+                            <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -134,7 +134,7 @@
         @if (count($cities) > 0)
             @foreach ($cities as $index => $city)
                 <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="city-badge-{{ $index }}">
-                    <i class="fas fa-city me-2"></i>
+                    <i class="fa-solid fa-city me-2"></i>
                     {{ $city }}
                     <button type="button" class="byo-pill-remove ms-2"
                         wire:click="removeCity({{ $index }})" aria-label="Remove">&times;</button>
@@ -168,7 +168,7 @@
                         <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
                             wire:click="selectCountySuggestion('{{ $suggestion }}')"
                             wire:key="county-suggestion-{{ $index }}">
-                            <i class="fas fa-map me-2 text-muted"></i>
+                            <i class="fa-solid fa-map me-2 text-muted"></i>
                             {{ $suggestion }}
                         </li>
                     @endforeach
@@ -186,7 +186,7 @@
         @if (count($counties) > 0)
             @foreach ($counties as $index => $county)
                 <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
-                    <i class="fas fa-map me-2"></i>
+                    <i class="fa-solid fa-map me-2"></i>
                     {{ $county }}
                     <button type="button" class="byo-pill-remove ms-2"
                         wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
@@ -482,7 +482,7 @@
 {{-- <div class="form-group mb-3">
     <label class="fw-bold mb-2">Sqft Heated Source:</label>
     <div class="input-cover">
-        <select wire:model="sqft_heated_source" class="form-control has-icon" data-icon="fas fa-ruler">
+        <select wire:model="sqft_heated_source" class="form-control has-icon" data-icon="fa-solid fa-ruler">
             <option value="">Select source</option>
             <option value="Appraisal">Appraisal</option>
             <option value="Builder">Builder</option>

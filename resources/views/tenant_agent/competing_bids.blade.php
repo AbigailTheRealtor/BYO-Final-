@@ -9,19 +9,19 @@
                     <p class="text-muted mb-0">Listing: {{ $listingId }}</p>
                 </div>
                 <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-outline-secondary">
-                    <i class="fas fa-arrow-left me-2"></i>Back to Listing
+                    <i class="fa-solid fa-arrow-left me-2"></i>Back to Listing
                 </a>
             </div>
 
             <div class="alert alert-info mb-4">
-                <i class="fas fa-info-circle me-2"></i>
+                <i class="fa-solid fa-info-circle me-2"></i>
                 <strong>Bidding Period:</strong> The bidding period creates a structured window for competitive bids. You can view other Agents' Offered Services and Terms Match summaries below. Agent identities and compensation details remain confidential.
             </div>
 
             @if(count($competingBids) === 0)
                 <div class="card">
                     <div class="card-body text-center py-5">
-                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <i class="fa-solid fa-users fa-3x text-muted mb-3"></i>
                         <h5>No Competing Bids Yet</h5>
                         <p class="text-muted">Be the first to submit a bid, or check back later to see competing offers.</p>
                     </div>
@@ -34,7 +34,7 @@
                                 <span class="fw-bold" style="font-size: 1.1rem;">{{ $bid['anonymous_label'] }}</span>
                                 @if($bid['is_updated'])
                                     <span class="badge" style="background: #e3f2fd; color: #1976d2; font-size: 0.75rem;">
-                                        <i class="fas fa-sync-alt me-1"></i>Updated
+                                        <i class="fa-solid fa-sync-alt me-1"></i>Updated
                                     </span>
                                 @endif
                             </div>
@@ -45,7 +45,7 @@
                                 @endphp
                                 <div class="text-end">
                                     <span class="badge" style="background: {{ $scoreColor }}; color: white; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
-                                        <i class="fas fa-chart-pie me-1"></i>{{ $score }}% Match
+                                        <i class="fa-solid fa-chart-pie me-1"></i>{{ $score }}% Match
                                     </span>
                                     <div class="small text-muted mt-1">Compared to Your Bid</div>
                                 </div>
@@ -97,7 +97,7 @@
                             {{-- Match Summary (de-emphasized) --}}
                             <hr style="margin: 12px 0; border-color: #e0e0e0;">
                             <div class="p-2 rounded" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 1px solid #dee2e6; font-size: 0.88rem;">
-                                <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;"><i class="fas fa-chart-pie me-1"></i>Match Summary</span>
+                                <span style="font-weight: 600; color: #6c757d; font-size: 0.85rem;"><i class="fa-solid fa-chart-pie me-1"></i>Match Summary</span>
                                 <div class="row g-2 mt-1">
                                     @php
                                         $servicesScore = $bid['match_score']['services_percent'];

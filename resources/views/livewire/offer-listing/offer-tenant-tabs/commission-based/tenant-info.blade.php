@@ -63,7 +63,7 @@
         <div class="input-cover" wire:key="photo-input-stable">
             <div class="input-group">
                 <input type="file" wire:model="photo" id="photo-input" class="form-control has-icon"
-                    data-icon="fas fa-camera" accept="image/*">
+                    data-icon="fa-solid fa-camera" accept="image/*">
             </div>
         </div>
         <span id="photo-error" class="text-danger" style="display: none;"></span>

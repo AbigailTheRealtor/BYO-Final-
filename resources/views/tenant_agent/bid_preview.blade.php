@@ -994,12 +994,12 @@
             <button type="submit" class="btn btn-success"
                     style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;"
                     onclick="return confirm('Accept this bid?')">
-                <i class="fas fa-check me-1"></i>Accept Bid
+                <i class="fa-solid fa-check me-1"></i>Accept Bid
             </button>
         </form>
         <a href="{{ route('tenant.counter-terms', $bid->id) }}" class="btn btn-primary"
            style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
-            <i class="fas fa-exchange-alt me-1"></i>Counter Bid
+            <i class="fa-solid fa-exchange-alt me-1"></i>Counter Bid
         </a>
         <form action="{{ route('tenant.hire.agent.auction.bid.reject') }}" method="POST" class="d-inline">
             @csrf
@@ -1008,16 +1008,16 @@
             <button type="submit" class="btn btn-danger"
                     style="min-width: 120px; height: 40px; display: inline-flex; align-items: center; justify-content: center;"
                     onclick="return confirm('Reject this bid?')">
-                <i class="fas fa-times me-1"></i>Reject Bid
+                <i class="fa-solid fa-times me-1"></i>Reject Bid
             </button>
         </form>
         @elseif($bidStatus === 'Countered')
         <span class="btn" style="background: #fff3cd; color: #856404; border: 1px solid #ffc107;">
-            <i class="fas fa-clock me-1"></i>Awaiting Response
+            <i class="fa-solid fa-clock me-1"></i>Awaiting Response
         </span>
         @elseif($bidStatus === 'Accepted')
         <a href="{{ route('tenant.agent.auction.view', $auction->id) }}" class="btn btn-success">
-            <i class="fas fa-file-contract me-1"></i>View Summary
+            <i class="fa-solid fa-file-contract me-1"></i>View Summary
         </a>
         @endif
     </x-slot>

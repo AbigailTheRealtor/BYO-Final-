@@ -2,9 +2,9 @@
 @section('bids-content')
 <div class="p-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="mb-0" style="color: #049399;"><i class="fas fa-users me-2"></i>Agent Bids on Your Listings</h5>
+        <h5 class="mb-0" style="color: #049399;"><i class="fa-solid fa-users me-2"></i>Agent Bids on Your Listings</h5>
         <a href="{{ route('buyer.agent.auctions.list') }}" class="btn btn-sm" style="background: #049399; color: #fff;">
-            <i class="fas fa-list me-1"></i>View All Listings
+            <i class="fa-solid fa-list me-1"></i>View All Listings
         </a>
     </div>
 
@@ -62,7 +62,7 @@
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge" style="{{ $statusStyles[$bidStatus] ?? $statusStyles['Active'] }} padding: 6px 12px; border-radius: 4px;">{{ $bidStatus }}</span>
                     <span class="badge" style="background: {{ $totalScoreColor }}; color: white; padding: 6px 12px; border-radius: 4px;">
-                        <i class="fas fa-chart-pie me-1"></i>{{ $totalScore }}% Match
+                        <i class="fa-solid fa-chart-pie me-1"></i>{{ $totalScore }}% Match
                     </span>
                 </div>
             </div>
@@ -93,15 +93,15 @@
             </div>
             <div class="card-footer d-flex justify-content-end gap-2" style="background: #f8f9fa;">
                 <a href="{{ route('buyer.view-auction', $agentBid->auction->id) }}" class="btn btn-sm" style="background: #fff; border: 1px solid #049399; color: #049399;">
-                    <i class="fas fa-eye me-1"></i>View Bid
+                    <i class="fa-solid fa-eye me-1"></i>View Bid
                 </a>
                 @if($bidStatus === 'Countered')
                     <a href="{{ route('buyer.hire.agent.auction.bid.view-counter', $agentBid->id) }}" class="btn btn-sm" style="background:#fff;border:2px solid #049399;color:#049399;padding:5px 12px;font-weight:600;font-size:0.85rem;">
-                        <i class="fas fa-eye me-1"></i>View Counter Terms
+                        <i class="fa-solid fa-eye me-1"></i>View Counter Terms
                     </a>
                 @elseif($bidStatus === 'Accepted')
                     <a href="{{ route('buyer.view-auction', $agentBid->auction->id) }}" class="btn btn-sm" style="background: #28a745; color: #fff; border: none;">
-                        <i class="fas fa-file-contract me-1"></i>View Summary
+                        <i class="fa-solid fa-file-contract me-1"></i>View Summary
                     </a>
                 @endif
             </div>
@@ -109,11 +109,11 @@
         @endforeach
     @else
         <div class="text-center py-5">
-            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <i class="fa-solid fa-inbox fa-3x text-muted mb-3"></i>
             <h5 class="text-muted">No Agent Bids Yet</h5>
             <p class="text-muted">When agents bid on your listings, they will appear here.</p>
             <a href="{{ route('hire.agent.auction', ['user_type' => 'buyer']) }}" class="btn" style="background: #049399; color: #fff;">
-                <i class="fas fa-plus me-1"></i>Create a Listing
+                <i class="fa-solid fa-plus me-1"></i>Create a Listing
             </a>
         </div>
     @endif

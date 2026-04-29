@@ -47,12 +47,12 @@
                             @elseif($bidStatus === 'Active')
                                 @if($isBiddingPeriod && $biddingEndTime)
                                     <span class="me-3 text-muted small">
-                                        <i class="fas fa-clock me-1"></i>Timer Ends:
+                                        <i class="fa-solid fa-clock me-1"></i>Timer Ends:
                                         <span class="countdown-timer fw-bold" data-end="{{ $biddingEndTime }}">--:--:--</span>
                                     </span>
                                 @endif
                                 <a href="{{ route('add_seller_agent_bid', $auction->id) }}?edit={{ $bid->id }}" class="btn btn-sm btn-primary me-2">
-                                    <i class="fas fa-edit me-1"></i>View/Edit Bid
+                                    <i class="fa-solid fa-edit me-1"></i>View/Edit Bid
                                 </a>
                                 <a href="{{ route('seller.agent.auction.detail', $auction->id) }}" class="btn btn-sm btn-outline-secondary">
                                     Visit Listing

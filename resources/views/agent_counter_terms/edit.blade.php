@@ -288,7 +288,7 @@
               <div class="form-group {{ $counter->agentCharge == 'Yes' ? 'd-block' : 'd-none' }} agentChargeYes">
                 <label class="fw-bold">What is the fee that the agent charges to secure a property for the tenant?
                 </label>
-                <input type="text" class="form-control has-icon" name="agentChargeOther" data-icon="fas fa-dollar-sign"
+                <input type="text" class="form-control has-icon" name="agentChargeOther" data-icon="fa-solid fa-dollar-sign"
                   value="{{ $counter->agentChargeOther }}">
               </div>
             </div>
@@ -316,7 +316,7 @@
               <div class="form-group agentFeeYes {{ $counter->agentFee == 'Yes' ? 'd-block' : 'd-none' }}">
                 <label class="fw-bold">What is the cancellation fee to the tenant?</label>
                 <input type="text" class="form-control has-icon" value="{{ $counter->agentFeeOther }}"
-                  name="agentFeeOther" data-icon="fas fa-dollar-sign">
+                  name="agentFeeOther" data-icon="fa-solid fa-dollar-sign">
               </div>
             </div>
           </div>

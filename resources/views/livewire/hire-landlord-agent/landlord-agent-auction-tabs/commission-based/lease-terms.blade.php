@@ -79,10 +79,10 @@
     <label class="fw-bold"> Leasing Space:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Indicate what part of the property is available for lease.">
-        <i class="fas fa-circle-info"></i>
+        <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <select wire:model="leasing_spaces" class="form-control has-icon" data-icon="fas fa-building" required>
+        <select wire:model="leasing_spaces" class="form-control has-icon" data-icon="fa-solid fa-building" required>
             <option value="">Select</option>
             @foreach ($acceptable_leasing_space as $row_pt)
                 @if ($property_type === 'Residential Property' || $row_pt['name'] !== 'Accessory Unit / Guest Suite (ADU)')
@@ -104,11 +104,11 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="List any rules Tenants must follow—such as no smoking, pet restrictions, quiet hours, or limits on guests and overnight stays.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
                 <div class="input-cover">
-                    <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fas fa-ban"
+                    <input type="text" wire:model="restrictions" class="form-control has-icon" data-icon="fa-solid fa-ban"
                         @if ($property_type === 'Residential Property') placeholder="Enter details (e.g., Visiting Hours, Overnight Stay Rules)"
                 @elseif($property_type === 'Commercial Property')
                 placeholder="Enter details (e.g., Visiting Hours, Overnight Use, Guest Limitations)"
@@ -122,12 +122,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select who is responsible for handling maintenance and repairs.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fas fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -141,13 +141,13 @@
                 <label>Maintenance Response Time:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Indicate the typical turnaround time for addressing maintenance requests (e.g., 24 hours, 2 business days). This helps set Tenant expectations.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fas fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
                 </div>
             </div>
 
@@ -156,7 +156,7 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
                 <div class="input-cover">
@@ -175,11 +175,11 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Enter the approximate size of any dedicated storage space available to the Tenant, such as a storage closet, garage bay, or external unit. (e.g., 6x6 or 4x10).">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                     <div class="input-cover">
                         <input type="text" wire:model="storage_space_res_both" class="form-control has-icon"
-                            data-icon="fas fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
+                            data-icon="fa-solid fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
                     </div>
                 </div>
             @endif
@@ -191,11 +191,11 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Indicate whether guests are allowed and under what conditions (e.g., daytime only, no overnight guests, prior approval required).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
                     <select wire:model="guests_allowed" class="form-control has-icon"
-                        data-icon="fas fa-user-friends">
+                        data-icon="fa-solid fa-user-friends">
                         <option value="">Select</option>
                         <option value="Allowed">Allowed</option>
                         <option value="Not Allowed">Not Allowed</option>
@@ -208,12 +208,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="List any house rules the Tenant must follow—such as quiet hours, kitchen use limitations, curfews, or pet policies.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon"
-                        data-icon="fas fa-ban"
+                        data-icon="fa-solid fa-ban"
                         placeholder="Enter details (e.g., Visiting Hours, Overnight Stay Rules)" />
                 </div>
             </div>
@@ -223,13 +223,13 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Specify which shared areas the Tenant may use (e.g., kitchen, living room, laundry room, backyard).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="common_areas_access" class="form-control has-icon"
-                        data-icon="fas fa-door-open"
+                        data-icon="fa-solid fa-door-open"
                         placeholder="Enter common areas (e.g., Kitchen, Living Room, Backyard)">
 
                 </div>
@@ -239,12 +239,12 @@
                 <label>Maintenance and Repairs Are Handled By:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select who is responsible for handling maintenance and repairs.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fas fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -258,13 +258,13 @@
                 <label>Maintenance Response Time:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Indicate the typical turnaround time for addressing maintenance requests (e.g., 24 hours, 2 business days). This helps set Tenant expectations.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fas fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
                 </div>
             </div>
 
@@ -272,12 +272,12 @@
                 <label>Utilities:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select how utilities are managed—whether included in rent, shared among Tenants, or paid separately by the room.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="utilities" class="form-control has-icon" data-icon="fas fa-bolt">
+                    <select wire:model="utilities" class="form-control has-icon" data-icon="fa-solid fa-bolt">
                         <option value="">Select</option>
                         <option value="Included in Rent">Included in Rent</option>
                         <option value="Split Among Tenants">Split Among Tenants</option>
@@ -291,13 +291,13 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter cleaning frequency and who is responsible (e.g., Weekly by Landlord, Tenants Take Turns).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="common_areas_cleaning" class="form-control has-icon"
-                        data-icon="fas fa-broom"
+                        data-icon="fa-solid fa-broom"
                         placeholder="Enter cleaning frequency and who is responsible (e.g., Weekly by Landlord, Tenants Take Turns)">
                 </div>
             </div>
@@ -307,7 +307,7 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
                 <div class="input-cover">
@@ -326,11 +326,11 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Enter the approximate size of any dedicated storage space available to the Tenant, such as a storage closet, garage bay, or external unit. (e.g., 6x6 or 4x10).">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                     <div class="input-cover">
                         <input type="text" wire:model="storage_space_res_single" class="form-control has-icon"
-                            data-icon="fas fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
+                            data-icon="fa-solid fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
                     </div>
                 </div>
             @endif
@@ -339,11 +339,11 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select the type of bathroom access — private or shared.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="bathroom_facilities" class="form-control has-icon" data-icon="fas fa-bath">
+                    <select wire:model="bathroom_facilities" class="form-control has-icon" data-icon="fa-solid fa-bath">
                         <option value="">Select</option>
                         <option value="Private">Private</option>
                         <option value="Shared">Shared</option>
@@ -356,12 +356,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter the approximate size of the room in square feet.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="room_size" class="form-control has-icon"
-                        data-icon="fas fa-ruler-combined" placeholder="Enter square footage (e.g., 300 SqFt)">
+                        data-icon="fa-solid fa-ruler-combined" placeholder="Enter square footage (e.g., 300 SqFt)">
                 </div>
             </div>
         @endif
@@ -379,12 +379,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Specify any limitations on property use, access, or behavior—such as guest policies, business hours, noise rules, or overnight restrictions.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon"
-                        data-icon="fas fa-ban"
+                        data-icon="fa-solid fa-ban"
                         placeholder="Enter details (e.g., Visiting Hours, Overnight Use, Guest Limitations)">
 
                 </div>
@@ -395,12 +395,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select who is responsible for handling maintenance and repairs.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fas fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -414,13 +414,13 @@
                 <label>Maintenance Response Time:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Indicate the typical turnaround time for addressing maintenance requests (e.g., 24 hours, 2 business days). This helps set Tenant expectations.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fas fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
                 </div>
             </div>
 
@@ -428,7 +428,7 @@
                 <label class="fw-bold"> Included Storage Space:
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
                 <div class="input-cover">
@@ -447,11 +447,11 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Enter the approximate size of any dedicated storage space available to the Tenant, such as a storage closet, garage bay, or external unit. (e.g., 6x6 or 4x10).">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                     <div class="input-cover">
                         <input type="text" wire:model="storage_space_com_entire" class="form-control has-icon"
-                            data-icon="fas fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
+                            data-icon="fa-solid fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
                     </div>
                 </div>
             @endif
@@ -461,7 +461,7 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="List any shared facilities available to tenants, such as conference rooms, break areas, restrooms, or common parking.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="shared_amenities" class="form-control has-icon"
@@ -476,7 +476,7 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Provide the regular building access hours (e.g., Mon–Fri, 8am–6pm). This helps Tenants understand when the property is typically accessible.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="building_hours" class="form-control has-icon"
@@ -490,7 +490,7 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Indicate whether Tenants have unrestricted 24/7 access to the leased premises, or if access is limited to set hours.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
@@ -508,7 +508,7 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="State the permitted commercial uses under current zoning (e.g., office, retail, light industrial). This helps ensure the Tenant’s business use is compliant.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
@@ -524,7 +524,7 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Describe the layout or functional aspects of the space (e.g., private offices, warehouse bay, open floor plan, loading dock).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
@@ -540,7 +540,7 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="List nearby or anchor Tenants that may affect traffic, visibility, or co-tenancy appeal (e.g., Target, Walmart, Starbucks).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
@@ -555,11 +555,11 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Indicate whether guests are allowed and under what conditions (e.g., daytime only, no overnight guests, prior approval required).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
                     <select wire:model="guests_allowed" class="form-control has-icon"
-                        data-icon="fas fa-user-friends">
+                        data-icon="fa-solid fa-user-friends">
                         <option value="">Select</option>
                         <option value="Allowed">Allowed</option>
                         <option value="Not Allowed">Not Allowed</option>
@@ -572,12 +572,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Describe any limitations on property use, access, or behavior—such as shared hours, overnight use, or guest limitations.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="restrictions" class="form-control has-icon"
-                        data-icon="fas fa-ban"
+                        data-icon="fa-solid fa-ban"
                         placeholder="Enter details (e.g., Shared Hours, Overnight Use, Guest Limitations)">
                 </div>
             </div>
@@ -586,13 +586,13 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Specify which shared areas the Tenant may use (e.g., lobby, breakroom, restroom).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="common_areas_access" class="form-control has-icon"
-                        data-icon="fas fa-door-open"
+                        data-icon="fa-solid fa-door-open"
                         placeholder="Enter shared spaces (e.g., Lobby, Breakroom, Restroom)" />
 
                 </div>
@@ -602,12 +602,12 @@
                 <label>Maintenance and Repairs Are Handled By:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select who is responsible for handling maintenance and repairs (e.g., Landlord, Property Manager, Real Estate Agent, Tenant).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fas fa-tools">
+                    <select wire:model="maintenance_by" class="form-control has-icon" data-icon="fa-solid fa-tools">
                         <option value="">Select</option>
                         <option value="Landlord">Landlord</option>
                         <option value="Property Manager">Property Manager</option>
@@ -621,13 +621,13 @@
                 <label>Maintenance Response Time:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter the usual turnaround time for addressing maintenance requests (e.g., 24 hours, 2 business days). This helps set Tenant expectations.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fas fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
                 </div>
             </div>
 
@@ -635,12 +635,12 @@
                 <label>Utilities:</label>
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select how utilities are managed—whether included in rent, shared among Tenants, or paid separately by the room.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="utilities" class="form-control has-icon" data-icon="fas fa-bolt">
+                    <select wire:model="utilities" class="form-control has-icon" data-icon="fa-solid fa-bolt">
                         <option value="">Select</option>
                         <option value="Included in Rent">Included in Rent</option>
                         <option value="Split Among Tenants">Split Among Tenants</option>
@@ -654,13 +654,13 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter cleaning frequency and who is responsible for maintaining common areas (e.g., nightly by cleaning service).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="common_areas_cleaning" class="form-control has-icon"
-                        data-icon="fas fa-broom"
+                        data-icon="fa-solid fa-broom"
                         placeholder="Enter frequency and by whom (e.g., Nightly by Cleaning Service)">
                 </div>
             </div>
@@ -670,7 +670,7 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
                 <div class="input-cover">
@@ -689,11 +689,11 @@
 
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Enter the approximate size of any dedicated storage space available to the Tenant, such as a storage closet, garage bay, or external unit. (e.g., 6x6 or 4x10).">
-                        <i class="fas fa-circle-info"></i>
+                        <i class="fa-solid fa-circle-info"></i>
                     </span>
                     <div class="input-cover">
                         <input type="text" wire:model="storage_space_com_single" class="form-control has-icon"
-                            data-icon="fas fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
+                            data-icon="fa-solid fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
                     </div>
                 </div>
             @endif
@@ -703,11 +703,11 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select the type of bathroom access — private or shared.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
-                    <select wire:model="bathroom_facilities" class="form-control has-icon" data-icon="fas fa-bath">
+                    <select wire:model="bathroom_facilities" class="form-control has-icon" data-icon="fa-solid fa-bath">
                         <option value="">Select</option>
                         <option value="Private">Private</option>
                         <option value="Shared">Shared</option>
@@ -720,12 +720,12 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter the approximate size of the room in square footage (e.g., 200 SqFt).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
 
                 <div class="input-cover">
                     <input type="text" wire:model="room_size" class="form-control has-icon"
-                        data-icon="fas fa-ruler-combined" placeholder="Enter square footage (e.g., 200 SqFt)">
+                        data-icon="fa-solid fa-ruler-combined" placeholder="Enter square footage (e.g., 200 SqFt)">
                 </div>
             </div>
         @endif
@@ -742,7 +742,7 @@
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="List any shared facilities available to Tenants, such as conference rooms, break areas, restrooms, or common parking.">
-                <i class="fas fa-circle-info"></i>
+                <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
                 <input type="text" wire:model="shared_amenities" class="form-control has-icon"
@@ -756,7 +756,7 @@
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Provide the regular building access hours (e.g., Mon–Fri, 8am–6pm). This helps Tenants understand when the property is typically accessible.">
-                <i class="fas fa-circle-info"></i>
+                <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
                 <input type="text" wire:model="building_hours" class="form-control has-icon"
@@ -769,7 +769,7 @@
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Indicate whether Tenants have unrestricted 24/7 access to the leased premises, or if access is limited to set hours.">
-                <i class="fas fa-circle-info"></i>
+                <i class="fa-solid fa-circle-info"></i>
             </span>
 
             <div class="input-cover">
@@ -786,7 +786,7 @@
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="State the permitted commercial uses under current zoning (e.g., office, retail, light industrial). This helps ensure the Tenant’s business use is compliant.">
-                <i class="fas fa-circle-info"></i>
+                <i class="fa-solid fa-circle-info"></i>
             </span>
 
             <div class="input-cover">
@@ -799,7 +799,7 @@
         <div class="form-group">
             <label class="fw-bold">Maintenance and repairs are handled by:</label>
             <div class="input-cover">
-                <select wire:model="maintenance_handler" class="form-control has-icon" data-icon="fas fa-tools">
+                <select wire:model="maintenance_handler" class="form-control has-icon" data-icon="fa-solid fa-tools">
                     <option value="">Select</option>
                     <option value="Landlord">Landlord</option>
                     <option value="Property Manager">Property Manager</option>
@@ -814,7 +814,7 @@
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Describe the layout or functional aspects of the space (e.g., private offices, warehouse bay, open floor plan, loading dock).">
-                <i class="fas fa-circle-info"></i>
+                <i class="fa-solid fa-circle-info"></i>
             </span>
 
             <div class="input-cover">
@@ -828,7 +828,7 @@
             <label class="fw-bold"> Included Storage Space:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Select if dedicated storage space is included in the lease for the Tenant’s exclusive use.">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
 
             </label>
             <div class="input-cover">
@@ -847,11 +847,11 @@
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                     title="Enter the approximate size of any dedicated storage space available to the Tenant, such as a storage closet, garage bay, or external unit. (e.g., 6x6 or 4x10).">
-                    <i class="fas fa-circle-info"></i>
+                    <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">
                     <input type="text" wire:model="storage_space" class="form-control has-icon"
-                        data-icon="fas fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
+                        data-icon="fa-solid fa-warehouse" placeholder="Enter size of storage space (e.g., 6x6)">
                 </div>
             </div>
         @endif
@@ -861,7 +861,7 @@
 
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="List nearby or anchor tenants that may affect traffic, visibility, or co-tenancy appeal (e.g., Target, Starbucks, medical offices).">
-                <i class="fas fa-circle-info"></i>
+                <i class="fa-solid fa-circle-info"></i>
             </span>
 
             <div class="input-cover">
@@ -883,7 +883,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
-                data-icon="fas fa-user input-icon2" multiple>
+                data-icon="fa-solid fa-user input-icon2" multiple>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -896,7 +896,7 @@
         style="display: {{ $is_other_tenant_pay_visible ? 'block' : 'none' }}">
         <div class="input-cover">
             <input type="text" wire:model="other_tenant_pays" class="form-control has-icon"
-                data-icon="fas fa-user"
+                data-icon="fa-solid fa-user"
                 placeholder="Enter expenses the Tenant is responsible for (e.g., HVAC Maintenance, Janitorial Services, Security Monitoring)">
         </div>
     </div>
@@ -906,7 +906,7 @@
 <label class="fw-bold">Please specify other expense paid by Tenant:</label>
 <div class="input-cover">
     <input type="text" wire:model="tenant_pays_other" class="form-control has-icon"
-        data-icon="fas fa-pencil-alt" placeholder="Enter other expense paid by Tenant (e.g., HVAC maintenance)">
+        data-icon="fa-solid fa-pencil-alt" placeholder="Enter other expense paid by Tenant (e.g., HVAC maintenance)">
 </div>
 </div> --}}
 
@@ -920,7 +920,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
-                data-icon="fas fa-user-tie input-icon2" multiple>
+                data-icon="fa-solid fa-user-tie input-icon2" multiple>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -931,7 +931,7 @@
     <div class="form-group other_owner_pays" style="display: {{ $is_other_owner_pays_visible ? 'block' : 'none' }}">
         <div class="input-cover">
             <input type="text" wire:model="other_owner_pays" class="form-control has-icon"
-                data-icon="fas fa-user-tie"
+                data-icon="fa-solid fa-user-tie"
                 placeholder="Enter expenses paid by Owner (e.g., Elevator Maintenance, Window Cleaning, Janitorial Services)">
         </div>
     </div>
@@ -991,7 +991,7 @@
     <label class="fw-bold">Please specify other expense paid by Owner:</label>
     <div class="input-cover">
         <input type="text" wire:model="owner_pays_other" class="form-control has-icon"
-            data-icon="fas fa-pencil-alt" placeholder="Enter expense paid by Owner (e.g., elevator maintenance)">
+            data-icon="fa-solid fa-pencil-alt" placeholder="Enter expense paid by Owner (e.g., elevator maintenance)">
     </div>
 </div>
 
@@ -1053,7 +1053,7 @@
     </span>
     <div class="input-cover" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
-            data-icon="fas fa-calendar-alt input-icon2" multiple required>
+            data-icon="fa-solid fa-calendar-alt input-icon2" multiple required>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1073,7 +1073,7 @@
         {{-- <label class="fw-bold">Other Lease Term:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_lease_term" class="form-control has-icon"
-                data-icon="fas fa-calendar-alt" placeholder="Enter desired lease term (e.g., 8 Months)">
+                data-icon="fa-solid fa-calendar-alt" placeholder="Enter desired lease term (e.g., 8 Months)">
         </div>
     </div>
 

@@ -256,7 +256,7 @@
                                             @else
                                                 <tr>
                                                     <td colspan="8" class="text-center py-4">
-                                                        <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+                                                        <i class="fa-solid fa-inbox fa-3x mb-3 text-muted"></i>
                                                         <p class="mb-0">No auctions found for this category.</p>
                                                     </td>
                                                 </tr>

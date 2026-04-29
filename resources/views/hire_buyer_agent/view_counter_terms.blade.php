@@ -19,7 +19,7 @@
             <div class="card mb-4" style="border: 2px solid #049399; border-radius: 8px;">
                 <div class="card-header" style="background: linear-gradient(135deg, #049399 0%, #037a7f 100%); color: white;">
                     <h4 class="mb-0">
-                        <i class="fas fa-exchange-alt me-2"></i>
+                        <i class="fa-solid fa-exchange-alt me-2"></i>
                         Agent's Counter Terms
                     </h4>
                 </div>
@@ -207,7 +207,7 @@
                     <div class="border rounded p-4 mb-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 style="color: #049399; font-weight: 600; margin: 0;">
-                                <i class="fas fa-file-contract me-2"></i>
+                                <i class="fa-solid fa-file-contract me-2"></i>
                                 @if($awaitingCounterResponse)
                                 Your Submitted Counter Offer
                                 @else
@@ -219,7 +219,7 @@
 
                         @if($awaitingCounterResponse)
                         <div class="alert alert-warning mb-3 py-2" style="border-radius: 8px; border-left: 4px solid #ffc107; background: #fff9e6;">
-                            <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
+                            <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                         </div>
                         @endif
 
@@ -228,11 +228,11 @@
                             @if ($showDualScore && $latestCounterScore)
                             <div class="mb-3">
                                 <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
-                                    <i class="fas fa-chart-pie me-2"></i>Match Summary
+                                    <i class="fa-solid fa-chart-pie me-2"></i>Match Summary
                                 </span>
                             </div>
                             <p class="small text-muted mb-3">
-                                <i class="fas fa-info-circle me-1"></i>
+                                <i class="fa-solid fa-info-circle me-1"></i>
                                 <strong>Original Match</strong> compares this response to your original listing request.<br>
                                 <strong>Latest Counter Match</strong> compares this response to your most recent counteroffer.<br>
                                 Added services or terms are shown for transparency but do not increase either score.
@@ -298,14 +298,14 @@
                             @else
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span style="font-weight: 600; color: #1a3a5c; font-size: 1.1rem;">
-                                    <i class="fas fa-chart-pie me-2"></i>Match Score
+                                    <i class="fa-solid fa-chart-pie me-2"></i>Match Score
                                 </span>
                                 <span class="badge" style="background: {{ $totalScoreColor }}; font-size: 1.1rem; padding: 8px 16px; color: white;">
                                     {{ $totalScore }}%
                                 </span>
                             </div>
                             <p class="small text-muted mb-3">
-                                <i class="fas fa-info-circle me-1"></i>Match Score compares this counter only to the baseline. Added services or added terms are shown for transparency but do not increase the score.<br>
+                                <i class="fa-solid fa-info-circle me-1"></i>Match Score compares this counter only to the baseline. Added services or added terms are shown for transparency but do not increase the score.<br>
                                 Compared to: <strong>{{ $baselineLabel }}</strong>
                             </p>
                             <div class="row g-2">
@@ -344,13 +344,13 @@
                         </div>
                         @else
                         <div class="alert alert-secondary mb-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
-                            <i class="fas fa-info-circle me-2"></i>No match score available — no requirements were provided in the baseline.
+                            <i class="fa-solid fa-info-circle me-2"></i>No match score available — no requirements were provided in the baseline.
                         </div>
                         @endif
 
                         <div class="mb-4">
                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                <i class="fas fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
+                                <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
                             </h6>
 
                             @if (!empty($counterData['commission_structure']) || !empty($counterData['purchase_fee_type']))
@@ -552,7 +552,7 @@
 
                         <div class="mb-4">
                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
-                                <i class="fas fa-list-check me-2"></i>Requested Services
+                                <i class="fa-solid fa-list-check me-2"></i>Requested Services
                             </h6>
 
                             @if (!empty($orderedCounterServices))
@@ -565,7 +565,7 @@
                                             @php $isInBaseline = in_array($normalizeService($service), $baselineNorm); @endphp
                                             <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
                                                 @if (!$isInBaseline)
-                                                    <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                                    <i class="fa-solid fa-plus-circle me-2" style="color: #28a745;"></i>
                                                 @else
                                                     <span class="me-2" style="color: #6c757d;">•</span>
                                                 @endif
@@ -583,7 +583,7 @@
                                     @php $isInBaseline = in_array($normalizeService($service), $baselineNorm); @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
                                         @if (!$isInBaseline)
-                                            <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                            <i class="fa-solid fa-plus-circle me-2" style="color: #28a745;"></i>
                                         @else
                                             <span class="me-2" style="color: #6c757d;">•</span>
                                         @endif
@@ -602,7 +602,7 @@
                                     @php $isInBaseline = in_array($normalizeService($otherService), $baselineNorm); @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
                                         @if (!$isInBaseline)
-                                            <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>
+                                            <i class="fa-solid fa-plus-circle me-2" style="color: #28a745;"></i>
                                         @else
                                             <span class="me-2" style="color: #6c757d;">•</span>
                                         @endif
@@ -616,12 +616,12 @@
 
                             @if (!empty($servicesMissing))
                             <div class="mt-4 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
-                                <strong style="color: #856404;"><i class="fas fa-exclamation-triangle me-2"></i>Services Not Included in Counter:</strong>
+                                <strong style="color: #856404;"><i class="fa-solid fa-exclamation-triangle me-2"></i>Services Not Included in Counter:</strong>
                                 <ul class="list-unstyled ps-3 mt-2 mb-0">
                                     @foreach ($allBaselineServices as $baselineService)
                                         @if (in_array($normalizeService($baselineService), $servicesMissing))
                                         <li class="mb-1" style="{{ $missingStyle }}">
-                                            <i class="fas fa-times-circle me-2" style="color: #ffc107;"></i>{{ $baselineService }}
+                                            <i class="fa-solid fa-times-circle me-2" style="color: #ffc107;"></i>{{ $baselineService }}
                                         </li>
                                         @endif
                                     @endforeach
@@ -654,7 +654,7 @@
                         @if (!empty($counterData['additional_details']))
                         <div class="mb-4">
                             <h6 class="mb-2" style="color: #049399; font-weight: 600;">
-                                <i class="fas fa-info-circle me-2"></i>Additional Details
+                                <i class="fa-solid fa-info-circle me-2"></i>Additional Details
                             </h6>
                             <p class="mb-0 ps-3">{{ $counterData['additional_details'] }}</p>
                         </div>
@@ -668,7 +668,7 @@
                             @if($awaitingCounterResponse)
                             {{-- Agent submitted the latest counter — waiting for buyer to respond --}}
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
+                                <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
                                 <i class="fa fa-edit me-2"></i>Edit Counter Terms
@@ -676,14 +676,14 @@
                             @else
                             {{-- Buyer sent the latest counter — agent can respond --}}
                             <a href="{{ route('agent.buyer.hire.agent.auction.counter-bid', ['id' => $auction->id, 'bid_id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                                <i class="fas fa-reply me-2"></i>Counter Back
+                                <i class="fa-solid fa-reply me-2"></i>Counter Back
                             </a>
                             <form action="{{ route('buyer.hire.agent.auction.buyer.counter.term.accept') }}" method="POST" class="d-inline">
                                 @csrf
                                 <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to accept these counter terms?')">
-                                    <i class="fas fa-check me-2"></i>Accept
+                                    <i class="fa-solid fa-check me-2"></i>Accept
                                 </button>
                             </form>
                             <form action="{{ route('buyer.hire.agent.auction.buyer.counter.term.reject') }}" method="POST" class="d-inline">
@@ -691,7 +691,7 @@
                                 <input type="hidden" name="buyer_counter_term_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Are you sure you want to reject these counter terms?')">
-                                    <i class="fas fa-times me-2"></i>Reject
+                                    <i class="fa-solid fa-times me-2"></i>Reject
                                 </button>
                             </form>
                             @endif
@@ -705,14 +705,14 @@
                         @if($viewerRole === 'buyer' && !$bidIsTerminal)
                             @if(!$awaitingCounterResponse)
                             <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #ffc107; border: 2px solid #ffc107; color: #000; padding: 10px 20px; font-weight: 600;">
-                                <i class="fas fa-reply me-2"></i>Counter Back
+                                <i class="fa-solid fa-reply me-2"></i>Counter Back
                             </a>
                             <form action="{{ route('buyer.hire.agent.auction.counter.bid.accept') }}" method="POST" class="d-inline">
                                 @csrf
                                 <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #28a745; border: 2px solid #28a745; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Accept this counter offer from the agent?')">
-                                    <i class="fas fa-check me-2"></i>Accept
+                                    <i class="fa-solid fa-check me-2"></i>Accept
                                 </button>
                             </form>
                             <form action="{{ route('buyer.hire.agent.auction.counter.bid.reject') }}" method="POST" class="d-inline">
@@ -720,12 +720,12 @@
                                 <input type="hidden" name="counter_bid_id" value="{{ $activeCounter->id }}">
                                 <input type="hidden" name="auction_id" value="{{ $auction->id }}">
                                 <button type="submit" class="btn" style="background-color: #dc3545; border: 2px solid #dc3545; color: #fff; padding: 10px 20px; font-weight: 600;" onclick="return confirm('Reject this counter offer from the agent?')">
-                                    <i class="fas fa-times me-2"></i>Reject
+                                    <i class="fa-solid fa-times me-2"></i>Reject
                                 </button>
                             </form>
                             @else
                             <div class="alert alert-info mb-0">
-                                <i class="fas fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
+                                <i class="fa-solid fa-clock me-2"></i><strong>Counter Offer Sent.</strong>
                             </div>
                             <a href="{{ route('buyer.counter-terms', ['id' => $bid->id]) }}" class="btn" style="background-color: #049399; border: 2px solid #049399; color: #fff; padding: 10px 20px; font-weight: 600;">
                                 <i class="fa fa-edit me-2"></i>Edit Counter Terms
@@ -739,16 +739,16 @@
 
                         <a href="{{ route('buyer.view-auction', $auction->id) }}"
                            class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
-                            <i class="fas fa-eye me-2"></i>View Listing
+                            <i class="fa-solid fa-eye me-2"></i>View Listing
                         </a>
                     </div>
                     @else
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
+                        <i class="fa-solid fa-info-circle me-2"></i>
                         No counter terms have been submitted for this bid yet.
                     </div>
                     <a href="{{ route('buyer.view-auction', $auction->id) }}" class="btn btn-outline-secondary mt-2">
-                        <i class="fas fa-arrow-left me-2"></i>Back to Listing
+                        <i class="fa-solid fa-arrow-left me-2"></i>Back to Listing
                     </a>
                     @endif
                 </div>

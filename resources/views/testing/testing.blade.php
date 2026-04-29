@@ -111,7 +111,7 @@ body{
 <div class="wrapper">
 	<div class="notification_wrap">
 		<div class="notification_icon">
-			<i class="fas fa-bell"></i>
+			<i class="fa-solid fa-bell"></i>
 		</div>
 		<div class="dropdown">
 			<div class="notify_item">
