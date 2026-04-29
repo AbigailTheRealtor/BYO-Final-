@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/confirmOtp.css') }}" />
     <link href="https://fonts.googleapis.com/css?family=Poppins" rel="stylesheet" />
     <!-- //Font Icon  -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" />
 </head>
 
 <body>

@@ -19,6 +19,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
     <link rel="shortcut icon" href="{{ asset(get_setting('favicon')) }}" type="image/x-icon">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css">
 </head>
 <style>
     .notification-btn {
@@ -153,7 +155,6 @@
         </ul>
     </div>
 
-    <script src="https://kit.fontawesome.com/d7dd5c0801.js" crossorigin="anonymous"></script>
     <script src="{{ asset('assets/bootstrap-5.2.2/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('assets/js/loader.js') }}"></script>
     <!-- Compiled Alpine/App JS -->
