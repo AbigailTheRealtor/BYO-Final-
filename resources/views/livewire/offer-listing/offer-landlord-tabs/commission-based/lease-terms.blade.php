@@ -921,7 +921,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
-                data-icon="fas fa-user-tie input-icon2" multiple>
+                data-icon="fa-solid fa-user-tie input-icon2" multiple>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -932,7 +932,7 @@
     <div class="form-group other_owner_pays" style="display: {{ $is_other_owner_pays_visible ? 'block' : 'none' }}">
         <div class="input-cover">
             <input type="text" wire:model="other_owner_pays" class="form-control has-icon"
-                data-icon="fas fa-user-tie"
+                data-icon="fa-solid fa-user-tie"
                 placeholder="Enter expenses paid by Owner (e.g., Elevator Maintenance, Window Cleaning, Janitorial Services)">
         </div>
     </div>
