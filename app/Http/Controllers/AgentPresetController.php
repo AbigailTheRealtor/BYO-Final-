@@ -28,6 +28,7 @@ class AgentPresetController extends Controller
         'brokerage',
         'license_no',
         'nar_id',
+        'brokerage_relationship',
         'presentation_link',
         'business_card_link',
         'reviews_links',
