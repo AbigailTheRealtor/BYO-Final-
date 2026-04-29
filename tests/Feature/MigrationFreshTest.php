@@ -6,8 +6,27 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
+/**
+ * ⚠️  This test calls migrate:fresh against the REAL database — it destroys
+ * all rows in every table.  It must NEVER run during normal development.
+ *
+ * Skipped by default.  Enable only in CI on a throwaway DB:
+ *   MIGRATION_FRESH_TEST=true php artisan test --filter=MigrationFreshTest
+ */
 class MigrationFreshTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (! env('MIGRATION_FRESH_TEST')) {
+            $this->markTestSkipped(
+                'MigrationFreshTest disabled in dev. '
+                . 'Set MIGRATION_FRESH_TEST=true to enable (CI / throwaway DB only).'
+            );
+        }
+    }
+
     public function test_migrate_fresh_runs_without_errors(): void
     {
         $exitCode = Artisan::call('migrate:fresh', ['--force' => true]);
