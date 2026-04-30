@@ -1,0 +1,141 @@
+Surgical implementation only. Do not redesign forms.
+
+Goal:
+Add a new optional "Photos, Tours & Documents" tab to both Create Seller Listing and Create Landlord Listing flows.
+
+IMPORTANT:
+- This is for Create Listing (NOT Hire Agent)
+- There is NO Broker Compensation tab in this flow
+- The new tab must follow the exact same input styles, components, spacing, and structure already used in the existing form inputs
+- Do NOT introduce new UI patterns or custom components
+
+---------------------------------------
+
+ALSO FIX:
+- Update any tab label that currently shows "sale Terms" to "Sale Terms" (capital S)
+
+---------------------------------------
+
+NEW TAB:
+
+Tab name:
+Photos, Tours & Documents
+
+Placement (VERY IMPORTANT):
+Add this tab:
+- AFTER "Additional Details"
+- BEFORE "Seller Information" (Seller flow)
+- BEFORE "Landlord Information" (Landlord flow)
+
+Final order should be:
+
+Seller:
+1. Listing Details
+2. Property Preferences
+3. Sale Terms
+4. Additional Details
+5. Photos, Tours & Documents  ← NEW
+6. Seller Information
+7. AI Questions
+
+Landlord:
+1. Listing Details
+2. Property Preferences
+3. Leasing Terms
+4. Additional Details
+5. Photos, Tours & Documents  ← NEW
+6. Landlord Information
+7. AI Questions
+
+---------------------------------------
+
+TAB CONTENT:
+
+Use EXISTING input styles only (same classes, same structure, same icons if used).
+
+SECTION 1: Property Photos
+- Field: Photo Upload
+- Type: file upload
+- Allow multiple files IF current system supports it
+- Accept: jpg, jpeg, png, webp
+- Optional
+
+SECTION 2: Video Tour Link
+- Field: Video Tour URL
+- Type: text/url input
+- Placeholder: https://youtube.com/...
+- Optional
+
+SECTION 3: 3D / Virtual Tour Link
+- Field: 3D Tour URL
+- Type: text/url input
+- Placeholder: https://my.matterport.com/...
+- Optional
+
+SECTION 4: Documents
+- Field: Document Upload
+- Type: file upload
+- Allow multiple IF supported
+- Accept: pdf, doc, docx, jpg, jpeg, png
+- Optional
+
+---------------------------------------
+
+HELPER TEXT (top of tab):
+
+"Upload photos, tours, and optional documents to help agents and interested parties better understand the property. You can skip this section for now and add media later."
+
+---------------------------------------
+
+DATA HANDLING:
+
+- Use existing storage pattern (meta keys or existing file upload system)
+- DO NOT create a new upload architecture
+- If upload system exists → reuse it
+- If upload system does NOT exist:
+  - Implement URL fields only
+  - Report missing upload infrastructure instead of building a full system
+
+- All fields must be nullable
+- No required validation
+
+---------------------------------------
+
+SAFEGUARDS:
+
+- Do NOT modify Services
+- Do NOT modify AI Questions
+- Do NOT modify Buyer or Tenant flows
+- Do NOT touch bidding, counters, or summaries
+- Do NOT remove or rename existing fields
+- Do NOT run destructive migrations
+- If DB changes needed → additive nullable only
+
+---------------------------------------
+
+VERIFICATION:
+
+- Seller (all property types) renders correctly
+- Landlord (Residential + Commercial) renders correctly
+- Tab appears in correct position
+- Tab navigation works (Next/Back)
+- Fields save and reload
+- No duplicate UI patterns introduced
+- "Sale Terms" label corrected
+- PHP syntax check passes
+- View cache cleared
+
+---------------------------------------
+
+OUTPUT:
+
+Write report to:
+.local/tasks/photos_tours_documents_tab_report.md
+
+Include:
+- Files modified
+- Fields added
+- Storage method used
+- Confirmation of tab placement
+- Confirmation of Sale Terms label fix
+- Any issues found
