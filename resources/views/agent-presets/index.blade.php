@@ -380,7 +380,7 @@
         @endif
         <div class="avatar-upload-info flex-grow-1">
             <h6><i class="fa-solid fa-camera me-1" style="color:#049399"></i>Profile Photo</h6>
-            <p>Your photo appears on your Hire Me page and your public profile page so clients can put a face to your name.</p>
+            <p>Your photo appears on your Hire Me page and your <a href="{{ route('agent.profile.public', ['agentShortId' => $agentShortId]) }}" target="_blank" rel="noopener noreferrer">public profile page</a> so clients can put a face to your name.</p>
             @error('avatar')
                 <div class="alert alert-danger py-1 px-2 mb-2" style="font-size:.82rem;">{{ $message }}</div>
             @enderror
