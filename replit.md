@@ -6,6 +6,28 @@ Bid Your Offer is a Laravel-based real estate auction platform designed to enhan
 ## User Preferences
 I prefer detailed explanations. Ask before making major changes.
 
+## GLOBAL BUILD RULE — Limited Service Is Out of Scope
+
+**Do NOT modify Limited Service listing flows unless explicitly requested.**
+
+Limited Service / flat-fee / legacy paths are frozen. All listing edits, field changes, tab changes, UI changes, uploads, MLS fields, and validation changes apply to **Full Service only**.
+
+Do not edit:
+- Limited Service listing blades or tab partials
+- Limited Service Livewire logic or panes
+- Flat-fee / limited-service paths
+- Any commented-out Limited Service code or legacy limited-service UI
+
+If a shared file affects both Full Service and Limited Service:
+- Do not blindly edit it.
+- Isolate the change to Full Service only.
+- If isolation is not possible, stop and report before making any changes.
+
+Before implementing any listing change, confirm:
+1. Which files are being edited
+2. Whether any Limited Service file/path is touched
+3. How the change is isolated to Full Service only
+
 ## System Architecture
 The platform is built on Laravel 8.x, PHP 8.2.23, and PostgreSQL, utilizing Laravel Mix with TailwindCSS, AlpineJS, and Livewire for dynamic frontend components. Bootstrap is used for UI elements. Location data is sourced from a U.S. Census-based local database.
 
