@@ -283,6 +283,29 @@
             color: #0ce7ef;
             font-weight: 600;
         }
+
+        .input-group-text-seller {
+            display: flex;
+            align-items: center;
+            padding: 0.7rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            text-align: center;
+            white-space: nowrap;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: .375rem;
+        }
+
+        .input-group-text-seller+input.form-control {
+            padding-left: 8px;
+        }
+
+        .percentage-value-set {
+            padding-left: 9px !important;
+        }
     </style>
 @endpush
 
@@ -1205,6 +1228,8 @@
                 sale_provision: '#sale_provision',
                 offered_financing: '#offered_financing',
                 view_preference: '#view_preference',
+                association_fee_includes: '#association_fee_includes',
+                association_amenities: '#association_amenities',
             };
             Object.entries(regularFields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -1318,6 +1343,16 @@
             @this.set('offered_financing', selectedValues, false);
             applyFinancingVisibility();
         });
+        $(document).on('change', '#association_fee_includes', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('association_fee_includes', selectedValues, false);
+            $('#hoa-fee-includes-other-section').toggle(selectedValues.includes('Other'));
+        });
+        $(document).on('change', '#association_amenities', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('association_amenities', selectedValues, false);
+            $('#hoa-amenities-other-section').toggle(selectedValues.includes('Other'));
+        });
 
         Object.entries(_mlsFieldSelectors).forEach(function([fieldId, selectors]) {
             selectors.forEach(function(selector) {
@@ -1419,6 +1454,24 @@
                 }
 
                 initializeMlsPropertyMultiSelects();
+
+                var $feeIncludes = $('#association_fee_includes');
+                if ($feeIncludes.length) {
+                    if (!$feeIncludes.hasClass('select2-hidden-accessible')) {
+                        $feeIncludes.select2({ placeholder: "Select what the fee includes", allowClear: true });
+                    }
+                    var fiData = $feeIncludes.val() || [];
+                    $('#hoa-fee-includes-other-section').toggle(fiData.includes('Other'));
+                }
+
+                var $amenities = $('#association_amenities');
+                if ($amenities.length) {
+                    if (!$amenities.hasClass('select2-hidden-accessible')) {
+                        $amenities.select2({ placeholder: "Select amenities", allowClear: true });
+                    }
+                    var amData = $amenities.val() || [];
+                    $('#hoa-amenities-other-section').toggle(amData.includes('Other'));
+                }
             });
         });
 
@@ -1507,6 +1560,8 @@
                 '#view_preference': 'view_preference',
                 '#appliances': 'appliances',
                 '#included_assets': 'business_assets',
+                '#association_fee_includes': 'association_fee_includes',
+                '#association_amenities': 'association_amenities',
             };
             Object.keys(regularFields).forEach(function(selector) {
                 var $el = $(selector);
@@ -1612,6 +1667,21 @@
                 applyProvisionVisibility();
             }
 
+            if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
+                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true });
+            }
+            if ($('#association_fee_includes').length) {
+                var fiDataInit = $('#association_fee_includes').val() || [];
+                $('#hoa-fee-includes-other-section').toggle(fiDataInit.includes('Other'));
+            }
+
+            if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
+                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true });
+            }
+            if ($('#association_amenities').length) {
+                var amDataInit = $('#association_amenities').val() || [];
+                $('#hoa-amenities-other-section').toggle(amDataInit.includes('Other'));
+            }
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({

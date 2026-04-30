@@ -259,7 +259,7 @@
 
             <span class="input-group-text-seller">$</span>
 
-            <input type="text" wire:model="maximum_budget" class="form-control has-icon"
+            <input type="text" wire:model="maximum_budget" class="form-control"
                 placeholder="Enter desired sale price (e.g., 500000)" data-error-id="maximum_budget_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
         </div>
@@ -1654,7 +1654,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="initial_deposit_requested" class="form-control has-icon"
+        <input type="text" wire:model="initial_deposit_requested" class="form-control"
             placeholder="Enter initial deposit amount (e.g., 5000)"
             data-error-id="initial_deposit_requested_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1696,7 +1696,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="additional_deposit_requested" class="form-control has-icon"
+        <input type="text" wire:model="additional_deposit_requested" class="form-control"
             placeholder="Enter additional deposit amount (e.g., 10000)"
             data-error-id="additional_deposit_requested_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">

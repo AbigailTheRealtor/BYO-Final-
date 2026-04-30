@@ -40,11 +40,9 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <div class="input-cover">
-                        <input type="text" wire:model="tax_year" class="form-control has-icon"
-                            data-icon="fa-regular fa-calendar"
-                            placeholder="e.g., 2025">
-                    </div>
+                    <input type="text" wire:model="tax_year" class="form-control"
+                        style="padding-left: 12px;"
+                        placeholder="Enter Tax Year (e.g., 2025)">
                 </div>
             </div>
 
@@ -59,8 +57,8 @@
                     </label>
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="annual_property_taxes" class="form-control has-icon"
-                            placeholder="e.g., 5200"
+                        <input type="text" wire:model="annual_property_taxes" class="form-control"
+                            placeholder="Enter Annual Property Taxes (e.g., 5,200)"
                             data-error-id="annual_property_taxes_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -90,17 +88,15 @@
 
         @if ($additional_parcels === 'Yes')
             <div class="form-group mt-3">
-                <label class="fw-bold">Total Parcel Count:
+                <label class="fw-bold">Total Number of Parcels:
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="Enter the total number of parcels included in this sale (including the primary parcel).">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="input-cover">
-                    <input type="number" wire:model="total_parcel_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-hashtag"
-                        placeholder="e.g., 3" min="2">
-                </div>
+                <input type="number" wire:model="total_parcel_count" class="form-control"
+                    style="padding-left: 12px;"
+                    placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
             </div>
 
             <div class="form-group mt-3">
@@ -215,7 +211,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="flood_zone_panel" class="form-control has-icon"
                     data-icon="fa-solid fa-map"
-                    placeholder="e.g., 12086C0318H">
+                    placeholder="Enter FEMA Flood Zone Panel / Map Number (e.g., 12086C0318H)">
             </div>
         </div>
 
@@ -258,8 +254,8 @@
                 </label>
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
-                    <input type="text" wire:model="annual_cdd_fee" class="form-control has-icon"
-                        placeholder="e.g., 1800"
+                    <input type="text" wire:model="annual_cdd_fee" class="form-control"
+                        placeholder="Enter Annual CDD Fee (e.g., 1,800)"
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -296,8 +292,8 @@
                 </label>
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
-                    <input type="text" wire:model="special_assessment_amount" class="form-control has-icon"
-                        placeholder="e.g., 4500"
+                    <input type="text" wire:model="special_assessment_amount" class="form-control"
+                        placeholder="Enter Special Assessment Amount (e.g., 4,500)"
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -395,7 +391,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="association_name" class="form-control has-icon"
                         data-icon="fa-solid fa-building"
-                        placeholder="e.g., Sunset Hills Homeowners Association, Inc.">
+                        placeholder="Enter Association Name (e.g., Sunset Hills Homeowners Association, Inc.)">
                 </div>
             </div>
 
@@ -411,8 +407,8 @@
                         </label>
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
-                            <input type="text" wire:model="association_fee_amount" class="form-control has-icon"
-                                placeholder="e.g., 350"
+                            <input type="text" wire:model="association_fee_amount" class="form-control"
+                                placeholder="Enter Association Fee Amount (e.g., 350)"
                                 data-error-id="association_fee_amount_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
@@ -499,8 +495,8 @@
                     </label>
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="association_application_fee" class="form-control has-icon"
-                            placeholder="e.g., 150"
+                        <input type="text" wire:model="association_application_fee" class="form-control"
+                            placeholder="Enter Association Application Fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -508,7 +504,7 @@
                 </div>
             @endif
 
-            {{-- What does the fee include (multi-select) --}}
+            {{-- What does the fee include (Select2 multi-select) --}}
             <div class="form-group mt-3">
                 <label class="fw-bold">What Does the Association Fee Include?
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -516,43 +512,38 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="row">
-                    @php
-                        $feeIncludesOptions = [
-                            'Cable TV', 'Common Area Maintenance', 'Community Pool',
-                            'Exterior Maintenance', 'Flood Insurance', 'Gas',
-                            'Grounds Maintenance', 'Insurance', 'Internet',
-                            'Pest Control', 'Private Road Maintenance', 'Recreational Facilities',
-                            'Roof Maintenance', 'Security', 'Sewer', 'Trash',
-                            'Water', 'Other',
-                        ];
-                    @endphp
-                    @foreach ($feeIncludesOptions as $option)
-                        <div class="col-md-4 col-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox"
-                                    wire:model="association_fee_includes"
-                                    value="{{ $option }}"
-                                    id="fee_includes_{{ Str::slug($option) }}">
-                                <label class="form-check-label" for="fee_includes_{{ Str::slug($option) }}">
-                                    {{ $option }}
-                                </label>
-                            </div>
-                        </div>
-                    @endforeach
+                @php
+                    $feeIncludesOptions = [
+                        'Cable TV', 'Common Area Maintenance', 'Community Pool',
+                        'Exterior Maintenance', 'Flood Insurance', 'Gas',
+                        'Grounds Maintenance', 'Insurance', 'Internet',
+                        'Pest Control', 'Private Road Maintenance', 'Recreational Facilities',
+                        'Roof Maintenance', 'Security', 'Sewer', 'Trash',
+                        'Water', 'Other',
+                    ];
+                @endphp
+                <div class="input-cover" wire:ignore>
+                    <i class="input-icon fa-solid fa-list-check input-icon2"></i>
+                    <select id="association_fee_includes" class="form-control has-icon select2-multiple" multiple>
+                        @foreach ($feeIncludesOptions as $option)
+                            <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
+                                {{ $option }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                @if (in_array('Other', $association_fee_includes ?? []))
-                    <div class="form-group mt-2">
-                        <div class="input-cover">
-                            <input type="text" wire:model="association_fee_includes_other" class="form-control has-icon"
-                                data-icon="fa-solid fa-list-check"
-                                placeholder="Describe additional fee inclusions">
-                        </div>
+            </div>
+            <div id="hoa-fee-includes-other-section" wire:ignore.self style="display: {{ in_array('Other', $association_fee_includes ?? []) ? 'block' : 'none' }}">
+                <div class="form-group mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="association_fee_includes_other" class="form-control has-icon"
+                            data-icon="fa-solid fa-list-check"
+                            placeholder="Enter what else is included (e.g., Roof Maintenance, Building Reserves)">
                     </div>
-                @endif
+                </div>
             </div>
 
-            {{-- Association Amenities (multi-select) --}}
+            {{-- Association Amenities (Select2 multi-select) --}}
             <div class="form-group mt-3">
                 <label class="fw-bold">Association Amenities:
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
@@ -560,38 +551,33 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="row">
-                    @php
-                        $amenityOptions = [
-                            'Basketball Court', 'Boat Slip/Marina', 'Clubhouse', 'Dog Park',
-                            'Fitness Center / Gym', 'Gated Entry', 'Golf Course', 'Jogging / Walking Trail',
-                            'Pickleball Court', 'Playground', 'Pool', 'Recreation Center',
-                            'Sauna / Spa', 'Tennis Court', 'Waterfront Access', 'Other',
-                        ];
-                    @endphp
-                    @foreach ($amenityOptions as $option)
-                        <div class="col-md-4 col-6">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox"
-                                    wire:model="association_amenities"
-                                    value="{{ $option }}"
-                                    id="amenity_{{ Str::slug($option) }}">
-                                <label class="form-check-label" for="amenity_{{ Str::slug($option) }}">
-                                    {{ $option }}
-                                </label>
-                            </div>
-                        </div>
-                    @endforeach
+                @php
+                    $amenityOptions = [
+                        'Basketball Court', 'Boat Slip/Marina', 'Clubhouse', 'Dog Park',
+                        'Fitness Center / Gym', 'Gated Entry', 'Golf Course', 'Jogging / Walking Trail',
+                        'Pickleball Court', 'Playground', 'Pool', 'Recreation Center',
+                        'Sauna / Spa', 'Tennis Court', 'Waterfront Access', 'Other',
+                    ];
+                @endphp
+                <div class="input-cover" wire:ignore>
+                    <i class="input-icon fa-solid fa-star input-icon2"></i>
+                    <select id="association_amenities" class="form-control has-icon select2-multiple" multiple>
+                        @foreach ($amenityOptions as $option)
+                            <option value="{{ $option }}" {{ in_array($option, $association_amenities ?? []) ? 'selected' : '' }}>
+                                {{ $option }}
+                            </option>
+                        @endforeach
+                    </select>
                 </div>
-                @if (in_array('Other', $association_amenities ?? []))
-                    <div class="form-group mt-2">
-                        <div class="input-cover">
-                            <input type="text" wire:model="association_amenities_other" class="form-control has-icon"
-                                data-icon="fa-solid fa-star"
-                                placeholder="Describe additional amenities">
-                        </div>
+            </div>
+            <div id="hoa-amenities-other-section" wire:ignore.self style="display: {{ in_array('Other', $association_amenities ?? []) ? 'block' : 'none' }}">
+                <div class="form-group mt-2">
+                    <div class="input-cover">
+                        <input type="text" wire:model="association_amenities_other" class="form-control has-icon"
+                            data-icon="fa-solid fa-star"
+                            placeholder="Enter association amenity (e.g., Community Garden)">
                     </div>
-                @endif
+                </div>
             </div>
 
             {{-- Leasing Restrictions --}}
@@ -655,11 +641,9 @@
                                     <i class="fa-solid fa-circle-info"></i>
                                 </span>
                             </label>
-                            <div class="input-cover">
-                                <input type="number" wire:model="max_leases_per_year" class="form-control has-icon"
-                                    data-icon="fa-solid fa-hashtag"
-                                    placeholder="e.g., 2" min="1">
-                            </div>
+                            <input type="number" wire:model="max_leases_per_year" class="form-control"
+                                    style="padding-left: 12px;"
+                                    placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
                         </div>
                     </div>
                 </div>
