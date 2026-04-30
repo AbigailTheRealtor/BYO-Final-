@@ -6,6 +6,7 @@ use App\Models\AgentDefaultProfile;
 use App\Services\AgentPresetCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class AgentPresetController extends Controller
 {
@@ -30,7 +31,9 @@ class AgentPresetController extends Controller
         'nar_id',
         'brokerage_relationship',
         'presentation_link',
+        'presentation_upload_path',
         'business_card_link',
+        'business_card_upload_path',
         'reviews_links',
         'website_link',
         'social_media',
@@ -186,8 +189,10 @@ class AgentPresetController extends Controller
             'brokerage'         => ['nullable', 'string', 'max:200'],
             'license_no'        => ['nullable', 'string', 'max:100'],
             'nar_id'            => ['nullable', 'string', 'max:100'],
-            'presentation_link' => ['nullable', 'url', 'max:500'],
-            'business_card_link'=> ['nullable', 'url', 'max:500'],
+            'presentation_link'   => ['nullable', 'url', 'max:500'],
+            'presentation_upload' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,ppt,pptx', 'max:10240'],
+            'business_card_link'  => ['nullable', 'url', 'max:500'],
+            'business_card_upload'=> ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png,webp,doc,docx,ppt,pptx', 'max:10240'],
             'reviews_links_raw' => ['nullable', 'string', 'max:5000'],
             'website_link_raw'  => ['nullable', 'string', 'max:5000'],
             'social_media_raw'  => ['nullable', 'string', 'max:5000'],
@@ -330,6 +335,31 @@ class AgentPresetController extends Controller
             array_map('trim', (array) $otherServicesRaw)
         ));
 
+        $userId = Auth::id();
+
+        // Retrieve any existing record so we can carry over stored upload paths
+        // when no new file is submitted for that slot.
+        $existingProfile = AgentDefaultProfile::findForAgent($userId, $role, $propertyType);
+        $existingData    = $existingProfile?->profile_data ?? [];
+
+        // Handle Presentation Upload
+        $presentationUploadPath = $existingData['presentation_upload_path'] ?? null;
+        if ($request->hasFile('presentation_upload') && $request->file('presentation_upload')->isValid()) {
+            $file = $request->file('presentation_upload');
+            $dir  = 'agent-offer-presets/' . $userId;
+            $name = 'presentation_' . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $presentationUploadPath = Storage::disk('public')->putFileAs($dir, $file, $name);
+        }
+
+        // Handle Business Card / Headshot Upload
+        $businessCardUploadPath = $existingData['business_card_upload_path'] ?? null;
+        if ($request->hasFile('business_card_upload') && $request->file('business_card_upload')->isValid()) {
+            $file = $request->file('business_card_upload');
+            $dir  = 'agent-offer-presets/' . $userId;
+            $name = 'business_card_' . \Illuminate\Support\Str::uuid() . '.' . $file->getClientOriginalExtension();
+            $businessCardUploadPath = Storage::disk('public')->putFileAs($dir, $file, $name);
+        }
+
         $profileData = [
             'services'            => $request->input('services', []),
             'other_services'      => $otherServices,
@@ -346,8 +376,10 @@ class AgentPresetController extends Controller
             'brokerage'           => $request->input('brokerage', ''),
             'license_no'          => $request->input('license_no', ''),
             'nar_id'              => $request->input('nar_id', ''),
-            'presentation_link'   => $request->input('presentation_link', ''),
-            'business_card_link'  => $request->input('business_card_link', ''),
+            'presentation_link'        => $request->input('presentation_link', ''),
+            'presentation_upload_path' => $presentationUploadPath,
+            'business_card_link'       => $request->input('business_card_link', ''),
+            'business_card_upload_path'=> $businessCardUploadPath,
             'reviews_links'       => static::splitLines($request->input('reviews_links_raw', '')),
             'website_link'        => static::splitLines($request->input('website_link_raw', '')),
             'social_media'        => static::splitLines($request->input('social_media_raw', '')),
@@ -484,8 +516,6 @@ class AgentPresetController extends Controller
             'communication_style'           => $request->input('communication_style', ''),
             'preferred_contact_method'      => $request->input('preferred_contact_method', ''),
         ];
-
-        $userId = Auth::id();
 
         AgentDefaultProfile::upsertForAgent($userId, $role, $propertyType, $profileData);
 

@@ -285,7 +285,7 @@
         <span id="preset-error-summary-text"></span>
     </div>
 
-    <form method="POST" action="{{ route('agent.presets.save', [$role, $propertyType]) }}" id="preset-form">
+    <form method="POST" action="{{ route('agent.presets.save', [$role, $propertyType]) }}" id="preset-form" enctype="multipart/form-data">
         @csrf
 
         {{-- ── SERVICES ──────────────────────────────────────────────────────── --}}
@@ -505,12 +505,38 @@
                     <div class="form-hint">Link to a short intro video (YouTube, Vimeo, etc.).</div>
                 </div>
                 <div class="mb-3">
+                    <label class="form-label form-label-sm" for="presentation_upload">Presentation Upload</label>
+                    <input type="file" class="form-control @error('presentation_upload') is-invalid @enderror"
+                           id="presentation_upload" name="presentation_upload"
+                           accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.ppt,.pptx">
+                    @error('presentation_upload')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-hint">Upload a PDF, image, or document (max 10 MB). Accepted: pdf, jpg, png, webp, doc, docx, ppt, pptx.</div>
+                    @if (!empty($data['presentation_upload_path']))
+                        <div class="mt-1">
+                            <small>Current file: <a href="{{ Storage::disk('public')->url($data['presentation_upload_path']) }}" target="_blank" rel="noopener noreferrer">{{ basename($data['presentation_upload_path']) }}</a></small>
+                        </div>
+                    @endif
+                </div>
+                <div class="mb-3">
                     <label class="form-label form-label-sm" for="business_card_link">Business Card / Headshot Link</label>
                     <input type="url" class="form-control @error('business_card_link') is-invalid @enderror"
                            id="business_card_link" name="business_card_link"
                            placeholder="https://"
                            value="{{ old('business_card_link', $data['business_card_link'] ?? '') }}">
                     @error('business_card_link')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm" for="business_card_upload">Business Card / Headshot Upload</label>
+                    <input type="file" class="form-control @error('business_card_upload') is-invalid @enderror"
+                           id="business_card_upload" name="business_card_upload"
+                           accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.ppt,.pptx">
+                    @error('business_card_upload')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="form-hint">Upload a PDF, image, or document (max 10 MB). Accepted: pdf, jpg, png, webp, doc, docx, ppt, pptx.</div>
+                    @if (!empty($data['business_card_upload_path']))
+                        <div class="mt-1">
+                            <small>Current file: <a href="{{ Storage::disk('public')->url($data['business_card_upload_path']) }}" target="_blank" rel="noopener noreferrer">{{ basename($data['business_card_upload_path']) }}</a></small>
+                        </div>
+                    @endif
                 </div>
                 <div class="mb-3">
                     <label class="form-label form-label-sm" for="reviews_links_raw">Review Links</label>
