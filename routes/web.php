@@ -157,6 +157,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/agent/presets', [\App\Http\Controllers\AgentPresetController::class, 'index'])->name('agent.presets.index');
     Route::get('/agent/presets/{role}/{propertyType}/edit', [\App\Http\Controllers\AgentPresetController::class, 'edit'])->name('agent.presets.edit');
     Route::post('/agent/presets/{role}/{propertyType}', [\App\Http\Controllers\AgentPresetController::class, 'save'])->name('agent.presets.save');
+    Route::post('/agent/avatar', [\App\Http\Controllers\AgentPresetController::class, 'uploadAvatar'])->name('agent.avatar.upload');
 
     Route::get('/notifications/fetch', [NotificationController::class, 'fetch'])->name('notifications.fetch');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markRead'])->name('notifications.markRead');

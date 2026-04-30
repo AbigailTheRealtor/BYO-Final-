@@ -172,6 +172,55 @@
         color: #9aa5b1;
         margin-top: .45rem;
     }
+    .avatar-section {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1.25rem 1.5rem;
+        margin-bottom: 1.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .avatar-preview {
+        flex-shrink: 0;
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #c8e8ea;
+        background: #f0fafa;
+    }
+    .avatar-placeholder {
+        flex-shrink: 0;
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        background: #e9ecef;
+        border: 3px dashed #ced4da;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #adb5bd;
+        font-size: 2rem;
+    }
+    .avatar-upload-info h6 {
+        font-size: .95rem;
+        font-weight: 700;
+        margin-bottom: .25rem;
+    }
+    .avatar-upload-info p {
+        font-size: .82rem;
+        color: #6c757d;
+        margin-bottom: .6rem;
+    }
+    .avatar-upload-form {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        flex-wrap: wrap;
+    }
     .preset-hire-path {
         font-size: .72rem;
         font-family: monospace;
@@ -288,6 +337,46 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
+
+    {{-- ── Profile Photo ──────────────────────────────────────────────────── --}}
+    <div class="avatar-section">
+        @if (auth()->user()->avatar)
+            <img src="{{ asset('images/avatar/'.auth()->user()->avatar) }}"
+                 alt="Your profile photo"
+                 class="avatar-preview"
+                 onerror="this.style.display='none'; document.getElementById('avatar-placeholder-fb').style.display='flex';">
+            <div id="avatar-placeholder-fb" class="avatar-placeholder" style="display:none;">
+                <i class="fa-solid fa-user"></i>
+            </div>
+        @else
+            <div class="avatar-placeholder">
+                <i class="fa-solid fa-user"></i>
+            </div>
+        @endif
+        <div class="avatar-upload-info flex-grow-1">
+            <h6><i class="fa-solid fa-camera me-1" style="color:#049399"></i>Profile Photo</h6>
+            <p>Your photo appears on your Hire Me page so clients can put a face to your name.</p>
+            @error('avatar')
+                <div class="alert alert-danger py-1 px-2 mb-2" style="font-size:.82rem;">{{ $message }}</div>
+            @enderror
+            <form method="POST"
+                  action="{{ route('agent.avatar.upload') }}"
+                  enctype="multipart/form-data"
+                  class="avatar-upload-form">
+                @csrf
+                <input type="file"
+                       id="avatar-file-input"
+                       name="avatar"
+                       accept="image/jpeg,image/png,image/gif,image/webp"
+                       class="form-control form-control-sm"
+                       style="max-width:260px;">
+                <button type="submit" class="btn btn-sm btn-primary" style="background:#049399;border-color:#049399;white-space:nowrap;">
+                    <i class="fa-solid fa-upload me-1"></i>Upload Photo
+                </button>
+            </form>
+            <div style="font-size:.75rem;color:#9aa5b1;margin-top:.4rem;">JPEG, PNG, GIF or WebP &middot; Max 4 MB</div>
+        </div>
+    </div>
 
     @php
         $roleLabels = [

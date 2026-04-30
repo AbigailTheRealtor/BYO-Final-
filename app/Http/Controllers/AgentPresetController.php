@@ -523,6 +523,49 @@ class AgentPresetController extends Controller
             ->route('agent.presets.edit', ['role' => $role, 'propertyType' => $propertyType, 'saved' => 1]);
     }
 
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,gif,webp', 'max:4096'],
+        ]);
+
+        $user = Auth::user();
+
+        $file = $request->file('avatar');
+
+        // Derive a safe extension from the server-detected MIME type only.
+        // Never trust the client-supplied filename extension.
+        $mimeToExt = [
+            'image/jpeg' => 'jpg',
+            'image/jpg'  => 'jpg',
+            'image/png'  => 'png',
+            'image/gif'  => 'gif',
+            'image/webp' => 'webp',
+        ];
+        $mime      = $file->getMimeType();
+        $extension = $mimeToExt[$mime] ?? null;
+
+        if ($extension === null) {
+            return back()->withErrors(['avatar' => 'Unsupported image format. Please upload a JPEG, PNG, GIF, or WebP file.']);
+        }
+
+        $filename = 'agent_' . $user->id . '_' . time() . '.' . $extension;
+        $destDir  = public_path('images/avatar');
+
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0775, true);
+        }
+
+        $file->move($destDir, $filename);
+
+        $user->avatar = $filename;
+        $user->save();
+
+        return redirect()
+            ->route('agent.presets.index')
+            ->with('success', 'Profile photo updated successfully.');
+    }
+
     protected static function splitLines(?string $value): array
     {
         if (empty($value)) {
