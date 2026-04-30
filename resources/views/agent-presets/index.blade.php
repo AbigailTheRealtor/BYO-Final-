@@ -1,6 +1,7 @@
 @extends('layouts.main')
 
 @push('styles')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css" crossorigin="anonymous">
 <style>
     .preset-hub-wrap {
         max-width: 1100px;
@@ -221,6 +222,30 @@
         gap: .6rem;
         flex-wrap: wrap;
     }
+    .avatar-crop-preview {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #049399;
+        display: none;
+        flex-shrink: 0;
+    }
+    .avatar-crop-note {
+        font-size: .78rem;
+        color: #049399;
+        margin-top: .35rem;
+        display: none;
+    }
+    #avatar-crop-modal .modal-body {
+        background: #111;
+        padding: 0;
+        line-height: 0;
+    }
+    #avatar-crop-modal img {
+        display: block;
+        max-width: 100%;
+    }
     .preset-hire-path {
         font-size: .72rem;
         font-family: monospace;
@@ -362,18 +387,29 @@
             <form method="POST"
                   action="{{ route('agent.avatar.upload') }}"
                   enctype="multipart/form-data"
-                  class="avatar-upload-form">
+                  class="avatar-upload-form"
+                  id="avatar-upload-form">
                 @csrf
                 <input type="file"
                        id="avatar-file-input"
                        name="avatar"
                        accept="image/jpeg,image/png,image/gif,image/webp"
-                       class="form-control form-control-sm"
-                       style="max-width:260px;">
-                <button type="submit" class="btn btn-sm btn-primary" style="background:#049399;border-color:#049399;white-space:nowrap;">
+                       style="display:none;">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="avatar-choose-btn">
+                    <i class="fa-solid fa-image me-1"></i>Choose Photo&hellip;
+                </button>
+                <button type="submit" class="btn btn-sm btn-primary" id="avatar-upload-btn" style="background:#049399;border-color:#049399;white-space:nowrap;display:none;">
                     <i class="fa-solid fa-upload me-1"></i>Upload Photo
                 </button>
             </form>
+            <div class="d-flex align-items-center gap-3 mt-2" id="avatar-crop-result" style="display:none!important;">
+                <img id="avatar-crop-preview" class="avatar-crop-preview" alt="Cropped preview">
+                <div>
+                    <div class="avatar-crop-note" id="avatar-crop-note">
+                        <i class="fa-solid fa-circle-check me-1"></i>Looking good! Click <strong>Upload Photo</strong> to save.
+                    </div>
+                </div>
+            </div>
             <div style="font-size:.75rem;color:#9aa5b1;margin-top:.4rem;">JPEG, PNG, GIF or WebP &middot; Max 4 MB</div>
         </div>
     </div>
@@ -500,11 +536,142 @@
     @endforeach
 
 </div>
+
+{{-- ── Avatar Crop Modal ────────────────────────────────────────────── --}}
+<div class="modal fade" id="avatar-crop-modal" tabindex="-1" aria-labelledby="avatarCropModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:520px;">
+        <div class="modal-content">
+            <div class="modal-header" style="background:#f8f9fa;">
+                <h5 class="modal-title" id="avatarCropModalLabel"><i class="fa-solid fa-crop-simple me-2" style="color:#049399"></i>Crop Your Photo</h5>
+                <button type="button" class="btn-close" id="avatar-crop-cancel" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="background:#111;padding:0;line-height:0;">
+                <img id="avatar-crop-img" src="" alt="Crop preview" style="display:block;max-width:100%;">
+            </div>
+            <div class="modal-footer" style="background:#f8f9fa;flex-wrap:wrap;gap:.5rem;">
+                <div style="font-size:.78rem;color:#6c757d;flex:1 1 100%;margin-bottom:.25rem;">
+                    <i class="fa-solid fa-arrows-up-down-left-right me-1"></i>Drag to reposition &ensp;
+                    <i class="fa-solid fa-magnifying-glass-plus me-1"></i>Scroll or pinch to zoom
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="avatar-crop-cancel2">Cancel</button>
+                <button type="button" class="btn btn-sm btn-primary" id="avatar-crop-confirm" style="background:#049399;border-color:#049399;">
+                    <i class="fa-solid fa-check me-1"></i>Use This Photo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" crossorigin="anonymous"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    // ── Avatar Crop/Preview ──────────────────────────────────────────────
+    (function () {
+        var fileInput    = document.getElementById('avatar-file-input');
+        var chooseBtn    = document.getElementById('avatar-choose-btn');
+        var uploadBtn    = document.getElementById('avatar-upload-btn');
+        var cropImg      = document.getElementById('avatar-crop-img');
+        var cropResult   = document.getElementById('avatar-crop-result');
+        var cropPreview  = document.getElementById('avatar-crop-preview');
+        var cropNote     = document.getElementById('avatar-crop-note');
+        var confirmBtn   = document.getElementById('avatar-crop-confirm');
+        var cancelBtn    = document.getElementById('avatar-crop-cancel');
+        var cancelBtn2   = document.getElementById('avatar-crop-cancel2');
+
+        var cropperInstance = null;
+        var modalEl         = document.getElementById('avatar-crop-modal');
+        var bsModal         = new bootstrap.Modal(modalEl);
+
+        chooseBtn.addEventListener('click', function () {
+            fileInput.value = '';
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', function () {
+            var file = fileInput.files[0];
+            if (!file) return;
+
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                cropImg.src = e.target.result;
+                bsModal.show();
+            };
+            reader.readAsDataURL(file);
+        });
+
+        modalEl.addEventListener('shown.bs.modal', function () {
+            if (cropperInstance) {
+                cropperInstance.destroy();
+            }
+            cropperInstance = new Cropper(cropImg, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 0.9,
+                movable: true,
+                zoomable: true,
+                rotatable: false,
+                scalable: false,
+                guides: true,
+                center: true,
+                highlight: false,
+                cropBoxResizable: true,
+                background: true,
+            });
+        });
+
+        function closeAndReset() {
+            bsModal.hide();
+            if (cropperInstance) {
+                cropperInstance.destroy();
+                cropperInstance = null;
+            }
+            fileInput.value = '';
+        }
+
+        cancelBtn.addEventListener('click', closeAndReset);
+        cancelBtn2.addEventListener('click', closeAndReset);
+
+        confirmBtn.addEventListener('click', function () {
+            if (!cropperInstance) return;
+
+            var canvas = cropperInstance.getCroppedCanvas({ width: 400, height: 400 });
+            if (!canvas) return;
+            canvas.toBlob(function (blob) {
+                if (!blob) return;
+                var croppedFile = new File([blob], 'avatar_crop.jpg', { type: 'image/jpeg' });
+
+                var dt = new DataTransfer();
+                dt.items.add(croppedFile);
+                fileInput.files = dt.files;
+
+                var previewUrl = URL.createObjectURL(blob);
+                cropPreview.src = previewUrl;
+                cropPreview.style.display = 'block';
+                cropResult.style.display  = 'flex';
+                cropNote.style.display    = 'block';
+                uploadBtn.style.display   = 'inline-block';
+
+                bsModal.hide();
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                    cropperInstance = null;
+                }
+            }, 'image/jpeg', 0.9);
+        });
+
+        modalEl.addEventListener('hidden.bs.modal', function () {
+            if (cropperInstance) {
+                cropperInstance.destroy();
+                cropperInstance = null;
+            }
+        });
+    })();
+
+    // ── Copy Hire-Me link & embed ────────────────────────────────────────
     document.querySelectorAll('.btn-copy-hire').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var url = this.dataset.hireUrl;
