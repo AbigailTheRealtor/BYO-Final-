@@ -1,0 +1,134 @@
+TASK: Fix BidYourOffer Create Listing UI labels and Landlord field formats
+
+GOAL:
+Update the Offer Listing create flows only. These changes are NOT for Hire Agent listings.
+
+SCOPE:
+- BidYourOffer / Offer Listing create flow
+- Create Landlord Offer Listing
+- Create Seller Offer Listing only for the “Property Preferences” label fix
+
+DO NOT:
+- Do not edit Hire Agent listings
+- Do not edit BidYourAgent flows
+- Do not edit Limited Service / legacy files
+- Do not edit Agent Bids
+- Do not edit Offer Presets
+- Do not edit counters or accepted bid summaries
+- Do not change database schema
+- Do not create migrations
+- Do not rename database columns, models, routes, or Livewire properties
+
+REQUIRED CHANGES:
+
+1. Seller and Landlord Offer Listing label fix:
+In the Create Seller Offer Listing and Create Landlord Offer Listing flows, replace the visible text:
+Property Preferences
+
+with:
+Property Details
+
+This is display text only.
+
+2. Landlord Offer Listing field format fix:
+In Create Landlord Offer Listing, update these fields so they use the same multi-select/tag/pill selection format as “Appliances Included”:
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Laundry Features
+- Floor Covering
+- Security Features
+
+Requirements:
+- Placeholder should say:
+Select
+- Preserve all existing option values.
+- Do not remove or rename existing options.
+- Existing saved values must still reload correctly.
+- Saving draft and submitting must still work.
+
+ 
+
+4. Landlord Offer Listing “Other” custom input behavior:
+When the user selects “Other” for these fields:
+- Heating and Fuel
+- Air Conditioning
+- Sewer
+- Utilities
+- Laundry Features
+- Floor Covering
+
+Show a custom input field using the same style/format as the current Amenities and Property Features “Other” input.
+
+Use these exact placeholder texts:
+- Heating and Fuel: Enter heating and fuel type (e.g., Solar, Propane, Radiant Heat)
+- Air Conditioning: Enter air conditioning type (e.g., Mini-Split, Evaporative Cooler)
+- Sewer: Enter sewer type (e.g., Holding Tank, Community Septic)
+- Utilities: Enter utilities (e.g., Fiber Internet, Solar Power, Generator Hookup)
+- Laundry Features: Enter laundry features (e.g., Laundry Room, Stackable Washer/Dryer)
+- Floor Covering: Enter floor covering (e.g., Luxury Vinyl Plank, Terrazzo)
+
+AUDIT FIRST:
+Before editing, search for:
+- Property Preferences
+- Property Details
+- Appliances Included
+- Heating and Fuel
+- Air Conditioning
+- Amenities and Property Features
+- Select credit score rating
+- Year Built
+- Floor Covering
+- Security Features
+
+Find the Offer Listing create files only. If the same partial is shared with Hire Agent listings, stop and report before editing.
+
+SAFEGUARDS:
+- Offer Listing only.
+- Landlord field formatting only.
+- Seller only gets the label text fix.
+- No Limited Service edits.
+- No Hire Agent edits.
+- No database changes.
+- No schema changes.
+- No migrations.
+- No unrelated cleanup.
+- No refactors.
+- Make the smallest targeted changes possible.
+
+VERIFICATION:
+After editing, verify:
+
+Landlord Offer Listing Create:
+- “Property Preferences” no longer appears.
+- “Property Details” appears.
+- Heating and Fuel matches Appliances Included selection format.
+- Air Conditioning matches Appliances Included selection format.
+- Water matches Appliances Included selection format.
+- Sewer matches Appliances Included selection format.
+- Utilities matches Appliances Included selection format.
+- Laundry Features matches Appliances Included selection format.
+- Floor Covering matches Appliances Included selection format.
+- Security Features matches Appliances Included selection format.
+- All updated fields show placeholder “Select.”
+- Amenities and Property Features placeholder is “Select.”
+- Year Built placeholder is “Enter year built (e.g., 1995).”
+- “Other” custom inputs appear with the exact placeholders above.
+- Draft save/reload preserves selections and Other values.
+
+Seller Offer Listing Create:
+- “Property Preferences” no longer appears.
+- “Property Details” appears.
+- No Seller field formatting changes were made.
+
+FINAL REPORT:
+Tell me:
+- Files changed
+- Exact labels/placeholders changed
+- Confirmation Offer Listing only
+- Confirmation Hire Agent listings untouched
+- Confirmation Limited Service files untouched
+- Confirmation no schema/database changes
+- Any issue that needs separate approval
