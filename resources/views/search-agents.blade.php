@@ -79,7 +79,7 @@
                             <img src="{{ asset('images/cover/'.($agent->cover_photo ? $agent->cover_photo : '3.jpg')) }}" alt="Agent cover">
                         </div>
                         <div class="userImg">
-                            <img src="{{ asset('images/avatar/'.($agent->avatar ? $agent->avatar : '17.png')) }}" alt="{{ $agent->name }}">
+                            <x-avatar-img :avatar="$agent->avatar" :alt="$agent->name" />
                         </div>
                     </a>
                     <div class="userDescription mt-2">

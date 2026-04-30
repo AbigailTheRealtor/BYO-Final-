@@ -2030,9 +2030,7 @@ $auser = $auctionUser::find(@$auction->user_id);
 <div class="card review">
     <div class="card-body d-flex align-items-center">
         <div class="left d-flex align-items-center">
-            <img class="w-25"
-                src="{{ $auser->avatar ? asset('images/avatar/' . $auser->avatar) : 'https://ppt1080.b-cdn.net/images/avatar/none.png' }}"
-                alt="">
+            <x-avatar-img :avatar="$auser->avatar" alt="" class="w-25" />
             <div>
                 <p class="mb-0"><a href="{{ route('author', [$auser->id]) }}"><b>User
                             Details</b></a><span></span>

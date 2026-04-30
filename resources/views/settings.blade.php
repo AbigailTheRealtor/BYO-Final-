@@ -125,11 +125,11 @@
                                                         <div class="d-flex align-items-center gap-3 mt-2">
                                                             {{-- Preview --}}
                                                             @if($hasUploadedPhoto)
-                                                                <img src="{{ asset('images/avatar/' . $user->avatar) }}"
+                                                                <x-avatar-img :avatar="$user->avatar"
                                                                      id="profile-photo-preview"
                                                                      class="rounded-circle border"
                                                                      style="width: 72px; height: 72px; object-fit: cover; flex-shrink: 0;"
-                                                                     alt="Current profile photo">
+                                                                     alt="Current profile photo" />
                                                             @else
                                                                 <div class="rounded-circle border d-flex align-items-center justify-content-center bg-light"
                                                                      style="width: 72px; height: 72px; flex-shrink: 0; position: relative; overflow: hidden;">

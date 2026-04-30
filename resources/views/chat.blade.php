@@ -835,10 +835,6 @@
 
 
 
-@php
-    $avatarSrc = isset($avatar) ? asset('images/avatar/' . $avatar) : 'https://ppt1080.b-cdn.net/images/avatar/none.png';
-
-@endphp
 <div class="chat-header">
     <h3 style="font-size: 20px;">Chat Support</h3>
     <button id="closebutton" style="width: 41px;margin-left: 403px;" class="chat-close-btn">&times;</button>
@@ -846,7 +842,7 @@
 <div class="contact-profile">
     <div class="wrap d-flex" style="justify-content: flex-start;">
         <div style="width: 40px; height: 40px;">
-            <img class="contact-profile-img" src="{{ $avatarSrc }}"
+            <x-avatar-img class="contact-profile-img" :avatar="$avatar ?? null"
                 style="width:100%; height:100%; object-fit:cover;" alt="" />
             {{-- {{$current_contact->avatar}} --}}
         </div>

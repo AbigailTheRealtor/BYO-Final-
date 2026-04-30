@@ -843,9 +843,6 @@
                 <div class="chat-box">
 
                     {{-- Start Chat Box --}}
-                    @php
-                        $my_avatar = auth()->user()->avatar ? asset('images/avatar/' . auth()->user()->avatar) : 'https://ppt1080.b-cdn.net/images/avatar/none.png';
-                    @endphp
                     <div id="frame">
                         @if ($chat_tokens->count())
                             <div id="sidepanel">
@@ -853,8 +850,8 @@
                                     <div class="wrap">
                                         <div class="d-flex">
                                             <div id="profile-img" style="width:50px; height:50px;">
-                                                <img style="width: 100%; height:100%; object-fit:cover; border-color:#000;"
-                                                    src="{{ $my_avatar }}" class="online" alt="" />
+                                                <x-avatar-img :avatar="auth()->user()->avatar" class="online" alt=""
+                                                    style="width: 100%; height:100%; object-fit:cover; border-color:#000;" />
                                             </div>
                                             {{-- {{auth()->user()->avatar}} --}}
                                             <p class="fw-bold">{{ auth()->user()->name }}</p>
@@ -956,7 +953,7 @@
 
                                                     {{-- <span class="contact-status online"></span> --}}
                                                     <div style="width:40px; height:40px;">
-                                                        <img src="{{ $avatar?$avatar:'' }}" alt=""
+                                                        <x-avatar-img :avatar="@$contact->avatar" alt=""
                                                             style="width:100%;height:100%;object-fit:cover;" />
                                                     </div>
 
@@ -985,14 +982,11 @@
                             </div> --}}
                             </div>
 
-                            @php
-                                $current_contact_avatar = @$current_contact->avatar ? asset('images/avatar/' . @$current_contact->avatar) : 'https://ppt1080.b-cdn.net/images/avatar/none.png';
-                            @endphp
                             <div class="content">
                                 <div class="contact-profile">
                                     <div class="wrap d-flex">
                                         <div style="width: 40px; height: 40px;">
-                                            <img class="contact-profile-img" src="{{ $current_contact_avatar }}"
+                                            <x-avatar-img class="contact-profile-img" :avatar="@$current_contact->avatar"
                                                 style="width:100%; height:100%; object-fit:cover;" alt="" />
                                             {{-- {{$current_contact->avatar}} --}}
                                         </div>

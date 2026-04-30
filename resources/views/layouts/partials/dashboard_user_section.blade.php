@@ -51,8 +51,7 @@
                 <a href="{{ route('author', $user) }}" class="text-decoration-none">
                     <div class="d-flex align-items-center gap-3 flex-wrap">
                         <div class="position-relative" style="width:56px;height:56px;border-radius:50%;overflow:hidden;flex-shrink:0;">
-                            <img src="{{ $user->avatar ? $user->avatar : 'https://ppt1080.b-cdn.net/images/avatar/none.png' }}"
-                                alt="{{ $user->name }}" style="width:100%;height:100%;object-fit:cover;" />
+                            <x-avatar-img :avatar="$user->avatar" :alt="$user->name" style="width:100%;height:100%;object-fit:cover;" />
                         </div>
                         <div>
                             <div class="fw-bold text-dark mb-0">{{ auth()->user()->name }}</div>

@@ -24,8 +24,7 @@
                         <div class="card-body d-flex align-items-center justify-content-between flex-wrap">
                             <div class="left d-flex align-items-end flex-wrap">
                                 <div class="position-relative image bg-light rounded-circle">
-                                    <img src="{{ $user->avatar ? asset('images/avatar/' . $user->avatar) : 'https://ppt1080.b-cdn.net/images/avatar/none.png' }}"
-                                        alt="">
+                                    <x-avatar-img :avatar="$user->avatar" alt="" />
                                     <span></span>
                                 </div>
                                 <div class="mt-5 ms-2">

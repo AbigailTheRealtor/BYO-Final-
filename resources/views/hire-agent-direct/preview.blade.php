@@ -225,10 +225,8 @@
     <div class="agent-card-header">
         <div class="d-flex align-items-center gap-3">
             <div style="flex-shrink:0">
-                <img src="{{ asset('images/avatar/'.($agent->avatar ?? 'default.png')) }}"
-                     onerror="this.onerror=null; this.style.display='none';"
-                     alt="Agent avatar"
-                     style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);">
+                <x-avatar-img :avatar="$agent->avatar" alt="Agent avatar"
+                     style="width:68px;height:68px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.4);" />
             </div>
             <div>
                 <h3>{{ $agentDisplayName }}</h3>

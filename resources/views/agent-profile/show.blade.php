@@ -270,18 +270,7 @@
     {{-- ── AGENT OVERVIEW ────────────────────────────────────────── --}}
     <div class="profile-hero">
         <div class="profile-hero-avatar">
-            @if ($agent->avatar)
-                <img src="{{ asset('images/avatar/'.$agent->avatar) }}"
-                     onerror="this.onerror=null; this.style.display='none'; document.getElementById('profile-avatar-placeholder').style.display='flex';"
-                     alt="{{ $agentDisplayName }}">
-                <div id="profile-avatar-placeholder" class="profile-hero-avatar-placeholder" style="display:none;">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-            @else
-                <div class="profile-hero-avatar-placeholder">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-            @endif
+            <x-avatar-img :avatar="$agent->avatar" :alt="$agentDisplayName" />
         </div>
         <div class="profile-hero-info">
             <h1>{{ $agentDisplayName }}</h1>

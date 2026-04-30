@@ -365,19 +365,9 @@
 
     {{-- ── Profile Photo ──────────────────────────────────────────────────── --}}
     <div class="avatar-section">
-        @if (auth()->user()->avatar)
-            <img src="{{ asset('images/avatar/'.auth()->user()->avatar) }}"
-                 alt="Your profile photo"
-                 class="avatar-preview"
-                 onerror="this.style.display='none'; document.getElementById('avatar-placeholder-fb').style.display='flex';">
-            <div id="avatar-placeholder-fb" class="avatar-placeholder" style="display:none;">
-                <i class="fa-solid fa-user"></i>
-            </div>
-        @else
-            <div class="avatar-placeholder">
-                <i class="fa-solid fa-user"></i>
-            </div>
-        @endif
+        <x-avatar-img :avatar="auth()->user()->avatar"
+             alt="Your profile photo"
+             class="avatar-preview" />
         <div class="avatar-upload-info flex-grow-1">
             <h6><i class="fa-solid fa-camera me-1" style="color:#049399"></i>Profile Photo</h6>
             <p>Your photo appears on your Hire Me page and your <a href="{{ route('agent.profile.public', ['agentShortId' => $agentShortId]) }}" target="_blank" rel="noopener noreferrer">public profile page</a> so clients can put a face to your name.</p>
