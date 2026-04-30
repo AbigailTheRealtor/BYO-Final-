@@ -1,0 +1,140 @@
+TASK — Seller Create Listing Formatting Parity (DO NOT ADD/REMOVE FIELDS)
+
+GOAL:
+Keep all new MLS property detail fields in Seller Create Listing, but make their formatting match the existing Hire Seller Agent style (Select text, placeholders, tooltips, multi-select appearance, spacing, etc.).
+
+SCOPE — EDIT ONLY:
+resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php
+
+REFERENCE (DO NOT EDIT):
+resources/views/livewire/hire-seller-agent/seller-agent-auction-tabs/commission-based/property-preferences.blade.php
+
+DO NOT TOUCH:
+- Any hire-seller-agent files
+- Livewire PHP components
+- Validation logic
+- Database
+- Routes/controllers
+- Buyer, Landlord, or Tenant flows
+
+-----------------------------------
+
+FIXES TO APPLY:
+
+1. STANDARDIZE PLACEHOLDER TEXT
+
+Match Hire Agent format:
+
+- Dropdowns:
+  Use exactly: "Select"
+
+- Text/number inputs:
+  Use format:
+  "Enter [field name] (e.g., example)"
+
+Examples:
+- Year Built → "Enter year built (e.g., 1998)"
+- Front Footage → "Enter front footage (e.g., 100)"
+- Zoning → "Enter zoning (e.g., C-2)"
+
+REMOVE wording like:
+- "Please specify..."
+- "Type here..."
+- inconsistent phrasing
+
+-----------------------------------
+
+2. MATCH MULTI-SELECT FORMAT
+
+Ensure all multi-select fields match style used by:
+- Appliances Included
+- View
+
+For ALL MLS multi-select fields:
+- Same input-cover structure
+- Same select2 / multiple-select class usage
+- Same icon placement
+- Same height/spacing
+- Same dropdown behavior
+
+Fields to check:
+- Roof Type
+- Foundation
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Building Features
+- Amenities
+- etc.
+
+-----------------------------------
+
+3. FIX DUPLICATE HTML IDs (CRITICAL)
+
+Audit and fix duplicate IDs in this file only.
+
+Examples to fix:
+- id="water"
+- id="sewer"
+- id="utilities"
+- id="roof_type"
+- id="foundation"
+- id="other_*_wrapper"
+
+If used in multiple conditional blocks, make them unique:
+Example:
+- water_residential
+- water_commercial
+
+IMPORTANT:
+- DO NOT change wire:model names
+- ONLY change HTML id attributes
+
+-----------------------------------
+
+4. TOOLTIP FIX (SELLER VIEW ONLY)
+
+Ensure tooltips show on hover:
+
+- Confirm tooltip HTML exists (icon + attributes)
+- Match structure used in Hire Agent view
+- If missing attributes, add:
+  data-bs-toggle="tooltip"
+
+DO NOT implement global JS changes here.
+If tooltips still fail due to Livewire, report it separately.
+
+-----------------------------------
+
+5. VISUAL CONSISTENCY
+
+Ensure new MLS fields match existing fields in:
+- input height
+- padding
+- spacing between fields
+- icon alignment
+- label alignment
+
+-----------------------------------
+
+VERIFY:
+
+- Seller Create Listing still shows ALL MLS fields
+- Hire Seller Agent remains unchanged
+- All dropdowns use "Select"
+- All inputs use consistent "Enter (e.g., ...)" format
+- Multi-select fields match Appliances Included/View styling
+- No duplicate IDs exist in this file
+- Tooltips appear on hover (if supported locally)
+- php -l passes
+- php artisan view:clear
+
+-----------------------------------
+
+OUTPUT:
+
+- List of formatting updates made
+- List of duplicate IDs fixed
+- Confirmation no Hire Agent files were modified
