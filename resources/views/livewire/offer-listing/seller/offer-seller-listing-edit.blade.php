@@ -1009,25 +1009,25 @@
 
         function initializeMlsPropertyMultiSelects() {
             var _mlsFields = [
-                { id: 'roof_type', placeholder: 'Select roof type(s)' },
-                { id: 'exterior_construction', placeholder: 'Select exterior construction' },
-                { id: 'foundation', placeholder: 'Select foundation type(s)' },
-                { id: 'heating_and_fuel', placeholder: 'Select heating and fuel type(s)' },
-                { id: 'air_conditioning', placeholder: 'Select air conditioning type(s)' },
-                { id: 'water', placeholder: 'Select water source(s)' },
-                { id: 'sewer', placeholder: 'Select sewer type(s)' },
-                { id: 'utilities', placeholder: 'Select utilities' },
-                { id: 'road_frontage', placeholder: 'Select road frontage type(s)' },
-                { id: 'road_surface_type', placeholder: 'Select road surface type(s)' },
-                { id: 'electrical_service', placeholder: 'Select electrical service type(s)' },
-                { id: 'building_features', placeholder: 'Select building features' },
-                { id: 'licenses', placeholder: 'Select license(s)' },
-                { id: 'sale_includes', placeholder: 'Select what is included in sale' },
-                { id: 'current_use', placeholder: 'Select current use(s)' },
-                { id: 'current_adjacent_use', placeholder: 'Select adjacent use(s)' },
-                { id: 'fences', placeholder: 'Select fence type(s)' },
-                { id: 'vegetation', placeholder: 'Select vegetation type(s)' },
-                { id: 'easements', placeholder: 'Select easement type(s)' },
+                { id: 'roof_type', placeholder: 'Select' },
+                { id: 'exterior_construction', placeholder: 'Select' },
+                { id: 'foundation', placeholder: 'Select' },
+                { id: 'heating_and_fuel', placeholder: 'Select' },
+                { id: 'air_conditioning', placeholder: 'Select' },
+                { id: 'water', placeholder: 'Select' },
+                { id: 'sewer', placeholder: 'Select' },
+                { id: 'utilities', placeholder: 'Select' },
+                { id: 'road_frontage', placeholder: 'Select' },
+                { id: 'road_surface_type', placeholder: 'Select' },
+                { id: 'electrical_service', placeholder: 'Select' },
+                { id: 'building_features', placeholder: 'Select' },
+                { id: 'licenses', placeholder: 'Select' },
+                { id: 'sale_includes', placeholder: 'Select' },
+                { id: 'current_use', placeholder: 'Select' },
+                { id: 'current_adjacent_use', placeholder: 'Select' },
+                { id: 'fences', placeholder: 'Select' },
+                { id: 'vegetation', placeholder: 'Select' },
+                { id: 'easements', placeholder: 'Select' },
             ];
             _mlsFields.forEach(function(field) {
                 var selectors = _mlsFieldSelectors[field.id] || ['#' + field.id];
@@ -1115,7 +1115,7 @@
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -1332,7 +1332,7 @@
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
-                    placeholder: "Select Preference",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
