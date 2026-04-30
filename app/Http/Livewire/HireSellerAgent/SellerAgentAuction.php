@@ -291,7 +291,60 @@ class SellerAgentAuction extends Component
     public $garage_spaces = '';
     public $carport_spaces = '';
     public $unit_type_description = '';
+    public $unit_type_configurations = [];
     public $breed_restrictions = '';
+
+    // MLS property detail fields
+    public $year_built = '';
+    public $zoning = '';
+    public $roof_type = [];
+    public $exterior_construction = [];
+    public $foundation = [];
+    public $heating_and_fuel = [];
+    public $air_conditioning = [];
+    public $water = [];
+    public $sewer = [];
+    public $utilities = [];
+    public $road_frontage = [];
+    public $road_surface_type = [];
+    public $electrical_service = [];
+    public $ceiling_height = '';
+    public $building_features = [];
+    public $number_water_meters = '';
+    public $number_electric_meters = '';
+    public $business_name = '';
+    public $year_established = '';
+    public $licenses = [];
+    public $sale_includes = [];
+    public $current_use = [];
+    public $lot_dimensions = '';
+    public $front_footage = '';
+    public $number_of_wells = '';
+    public $number_of_septics = '';
+    public $current_adjacent_use = [];
+    public $fences = [];
+    public $vegetation = [];
+    public $buildable = '';
+    public $easements = [];
+    public $other_roof_type = '';
+    public $other_exterior_construction = '';
+    public $other_foundation = '';
+    public $other_heating_and_fuel = '';
+    public $other_air_conditioning = '';
+    public $other_water = '';
+    public $other_sewer = '';
+    public $other_utilities = '';
+    public $other_road_frontage = '';
+    public $other_road_surface_type = '';
+    public $other_electrical_service = '';
+    public $other_building_features = '';
+    public $other_licenses = '';
+    public $other_sale_includes = '';
+    public $other_current_use = '';
+    public $other_current_adjacent_use = '';
+    public $other_fences = '';
+    public $other_vegetation = '';
+    public $other_easements = '';
 
     // Meeting preference
     public $meeting_Preference = '';
@@ -903,6 +956,22 @@ class SellerAgentAuction extends Component
     // Methods
     public function mount($listingId = null)
     {
+        $this->unit_type_configurations = [
+            [
+                'unit_type'          => '',
+                'beds_unit'          => '',
+                'baths_unit'         => '',
+                'garage_spaces'      => '',
+                'carport_spaces'     => '',
+                'other_spaces'       => '',
+                'number_of_units'    => '',
+                'number_occupied'    => '',
+                'expected_rent'      => '',
+                'unit_type_description' => '',
+                'sqft_heated'        => '',
+            ]
+        ];
+
         $this->addService();
 
         // Set listing_date to today's date by default (only if creating new listing)
@@ -918,6 +987,32 @@ class SellerAgentAuction extends Component
             $this->loadDraft($listingId);
         }
     }
+
+    public function addUnitType()
+    {
+        $this->unit_type_configurations[] = [
+            'unit_type'          => '',
+            'beds_unit'          => '',
+            'baths_unit'         => '',
+            'garage_spaces'      => '',
+            'carport_spaces'     => '',
+            'other_spaces'       => '',
+            'number_of_units'    => '',
+            'number_occupied'    => '',
+            'expected_rent'      => '',
+            'unit_type_description' => '',
+            'sqft_heated'        => '',
+        ];
+    }
+
+    public function removeUnitType($index)
+    {
+        if (count($this->unit_type_configurations) > 1) {
+            unset($this->unit_type_configurations[$index]);
+            $this->unit_type_configurations = array_values($this->unit_type_configurations);
+        }
+    }
+
     public function startNew()
     {
         // Reset all properties to their initial state
@@ -1631,6 +1726,66 @@ class SellerAgentAuction extends Component
             $this->unit_size_other = $auction->get->unit_size_other;
             $this->preferance_details = $auction->get->preferance_details;
 
+            // Income / multi-unit configuration
+            $unitTypeConfigRaw = $auction->get->unit_type_configurations ?? null;
+            if ($unitTypeConfigRaw) {
+                $decoded = is_array($unitTypeConfigRaw) ? $unitTypeConfigRaw : json_decode($unitTypeConfigRaw, true);
+                if (is_array($decoded) && count($decoded) > 0) {
+                    $this->unit_type_configurations = array_values($decoded);
+                }
+            }
+
+            // MLS property detail fields
+            $this->year_built = $auction->get->year_built ?? '';
+            $this->zoning = $auction->get->zoning ?? '';
+            $this->roof_type = is_string($auction->get->roof_type) ? json_decode($auction->get->roof_type, true) ?? [] : (array)($auction->get->roof_type ?? []);
+            $this->other_roof_type = $auction->get->other_roof_type ?? '';
+            $this->exterior_construction = is_string($auction->get->exterior_construction) ? json_decode($auction->get->exterior_construction, true) ?? [] : (array)($auction->get->exterior_construction ?? []);
+            $this->other_exterior_construction = $auction->get->other_exterior_construction ?? '';
+            $this->foundation = is_string($auction->get->foundation) ? json_decode($auction->get->foundation, true) ?? [] : (array)($auction->get->foundation ?? []);
+            $this->other_foundation = $auction->get->other_foundation ?? '';
+            $this->heating_and_fuel = is_string($auction->get->heating_and_fuel) ? json_decode($auction->get->heating_and_fuel, true) ?? [] : (array)($auction->get->heating_and_fuel ?? []);
+            $this->other_heating_and_fuel = $auction->get->other_heating_and_fuel ?? '';
+            $this->air_conditioning = is_string($auction->get->air_conditioning) ? json_decode($auction->get->air_conditioning, true) ?? [] : (array)($auction->get->air_conditioning ?? []);
+            $this->other_air_conditioning = $auction->get->other_air_conditioning ?? '';
+            $this->water = is_string($auction->get->water) ? json_decode($auction->get->water, true) ?? [] : (array)($auction->get->water ?? []);
+            $this->other_water = $auction->get->other_water ?? '';
+            $this->sewer = is_string($auction->get->sewer) ? json_decode($auction->get->sewer, true) ?? [] : (array)($auction->get->sewer ?? []);
+            $this->other_sewer = $auction->get->other_sewer ?? '';
+            $this->utilities = is_string($auction->get->utilities) ? json_decode($auction->get->utilities, true) ?? [] : (array)($auction->get->utilities ?? []);
+            $this->other_utilities = $auction->get->other_utilities ?? '';
+            $this->road_frontage = is_string($auction->get->road_frontage) ? json_decode($auction->get->road_frontage, true) ?? [] : (array)($auction->get->road_frontage ?? []);
+            $this->other_road_frontage = $auction->get->other_road_frontage ?? '';
+            $this->road_surface_type = is_string($auction->get->road_surface_type) ? json_decode($auction->get->road_surface_type, true) ?? [] : (array)($auction->get->road_surface_type ?? []);
+            $this->other_road_surface_type = $auction->get->other_road_surface_type ?? '';
+            $this->electrical_service = is_string($auction->get->electrical_service) ? json_decode($auction->get->electrical_service, true) ?? [] : (array)($auction->get->electrical_service ?? []);
+            $this->other_electrical_service = $auction->get->other_electrical_service ?? '';
+            $this->ceiling_height = $auction->get->ceiling_height ?? '';
+            $this->building_features = is_string($auction->get->building_features) ? json_decode($auction->get->building_features, true) ?? [] : (array)($auction->get->building_features ?? []);
+            $this->other_building_features = $auction->get->other_building_features ?? '';
+            $this->number_water_meters = $auction->get->number_water_meters ?? '';
+            $this->number_electric_meters = $auction->get->number_electric_meters ?? '';
+            $this->business_name = $auction->get->business_name ?? '';
+            $this->year_established = $auction->get->year_established ?? '';
+            $this->licenses = is_string($auction->get->licenses) ? json_decode($auction->get->licenses, true) ?? [] : (array)($auction->get->licenses ?? []);
+            $this->other_licenses = $auction->get->other_licenses ?? '';
+            $this->sale_includes = is_string($auction->get->sale_includes) ? json_decode($auction->get->sale_includes, true) ?? [] : (array)($auction->get->sale_includes ?? []);
+            $this->other_sale_includes = $auction->get->other_sale_includes ?? '';
+            $this->current_use = is_string($auction->get->current_use) ? json_decode($auction->get->current_use, true) ?? [] : (array)($auction->get->current_use ?? []);
+            $this->other_current_use = $auction->get->other_current_use ?? '';
+            $this->lot_dimensions = $auction->get->lot_dimensions ?? '';
+            $this->front_footage = $auction->get->front_footage ?? '';
+            $this->number_of_wells = $auction->get->number_of_wells ?? '';
+            $this->number_of_septics = $auction->get->number_of_septics ?? '';
+            $this->current_adjacent_use = is_string($auction->get->current_adjacent_use) ? json_decode($auction->get->current_adjacent_use, true) ?? [] : (array)($auction->get->current_adjacent_use ?? []);
+            $this->other_current_adjacent_use = $auction->get->other_current_adjacent_use ?? '';
+            $this->fences = is_string($auction->get->fences) ? json_decode($auction->get->fences, true) ?? [] : (array)($auction->get->fences ?? []);
+            $this->other_fences = $auction->get->other_fences ?? '';
+            $this->vegetation = is_string($auction->get->vegetation) ? json_decode($auction->get->vegetation, true) ?? [] : (array)($auction->get->vegetation ?? []);
+            $this->other_vegetation = $auction->get->other_vegetation ?? '';
+            $this->buildable = $auction->get->buildable ?? '';
+            $this->easements = is_string($auction->get->easements) ? json_decode($auction->get->easements, true) ?? [] : (array)($auction->get->easements ?? []);
+            $this->other_easements = $auction->get->other_easements ?? '';
 
             // Sale Provision
             $this->sale_provision = is_string($auction->get->sale_provision) ? json_decode($auction->get->sale_provision, true) ?? [] : (array)($auction->get->sale_provision ?? []);
@@ -2035,6 +2190,60 @@ class SellerAgentAuction extends Component
         $auction->saveMeta('unit_size', $this->unit_size);
         $auction->saveMeta('unit_size_other', $this->unit_size_other);
         $auction->saveMeta('preferance_details', $this->preferance_details);
+        $configs = is_array($this->unit_type_configurations) ? $this->unit_type_configurations : [];
+        $auction->saveMeta('unit_type_configurations', json_encode(array_values($configs)));
+
+        // MLS property detail fields
+        $auction->saveMeta('year_built', $this->year_built);
+        $auction->saveMeta('zoning', $this->zoning);
+        $auction->saveMeta('roof_type', json_encode($this->roof_type));
+        $auction->saveMeta('other_roof_type', $this->other_roof_type);
+        $auction->saveMeta('exterior_construction', json_encode($this->exterior_construction));
+        $auction->saveMeta('other_exterior_construction', $this->other_exterior_construction);
+        $auction->saveMeta('foundation', json_encode($this->foundation));
+        $auction->saveMeta('other_foundation', $this->other_foundation);
+        $auction->saveMeta('heating_and_fuel', json_encode($this->heating_and_fuel));
+        $auction->saveMeta('other_heating_and_fuel', $this->other_heating_and_fuel);
+        $auction->saveMeta('air_conditioning', json_encode($this->air_conditioning));
+        $auction->saveMeta('other_air_conditioning', $this->other_air_conditioning);
+        $auction->saveMeta('water', json_encode($this->water));
+        $auction->saveMeta('other_water', $this->other_water);
+        $auction->saveMeta('sewer', json_encode($this->sewer));
+        $auction->saveMeta('other_sewer', $this->other_sewer);
+        $auction->saveMeta('utilities', json_encode($this->utilities));
+        $auction->saveMeta('other_utilities', $this->other_utilities);
+        $auction->saveMeta('road_frontage', json_encode($this->road_frontage));
+        $auction->saveMeta('other_road_frontage', $this->other_road_frontage);
+        $auction->saveMeta('road_surface_type', json_encode($this->road_surface_type));
+        $auction->saveMeta('other_road_surface_type', $this->other_road_surface_type);
+        $auction->saveMeta('electrical_service', json_encode($this->electrical_service));
+        $auction->saveMeta('other_electrical_service', $this->other_electrical_service);
+        $auction->saveMeta('ceiling_height', $this->ceiling_height);
+        $auction->saveMeta('building_features', json_encode($this->building_features));
+        $auction->saveMeta('other_building_features', $this->other_building_features);
+        $auction->saveMeta('number_water_meters', $this->number_water_meters);
+        $auction->saveMeta('number_electric_meters', $this->number_electric_meters);
+        $auction->saveMeta('business_name', $this->business_name);
+        $auction->saveMeta('year_established', $this->year_established);
+        $auction->saveMeta('licenses', json_encode($this->licenses));
+        $auction->saveMeta('other_licenses', $this->other_licenses);
+        $auction->saveMeta('sale_includes', json_encode($this->sale_includes));
+        $auction->saveMeta('other_sale_includes', $this->other_sale_includes);
+        $auction->saveMeta('current_use', json_encode($this->current_use));
+        $auction->saveMeta('other_current_use', $this->other_current_use);
+        $auction->saveMeta('lot_dimensions', $this->lot_dimensions);
+        $auction->saveMeta('front_footage', $this->front_footage);
+        $auction->saveMeta('number_of_wells', $this->number_of_wells);
+        $auction->saveMeta('number_of_septics', $this->number_of_septics);
+        $auction->saveMeta('current_adjacent_use', json_encode($this->current_adjacent_use));
+        $auction->saveMeta('other_current_adjacent_use', $this->other_current_adjacent_use);
+        $auction->saveMeta('fences', json_encode($this->fences));
+        $auction->saveMeta('other_fences', $this->other_fences);
+        $auction->saveMeta('vegetation', json_encode($this->vegetation));
+        $auction->saveMeta('other_vegetation', $this->other_vegetation);
+        $auction->saveMeta('buildable', $this->buildable);
+        $auction->saveMeta('easements', json_encode($this->easements));
+        $auction->saveMeta('other_easements', $this->other_easements);
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', $this->sale_provision);

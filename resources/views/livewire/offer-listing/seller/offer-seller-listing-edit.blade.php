@@ -725,7 +725,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
@@ -817,8 +817,8 @@
                             </div>
                             @if ($service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
-                                    id="property-preferences" role="tabpanel"
-                                    aria-labelledby="property-preferences-tab">
+                                    id="property-details" role="tabpanel"
+                                    aria-labelledby="property-details-tab">
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.property-preferences')
 
                                 </div>
@@ -922,6 +922,25 @@
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 exchange_item: '#exchange_item',
                 business_assets: '#included_assets',
+                roof_type: '#roof_type',
+                exterior_construction: '#exterior_construction',
+                foundation: '#foundation',
+                heating_and_fuel: '#heating_and_fuel',
+                air_conditioning: '#air_conditioning',
+                water: '#water',
+                sewer: '#sewer',
+                utilities: '#utilities',
+                road_frontage: '#road_frontage',
+                road_surface_type: '#road_surface_type',
+                electrical_service: '#electrical_service',
+                building_features: '#building_features',
+                licenses: '#licenses',
+                sale_includes: '#sale_includes',
+                current_use: '#current_use',
+                current_adjacent_use: '#current_adjacent_use',
+                fences: '#fences',
+                vegetation: '#vegetation',
+                easements: '#easements',
             };
             Object.entries(fields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -934,6 +953,55 @@
         document.addEventListener('submit', function(e) {
             syncAllSelect2BeforeSave();
         }, true);
+
+        var _mlsMultiSelectIds = ['roof_type','exterior_construction','foundation','heating_and_fuel','air_conditioning','water','sewer','utilities','road_frontage','road_surface_type','electrical_service','building_features','licenses','sale_includes','current_use','current_adjacent_use','fences','vegetation','easements'];
+        _mlsMultiSelectIds.forEach(function(fieldId) {
+            $(document).on('change', '#' + fieldId, function() {
+                var selectedValues = $(this).val() || [];
+                @this.set(fieldId, selectedValues, false);
+                var otherWrapper = document.getElementById('other_' + fieldId + '_wrapper');
+                if (otherWrapper) {
+                    otherWrapper.style.display = selectedValues.includes('Other') ? '' : 'none';
+                }
+            });
+        });
+
+        function initializeMlsPropertyMultiSelects() {
+            var _mlsFields = [
+                { id: 'roof_type', placeholder: 'Select roof type(s)' },
+                { id: 'exterior_construction', placeholder: 'Select exterior construction' },
+                { id: 'foundation', placeholder: 'Select foundation type(s)' },
+                { id: 'heating_and_fuel', placeholder: 'Select heating and fuel type(s)' },
+                { id: 'air_conditioning', placeholder: 'Select air conditioning type(s)' },
+                { id: 'water', placeholder: 'Select water source(s)' },
+                { id: 'sewer', placeholder: 'Select sewer type(s)' },
+                { id: 'utilities', placeholder: 'Select utilities' },
+                { id: 'road_frontage', placeholder: 'Select road frontage type(s)' },
+                { id: 'road_surface_type', placeholder: 'Select road surface type(s)' },
+                { id: 'electrical_service', placeholder: 'Select electrical service type(s)' },
+                { id: 'building_features', placeholder: 'Select building features' },
+                { id: 'licenses', placeholder: 'Select license(s)' },
+                { id: 'sale_includes', placeholder: 'Select what is included in sale' },
+                { id: 'current_use', placeholder: 'Select current use(s)' },
+                { id: 'current_adjacent_use', placeholder: 'Select adjacent use(s)' },
+                { id: 'fences', placeholder: 'Select fence type(s)' },
+                { id: 'vegetation', placeholder: 'Select vegetation type(s)' },
+                { id: 'easements', placeholder: 'Select easement type(s)' },
+            ];
+            _mlsFields.forEach(function(field) {
+                var $el = $('#' + field.id);
+                if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
+                    $el.select2({ placeholder: field.placeholder, allowClear: true });
+                }
+                if ($el.length) {
+                    var current = $el.val() || [];
+                    var otherWrapper = document.getElementById('other_' + field.id + '_wrapper');
+                    if (otherWrapper) {
+                        otherWrapper.style.display = current.includes('Other') ? '' : 'none';
+                    }
+                }
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             // Detect which service is preselected on load
@@ -1053,7 +1121,7 @@
                 }
             }
 
-
+            initializeMlsPropertyMultiSelects();
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -1969,7 +2037,7 @@
 
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
-                    '#property-preferences',
+                    '#property-details',
                     '#purchasing-terms',
                     '#services',
                     '#additional-details',
