@@ -862,7 +862,7 @@
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="Describe other heating / fuel type">
+                data-icon="fa-solid fa-fire" placeholder="Enter heating and fuel type (e.g., Solar, Propane, Radiant Heat)">
         </div>
     </div>
 
@@ -887,7 +887,7 @@
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-snowflake" placeholder="Describe other air conditioning type">
+                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Mini-Split, Evaporative Cooler)">
         </div>
     </div>
 
@@ -930,7 +930,7 @@
         {{-- <label class="fw-bold">Other Sewer:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pipe-section" placeholder="Describe other sewer type">
+                data-icon="fa-solid fa-pipe-section" placeholder="Enter sewer type (e.g., Holding Tank, Community Septic)">
         </div>
     </div>
 
@@ -955,7 +955,7 @@
         {{-- <label class="fw-bold">Other Utilities:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_property_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-bolt" placeholder="Describe other utilities">
+                data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber Internet, Solar Power, Generator Hookup)">
         </div>
     </div>
 
@@ -980,7 +980,7 @@
         {{-- <label class="fw-bold">Other Laundry Features:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_laundry_features" class="form-control has-icon"
-                data-icon="fa-solid fa-shirt" placeholder="Describe other laundry features">
+                data-icon="fa-solid fa-shirt" placeholder="Enter laundry features (e.g., Laundry Room, Stackable Washer/Dryer)">
         </div>
     </div>
 
@@ -1005,7 +1005,7 @@
         {{-- <label class="fw-bold">Other Floor Covering:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_floor_covering" class="form-control has-icon"
-                data-icon="fa-solid fa-layer-group" placeholder="Describe other floor covering">
+                data-icon="fa-solid fa-layer-group" placeholder="Enter floor covering (e.g., Luxury Vinyl Plank, Terrazzo)">
         </div>
     </div>
 
@@ -1162,7 +1162,7 @@
         {{-- <label class="fw-bold">Other Utilities:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_property_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-bolt" placeholder="Describe other utilities">
+                data-icon="fa-solid fa-bolt" placeholder="Enter utilities (e.g., Fiber Internet, Solar Power, Generator Hookup)">
         </div>
     </div>
 
@@ -1205,7 +1205,7 @@
         {{-- <label class="fw-bold">Other Sewer:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pipe-section" placeholder="Describe other sewer type">
+                data-icon="fa-solid fa-pipe-section" placeholder="Enter sewer type (e.g., Holding Tank, Community Septic)">
         </div>
     </div>
 
@@ -1230,7 +1230,7 @@
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="Describe other heating / fuel type">
+                data-icon="fa-solid fa-fire" placeholder="Enter heating and fuel type (e.g., Solar, Propane, Radiant Heat)">
         </div>
     </div>
 
@@ -1255,7 +1255,7 @@
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-snowflake" placeholder="Describe other air conditioning type">
+                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Mini-Split, Evaporative Cooler)">
         </div>
     </div>
 
