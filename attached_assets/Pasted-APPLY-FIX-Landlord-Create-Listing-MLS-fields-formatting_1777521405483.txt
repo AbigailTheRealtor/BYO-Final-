@@ -1,0 +1,101 @@
+APPLY FIX — Landlord Create Listing MLS fields formatting (USE AUDIT — DO NOT RE-AUDIT)
+
+GOAL:
+Fix formatting issues for NEW MLS fields in Landlord Create Listing so they match existing fields.
+
+IMPORTANT:
+- DO NOT remove or add fields
+- DO NOT modify Hire Landlord Agent
+- ONLY fix formatting in Create Landlord Listing
+
+FILE TO EDIT:
+resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php
+
+-----------------------------------
+
+FIX 1 — CRITICAL (ICONS NOT SHOWING)
+
+Add "input-icon2" to ALL multi-select data-icon attributes.
+
+Example:
+
+FROM:
+data-icon="fa-solid fa-fire"
+
+TO:
+data-icon="fa-solid fa-fire input-icon2"
+
+Apply to ALL new MLS multi-select fields.
+
+-----------------------------------
+
+FIX 2 — TOOLTIP CONSISTENCY
+
+Add tooltip icon to ALL new MLS field labels using existing pattern:
+
+<span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true" title="...">
+    <i class="fa-solid fa-circle-info"></i>
+</span>
+
+Match formatting of existing fields.
+
+-----------------------------------
+
+FIX 3 — "OTHER" FIELD LABELS
+
+Remove or comment out visible labels inside "Other" input wrappers.
+
+Example:
+
+REMOVE:
+<label class="fw-bold">Other Heating / Fuel:</label>
+
+These should match existing pattern (no visible label).
+
+-----------------------------------
+
+FIX 4 — "OTHER" FIELD ICONS
+
+Replace generic pen icon with matching parent field icon.
+
+Example:
+
+Heating & Fuel:
+FROM:
+data-icon="fa-solid fa-pen"
+
+TO:
+data-icon="fa-solid fa-fire"
+
+Apply to all "Other" fields.
+
+-----------------------------------
+
+DO NOT CHANGE:
+- wire:model
+- field names
+- layout structure
+- JS / select2 behavior
+- Hire Agent files
+
+-----------------------------------
+
+AFTER:
+Run:
+php artisan view:clear
+
+-----------------------------------
+
+VERIFY:
+- Icons show properly (not hidden)
+- Multi-select fields match Appliances/View style
+- Tooltips appear
+- "Other" fields match existing UI pattern
+
+-----------------------------------
+
+OUTPUT:
+- File edited
+- Number of fields updated
+- Confirmation icons now display correctly
+- Confirmation Hire Landlord Agent was NOT modified
