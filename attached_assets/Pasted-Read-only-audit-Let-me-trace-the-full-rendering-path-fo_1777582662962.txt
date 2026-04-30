@@ -1,0 +1,171 @@
+Read-only audit. Let me trace the full rendering path for /offer-listing/landlord in parallel:
+
+
+7 actions
+Now let me look at the main landlord create blade for the included partials and JS init, and the property-preferences for the problem fields:
+
+
+3 actions
+That's suspicious — the landlord blade is including ALL four property-preference partials. Let me read the surrounding context and the JS initialization loop:
+
+
+3 actions
+The $user_type-based include is correct — it IS including the landlord partial. Now let me check the actual IDs in the landlord property-preferences blade vs what the JS is looking for:
+
+
+3 actions
+IDs match in the JS. Now let me check the wire:ignore setup on the landlord MLS fields and the scope of initMlsMultiSelects():
+
+
+3 actions
+Critical finding on line 544 — outer div missing wire:ignore. Let me read those MLS field wrappers and the scope of initMlsMultiSelects():
+
+
+3 actions
+Let me check if the new MLS fields in the landlord blade are inside @if ($property_type === ...) blocks, and read the initMlsMultiSelects enclosing scope:
+
+
+3 actions
+Let me look at the block context for initMlsMultiSelects and the appliances/view wire:ignore in the landlord blade:
+
+
+4 actions
+Let me check the appliances and view_preference JS init, and the non_negotiable_amenities placeholder in the landlord blade:
+
+
+4 actions
+Let me check what Select2 JS/CSS is loaded and verify the input-icon2 CSS is present in the landlord blade:
+
+
+4 actions
+Let me check the view_preference field HTML structure and also see if there's a JS error in initializeFullService between the working non_negotiable_amenities (line 1493) and the failing view_preference (line 1661):
+
+
+3 actions
+Let me read the key gap between the working non_negotiable_amenities init and the non-working view_preference to spot any JS error:
+
+
+2 actions
+I need to find where initializeFullService() closes to know if view_preference and initMlsMultiSelects are inside or outside it:
+
+
+3 actions
+Let me check for cached compiled Blade views and verify the actual state of both the blade partial and landlord listing blade:
+
+
+4 actions
+Let me trace the closing brace of initializeFullService() to determine exactly what's inside vs outside it:
+
+
+2 actions
+Let me read the area around line 2040-2080 to find where initializeFullService closes and check the stale cache question:
+
+
+3 actions
+Critical finding in the cache! Let me read the compiled view around those property-preferences lines to confirm if the cache is stale and whether the elseif chain is correct:
+
+
+2 actions
+The compiled main blade is correct. Now let me check if the compiled version of the landlord property-preferences partial has the select2-multiple class (to verify cache staleness for the partial itself):
+
+
+4 actions
+Let me check the non_negotiable_amenities field structure versus view_preference in the landlord blade — specifically whether multiple attribute is set:
+
+
+3 actions
+I now have everything I need. Here's the complete read-only audit report:
+
+Landlord Create Listing — Full Audit Report
+A. Active Rendering Path
+Layer	Value
+Route	GET /offer-listing/landlord → routes/web.php:913
+Livewire component	App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing
+Main blade	resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+Property-prefs partial	resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php
+The main blade is a multi-role shared blade. The property-preferences partial is conditionally included at line 1196–1197 via @elseif($user_type === 'landlord'). This is correct — when you visit /offer-listing/landlord, the right partial is included.
+
+B. Were Prior Edits in the Wrong Files?
+No — Task #258 edits landed in the correct files. The landlord property-preferences partial currently has:
+
+22 occurrences of select2-multiple ✓
+wire:ignore on inner .input-cover divs ✓
+.input-icon2 CSS defined at line 2 of the partial itself ✓
+Correct field IDs (heating_fuel, air_conditioning, water, sewer, property_utilities, laundry_features, floor_covering, security_features) matching the JS init loop ✓
+The compiled Blade cache (storage/framework/views/) also reflects the correct @elseif($user_type === 'landlord') chain, so the routing is not stale.
+
+C. Field Source Map
+Field	File	Line(s)	Current state	Problem
+Appliances Included	offer-landlord-tabs/…/property-preferences.blade.php	552–557	select2-multiple, wire:ignore on inner div, outer form-group has wire:key="landlord-appliances-group" but no outer wire:ignore	Select2 init at main blade line 1951 — called once at initializeFullService(), never re-run in message.processed
+View	Same	736–744	select2-multiple, wire:ignore on inner div, outer form-group has no wire:key and no wire:ignore	Select2 init at main blade line 1661 — same problem, not in message.processed. Most vulnerable to morphdom destruction
+Amenities & Property Features	Same	790–806	select2-multiple, wire:ignore, multiple — Select2 IS applied	Select2 works but placeholder is wrong ("Select credit score rating(s)")
+Year Built	Same	831–841	type="number", correct placeholder "Enter year built (e.g., 1998)"	No bug here — text input, no Select2 needed
+Heating and Fuel	Same	845–860	select2-multiple, wire:ignore on inner, outer form-group bare (no key, no ignore). Inside @if ($property_type === 'Residential Property') block (line 828)	Handled by initMlsMultiSelects() + message.processed — should work on property type selection
+Air Conditioning	Same	870–885	Same as above	Same
+Water	Same	895–910	Same	Same — appears again in Commercial block (line 1177) with same ID water — duplicate ID risk
+Sewer	Same	920–928	Same	Same — appears again at line 1195 — duplicate ID risk
+Utilities	Same	945–952	Same	Same — appears again at line 1152 — duplicate ID risk
+Laundry Features	Same	970–977	Same	Residential-only
+Floor Covering	Same	995–1002	Same	Residential-only
+Security Features	Same	1020–1027	Same	Residential-only
+Placeholder source for "Select credit score rating(s)":
+Main landlord blade, line 1495 — placeholder: "Select credit score rating(s)" inside the $('#non_negotiable_amenities').select2({…}) call within initializeFullService(). This is a copy-paste from a buyer/tenant flow where that select was for credit score ratings.
+
+D. Root Causes
+Root Cause 1 — view_preference and appliances Select2 are not re-initialized after Livewire updates (PRIMARY)
+
+initializeFullService() runs once at DOMContentLoaded. It initializes Select2 on #view_preference (line 1661) and #appliances (line 1951). But neither is registered in the Livewire.hook('message.processed', …) callback.
+
+Every time the user changes any Livewire-bound field (property type, property sub-type, any text input), Livewire re-renders the component. morphdom patches the DOM. The outer form-group divs for view_preference (no wire:key) and appliances (wire:key only, no outer wire:ignore) can be morphed or re-keyed. When that happens, the Select2 widget is destroyed. It is never re-initialized because message.processed only calls:
+
+attachAuctionDropdownListener
+toggleGarageOptions
+attachBathroomsDropdownListener
+initMlsMultiSelects (for the Residential-only MLS fields)
+but not the view_preference or appliances init blocks.
+
+Root Cause 2 — view_preference outer div has no wire:key (amplifies Root Cause 1)
+
+Without wire:key, morphdom cannot reliably match the view_preference form-group across re-renders when surrounding elements change (e.g., the Residential @if block adding or removing elements above it changes the DOM node ordering). This makes Select2 destruction more likely.
+
+Root Cause 3 — Duplicate IDs for Commercial Property block fields (secondary)
+
+Fields water (lines 902, 1177), sewer (lines 920, 1195), and property_utilities (lines 945, 1152) appear twice in the landlord property-preferences blade — once in the Residential block (@if property_type === 'Residential Property') and again in a Commercial block below. Since both @if branches render conditionally, at most one set is ever in the DOM at a time. However if the Blade compiler or Livewire's diff algorithm sees both blocks in the compiled output, and the @if guard fails silently, both could briefly co-exist with duplicate IDs, causing $('#water') to find the wrong element. This is lower risk but worth noting.
+
+Root Cause 4 — Wrong placeholder for non_negotiable_amenities (content bug)
+
+offer-landlord-listing.blade.php line 1495: placeholder: "Select credit score rating(s)" — pasted from a buyer/tenant flow. Should be something like "Select amenities and property features".
+
+Root Cause 5 — The screenshot timing
+
+The screenshot was taken after Task #258 was merged (the code IS in the files) but likely while testing showed that Select2 still reverts to native listboxes on the first Livewire interaction (property type selection). That first interaction triggers message.processed, which re-runs initMlsMultiSelects() — but the view_preference and appliances inits (not in the hook) get destroyed on that same render cycle, making them regress to native listboxes. The MLS fields (heading_fuel etc.) similarly may lose Select2 if initMlsMultiSelects() runs before morphdom finishes patching (the 150ms delay sometimes isn't enough).
+
+E. Recommended Fix Plan (no code changes — plan only)
+File 1: resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+
+Fix non_negotiable_amenities placeholder (line 1495):
+Change "Select credit score rating(s)" → "Select amenities and property features".
+
+Move view_preference Select2 init into a re-usable function, hooked to message.processed:
+Extract the block at lines 1661–1675 (view_preference init + change handler + other_preferences toggle) into a named function initViewPreferenceSelect2(). Call it:
+
+Once directly (for initial DOMContentLoaded pass)
+In the existing Livewire.hook('message.processed', () => { setTimeout(initMlsMultiSelects, 150); }) block — merge into same setTimeout call
+Move appliances Select2 init into message.processed:
+Extract the block at lines 1951–1960 into a named function initAppliancesSelect2(). Same pattern — call once directly, then in message.processed setTimeout.
+
+Add wire:key to view_preference outer form-group in the landlord property-preferences partial (line 726) — e.g., wire:key="landlord-view-preference-group" — to anchor it for morphdom.
+
+File 2: resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/property-preferences.blade.php
+
+Audit the Commercial block for duplicate IDs (lines 1100+): Verify water, sewer, property_utilities in the Commercial section use distinct IDs (e.g., water_commercial, sewer_commercial, property_utilities_commercial) to avoid ID collisions. The mlsMultiSelects JS array would need corresponding id entries for the commercial variants.
+Test steps after fix:
+
+Load /offer-listing/landlord as a logged-in agent
+On Property Preferences tab, verify Appliances shows tag/pill Select2 immediately on page load (before any interaction)
+Select "Residential Property" → verify all MLS fields render as Select2 tags after the Livewire update
+Select a view option from the View field → verify it appears as a tag, not a listbox selection
+Change any other field (e.g., City) to trigger a Livewire re-render → verify Appliances and View still show as Select2 (not reverted to native)
+Verify Amenities placeholder reads "Select amenities and property features" not "Select credit score rating(s)"
+Switch to Commercial Property type → verify the commercial-block fields (water, sewer, utilities) show as Select2 and no duplicate-ID conflicts
+That's the full audit. No code has been touched. Would you like me to proceed with implementing these fixes as a new task?

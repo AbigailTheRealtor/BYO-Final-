@@ -96,14 +96,23 @@
             if (!target) return;
             setTimeout(function() { initUninitialized(target); }, 50);
         });
+
+        setTimeout(function() { initUninitialized(); }, 100);
     });
 
-    document.addEventListener('livewire:load', function() {
+    if (window.Livewire) {
         Livewire.hook('message.processed', function() {
             repairBrokenSelects();
-            setTimeout(function() { initUninitialized(); }, 20);
+            setTimeout(function() { initUninitialized(); }, 200);
         });
-    });
+    } else {
+        document.addEventListener('livewire:load', function() {
+            Livewire.hook('message.processed', function() {
+                repairBrokenSelects();
+                setTimeout(function() { initUninitialized(); }, 200);
+            });
+        });
+    }
 
     window.Select2Stable = {
         initUninitialized: initUninitialized,

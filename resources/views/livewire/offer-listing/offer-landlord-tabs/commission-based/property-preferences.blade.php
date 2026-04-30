@@ -541,7 +541,7 @@
 </div>
 
 <!-- View Preference Needed -->
-<div class="form-group" wire:key="landlord-appliances-group">
+<div class="form-group" wire:ignore wire:key="landlord-appliances-group">
     <label class="fw-bold">Appliances Included:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Select the appliances included with the property. If 'Other' is selected, enter any additional appliances.">
@@ -724,7 +724,7 @@
     </div>
 @endif
 
-<div class="form-group" wire:key="landlord-view-pref-group">
+<div class="form-group" wire:ignore wire:key="landlord-view-pref-group">
     <label class="fw-bold">View:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

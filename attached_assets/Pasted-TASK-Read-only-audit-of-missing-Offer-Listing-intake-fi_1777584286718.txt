@@ -1,0 +1,215 @@
+TASK: Read-only audit of missing Offer Listing intake fields by role/property type
+
+GOAL:
+Audit current BidYourOffer Create Listing forms and identify missing important fields needed to make the platform useful for agents, based on MLS-style data entry forms.
+
+SCOPE:
+- Agent Dashboard
+- BidYourOffer / Offer Listings
+- Create Seller Listing
+- Create Landlord Listing
+
+PROPERTY TYPES TO AUDIT:
+Seller:
+- Residential
+- Income
+- Commercial
+- Business Opportunity
+- Vacant Land
+
+Landlord:
+- Residential
+- Commercial
+
+DO NOT:
+- Do not edit files
+- Do not add fields yet
+- Do not change database schema
+- Do not create migrations
+- Do not touch Hire Agent listings
+- Do not touch BidYourAgent
+- Do not touch Limited Service / legacy files
+
+AUDIT CURRENT QUESTIONS:
+For each role/property type, list current fields already present in:
+- Listing Details
+- Property Details
+- Sale Terms / Leasing Terms
+- Additional Details
+- Photos, Tours & Documents
+- AI Questions
+- Agent Information
+
+COMPARE AGAINST NEEDED FIELD GROUPS:
+Audit whether the platform currently captures:
+
+1. Legal / Tax / Parcel
+- Tax ID / Parcel Number
+- Tax Year
+- Annual Property Taxes
+- Legal Description
+- Section
+- Township
+- Range
+- Plat Book/Page
+- Block/Parcel
+- Lot Number
+- Alt Key/Folio
+- Additional Parcels
+- Total Number of Parcels
+- Additional Tax IDs
+
+2. HOA / Association / Condo / Community
+- HOA / Community Association: Yes/No
+- HOA fee requirement: None / Optional / Required
+- HOA amount
+- HOA payment schedule
+- Condo fee
+- Condo fee schedule
+- Master Association: Yes/No
+- Master Association fee
+- Association manager/contact name
+- Association phone
+- Association email
+- Association website
+- Fee includes
+- Association amenities
+- Community features
+- Amenities with additional fees
+
+3. CDD / Special Assessments / Exemptions
+- CDD: Yes/No
+- Annual CDD fee
+- Special assessments: Yes/No
+- Special assessment amount
+- Special assessment description
+- Homestead: Yes/No
+- Agricultural exemption: Yes/No
+- Other exemptions: Yes/No
+- Land lease: Yes/No
+- Land lease fee
+
+4. Flood / Zoning / Land Use
+- Flood Zone Code
+- Flood Zone Date
+- Flood Zone Panel
+- Flood insurance required: Yes/No
+- Zoning
+- Zoning compatible: Yes/No
+- Future land use
+- Current use
+- Current adjacent use
+- State/county land use/property use codes where applicable
+
+5. Financial / Income / Commercial
+- Annual gross income
+- Annual net income / NOI
+- Annual expenses
+- Gross scheduled income
+- Cap rate
+- Vacancy rate
+- Number of tenants
+- Tenant count
+- Total monthly rent
+- Total monthly expenses
+- Financial source
+- Sale includes
+- Real estate included for business opportunity
+- Business name
+- Year established
+- Licenses
+- Lease terms
+- Owner pays
+- Tenant pays
+- Pass-through expenses
+- Initial pass-through expenses
+- Pass-through expense type
+
+6. Leasing Restrictions / Existing Lease
+- Existing lease or tenant: Yes/No
+- Monthly rental amount
+- Lease end date
+- Month-to-month or weekly: Yes/No
+- Days notice to tenant if not renewing
+- Can property be leased: Yes/No
+- Lease restrictions: Yes/No
+- Association approval required: Yes/No
+- Minimum lease period
+- Max lease times per year
+- Years of ownership prior to leasing
+- Approval process
+- Additional lease restrictions
+
+7. Pets
+- Pets allowed
+- Number of pets allowed
+- Pet size
+- Max pet weight
+- Breed restrictions
+- Number limit
+- Cats OK
+- Dogs OK
+- Pet deposit
+- Non-refundable pet fee
+- Monthly pet fee
+- Additional pet fees
+- Pet restrictions source
+- Pet restriction notes
+
+8. Showing / Occupancy / Access
+- Occupant type
+- Showing instructions
+- Showing considerations
+- Lockbox type
+- Gate code required
+- Appointment only
+- Listing agent must accompany
+- Do not contact tenants
+- ShowingTime secure remarks
+- Call center phone
+- Possession
+
+9. Documents / Disclosures
+- Documents available
+- Status of documents
+- Survey available
+- Floor plan available
+- Engineering report
+- Environmental report
+- Phase I / Phase II environmental report
+- Termite bond/warranty
+- Copy of lease available
+- Seller disclosures
+- HOA/Condo docs
+- Flood disclosure
+- Lead-based paint if applicable
+- Other attachments
+
+10. Photos / Tours / Marketing
+- Multiple property photos
+- Video tour URL
+- 3D tour URL
+- Virtual tour links
+- Documents upload
+- Virtually staged listing photos disclosure
+
+OUTPUT REQUIRED:
+Create a clear audit report:
+
+For each role/property type:
+1. Existing fields found
+2. Missing fields
+3. Recommended new field groups
+4. Priority:
+   - Launch Critical
+   - Important
+   - Later Enhancement
+5. Suggested tab placement:
+   - Property Details
+   - Sale Terms / Leasing Terms
+   - Additional Details
+   - Photos, Tours & Documents
+   - New Tax & Public Records section if needed
+
+IMPORTANT:
+Do not implement yet. Stop after the audit report.

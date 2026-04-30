@@ -1492,7 +1492,7 @@
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -1658,21 +1658,24 @@
                 }, 150);
             });
 
-            if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2({
-                    placeholder: "Select Preference",
-                    allowClear: true
-                });
-                $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val();
-                    Livewire.emit('updatePreference', selectedValues);
-                    if (selectedValues.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                    }
-                });
+            function initViewPreferenceSelect2() {
+                if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
+                    $('#view_preference').select2({
+                        placeholder: "Select",
+                        allowClear: true
+                    });
+                    $('#view_preference').on('change', function() {
+                        let selectedValues = $(this).val();
+                        Livewire.emit('updatePreference', selectedValues);
+                        if (selectedValues.includes('Other')) {
+                            $('#other_preferences').show();
+                        } else {
+                            $('#other_preferences').hide();
+                        }
+                    });
+                }
             }
+            initViewPreferenceSelect2();
 
             // MLS Property Detail — multi-select fields with Other-toggle
             var mlsMultiSelects = [
@@ -1710,7 +1713,11 @@
             }
             initMlsMultiSelects();
             Livewire.hook('message.processed', () => {
-                setTimeout(initMlsMultiSelects, 150);
+                setTimeout(function() {
+                    initMlsMultiSelects();
+                    initViewPreferenceSelect2();
+                    initAppliancesSelect2();
+                }, 150);
             });
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
@@ -1948,17 +1955,20 @@
             });
 
 
-            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                $('#appliances').select2({
-                    placeholder: "Select appliances",
-                    allowClear: true,
-                });
-                $('#appliances').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('appliances', selectedValues);
-                    @this.call('updateAppliances', selectedValues);
-                });
+            function initAppliancesSelect2() {
+                if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
+                    $('#appliances').select2({
+                        placeholder: "Select",
+                        allowClear: true,
+                    });
+                    $('#appliances').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('appliances', selectedValues);
+                        @this.call('updateAppliances', selectedValues);
+                    });
+                }
             }
+            initAppliancesSelect2();
 
             if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
                 $('#rent_includes').select2({
