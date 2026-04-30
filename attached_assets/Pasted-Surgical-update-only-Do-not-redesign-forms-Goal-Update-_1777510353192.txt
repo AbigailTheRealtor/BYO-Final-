@@ -1,0 +1,368 @@
+Surgical update only. Do not redesign forms.
+
+Goal:
+Update Landlord Create Listing > "Property Preferences" tab to "Property Details" and add missing must-have MLS-style fields for Landlord Residential Rental and Landlord Commercial Lease.
+
+IMPORTANT:
+- Before adding any field, check whether it already exists in the Landlord Property Details tab.
+- If the field already exists and works, do NOT duplicate it.
+- If the field exists but has missing/wrong options, update options only.
+- If the field exists but has wrong label/layout, adjust label/layout only.
+- Use the same layout/input styling already used in Hire a Seller's Agent / platform forms.
+- Do NOT touch Seller, Buyer, Tenant, Leasing Terms, Additional Details, Landlord Information, AI Questions, bids, counters, or summaries.
+- All new fields optional unless already required by the app.
+- Prefer existing meta-key storage. Add nullable DB fields only if unavoidable.
+
+Rename tab:
+"Property Preferences" → "Property Details"
+
+==================================================
+GLOBAL LANDLORD FIELD OPTIONS
+==================================================
+
+Heating and Fuel:
+Input type: multi-select
+Options:
+- Baseboard
+- Central
+- Electric
+- Exhaust Fans
+- Gas
+- Heat Pump
+- Natural Gas
+- None
+- Other
+- Partial
+- Propane
+- Solar
+- Space Heater
+- Wall/Window Unit(s)
+- Zoned
+
+Air Conditioning:
+Input type: multi-select
+Options:
+- Central Air
+- Humidity Control
+- Mini-Split Unit(s)
+- None
+- Other
+- Wall/Window Unit(s)
+- Zoned
+
+Water:
+Input type: multi-select
+Options:
+- Canal/Lake for Irrigation
+- None
+- Private
+- Public
+- See Remarks
+- Well
+
+Sewer:
+Input type: multi-select
+Options:
+- Aerobic Septic
+- None
+- Other
+- PEP-Holding Tank
+- Private Sewer
+- Public Sewer
+- Septic Tank
+
+Utilities:
+Input type: multi-select
+Options:
+- BB/HS Internet Available
+- Cable Available
+- Cable Connected
+- Emergency Power
+- Electric - Multiple Meters
+- Electrical Nearby
+- Electricity Available
+- Electricity Connected
+- Fiber Optics
+- Fire Hydrant
+- Mini Sewer
+- Natural Gas Available
+- Natural Gas Connected
+- Other
+- Phone Available
+- Private
+- Propane
+- Public
+- Sewer Available
+- Sewer Connected
+- Solar
+- Sprinkler Meter
+- Sprinkler Recycled
+- Sprinkler Well
+- Street Lights
+- Underground Utilities
+- Water - Multiple Meters
+- Water Available
+- Water Connected
+
+Road Surface Type:
+Input type: multi-select
+Options:
+- Asphalt
+- Brick
+- Chip And Seal
+- Concrete
+- Dirt
+- Gravel
+- Limerock
+- Other
+- Paved
+- Unimproved
+
+Electrical Service:
+Input type: multi-select
+Options:
+- 100 Amp Service
+- 150 Amp Service
+- 200+ Amp Service
+- 3 Phase
+- 110 Volts
+- 220 Volts
+- 440 Volts
+- Generator
+- Generator Hook-Up
+- Other
+- Separate Meters
+
+Building Features:
+Input type: multi-select
+Options:
+- Bathrooms
+- Clear Span
+- Columns
+- Common Lighting
+- Drive-Through
+- Dumpsters
+- Elevator
+- Elevator - None
+- Extra Storage
+- Fencing
+- Fiber Optic
+- Freight Elevator
+- Furnished
+- High Bays
+- Janitorial Services
+- Kitchen Facility
+- Lit Sign on Site
+- Loading Dock
+- Loft
+- Medical Disposal
+- On Site Shower
+- Other
+- Outside Storage
+- Overhead Doors
+- Pool/Spa
+- Ramp
+- Reception
+- Seating
+- Service Stations
+- Solid Surface Counter
+- Stone Counter
+- Trash Removal
+- Truck Doors
+- Truck Well
+- Waiting Room
+
+Ceiling Height:
+Input type: single-select
+Options:
+- 8 to 9 Feet
+- 10 to 15 Feet
+- 16 to 22 Feet
+- 23+ Feet
+- Varied
+
+==================================================
+LANDLORD RESIDENTIAL RENTAL — MUST-HAVE FIELD CHECKLIST
+==================================================
+
+Check each first. Do not duplicate existing fields.
+
+Add only if missing:
+
+- Year Built: number input
+- Tax ID / Parcel Number: text input
+- Lot Dimensions: text input
+- Lot Size Square Footage: number input
+- Lot Size Acres: number input
+- Heating and Fuel: multi-select using options above
+- Air Conditioning: multi-select using options above
+- Water: multi-select using options above
+- Sewer: multi-select using options above
+- Utilities: multi-select using options above
+- Laundry Features: multi-select with options:
+  - Common Area
+  - Corridor Access
+  - Electric Dryer Hookup
+  - Gas Dryer Hookup
+  - In Garage
+  - In Kitchen
+  - Inside
+  - Laundry Chute
+  - Laundry Closet
+  - Laundry Room
+  - None
+  - Other
+  - Outside
+  - Same Floor as Condo Unit
+  - Upper Floor
+  - Washer Hookup
+- Floor Covering: multi-select with options:
+  - Bamboo
+  - Brick/Stone
+  - Carpet
+  - Ceramic Tile
+  - Concrete
+  - Cork
+  - Engineered Hardwood
+  - Epoxy
+  - Forestry Stewardship Certified
+  - Granite
+  - Laminate
+  - Linoleum
+  - Luxury Vinyl
+  - Marble
+  - Other
+  - Parquet
+  - Porcelain Tile
+  - Quarry Tile
+  - Reclaimed Wood
+  - Recycled/Composite Flooring
+  - Slate
+  - Terrazzo
+  - Tile
+  - Travertine
+  - Vinyl
+  - Wood
+- Security Features: multi-select with options:
+  - Closed Circuit Camera(s)
+  - Fire Alarm
+  - Fire Sprinkler System
+  - Gated Community
+  - Key Card Entry
+  - Medical Alarm
+  - Secured Garage/Parking
+  - Security Fencing/Lighting/Alarms
+  - Security Gate
+  - Security Lights
+  - Security System
+  - Security System Leased
+  - Security System Owned
+  - Smoke Detector(s)
+
+Do not add if already present:
+- Property Type
+- Property Style
+- Property Condition
+- Bedrooms
+- Bathrooms
+- Heated SqFt
+- Total SqFt
+- SqFt Heated Source
+- Total Acreage
+- Appliances Included
+- Furnishings
+- Carport
+- Garage
+- Pool
+- View
+- Age-Restricted Community
+- Amenities and Property Features
+- Pets Allowed
+
+==================================================
+LANDLORD COMMERCIAL LEASE — MUST-HAVE FIELD CHECKLIST
+==================================================
+
+Check each first. Do not duplicate existing fields.
+
+Add only if missing:
+
+- Year Built: number input
+- Zoning: text input
+- Total Number of Buildings: number input
+- Total Units on Property: number input
+- Net Leasable SqFt: number input
+- Office/Retail Space SqFt: number input
+- Flex Space SqFt: number input
+- Road Surface Type: multi-select using options above
+- Utilities: multi-select using options above
+- Water: multi-select using options above
+- Sewer: multi-select using options above
+- Heating and Fuel: multi-select using options above
+- Air Conditioning: multi-select using options above
+- Electrical Service: multi-select using options above
+- Ceiling Height: single-select using options above
+- Building Features: multi-select using options above
+- Number Electric Meters: number input
+- Number Water Meters: number input
+- Number Gas Meters: number input
+- Space Type: multi-select with options:
+  - Gray Shell
+  - New
+  - Re Let
+  - Sub Let
+  - Vanilla Shell
+- Space Classification: multi-select with options:
+  - A
+  - B
+  - C
+  - D
+- Number of Restrooms: number input
+- Number of Offices: number input
+- Number of Conference/Meeting Rooms: number input
+
+Do not add if already present:
+- Property Type
+- Property Style
+- Property Condition
+- Bathrooms
+- Net Leasable SqFt if already present
+- Total SqFt
+- SqFt Heated Source
+- Total Acreage
+- Appliances Included
+- Garage/Parking Features
+- View
+- Amenities and Property Features
+
+==================================================
+BEHAVIOR / STORAGE
+==================================================
+
+- Use same input components/classes as existing form fields.
+- Multi-select fields should behave like existing multi-select fields in Hire/Seller forms.
+- Single-select fields should behave like existing dropdowns.
+- Yes/No fields should behave like existing Yes/No fields.
+- Save values in the same pattern currently used by the Landlord listing form.
+- Preserve existing save keys unless a key is clearly broken.
+- Do not make any new field required.
+
+==================================================
+VERIFICATION
+==================================================
+
+Verify:
+- Landlord Residential renders correctly.
+- Landlord Commercial renders correctly.
+- New fields appear only for the correct property type.
+- No duplicate fields were created.
+- Existing fields remain unchanged.
+- New selectable fields show the exact options listed above.
+- New fields save and reload.
+- Tab label says "Property Details."
+- PHP syntax check passes.
+- View cache cleared.
+
+Output:
+Write report to:
+.local/tasks/landlord_property_details_mls_fields_report.md
