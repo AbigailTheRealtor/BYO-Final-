@@ -1907,6 +1907,8 @@
                             </div>
                         @endif
 
+                        @include('partials.listing-photos-tours-documents')
+
                         @php
                             $hasSellerBrokerCompData = !empty(@$auction->get->purchase_fee_type)
                                 || !empty(@$auction->get->commission_structure)

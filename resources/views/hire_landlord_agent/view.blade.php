@@ -1487,6 +1487,8 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         </div>
         @endif
 
+        @include('partials.listing-photos-tours-documents')
+
         @php
             $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
                 || !empty(@$auction->get->tenant_broker_commission_structure)
