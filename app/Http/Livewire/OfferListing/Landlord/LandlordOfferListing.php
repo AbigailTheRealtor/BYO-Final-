@@ -382,7 +382,8 @@ class LandlordOfferListing extends Component
     public $videoError = null;
 
     // Photos, Tours & Documents
-    public $propertyPhotos = null;
+    public $propertyPhotos = [];
+    public $newPropertyPhotos = [];
     public $videoTourUrl = '';
     public $virtualTourUrl = '';
     public $listingDocuments = null;
@@ -1756,7 +1757,14 @@ class LandlordOfferListing extends Component
             $this->video = $auction->get->video ?? null;
             $this->videoTourUrl = $auction->get->video_tour_url ?? '';
             $this->virtualTourUrl = $auction->get->virtual_tour_url ?? '';
-            $this->propertyPhotos = $auction->get->property_photos ?? null;
+            $rawPhotos = $auction->get->property_photos ?? null;
+            if (is_array($rawPhotos)) {
+                $this->propertyPhotos = $rawPhotos;
+            } elseif (is_string($rawPhotos) && $rawPhotos !== '') {
+                $this->propertyPhotos = [$rawPhotos];
+            } else {
+                $this->propertyPhotos = [];
+            }
             $this->listingDocuments = $auction->get->listing_documents ?? null;
 
             // Location and meeting details
@@ -2625,18 +2633,8 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('video_tour_url', $this->videoTourUrl ?? '');
         $auction->saveMeta('virtual_tour_url', $this->virtualTourUrl ?? '');
 
-        if ($this->propertyPhotos && !is_string($this->propertyPhotos)) {
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (in_array($this->propertyPhotos->getMimeType(), $allowedMimes)) {
-                $ext = $this->propertyPhotos->getClientOriginalExtension();
-                $uuid = (string) Str::uuid();
-                $fileName = $uuid . '.' . $ext;
-                $this->propertyPhotos->storeAs('auction/images', $fileName, 'public');
-                $auction->saveMeta('property_photos', $fileName);
-            }
-        } elseif ($this->propertyPhotos && is_string($this->propertyPhotos)) {
-            $auction->saveMeta('property_photos', $this->propertyPhotos);
-        }
+        $this->processPendingPhotoUploads();
+        $auction->saveMeta('property_photos', $this->propertyPhotos);
 
         if ($this->listingDocuments && !is_string($this->listingDocuments)) {
             $allowedMimes = ['application/pdf', 'application/msword',
@@ -2655,9 +2653,32 @@ class LandlordOfferListing extends Component
         }
     }
 
-    public function updatedPropertyPhotos()
+    private function processPendingPhotoUploads(): void
     {
-        $this->validate(['propertyPhotos' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+        if (empty($this->newPropertyPhotos)) {
+            return;
+        }
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        foreach ($this->newPropertyPhotos as $photo) {
+            if (in_array($photo->getMimeType(), $allowedMimes)) {
+                $ext = $photo->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $photo->storeAs('auction/images', $fileName, 'public');
+                $this->propertyPhotos[] = $fileName;
+            }
+        }
+        $this->newPropertyPhotos = [];
+    }
+
+    public function updatedNewPropertyPhotos()
+    {
+        $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+        $this->processPendingPhotoUploads();
+        if ($this->listingId) {
+            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
     }
 
     public function updatedListingDocuments()
@@ -2665,16 +2686,21 @@ class LandlordOfferListing extends Component
         $this->validate(['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240']);
     }
 
-    public function deletePropertyPhoto()
+    public function deletePropertyPhoto($index)
     {
-        if ($this->propertyPhotos && is_string($this->propertyPhotos)) {
-            Storage::disk('public')->delete('auction/images/' . $this->propertyPhotos);
+        if (isset($this->propertyPhotos[$index])) {
+            $filename = $this->propertyPhotos[$index];
+            Storage::disk('public')->delete('auction/images/' . $filename);
+            array_splice($this->propertyPhotos, $index, 1);
             if ($this->listingId) {
                 $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
-                $auction->deleteMeta('property_photos');
+                if (empty($this->propertyPhotos)) {
+                    $auction->deleteMeta('property_photos');
+                } else {
+                    $auction->saveMeta('property_photos', $this->propertyPhotos);
+                }
             }
         }
-        $this->propertyPhotos = null;
     }
 
     public function deleteListingDocument()
