@@ -1945,18 +1945,18 @@
     </div>
 </div>
 
-{{-- 18. HOA / Condo Association Terms --}}
+{{-- 18. Additional HOA / Association Notes --}}
 <div class="form-group mt-3">
-    <label class="fw-bold">HOA / Condo Association Terms:
+    <label class="fw-bold">Additional HOA / Association Notes:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any relevant HOA or condo association terms, fees, transfer requirements, or restrictions the Buyer should be aware of.">
+            title="Enter any supplemental HOA or association information not captured in the structured Tax, Legal, HOA &amp; Disclosures tab — such as special transfer fees, pending rule changes, or other notes the Buyer should be aware of.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover">
         <input type="text" wire:model="hoa_condo_association_terms" class="form-control has-icon"
             data-icon="fa-solid fa-building"
-            placeholder="Enter HOA or condo association terms (e.g., $350/month HOA, $200 transfer fee, no rentals allowed)">
+            placeholder="Enter any additional HOA notes (e.g., $200 transfer fee, pending special assessment, new rules effective Jan 2026)">
     </div>
 </div>
 

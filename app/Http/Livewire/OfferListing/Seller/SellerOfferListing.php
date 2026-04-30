@@ -525,6 +525,52 @@ class SellerOfferListing extends Component
     public $hoa_condo_association_terms = '';
     public $additional_seller_sale_terms = '';
 
+    // Tax, Legal, HOA & Disclosures tab fields
+    // Group 1 — Tax / Legal / Parcel
+    public $parcel_id = '';
+    public $tax_year = '';
+    public $annual_property_taxes = '';
+    public $additional_parcels = '';
+    public $total_parcel_count = '';
+    public $additional_parcel_ids = '';
+    public $legal_description = '';
+
+    // Group 2 — Flood Zone
+    public $flood_zone_code = '';
+    public $flood_zone_code_other = '';
+    public $flood_insurance_required = '';
+    public $flood_zone_panel = '';
+
+    // Group 3 — CDD / Special Assessments
+    public $has_cdd = '';
+    public $annual_cdd_fee = '';
+    public $has_special_assessments = '';
+    public $special_assessment_amount = '';
+    public $special_assessment_description = '';
+
+    // Group 4 — Structured HOA
+    public $has_hoa = '';
+    public $association_type = '';
+    public $association_type_other = '';
+    public $association_name = '';
+    public $association_fee_amount = '';
+    public $association_fee_frequency = '';
+    public $association_fee_frequency_other = '';
+    public $association_approval_required = '';
+    public $association_approval_process = '';
+    public $association_application_fee = '';
+    public $association_fee_includes = [];
+    public $association_fee_includes_other = '';
+    public $association_amenities = [];
+    public $association_amenities_other = '';
+    public $leasing_restrictions = '';
+    public $min_lease_period = '';
+    public $min_lease_period_other = '';
+    public $max_leases_per_year = '';
+    public $additional_lease_restrictions = '';
+    public $pet_restrictions = '';
+    public $pet_restrictions_detail = '';
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -2145,6 +2191,47 @@ class SellerOfferListing extends Component
             $this->hoa_condo_association_terms = $auction->get->hoa_condo_association_terms ?? '';
             $this->additional_seller_sale_terms = $auction->get->additional_seller_sale_terms ?? '';
 
+            // Tax, Legal, HOA & Disclosures tab
+            $this->parcel_id = $auction->get->parcel_id ?? '';
+            $this->tax_year = $auction->get->tax_year ?? '';
+            $this->annual_property_taxes = $auction->get->annual_property_taxes ?? '';
+            $this->additional_parcels = $auction->get->additional_parcels ?? '';
+            $this->total_parcel_count = $auction->get->total_parcel_count ?? '';
+            $this->additional_parcel_ids = $auction->get->additional_parcel_ids ?? '';
+            $this->legal_description = $auction->get->legal_description ?? '';
+            $this->flood_zone_code = $auction->get->flood_zone_code ?? '';
+            $this->flood_zone_code_other = $auction->get->flood_zone_code_other ?? '';
+            $this->flood_insurance_required = $auction->get->flood_insurance_required ?? '';
+            $this->flood_zone_panel = $auction->get->flood_zone_panel ?? '';
+            $this->has_cdd = $auction->get->has_cdd ?? '';
+            $this->annual_cdd_fee = $auction->get->annual_cdd_fee ?? '';
+            $this->has_special_assessments = $auction->get->has_special_assessments ?? '';
+            $this->special_assessment_amount = $auction->get->special_assessment_amount ?? '';
+            $this->special_assessment_description = $auction->get->special_assessment_description ?? '';
+            $this->has_hoa = $auction->get->has_hoa ?? '';
+            $this->association_type = $auction->get->association_type ?? '';
+            $this->association_type_other = $auction->get->association_type_other ?? '';
+            $this->association_name = $auction->get->association_name ?? '';
+            $this->association_fee_amount = $auction->get->association_fee_amount ?? '';
+            $this->association_fee_frequency = $auction->get->association_fee_frequency ?? '';
+            $this->association_fee_frequency_other = $auction->get->association_fee_frequency_other ?? '';
+            $this->association_approval_required = $auction->get->association_approval_required ?? '';
+            $this->association_approval_process = $auction->get->association_approval_process ?? '';
+            $this->association_application_fee = $auction->get->association_application_fee ?? '';
+            $rawFeeIncludes = $auction->get->association_fee_includes ?? [];
+            $this->association_fee_includes = is_string($rawFeeIncludes) ? json_decode($rawFeeIncludes, true) ?? [] : (array)$rawFeeIncludes;
+            $this->association_fee_includes_other = $auction->get->association_fee_includes_other ?? '';
+            $rawAmenities = $auction->get->association_amenities ?? [];
+            $this->association_amenities = is_string($rawAmenities) ? json_decode($rawAmenities, true) ?? [] : (array)$rawAmenities;
+            $this->association_amenities_other = $auction->get->association_amenities_other ?? '';
+            $this->leasing_restrictions = $auction->get->leasing_restrictions ?? '';
+            $this->min_lease_period = $auction->get->min_lease_period ?? '';
+            $this->min_lease_period_other = $auction->get->min_lease_period_other ?? '';
+            $this->max_leases_per_year = $auction->get->max_leases_per_year ?? '';
+            $this->additional_lease_restrictions = $auction->get->additional_lease_restrictions ?? '';
+            $this->pet_restrictions = $auction->get->pet_restrictions ?? '';
+            $this->pet_restrictions_detail = $auction->get->pet_restrictions_detail ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -2580,6 +2667,45 @@ class SellerOfferListing extends Component
         $auction->saveMeta('home_warranty_amount_details', $this->home_warranty_amount_details);
         $auction->saveMeta('hoa_condo_association_terms', $this->hoa_condo_association_terms);
         $auction->saveMeta('additional_seller_sale_terms', $this->additional_seller_sale_terms);
+
+        // Tax, Legal, HOA & Disclosures tab
+        $auction->saveMeta('parcel_id', $this->parcel_id);
+        $auction->saveMeta('tax_year', $this->tax_year);
+        $auction->saveMeta('annual_property_taxes', $this->stripCommas($this->annual_property_taxes));
+        $auction->saveMeta('additional_parcels', $this->additional_parcels);
+        $auction->saveMeta('total_parcel_count', $this->total_parcel_count);
+        $auction->saveMeta('additional_parcel_ids', $this->additional_parcel_ids);
+        $auction->saveMeta('legal_description', $this->legal_description);
+        $auction->saveMeta('flood_zone_code', $this->flood_zone_code);
+        $auction->saveMeta('flood_zone_code_other', $this->flood_zone_code_other);
+        $auction->saveMeta('flood_insurance_required', $this->flood_insurance_required);
+        $auction->saveMeta('flood_zone_panel', $this->flood_zone_panel);
+        $auction->saveMeta('has_cdd', $this->has_cdd);
+        $auction->saveMeta('annual_cdd_fee', $this->stripCommas($this->annual_cdd_fee));
+        $auction->saveMeta('has_special_assessments', $this->has_special_assessments);
+        $auction->saveMeta('special_assessment_amount', $this->stripCommas($this->special_assessment_amount));
+        $auction->saveMeta('special_assessment_description', $this->special_assessment_description);
+        $auction->saveMeta('has_hoa', $this->has_hoa);
+        $auction->saveMeta('association_type', $this->association_type);
+        $auction->saveMeta('association_type_other', $this->association_type_other);
+        $auction->saveMeta('association_name', $this->association_name);
+        $auction->saveMeta('association_fee_amount', $this->stripCommas($this->association_fee_amount));
+        $auction->saveMeta('association_fee_frequency', $this->association_fee_frequency);
+        $auction->saveMeta('association_fee_frequency_other', $this->association_fee_frequency_other);
+        $auction->saveMeta('association_approval_required', $this->association_approval_required);
+        $auction->saveMeta('association_approval_process', $this->association_approval_process);
+        $auction->saveMeta('association_application_fee', $this->stripCommas($this->association_application_fee));
+        $auction->saveMeta('association_fee_includes', json_encode($this->association_fee_includes));
+        $auction->saveMeta('association_fee_includes_other', $this->association_fee_includes_other);
+        $auction->saveMeta('association_amenities', json_encode($this->association_amenities));
+        $auction->saveMeta('association_amenities_other', $this->association_amenities_other);
+        $auction->saveMeta('leasing_restrictions', $this->leasing_restrictions);
+        $auction->saveMeta('min_lease_period', $this->min_lease_period);
+        $auction->saveMeta('min_lease_period_other', $this->min_lease_period_other);
+        $auction->saveMeta('max_leases_per_year', $this->max_leases_per_year);
+        $auction->saveMeta('additional_lease_restrictions', $this->additional_lease_restrictions);
+        $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
+        $auction->saveMeta('pet_restrictions_detail', $this->pet_restrictions_detail);
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
