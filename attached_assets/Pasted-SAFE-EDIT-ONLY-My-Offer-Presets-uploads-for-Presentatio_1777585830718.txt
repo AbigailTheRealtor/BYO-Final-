@@ -1,0 +1,116 @@
+SAFE EDIT ONLY — My Offer Presets uploads for Presentation + Business Card/Headshot
+
+GOAL:
+In Agent Dashboard → My Offer Presets, add upload fields so Agents can upload:
+1. Presentation file
+2. Business Card / Headshot file
+
+This must be added in addition to the existing link fields. Do NOT remove or rename the existing:
+- Presentation Link
+- Business Card / Headshot Link
+- Review Links
+- Website Links
+- Social Media Links
+
+SCOPE:
+My Offer Presets only.
+Applies to all preset role/property combinations:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+- All property types already supported inside Offer Presets
+
+DO NOT:
+- Delete existing saved data
+- Rename existing database columns
+- Remove existing link fields
+- Change Hire Agent listing creation
+- Change Create Listing / BidYourOffer listing forms
+- Change Limited Service legacy files
+- Change Agent Bids
+- Change Accepted Bid Summary
+- Change dashboards outside My Offer Presets
+- Touch unrelated UI/copy
+
+REQUIRED BEHAVIOR:
+1. Keep current link fields exactly as they are.
+2. Add a file upload input near “Presentation Link”:
+   Label: Presentation Upload
+   Helper text: Upload a presentation, buyer guide, seller guide, tenant guide, landlord guide, PDF, or marketing file.
+3. Add a file upload input near “Business Card / Headshot Link”:
+   Label: Business Card / Headshot Upload
+   Helper text: Upload a business card, headshot, or agent marketing image.
+4. Existing links and new uploads should both be allowed.
+5. User may use a link, an upload, or both.
+6. Existing saved presets must continue loading normally.
+7. Do not overwrite existing uploaded files unless the Agent uploads a new file.
+8. If an upload already exists, show a small “Current file” link or filename below the upload field.
+9. Validation should allow common safe file types:
+   - pdf
+   - jpg
+   - jpeg
+   - png
+   - webp
+   - doc
+   - docx
+   - ppt
+   - pptx
+10. Recommended max size: 10MB per file.
+
+DATABASE SAFETY:
+First audit the existing presets table/model/controller before making schema changes.
+
+If upload columns already exist, reuse them.
+
+If they do not exist, add only these nullable columns to the Agent Offer Presets table:
+- presentation_upload_path nullable string
+- business_card_upload_path nullable string
+
+Do not alter, rename, or drop any existing columns.
+
+BACKEND REQUIREMENTS:
+1. Update the Offer Preset save/update logic to store uploaded files.
+2. Store files under a safe public disk path such as:
+   agent-offer-presets/{agent_id}/
+3. Preserve existing uploaded file path when no new file is uploaded.
+4. Only replace the file path when a new file is uploaded.
+5. Do not delete old files in this task unless the existing app already has a safe file replacement pattern.
+6. Add validation for both new upload fields.
+7. Make sure forms include enctype="multipart/form-data" where needed.
+
+FRONTEND REQUIREMENTS:
+In the “Presentation & Links” section, keep current fields and add:
+
+After Presentation Link:
+- Presentation Upload
+
+After Business Card / Headshot Link:
+- Business Card / Headshot Upload
+
+Use existing form styling/classes so the new fields visually match the page.
+
+AUDIT FIRST:
+Before editing, identify:
+- Blade file(s) for Agent Dashboard → My Offer Presets edit/create form
+- Controller/Livewire component that saves presets
+- Model/table name used for offer presets
+- Existing file upload patterns in the app, if any
+
+Then make the smallest possible edits.
+
+VERIFY:
+After edits, verify:
+1. Existing preset with links still loads.
+2. Saving preset without uploading files does not erase existing links or uploads.
+3. Uploading a Presentation file saves and displays current file.
+4. Uploading a Business Card / Headshot file saves and displays current file.
+5. Buyer preset works.
+6. Seller preset works.
+7. Landlord preset works.
+8. Tenant preset works.
+9. No limited-service files were edited.
+10. No listing creation or accepted summary files were edited.
+
+STOP RULE:
+If the upload storage architecture is unclear, stop after the audit and report exactly which files/columns need to be changed. Do not guess or make broad changes.
