@@ -1091,10 +1091,32 @@
             }, delay || 200);
         }
 
+        var _mlsFieldSelectors = {
+            roof_type:              ['#roof_type_residential', '#roof_type_commercial', '#roof_type_business'],
+            exterior_construction:  ['#exterior_construction_residential', '#exterior_construction_commercial', '#exterior_construction_business'],
+            foundation:             ['#foundation_residential', '#foundation_commercial', '#foundation_business'],
+            heating_and_fuel:       ['#heating_and_fuel_residential', '#heating_and_fuel_commercial', '#heating_and_fuel_business'],
+            air_conditioning:       ['#air_conditioning_residential', '#air_conditioning_commercial', '#air_conditioning_business'],
+            water:                  ['#water_residential', '#water_commercial', '#water_business', '#water_vacant_land'],
+            sewer:                  ['#sewer_residential', '#sewer_commercial', '#sewer_business', '#sewer_vacant_land'],
+            utilities:              ['#utilities_residential', '#utilities_commercial', '#utilities_business', '#utilities_vacant_land'],
+            road_frontage:          ['#road_frontage_commercial', '#road_frontage_vacant_land'],
+            road_surface_type:      ['#road_surface_type_commercial', '#road_surface_type_vacant_land'],
+            electrical_service:     ['#electrical_service_commercial', '#electrical_service_business'],
+            building_features:      ['#building_features'],
+            licenses:               ['#licenses'],
+            sale_includes:          ['#sale_includes'],
+            current_use:            ['#current_use'],
+            current_adjacent_use:   ['#current_adjacent_use'],
+            fences:                 ['#fences'],
+            vegetation:             ['#vegetation'],
+            easements:              ['#easements'],
+        };
+
         function syncAllSelect2BeforeSave() {
             Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
             _s2Timers = {};
-            var fields = {
+            var regularFields = {
                 property_items: '#property_items',
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 appliances: '#appliances',
@@ -1102,31 +1124,20 @@
                 sale_provision: '#sale_provision',
                 offered_financing: '#offered_financing',
                 view_preference: '#view_preference',
-                roof_type: '#roof_type',
-                exterior_construction: '#exterior_construction',
-                foundation: '#foundation',
-                heating_and_fuel: '#heating_and_fuel',
-                air_conditioning: '#air_conditioning',
-                water: '#water',
-                sewer: '#sewer',
-                utilities: '#utilities',
-                road_frontage: '#road_frontage',
-                road_surface_type: '#road_surface_type',
-                electrical_service: '#electrical_service',
-                building_features: '#building_features',
-                licenses: '#licenses',
-                sale_includes: '#sale_includes',
-                current_use: '#current_use',
-                current_adjacent_use: '#current_adjacent_use',
-                fences: '#fences',
-                vegetation: '#vegetation',
-                easements: '#easements',
             };
-            Object.entries(fields).forEach(function([field, selector]) {
+            Object.entries(regularFields).forEach(function([field, selector]) {
                 var el = $(selector);
                 if (el.length && el.hasClass('select2-hidden-accessible')) {
                     @this.set(field, el.val() || []);
                 }
+            });
+            Object.entries(_mlsFieldSelectors).forEach(function([fieldId, selectors]) {
+                selectors.forEach(function(selector) {
+                    var el = $(selector);
+                    if (el.length && el.hasClass('select2-hidden-accessible')) {
+                        @this.set(fieldId, el.val() || []);
+                    }
+                });
             });
         }
 
@@ -1227,15 +1238,16 @@
             applyFinancingVisibility();
         });
 
-        var _mlsMultiSelectIds = ['roof_type','exterior_construction','foundation','heating_and_fuel','air_conditioning','water','sewer','utilities','road_frontage','road_surface_type','electrical_service','building_features','licenses','sale_includes','current_use','current_adjacent_use','fences','vegetation','easements'];
-        _mlsMultiSelectIds.forEach(function(fieldId) {
-            $(document).on('change', '#' + fieldId, function() {
-                var selectedValues = $(this).val() || [];
-                @this.set(fieldId, selectedValues, false);
-                var otherWrapper = document.getElementById('other_' + fieldId + '_wrapper');
-                if (otherWrapper) {
-                    otherWrapper.style.display = selectedValues.includes('Other') ? '' : 'none';
-                }
+        Object.entries(_mlsFieldSelectors).forEach(function([fieldId, selectors]) {
+            selectors.forEach(function(selector) {
+                $(document).on('change', selector, function() {
+                    var selectedValues = $(this).val() || [];
+                    @this.set(fieldId, selectedValues, false);
+                    var otherWrapper = document.getElementById('other_' + this.id + '_wrapper');
+                    if (otherWrapper) {
+                        otherWrapper.style.display = selectedValues.includes('Other') ? '' : 'none';
+                    }
+                });
             });
         });
 
@@ -1262,17 +1274,21 @@
                 { id: 'easements', placeholder: 'Select easement type(s)' },
             ];
             _mlsFields.forEach(function(field) {
-                var $el = $('#' + field.id);
-                if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: field.placeholder, allowClear: true });
-                }
-                if ($el.length) {
-                    var current = $el.val() || [];
-                    var otherWrapper = document.getElementById('other_' + field.id + '_wrapper');
-                    if (otherWrapper) {
-                        otherWrapper.style.display = current.includes('Other') ? '' : 'none';
+                var selectors = _mlsFieldSelectors[field.id] || ['#' + field.id];
+                selectors.forEach(function(selector) {
+                    var $el = $(selector);
+                    if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
+                        $el.select2({ placeholder: field.placeholder, allowClear: true });
                     }
-                }
+                    if ($el.length) {
+                        var current = $el.val() || [];
+                        var elId = selector.substring(1);
+                        var otherWrapper = document.getElementById('other_' + elId + '_wrapper');
+                        if (otherWrapper) {
+                            otherWrapper.style.display = current.includes('Other') ? '' : 'none';
+                        }
+                    }
+                });
             });
         }
 
@@ -1402,7 +1418,7 @@
         });
 
         function rehydrateSelect2MultiFields() {
-            var multiFields = {
+            var regularFields = {
                 '#exchange_item': 'exchange_item',
                 '#non_negotiable_amenities': 'non_negotiable_amenities',
                 '#sale_provision': 'sale_provision',
@@ -1410,36 +1426,28 @@
                 '#view_preference': 'view_preference',
                 '#appliances': 'appliances',
                 '#included_assets': 'business_assets',
-                '#roof_type': 'roof_type',
-                '#exterior_construction': 'exterior_construction',
-                '#foundation': 'foundation',
-                '#heating_and_fuel': 'heating_and_fuel',
-                '#air_conditioning': 'air_conditioning',
-                '#water': 'water',
-                '#sewer': 'sewer',
-                '#utilities': 'utilities',
-                '#road_frontage': 'road_frontage',
-                '#road_surface_type': 'road_surface_type',
-                '#electrical_service': 'electrical_service',
-                '#building_features': 'building_features',
-                '#licenses': 'licenses',
-                '#sale_includes': 'sale_includes',
-                '#current_use': 'current_use',
-                '#current_adjacent_use': 'current_adjacent_use',
-                '#fences': 'fences',
-                '#vegetation': 'vegetation',
-                '#easements': 'easements',
             };
-            Object.keys(multiFields).forEach(function(selector) {
+            Object.keys(regularFields).forEach(function(selector) {
                 var $el = $(selector);
                 if ($el.length && $el.hasClass('select2-hidden-accessible')) {
-                    var prop = multiFields[selector];
+                    var prop = regularFields[selector];
                     var saved = @this.get(prop) || [];
                     if (saved.length > 0) {
                         $el.val(saved).trigger('change.select2');
                         console.log('[DraftLoaded] Rehydrated ' + prop + ':', saved);
                     }
                 }
+            });
+            Object.entries(_mlsFieldSelectors).forEach(function([fieldId, selectors]) {
+                var saved = @this.get(fieldId) || [];
+                if (saved.length === 0) return;
+                selectors.forEach(function(selector) {
+                    var $el = $(selector);
+                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                        $el.val(saved).trigger('change.select2');
+                        console.log('[DraftLoaded] Rehydrated ' + fieldId + ':', saved);
+                    }
+                });
             });
         }
 

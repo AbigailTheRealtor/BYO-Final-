@@ -711,7 +711,7 @@
             <option value="Vacant Land" data-display="Vacant Land">Vacant Land</option>
         </select>
     </div>
-    <span class="error mt-2" id="leasing_space_error"></span>
+    <span class="error mt-2" id="leasing_space_type_error"></span>
 </div>
 
 <div class="form-group mt-3">
@@ -767,7 +767,7 @@
             @endif
         </select>
     </div>
-    <span class="error mt-2" id="leasing_space_error"></span>
+    <span class="error mt-2" id="leasing_space_style_error"></span>
 </div>
 
 <!-- Other Property Style Input -->
@@ -915,7 +915,7 @@
             <input type="number" wire:model="minimum_heated_square" class="form-control has-icon"
                 data-icon="fa-solid fa-ruler" placeholder="Enter heated square footage (e.g., 1000)" required>
         </div>
-        <span class="error mt-2" id="minimum_heated_square_error"></span>
+        <span class="error mt-2" id="minimum_heated_square_legacy_error"></span>
     </div>
 @endif --}}
 
@@ -1572,7 +1572,7 @@
                 <input type="number" wire:model="number_of_unit_other" class="form-control has-icon"
                     data-icon="fa-solid fa-home" placeholder="Enter units type (e.g., 4)">
             </div>
-            <span class="error mt-2" id="number_of_unit_error"></span>
+            <span class="error mt-2" id="number_of_unit_other_error"></span>
         </div>
     @endif
     @if ($number_of_unit && $number_of_unit !== 'Other')
@@ -1586,7 +1586,7 @@
                 <input type="number" wire:model="beds_unit" class="form-control has-icon"
                     data-icon="fa-solid fa-home" placeholder="Enter number of bedrooms (e.g., 2)">
             </div>
-            <span class="error mt-2" id="number_of_unit_error"></span>
+            <span class="error mt-2" id="beds_unit_error"></span>
         </div>
         <div class="form-group">
             <label class="fw-bold">Baths / Unit: </label>
@@ -1598,7 +1598,7 @@
                 <input type="number" wire:model="baths_unit" class="form-control has-icon"
                     data-icon="fa-solid fa-home" placeholder="Enter number of bathrooms (e.g., 1.5)">
             </div>
-            <span class="error mt-2" id="number_of_unit_error"></span>
+            <span class="error mt-2" id="baths_unit_error"></span>
         </div>
 
         <div class="form-group">
@@ -1891,18 +1891,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="roof_type" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
+            <select id="roof_type_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
                 @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="roof_type_error"></span>
+        <span class="error mt-2" id="roof_type_error_residential"></span>
     </div>
-    <div class="form-group" id="other_roof_type_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_roof_type_residential_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_roof_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other roof type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other roof type (e.g., Foam, TPO)">
         </div>
     </div>
 
@@ -1913,18 +1913,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="exterior_construction" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+            <select id="exterior_construction_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
                 @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="exterior_construction_error"></span>
+        <span class="error mt-2" id="exterior_construction_error_residential"></span>
     </div>
-    <div class="form-group" id="other_exterior_construction_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_exterior_construction_residential_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_exterior_construction" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other exterior construction">
+                data-icon="fa-solid fa-pen" placeholder="Enter other exterior construction (e.g., Fiber Cement, SIPs)">
         </div>
     </div>
 
@@ -1935,18 +1935,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="foundation" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
+            <select id="foundation_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
                 @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="foundation_error"></span>
+        <span class="error mt-2" id="foundation_error_residential"></span>
     </div>
-    <div class="form-group" id="other_foundation_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_foundation_residential_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other foundation type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other foundation type (e.g., Helical Pier, Pressure-Treated Wood)">
         </div>
     </div>
 
@@ -1957,18 +1957,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="heating_and_fuel" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
+            <select id="heating_and_fuel_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
                 @foreach (['Baseboard','Central','Electric','Exhaust Fans','Gas','Heat Pump','Heat Recovery Unit','Natural Gas','Oil','Partial','Propane','Radiant Ceiling','Reverse Cycle','Solar','Space Heater','Wall Furnace','Wall Units / Window Unit','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($heating_and_fuel) && in_array($_opt, $heating_and_fuel) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="heating_and_fuel_error"></span>
+        <span class="error mt-2" id="heating_and_fuel_error_residential"></span>
     </div>
-    <div class="form-group" id="other_heating_and_fuel_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_heating_and_fuel_residential_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_heating_and_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other heating/fuel type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other heating/fuel type (e.g., Wood Pellet, Geothermal)">
         </div>
     </div>
 
@@ -1979,18 +1979,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="air_conditioning" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
+            <select id="air_conditioning_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
                 @foreach (['Central Air','Humidity Control','Mini-Split Unit(s)','Wall/Window Unit(s)','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($air_conditioning) && in_array($_opt, $air_conditioning) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="air_conditioning_error"></span>
+        <span class="error mt-2" id="air_conditioning_error_residential"></span>
     </div>
-    <div class="form-group" id="other_air_conditioning_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_air_conditioning_residential_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other air conditioning type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
         </div>
     </div>
 
@@ -2001,18 +2001,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="water" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+            <select id="water_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="water_error"></span>
+        <span class="error mt-2" id="water_error_residential"></span>
     </div>
-    <div class="form-group" id="other_water_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_water_residential_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other water source">
+                data-icon="fa-solid fa-pen" placeholder="Enter other water source (e.g., Rainwater Collection, Shared Well)">
         </div>
     </div>
 
@@ -2023,18 +2023,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="sewer" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+            <select id="sewer_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="sewer_error"></span>
+        <span class="error mt-2" id="sewer_error_residential"></span>
     </div>
-    <div class="form-group" id="other_sewer_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_sewer_residential_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other sewer type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other sewer type (e.g., Cesspool, Composting)">
         </div>
     </div>
 
@@ -2045,18 +2045,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="utilities" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+            <select id="utilities_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
                 @foreach (['BB/HS Internet Available','Cable Available','Cable Connected','Electricity Available','Electricity Connected','Fiber Optics','Fire Hydrant','Mini Sewer','Natural Gas Available','Natural Gas Connected','Phone Available','Private','Propane','Public','Sewer Available','Sewer Connected','Solar','Sprinkler Meter','Sprinkler Recycled','Sprinkler Well','Street Lights','Underground Utilities','Water - Multiple Meters','Water Available','Water Connected','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="utilities_error"></span>
+        <span class="error mt-2" id="utilities_error_residential"></span>
     </div>
-    <div class="form-group" id="other_utilities_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_utilities_residential_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other utility">
+                data-icon="fa-solid fa-pen" placeholder="Enter other utility (e.g., Steam, Geothermal)">
         </div>
     </div>
 
@@ -2104,7 +2104,7 @@
             <input type="number" wire:model.defer="year_built" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar" placeholder="Enter year built (e.g., 1998)" min="1800" max="2100">
         </div>
-        <span class="error mt-2" id="year_built_error"></span>
+        <span class="error mt-2" id="year_built_error_residential"></span>
     </div>
 
     <div class="form-group">
@@ -2117,7 +2117,7 @@
             <input type="text" wire:model.defer="zoning" class="form-control has-icon"
                 data-icon="fa-solid fa-map" placeholder="Enter zoning code (e.g., C-1, B-2)">
         </div>
-        <span class="error mt-2" id="zoning_error"></span>
+        <span class="error mt-2" id="zoning_error_residential"></span>
     </div>
 
     <div class="form-group" wire:ignore wire:key="roof-type-comm-{{ $property_type }}">
@@ -2127,18 +2127,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="roof_type" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
+            <select id="roof_type_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
                 @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="roof_type_error"></span>
+        <span class="error mt-2" id="roof_type_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_roof_type_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_roof_type_commercial_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_roof_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other roof type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other roof type (e.g., Foam, TPO)">
         </div>
     </div>
 
@@ -2149,18 +2149,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="exterior_construction" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+            <select id="exterior_construction_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
                 @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="exterior_construction_error"></span>
+        <span class="error mt-2" id="exterior_construction_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_exterior_construction_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_exterior_construction_commercial_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_exterior_construction" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other exterior construction">
+                data-icon="fa-solid fa-pen" placeholder="Enter other exterior construction (e.g., Fiber Cement, SIPs)">
         </div>
     </div>
 
@@ -2171,18 +2171,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="foundation" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
+            <select id="foundation_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
                 @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="foundation_error"></span>
+        <span class="error mt-2" id="foundation_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_foundation_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_foundation_commercial_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other foundation type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other foundation type (e.g., Helical Pier, Pressure-Treated Wood)">
         </div>
     </div>
 
@@ -2193,18 +2193,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="road_frontage" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+            <select id="road_frontage_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
                 @foreach (['Access Road','Alley','Business District','City Street','County Road','Divided Highway','Easement','Highway','Interchange','Interstate','Main Thoroughfare','Private Road','Rail','State Road','Turn Lanes','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_frontage) && in_array($_opt, $road_frontage) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="road_frontage_error"></span>
+        <span class="error mt-2" id="road_frontage_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_road_frontage_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_road_frontage_commercial_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_frontage" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other road frontage type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other road frontage type (e.g., Cul-de-Sac, Service Road)">
         </div>
     </div>
 
@@ -2215,18 +2215,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="road_surface_type" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+            <select id="road_surface_type_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
                 @foreach (['Asphalt','Brick','Chip And Seal','Concrete','Dirt','Gravel','Limerock','Paved','Unimproved','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_surface_type) && in_array($_opt, $road_surface_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="road_surface_type_error"></span>
+        <span class="error mt-2" id="road_surface_type_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_road_surface_type_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_road_surface_type_commercial_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other road surface type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other road surface type (e.g., Cobblestone, Shell)">
         </div>
     </div>
 
@@ -2237,18 +2237,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="utilities" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+            <select id="utilities_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
                 @foreach (['BB/HS Internet Capable','Electrical Nearby','Electricity Available','Emergency Power','Natural Gas Available','Phone Available','Private','Public','Sewer Nearby','Solar','Telephone Nearby','Underground Utilities','Water Connected','Water Nearby','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="utilities_error"></span>
+        <span class="error mt-2" id="utilities_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_utilities_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_utilities_commercial_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other utility">
+                data-icon="fa-solid fa-pen" placeholder="Enter other utility (e.g., Steam, Geothermal)">
         </div>
     </div>
 
@@ -2259,18 +2259,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="water" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+            <select id="water_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="water_error"></span>
+        <span class="error mt-2" id="water_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_water_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_water_commercial_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other water source">
+                data-icon="fa-solid fa-pen" placeholder="Enter other water source (e.g., Rainwater Collection, Shared Well)">
         </div>
     </div>
 
@@ -2281,18 +2281,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="sewer" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+            <select id="sewer_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="sewer_error"></span>
+        <span class="error mt-2" id="sewer_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_sewer_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_sewer_commercial_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other sewer type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other sewer type (e.g., Cesspool, Composting)">
         </div>
     </div>
 
@@ -2303,18 +2303,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="heating_and_fuel" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
+            <select id="heating_and_fuel_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
                 @foreach (['Baseboard','Central','Central Building','Central Individual','Electric','Exhaust Fans','Gas','Heat Pump','Heat Recovery Unit','Natural Gas','Oil','Partial','Propane','Radiant Ceiling','Reverse Cycle','Solar','Space Heater','Wall Furnace','Wall Units / Window Unit','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($heating_and_fuel) && in_array($_opt, $heating_and_fuel) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="heating_and_fuel_error"></span>
+        <span class="error mt-2" id="heating_and_fuel_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_heating_and_fuel_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_heating_and_fuel_commercial_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_heating_and_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other heating/fuel type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other heating/fuel type (e.g., Wood Pellet, Geothermal)">
         </div>
     </div>
 
@@ -2325,18 +2325,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="air_conditioning" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
+            <select id="air_conditioning_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
                 @foreach (['A/C Office Only','Central Air','Humidity Control','Mini-Split Unit(s)','Wall/Window Unit(s)','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($air_conditioning) && in_array($_opt, $air_conditioning) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="air_conditioning_error"></span>
+        <span class="error mt-2" id="air_conditioning_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_air_conditioning_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_air_conditioning_commercial_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other air conditioning type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
         </div>
     </div>
 
@@ -2347,18 +2347,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="electrical_service" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug input-icon2" multiple>
+            <select id="electrical_service_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug input-icon2" multiple>
                 @foreach (['1 Phase (3-Wire)','3 Phase','110 Volts','220 Volts','440 Volts','Separate Meter','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($electrical_service) && in_array($_opt, $electrical_service) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="electrical_service_error"></span>
+        <span class="error mt-2" id="electrical_service_error_commercial"></span>
     </div>
-    <div class="form-group" id="other_electrical_service_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_electrical_service_commercial_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other electrical service">
+                data-icon="fa-solid fa-pen" placeholder="Enter other electrical service (e.g., 600 Volts, DC Power)">
         </div>
     </div>
 
@@ -2397,7 +2397,7 @@
     <div class="form-group" id="other_building_features_wrapper" style="{{ is_array($building_features) && in_array('Other', $building_features) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_building_features" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other building features">
+                data-icon="fa-solid fa-pen" placeholder="Enter other building features (e.g., Skylight, Automated Gate)">
         </div>
     </div>
 
@@ -2449,7 +2449,7 @@
     <div class="form-group" id="other_licenses_wrapper" style="{{ is_array($licenses) && in_array('Other', $licenses) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_licenses" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other license">
+                data-icon="fa-solid fa-pen" placeholder="Enter other license (e.g., Catering, Entertainment)">
         </div>
     </div>
 
@@ -2471,7 +2471,7 @@
     <div class="form-group" id="other_sale_includes_wrapper" style="{{ is_array($sale_includes) && in_array('Other', $sale_includes) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sale_includes" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other items included in sale">
+                data-icon="fa-solid fa-pen" placeholder="Enter other items included in sale (e.g., Domain Name, Social Media Accounts)">
         </div>
     </div>
 
@@ -2485,7 +2485,7 @@
             <input type="number" wire:model.defer="year_built" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar" placeholder="Enter year built (e.g., 1998)" min="1800" max="2100">
         </div>
-        <span class="error mt-2" id="year_built_error"></span>
+        <span class="error mt-2" id="year_built_error_business"></span>
     </div>
 
     <div class="form-group">
@@ -2498,7 +2498,7 @@
             <input type="text" wire:model.defer="zoning" class="form-control has-icon"
                 data-icon="fa-solid fa-map" placeholder="Enter zoning code (e.g., C-1, B-2)">
         </div>
-        <span class="error mt-2" id="zoning_error"></span>
+        <span class="error mt-2" id="zoning_error_business"></span>
     </div>
 
     <div class="form-group" wire:ignore wire:key="roof-type-biz-{{ $property_type }}">
@@ -2508,18 +2508,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="roof_type" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
+            <select id="roof_type_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
                 @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="roof_type_error"></span>
+        <span class="error mt-2" id="roof_type_error_business"></span>
     </div>
-    <div class="form-group" id="other_roof_type_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_roof_type_business_wrapper" style="{{ is_array($roof_type) && in_array('Other', $roof_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_roof_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other roof type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other roof type (e.g., Foam, TPO)">
         </div>
     </div>
 
@@ -2530,18 +2530,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="exterior_construction" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+            <select id="exterior_construction_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
                 @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="exterior_construction_error"></span>
+        <span class="error mt-2" id="exterior_construction_error_business"></span>
     </div>
-    <div class="form-group" id="other_exterior_construction_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_exterior_construction_business_wrapper" style="{{ is_array($exterior_construction) && in_array('Other', $exterior_construction) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_exterior_construction" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other exterior construction">
+                data-icon="fa-solid fa-pen" placeholder="Enter other exterior construction (e.g., Fiber Cement, SIPs)">
         </div>
     </div>
 
@@ -2552,18 +2552,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="foundation" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
+            <select id="foundation_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
                 @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="foundation_error"></span>
+        <span class="error mt-2" id="foundation_error_business"></span>
     </div>
-    <div class="form-group" id="other_foundation_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_foundation_business_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other foundation type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other foundation type (e.g., Helical Pier, Pressure-Treated Wood)">
         </div>
     </div>
 
@@ -2574,18 +2574,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="utilities" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+            <select id="utilities_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
                 @foreach (['BB/HS Internet Available','Cable Available','Cable Connected','Electricity Available','Electricity Connected','Fiber Optics','Fire Hydrant','Mini Sewer','Natural Gas Available','Natural Gas Connected','Phone Available','Private','Propane','Public','Sewer Available','Sewer Connected','Solar','Sprinkler Meter','Sprinkler Recycled','Sprinkler Well','Street Lights','Underground Utilities','Water - Multiple Meters','Water Available','Water Connected','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="utilities_error"></span>
+        <span class="error mt-2" id="utilities_error_business"></span>
     </div>
-    <div class="form-group" id="other_utilities_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_utilities_business_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other utility">
+                data-icon="fa-solid fa-pen" placeholder="Enter other utility (e.g., Steam, Geothermal)">
         </div>
     </div>
 
@@ -2596,18 +2596,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="water" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+            <select id="water_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="water_error"></span>
+        <span class="error mt-2" id="water_error_business"></span>
     </div>
-    <div class="form-group" id="other_water_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_water_business_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other water source">
+                data-icon="fa-solid fa-pen" placeholder="Enter other water source (e.g., Rainwater Collection, Shared Well)">
         </div>
     </div>
 
@@ -2618,18 +2618,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="sewer" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+            <select id="sewer_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="sewer_error"></span>
+        <span class="error mt-2" id="sewer_error_business"></span>
     </div>
-    <div class="form-group" id="other_sewer_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_sewer_business_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other sewer type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other sewer type (e.g., Cesspool, Composting)">
         </div>
     </div>
 
@@ -2640,18 +2640,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="heating_and_fuel" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
+            <select id="heating_and_fuel_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
                 @foreach (['Baseboard','Central','Electric','Exhaust Fans','Gas','Heat Pump','Heat Recovery Unit','Natural Gas','Oil','Partial','Propane','Radiant Ceiling','Reverse Cycle','Solar','Space Heater','Wall Furnace','Wall Units / Window Unit','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($heating_and_fuel) && in_array($_opt, $heating_and_fuel) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="heating_and_fuel_error"></span>
+        <span class="error mt-2" id="heating_and_fuel_error_business"></span>
     </div>
-    <div class="form-group" id="other_heating_and_fuel_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_heating_and_fuel_business_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_heating_and_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other heating/fuel type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other heating/fuel type (e.g., Wood Pellet, Geothermal)">
         </div>
     </div>
 
@@ -2662,18 +2662,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="air_conditioning" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
+            <select id="air_conditioning_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
                 @foreach (['Central Air','Humidity Control','Mini-Split Unit(s)','Wall/Window Unit(s)','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($air_conditioning) && in_array($_opt, $air_conditioning) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="air_conditioning_error"></span>
+        <span class="error mt-2" id="air_conditioning_error_business"></span>
     </div>
-    <div class="form-group" id="other_air_conditioning_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_air_conditioning_business_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other air conditioning type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
         </div>
     </div>
 
@@ -2684,18 +2684,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="electrical_service" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug input-icon2" multiple>
+            <select id="electrical_service_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug input-icon2" multiple>
                 @foreach (['1 Phase (3-Wire)','3 Phase','110 Volts','220 Volts','440 Volts','Separate Meter','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($electrical_service) && in_array($_opt, $electrical_service) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="electrical_service_error"></span>
+        <span class="error mt-2" id="electrical_service_error_business"></span>
     </div>
-    <div class="form-group" id="other_electrical_service_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_electrical_service_business_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other electrical service">
+                data-icon="fa-solid fa-pen" placeholder="Enter other electrical service (e.g., 600 Volts, DC Power)">
         </div>
     </div>
 
@@ -2721,7 +2721,7 @@
     <div class="form-group" id="other_current_use_wrapper" style="{{ is_array($current_use) && in_array('Other', $current_use) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_current_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other current use">
+                data-icon="fa-solid fa-pen" placeholder="Enter other current use (e.g., Hunting, Camping)">
         </div>
     </div>
 
@@ -2735,7 +2735,7 @@
             <input type="text" wire:model.defer="zoning" class="form-control has-icon"
                 data-icon="fa-solid fa-map" placeholder="Enter zoning code (e.g., A-1, R-1)">
         </div>
-        <span class="error mt-2" id="zoning_error"></span>
+        <span class="error mt-2" id="zoning_error_vacant_land"></span>
     </div>
 
     <div class="form-group">
@@ -2771,18 +2771,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="road_frontage" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+            <select id="road_frontage_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
                 @foreach (['Access Road','Alley','Business District','City Street','County Road','Divided Highway','Easement','Highway','Interchange','Interstate','Main Thoroughfare','Private Road','Rail','State Road','Turn Lanes','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_frontage) && in_array($_opt, $road_frontage) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="road_frontage_error"></span>
+        <span class="error mt-2" id="road_frontage_error_vacant_land"></span>
     </div>
-    <div class="form-group" id="other_road_frontage_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_road_frontage_vacant_land_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_frontage" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other road frontage type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other road frontage type (e.g., Cul-de-Sac, Service Road)">
         </div>
     </div>
 
@@ -2793,18 +2793,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="road_surface_type" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+            <select id="road_surface_type_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
                 @foreach (['Asphalt','Brick','Chip And Seal','Concrete','Dirt','Gravel','Limerock','Paved','Unimproved','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_surface_type) && in_array($_opt, $road_surface_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="road_surface_type_error"></span>
+        <span class="error mt-2" id="road_surface_type_error_vacant_land"></span>
     </div>
-    <div class="form-group" id="other_road_surface_type_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_road_surface_type_vacant_land_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other road surface type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other road surface type (e.g., Cobblestone, Shell)">
         </div>
     </div>
 
@@ -2815,18 +2815,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="utilities" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+            <select id="utilities_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
                 @foreach (['BB/HS Internet Available','BB/HS Internet Capable','Cable Available','Cable Connected','Electrical Nearby','Electricity Available','Fiber Optics','Fire Hydrant','Mini Sewer','Natural Gas Available','Phone Available','Private','Propane','Public','Sewer Available','Sewer Connected','Sewer Nearby','Sprinkler Meter','Sprinkler Recycled','Sprinkler Well','Street Lights','Telephone Nearby','Underground Utilities','Utility Pole','Water - Multiple Meters','Water Available','Water Connected','Water Nearby','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="utilities_error"></span>
+        <span class="error mt-2" id="utilities_error_vacant_land"></span>
     </div>
-    <div class="form-group" id="other_utilities_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_utilities_vacant_land_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other utility">
+                data-icon="fa-solid fa-pen" placeholder="Enter other utility (e.g., Steam, Geothermal)">
         </div>
     </div>
 
@@ -2837,18 +2837,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="water" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+            <select id="water_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="water_error"></span>
+        <span class="error mt-2" id="water_error_vacant_land"></span>
     </div>
-    <div class="form-group" id="other_water_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_water_vacant_land_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other water source">
+                data-icon="fa-solid fa-pen" placeholder="Enter other water source (e.g., Rainwater Collection, Shared Well)">
         </div>
     </div>
 
@@ -2859,18 +2859,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <select id="sewer" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+            <select id="sewer_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
             </select>
         </div>
-        <span class="error mt-2" id="sewer_error"></span>
+        <span class="error mt-2" id="sewer_error_vacant_land"></span>
     </div>
-    <div class="form-group" id="other_sewer_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
+    <div class="form-group" id="other_sewer_vacant_land_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other sewer type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other sewer type (e.g., Cesspool, Composting)">
         </div>
     </div>
 
@@ -2918,7 +2918,7 @@
     <div class="form-group" id="other_current_adjacent_use_wrapper" style="{{ is_array($current_adjacent_use) && in_array('Other', $current_adjacent_use) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_current_adjacent_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other adjacent use">
+                data-icon="fa-solid fa-pen" placeholder="Enter other adjacent use (e.g., Conservation Land, Nature Preserve)">
         </div>
     </div>
 
@@ -2940,7 +2940,7 @@
     <div class="form-group" id="other_fences_wrapper" style="{{ is_array($fences) && in_array('Other', $fences) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_fences" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other fence type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other fence type (e.g., Electric, Invisible)">
         </div>
     </div>
 
@@ -2962,7 +2962,7 @@
     <div class="form-group" id="other_vegetation_wrapper" style="{{ is_array($vegetation) && in_array('Other', $vegetation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_vegetation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other vegetation type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other vegetation type (e.g., Citrus Grove, Vineyard)">
         </div>
     </div>
 
@@ -3000,7 +3000,7 @@
     <div class="form-group" id="other_easements_wrapper" style="{{ is_array($easements) && in_array('Other', $easements) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_easements" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Please specify other easement type">
+                data-icon="fa-solid fa-pen" placeholder="Enter other easement type (e.g., Drainage, Mineral Rights)">
         </div>
     </div>
 
