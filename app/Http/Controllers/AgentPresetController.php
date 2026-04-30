@@ -549,17 +549,38 @@ class AgentPresetController extends Controller
             return back()->withErrors(['avatar' => 'Unsupported image format. Please upload a JPEG, PNG, GIF, or WebP file.']);
         }
 
-        $filename = 'agent_' . $user->id . '_' . time() . '.' . $extension;
+        $filename = 'agent_' . $user->id . '_' . \Illuminate\Support\Str::uuid() . '.' . $extension;
         $destDir  = public_path('images/avatar');
 
         if (!is_dir($destDir)) {
             mkdir($destDir, 0775, true);
         }
 
+        $oldAvatar = $user->avatar;
+
         $file->move($destDir, $filename);
 
+        // Persist the new avatar first; only delete the old file after a successful save
+        // so a save failure never leaves the database pointing at a deleted file.
         $user->avatar = $filename;
         $user->save();
+
+        // Match all known app-generated avatar filename formats (whitelist):
+        //   DashboardController  → {uuid}.{ext}
+        //   AgentPresetController (new) → agent_{id}_{uuid}.{ext}
+        //   AgentPresetController (legacy) → agent_{id}_{timestamp}.{ext}
+        $uploadedAvatarPattern = '/^(agent_\d+_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\d{9,11})|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.(jpg|jpeg|png|gif|webp)$/i';
+
+        if (
+            $oldAvatar
+            && $oldAvatar !== $filename
+            && preg_match($uploadedAvatarPattern, $oldAvatar)
+        ) {
+            $oldPath = $destDir . DIRECTORY_SEPARATOR . basename($oldAvatar);
+            if (file_exists($oldPath) && !unlink($oldPath)) {
+                \Illuminate\Support\Facades\Log::warning('Failed to delete old avatar file', ['path' => $oldPath]);
+            }
+        }
 
         return redirect()
             ->route('agent.presets.index')
