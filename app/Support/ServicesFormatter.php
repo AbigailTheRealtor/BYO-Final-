@@ -86,6 +86,48 @@ class ServicesFormatter
         return $map[$propertyType] ?? 'buyer_agent.residential';
     }
 
+    public static function keyForSellerAgent(string $propertyType): string
+    {
+        $map = [
+            'Residential' => 'seller_agent.residential',
+            'Income' => 'seller_agent.income',
+            'Commercial' => 'seller_agent.commercial',
+            'Business' => 'seller_agent.business',
+            'Vacant Land' => 'seller_agent.vacant_land',
+        ];
+
+        return $map[$propertyType] ?? 'seller_agent.residential';
+    }
+
+    public static function keyForLandlordAgent(string $propertyType): string
+    {
+        $map = [
+            'Residential' => 'landlord_agent.residential',
+            'Commercial' => 'landlord_agent.commercial',
+        ];
+
+        return $map[$propertyType] ?? 'landlord_agent.residential';
+    }
+
+    public static function keyForTenantAgent(string $propertyType): string
+    {
+        $map = [
+            'Residential' => 'tenant_agent.residential',
+            'Commercial' => 'tenant_agent.commercial',
+        ];
+
+        return $map[$propertyType] ?? 'tenant_agent.residential';
+    }
+
+    /**
+     * Return the full category => [services] catalog for the given flow key.
+     * Used by the preset editor to render grouped checkboxes.
+     */
+    public static function groupedCatalog(string $flowKey): array
+    {
+        return self::getCanonicalOrder($flowKey);
+    }
+
     protected static function getCanonicalOrder(string $flowKey): array
     {
         $parts = explode('.', $flowKey);
@@ -93,8 +135,20 @@ class ServicesFormatter
             return [];
         }
 
-        $config = config('buyer_services_order');
-        
+        $configMap = [
+            'buyer_agent'    => 'buyer_services_order',
+            'seller_agent'   => 'seller_services_order',
+            'landlord_agent' => 'landlord_services_order',
+            'tenant_agent'   => 'tenant_services_order',
+        ];
+
+        $configName = $configMap[$parts[0]] ?? null;
+        if (!$configName) {
+            return [];
+        }
+
+        $config = config($configName);
+
         if (!$config) {
             return [];
         }

@@ -6,7 +6,7 @@
         <label class="fw-bold d-flex align-items-center">
             Payment Timing for Broker Fees:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker’s fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or “Other” to define a custom arrangement.">
+                title="Select when the Broker's fee will be paid. Options include: deducting from rent collected, payment after lease execution, payment after the rent due date, or &quot;Other&quot; to define a custom arrangement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -65,7 +65,7 @@
         <label class="fw-bold d-flex align-items-center">
             Payment Timing for Broker Fees:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select when the Broker’s fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or “Other” to define a custom arrangement.">
+                title="Select when the Broker's fee will be paid. Options include: full payment upon execution of the lease, sales contract, or other transfer agreement; 50% upon execution with the remaining 50% due at commencement of the agreement; 50% upon execution with the remaining 50% due upon occupancy of the premises; or &quot;Other&quot; to define a custom arrangement.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
@@ -84,47 +84,7 @@
         </div>
 
         <div class="mt-3">
-            @if ($broker_fee_timing === 'split_payment dumy')
-                <div class="mb-4">
-                    <label class="form-label">Remaining 50% due upon:</label>
-                    <div class="input-cover">
-
-                        <select wire:model.lazy="split_payment_due" class="form-control has-icon"
-                            data-icon="fa-solid fa-percent">
-                            <option value="">Select </option>
-                            <option
-                                value="Full amount upon execution of lease, sales contract, or other transfer agreement">
-                                Full amount upon execution of lease, sales contract, or other transfer agreement
-                            </option>
-                            <option value="50% due upon execution, 50% due upon commencement of agreement">50% due upon
-                                execution, 50% due upon commencement of agreement</option>
-                            <option value="50% due upon execution, 50% due uponoccupancy of premises">50% due upon
-                                execution, 50% due uponoccupancy of premises</option>
-                            <option value="Other">Other</option>
-                        </select>
-
-                    </div>
-                </div>
-
-                @if ($split_payment_due === 'Other')
-                    <div class="input-group mb-3">
-                        <input type="text" wire:model.lazy="split_payment_due_other" class="form-control"
-                            placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month’s rent)">
-                    </div>
-                @endif
-
-                <div class="mb-3">
-                    {{-- <label class="form-label">Calendar Days to Pay Second Installment After Due Event:</label> --}}
-                    <div class="input-group">
-                        <span class="input-group-text">#</span>
-                        <input type="number" wire:model.lazy="broker_fee_days_after_due_event" class="form-control"
-                            placeholder="Enter number of calendar days (e.g., 5)">
-                        @error('broker_fee_days_after_due_event')
-                            <span class="text-danger small">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </div>
-            @elseif ($broker_fee_timing === 'Other')
+            @if ($broker_fee_timing === 'Other')
                 <div class="input-group">
                     <input type="text" wire:model.lazy="broker_fee_timing_other" class="form-control"
                         placeholder="Describe payment arrangement (e.g., Broker to be paid 25% upon lease execution, 25% upon tenant move-in, and 50% upon first month's rent payment)">

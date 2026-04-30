@@ -83,6 +83,17 @@
     @media (min-width: 640px) {
         .services-grid { grid-template-columns: 1fr 1fr; }
     }
+    .services-category-header {
+        grid-column: 1 / -1;
+        font-weight: 700;
+        font-size: .82rem;
+        letter-spacing: .02em;
+        color: #34465c;
+        padding: .45rem .1rem .1rem;
+        border-bottom: 1px solid #d0dce8;
+        margin-top: .5rem;
+    }
+    .services-category-header:first-child { margin-top: 0; }
     .service-item {
         background: #f8fafc;
         border: 1px solid #a8bfcf;
@@ -311,19 +322,80 @@
                     </span>
                 </div>
 
+                @php
+                    $presetFlowKey      = $role . '_agent.' . $propertyType;
+                    $groupedCatalog     = \App\Support\ServicesFormatter::groupedCatalog($presetFlowKey);
+                    $normPreset         = fn($s) => mb_strtolower(trim(str_replace(
+                        ["\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}"],
+                        ["'",        "'",        '"',        '"'],
+                        (string)$s
+                    )));
+                    // Build normalized lookup: catalog flat strings → canonical
+                    $flatNormToCanon = [];
+                    foreach ($services as $svc) {
+                        $flatNormToCanon[$normPreset($svc)] = $svc;
+                    }
+                    // Build normalized selected map
+                    $selectedNormSet = [];
+                    foreach ($selectedServices as $ss) {
+                        $selectedNormSet[$normPreset($ss)] = true;
+                    }
+                    // Build grouped render list using flat catalog strings (preserves saved values)
+                    $groupedPresetRender = [];
+                    $usedNorms = [];
+                    foreach ($groupedCatalog as $catLabel => $catSvcs) {
+                        $row = [];
+                        foreach ($catSvcs as $cfgSvc) {
+                            $norm   = $normPreset($cfgSvc);
+                            $canon  = $flatNormToCanon[$norm] ?? $cfgSvc;
+                            $row[]  = $canon;
+                            $usedNorms[$norm] = true;
+                        }
+                        if (!empty($row)) {
+                            $groupedPresetRender[$catLabel] = $row;
+                        }
+                    }
+                    // Orphan services: in flat catalog but absent from config (safety net)
+                    $orphans = [];
+                    foreach ($services as $svc) {
+                        if (!isset($usedNorms[$normPreset($svc)])) {
+                            $orphans[] = $svc;
+                        }
+                    }
+                    if (!empty($orphans)) {
+                        $groupedPresetRender['✍️ Additional Services'] = $orphans;
+                    }
+                @endphp
+
                 <div class="services-grid" id="services-grid">
-                    @forelse ($services as $service)
-                        @php $checked = in_array($service, $selectedServices); @endphp
-                        <label class="service-item {{ $checked ? 'checked' : '' }}">
-                            <input type="checkbox"
-                                   name="services[]"
-                                   value="{{ $service }}"
-                                   {{ $checked ? 'checked' : '' }}>
-                            <span>{{ $service }}</span>
-                        </label>
-                    @empty
+                    @if (!empty($groupedPresetRender))
+                        @foreach ($groupedPresetRender as $catLabel => $catServices)
+                            <div class="services-category-header">{{ $catLabel }}</div>
+                            @foreach ($catServices as $service)
+                                @php $checked = isset($selectedNormSet[$normPreset($service)]); @endphp
+                                <label class="service-item {{ $checked ? 'checked' : '' }}">
+                                    <input type="checkbox"
+                                           name="services[]"
+                                           value="{{ $service }}"
+                                           {{ $checked ? 'checked' : '' }}>
+                                    <span>{{ $service }}</span>
+                                </label>
+                            @endforeach
+                        @endforeach
+                    @elseif (!empty($services))
+                        @foreach ($services as $service)
+                            @php $checked = in_array($service, $selectedServices); @endphp
+                            <label class="service-item {{ $checked ? 'checked' : '' }}">
+                                <input type="checkbox"
+                                       name="services[]"
+                                       value="{{ $service }}"
+                                       {{ $checked ? 'checked' : '' }}>
+                                <span>{{ $service }}</span>
+                            </label>
+                        @endforeach
+                    @else
                         <p class="text-muted fst-italic">No services available for this combination.</p>
-                    @endforelse
+                    @endif
                 </div>
 
                 {{-- ── ADDITIONAL / CUSTOM SERVICES ────────────────────────────── --}}

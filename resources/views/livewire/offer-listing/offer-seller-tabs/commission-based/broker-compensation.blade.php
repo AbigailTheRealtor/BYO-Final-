@@ -365,13 +365,6 @@ $safeKey = function(...$parts) {
                     </div>
                 </div>
             @endif
-        @elseif($seller_leasing_fee_type === 'Percentage of Each Rental Period')
-            <div class="mt-3">
-                <div class="input-group"> <input type="number" wire:model="seller_leasing_each_rental"
-                        class="form-control" placeholder="Enter percentage of each rental period (e.g., 10)">
-                    <span class="input-group-text">%</span>
-                </div>
-            </div>
         @elseif($seller_leasing_fee_type === 'Percentage of Month\'s Rent')
             {{-- Commercial/Business Month's Rent option --}}
             <div class="mt-3">
