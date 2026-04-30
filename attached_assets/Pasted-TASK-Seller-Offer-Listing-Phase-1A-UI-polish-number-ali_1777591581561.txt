@@ -1,0 +1,230 @@
+TASK: Seller Offer Listing Phase 1A UI polish — number alignment, placeholder consistency, input sizing, and multi-select format
+
+GOAL:
+Polish the new “Tax, Legal, HOA & Disclosures” tab and fix existing Sale Terms number/currency input alignment so all fields match the platform’s existing input format.
+
+SCOPE:
+- Agent Dashboard
+- BidYourOffer / Offer Listings
+- Create Seller Listing ONLY
+- Full-service / commission-based Seller flow ONLY
+
+FILES LIKELY INVOLVED:
+- SellerOfferListing.php
+- tax-legal-hoa-disclosures.blade.php
+- seller-terms.blade.php
+- any shared input wrapper/component used by Seller Offer Listing currency/number fields
+
+DO NOT:
+- Do not edit Landlord, Buyer, Tenant
+- Do not edit Hire Agent listings
+- Do not edit Limited Service / legacy files
+- Do not edit Agent Bids, counters, summaries, or presets
+- Do not change database schema
+- Do not create migrations
+- Do not rename wire:model properties
+- Do not change save/load logic unless required for UI format preservation
+- Do not change the meaning/options of fields
+
+ISSUES TO FIX:
+
+1. Number/currency input text alignment
+Current issue:
+Some number/currency inputs have extra left padding as if an icon should be there, causing the typed number and placeholder to start too far to the right.
+
+Fix:
+- For any plain number input without an icon, text must align far left like normal text input.
+- Do not reserve icon spacing unless there is a visible icon or $ prefix.
+- Currency fields with a visible $ prefix should align consistently after the $ prefix.
+- Tax Year should NOT show a calendar icon unless it is truly a date picker.
+- If Tax Year is a plain year field, remove the calendar icon spacing/style and make it a normal text/number-style input.
+
+Apply to:
+Tax, Legal, HOA & Disclosures tab:
+- Tax Year
+- Annual Property Taxes
+- Total Parcel Count
+- Annual CDD Fee
+- Special Assessment Amount
+- Association Fee Amount
+- Association Application Fee
+- Max Leases Per Year
+
+Sale Terms tab:
+- Desired Sale Price
+- Initial Deposit Requested
+- Additional Deposit Requested
+- Any other Seller Sale Terms currency/number inputs showing extra left spacing
+
+2. Consistent input height/box sizing
+Current issue:
+Form boxes vary in height/size after entering information.
+
+Fix:
+- Make all standard text, number, currency, and select inputs use the same existing Seller Offer Listing input height and box styling.
+- Textareas may remain taller.
+- Select2/tag fields should use the same height/format used elsewhere in the form.
+- Do not create new custom styling if an existing input class/helper can be reused.
+
+3. Placeholder format consistency
+For all new fields in Tax, Legal, HOA & Disclosures, update placeholder text to follow this format:
+
+Enter [Field Title] (e.g., example)
+
+Examples:
+- Annual Property Taxes:
+  Enter annual property taxes (e.g., 5200)
+
+- Annual CDD Fee:
+  Enter annual CDD fee (e.g., 1200)
+
+- Special Assessment Amount:
+  Enter special assessment amount (e.g., 4500)
+
+- Association Fee Amount:
+  Enter association fee amount (e.g., 350)
+
+- Association Application Fee:
+  Enter association application fee (e.g., 150)
+
+- Max Leases Per Year:
+  Enter max leases per year (e.g., 2)
+
+- Tax Year:
+  Enter tax year (e.g., 2025)
+
+- Total Parcel Count:
+  Enter total parcel count (e.g., 2)
+
+Do NOT use placeholder-only examples like:
+- e.g., 5200
+- e.g., 150
+
+Do NOT include "$" in placeholder examples because the $ prefix is already visual.
+
+4. Rename “Total Parcel Count” label if needed
+If label currently says:
+Total Parcel Count
+
+Change to:
+Total Number of Parcels
+
+Placeholder:
+Enter total number of parcels (e.g., 2)
+
+5. Convert HOA multi-checkbox groups to existing multi-select/tag format
+Current issue:
+These fields use checkbox groups, which do not match the rest of the listing forms:
+- What Does the Association Fee Include?
+- Association Amenities
+
+Fix:
+Convert both to the same multi-select/tag/pill format used elsewhere in Seller Offer Listing.
+
+Requirements:
+- Placeholder: Select
+- Same visual format as existing multi-select fields
+- Same save/reload behavior
+- Preserve all current options
+- Preserve “Other” option
+- If “Other” selected, show custom input with example placeholder
+
+Field:
+What Does the Association Fee Include?
+
+Options:
+- Cable TV
+- Internet
+- Water
+- Sewer
+- Trash
+- Security
+- Insurance
+- Common Area Maintenance
+- Community Pool
+- Exterior Maintenance
+- Grounds Maintenance
+- Manager
+- Recreational Facilities
+- Pest Control
+- Private Road Maintenance
+- Amenities
+- Other
+
+Other placeholder:
+Enter what else is included (e.g., Roof Maintenance, Building Reserves)
+
+Field:
+Association Amenities
+
+Options:
+- Clubhouse
+- Pool
+- Fitness Center / Gym
+- Gated Entry
+- Golf Course
+- Tennis Court
+- Pickleball Court
+- Playground
+- Park
+- Security
+- Elevators
+- Laundry
+- Storage
+- Boat Slip / Marina
+- Dock
+- Waterfront Access
+- Dog Park
+- Other
+
+Other placeholder:
+Enter association amenity (e.g., Community Garden)
+
+Important:
+- If the backend currently stores these as arrays, keep array save/load behavior.
+- JSON encode/decode should continue working.
+- Do not change DB/meta keys.
+
+6. Verify Select2/Livewire lifecycle
+Because previous fields have had Livewire/Select2 issues:
+- Ensure the converted Association Fee Includes and Association Amenities fields remain in tag/pill format after Livewire updates.
+- Add wire:ignore / wire:key only if consistent with the existing working multi-select pattern.
+- Do not break save draft.
+
+SAFEGUARDS:
+- UI polish only.
+- No schema changes.
+- No new fields.
+- No deleted fields.
+- No role changes.
+- No property type logic changes.
+- Do not touch Limited Service.
+- Do not touch Hire Agent flows.
+- Keep all existing options unless listed above.
+- If a shared input component affects other roles, STOP and report before editing.
+
+VERIFICATION:
+Test Seller Create Offer Listing:
+
+Tax, Legal, HOA & Disclosures tab:
+1. Number/currency placeholders align correctly.
+2. Tax Year has no unnecessary calendar icon/left spacing.
+3. All input boxes have consistent height/width.
+4. Placeholders use full format: Enter [field title] (e.g., example).
+5. Currency placeholders do not include $.
+6. What Does the Association Fee Include? uses multi-select/tag format.
+7. Association Amenities uses multi-select/tag format.
+8. Other inputs appear correctly with example placeholders.
+9. Save Draft and reload preserve values.
+
+Sale Terms tab:
+1. Desired Sale Price aligns correctly after $ prefix.
+2. Deposit amount fields align correctly after $ prefix.
+3. Input box height/width is consistent.
+
+Final report:
+- Files changed
+- Fields polished
+- Confirmation no schema changes
+- Confirmation no Hire Agent / Limited Service edits
+- Confirmation converted checkbox groups save/reload correctly
