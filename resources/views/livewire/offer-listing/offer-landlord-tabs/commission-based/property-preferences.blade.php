@@ -836,7 +836,7 @@
         </span>
         <div class="input-cover">
             <input type="number" wire:model="year_built" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar" placeholder="e.g. 1995" min="1800" max="{{ date('Y') }}">
+                data-icon="fa-solid fa-calendar" placeholder="Enter year built (e.g., 1998)" min="1800" max="{{ date('Y') }}">
         </div>
         <span class="error mt-2" id="year_built_error"></span>
     </div>
@@ -1041,7 +1041,7 @@
         </span>
         <div class="input-cover">
             <input type="number" wire:model="year_built" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar" placeholder="e.g. 1995" min="1800" max="{{ date('Y') }}">
+                data-icon="fa-solid fa-calendar" placeholder="Enter year built (e.g., 1998)" min="1800" max="{{ date('Y') }}">
         </div>
         <span class="error mt-2" id="year_built_error"></span>
     </div>
