@@ -799,7 +799,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter other business type (e.g., Recording Studio, Event Venue, Repair Shop)">
+            placeholder="Enter business type (e.g., Recording Studio, Event Venue, Repair Shop)">
     </div>
 </div>
 
@@ -1153,7 +1153,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_parking_space_wrapper" id="other_parking_space"
                 class="form-control has-icon" data-icon="fa-solid fa-warehouse"
-                placeholder="Enter other garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+                placeholder="Enter garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
         </div>
     </div> --}}
 
@@ -2204,7 +2204,7 @@
     <div class="form-group" id="other_road_frontage_commercial_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_frontage" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other road frontage type (e.g., Cul-de-Sac, Service Road)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road frontage type (e.g., Cul-de-Sac, Service Road)">
         </div>
     </div>
 
@@ -2226,7 +2226,7 @@
     <div class="form-group" id="other_road_surface_type_commercial_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other road surface type (e.g., Cobblestone, Shell)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road surface type (e.g., Cobblestone, Shell)">
         </div>
     </div>
 
@@ -2358,7 +2358,7 @@
     <div class="form-group" id="other_electrical_service_commercial_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other electrical service (e.g., 600 Volts, DC Power)">
+                data-icon="fa-solid fa-pen" placeholder="Enter electrical service (e.g., 600 Volts, DC Power)">
         </div>
     </div>
 
@@ -2397,7 +2397,7 @@
     <div class="form-group" id="other_building_features_wrapper" style="{{ is_array($building_features) && in_array('Other', $building_features) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_building_features" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other building features (e.g., Skylight, Automated Gate)">
+                data-icon="fa-solid fa-pen" placeholder="Enter building features (e.g., Skylight, Automated Gate)">
         </div>
     </div>
 
@@ -2449,7 +2449,7 @@
     <div class="form-group" id="other_licenses_wrapper" style="{{ is_array($licenses) && in_array('Other', $licenses) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_licenses" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other license (e.g., Catering, Entertainment)">
+                data-icon="fa-solid fa-pen" placeholder="Enter license (e.g., Catering, Entertainment)">
         </div>
     </div>
 
@@ -2471,7 +2471,7 @@
     <div class="form-group" id="other_sale_includes_wrapper" style="{{ is_array($sale_includes) && in_array('Other', $sale_includes) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sale_includes" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other items included in sale (e.g., Domain Name, Social Media Accounts)">
+                data-icon="fa-solid fa-pen" placeholder="Enter items included in sale (e.g., Domain Name, Social Media Accounts)">
         </div>
     </div>
 
@@ -2695,7 +2695,7 @@
     <div class="form-group" id="other_electrical_service_business_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other electrical service (e.g., 600 Volts, DC Power)">
+                data-icon="fa-solid fa-pen" placeholder="Enter electrical service (e.g., 600 Volts, DC Power)">
         </div>
     </div>
 
@@ -2721,7 +2721,7 @@
     <div class="form-group" id="other_current_use_wrapper" style="{{ is_array($current_use) && in_array('Other', $current_use) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_current_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other current use (e.g., Hunting, Camping)">
+                data-icon="fa-solid fa-pen" placeholder="Enter current use (e.g., Hunting, Camping)">
         </div>
     </div>
 
@@ -2782,7 +2782,7 @@
     <div class="form-group" id="other_road_frontage_vacant_land_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_frontage" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other road frontage type (e.g., Cul-de-Sac, Service Road)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road frontage type (e.g., Cul-de-Sac, Service Road)">
         </div>
     </div>
 
@@ -2804,7 +2804,7 @@
     <div class="form-group" id="other_road_surface_type_vacant_land_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other road surface type (e.g., Cobblestone, Shell)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road surface type (e.g., Cobblestone, Shell)">
         </div>
     </div>
 
@@ -2918,7 +2918,7 @@
     <div class="form-group" id="other_current_adjacent_use_wrapper" style="{{ is_array($current_adjacent_use) && in_array('Other', $current_adjacent_use) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_current_adjacent_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other adjacent use (e.g., Conservation Land, Nature Preserve)">
+                data-icon="fa-solid fa-pen" placeholder="Enter adjacent use (e.g., Conservation Land, Nature Preserve)">
         </div>
     </div>
 
@@ -2940,7 +2940,7 @@
     <div class="form-group" id="other_fences_wrapper" style="{{ is_array($fences) && in_array('Other', $fences) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_fences" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other fence type (e.g., Electric, Invisible)">
+                data-icon="fa-solid fa-pen" placeholder="Enter fence type (e.g., Electric, Invisible)">
         </div>
     </div>
 
@@ -2962,7 +2962,7 @@
     <div class="form-group" id="other_vegetation_wrapper" style="{{ is_array($vegetation) && in_array('Other', $vegetation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_vegetation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other vegetation type (e.g., Citrus Grove, Vineyard)">
+                data-icon="fa-solid fa-pen" placeholder="Enter vegetation type (e.g., Citrus Grove, Vineyard)">
         </div>
     </div>
 
@@ -3000,7 +3000,7 @@
     <div class="form-group" id="other_easements_wrapper" style="{{ is_array($easements) && in_array('Other', $easements) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_easements" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter other easement type (e.g., Drainage, Mineral Rights)">
+                data-icon="fa-solid fa-pen" placeholder="Enter easement type (e.g., Drainage, Mineral Rights)">
         </div>
     </div>
 
