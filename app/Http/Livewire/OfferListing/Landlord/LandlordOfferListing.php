@@ -381,6 +381,12 @@ class LandlordOfferListing extends Component
     public $photoError = null;
     public $videoError = null;
 
+    // Photos, Tours & Documents
+    public $propertyPhotos = null;
+    public $videoTourUrl = '';
+    public $virtualTourUrl = '';
+    public $listingDocuments = null;
+
     // Tab management
     public $activeTab = 0;
 
@@ -1748,6 +1754,10 @@ class LandlordOfferListing extends Component
             $this->listing_ai_faq = json_decode($auction->info('listing_ai_faq') ?: '{}', true) ?? [];
             $this->photo = $auction->get->photo ?? null;
             $this->video = $auction->get->video ?? null;
+            $this->videoTourUrl = $auction->get->video_tour_url ?? '';
+            $this->virtualTourUrl = $auction->get->virtual_tour_url ?? '';
+            $this->propertyPhotos = $auction->get->property_photos ?? null;
+            $this->listingDocuments = $auction->get->listing_documents ?? null;
 
             // Location and meeting details
             $this->person_meeting = $auction->get->person_meeting ?? null;
@@ -2610,6 +2620,73 @@ class LandlordOfferListing extends Component
             // Save file name to database
             $auction->saveMeta('video', $videoName);
         }
+
+        // Save Photos, Tours & Documents fields
+        $auction->saveMeta('video_tour_url', $this->videoTourUrl ?? '');
+        $auction->saveMeta('virtual_tour_url', $this->virtualTourUrl ?? '');
+
+        if ($this->propertyPhotos && !is_string($this->propertyPhotos)) {
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+            if (in_array($this->propertyPhotos->getMimeType(), $allowedMimes)) {
+                $ext = $this->propertyPhotos->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $this->propertyPhotos->storeAs('auction/images', $fileName, 'public');
+                $auction->saveMeta('property_photos', $fileName);
+            }
+        } elseif ($this->propertyPhotos && is_string($this->propertyPhotos)) {
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+
+        if ($this->listingDocuments && !is_string($this->listingDocuments)) {
+            $allowedMimes = ['application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg', 'image/png'];
+            if (in_array($this->listingDocuments->getMimeType(), $allowedMimes)) {
+                $ext = $this->listingDocuments->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                Storage::disk('public')->makeDirectory('auction/documents');
+                $this->listingDocuments->storeAs('auction/documents', $fileName, 'public');
+                $auction->saveMeta('listing_documents', $fileName);
+            }
+        } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
+            $auction->saveMeta('listing_documents', $this->listingDocuments);
+        }
+    }
+
+    public function updatedPropertyPhotos()
+    {
+        $this->validate(['propertyPhotos' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+    }
+
+    public function updatedListingDocuments()
+    {
+        $this->validate(['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240']);
+    }
+
+    public function deletePropertyPhoto()
+    {
+        if ($this->propertyPhotos && is_string($this->propertyPhotos)) {
+            Storage::disk('public')->delete('auction/images/' . $this->propertyPhotos);
+            if ($this->listingId) {
+                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+                $auction->deleteMeta('property_photos');
+            }
+        }
+        $this->propertyPhotos = null;
+    }
+
+    public function deleteListingDocument()
+    {
+        if ($this->listingDocuments && is_string($this->listingDocuments)) {
+            Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
+            if ($this->listingId) {
+                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+                $auction->deleteMeta('listing_documents');
+            }
+        }
+        $this->listingDocuments = null;
     }
 
     public function store()

@@ -1043,13 +1043,26 @@ $tenantPays = [
                                     </li>
                                 @endforeach
 
-                                <!-- Dynamic Information Tab Based on User Type -->
+                                <!-- Photos, Tours & Documents Tab (limited_service: index 4) -->
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        id="photos-tours-documents-ls-tab" data-bs-toggle="tab"
+                                        data-bs-target="#photos-tours-documents-ls"
+                                        type="button" role="tab"
+                                        wire:click="setActiveTab(4)"
+                                        aria-controls="photos-tours-documents-ls"
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                        Photos, Tours &amp; Documents
+                                    </button>
+                                </li>
+
+                                <!-- Dynamic Information Tab Based on User Type -->
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         id="information-tab" data-bs-toggle="tab"
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
                                         @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                             Agent Credentials & Contact Info
                                         @elseif ($user_type === 'tenant')
@@ -1064,12 +1077,12 @@ $tenantPays = [
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
                                         AI Questions
                                     </button>
                                 </li>
@@ -1114,7 +1127,7 @@ $tenantPays = [
 
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
+                                <!-- Broker Compensation Tab (index 5) -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="broker-compensation" role="tabpanel"
                                     aria-labelledby="broker-compensation-tab">
@@ -1139,8 +1152,24 @@ $tenantPays = [
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                             @elseif($service_type === 'limited_service')
-                                <!-- AI Questions Tab (limited_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- Photos, Tours & Documents Tab (limited_service: index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="photos-tours-documents-ls"
+                                    role="tabpanel" aria-labelledby="photos-tours-documents-ls-tab">
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
+                                </div>
+
+                                <!-- Information Tab (limited_service: index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="information"
+                                    role="tabpanel" aria-labelledby="information-tab">
+                                    @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
+                                        @include('livewire.partials.agent-credentials')
+                                    @else
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.landlord-info')
+                                    @endif
+                                </div>
+
+                                <!-- AI Questions Tab (limited_service: index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
