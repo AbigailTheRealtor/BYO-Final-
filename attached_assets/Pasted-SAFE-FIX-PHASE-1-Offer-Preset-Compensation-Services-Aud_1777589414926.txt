@@ -1,0 +1,115 @@
+SAFE FIX PHASE 1 — Offer Preset Compensation + Services Audit Fixes Only
+
+GOAL:
+Fix the highest-priority issues found in:
+.local/offer_presets_compensation_services_audit.md
+
+DO NOT:
+- Do not add new MLS/tax/HOA/flood fields yet.
+- Do not rewrite the whole preset system.
+- Do not run destructive migrations.
+- Do not delete existing saved presets, services, bids, or compensation data.
+- Do not touch unrelated dashboards, accepted bid summaries, AI features, widgets, or referral partner tracking.
+- Do not change listing creation flows unless directly required to reuse existing correct options.
+- Make small, targeted fixes only.
+
+FIX 1 — Categorize Services in Agent Preset Editor
+
+Current issue:
+resources/views/agent-presets/edit.blade.php shows services as one flat grid of 40+ checkboxes.
+
+Required:
+- Display services under category headers, matching the grouped format used on bid/detail pages.
+- Do not change saved service values.
+- Do not rename service labels.
+- Do not remove existing services.
+- Custom services should appear under:
+  Additional Services
+
+Use existing service category/order logic where possible:
+- app/Support/ServicesFormatter.php
+- config/buyer_services_order.php
+
+If seller/landlord/tenant configs are missing, create safe config files or role-based arrays without changing database structure.
+
+FIX 2 — Add Missing Category Configs for Seller, Landlord, Tenant
+
+Current issue:
+buyer_services_order.php only covers Buyer. Seller, Landlord, and Tenant fall back to raw unordered service display.
+
+Required:
+- Add service category ordering for:
+  - Seller
+  - Landlord
+  - Tenant
+- Match the service category structure already used in each listing flow as closely as possible.
+- Do not invent unrelated new services.
+- Only organize existing services.
+- Ensure bid/detail pages show grouped services for all roles.
+
+FIX 3 — Fix Seller Leasing Fee Dead Condition
+
+Current issue:
+Seller broker compensation has a dead @elseif condition:
+'Percentage of Each Rental Period'
+
+But actual dropdown value is:
+'Percentage of the Rent Due Each Rental Period'
+
+Required:
+- Update the condition so the correct input field appears when that dropdown option is selected.
+- Do not change the saved dropdown value unless absolutely required.
+- Search all related Seller broker compensation views/partials for the same mismatch and fix consistently.
+
+FIX 4 — Fix Landlord split_payment “dumy” Dead Code
+
+Current issue:
+Landlord views contain typo/dead logic:
+split_payment == "dumy"
+
+Required:
+- Identify whether split payment is supposed to be supported.
+- If it is not supported, remove/hide unreachable dead display code safely from views only.
+- If it is supported, fix the condition using the actual supported value and verify the UI works.
+- Do not create new compensation behavior without confirming existing saved field usage.
+- Report what you found before making a broader change.
+
+FIX 5 — Begin Reducing Compensation Option Drift
+
+Current issue:
+Compensation dropdown options are hardcoded across multiple Blade files, causing drift.
+
+Required for this phase:
+- Do not fully refactor the system yet.
+- Create a report section identifying duplicate hardcoded option sets that should be centralized later.
+- Only centralize options if it can be done safely without changing behavior.
+- Landlord already has config support; do not break it.
+
+VERIFICATION:
+After edits, verify:
+
+1. Agent Preset Editor
+- Buyer services display under categories.
+- Seller services display under categories.
+- Landlord services display under categories.
+- Tenant services display under categories.
+- Custom services appear under Additional Services.
+- Saved selected services remain selected.
+
+2. Bid/Detail Pages
+- Buyer, Seller, Landlord, and Tenant services display grouped by category.
+- No role falls back to a raw unordered list unless no category exists.
+
+3. Seller Leasing Fee
+- Selecting “Percentage of the Rent Due Each Rental Period” shows the correct input field.
+
+4. Landlord split_payment
+- No visible dead/incorrect “split payment” output appears.
+- No “dumy” typo remains in active views.
+
+REPORT BACK:
+- Exact files changed.
+- Before/after behavior.
+- Any services that could not be categorized.
+- Whether split_payment is supported or should be removed later.
+- Any remaining compensation option drift risks.
