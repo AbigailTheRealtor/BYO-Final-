@@ -1,0 +1,73 @@
+APPROVE #248 WITH LIMITED SCOPE — Seller Offer Listing detail views only
+
+GOAL:
+Display the new MLS/property detail fields that are collected in the Seller Property Details tab on the regular Seller listing detail/show pages.
+
+SCOPE — AUDIT FIRST:
+Find the active Seller offer-listing detail/show Blade views where buyers, agents, or public viewers see a Seller listing.
+
+DO NOT TOUCH:
+- HireSellerAgent / seller-agent-auction files
+- Buyer, Tenant, Landlord flows
+- Database schema
+- Input form fields
+- Save logic
+- Validation logic
+- Routes/controllers unless required only to pass existing saved values to the view
+
+DO:
+1. Identify the active Seller listing detail/show views.
+2. Confirm where existing property details are displayed.
+3. Add display sections for the new fields, grouped cleanly by property type using the same @if property-type logic as the input form.
+4. Only show non-empty values.
+5. Format arrays/multi-selects as comma-separated readable labels.
+6. Format numbers clearly:
+   - Year Built
+   - Front Footage
+   - Number of Wells
+   - Number of Septics
+   - Water Meters
+   - Electric Meters
+7. Include fields such as:
+   - Roof Type
+   - Exterior Construction
+   - Foundation
+   - Heating and Fuel
+   - Air Conditioning
+   - Water
+   - Sewer
+   - Utilities
+   - Road Frontage
+   - Road Surface Type
+   - Electrical Service
+   - Ceiling Height
+   - Building Features
+   - Licenses
+   - Sale Includes
+   - Current Use
+   - Adjacent Use
+   - Fences
+   - Vegetation
+   - Buildable
+   - Easements
+   - Lot Dimensions
+   - Front Footage
+   - Zoning
+   - Business Name
+   - Year Established
+   - Sqft Heated by unit type, if stored
+
+VERIFY:
+- Create/edit Seller listing with new fields
+- View listing detail page
+- Confirm saved values display
+- Confirm empty fields do not display
+- Confirm Hire Agent flow was not changed
+- php -l passes
+- php artisan view:clear
+
+OUTPUT:
+- Active detail view files found
+- Files changed
+- Fields displayed
+- Confirmation HireSellerAgent was not modified

@@ -1,0 +1,70 @@
+TASK #249 — Add server-side validation for Seller property detail fields (SAFE SCOPE)
+
+GOAL:
+Add validation rules so only valid values can be saved for new MLS/property detail fields in the Seller Offer Listing flow.
+
+SCOPE — EDIT ONLY:
+app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php
+
+DO NOT TOUCH:
+- HireSellerAgent (any files under app/Http/Livewire/HireSellerAgent/*)
+- Buyer, Tenant, or Landlord components
+- Blade layout/structure (except error spans if missing in Seller offer-listing only)
+- Database schema/migrations
+- Routes or controllers outside this component
+
+IMPLEMENTATION:
+
+1) Locate validation:
+- Prefer rules() method if present
+- Otherwise find $this->validate([...]) in save/update methods
+
+2) Add/extend rules for these fields:
+
+year_built:
+  nullable|digits:4|integer|min:1800|max:{{ current_year }}
+
+front_footage:
+  nullable|numeric|min:0
+
+number_of_wells:
+  nullable|integer|min:0
+
+number_of_septics:
+  nullable|integer|min:0
+
+number_water_meters:
+  nullable|integer|min:0
+
+number_electric_meters:
+  nullable|integer|min:0
+
+zoning:
+  nullable|string|max:255
+
+# If multi-selects exist (e.g., ceiling_height, utilities, etc.):
+- Validate as array
+- Each item must be in allowed options list (use existing options source if available)
+
+Example:
+'ceiling_height' => 'nullable|array',
+'ceiling_height.*' => 'in:8,9,10,12,14,16,20',  # adjust to actual options used in UI
+
+3) Error messages:
+- Use existing @error(...) spans in the Seller offer-listing Blade
+- If any of these fields are missing error spans, add them ONLY in:
+  resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/property-preferences.blade.php
+
+4) Do NOT rename fields or change bindings.
+
+VERIFY:
+- Invalid inputs (e.g., year_built="abcd", front_footage=-5) show inline errors
+- Valid inputs save successfully
+- No changes appear in Hire Agent flows
+- php -l passes on edited file
+- php artisan view:clear
+
+OUTPUT:
+- Exact lines added/changed in SellerOfferListing.php
+- List of validated fields
+- Confirmation HireSellerAgent was NOT modified
