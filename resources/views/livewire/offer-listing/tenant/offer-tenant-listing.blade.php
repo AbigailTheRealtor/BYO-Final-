@@ -1723,7 +1723,7 @@ $lease_types = [
 
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
                         @foreach ($allTabs as $index => $tab)
-                        @if ($tab && !in_array($tab, ['Services', 'Broker Compensation & Agency Agreement Terms', 'Referral & Cooperation Terms']))
+                        @if ($tab)
                         @php $tabSlug = $safeSlug($tab); @endphp
                         <li class="nav-item" role="presentation">
                             <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
