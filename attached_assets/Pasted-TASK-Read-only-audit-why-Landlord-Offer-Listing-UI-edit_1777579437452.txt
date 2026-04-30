@@ -1,0 +1,157 @@
+TASK: Read-only audit — why Landlord Offer Listing UI edits did not apply
+
+GOAL:
+Figure out why the requested UI edits are not showing on:
+GET /offer-listing/landlord
+
+This is the Create Landlord Offer Listing flow, NOT Hire Agent.
+
+IMPORTANT:
+This is a READ-ONLY AUDIT FIRST.
+Do not edit anything yet.
+
+SCOPE:
+- BidYourOffer / Offer Listing
+- Create Landlord Listing
+- Route: /offer-listing/landlord
+- Agent Dashboard flow if applicable
+
+DO NOT:
+- Do not edit files
+- Do not change database schema
+- Do not create migrations
+- Do not touch Hire Agent flows
+- Do not touch BidYourAgent flows
+- Do not touch Limited Service / legacy files
+- Do not refactor
+- Do not “fix” anything until audit report is complete
+
+AUDIT QUESTIONS TO ANSWER:
+
+1. Which route/controller/component is actually rendering:
+   /offer-listing/landlord
+
+Find and report:
+- Route definition
+- Controller or Livewire component
+- Blade view files
+- Any included partials/components used for the Property Details section
+
+2. Are prior edits being made in the wrong files?
+Compare the actual rendered files for /offer-listing/landlord against any files recently edited.
+
+Report:
+- Actual files used by /offer-listing/landlord
+- Any similar files that are NOT used by this route
+- Whether the previous changes were likely made in seller files, hire-agent files, limited-service files, or unused/shared partials
+
+3. Identify exact source of these still-wrong fields:
+
+For each field below, report the file and line number where its current UI is defined:
+
+- Appliances Included
+- View
+- Amenities and Property Features
+- Year Built
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Laundry Features
+- Floor Covering
+- Security Features
+
+4. Explain why these fields still use the wrong selection type:
+The following Landlord fields still appear as large native multi-select/listbox style instead of the tag/pill select format:
+- Appliances Included
+- View
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Laundry Features
+- Floor Covering
+- Security Features
+
+Determine:
+- What component/helper renders the correct tag/pill format?
+- What component/helper renders the wrong native listbox format?
+- Why Landlord is using the wrong one
+- Whether Amenities and Property Features uses a different component or custom field structure
+
+5. Explain why placeholder updates did not apply:
+Current wrong examples still visible:
+- Amenities and Property Features says “Select credit score rating(s)”
+- Year Built says “Enter year built (e.g., 1995)” or other incorrect value if this was supposed to match seller
+- Multi-select fields still show specific placeholders instead of “Select”
+
+Report where those placeholder strings are defined.
+
+6. Check if browser/build/cache is involved:
+Determine whether the issue is:
+- wrong file edited
+- shared component not used
+- cached compiled views
+- frontend asset/build cache
+- Livewire state hydration
+- old Replit server process
+- route hitting a different app/module than expected
+
+Do not clear or change anything yet. Just report.
+
+7. Check if there are duplicate Landlord create views:
+Search for duplicate files/components such as:
+- landlord create
+- offer-listing landlord
+- landlord_property
+- create-landlord
+- property details partial
+- full service vs limited service
+- agent dashboard vs public dashboard
+
+Report which one is active.
+
+EXPECTED AUDIT OUTPUT:
+
+Provide a concise audit report with:
+
+A. Active rendering path
+- Route
+- Controller/Livewire component
+- Main Blade view
+- Included partials/components
+
+B. Wrong-file findings
+- Which files were edited previously, if detectable
+- Which files are actually used
+- Why edits did not show
+
+C. Field source map
+For each problematic field:
+- Field name
+- Current component/view
+- Current placeholder/source string
+- Current selection type source
+- What it should use instead
+
+D. Root cause
+Pick the most likely reason:
+- wrong file edited
+- wrong shared partial
+- duplicate flow
+- cache/build issue
+- component mismatch
+- other
+
+E. Recommended next Replit task
+Do NOT implement yet.
+Give a surgical fix plan only, including:
+- exact files that need edits
+- exact fields to update
+- safeguards
+- test steps
+
+STOP after the audit report.
+Do not make code changes.
