@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             CountySeeder::class,
             HeatingFuelSeeder::class,
             AgentServiceSeeder::class,
+            SettingsSeeder::class,
         ]);
     }
 }
