@@ -270,6 +270,7 @@ class SellerOfferListing extends Component
     public $garage_spaces = '';
     public $carport_spaces = '';
     public $unit_type_description = '';
+    public $unit_type_configurations = [];
     public $breed_restrictions = '';
 
     // Meeting preference
@@ -904,6 +905,21 @@ class SellerOfferListing extends Component
     // Methods
     public function mount($listingId = null)
     {
+        $this->unit_type_configurations = [
+            [
+                'unit_type'          => '',
+                'beds_unit'          => '',
+                'baths_unit'         => '',
+                'garage_spaces'      => '',
+                'carport_spaces'     => '',
+                'other_spaces'       => '',
+                'number_of_units'    => '',
+                'number_occupied'    => '',
+                'expected_rent'      => '',
+                'unit_type_description' => '',
+            ]
+        ];
+
         $this->addService();
 
         // Set listing_date to today's date by default (only if creating new listing)
@@ -919,6 +935,30 @@ class SellerOfferListing extends Component
             $this->loadDraft($listingId);
         }
     }
+    public function addUnitType()
+    {
+        $this->unit_type_configurations[] = [
+            'unit_type'          => '',
+            'beds_unit'          => '',
+            'baths_unit'         => '',
+            'garage_spaces'      => '',
+            'carport_spaces'     => '',
+            'other_spaces'       => '',
+            'number_of_units'    => '',
+            'number_occupied'    => '',
+            'expected_rent'      => '',
+            'unit_type_description' => '',
+        ];
+    }
+
+    public function removeUnitType($index)
+    {
+        if (count($this->unit_type_configurations) > 1) {
+            unset($this->unit_type_configurations[$index]);
+            $this->unit_type_configurations = array_values($this->unit_type_configurations);
+        }
+    }
+
     public function startNew()
     {
         // Reset all properties to their initial state
@@ -1633,6 +1673,15 @@ class SellerOfferListing extends Component
             $this->preferance_details = $auction->get->preferance_details;
 
 
+            // Income / multi-unit configuration
+            $unitTypeConfigRaw = $auction->get->unit_type_configurations ?? null;
+            if ($unitTypeConfigRaw) {
+                $decoded = is_array($unitTypeConfigRaw) ? $unitTypeConfigRaw : json_decode($unitTypeConfigRaw, true);
+                if (is_array($decoded) && count($decoded) > 0) {
+                    $this->unit_type_configurations = array_values($decoded);
+                }
+            }
+
             // Sale Provision
             $this->sale_provision = is_string($auction->get->sale_provision) ? json_decode($auction->get->sale_provision, true) ?? [] : (array)($auction->get->sale_provision ?? []);
             $this->sale_provision_other = $auction->get->sale_provision_other;
@@ -2037,6 +2086,8 @@ class SellerOfferListing extends Component
         $auction->saveMeta('unit_size', $this->unit_size);
         $auction->saveMeta('unit_size_other', $this->unit_size_other);
         $auction->saveMeta('preferance_details', $this->preferance_details);
+        $configs = is_array($this->unit_type_configurations) ? $this->unit_type_configurations : [];
+        $auction->saveMeta('unit_type_configurations', json_encode(array_values($configs)));
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', $this->sale_provision);
