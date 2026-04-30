@@ -37,6 +37,19 @@
         border: 3px solid rgba(255,255,255,.4);
         flex-shrink: 0;
     }
+    .profile-hero-avatar-placeholder {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.2);
+        border: 3px solid rgba(255,255,255,.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        color: rgba(255,255,255,.8);
+        flex-shrink: 0;
+    }
     .profile-hero-info h1 {
         font-size: 1.55rem;
         font-weight: 700;
@@ -257,9 +270,18 @@
     {{-- ── AGENT OVERVIEW ────────────────────────────────────────── --}}
     <div class="profile-hero">
         <div class="profile-hero-avatar">
-            <img src="{{ asset('images/avatar/'.($agent->avatar ?? 'default.png')) }}"
-                 onerror="this.src='{{ asset('images/avatar/default.png') }}'"
-                 alt="{{ $agentDisplayName }}">
+            @if ($agent->avatar)
+                <img src="{{ asset('images/avatar/'.$agent->avatar) }}"
+                     onerror="this.onerror=null; this.style.display='none'; document.getElementById('profile-avatar-placeholder').style.display='flex';"
+                     alt="{{ $agentDisplayName }}">
+                <div id="profile-avatar-placeholder" class="profile-hero-avatar-placeholder" style="display:none;">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            @else
+                <div class="profile-hero-avatar-placeholder">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            @endif
         </div>
         <div class="profile-hero-info">
             <h1>{{ $agentDisplayName }}</h1>
