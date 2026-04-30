@@ -560,6 +560,51 @@ class LandlordOfferListing extends Component
     public $service_animal = '';
     public $support_animal = '';
 
+    // MLS Property Detail Fields — Residential + Commercial shared
+    public $year_built = '';
+    public $heating_fuel = [];
+    public $other_heating_fuel = '';
+    public $air_conditioning = [];
+    public $other_air_conditioning = '';
+    public $water = [];
+    public $other_water = '';
+    public $sewer = [];
+    public $other_sewer = '';
+    public $property_utilities = [];
+    public $other_property_utilities = '';
+
+    // MLS Property Detail Fields — Residential only
+    public $laundry_features = [];
+    public $other_laundry_features = '';
+    public $floor_covering = [];
+    public $other_floor_covering = '';
+    public $security_features = [];
+    public $other_security_features = '';
+
+    // MLS Property Detail Fields — Commercial only
+    public $zoning = '';
+    public $total_buildings = '';
+    public $total_units_on_property = '';
+    public $office_retail_sqft = '';
+    public $flex_space_sqft = '';
+    public $road_surface_type = [];
+    public $other_road_surface_type = '';
+    public $electrical_service = [];
+    public $other_electrical_service = '';
+    public $ceiling_height = '';
+    public $building_features = [];
+    public $other_building_features = '';
+    public $number_electric_meters = '';
+    public $number_water_meters = '';
+    public $number_gas_meters = '';
+    public $space_type = [];
+    public $other_space_type = '';
+    public $space_classification = [];
+    public $other_space_classification = '';
+    public $number_of_restrooms = '';
+    public $number_of_offices = '';
+    public $number_of_conference_rooms = '';
+
     // Payment Timing
 
 
@@ -1849,6 +1894,47 @@ class LandlordOfferListing extends Component
             $this->service_animal = $auction->get->service_animal ?? null;
             $this->support_animal = $auction->get->support_animal ?? null;
 
+            // MLS Property Detail Fields
+            $this->year_built = $auction->get->year_built ?? '';
+            $this->heating_fuel = $this->ensureArray(json_decode($auction->get->heating_fuel ?? '[]', true));
+            $this->other_heating_fuel = $auction->get->other_heating_fuel ?? '';
+            $this->air_conditioning = $this->ensureArray(json_decode($auction->get->air_conditioning ?? '[]', true));
+            $this->other_air_conditioning = $auction->get->other_air_conditioning ?? '';
+            $this->water = $this->ensureArray(json_decode($auction->get->water ?? '[]', true));
+            $this->other_water = $auction->get->other_water ?? '';
+            $this->sewer = $this->ensureArray(json_decode($auction->get->sewer ?? '[]', true));
+            $this->other_sewer = $auction->get->other_sewer ?? '';
+            $this->property_utilities = $this->ensureArray(json_decode($auction->get->property_utilities ?? '[]', true));
+            $this->other_property_utilities = $auction->get->other_property_utilities ?? '';
+            $this->laundry_features = $this->ensureArray(json_decode($auction->get->laundry_features ?? '[]', true));
+            $this->other_laundry_features = $auction->get->other_laundry_features ?? '';
+            $this->floor_covering = $this->ensureArray(json_decode($auction->get->floor_covering ?? '[]', true));
+            $this->other_floor_covering = $auction->get->other_floor_covering ?? '';
+            $this->security_features = $this->ensureArray(json_decode($auction->get->security_features ?? '[]', true));
+            $this->other_security_features = $auction->get->other_security_features ?? '';
+            $this->zoning = $auction->get->zoning ?? '';
+            $this->total_buildings = $auction->get->total_buildings ?? '';
+            $this->total_units_on_property = $auction->get->total_units_on_property ?? '';
+            $this->office_retail_sqft = $auction->get->office_retail_sqft ?? '';
+            $this->flex_space_sqft = $auction->get->flex_space_sqft ?? '';
+            $this->road_surface_type = $this->ensureArray(json_decode($auction->get->road_surface_type ?? '[]', true));
+            $this->other_road_surface_type = $auction->get->other_road_surface_type ?? '';
+            $this->electrical_service = $this->ensureArray(json_decode($auction->get->electrical_service ?? '[]', true));
+            $this->other_electrical_service = $auction->get->other_electrical_service ?? '';
+            $this->ceiling_height = $auction->get->ceiling_height ?? '';
+            $this->building_features = $this->ensureArray(json_decode($auction->get->building_features ?? '[]', true));
+            $this->other_building_features = $auction->get->other_building_features ?? '';
+            $this->number_electric_meters = $auction->get->number_electric_meters ?? '';
+            $this->number_water_meters = $auction->get->number_water_meters ?? '';
+            $this->number_gas_meters = $auction->get->number_gas_meters ?? '';
+            $this->space_type = $this->ensureArray(json_decode($auction->get->space_type ?? '[]', true));
+            $this->other_space_type = $auction->get->other_space_type ?? '';
+            $this->space_classification = $this->ensureArray(json_decode($auction->get->space_classification ?? '[]', true));
+            $this->other_space_classification = $auction->get->other_space_classification ?? '';
+            $this->number_of_restrooms = $auction->get->number_of_restrooms ?? '';
+            $this->number_of_offices = $auction->get->number_of_offices ?? '';
+            $this->number_of_conference_rooms = $auction->get->number_of_conference_rooms ?? '';
+
             // End by AT
 
             // Move services
@@ -1943,6 +2029,20 @@ class LandlordOfferListing extends Component
                 'photo_enhancements' => $this->ensureArray($this->photo_enhancements),
                 'property_items' => $this->ensureArray($this->property_items),
                 'tenant_require' => $this->ensureArray($this->tenant_require),
+                // MLS Property Detail Fields
+                'heating_fuel' => $this->ensureArray($this->heating_fuel),
+                'air_conditioning' => $this->ensureArray($this->air_conditioning),
+                'water' => $this->ensureArray($this->water),
+                'sewer' => $this->ensureArray($this->sewer),
+                'property_utilities' => $this->ensureArray($this->property_utilities),
+                'laundry_features' => $this->ensureArray($this->laundry_features),
+                'floor_covering' => $this->ensureArray($this->floor_covering),
+                'security_features' => $this->ensureArray($this->security_features),
+                'road_surface_type' => $this->ensureArray($this->road_surface_type),
+                'electrical_service' => $this->ensureArray($this->electrical_service),
+                'building_features' => $this->ensureArray($this->building_features),
+                'space_type' => $this->ensureArray($this->space_type),
+                'space_classification' => $this->ensureArray($this->space_classification),
             ]);
         }
     }
@@ -2259,6 +2359,47 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
         $auction->saveMeta('service_animal', $this->service_animal);
         $auction->saveMeta('support_animal', $this->support_animal);
+
+        // MLS Property Detail Fields
+        $auction->saveMeta('year_built', $this->year_built);
+        $auction->saveMeta('heating_fuel', json_encode($this->ensureArray($this->heating_fuel)));
+        $auction->saveMeta('other_heating_fuel', $this->other_heating_fuel);
+        $auction->saveMeta('air_conditioning', json_encode($this->ensureArray($this->air_conditioning)));
+        $auction->saveMeta('other_air_conditioning', $this->other_air_conditioning);
+        $auction->saveMeta('water', json_encode($this->ensureArray($this->water)));
+        $auction->saveMeta('other_water', $this->other_water);
+        $auction->saveMeta('sewer', json_encode($this->ensureArray($this->sewer)));
+        $auction->saveMeta('other_sewer', $this->other_sewer);
+        $auction->saveMeta('property_utilities', json_encode($this->ensureArray($this->property_utilities)));
+        $auction->saveMeta('other_property_utilities', $this->other_property_utilities);
+        $auction->saveMeta('laundry_features', json_encode($this->ensureArray($this->laundry_features)));
+        $auction->saveMeta('other_laundry_features', $this->other_laundry_features);
+        $auction->saveMeta('floor_covering', json_encode($this->ensureArray($this->floor_covering)));
+        $auction->saveMeta('other_floor_covering', $this->other_floor_covering);
+        $auction->saveMeta('security_features', json_encode($this->ensureArray($this->security_features)));
+        $auction->saveMeta('other_security_features', $this->other_security_features);
+        $auction->saveMeta('zoning', $this->zoning);
+        $auction->saveMeta('total_buildings', $this->total_buildings);
+        $auction->saveMeta('total_units_on_property', $this->total_units_on_property);
+        $auction->saveMeta('office_retail_sqft', $this->office_retail_sqft);
+        $auction->saveMeta('flex_space_sqft', $this->flex_space_sqft);
+        $auction->saveMeta('road_surface_type', json_encode($this->ensureArray($this->road_surface_type)));
+        $auction->saveMeta('other_road_surface_type', $this->other_road_surface_type);
+        $auction->saveMeta('electrical_service', json_encode($this->ensureArray($this->electrical_service)));
+        $auction->saveMeta('other_electrical_service', $this->other_electrical_service);
+        $auction->saveMeta('ceiling_height', $this->ceiling_height);
+        $auction->saveMeta('building_features', json_encode($this->ensureArray($this->building_features)));
+        $auction->saveMeta('other_building_features', $this->other_building_features);
+        $auction->saveMeta('number_electric_meters', $this->number_electric_meters);
+        $auction->saveMeta('number_water_meters', $this->number_water_meters);
+        $auction->saveMeta('number_gas_meters', $this->number_gas_meters);
+        $auction->saveMeta('space_type', json_encode($this->ensureArray($this->space_type)));
+        $auction->saveMeta('other_space_type', $this->other_space_type);
+        $auction->saveMeta('space_classification', json_encode($this->ensureArray($this->space_classification)));
+        $auction->saveMeta('other_space_classification', $this->other_space_classification);
+        $auction->saveMeta('number_of_restrooms', $this->number_of_restrooms);
+        $auction->saveMeta('number_of_offices', $this->number_of_offices);
+        $auction->saveMeta('number_of_conference_rooms', $this->number_of_conference_rooms);
 
         // 2nd tab limited services
         // Meeting details

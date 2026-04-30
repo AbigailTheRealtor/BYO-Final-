@@ -1057,7 +1057,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
                                     @if (!in_array($tab, ['Services', 'Broker Compensation']))
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
@@ -1370,6 +1370,31 @@
                     'property_items': data.property_items || [],
                     'tenant_require': data.tenant_require || [],
                 };
+                // MLS Property Detail — hydrate by element ID
+                var mlsIdFields = {
+                    'heating_fuel': data.heating_fuel || [],
+                    'air_conditioning': data.air_conditioning || [],
+                    'water': data.water || [],
+                    'sewer': data.sewer || [],
+                    'property_utilities': data.property_utilities || [],
+                    'laundry_features': data.laundry_features || [],
+                    'floor_covering': data.floor_covering || [],
+                    'security_features': data.security_features || [],
+                    'road_surface_type': data.road_surface_type || [],
+                    'electrical_service': data.electrical_service || [],
+                    'building_features': data.building_features || [],
+                    'space_type': data.space_type || [],
+                    'space_classification': data.space_classification || [],
+                };
+                Object.keys(mlsIdFields).forEach(function(fieldId) {
+                    var values = mlsIdFields[fieldId];
+                    if (values && values.length > 0) {
+                        var $el = $('#' + fieldId);
+                        if ($el.length && $el.hasClass('select2-multiple')) {
+                            $el.val(values).trigger('change');
+                        }
+                    }
+                });
                 Object.keys(select2Fields).forEach(function(fieldName) {
                     var values = select2Fields[fieldName];
                     if (values && values.length > 0) {
@@ -1636,6 +1661,45 @@
                     }
                 });
             }
+
+            // MLS Property Detail — multi-select fields with Other-toggle
+            var mlsMultiSelects = [
+                { id: 'heating_fuel',      field: 'heating_fuel',      placeholder: 'Select heating / fuel type(s)',   otherId: 'other_heating_fuel_wrapper' },
+                { id: 'air_conditioning',  field: 'air_conditioning',  placeholder: 'Select air conditioning type(s)', otherId: 'other_air_conditioning_wrapper' },
+                { id: 'water',             field: 'water',             placeholder: 'Select water source(s)' },
+                { id: 'sewer',             field: 'sewer',             placeholder: 'Select sewer type(s)',            otherId: 'other_sewer_wrapper' },
+                { id: 'property_utilities',field: 'property_utilities',placeholder: 'Select utilities',                otherId: 'other_property_utilities_wrapper' },
+                { id: 'laundry_features',  field: 'laundry_features',  placeholder: 'Select laundry features',        otherId: 'other_laundry_features_wrapper' },
+                { id: 'floor_covering',    field: 'floor_covering',    placeholder: 'Select floor covering',          otherId: 'other_floor_covering_wrapper' },
+                { id: 'security_features', field: 'security_features', placeholder: 'Select security features' },
+                { id: 'road_surface_type', field: 'road_surface_type', placeholder: 'Select road surface type(s)',    otherId: 'other_road_surface_type_wrapper' },
+                { id: 'electrical_service',field: 'electrical_service',placeholder: 'Select electrical service',      otherId: 'other_electrical_service_wrapper' },
+                { id: 'building_features', field: 'building_features', placeholder: 'Select building features',       otherId: 'other_building_features_wrapper' },
+                { id: 'space_type',           field: 'space_type',           placeholder: 'Select space type(s)' },
+                { id: 'space_classification', field: 'space_classification', placeholder: 'Select space classification' },
+            ];
+            function initMlsMultiSelects() {
+                mlsMultiSelects.forEach(function(cfg) {
+                    var $el = $('#' + cfg.id);
+                    if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
+                        $el.select2({ placeholder: cfg.placeholder, allowClear: true });
+                        $el.on('change', function() {
+                            var vals = $(this).val() || [];
+                            @this.set(cfg.field, vals);
+                            if (cfg.otherId) {
+                                var $wrapper = $('#' + cfg.otherId);
+                                if ($wrapper.length) {
+                                    $wrapper.css('display', vals.includes('Other') ? 'block' : 'none');
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+            initMlsMultiSelects();
+            Livewire.hook('message.processed', () => {
+                setTimeout(initMlsMultiSelects, 150);
+            });
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -1972,6 +2036,19 @@
                     'non_negotiable_amenities': '#non_negotiable_amenities',
                     'property_items': '#property_items',
                     'view_preference': '#view_preference',
+                    'heating_fuel': '#heating_fuel',
+                    'air_conditioning': '#air_conditioning',
+                    'water': '#water',
+                    'sewer': '#sewer',
+                    'property_utilities': '#property_utilities',
+                    'laundry_features': '#laundry_features',
+                    'floor_covering': '#floor_covering',
+                    'security_features': '#security_features',
+                    'road_surface_type': '#road_surface_type',
+                    'electrical_service': '#electrical_service',
+                    'building_features': '#building_features',
+                    'space_type': '#space_type',
+                    'space_classification': '#space_classification',
                 };
                 Object.entries(selects2Map).forEach(function([field, selector]) {
                     var $el = $(selector);
