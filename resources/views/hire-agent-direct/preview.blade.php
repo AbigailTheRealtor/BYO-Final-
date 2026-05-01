@@ -353,12 +353,12 @@
             @if(count($compRows) > 0)
             <div class="preview-section">
                 <div class="preview-section-header">
-                    <i class="fa-solid fa-file-lines"></i> Proposed Broker Compensation &amp; Agreement Terms
+                    <i class="fa-solid fa-file-lines"></i> Agent's Default Broker Compensation &amp; Agency Agreement Terms
                 </div>
                 <div class="preview-section-body">
                     <p class="text-muted small mb-3">
-                        These are the compensation and agreement terms from the agent's preset.
-                        This is a preview only — actual terms may be negotiated after submission.
+                        These are the Agent's default proposed terms. You may review them before submitting your hire request.
+                        Final terms may be accepted, rejected, or countered through the platform.
                     </p>
                     <table class="comp-table">
                         @foreach($compRows as $row)
