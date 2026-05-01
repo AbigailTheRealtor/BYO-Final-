@@ -322,7 +322,9 @@ class HireAgentDirectController extends Controller
             $bid->saveMeta('nar_id',      $mapped['nar_id']      ?: ($agent->nar_id     ?? ''));
 
             // Services on the bid mirror what the client confirmed
-            $bid->saveMeta('services',     json_encode($clientServices));
+            $bid->saveMeta('services',       json_encode($clientServices));
+            // Other services on the bid mirror only what the client kept checked
+            $bid->saveMeta('other_services', json_encode($clientOtherServices));
             $bid->saveMeta('hire_me_auto_bid', '1');
 
             DB::commit();

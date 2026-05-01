@@ -328,13 +328,18 @@
                     @if(!empty($filteredOtherServices))
                     <div class="mt-3">
                         <div style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;">Additional Services</div>
-                        <p class="text-muted small mb-2">These custom services are included with this offer.</p>
-                        <ul class="mb-0" style="padding-left:1.25rem;line-height:1.9;">
+                        <p class="text-muted small mb-2">These are custom services added by the agent. Uncheck any you do not need.</p>
+                        <div class="service-checkbox-list">
                             @foreach($filteredOtherServices as $svc)
-                                <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
-                                <input type="hidden" name="other_services[]" value="{{ $svc }}">
+                            <label class="service-item">
+                                <input type="checkbox"
+                                       name="other_services[]"
+                                       value="{{ $svc }}"
+                                       checked>
+                                {{ $svc }}
+                            </label>
                             @endforeach
-                        </ul>
+                        </div>
                     </div>
                     @endif
                     @error('services') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
