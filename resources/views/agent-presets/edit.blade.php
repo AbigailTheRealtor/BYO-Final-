@@ -970,8 +970,10 @@
                             <select id="cp_commission_structure" name="commission_structure" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Buyer Pays Out-of-Pocket" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Buyer Pays Out-of-Pocket')>Buyer Pays Out-of-Pocket</option>
-                                <option value="Requested From Seller in the Offer" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Requested From Seller in the Offer')>Requested From Seller in the Offer</option>
+                                @php $curCommStr = old('commission_structure', $data['commission_structure'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.buyer.commission_structure') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curCommStr === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -983,10 +985,10 @@
                             <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                <option value="Percentage of the Total Purchase Price" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
-                                <option value="Percentage of the Total Purchase Price + Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price + Flat Fee')>Percentage of the Total Purchase Price + Flat Fee</option>
-                                <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                @php $curPurchFee = old('purchase_fee_type', $data['purchase_fee_type'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.buyer.purchase_fee_type') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curPurchFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1027,19 +1029,18 @@
                     <div data-cp-parent="cp_interested_lease_option" data-cp-values="Yes" class="mb-4 ps-3 border-start border-2 border-secondary">
                         <label class="fw-bold mt-2">Buyer's Broker Lease Fee</label>
                         <div class="input-cover mt-2">
+                            @php
+                                $curLeaseFee = old('lease_fee_type', $data['lease_fee_type'] ?? '');
+                                $buyerLeaseFeeOpts = ($propertyType === 'residential')
+                                    ? config('agent_preset_compensation.buyer.lease_fee_type.residential')
+                                    : config('agent_preset_compensation.buyer.lease_fee_type.commercial');
+                            @endphp
                             <select id="cp_lease_fee_type" name="lease_fee_type" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="flat" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'flat')>Flat Fee</option>
-                                @if ($propertyType === 'residential')
-                                    <option value="Percentage of Monthly Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of Monthly Rent')>Percentage of Monthly Rent</option>
-                                    <option value="Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                    <option value="Flat Fee + Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Gross Lease Value')>Flat Fee + Percentage of the Gross Lease Value</option>
-                                @else
-                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
-                                    <option value="Flat Fee + Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Net Aggregate Rent')>Flat Fee + Percentage of the Net Aggregate Rent</option>
-                                @endif
-                                <option value="other" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'other')>Other</option>
+                                @foreach($buyerLeaseFeeOpts as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curLeaseFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1074,16 +1075,17 @@
 
                 @if ($role === 'seller')
                     {{-- Seller's Broker Purchase Fee --}}
+                    {{-- NOTE: seller stores SHORT SLUG values ('percentage','flat','combo') not full text. --}}
                     <div class="mb-4">
                         <label class="fw-bold">Seller's Broker Purchase Fee</label>
                         <div class="input-cover mt-2">
                             <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="percentage" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'percentage')>Percentage of the Total Purchase Price</option>
-                                <option value="flat" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'flat')>Flat Fee</option>
-                                <option value="combo" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'combo')>Percentage of the Total Purchase Price + Flat Fee</option>
-                                <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                @php $curSellerPurchFee = old('purchase_fee_type', $data['purchase_fee_type'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.seller.purchase_fee_type') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curSellerPurchFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1118,9 +1120,10 @@
                             <select id="cp_commission_structure" name="commission_structure" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission" @selected(old('commission_structure', $data['commission_structure'] ?? '') === "Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission")>Seller's Broker to Compensate Buyer's Broker from Seller's Broker Commission</option>
-                                <option value="Seller to Pay Buyer's Broker Separately" @selected(old('commission_structure', $data['commission_structure'] ?? '') === "Seller to Pay Buyer's Broker Separately")>Seller to Pay Buyer's Broker Separately</option>
-                                <option value="No Compensation Offered to the Buyer's Broker" @selected(old('commission_structure', $data['commission_structure'] ?? '') === "No Compensation Offered to the Buyer's Broker")>No Compensation Offered to the Buyer's Broker</option>
+                                @php $curSellerCommStr = old('commission_structure', $data['commission_structure'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.seller.commission_structure') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curSellerCommStr === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -1132,9 +1135,10 @@
                             <select id="cp_commission_structure_type" name="commission_structure_type" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Percentage of the Total Purchase Price" @selected(old('commission_structure_type', $data['commission_structure_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
-                                <option value="Flat Fee" @selected(old('commission_structure_type', $data['commission_structure_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                <option value="other" @selected(old('commission_structure_type', $data['commission_structure_type'] ?? '') === 'other')>Other</option>
+                                @php $curCommStrType = old('commission_structure_type', $data['commission_structure_type'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.seller.commission_structure_type') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curCommStrType === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1167,22 +1171,19 @@
                          class="mb-4 ps-3 border-start border-2 border-secondary">
                         <label class="fw-bold mt-2">Seller's Broker Leasing Fee</label>
                         <div class="input-cover mt-2">
+                            @php
+                                $curSellerLeasingFee = old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '');
+                                $sellerLeasingFeeOpts = in_array($propertyType, ['residential', 'income', 'vacant_land'])
+                                    ? config('agent_preset_compensation.seller.seller_leasing_fee_type.residential_income_vacant_land')
+                                    : config('agent_preset_compensation.seller.seller_leasing_fee_type.commercial_business');
+                            @endphp
                             <select id="cp_seller_leasing_fee_type" name="seller_leasing_fee_type"
                                     class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
                                     onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                @if (in_array($propertyType, ['residential', 'income', 'vacant_land']))
-                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
-                                    <option value="Percentage of the Gross Lease Value" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                    <option value="Percentage of the First Month's Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === "Percentage of the First Month's Rent")>Percentage of the First Month's Rent</option>
-                                    <option value="Flat Fee" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                    <option value="other" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'other')>Other</option>
-                                @elseif (in_array($propertyType, ['commercial', 'business']))
-                                    <option value="Percentage of Net Aggregate Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of Net Aggregate Rent')>Percentage of Net Aggregate Rent</option>
-                                    <option value="Percentage of Gross Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Percentage of Gross Rent')>Percentage of Gross Rent</option>
-                                    <option value="Percentage of Month's Rent" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === "Percentage of Month's Rent")>Percentage of Month's Rent</option>
-                                    <option value="Flat Fee" @selected(old('seller_leasing_fee_type', $data['seller_leasing_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                @endif
+                                @foreach($sellerLeasingFeeOpts as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curSellerLeasingFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1201,19 +1202,19 @@
                             <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of Gross Rent">
                                 <div class="row gy-2">
                                     <div class="col-12"><div class="input-group"><input type="number" name="seller_leasing_gross_percentage" class="form-control" value="{{ old('seller_leasing_gross_percentage', $data['seller_leasing_gross_percentage'] ?? '') }}" placeholder="Enter percentage of the gross rent (e.g., 6)"><span class="input-group-text">%</span></div></div>
-                                    <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_option_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('seller_leasing_gross_sales_tax_option_gross', $data['seller_leasing_gross_sales_tax_option_gross'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('seller_leasing_gross_sales_tax_option_gross', $data['seller_leasing_gross_sales_tax_option_gross'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_option_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('seller_leasing_gross_sales_tax_option_gross', $data['seller_leasing_gross_sales_tax_option_gross'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                 </div>
                             </div>
                             <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Percentage of Month's Rent">
                                 <div class="row gy-2">
                                     <div class="col-12"><div class="input-group"><input type="number" name="seller_leasing_gross_month_rent" class="form-control" value="{{ old('seller_leasing_gross_month_rent', $data['seller_leasing_gross_month_rent'] ?? '') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
-                                    <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_first_month" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('seller_leasing_gross_sales_tax_first_month', $data['seller_leasing_gross_sales_tax_first_month'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('seller_leasing_gross_sales_tax_first_month', $data['seller_leasing_gross_sales_tax_first_month'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                    <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_first_month" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('seller_leasing_gross_sales_tax_first_month', $data['seller_leasing_gross_sales_tax_first_month'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     <div class="col-12"><label class="fw-bold">Number of Months</label><div class="input-group mt-1"><span class="input-group-text">#</span><input type="number" name="seller_leasing_gross_no_of_months" class="form-control" value="{{ old('seller_leasing_gross_no_of_months', $data['seller_leasing_gross_no_of_months'] ?? '') }}" placeholder="Enter number of months (e.g., 1)"></div></div>
                                 </div>
                             </div>
                             <div data-cp-parent="cp_seller_leasing_fee_type" data-cp-values="Flat Fee">
                                 @if (in_array($propertyType, ['commercial', 'business']))
-                                <div class="mb-2"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_flat_free_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('seller_leasing_gross_sales_tax_flat_free_gross', $data['seller_leasing_gross_sales_tax_flat_free_gross'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('seller_leasing_gross_sales_tax_flat_free_gross', $data['seller_leasing_gross_sales_tax_flat_free_gross'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                <div class="mb-2"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="seller_leasing_gross_sales_tax_flat_free_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('seller_leasing_gross_sales_tax_flat_free_gross', $data['seller_leasing_gross_sales_tax_flat_free_gross'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                 @endif
                                 <div class="input-group"><span class="input-group-text">$</span><input type="text" name="seller_leasing_gross_purchase_fee_flat_amount" class="form-control" value="{{ old('seller_leasing_gross_purchase_fee_flat_amount', $data['seller_leasing_gross_purchase_fee_flat_amount'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div>
                             </div>
@@ -1234,11 +1235,10 @@
                                 <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
                                         data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
-                                    <option value="Percentage of the Gross Lease Value" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                    <option value="Percentage of the First Month’s Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === "Percentage of the First Month’s Rent")>Percentage of the First Month’s Rent</option>
-                                    <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                    <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                    @php $curLlPurchFeeRes = old('purchase_fee_type', $data['purchase_fee_type'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.purchase_fee_type.residential') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curLlPurchFeeRes === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -1268,9 +1268,10 @@
                                         class="form-control has-icon" data-icon="fa-solid fa-handshake"
                                         onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission" @selected(old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? '') === "Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission")>Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission</option>
-                                    <option value="Landlord to Pay Tenant's Broker Separately" @selected(old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? '') === "Landlord to Pay Tenant's Broker Separately")>Landlord to Pay Tenant's Broker Separately</option>
-                                    <option value="No Compensation Offered to the Tenant's Broker" @selected(old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? '') === "No Compensation Offered to the Tenant's Broker")>No Compensation Offered to the Tenant's Broker</option>
+                                    @php $curTbCommStr = old('tenant_broker_commission_structure', $data['tenant_broker_commission_structure'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.tenant_broker_commission_structure') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curTbCommStr === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -1283,11 +1284,14 @@
                                         class="form-control has-icon" data-icon="fa-solid fa-ruler"
                                         onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
-                                    <option value="Percentage of the Gross Lease Value" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                    <option value="Percentage of the First Month’s Rent" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === "Percentage of the First Month’s Rent")>Percentage of the First Month’s Rent</option>
-                                    <option value="Flat fee" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Flat fee')>Flat Fee</option>
-                                    <option value="Other" @selected(old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '') === 'Other')>Other</option>
+                                    @php
+                                        $rawTbFeeStr = old('tenant_broker_fee_structure', $data['tenant_broker_fee_structure'] ?? '');
+                                        // Normalize legacy 'Flat Fee' (capital F) to 'Flat fee' so @selected fires on the one option
+                                        $curTbFeeStr = ($rawTbFeeStr === 'Flat Fee') ? 'Flat fee' : $rawTbFeeStr;
+                                    @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.tenant_broker_fee_structure') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curTbFeeStr === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -1316,10 +1320,10 @@
                                 <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
                                         data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Deducted from Rent Collected" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Deducted from Rent Collected')>Deducted from Rent Collected</option>
-                                    <option value="Paid Within Calendar Days After Executed Lease" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days After Executed Lease')>Paid Within Calendar Days After Executed Lease</option>
-                                    <option value="Paid Within Calendar Days of Tenant Rent Payment" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days of Tenant Rent Payment')>Paid Within Calendar Days of Tenant Rent Payment</option>
-                                    <option value="other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'other')>Other</option>
+                                    @php $curLlBftRes = old('broker_fee_timing', $data['broker_fee_timing'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.broker_fee_timing.residential') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curLlBftRes === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -1345,11 +1349,10 @@
                                 <select id="cp_renewal_fee_type_res" name="renewal_fee_type" class="form-control has-icon"
                                         data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Percentage of the Rent Due Each Rental Period" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
-                                    <option value="Percentage of the Gross Lease Value" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                    <option value="Percentage of the First Month's Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === "Percentage of the First Month’s Rent")>Percentage of the First Month's Rent</option>
-                                    <option value="Flat Fee" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                    <option value="other" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'other')>Other</option>
+                                    @php $curLlRenFeeRes = old('renewal_fee_type', $data['renewal_fee_type'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.renewal_fee_type.residential') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curLlRenFeeRes === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -1378,11 +1381,10 @@
                                 <select id="cp_purchase_fee_type" name="purchase_fee_type" class="form-control has-icon"
                                         data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
-                                    <option value="Percentage of the Gross Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Gross Rent')>Percentage of the Gross Rent</option>
-                                    <option value="Percentage of Month’s Rent" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === "Percentage of Month’s Rent")>Percentage of Month’s Rent</option>
-                                    <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                    <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                    @php $curLlPurchFeeComm = old('purchase_fee_type', $data['purchase_fee_type'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.purchase_fee_type.commercial') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curLlPurchFeeComm === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -1392,20 +1394,20 @@
                                 <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of the Gross Rent">
                                     <div class="row gy-2">
                                         <div class="col-12"><div class="input-group"><input type="number" name="purchase_fee_gross_rent" class="form-control" value="{{ old('purchase_fee_gross_rent', $data['purchase_fee_gross_rent'] ?? '') }}" placeholder="Enter percentage of the gross rent (e.g., 5)"><span class="input-group-text">%</span></div></div>
-                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('sales_tax_option_gross', $data['sales_tax_option_gross'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('sales_tax_option_gross', $data['sales_tax_option_gross'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_gross" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('sales_tax_option_gross', $data['sales_tax_option_gross'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
                                 <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Percentage of Month’s Rent">
                                     <div class="row gy-2">
                                         <div class="col-12"><div class="input-group"><input type="number" name="purchase_fee_monthly_percentage" class="form-control" value="{{ old('purchase_fee_monthly_percentage', $data['purchase_fee_monthly_percentage'] ?? '') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
                                         <div class="col-12"><label class="fw-bold">Number of Months</label><div class="input-group mt-1"><span class="input-group-text">#</span><input type="number" name="purchase_fee_months" class="form-control" value="{{ old('purchase_fee_months', $data['purchase_fee_months'] ?? '') }}" placeholder="Enter number of months (e.g., 1)"></div></div>
-                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_monthly" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('sales_tax_option_monthly', $data['sales_tax_option_monthly'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('sales_tax_option_monthly', $data['sales_tax_option_monthly'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_monthly" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('sales_tax_option_monthly', $data['sales_tax_option_monthly'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
                                 <div data-cp-parent="cp_purchase_fee_type" data-cp-values="Flat Fee">
                                     <div class="row gy-2">
                                         <div class="col-12"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="purchase_fee_flat_commercial" class="form-control" value="{{ old('purchase_fee_flat_commercial', $data['purchase_fee_flat_commercial'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 3,000)"></div></div>
-                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_flat" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('sales_tax_option_flat', $data['sales_tax_option_flat'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('sales_tax_option_flat', $data['sales_tax_option_flat'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="sales_tax_option_flat" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('sales_tax_option_flat', $data['sales_tax_option_flat'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
                                 <div data-cp-parent="cp_purchase_fee_type" data-cp-values="other">
@@ -1421,10 +1423,10 @@
                                 <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
                                         data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="full_execution" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'full_execution')>Full amount upon execution of lease, sales contract, or other transfer agreement</option>
-                                    <option value="50% due upon execution, 50% due upon commencement of agreement" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === '50% due upon execution, 50% due upon commencement of agreement')>50% due upon execution, 50% due upon commencement of agreement</option>
-                                    <option value="50% due upon execution, 50% due upon occupancy of premises" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === '50% due upon execution, 50% due upon occupancy of premises')>50% due upon execution, 50% due upon occupancy of premises</option>
-                                    <option value="Other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Other')>Other</option>
+                                    @php $curLlBftComm = old('broker_fee_timing', $data['broker_fee_timing'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.broker_fee_timing.commercial') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curLlBftComm === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div data-cp-parent="cp_broker_fee_timing" data-cp-values="Other" class="mt-2">
@@ -1439,11 +1441,10 @@
                                 <select id="cp_renewal_fee_type_com" name="renewal_fee_type" class="form-control has-icon"
                                         data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                     <option value="">Select</option>
-                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
-                                    <option value="Percentage of the Gross Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Percentage of the Gross Rent')>Percentage of the Gross Rent</option>
-                                    <option value="Percentage of Month's Rent" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === "Percentage of Month’s Rent")>Percentage of Month's Rent</option>
-                                    <option value="Flat Fee" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                    <option value="other" @selected(old('renewal_fee_type', $data['renewal_fee_type'] ?? '') === 'other')>Other</option>
+                                    @php $curLlRenFeeComm = old('renewal_fee_type', $data['renewal_fee_type'] ?? ''); @endphp
+                                    @foreach(config('agent_preset_compensation.landlord.renewal_fee_type.commercial') as $optVal => $optLabel)
+                                        <option value="{{ $optVal }}" @selected($curLlRenFeeComm === $optVal)>{{ $optLabel }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="mt-2">
@@ -1453,20 +1454,20 @@
                                 <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Percentage of the Gross Rent">
                                     <div class="row gy-2">
                                         <div class="col-12"><div class="input-group"><input type="number" name="renewal_fee_lease_value" class="form-control" value="{{ old('renewal_fee_lease_value', $data['renewal_fee_lease_value'] ?? '') }}" placeholder="Enter percentage of the gross rent (e.g., 5)"><span class="input-group-text">%</span></div></div>
-                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_lease_value" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('renewal_fee_sales_tax_lease_value', $data['renewal_fee_sales_tax_lease_value'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('renewal_fee_sales_tax_lease_value', $data['renewal_fee_sales_tax_lease_value'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_lease_value" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('renewal_fee_sales_tax_lease_value', $data['renewal_fee_sales_tax_lease_value'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
                                 <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Percentage of Month's Rent">
                                     <div class="row gy-2">
                                         <div class="col-12"><div class="input-group"><input type="number" name="renewal_fee_first_month" class="form-control" value="{{ old('renewal_fee_first_month', $data['renewal_fee_first_month'] ?? '') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
                                         <div class="col-12"><label class="fw-bold">Number of Months</label><div class="input-group mt-1"><span class="input-group-text">#</span><input type="number" name="renewal_fee_no_of_months" class="form-control" value="{{ old('renewal_fee_no_of_months', $data['renewal_fee_no_of_months'] ?? '') }}" placeholder="Enter number of months (e.g., 1)"></div></div>
-                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_first_month" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('renewal_fee_sales_tax_first_month', $data['renewal_fee_sales_tax_first_month'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('renewal_fee_sales_tax_first_month', $data['renewal_fee_sales_tax_first_month'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_first_month" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('renewal_fee_sales_tax_first_month', $data['renewal_fee_sales_tax_first_month'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
                                 <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="Flat Fee">
                                     <div class="row gy-2">
                                         <div class="col-12"><div class="input-group"><span class="input-group-text">$</span><input type="text" name="renewal_fee_flat_free" class="form-control" value="{{ old('renewal_fee_flat_free', $data['renewal_fee_flat_free'] ?? '') }}" placeholder="Enter flat fee amount (e.g., 5,000)"></div></div>
-                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_flat_fee" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option><option value="including" @selected(old('renewal_fee_sales_tax_flat_fee', $data['renewal_fee_sales_tax_flat_fee'] ?? '') === 'including')>Including Sales Tax</option><option value="excluding" @selected(old('renewal_fee_sales_tax_flat_fee', $data['renewal_fee_sales_tax_flat_fee'] ?? '') === 'excluding')>Excluding Sales Tax</option></select></div></div>
+                                        <div class="col-12"><label class="fw-bold">Sales Tax</label><div class="input-cover mt-1"><select name="renewal_fee_sales_tax_flat_fee" class="form-control has-icon" data-icon="fa-solid fa-ruler"><option value="">Select</option>@foreach(config('agent_preset_compensation.common.sales_tax') as $stOptVal => $stOptLabel)<option value="{{ $stOptVal }}" @selected(old('renewal_fee_sales_tax_flat_fee', $data['renewal_fee_sales_tax_flat_fee'] ?? '') === $stOptVal)>{{ $stOptLabel }}</option>@endforeach</select></div></div>
                                     </div>
                                 </div>
                                 <div data-cp-parent="cp_renewal_fee_type_com" data-cp-values="other">
@@ -1508,10 +1509,10 @@
                                     class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
                                     onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Percentage of the Gross Lease Value" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                <option value="Percentage of the Rent Due Each Rental Period" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Percentage of the Rent Due Each Rental Period')>Percentage of the Rent Due Each Rental Period</option>
-                                <option value="Flat Fee" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                <option value="Other" @selected(old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? '') === 'Other')>Other</option>
+                                @php $curPmFee = old('interested_in_property_management_fee', $data['interested_in_property_management_fee'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.landlord.property_management_fee_type') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curPmFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1551,10 +1552,10 @@
                                     class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
                                     onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Percentage of the Total Purchase Price" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
-                                <option value="Percentage of the Total Purchase Price + Flat Fee" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Percentage of the Total Purchase Price + Flat Fee')>Percentage of the Total Purchase Price + Flat Fee</option>
-                                <option value="Flat Fee" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                <option value="Other" @selected(old('interested_in_selling_type', $data['interested_in_selling_type'] ?? '') === 'Other')>Other</option>
+                                @php $curSellingFee = old('interested_in_selling_type', $data['interested_in_selling_type'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.landlord.selling_fee_type') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curSellingFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1580,22 +1581,11 @@
                             <select id="cp_split_payment_due" name="split_payment_due" class="form-control has-icon"
                                     data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Full amount upon execution of lease, sales contract, or other transfer agreement"
-                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === 'Full amount upon execution of lease, sales contract, or other transfer agreement')>
-                                    Full amount upon execution of lease, sales contract, or other transfer agreement
-                                </option>
-                                <option value="50% due upon execution, 50% due upon commencement of agreement"
-                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === '50% due upon execution, 50% due upon commencement of agreement')>
-                                    50% due upon execution, 50% due upon commencement of agreement
-                                </option>
-                                <option value="50% due upon execution, 50% due uponoccupancy of premises"
-                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === '50% due upon execution, 50% due uponoccupancy of premises')>
-                                    50% due upon execution, 50% due upon occupancy of premises
-                                </option>
-                                <option value="Other"
-                                    @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === 'Other')>
-                                    Other
-                                </option>
+                                @php $curSplitPay = old('split_payment_due', $data['split_payment_due'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.landlord.split_payment_due') as $optVal => $optLabel)
+                                    {{-- Note: 3rd option key has legacy typo 'uponoccupancy' (missing space); display label corrects it --}}
+                                    <option value="{{ $optVal }}" @selected($curSplitPay === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -1619,8 +1609,10 @@
                             <select id="cp_commission_structure" name="commission_structure" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Out-of-Pocket Payment" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Out-of-Pocket Payment')>Tenant Pays Out-of-Pocket</option>
-                                <option value="Included in Offer" @selected(old('commission_structure', $data['commission_structure'] ?? '') === 'Included in Offer')>Requested From Landlord in the Offer</option>
+                                @php $curTenantCommStr = old('commission_structure', $data['commission_structure'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.tenant.commission_structure') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curTenantCommStr === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                     </div>
@@ -1632,16 +1624,17 @@
                             <select id="cp_lease_fee_type" name="lease_fee_type" class="form-control has-icon"
                                     data-icon="fa-solid fa-file-invoice-dollar" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Flat Fee" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                @if ($propertyType === 'residential')
-                                    <option value="Percentage of Monthly Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of Monthly Rent')>Percentage of Monthly Rent</option>
-                                    <option value="Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Gross Lease Value')>Percentage of the Gross Lease Value</option>
-                                    <option value="Flat Fee + Percentage of the Gross Lease Value" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Gross Lease Value')>Flat Fee + Percentage of the Gross Lease Value</option>
-                                @elseif ($propertyType === 'commercial')
-                                    <option value="Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Percentage of the Net Aggregate Rent')>Percentage of the Net Aggregate Rent</option>
-                                    <option value="Flat Fee + Percentage of the Net Aggregate Rent" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'Flat Fee + Percentage of the Net Aggregate Rent')>Flat Fee + Percentage of the Net Aggregate Rent</option>
-                                @endif
-                                <option value="other" @selected(old('lease_fee_type', $data['lease_fee_type'] ?? '') === 'other')>Other</option>
+                                @php
+                                    $curTenantLeaseFee = old('lease_fee_type', $data['lease_fee_type'] ?? '');
+                                    $tenantLeaseFeeOpts = ($propertyType === 'residential')
+                                        ? config('agent_preset_compensation.tenant.lease_fee_type.residential')
+                                        : (($propertyType === 'commercial')
+                                            ? config('agent_preset_compensation.tenant.lease_fee_type.commercial')
+                                            : ['Flat Fee' => 'Flat Fee', 'other' => 'Other']);
+                                @endphp
+                                @foreach($tenantLeaseFeeOpts as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curTenantLeaseFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1680,10 +1673,10 @@
                             <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
                                     data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Deducted from Rent Collected" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Deducted from Rent Collected')>Deducted from Rent Collected</option>
-                                <option value="Paid Within Calendar Days After Executed Lease" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days After Executed Lease')>Paid Within Calendar Days After Executed Lease</option>
-                                <option value="Paid Within Calendar Days of Tenant Rent Payment" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'Paid Within Calendar Days of Tenant Rent Payment')>Paid Within Calendar Days of Tenant Rent Payment</option>
-                                <option value="other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'other')>Other</option>
+                                @php $curTenantBftRes = old('broker_fee_timing', $data['broker_fee_timing'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.tenant.broker_fee_timing.residential') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curTenantBftRes === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1711,10 +1704,10 @@
                             <select id="cp_broker_fee_timing" name="broker_fee_timing" class="form-control has-icon"
                                     data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="full_execution" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'full_execution')>Full amount upon execution of lease, sales contract, or other transfer agreement</option>
-                                <option value="half_execution_half_commencement" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'half_execution_half_commencement')>50% due upon execution, 50% due upon commencement of agreement</option>
-                                <option value="half_execution_half_occupancy" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'half_execution_half_occupancy')>50% due upon execution, 50% due upon occupancy of premises</option>
-                                <option value="other" @selected(old('broker_fee_timing', $data['broker_fee_timing'] ?? '') === 'other')>Other</option>
+                                @php $curTenantBftComm = old('broker_fee_timing', $data['broker_fee_timing'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.tenant.broker_fee_timing.commercial') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curTenantBftComm === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div data-cp-parent="cp_broker_fee_timing" data-cp-values="other" class="mt-2">
@@ -1744,10 +1737,10 @@
                                     class="form-control has-icon" data-icon="fa-solid fa-file-invoice-dollar"
                                     onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
-                                <option value="Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Flat Fee')>Flat Fee</option>
-                                <option value="Percentage of the Total Purchase Price" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price')>Percentage of the Total Purchase Price</option>
-                                <option value="Percentage of the Total Purchase Price + Flat Fee" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'Percentage of the Total Purchase Price + Flat Fee')>Percentage of the Total Purchase Price + Flat Fee</option>
-                                <option value="other" @selected(old('purchase_fee_type', $data['purchase_fee_type'] ?? '') === 'other')>Other</option>
+                                @php $curTenantPurchFee = old('purchase_fee_type', $data['purchase_fee_type'] ?? ''); @endphp
+                                @foreach(config('agent_preset_compensation.tenant.purchase_fee_type') as $optVal => $optLabel)
+                                    <option value="{{ $optVal }}" @selected($curTenantPurchFee === $optVal)>{{ $optLabel }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="mt-2">
@@ -1824,6 +1817,8 @@
                     $etfNoVal  = ($role === 'tenant') ? 'No'  : 'no';
                     $etfCur    = old('early_termination_fee_option', $data['early_termination_fee_option'] ?? '');
                 @endphp
+                {{-- NOTE: Left hardcoded — stored value differs by role: buyer/seller/landlord use lowercase 'yes'/'no';
+                     tenant uses capitalized 'Yes'/'No'. Values come from $etfYesVal/$etfNoVal (set above). --}}
                 <div class="mb-2">
                     <label class="fw-bold">Early Termination Fee</label>
                     <div class="input-cover mt-2">
@@ -1864,6 +1859,8 @@
                     $rtfNoVal  = ($role === 'tenant') ? 'No'  : 'no';
                     $rtfCur    = old('retainer_fee_option', $data['retainer_fee_option'] ?? '');
                 @endphp
+                {{-- NOTE: Left hardcoded — stored value differs by role: buyer/seller use lowercase 'yes'/'no';
+                     tenant uses 'Yes'/'No'. Values come from $rtfYesVal/$rtfNoVal (set above). --}}
                 <div class="mb-2">
                     <label class="fw-bold">Retainer Fee</label>
                     <div class="input-cover mt-2">
@@ -1882,6 +1879,8 @@
                                value="{{ old('retainer_fee_amount', $data['retainer_fee_amount'] ?? '') }}"
                                placeholder="Enter retainer fee amount (e.g., 500)">
                     </div>
+                    {{-- NOTE: Left hardcoded — stored value differs by role: tenant uses short slugs ('applied'/'additional');
+                         buyer/seller store full sentences ('Applied toward final compensation' / 'Charged in addition…'). --}}
                     <div class="input-cover mt-2">
                         <select name="retainer_fee_application" class="form-control has-icon" data-icon="fa-solid fa-circle-check">
                             <option value="">Select application</option>
@@ -1911,10 +1910,10 @@
                     <div class="input-cover mt-2">
                         <select name="brokerage_relationship" class="form-control has-icon" data-icon="fa-solid fa-handshake">
                             <option value="">Select</option>
-                            <option value="Transaction Broker Representation" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'Transaction Broker Representation')>Transaction Broker Representation</option>
-                            <option value="Single Agent Representation" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'Single Agent Representation')>Single Agent Representation</option>
-                            <option value="Dual Agency Representation" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'Dual Agency Representation')>Dual Agency Representation</option>
-                            <option value="No Brokerage Relationship" @selected(old('brokerage_relationship', $data['brokerage_relationship'] ?? '') === 'No Brokerage Relationship')>No Brokerage Relationship</option>
+                            @php $curBrokRelat = old('brokerage_relationship', $data['brokerage_relationship'] ?? ''); @endphp
+                            @foreach(config('agent_preset_compensation.common.brokerage_relationship') as $optVal => $optLabel)
+                                <option value="{{ $optVal }}" @selected($curBrokRelat === $optVal)>{{ $optLabel }}</option>
+                            @endforeach
                         </select>
                     </div>
                 </div>
@@ -1931,10 +1930,10 @@
                                 class="form-control has-icon" data-icon="fa-solid fa-calendar"
                                 onchange="_cpTrigger(this.id)">
                             <option value="">Select</option>
-                            <option value="3 Months" @selected($aatCur === '3 Months')>3 Months</option>
-                            <option value="6 Months" @selected($aatCur === '6 Months')>6 Months</option>
-                            <option value="9 Months" @selected($aatCur === '9 Months')>9 Months</option>
-                            <option value="12 Months" @selected($aatCur === '12 Months')>12 Months</option>
+                            @foreach(config('agent_preset_compensation.common.agency_agreement_timeframe') as $optVal => $optLabel)
+                                <option value="{{ $optVal }}" @selected($aatCur === $optVal)>{{ $optLabel }}</option>
+                            @endforeach
+                            {{-- Custom/Other option is hardcoded: buyer stores 'custom', all others store 'Other' (role-conditional value) --}}
                             <option value="{{ $aatCustomVal }}" @selected($aatCur === $aatCustomVal)>Other (Custom)</option>
                         </select>
                     </div>
