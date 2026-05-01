@@ -522,6 +522,8 @@ class AgentPresetController extends Controller
         // Scope-aware propagation of public profile fields to other presets.
         // Only the PROFILE_FIELDS keys are written to other records; all other
         // profile_data keys (services, compensation, agreement terms) are untouched.
+        // Invariant: 'current_role' scope is strictly filtered by role_type === $role,
+        // preventing any cross-role contamination of profile fields.
         $scope = $request->input('profile_save_scope', 'current_preset');
 
         if ($scope === 'current_role' || $scope === 'all_roles') {
@@ -533,6 +535,7 @@ class AgentPresetController extends Controller
                       ->orWhere('property_type', '!=', $propertyType);
                 });
 
+            // current_role: apply only to presets of the same role — no cross-role writes.
             if ($scope === 'current_role') {
                 $query->where('role_type', $role);
             }

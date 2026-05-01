@@ -150,6 +150,18 @@ class HireAgentDirectController extends Controller
         // Resolve services from the preset (handles array or JSON-string storage)
         $agentServices = self::resolveServices($profile);
 
+        // Resolve custom / additional services from the preset
+        $otherServices = [];
+        if ($profile) {
+            $rawOther = $profile->profile_data['other_services'] ?? [];
+            if (is_array($rawOther)) {
+                $otherServices = array_values(array_filter(
+                    $rawOther,
+                    fn($s) => is_string($s) && trim($s) !== ''
+                ));
+            }
+        }
+
         // Preset is only usable when it exists AND has at least one service
         $presetValid = $profile !== null && count($agentServices) > 0;
 
@@ -166,6 +178,7 @@ class HireAgentDirectController extends Controller
             'profile',
             'mapped',
             'agentServices',
+            'otherServices',
             'presetValid',
             'submitToken',
             'isOwnerPreview'
@@ -210,6 +223,8 @@ class HireAgentDirectController extends Controller
             'address'              => 'required|string|max:500',
             'services'             => 'nullable|array',
             'services.*'           => 'string|max:500',
+            'other_services'       => 'nullable|array',
+            'other_services.*'     => 'string|max:500',
             'additional_requested' => 'nullable|string|max:3000',
         ]);
 
@@ -240,6 +255,19 @@ class HireAgentDirectController extends Controller
             $agentServices
         ));
 
+        // Additional services the agent defined — intersect against the preset's
+        // other_services list so clients cannot inject arbitrary values
+        $presetOtherServices = array_values(array_filter(
+            is_array($profile->profile_data['other_services'] ?? null)
+                ? $profile->profile_data['other_services']
+                : [],
+            fn($s) => is_string($s) && trim($s) !== ''
+        ));
+        $clientOtherServices = array_values(array_intersect(
+            $validated['other_services'] ?? [],
+            $presetOtherServices
+        ));
+
         DB::beginTransaction();
         try {
             // ── 1. Create the listing ────────────────────────────────────
@@ -261,8 +289,8 @@ class HireAgentDirectController extends Controller
             $listing->saveMeta('property_type',    $propertyType);
             $listing->saveMeta('expiration_date',  now()->addDays(30)->toDateString());
             $listing->saveMeta('services',         json_encode($clientServices));
-            $listing->saveMeta('other_services',   json_encode([]));
-            $listing->saveMeta('other_services_enabled', '0');
+            $listing->saveMeta('other_services',   json_encode($clientOtherServices));
+            $listing->saveMeta('other_services_enabled', empty($clientOtherServices) ? '0' : '1');
             $listing->saveMeta('hire_me_flow',     '1');
 
             if (!empty($validated['additional_requested'])) {

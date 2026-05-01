@@ -317,6 +317,26 @@
                         </label>
                         @endforeach
                     </div>
+                    @php
+                        $agentServicesLower = array_map('mb_strtolower', $agentServices);
+                        $filteredOtherServices = array_values(array_filter(
+                            $otherServices,
+                            fn($s) => is_string($s) && trim($s) !== ''
+                                   && !in_array(mb_strtolower(trim($s)), $agentServicesLower, true)
+                        ));
+                    @endphp
+                    @if(!empty($filteredOtherServices))
+                    <div class="mt-3">
+                        <div style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;">Additional Services</div>
+                        <p class="text-muted small mb-2">These custom services are included with this offer.</p>
+                        <ul class="mb-0" style="padding-left:1.25rem;line-height:1.9;">
+                            @foreach($filteredOtherServices as $svc)
+                                <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
+                                <input type="hidden" name="other_services[]" value="{{ $svc }}">
+                            @endforeach
+                        </ul>
+                    </div>
+                    @endif
                     @error('services') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
                     @error('services.*') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
                 </div>

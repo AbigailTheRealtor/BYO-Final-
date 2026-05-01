@@ -616,6 +616,52 @@
         </div>
     @endif
 
+    {{-- ── SERVICES OFFERED ─────────────────────────────────────────── --}}
+    @php
+        // Collect all standard services that were successfully grouped by catalog category.
+        // $groupedProfileServices is passed from AgentProfileController::show().
+        $allStandardServicesLower = [];
+        foreach ($groupedProfileServices as $catSvcs) {
+            foreach ($catSvcs as $svc) {
+                $allStandardServicesLower[] = mb_strtolower(trim($svc));
+            }
+        }
+        // Deduplicate: custom services not already in the standard grouped list.
+        $profileOtherServices = array_values(array_filter(
+            is_array($data['other_services'] ?? null) ? $data['other_services'] : [],
+            fn($s) => is_string($s) && trim($s) !== ''
+                   && !in_array(mb_strtolower(trim($s)), $allStandardServicesLower, true)
+        ));
+        $hasServices = !empty($groupedProfileServices) || count($profileOtherServices) > 0;
+    @endphp
+    @if ($hasServices)
+        <div class="profile-section">
+            <div class="profile-section-header"><i class="fa-solid fa-list-check"></i> Services Offered</div>
+            <div class="profile-section-body">
+                @if (!empty($groupedProfileServices))
+                    @foreach ($groupedProfileServices as $catLabel => $catSvcs)
+                        <div class="profile-field-label" style="margin-top:{{ $loop->first ? '0' : '1rem' }};">{{ $catLabel }}</div>
+                        <ul class="mb-0" style="padding-left:1.25rem;line-height:1.7;">
+                            @foreach ($catSvcs as $svc)
+                                <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
+                            @endforeach
+                        </ul>
+                    @endforeach
+                @endif
+                @if (count($profileOtherServices) > 0)
+                    <div class="{{ !empty($groupedProfileServices) ? 'mt-3' : '' }}">
+                        <div class="profile-field-label">Additional Services</div>
+                        <ul class="mb-0" style="padding-left:1.25rem;line-height:1.7;">
+                            @foreach ($profileOtherServices as $svc)
+                                <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
     {{-- ── HIRE BUTTONS ─────────────────────────────────────────────── --}}
     @if ($isOwnerPreview && count($hireButtons) > 0)
         <div class="profile-section">

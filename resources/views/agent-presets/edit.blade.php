@@ -74,6 +74,34 @@
         color: #6c757d;
         margin-top: .2rem;
     }
+    /* Referral Fee tab panel */
+    .referral-tab-wrap {
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #dee2e6;
+    }
+    .referral-tab-nav {
+        border-bottom: 1px solid #dee2e6;
+        background: #f8f9fa;
+        padding: .5rem .75rem 0;
+    }
+    .referral-tab-nav .nav-link {
+        font-weight: 700;
+        font-size: .9rem;
+        color: #495057;
+        border-radius: 6px 6px 0 0;
+        border: 1px solid transparent;
+    }
+    .referral-tab-nav .nav-link.active {
+        color: #049399;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+    }
+    .referral-tab-content {
+        border-top: none;
+    }
+
     /* Services checklist */
     .services-grid {
         display: grid;
@@ -882,6 +910,45 @@
             </div>
         </div>
 
+        {{-- ── REFERRAL FEE & COOPERATION TERMS (agent-profile presets only) ─── --}}
+        @if(Auth::check() && Auth::user()->user_type === 'agent')
+        <div class="referral-tab-wrap mb-4">
+            <ul class="nav nav-tabs referral-tab-nav" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active"
+                            id="referral-tab-btn"
+                            type="button"
+                            role="tab"
+                            aria-controls="referral-tab-panel"
+                            aria-selected="true">
+                        <i class="fa-solid fa-handshake-simple me-1"></i>
+                        Referral Fee &amp; Cooperation Terms
+                    </button>
+                </li>
+            </ul>
+            <div class="tab-content referral-tab-content" id="referral-tab-panel" role="tabpanel" aria-labelledby="referral-tab-btn">
+                <div class="p-4">
+                    <p class="text-muted mb-4 small">If you are working on a referral basis, enter your referral fee percentage here. This field is shared across all roles and applies to agent-to-agent cooperation arrangements.</p>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold">Referral Fee (%)</label>
+                        <div class="input-group mt-2" style="max-width:280px;">
+                            <input type="number"
+                                   step="0.01"
+                                   min="0"
+                                   max="100"
+                                   name="referral_fee_percent"
+                                   class="form-control"
+                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
+                                   placeholder="e.g., 25">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-hint mt-1">Enter the percentage of your gross commission you are willing to pay to a referring agent (e.g., 25 for 25%).</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         {{-- ── BROKER COMPENSATION & AGENCY AGREEMENT TERMS ──────────────────── --}}
         <div class="preset-section">
             <div class="preset-section-header"
@@ -1003,21 +1070,6 @@
                         </div>
                     </div>
 
-                    {{-- Referral Fee (Buyer) --}}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Referral Fee (%)</label>
-                        <div class="input-group mt-2">
-                            <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   max="100"
-                                   name="referral_fee_percent"
-                                   class="form-control"
-                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
-                                   placeholder="Enter referral fee percentage (e.g., 25)">
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
                 @endif
 
                 @if ($role === 'seller')
@@ -1171,21 +1223,6 @@
                         </div>
                     </div>
 
-                    {{-- Referral Fee (Seller) --}}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Referral Fee (%)</label>
-                        <div class="input-group mt-2">
-                            <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   max="100"
-                                   name="referral_fee_percent"
-                                   class="form-control"
-                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
-                                   placeholder="Enter referral fee percentage (e.g., 25)">
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
                 @endif
 
                 @if ($role === 'landlord')
@@ -1536,28 +1573,12 @@
                         </div>
                     </div>
 
-                    {{-- Referral Fee (Landlord, agent-to-agent) --}}
+                    {{-- Payment Timing for Broker Fees (Landlord) --}}
                     <div class="mb-4">
-                        <label class="form-label fw-bold">Referral Fee (%)</label>
-                        <div class="input-group mt-2">
-                            <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   max="100"
-                                   name="referral_fee_percent"
-                                   class="form-control"
-                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
-                                   placeholder="Enter referral fee percentage (e.g., 25)">
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
-
-                    {{-- Split Payment Due (Landlord) --}}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Split Payment Due</label>
+                        <label class="form-label fw-bold">Payment Timing for Broker Fees</label>
                         <div class="input-cover mt-2">
-                            <select name="split_payment_due" class="form-control has-icon"
-                                    data-icon="fa-solid fa-clock">
+                            <select id="cp_split_payment_due" name="split_payment_due" class="form-control has-icon"
+                                    data-icon="fa-solid fa-clock" onchange="_cpTrigger(this.id)">
                                 <option value="">Select</option>
                                 <option value="Full amount upon execution of lease, sales contract, or other transfer agreement"
                                     @selected(old('split_payment_due', $data['split_payment_due'] ?? '') === 'Full amount upon execution of lease, sales contract, or other transfer agreement')>
@@ -1579,8 +1600,8 @@
                         </div>
                     </div>
 
-                    {{-- Split Payment Due — Other (Landlord) --}}
-                    <div class="mb-4">
+                    {{-- Payment Timing — If Other, Specify (Landlord, only when "Other" is selected) --}}
+                    <div data-cp-parent="cp_split_payment_due" data-cp-values="Other" class="mb-4">
                         <label class="form-label fw-bold">If Other, Specify</label>
                         <input type="text"
                                name="split_payment_due_other"
@@ -1745,21 +1766,6 @@
                         </div>
                     </div>
 
-                    {{-- Referral Fee (Tenant) --}}
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Referral Fee (%)</label>
-                        <div class="input-group mt-2">
-                            <input type="number"
-                                   step="0.01"
-                                   min="0"
-                                   max="100"
-                                   name="referral_fee_percent"
-                                   class="form-control"
-                                   value="{{ old('referral_fee_percent', $data['referral_fee_percent'] ?? '') }}"
-                                   placeholder="Enter referral fee percentage (e.g., 25)">
-                            <span class="input-group-text">%</span>
-                        </div>
-                    </div>
                 @endif
 
                 {{-- Interested in a Lease-Option Agreement (all roles) --}}

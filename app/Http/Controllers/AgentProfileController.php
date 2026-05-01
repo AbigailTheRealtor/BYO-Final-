@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\AgentDefaultProfile;
 use App\Models\User;
 use App\Services\AgentPresetCatalog;
+use App\Support\ServicesFormatter;
 use Illuminate\Support\Facades\Auth;
 
 class AgentProfileController extends Controller
@@ -16,6 +17,9 @@ class AgentProfileController extends Controller
      * are stripped server-side before the view is rendered.
      */
     public const PUBLIC_PROFILE_KEYS = [
+        // Services (shown as read-only bullet list on public profile)
+        'services',
+        'other_services',
         // Identity
         'first_name',
         'last_name',
@@ -131,12 +135,24 @@ class AgentProfileController extends Controller
             }
         }
 
+        // Build grouped standard-services list for read-only display on the profile page.
+        // Use the primary profile's role+property context to get catalog order.
+        $groupedProfileServices = [];
+        if ($primaryProfile && !empty($data['services']) && is_array($data['services'])) {
+            $flowKey = $primaryProfile->role_type . '_agent.' . $primaryProfile->property_type;
+            $groupedProfileServices = ServicesFormatter::orderSelectedServices(
+                $data['services'],
+                $flowKey
+            );
+        }
+
         return view('agent-profile.show', compact(
             'agent',
             'data',
             'hireButtons',
             'isOwnerPreview',
-            'agentShortId'
+            'agentShortId',
+            'groupedProfileServices'
         ));
     }
 }
