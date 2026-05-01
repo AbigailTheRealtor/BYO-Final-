@@ -1566,7 +1566,7 @@
                 var $addDocs = $('#additional_documents');
                 if ($addDocs.length) {
                     if (!$addDocs.hasClass('select2-hidden-accessible')) {
-                        $addDocs.select2({ placeholder: "Select", allowClear: true });
+                        $addDocs.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                     }
                     var adData = $addDocs.val() || [];
                     $('#additional-documents-other-section').toggle(adData.includes('Other'));
@@ -1784,7 +1784,7 @@
             }
 
             if ($('#additional_documents').length && !$('#additional_documents').hasClass('select2-hidden-accessible')) {
-                $('#additional_documents').select2({ placeholder: "Select", allowClear: true });
+                $('#additional_documents').select2({ placeholder: "Select", allowClear: true, width: '100%' });
             }
             if ($('#additional_documents').length) {
                 var adDataInit = $('#additional_documents').val() || [];

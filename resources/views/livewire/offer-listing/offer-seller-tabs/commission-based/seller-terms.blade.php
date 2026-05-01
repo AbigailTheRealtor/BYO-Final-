@@ -1909,10 +1909,10 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="included_personal_property" class="form-control has-icon" rows="3"
+        <input type="text" wire:model="included_personal_property" class="form-control has-icon"
             style="padding-left:40px;"
             data-icon="fa-solid fa-couch"
-            placeholder="List items included in the sale (e.g., Refrigerator, washer/dryer, dining room chandelier)"></textarea>
+            placeholder="List items included in the sale (e.g., Refrigerator, washer/dryer, dining room chandelier)">
     </div>
 </div>
 
@@ -1925,10 +1925,10 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="excluded_items" class="form-control has-icon" rows="3"
+        <input type="text" wire:model="excluded_items" class="form-control has-icon"
             style="padding-left:40px;"
             data-icon="fa-solid fa-ban"
-            placeholder="List items excluded from the sale (e.g., Antique light fixture in dining room, detached storage shed)"></textarea>
+            placeholder="List items excluded from the sale (e.g., Antique light fixture in dining room, detached storage shed)">
     </div>
 </div>
 
@@ -1987,7 +1987,7 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon" rows="4"
+        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon" rows="2"
             style="padding-left:40px;"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional sale terms or special conditions the Seller requires"></textarea>

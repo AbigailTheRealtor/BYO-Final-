@@ -30,41 +30,36 @@
             </div>
         </div>
 
-        <div class="row mt-3">
-            {{-- Tax Year --}}
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="fw-bold">Tax Year:
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Enter the tax year for which the property taxes below are reported.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-                    </label>
-                    <input type="text" wire:model="tax_year" class="form-control"
-                        style="padding-left: 12px;"
-                        placeholder="Enter Tax Year (e.g., 2025)">
-                </div>
-            </div>
+        {{-- Tax Year --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Tax Year:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Enter the tax year for which the property taxes below are reported.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <input type="text" wire:model="tax_year" class="form-control"
+                style="padding-left: 12px;"
+                placeholder="Enter Tax Year (e.g., 2025)">
+        </div>
 
-            {{-- Annual Property Taxes --}}
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="fw-bold">Annual Property Taxes:
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Enter the total annual property tax amount for the tax year listed. This figure is informational and may change after sale.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-                    </label>
-                    <div class="input-cover">
-                        <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="annual_property_taxes" class="form-control"
-                            placeholder="Enter Annual Property Taxes (e.g., 5,200)"
-                            data-error-id="annual_property_taxes_error"
-                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-                    </div>
-                    <span class="error mt-1" id="annual_property_taxes_error"></span>
-                </div>
+        {{-- Annual Property Taxes --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Annual Property Taxes:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Enter the total annual property tax amount for the tax year listed. This figure is informational and may change after sale.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
+                <input type="text" wire:model="annual_property_taxes" class="form-control"
+                    style="padding-left: 12px;"
+                    placeholder="Enter Annual Property Taxes (e.g., 5,200)"
+                    data-error-id="annual_property_taxes_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
+            <span class="error mt-1" id="annual_property_taxes_error"></span>
         </div>
 
         {{-- Additional Parcels --}}
@@ -721,11 +716,6 @@
     </div>
     <div class="card-body">
 
-        <p class="text-muted small mb-3">
-            <i class="fa-solid fa-circle-info me-1 text-info"></i>
-            Upload available documents in the Photos, Tours &amp; Documents tab.
-        </p>
-
         {{-- Seller Disclosure Available --}}
         <div class="form-group">
             <label class="fw-bold">Seller Disclosure Available:
@@ -886,6 +876,7 @@
             <div class="input-cover" wire:ignore>
                 <i class="input-icon fa-solid fa-folder-open input-icon2"></i>
                 <select id="additional_documents" class="form-control has-icon select2-multiple" multiple>
+                    <option value=""></option>
                     @foreach ($additionalDocumentOptions as $option)
                         <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
                             {{ $option }}
