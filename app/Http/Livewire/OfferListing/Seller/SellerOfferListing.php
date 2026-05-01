@@ -253,6 +253,33 @@ class SellerOfferListing extends Component
     public $unit_buildings = '';
     public $minimum_annual_net_income = '';
     public $minimum_cap_rate = '';
+
+    // Financial Details tab — Income property fields
+    public $gross_annual_income = '';
+    public $annual_operating_expenses = '';
+    public $rent_roll_available = '';
+    public $operating_statement_available = '';
+
+    // Financial Details tab — Commercial property fields
+    public $price_per_sqft = '';
+    public $existing_lease_type = '';
+    public $other_lease_type = '';
+    public $lease_expiration = '';
+    public $lease_assignable = '';
+
+    // Financial Details tab — Business property fields
+    public $annual_revenue = '';
+    public $gross_profit = '';
+    public $sde_ebitda = '';
+    public $inventory_value = '';
+    public $ffe_value = '';
+    public $reason_for_sale = '';
+    public $other_reason_for_sale = '';
+    public $employee_count = '';
+    public $financial_statements_available = '';
+    public $tax_returns_available = '';
+    public $nda_required = '';
+
     public $assets = '';
     public $assets_other = '';
     public $property_criteria = '';
@@ -1781,6 +1808,33 @@ class SellerOfferListing extends Component
             $this->min_acreage = $auction->get->min_acreage;
             $this->total_acreage = $auction->get->total_acreage;
             $this->minimum_cap_rate = $auction->get->minimum_cap_rate;
+
+            // Financial Details tab — Income
+            $this->gross_annual_income = $auction->get->gross_annual_income ?? '';
+            $this->annual_operating_expenses = $auction->get->annual_operating_expenses ?? '';
+            $this->rent_roll_available = $auction->get->rent_roll_available ?? '';
+            $this->operating_statement_available = $auction->get->operating_statement_available ?? '';
+
+            // Financial Details tab — Commercial
+            $this->price_per_sqft = $auction->get->price_per_sqft ?? '';
+            $this->existing_lease_type = $auction->get->existing_lease_type ?? '';
+            $this->other_lease_type = $auction->get->other_lease_type ?? '';
+            $this->lease_expiration = $auction->get->lease_expiration ?? '';
+            $this->lease_assignable = $auction->get->lease_assignable ?? '';
+
+            // Financial Details tab — Business
+            $this->annual_revenue = $auction->get->annual_revenue ?? '';
+            $this->gross_profit = $auction->get->gross_profit ?? '';
+            $this->sde_ebitda = $auction->get->sde_ebitda ?? '';
+            $this->inventory_value = $auction->get->inventory_value ?? '';
+            $this->ffe_value = $auction->get->ffe_value ?? '';
+            $this->reason_for_sale = $auction->get->reason_for_sale ?? '';
+            $this->other_reason_for_sale = $auction->get->other_reason_for_sale ?? '';
+            $this->employee_count = $auction->get->employee_count ?? '';
+            $this->financial_statements_available = $auction->get->financial_statements_available ?? '';
+            $this->tax_returns_available = $auction->get->tax_returns_available ?? '';
+            $this->nda_required = $auction->get->nda_required ?? '';
+
             $this->unit_number = $auction->get->unit_number ?? '';
             $this->unit_buildings = $auction->get->unit_buildings ?? '';
             $this->assets = $auction->get->assets;
@@ -2311,6 +2365,33 @@ class SellerOfferListing extends Component
         $auction->saveMeta('min_acreage', $this->min_acreage);
         $auction->saveMeta('total_acreage', $this->total_acreage);
         $auction->saveMeta('minimum_cap_rate', $this->stripCommas($this->minimum_cap_rate));
+
+        // Financial Details tab — Income
+        $auction->saveMeta('gross_annual_income', $this->stripCommas($this->gross_annual_income));
+        $auction->saveMeta('annual_operating_expenses', $this->stripCommas($this->annual_operating_expenses));
+        $auction->saveMeta('rent_roll_available', $this->rent_roll_available);
+        $auction->saveMeta('operating_statement_available', $this->operating_statement_available);
+
+        // Financial Details tab — Commercial
+        $auction->saveMeta('price_per_sqft', $this->stripCommas($this->price_per_sqft));
+        $auction->saveMeta('existing_lease_type', $this->existing_lease_type);
+        $auction->saveMeta('other_lease_type', $this->other_lease_type);
+        $auction->saveMeta('lease_expiration', $this->lease_expiration);
+        $auction->saveMeta('lease_assignable', $this->lease_assignable);
+
+        // Financial Details tab — Business
+        $auction->saveMeta('annual_revenue', $this->stripCommas($this->annual_revenue));
+        $auction->saveMeta('gross_profit', $this->stripCommas($this->gross_profit));
+        $auction->saveMeta('sde_ebitda', $this->stripCommas($this->sde_ebitda));
+        $auction->saveMeta('inventory_value', $this->stripCommas($this->inventory_value));
+        $auction->saveMeta('ffe_value', $this->stripCommas($this->ffe_value));
+        $auction->saveMeta('reason_for_sale', $this->reason_for_sale);
+        $auction->saveMeta('other_reason_for_sale', $this->other_reason_for_sale);
+        $auction->saveMeta('employee_count', $this->employee_count);
+        $auction->saveMeta('financial_statements_available', $this->financial_statements_available);
+        $auction->saveMeta('tax_returns_available', $this->tax_returns_available);
+        $auction->saveMeta('nda_required', $this->nda_required);
+
         $assetsToSave = (!empty($this->business_assets) && is_array($this->business_assets))
             ? json_encode($this->business_assets)
             : (is_array($this->assets) ? json_encode($this->assets) : $this->assets);

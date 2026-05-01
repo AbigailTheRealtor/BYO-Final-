@@ -837,10 +837,20 @@
                         <!-- Tab Navigation -->
 
                         @if ($service_type === 'full_service')
-                            @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
+                            @php
+                                $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
+                                $hasFinancialTab = $user_type === 'seller' && in_array($property_type, ['Income', 'Commercial', 'Business']);
+                                $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
+                                $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
+                                $taxLegalIdx         = $hasFinancialTab ? 5 : 4;
+                                $photosIdx           = $hasFinancialTab ? 6 : 5;
+                                $sellerInfoIdx       = $hasFinancialTab ? 7 : 6;
+                                $aiIdx               = $hasFinancialTab ? 8 : 7;
+                            @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Sale Terms', 'Additional Details'] as $index => $tab)
+                                {{-- Tabs 0 and 1: always present for all user types --}}
+                                @foreach (['Listing Details', 'Property Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -853,93 +863,173 @@
                                         </button>
                                     </li>
                                 @endforeach
+
                                 @if ($user_type === 'seller')
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)"
-                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#tax-legal-hoa-disclosures"
-                                        type="button" role="tab"
-                                        aria-controls="tax-legal-hoa-disclosures"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Tax, Legal, HOA &amp; Disclosures
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
-                                        type="button" role="tab"
-                                        aria-controls="photos-tours-documents"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Photos, Tours &amp; Documents
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
-                                        id="seller-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#seller-information"
-                                        type="button" role="tab"
-                                        aria-controls="seller-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Seller Information
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(7)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
-                                        type="button" role="tab"
-                                        aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
-                                        AI Questions
-                                    </button>
-                                </li>
-                                @else
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
-                                        type="button" role="tab"
-                                        aria-controls="photos-tours-documents"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Photos, Tours &amp; Documents
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
-                                        id="seller-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#seller-information"
-                                        type="button" role="tab"
-                                        aria-controls="seller-information"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        @if ($user_type === 'tenant')
-                                            Tenant Information
-                                        @elseif ($user_type === 'buyer')
-                                            Buyer Information
-                                        @elseif ($user_type === 'landlord')
-                                            Landlord Information
-                                        @else
+                                    {{-- Financial Details tab: only for Income, Commercial, Business property types --}}
+                                    @if ($hasFinancialTab)
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(2)"
+                                            id="financial-details-tab" data-bs-toggle="tab"
+                                            data-bs-target="#financial-details"
+                                            type="button" role="tab"
+                                            aria-controls="financial-details"
+                                            aria-selected="{{ $activeTab === 2 ? 'true' : 'false' }}">
+                                            Financial Details
+                                        </button>
+                                    </li>
+                                    @endif
+
+                                    {{-- Sale Terms --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $saleTermsIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $saleTermsIdx }})"
+                                            id="sale-terms-tab" data-bs-toggle="tab"
+                                            data-bs-target="#sale-terms"
+                                            type="button" role="tab"
+                                            aria-controls="sale-terms"
+                                            aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
+                                            Sale Terms
+                                        </button>
+                                    </li>
+
+                                    {{-- Additional Details --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $additionalDetailsIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $additionalDetailsIdx }})"
+                                            id="additional-details-tab" data-bs-toggle="tab"
+                                            data-bs-target="#additional-details"
+                                            type="button" role="tab"
+                                            aria-controls="additional-details"
+                                            aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
+                                            Additional Details
+                                        </button>
+                                    </li>
+
+                                    {{-- Tax, Legal, HOA & Disclosures --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $taxLegalIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $taxLegalIdx }})"
+                                            id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
+                                            data-bs-target="#tax-legal-hoa-disclosures"
+                                            type="button" role="tab"
+                                            aria-controls="tax-legal-hoa-disclosures"
+                                            aria-selected="{{ $activeTab === $taxLegalIdx ? 'true' : 'false' }}">
+                                            Tax, Legal, HOA &amp; Disclosures
+                                        </button>
+                                    </li>
+
+                                    {{-- Photos, Tours & Documents --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $photosIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $photosIdx }})"
+                                            id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                            data-bs-target="#photos-tours-documents"
+                                            type="button" role="tab"
+                                            aria-controls="photos-tours-documents"
+                                            aria-selected="{{ $activeTab === $photosIdx ? 'true' : 'false' }}">
+                                            Photos, Tours &amp; Documents
+                                        </button>
+                                    </li>
+
+                                    {{-- Seller Information --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $sellerInfoIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $sellerInfoIdx }})"
+                                            id="seller-information-tab" data-bs-toggle="tab"
+                                            data-bs-target="#seller-information"
+                                            type="button" role="tab"
+                                            aria-controls="seller-information"
+                                            aria-selected="{{ $activeTab === $sellerInfoIdx ? 'true' : 'false' }}">
                                             Seller Information
-                                        @endif
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
-                                        type="button" role="tab"
-                                        aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        AI Questions
-                                    </button>
-                                </li>
+                                        </button>
+                                    </li>
+
+                                    {{-- AI Questions --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $aiIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $aiIdx }})"
+                                            id="ai-questions-tab" data-bs-toggle="tab"
+                                            data-bs-target="#ai-questions"
+                                            type="button" role="tab"
+                                            aria-controls="ai-questions"
+                                            aria-selected="{{ $activeTab === $aiIdx ? 'true' : 'false' }}">
+                                            AI Questions
+                                        </button>
+                                    </li>
+                                @else
+                                    {{-- Non-seller: Sale Terms, Additional Details (indices 2, 3 — no financial tab) --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(2)"
+                                            id="sale-terms-tab" data-bs-toggle="tab"
+                                            data-bs-target="#sale-terms"
+                                            type="button" role="tab"
+                                            aria-controls="sale-terms"
+                                            aria-selected="{{ $activeTab === 2 ? 'true' : 'false' }}">
+                                            @if ($user_type === 'tenant')
+                                                Leasing Terms
+                                            @elseif ($user_type === 'buyer')
+                                                Purchasing Terms
+                                            @elseif ($user_type === 'landlord')
+                                                Lease Terms
+                                            @else
+                                                Sale Terms
+                                            @endif
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(3)"
+                                            id="additional-details-tab" data-bs-toggle="tab"
+                                            data-bs-target="#additional-details"
+                                            type="button" role="tab"
+                                            aria-controls="additional-details"
+                                            aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                            Additional Details
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(4)"
+                                            id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                            data-bs-target="#photos-tours-documents"
+                                            type="button" role="tab"
+                                            aria-controls="photos-tours-documents"
+                                            aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                            Photos, Tours &amp; Documents
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(5)"
+                                            id="seller-information-tab" data-bs-toggle="tab"
+                                            data-bs-target="#seller-information"
+                                            type="button" role="tab"
+                                            aria-controls="seller-information"
+                                            aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                            @if ($user_type === 'tenant')
+                                                Tenant Information
+                                            @elseif ($user_type === 'buyer')
+                                                Buyer Information
+                                            @elseif ($user_type === 'landlord')
+                                                Landlord Information
+                                            @else
+                                                Seller Information
+                                            @endif
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
+                                            wire:click="setActiveTab(6)"
+                                            id="ai-questions-tab" data-bs-toggle="tab"
+                                            data-bs-target="#ai-questions"
+                                            type="button" role="tab"
+                                            aria-controls="ai-questions"
+                                            aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                            AI Questions
+                                        </button>
+                                    </li>
                                 @endif
                             </ul>
                         @else
@@ -1038,8 +1128,18 @@
 
                                 </div>
 
+                                @if ($user_type === 'seller')
+                                <!-- Financial Details Tab (seller full_service: index 2, only for Income/Commercial/Business) -->
+                                @if ($hasFinancialTab)
+                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="financial-details"
+                                    role="tabpanel" aria-labelledby="financial-details-tab">
+                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.financial-details')
+                                </div>
+                                @endif
+                                @endif
+
                                 <!-- Sale Terms Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="sale-terms"
+                                <div class="tab-pane fade {{ $activeTab === $saleTermsIdx ? 'show active' : '' }}" id="sale-terms"
                                     role="tabpanel" aria-labelledby="sale-terms-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.leasing-terms')
@@ -1053,7 +1153,7 @@
                                 </div>
 
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === $additionalDetailsIdx ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1068,20 +1168,20 @@
                                 </div>
 
                                 @if ($user_type === 'seller')
-                                <!-- Tax, Legal, HOA & Disclosures Tab (seller full_service: index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}" id="tax-legal-hoa-disclosures"
+                                <!-- Tax, Legal, HOA & Disclosures Tab (seller full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $taxLegalIdx ? 'show active' : '' }}" id="tax-legal-hoa-disclosures"
                                     role="tabpanel" aria-labelledby="tax-legal-hoa-disclosures-tab">
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.tax-legal-hoa-disclosures')
                                 </div>
 
-                                <!-- Photos, Tours & Documents Tab (seller full_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="photos-tours-documents"
+                                <!-- Photos, Tours & Documents Tab (seller full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $photosIdx ? 'show active' : '' }}" id="photos-tours-documents"
                                     role="tabpanel" aria-labelledby="photos-tours-documents-tab">
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- Seller Info Tab (seller full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="seller-information"
+                                <!-- Seller Info Tab (seller full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $sellerInfoIdx ? 'show active' : '' }}" id="seller-information"
                                     role="tabpanel" aria-labelledby="seller-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1090,8 +1190,8 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (seller full_service: index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Questions Tab (seller full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $aiIdx ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>

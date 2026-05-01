@@ -1468,54 +1468,6 @@
         </div>
     </div>
 @endif
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
-    <div class="form-group">
-        <label class="fw-bold"> Annual Net Income:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the annual net income the property or business generates after all operating expenses.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <span class="input-group-text-seller">$</span>
-
-            <input type="text" wire:model.defer="minimum_annual_net_income" class="form-control has-icon"
-                placeholder="Enter annual net income (e.g., 85000)"
-
-                 data-error-id="minimum_annual_net_income_error"
-        oninput="validateInput(this)"
-        onblur="reformatNumber(this)"
-        onpaste="handlePaste(event)"
-                >
-        </div>
-        <span class="error mt-2" id="minimum_annual_net_income_error"></span>
-    </div>
-@endif
-@if (in_array($property_type, ['Income', 'Commercial', 'Business']))
-    <div class="form-group">
-        <label class="fw-bold"> Cap Rate:</label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the capitalization rate (Cap Rate), which reflects the property’s income potential relative to its price.Formula: Cap Rate = Net Operating Income ÷ Purchase Price">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="input-cover">
-            <input type="text" wire:model.defer="minimum_cap_rate" class="form-control has-icon percentage-value-set"
-                placeholder="Enter cap rate (e.g., 6.5)"
-                 data-error-id="minimum_cap_rate_error"
-        oninput="validateInput(this)"
-        onblur="reformatNumber(this)"
-        onpaste="handlePaste(event)"
-                >
-
-            <span class="input-group-text-seller">%</span>
-
-        </div>
-        <span class="error mt-2" id="minimum_cap_rate_error"></span>
-    </div>
-@endif
 @if ($property_type === 'Income')
     <div class="form-group">
         <label class="fw-bold">Total Number of Units:</label>
