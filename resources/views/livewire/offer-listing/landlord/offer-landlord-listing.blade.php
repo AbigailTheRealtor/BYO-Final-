@@ -1089,7 +1089,7 @@
                                         type="button" role="tab"
                                         aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Photos, Tours &amp; Documents
+                                        Photos &amp; Tours
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">

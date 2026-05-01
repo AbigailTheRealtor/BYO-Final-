@@ -919,7 +919,7 @@
                                         </button>
                                     </li>
 
-                                    {{-- Photos, Tours & Documents --}}
+                                    {{-- Photos & Tours --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $photosIdx ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $photosIdx }})"
@@ -928,7 +928,7 @@
                                             type="button" role="tab"
                                             aria-controls="photos-tours-documents"
                                             aria-selected="{{ $activeTab === $photosIdx ? 'true' : 'false' }}">
-                                            Photos, Tours &amp; Documents
+                                            Photos &amp; Tours
                                         </button>
                                     </li>
 
@@ -997,7 +997,7 @@
                                             type="button" role="tab"
                                             aria-controls="photos-tours-documents"
                                             aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                            Photos, Tours &amp; Documents
+                                            Photos &amp; Tours
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">

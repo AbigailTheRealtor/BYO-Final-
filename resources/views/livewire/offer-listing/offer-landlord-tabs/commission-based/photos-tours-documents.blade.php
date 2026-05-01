@@ -1,9 +1,9 @@
-<h3 class="fw-bold mb-3">Photos, Tours &amp; Documents</h3>
+<h3 class="fw-bold mb-3">Photos &amp; Tours</h3>
 
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
-            <strong>📷 Upload property photos, link video or 3D tours, and attach any relevant documents to help Agents better understand and market the property. All fields are optional.</strong>
+            <strong>📷 Upload property photos and link video or 3D tours to market the property. All fields are optional.</strong>
         </div>
     </div>
 </div>
@@ -157,39 +157,6 @@
     </div>
 </div>
 
-<!-- Documents -->
-<div class="form-group mt-3">
-    <label class="fw-bold">
-        Documents:
-        <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-            title="Upload any relevant property documents (e.g., disclosures, inspection reports, HOA rules). Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <div class="input-group">
-            <input type="file" wire:model="listingDocuments" id="listing-documents-input" class="form-control has-icon"
-                data-icon="fa-solid fa-file-alt" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-        </div>
-    </div>
-    @if ($listingDocuments && is_string($listingDocuments))
-        <div class="mt-2">
-            <a href="{{ asset('storage/auction/documents/' . $listingDocuments) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
-                <i class="fa-solid fa-file me-1"></i> View Document
-            </a>
-            <button type="button" wire:click="deleteListingDocument" wire:confirm="Are you sure you want to delete this document?"
-                class="btn btn-danger btn-sm ms-1">
-                Delete Document
-            </button>
-        </div>
-    @elseif ($listingDocuments && !is_string($listingDocuments))
-        <div class="mt-2 text-muted small">
-            Document ready to save: {{ $listingDocuments->getClientOriginalName() }}
-        </div>
-    @endif
-    <div wire:loading wire:target="listingDocuments" class="mt-1 text-muted small">Uploading...</div>
-    @error('listingDocuments') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
-</div>
 
 <script>
 (function () {

@@ -1,0 +1,128 @@
+SAFE TASK — Add Video Tour Embed Preview (Seller & Landlord Offer Listings Only)
+
+GOAL:
+When a user enters a Video Tour URL, display an embedded video preview on the listing.
+
+SCOPE:
+Offer Listings ONLY:
+- Seller Offer Listings (create + edit + view)
+- Landlord Offer Listings (create + edit + view)
+
+DO NOT:
+- Do not affect Buyer or Tenant flows
+- Do not change database schema
+- Do not store embed HTML in DB (store URL only)
+- Do not break existing Video Tour URL field
+- Do not touch 3D Tour field
+- Do not touch other tabs or features
+
+-----------------------------------
+PART 1 — FRONTEND PREVIEW (CREATE + EDIT FORMS)
+-----------------------------------
+
+FILES:
+- Seller photos-tours partial
+- Landlord photos-tours partial
+
+TASK:
+
+1. Detect if videoTourUrl is filled:
+   - wire:model already exists
+
+2. Under the input field, add preview section:
+
+IF videoTourUrl exists:
+- Render embedded iframe
+
+3. Convert URL → embed format:
+
+Handle:
+- YouTube:
+  https://www.youtube.com/watch?v=VIDEO_ID
+  → https://www.youtube.com/embed/VIDEO_ID
+
+- youtu.be:
+  https://youtu.be/VIDEO_ID
+  → https://www.youtube.com/embed/VIDEO_ID
+
+- Vimeo:
+  https://vimeo.com/VIDEO_ID
+  → https://player.vimeo.com/video/VIDEO_ID
+
+4. Render iframe:
+
+- Responsive container (16:9)
+- iframe:
+  width: 100%
+  height: 100%
+  allowfullscreen
+  loading="lazy"
+
+5. If URL invalid:
+- Do NOT crash
+- Show nothing or a small message:
+  “Preview not available”
+
+-----------------------------------
+PART 2 — LISTING DISPLAY (IMPORTANT)
+-----------------------------------
+
+FILES:
+- Seller listing view page
+- Landlord listing view page
+
+TASK:
+
+If videoTourUrl exists:
+- Show embedded video near top of listing media section
+- Preferably:
+  AFTER photos
+  BEFORE description
+
+This is where the REAL value is.
+
+-----------------------------------
+PART 3 — HELPER FUNCTION (CLEAN APPROACH)
+-----------------------------------
+
+Create helper (recommended):
+
+app/Support/VideoEmbedHelper.php
+
+Function:
+getEmbedUrl($url)
+
+Returns:
+- Proper embed URL
+- null if unsupported
+
+-----------------------------------
+PART 4 — UX REQUIREMENTS
+-----------------------------------
+
+- Do NOT autoplay video
+- Maintain clean spacing
+- Match styling of photo gallery
+- Keep it optional (no validation requirement)
+
+-----------------------------------
+VERIFY:
+
+CREATE/EDIT:
+- Paste YouTube link → preview appears
+- Paste Vimeo link → preview appears
+- Remove link → preview disappears
+- Invalid link → no crash
+
+LISTING VIEW:
+- Video shows correctly embedded
+- Works on mobile
+- Does not break layout
+
+-----------------------------------
+REPORT:
+
+- Files changed
+- Where preview is rendered (form + listing view)
+- How URL conversion is handled
+- Platforms supported (YouTube, Vimeo)
