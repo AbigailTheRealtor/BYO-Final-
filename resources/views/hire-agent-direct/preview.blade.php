@@ -344,37 +344,11 @@
 
             {{-- ── Broker Compensation & Agency Terms preview ────── --}}
             @php
-                $compLabels = [
-                    'agency_agreement_timeframe'     => 'Agreement Timeframe',
-                    'protection_period'              => 'Protection Period',
-                    'commission_structure'           => 'Commission Structure',
-                    'purchase_fee_type'              => 'Fee Type',
-                    'purchase_fee_flat'              => 'Flat Fee',
-                    'purchase_fee_percentage'        => 'Commission Percentage',
-                    'commission_structure_type'      => 'Commission Type',
-                    'retainer_fee_option'            => 'Retainer Fee',
-                    'retainer_fee_amount'            => 'Retainer Amount',
-                    'retainer_fee_application'       => 'Retainer Application',
-                    'early_termination_fee_option'   => 'Early Termination Fee',
-                    'early_termination_fee_amount'   => 'Early Termination Amount',
-                    'lease_fee_type'                 => 'Lease Fee Type',
-                    'lease_fee_flat'                 => 'Lease Fee (Flat)',
-                    'lease_fee_percentage'           => 'Lease Fee (%)',
-                    'interested_lease_option_agreement' => 'Lease Option Agreement',
-                    'purchase_type'                  => 'Purchase Type',
-                    'interested_purchase_fee_type'   => 'Purchase Fee Type',
-                    'nominal'                        => 'Nominal Fee',
-                    'additional_details'             => 'Additional Terms Notes',
-                ];
-                $compRows = [];
-                foreach ($compLabels as $key => $label) {
-                    $val = $mapped[$key] ?? '';
-                    if (is_array($val)) { $val = implode(', ', array_filter($val)); }
-                    $val = trim((string) $val);
-                    if ($val !== '' && strtolower($val) !== 'none') {
-                        $compRows[$label] = $val;
-                    }
-                }
+                $compRows = \App\Support\CompensationFormatter::formatPresetRows(
+                    $role,
+                    $propertyType ?? 'residential',
+                    $mapped
+                );
             @endphp
             @if(count($compRows) > 0)
             <div class="preview-section">
@@ -387,10 +361,10 @@
                         This is a preview only — actual terms may be negotiated after submission.
                     </p>
                     <table class="comp-table">
-                        @foreach($compRows as $label => $value)
+                        @foreach($compRows as $row)
                         <tr>
-                            <td>{{ $label }}</td>
-                            <td>{{ $value }}</td>
+                            <td>{{ $row['label'] }}</td>
+                            <td>{{ $row['value'] }}</td>
                         </tr>
                         @endforeach
                     </table>
