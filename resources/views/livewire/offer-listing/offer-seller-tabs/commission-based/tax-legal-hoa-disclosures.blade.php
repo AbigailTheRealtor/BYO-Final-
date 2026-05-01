@@ -735,6 +735,25 @@
                 </select>
             </div>
         </div>
+        @if ($seller_disclosure_available === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload Seller Disclosure:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="seller_disclosure_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="seller_disclosure_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('seller_disclosure_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($seller_disclosure_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($seller_disclosure_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Survey Available --}}
         <div class="form-group mt-3">
@@ -755,6 +774,25 @@
                 </select>
             </div>
         </div>
+        @if ($survey_available === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload Survey:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="survey_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="survey_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('survey_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($survey_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($survey_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Inspection Report Available --}}
         <div class="form-group mt-3">
@@ -775,6 +813,25 @@
                 </select>
             </div>
         </div>
+        @if ($inspection_report_available === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload Inspection Report:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="inspection_report_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="inspection_report_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('inspection_report_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($inspection_report_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($inspection_report_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- HOA/Condo Documents Available --}}
         <div class="form-group mt-3">
@@ -795,6 +852,25 @@
                 </select>
             </div>
         </div>
+        @if ($hoa_condo_docs_available === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload HOA/Condo Documents:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="hoa_condo_docs_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="hoa_condo_docs_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('hoa_condo_docs_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($hoa_condo_docs_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($hoa_condo_docs_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Flood Disclosure Available --}}
         <div class="form-group mt-3">
@@ -815,6 +891,25 @@
                 </select>
             </div>
         </div>
+        @if ($flood_disclosure_available === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload Flood Disclosure:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="flood_disclosure_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="flood_disclosure_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('flood_disclosure_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($flood_disclosure_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($flood_disclosure_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Lead-Based Paint Disclosure Required --}}
         <div class="form-group mt-3">
@@ -834,6 +929,25 @@
                 </select>
             </div>
         </div>
+        @if ($lead_based_paint_disclosure === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload Lead-Based Paint Disclosure:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="lead_based_paint_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="lead_based_paint_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('lead_based_paint_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($lead_based_paint_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($lead_based_paint_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Environmental Report Available --}}
         <div class="form-group mt-3">
@@ -854,6 +968,25 @@
                 </select>
             </div>
         </div>
+        @if ($environmental_report_available === 'Yes')
+            <div class="form-group mt-2">
+                <label class="fw-bold">Upload Environmental Report:</label>
+                <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
+                <input type="file" wire:model="environmental_report_file" class="form-control"
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                <div wire:loading wire:target="environmental_report_file" class="text-muted small mt-1">
+                    <span class="spinner-border spinner-border-sm" role="status"></span> Uploading…
+                </div>
+                @error('environmental_report_file') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                @if ($environmental_report_file_path)
+                    <div class="mt-1 small">
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($environmental_report_file_path) }}" target="_blank" class="text-primary">
+                            <i class="fa-solid fa-file me-1"></i>View current file
+                        </a>
+                    </div>
+                @endif
+            </div>
+        @endif
 
         {{-- Additional Documents Available (Select2 multi-select) --}}
         <div class="form-group mt-3">

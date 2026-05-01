@@ -347,6 +347,33 @@ class SellerOfferListingEdit extends Component
     public $total_marketing_fee = 0;
 
 
+    // Group 5 — Documents & Disclosures (Yes/No questions)
+    public $seller_disclosure_available = '';
+    public $survey_available = '';
+    public $inspection_report_available = '';
+    public $hoa_condo_docs_available = '';
+    public $flood_disclosure_available = '';
+    public $lead_based_paint_disclosure = '';
+    public $environmental_report_available = '';
+
+    // Disclosure file uploads (temporary Livewire upload objects)
+    public $seller_disclosure_file;
+    public $survey_file;
+    public $inspection_report_file;
+    public $hoa_condo_docs_file;
+    public $flood_disclosure_file;
+    public $lead_based_paint_file;
+    public $environmental_report_file;
+
+    // Disclosure file stored paths (persisted via meta)
+    public $seller_disclosure_file_path = '';
+    public $survey_file_path = '';
+    public $inspection_report_file_path = '';
+    public $hoa_condo_docs_file_path = '';
+    public $flood_disclosure_file_path = '';
+    public $lead_based_paint_file_path = '';
+    public $environmental_report_file_path = '';
+
     // Media uploads
     public $photo;
     public $video;
@@ -1371,7 +1398,60 @@ class SellerOfferListingEdit extends Component
             //         $this->enable[$field] = $value;
             //     }
             // }
+
+            // Documents & Disclosures — Yes/No questions
+            $this->seller_disclosure_available   = $auction->get->seller_disclosure_available ?? '';
+            $this->survey_available              = $auction->get->survey_available ?? '';
+            $this->inspection_report_available   = $auction->get->inspection_report_available ?? '';
+            $this->hoa_condo_docs_available      = $auction->get->hoa_condo_docs_available ?? '';
+            $this->flood_disclosure_available    = $auction->get->flood_disclosure_available ?? '';
+            $this->lead_based_paint_disclosure   = $auction->get->lead_based_paint_disclosure ?? '';
+            $this->environmental_report_available = $auction->get->environmental_report_available ?? '';
+
+            // Disclosure file paths
+            $this->seller_disclosure_file_path    = $auction->get->seller_disclosure_file_path ?? '';
+            $this->survey_file_path               = $auction->get->survey_file_path ?? '';
+            $this->inspection_report_file_path    = $auction->get->inspection_report_file_path ?? '';
+            $this->hoa_condo_docs_file_path       = $auction->get->hoa_condo_docs_file_path ?? '';
+            $this->flood_disclosure_file_path     = $auction->get->flood_disclosure_file_path ?? '';
+            $this->lead_based_paint_file_path     = $auction->get->lead_based_paint_file_path ?? '';
+            $this->environmental_report_file_path = $auction->get->environmental_report_file_path ?? '';
         }
+    }
+
+    public function updatedSellerDisclosureFile()
+    {
+        $this->validate(['seller_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedSurveyFile()
+    {
+        $this->validate(['survey_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedInspectionReportFile()
+    {
+        $this->validate(['inspection_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedHoaCondoDocsFile()
+    {
+        $this->validate(['hoa_condo_docs_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedFloodDisclosureFile()
+    {
+        $this->validate(['flood_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedLeadBasedPaintFile()
+    {
+        $this->validate(['lead_based_paint_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedEnvironmentalReportFile()
+    {
+        $this->validate(['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
     }
 
     protected function saveAllMetadata($auction)
@@ -1749,6 +1829,43 @@ class SellerOfferListingEdit extends Component
 
             // Save file name to database
             $auction->saveMeta('video', $videoName);
+        }
+
+        // Documents & Disclosures — Yes/No questions
+        $auction->saveMeta('seller_disclosure_available', $this->seller_disclosure_available);
+        $auction->saveMeta('survey_available', $this->survey_available);
+        $auction->saveMeta('inspection_report_available', $this->inspection_report_available);
+        $auction->saveMeta('hoa_condo_docs_available', $this->hoa_condo_docs_available);
+        $auction->saveMeta('flood_disclosure_available', $this->flood_disclosure_available);
+        $auction->saveMeta('lead_based_paint_disclosure', $this->lead_based_paint_disclosure);
+        $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
+
+        // Disclosure file uploads
+        $disclosureUploads = [
+            ['file' => 'seller_disclosure_file',    'path' => 'seller_disclosure_file_path',    'dir' => 'seller-disclosure'],
+            ['file' => 'survey_file',               'path' => 'survey_file_path',               'dir' => 'survey'],
+            ['file' => 'inspection_report_file',    'path' => 'inspection_report_file_path',    'dir' => 'inspection-report'],
+            ['file' => 'hoa_condo_docs_file',       'path' => 'hoa_condo_docs_file_path',       'dir' => 'hoa-condo-docs'],
+            ['file' => 'flood_disclosure_file',     'path' => 'flood_disclosure_file_path',     'dir' => 'flood-disclosure'],
+            ['file' => 'lead_based_paint_file',     'path' => 'lead_based_paint_file_path',     'dir' => 'lead-based-paint'],
+            ['file' => 'environmental_report_file', 'path' => 'environmental_report_file_path', 'dir' => 'environmental-report'],
+        ];
+        foreach ($disclosureUploads as $item) {
+            $fileVal  = $this->{$item['file']};
+            $pathProp = $item['path'];
+            if ($fileVal && !is_string($fileVal)) {
+                $ext      = $fileVal->getClientOriginalExtension();
+                $uuid     = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $dir      = 'seller-disclosures/' . $auction->id . '/' . $item['dir'];
+                Storage::disk('public')->makeDirectory($dir);
+                $fileVal->storeAs($dir, $fileName, 'public');
+                $storedPath           = $dir . '/' . $fileName;
+                $this->{$pathProp}    = $storedPath;
+                $auction->saveMeta($pathProp, $storedPath);
+            } elseif ($this->{$pathProp}) {
+                $auction->saveMeta($pathProp, $this->{$pathProp});
+            }
         }
     }
 
