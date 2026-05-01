@@ -1765,6 +1765,11 @@ class SellerOfferListing extends Component
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
             $auction->is_draft = true;
+
+            if (empty($auction->address)) {
+                $auction->address = !empty($this->listing_title) ? $this->listing_title : 'TBD';
+            }
+
             $auction->save();
 
             // Phase 6 — persist referral attribution on brand-new listing rows.
