@@ -3062,6 +3062,9 @@ class SellerOfferListing extends Component
         if ($this->seller_leasing_fee_type !== 'Percentage of the Gross Lease Value') {
             $this->seller_leasing_gross = '';
         }
+        if ($this->seller_leasing_fee_type !== 'Percentage of the Rent Due Each Rental Period') {
+            $this->seller_leasing_gross_rental = '';
+        }
 
         // Clear commission structure type fields based on selected type
         if ($this->commission_structure_type !== 'Flat Fee') {
@@ -3197,6 +3200,8 @@ class SellerOfferListing extends Component
                 $rules['seller_leasing_gross_flat'] = 'required|numeric|min:0';
             } elseif ($this->seller_leasing_fee_type === 'Percentage of the Gross Lease Value') {
                 $rules['seller_leasing_gross'] = 'required|numeric|min:0|max:100';
+            } elseif ($this->seller_leasing_fee_type === 'Percentage of the Rent Due Each Rental Period') {
+                $rules['seller_leasing_gross_rental'] = 'required|numeric|min:0|max:100';
             } elseif ($this->seller_leasing_fee_type === 'other') {
                 $rules['seller_leasing_gross_other'] = 'required|string';
             }
