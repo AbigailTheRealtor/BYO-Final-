@@ -92,6 +92,17 @@
             padding-left: 40px;
         }
 
+        .input-group-text-seller {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            background: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-right: 0;
+            border-radius: 6px 0 0 6px;
+            font-weight: 500;
+        }
+
         .error {
             display: block;
             color: red;
@@ -2056,8 +2067,61 @@
 
             initLeaseTermSelect2();
 
+            function initTaxLegalSelect2() {
+                if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
+                    $('#association_fee_includes').select2({
+                        placeholder: 'Select',
+                        allowClear: true,
+                        width: '100%',
+                    });
+                    $('#association_fee_includes').on('change', function() {
+                        var vals = $(this).val() || [];
+                        @this.set('association_fee_includes', vals);
+                        var otherSection = document.getElementById('hoa-fee-includes-other-section');
+                        if (otherSection) {
+                            otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
+                    $('#association_amenities').select2({
+                        placeholder: 'Select',
+                        allowClear: true,
+                        width: '100%',
+                    });
+                    $('#association_amenities').on('change', function() {
+                        var vals = $(this).val() || [];
+                        @this.set('association_amenities', vals);
+                        var otherSection = document.getElementById('hoa-amenities-other-section');
+                        if (otherSection) {
+                            otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
+                        }
+                    });
+                }
+
+                if ($('#additional_documents').length && !$('#additional_documents').hasClass('select2-hidden-accessible')) {
+                    $('#additional_documents').select2({
+                        placeholder: 'Select',
+                        allowClear: true,
+                        width: '100%',
+                    });
+                    $('#additional_documents').on('change', function() {
+                        var vals = $(this).val() || [];
+                        @this.set('additional_documents', vals);
+                        var otherSection = document.getElementById('additional-documents-other-section');
+                        if (otherSection) {
+                            otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
+                        }
+                    });
+                }
+            }
+
+            initTaxLegalSelect2();
+
             Livewire.hook('message.processed', () => {
                 initLeaseTermSelect2();
+                initTaxLegalSelect2();
             });
 
             window.syncLandlordSelect2BeforeSave = function() {

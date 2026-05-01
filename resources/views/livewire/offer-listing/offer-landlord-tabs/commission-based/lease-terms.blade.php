@@ -1005,11 +1005,11 @@
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
 
-        <input type="text" wire:model="desired_rental_amount" class="form-control has-icon"
+        <input type="text" wire:model="desired_rental_amount" class="form-control"
+            style="padding-left: 12px;"
             placeholder="Enter desired rental amount (e.g., 5000)" required
-             data-error-id="desired_rental_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"
-            >
+            data-error-id="desired_rental_amount_error"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
     <span class="error mt-2" id="desired_rental_amount_error"></span>
 
@@ -1215,9 +1215,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="parking_terms" class="form-control has-icon" rows="3"
+        <input type="text" wire:model="parking_terms" class="form-control has-icon"
             data-icon="fa-solid fa-car"
-            placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
+            placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)">
     </div>
 </div>
 
@@ -1229,9 +1229,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="utility_responsibility" class="form-control has-icon" rows="3"
+        <input type="text" wire:model="utility_responsibility" class="form-control has-icon"
             data-icon="fa-solid fa-bolt"
-            placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)"></textarea>
+            placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)">
     </div>
 </div>
 
@@ -1243,9 +1243,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon" rows="3"
+        <input type="text" wire:model="ll_maintenance_responsibility" class="form-control has-icon"
             data-icon="fa-solid fa-screwdriver-wrench"
-            placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)"></textarea>
+            placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)">
     </div>
 </div>
 
@@ -1291,9 +1291,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="landlord_approval_conditions" class="form-control has-icon" rows="3"
+        <input type="text" wire:model="landlord_approval_conditions" class="form-control has-icon"
             data-icon="fa-solid fa-clipboard-check"
-            placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)"></textarea>
+            placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)">
     </div>
 </div>
 
@@ -1305,7 +1305,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="4"
+        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="2"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional lease terms or special conditions"></textarea>
     </div>

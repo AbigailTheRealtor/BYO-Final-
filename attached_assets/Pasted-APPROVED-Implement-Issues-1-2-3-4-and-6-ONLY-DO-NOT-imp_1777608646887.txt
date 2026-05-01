@@ -1,0 +1,146 @@
+APPROVED — Implement Issues 1, 2, 3, 4, and 6 ONLY.
+
+DO NOT implement Issue 5 (Document Uploads) yet.
+
+STRICT SAFEGUARDS:
+- Landlord Offer Listing only
+- Full-Service flow only
+- Do NOT touch Seller, Tenant, Buyer flows
+- Do NOT touch Hire Agent flows
+- Do NOT touch database schema
+- Do NOT rename fields
+- Do NOT modify Livewire save/load logic (except Select2 JS sync if needed)
+- Do NOT change existing data structure
+- Only edit:
+  - Blade (UI)
+  - CSS (inside landlord blade only)
+  - JS (inside landlord blade only)
+
+--------------------------------------------------
+IMPLEMENTATION DETAILS
+--------------------------------------------------
+
+ISSUE 1 — Sewer Icon (Blade Only)
+File: property-preferences.blade.php
+
+- Add static icon:
+  <i class="input-icon fa-solid fa-pipe-section input-icon2"></i>
+- Place it inside `.input-cover` BEFORE the select
+- Apply to BOTH Sewer fields (residential + commercial)
+- Do NOT rely on JS injection
+
+--------------------------------------------------
+
+ISSUE 2 — Oversized Fields (Blade Only)
+File: lease-terms.blade.php
+
+Convert these to standard compact inputs:
+
+- Utility Responsibility → input[type="text"]
+- Parking Terms → input[type="text"]
+- Maintenance Responsibility → input[type="text"]
+- Landlord Approval Conditions → input[type="text"]
+
+Keep:
+- Additional Landlord Lease Terms → textarea
+- Change rows="4" → rows="2"
+
+Maintain:
+- wire:model
+- classes
+- placeholder
+- icons
+
+--------------------------------------------------
+
+ISSUE 3 — Money Field Alignment (Blade + CSS)
+
+Files:
+- lease-terms.blade.php
+- tax-legal-hoa-disclosures.blade.php
+- landlord blade <style> section
+
+Fix:
+
+1. Desired Rental Amount:
+   - REMOVE class="has-icon"
+   - Add:
+     style="padding-left: 12px;"
+
+2. Annual Property Taxes:
+   - Add:
+     style="padding-left: 12px;"
+
+3. Add CSS (if missing):
+.input-group-text-seller {
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    background: #f8f9fa;
+    border: 1px solid #ced4da;
+    border-right: 0;
+    border-radius: 6px 0 0 6px;
+    font-weight: 500;
+}
+
+DO NOT change global CSS — landlord blade only.
+
+--------------------------------------------------
+
+ISSUE 4 — Select2 + Placeholder Fix (JS Only)
+File: offer-landlord-listing.blade.php
+
+Inside initializeFullService():
+
+Initialize Select2 for:
+
+1. association_fee_includes
+2. association_amenities
+3. additional_documents
+
+Each must include:
+
+- placeholder:
+  "Select"
+- allowClear: true
+- width: '100%'
+
+Also:
+- Ensure change event updates Livewire properly
+- Do NOT break existing Select2 fields
+
+--------------------------------------------------
+
+ISSUE 6 — Field Order (Blade Only)
+File: tax-legal-hoa-disclosures.blade.php
+
+- Remove the 2-column row layout
+- Stack fields vertically:
+
+Order:
+1. Tax Year
+2. Annual Property Taxes
+
+Each as full-width form-group
+
+--------------------------------------------------
+
+POST-IMPLEMENTATION VERIFICATION
+
+Confirm:
+
+✔ Sewer icon shows correctly (not floating/misaligned)
+✔ All converted fields are compact and match other inputs
+✔ Additional Landlord Lease Terms is smaller (rows=2)
+✔ Money inputs align correctly next to "$"
+✔ Additional Documents shows “Select” placeholder
+✔ Select2 works on all 3 fields
+✔ Tax Year and Annual Property Taxes are stacked
+✔ No other fields changed
+✔ No regression in other tabs
+
+--------------------------------------------------
+
+STOP AFTER COMPLETION
+Do NOT proceed to document upload logic (Issue 5).
+Wait for next instructions.
