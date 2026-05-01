@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * HireAgentDirectController
@@ -287,11 +288,20 @@ class HireAgentDirectController extends Controller
             $listingClass = self::LISTING_MODELS[$role];
             $listing = new $listingClass();
             $listing->user_id    = Auth::id();
-            $listing->address    = $validated['address'];
-            $listing->title      = 'Direct Hire – ' . ucfirst($role) . ' Agent';
             $listing->is_approved = true;
             $listing->is_draft    = false;
             $listing->is_sold     = false;
+
+            // Only assign columns that exist on this model's table.
+            // landlord_agent_auctions and tenant_agent_auctions do not
+            // have address/title columns — those are stored as meta instead.
+            $listingTable = $listing->getTable();
+            if (Schema::hasColumn($listingTable, 'address')) {
+                $listing->address = $validated['address'];
+            }
+            if (Schema::hasColumn($listingTable, 'title')) {
+                $listing->title = 'Direct Hire – ' . ucfirst($role) . ' Agent';
+            }
             $listing->save();
 
             // ── 2. Save listing meta ─────────────────────────────────────
@@ -305,6 +315,15 @@ class HireAgentDirectController extends Controller
             $listing->saveMeta('other_services',   json_encode($clientOtherServices));
             $listing->saveMeta('other_services_enabled', empty($clientOtherServices) ? '0' : '1');
             $listing->saveMeta('hire_me_flow',     '1');
+
+            // For models without native address/title columns (landlord, tenant),
+            // persist these values via meta so detail views can read them.
+            if (!Schema::hasColumn($listingTable, 'address')) {
+                $listing->saveMeta('address', $validated['address']);
+            }
+            if (!Schema::hasColumn($listingTable, 'title')) {
+                $listing->saveMeta('title', 'Direct Hire – ' . ucfirst($role) . ' Agent');
+            }
 
             if (!empty($validated['additional_requested'])) {
                 $listing->saveMeta('client_additional_requested', $validated['additional_requested']);
