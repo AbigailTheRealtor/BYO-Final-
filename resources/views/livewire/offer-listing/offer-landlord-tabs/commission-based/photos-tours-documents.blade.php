@@ -139,6 +139,20 @@
             data-icon="fa-solid fa-video"
             placeholder="Enter video tour URL (e.g., https://www.youtube.com/watch?v=...)">
     </div>
+    @if ($videoTourUrl)
+        @php $landlordEmbedUrl = \App\Support\VideoEmbedHelper::getEmbedUrl($videoTourUrl); @endphp
+        @if ($landlordEmbedUrl)
+            <div class="ratio ratio-16x9 mt-2" style="max-width: 560px;">
+                <iframe src="{{ $landlordEmbedUrl }}"
+                        title="Video Tour Preview"
+                        allowfullscreen
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                </iframe>
+            </div>
+        @else
+            <p class="text-muted small mt-2"><i class="fa-solid fa-circle-exclamation me-1"></i> Preview not available for this URL.</p>
+        @endif
+    @endif
 </div>
 
 <!-- 3D Tour URL -->

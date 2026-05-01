@@ -24,17 +24,10 @@
         || !empty($viewVirtualTourUrl)
         || !empty($viewListingDocument);
 
-    // Convert a YouTube watch/share/shorts/embed URL to an embed URL (returns null for non-YouTube)
-    $youtubeEmbedUrl = null;
-    if (!empty($viewVideoTourUrl)) {
-        if (preg_match(
-            '/(?:youtube\.com\/(?:watch\?(?:[^&]*&)*v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_\-]{11})/',
-            $viewVideoTourUrl,
-            $ytm
-        )) {
-            $youtubeEmbedUrl = 'https://www.youtube.com/embed/' . $ytm[1];
-        }
-    }
+    // Convert a YouTube or Vimeo URL to an embed URL (returns null for unsupported)
+    $videoEmbedUrl = !empty($viewVideoTourUrl)
+        ? \App\Support\VideoEmbedHelper::getEmbedUrl($viewVideoTourUrl)
+        : null;
 
     // Determine document icon based on file extension
     $docExtension = null;
@@ -73,12 +66,12 @@
     @if (!empty($viewVideoTourUrl))
     <div class="col-12 mb-3">
         <p class="fw-bold mb-1"><i class="fa-solid fa-video me-1 text-secondary"></i> Video Tour</p>
-        @if ($youtubeEmbedUrl)
+        @if ($videoEmbedUrl)
             <div class="ratio ratio-16x9" style="max-width: 640px;">
-                <iframe src="{{ $youtubeEmbedUrl }}"
+                <iframe src="{{ $videoEmbedUrl }}"
                         title="Video Tour"
                         allowfullscreen
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
                 </iframe>
             </div>
         @else
