@@ -996,8 +996,82 @@
     </div>
 </div>
 
+@if ($auction_type === 'Bidding Period')
+<div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+    <h5 class="fw-bold text-primary mb-0">
+        <i class="fa-solid fa-gavel me-2"></i>Bidding Period Lease Pricing
+    </h5>
+</div>
 <div class="form-group">
-    <label class="fw-bold">Desired Rental Amount:<span class="text-danger">*</span></label>
+    <label class="fw-bold">Desired Lease Price:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the lease price the Landlord would like to receive.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control"
+            style="padding-left: 12px;"
+            placeholder="Enter desired lease price (e.g., 5000)" required
+            data-error-id="desired_rental_amount_error"
+            oninput="validateInput(this); landlordAutoFillLeaseNow(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+    <span class="error mt-2" id="desired_rental_amount_error"></span>
+</div>
+<div class="form-group mt-3">
+    <label class="fw-bold">Starting Rent / Opening Offer:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the minimum rent amount at which bidding will open for this lease.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="starting_rent" class="form-control"
+            placeholder="Enter opening offer amount (e.g., 4000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+<div class="form-group mt-3">
+    <label class="fw-bold">Reserve Rent:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the minimum rent amount the Landlord will accept. The property will not be leased below this amount. Reserve Rent is optional.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="reserve_rent" class="form-control"
+            placeholder="Enter reserve rent (e.g., 4500) — optional"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+<div class="form-group mt-3">
+    <label class="fw-bold">Lease Now Price:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the rent amount at which a Tenant can immediately lease the property and end the bidding period. Defaults to Desired Lease Price if left unchanged.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="lease_now_price" id="landlord_lease_now_price" class="form-control"
+            placeholder="Enter lease now price (e.g., 5000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+<script>
+    function landlordAutoFillLeaseNow(desiredPriceInput) {
+        var leaseNowInput = document.getElementById('landlord_lease_now_price');
+        if (leaseNowInput && leaseNowInput.value.trim() === '') {
+            leaseNowInput.value = desiredPriceInput.value;
+            leaseNowInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+</script>
+@else
+<div class="form-group">
+    <label class="fw-bold">Desired Lease Price:<span class="text-danger">*</span></label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
         title="Enter the monthly rent amount the Landlord would like to collect. ">
         <i class="fa-solid fa-circle-info"></i>
@@ -1007,13 +1081,13 @@
 
         <input type="text" wire:model="desired_rental_amount" class="form-control"
             style="padding-left: 12px;"
-            placeholder="Enter desired rental amount (e.g., 5000)" required
+            placeholder="Enter desired lease price (e.g., 5000)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
     <span class="error mt-2" id="desired_rental_amount_error"></span>
-
 </div>
+@endif
 
 <!-- Lease Amount Frequency Dropdown -->
 <div class="form-group">

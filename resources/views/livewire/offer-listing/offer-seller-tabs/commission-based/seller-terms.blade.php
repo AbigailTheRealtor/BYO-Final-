@@ -246,7 +246,79 @@
     </div>
 @endif
 
-<!-- Desired Sale Price -->
+<!-- Desired Sale Price / Bidding Period Pricing -->
+@if ($auction_type === 'Bidding Period')
+<div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+    <h5 class="fw-bold text-primary mb-0">
+        <i class="fa-solid fa-gavel me-2"></i>Bidding Period Pricing
+    </h5>
+</div>
+<div class="form-group">
+    <label class="fw-bold">Desired Sale Price:<span class="text-danger">*</span></label>
+    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+        title="Enter the amount the Seller would like to receive for the property.">
+        <i class="fa-solid fa-circle-info"></i>
+    </span>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="maximum_budget" id="seller_desired_sale_price" class="form-control"
+            placeholder="Enter desired sale price (e.g., 500000)" data-error-id="maximum_budget_error"
+            oninput="validateInput(this); sellerAutoFillBuyNow(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+    </div>
+    <span class="error mt-2" id="maximum_budget_error"></span>
+</div>
+<div class="form-group mt-3">
+    <label class="fw-bold">Starting Price / Opening Bid:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the minimum price at which bidding will open for this property.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="starting_price" class="form-control"
+            placeholder="Enter opening bid amount (e.g., 400000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+<div class="form-group mt-3">
+    <label class="fw-bold">Reserve Price:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the minimum price the Seller will accept. The property will not be sold below this amount. Reserve Price is optional.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="reserve_price" class="form-control"
+            placeholder="Enter reserve price (e.g., 450000) — optional"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+<div class="form-group mt-3">
+    <label class="fw-bold">Buy Now Price:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the price at which a Buyer can immediately purchase the property and end the bidding period. Defaults to Desired Sale Price if left unchanged.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="buy_now_price" id="seller_buy_now_price" class="form-control"
+            placeholder="Enter buy now price (e.g., 500000)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+    </div>
+</div>
+<script>
+    function sellerAutoFillBuyNow(desiredPriceInput) {
+        var buyNowInput = document.getElementById('seller_buy_now_price');
+        if (buyNowInput && buyNowInput.value.trim() === '') {
+            buyNowInput.value = desiredPriceInput.value;
+            buyNowInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    }
+</script>
+@else
 <div>
     <div class="form-group">
         <label class="fw-bold">Desired Sale Price:<span class="text-danger">*</span></label>
@@ -266,6 +338,7 @@
         <span class="error mt-2" id="maximum_budget_error"></span>
     </div>
 </div>
+@endif
 
 <!-- Offered Financing/Currency -->
 <div class="form-group mt-3">

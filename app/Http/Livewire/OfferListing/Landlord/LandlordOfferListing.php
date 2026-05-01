@@ -63,6 +63,9 @@ class LandlordOfferListing extends Component
 
     public $lease_amount_frequency = '';
     public $desired_rental_amount = '';
+    public $starting_rent = '';
+    public $reserve_rent = '';
+    public $lease_now_price = '';
     public $desired_rental_amount_tenant = '';
     public $desired_lease_length = [];
     public $rent_includes = []; // Residential only
@@ -1654,6 +1657,9 @@ class LandlordOfferListing extends Component
             $this->lease_amount_frequency = $auction->get->lease_amount_frequency ?? null;
             $this->desired_lease_length = $this->ensureArray($auction->get->desired_lease_length ?? null);
             $this->desired_rental_amount = $auction->get->desired_rental_amount ?? null;
+            $this->starting_rent = $auction->get->starting_rent ?? '';
+            $this->reserve_rent = $auction->get->reserve_rent ?? '';
+            $this->lease_now_price = $auction->get->lease_now_price ?? '';
             $this->desired_rental_amount_tenant = $auction->get->desired_rental_amount_tenant ?? null;
 
 
@@ -2318,6 +2324,9 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('lease_amount_frequency', $this->lease_amount_frequency);
         $auction->saveMeta('desired_lease_length', json_encode($this->ensureArray($this->desired_lease_length)));
         $auction->saveMeta('desired_rental_amount', $this->desired_rental_amount);
+        $auction->saveMeta('starting_rent', $this->starting_rent);
+        $auction->saveMeta('reserve_rent', $this->reserve_rent);
+        $auction->saveMeta('lease_now_price', $this->lease_now_price);
         $auction->saveMeta('desired_rental_amount_tenant', $this->desired_rental_amount_tenant);
         $auction->saveMeta('rent_includes', json_encode($this->ensureArray($this->rent_includes)));
         $auction->saveMeta('terms_of_lease', json_encode($this->ensureArray($this->terms_of_lease)));

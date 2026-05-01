@@ -66,6 +66,9 @@ class SellerOfferListingEdit extends Component
 
     // Properties
     public $maximum_budget = '';
+    public $starting_price = '';
+    public $reserve_price = '';
+    public $buy_now_price = '';
     public $offered_financing = '';
     public $other_financing = '';
     public $cash_budget = '';
@@ -1059,6 +1062,9 @@ class SellerOfferListingEdit extends Component
 
             // Budget & Financing
             $this->maximum_budget = $auction->get->maximum_budget;
+            $this->starting_price = $auction->get->starting_price ?? '';
+            $this->reserve_price = $auction->get->reserve_price ?? '';
+            $this->buy_now_price = $auction->get->buy_now_price ?? '';
             $this->offered_financing = is_string($auction->get->offered_financing) ? json_decode($auction->get->offered_financing, true) ?? [] : (array)($auction->get->offered_financing ?? []);
             $this->other_financing = $auction->get->other_financing;
             $this->cash_budget = $auction->get->cash_budget;
@@ -1428,6 +1434,9 @@ class SellerOfferListingEdit extends Component
 
         // Budget & Financing
         $auction->saveMeta('maximum_budget', $this->maximum_budget);
+        $auction->saveMeta('starting_price', $this->starting_price);
+        $auction->saveMeta('reserve_price', $this->reserve_price);
+        $auction->saveMeta('buy_now_price', $this->buy_now_price);
         $auction->saveMeta('offered_financing', json_encode($this->offered_financing));
         $auction->saveMeta('other_financing', $this->other_financing);
         $auction->saveMeta('cash_budget', $this->cash_budget);
