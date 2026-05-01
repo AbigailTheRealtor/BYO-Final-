@@ -1,0 +1,164 @@
+READ-ONLY AUDIT — Agent Preset Services Category Accuracy
+
+GOAL:
+Audit Agent Profile Offer Preset services for Buyer, Seller, Landlord, and Tenant across every property type to make sure services are assigned to the correct category, use the correct category title/emoji, and match the Hire Agent listing service structure.
+
+DO NOT EDIT ANYTHING.
+DO NOT FIX ANYTHING YET.
+DO NOT CHANGE CODE.
+DO NOT RUN MIGRATIONS.
+DO NOT DELETE OR RENAME SERVICES.
+ONLY inspect and report.
+
+SCOPE:
+Agent Profile Offer Presets only:
+- Buyer presets
+- Seller presets
+- Landlord presets
+- Tenant presets
+- All property types for each role
+- Preset editor service display
+- Agent profile public service display
+- Direct Hire preview service display
+
+REFERENCE RULE:
+Services should match the same category structure used when a user creates a Hire Agent listing for that same role/property type.
+
+The Agent Profile service display should:
+- Show services under the correct category title
+- Use the same emoji/category label style as the Hire Agent listing
+- Show bullet points next to each service on public/profile/review display
+- Keep checkboxes only in preset edit/bid/edit workflows
+- Show manually added services only under “Additional Services”
+- NOT place normal catalog services under “Additional Services”
+
+AUDIT TASKS:
+
+1. Identify source-of-truth service lists
+Find the Hire Agent listing service structure for:
+- Buyer Residential
+- Buyer Income
+- Buyer Commercial
+- Buyer Business
+- Buyer Vacant Land
+- Seller Residential
+- Seller Income
+- Seller Commercial
+- Seller Business
+- Seller Vacant Land
+- Landlord Residential
+- Landlord Commercial
+- Tenant Residential
+- Tenant Commercial
+
+2. Compare Agent Preset configs against Hire Agent listing services
+Inspect:
+- config/buyer_services_order.php
+- config/seller_services_order.php
+- config/landlord_services_order.php
+- config/tenant_services_order.php
+- app/Support/ServicesFormatter.php
+- resources/views/agent-presets/edit.blade.php
+- resources/views/agent-profile/show.blade.php
+- resources/views/hire-agent-direct/preview.blade.php
+
+3. Find misplaced services
+For each role/property type, report:
+- Services currently under the wrong category
+- Services incorrectly falling into “Additional Services”
+- Services missing from category configs
+- Services duplicated across categories
+- Services with typo errors
+- Services with wording mismatches compared to Hire Agent listing flow
+
+4. Verify public Agent Profile display
+Check whether services on the Agent Profile public page:
+- Use correct category titles
+- Use correct emojis
+- Display bullet points next to each service
+- Do not use checkboxes
+- Do not show catalog services under Additional Services
+
+5. Verify Preset Editor display
+Check whether the preset editor:
+- Uses correct category titles
+- Uses correct emojis
+- Places services in correct sections
+- Keeps manual custom services only in Additional Services
+- Does not show normal catalog services in Additional Services
+
+6. Verify Direct Hire Preview display
+Check whether preview:
+- Uses correct category titles
+- Uses correct emojis
+- Displays services as read-only bullet points
+- Shows only true manually added services under Additional Services
+
+REPORT OUTPUT:
+Create this report:
+
+.local/agent_preset_services_category_audit.md
+
+Report format:
+
+# Agent Preset Services Category Audit
+
+## Executive Summary
+- Overall status
+- Biggest issues
+- Whether services are safe to launch
+- Recommended fix priority
+
+## Files Inspected
+List every file inspected.
+
+## Source of Truth Map
+Table:
+| Role | Property Type | Hire Agent Source File | Agent Preset Config File |
+
+## Role + Property Type Matrix
+Table:
+| Role | Property Type | Correct Categories? | Misplaced Services? | Additional Services Issue? | Typo/Wording Issues? |
+
+## Misplaced Service Findings
+For each issue:
+- Role
+- Property type
+- Service text
+- Current category
+- Expected category
+- Source file/location
+- Severity: Critical / High / Medium / Low
+
+## Additional Services Findings
+List any normal catalog services incorrectly appearing under Additional Services.
+
+## Typo / Wording Findings
+List all typo errors and wording mismatches.
+
+## Agent Profile Display Findings
+Confirm whether public profile display uses:
+- Correct category titles
+- Correct emojis
+- Bullet points
+- No checkboxes
+
+## Direct Hire Preview Findings
+Confirm same display rules for preview.
+
+## Recommended Fix Plan
+Break fixes into safe phases:
+1. Config/category corrections only
+2. Public profile bullet/emoji display corrections
+3. Direct hire preview display corrections
+4. Final verification
+
+IMPORTANT:
+Stop after the audit report.
+Do not fix anything yet.
+
+REPORT BACK:
+- Report path
+- Top 10 issues found
+- Whether any normal catalog services are incorrectly falling into Additional Services
+- Which files should be edited in the fix phase
