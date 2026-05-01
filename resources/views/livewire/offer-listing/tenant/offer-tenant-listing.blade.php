@@ -1708,7 +1708,7 @@ $lease_types = [
                     }
 
                     $infoTabs = [
-                    'tenant' => 'Tenant Information',
+                    'tenant' => 'Agent Credentials & Contact Info',
                     'seller' => 'Seller Information',
                     'buyer' => 'Buyer Information',
                     'landlord' => 'Landlord Information',
@@ -1764,7 +1764,7 @@ $lease_types = [
                                 aria-controls="information"
                                 aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                 @if ($user_type === 'tenant')
-                                Tenant Information
+                                Agent Credentials & Contact Info
                                 @elseif($user_type === 'seller')
                                 Seller Information
                                 @elseif($user_type === 'buyer')

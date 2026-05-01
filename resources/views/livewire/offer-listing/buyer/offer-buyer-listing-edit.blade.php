@@ -792,7 +792,7 @@
                                         type="button" role="tab"
                                         aria-controls="buyer-information"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Buyer Information' }}
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -830,17 +830,7 @@
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
-                                            Agent Credentials & Contact Info
-                                        @elseif ($user_type === 'tenant')
-                                            Tenant Information
-                                        @elseif($user_type === 'seller')
-                                            Seller Information
-                                        @elseif($user_type === 'buyer')
-                                            Buyer Information
-                                        @elseif($user_type === 'landlord')
-                                            Landlord Information
-                                        @endif
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">

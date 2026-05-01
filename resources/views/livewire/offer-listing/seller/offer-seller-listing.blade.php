@@ -941,7 +941,7 @@
                                             type="button" role="tab"
                                             aria-controls="seller-information"
                                             aria-selected="{{ $activeTab === $sellerInfoIdx ? 'true' : 'false' }}">
-                                            Seller Information
+                                            Agent Credentials & Contact Info
                                         </button>
                                     </li>
 
@@ -1008,15 +1008,7 @@
                                             type="button" role="tab"
                                             aria-controls="seller-information"
                                             aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                            @if ($user_type === 'tenant')
-                                                Tenant Information
-                                            @elseif ($user_type === 'buyer')
-                                                Buyer Information
-                                            @elseif ($user_type === 'landlord')
-                                                Landlord Information
-                                            @else
-                                                Seller Information
-                                            @endif
+                                            Agent Credentials & Contact Info
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
@@ -1068,15 +1060,7 @@
                                         data-bs-target="#information" type="button" role="tab"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        @if ($user_type === 'tenant')
-                                            Tenant Information
-                                        @elseif($user_type === 'seller')
-                                            Seller Information
-                                        @elseif($user_type === 'buyer')
-                                            Buyer Information
-                                        @elseif($user_type === 'landlord')
-                                            Landlord Information
-                                        @endif
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">

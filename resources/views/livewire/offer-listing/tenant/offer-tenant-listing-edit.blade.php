@@ -1665,7 +1665,7 @@
                                 }
 
                                 $infoTabs = [
-                                    'tenant' => 'Tenant Information',
+                                    'tenant' => 'Agent Credentials & Contact Info',
                                     'seller' => 'Seller Information',
                                     'buyer' => 'Buyer Information',
                                     'landlord' => 'Landlord Information',
@@ -1723,7 +1723,7 @@
                                         @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                             Agent Credentials & Contact Info
                                         @elseif ($user_type === 'tenant')
-                                            Tenant Information
+                                            Agent Credentials & Contact Info
                                         @elseif($user_type === 'seller')
                                             Seller Information
                                         @elseif($user_type === 'buyer')
