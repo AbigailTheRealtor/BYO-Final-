@@ -713,3 +713,203 @@
 
     </div>
 </div>
+
+{{-- ===== GROUP 5: DOCUMENTS & DISCLOSURES ===== --}}
+<div class="card border mb-4">
+    <div class="card-header fw-bold bg-light">
+        <i class="fa-solid fa-file-shield me-2 text-primary"></i>Documents &amp; Disclosures
+    </div>
+    <div class="card-body">
+
+        <p class="text-muted small mb-3">
+            <i class="fa-solid fa-circle-info me-1 text-info"></i>
+            Upload available documents in the Photos, Tours &amp; Documents tab.
+        </p>
+
+        {{-- Seller Disclosure Available --}}
+        <div class="form-group">
+            <label class="fw-bold">Seller Disclosure Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Indicate whether a completed Seller Property Disclosure form is available for this listing. Seller disclosures inform buyers of known property conditions and defects.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="seller_disclosure_available" class="form-control has-icon"
+                    data-icon="fa-solid fa-file-lines">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- Survey Available --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Survey Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Indicate whether a current property survey is available. A survey shows the legal boundaries, improvements, and easements of the property.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="survey_available" class="form-control has-icon"
+                    data-icon="fa-solid fa-ruler-combined">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- Inspection Report Available --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Inspection Report Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Indicate whether a recent property inspection report is available. Pre-listing inspections can increase buyer confidence and reduce negotiation friction.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="inspection_report_available" class="form-control has-icon"
+                    data-icon="fa-solid fa-magnifying-glass">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- HOA/Condo Documents Available --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">HOA/Condo Documents Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Indicate whether HOA or condominium governing documents are available, including CC&Rs, bylaws, rules and regulations, and financial statements.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="hoa_condo_docs_available" class="form-control has-icon"
+                    data-icon="fa-solid fa-building-user">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- Flood Disclosure Available --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Flood Disclosure Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Indicate whether a flood zone disclosure or flood history disclosure is available for this property.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="flood_disclosure_available" class="form-control has-icon"
+                    data-icon="fa-solid fa-water">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- Lead-Based Paint Disclosure Required --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Lead-Based Paint Disclosure Required:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Federal law requires sellers to disclose known lead-based paint and hazards for homes built before 1978. Select Yes if this disclosure is required for this property.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="lead_based_paint_disclosure" class="form-control has-icon"
+                    data-icon="fa-solid fa-triangle-exclamation">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- Environmental Report Available --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Environmental Report Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Indicate whether an environmental assessment or report (such as a Phase I or Phase II ESA) is available for this property.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <select wire:model="environmental_report_available" class="form-control has-icon"
+                    data-icon="fa-solid fa-leaf">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Not Applicable">Not Applicable</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+
+        {{-- Additional Documents Available (Select2 multi-select) --}}
+        <div class="form-group mt-3">
+            <label class="fw-bold">Additional Documents Available:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Select any additional documents available for this listing. You may select multiple options or type to add a custom entry.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            @php
+                $additionalDocumentOptions = [
+                    'Appraisal Report', 'As-Built Plans / Floor Plans', 'Certificate of Occupancy',
+                    'Drainage / Stormwater Report', 'Elevation Certificate', 'Energy Audit Report',
+                    'Geotechnical / Soil Report', 'Hazardous Materials Report', 'Historic Designation Documents',
+                    'Lease Agreements (Existing Tenants)', 'Maintenance Records', 'Permits & Permit History',
+                    'Roof Certification', 'Septic Inspection Report', 'Title Insurance Commitment',
+                    'Utility Bills / History', 'Warranty Documents', 'Well Water Test Report', 'Other',
+                ];
+            @endphp
+            <div class="input-cover" wire:ignore>
+                <i class="input-icon fa-solid fa-folder-open input-icon2"></i>
+                <select id="additional_documents" class="form-control has-icon select2-multiple" multiple>
+                    @foreach ($additionalDocumentOptions as $option)
+                        <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
+                            {{ $option }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div id="additional-documents-other-section" wire:ignore.self style="display: {{ in_array('Other', $additional_documents ?? []) ? 'block' : 'none' }}">
+            <div class="form-group mt-2">
+                <label class="fw-bold">Other Document Type:
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                        title="Describe the additional document type that is available for this property.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                </label>
+                <div class="input-cover">
+                    <input type="text" wire:model="other_document_type" class="form-control has-icon"
+                        data-icon="fa-solid fa-folder-open"
+                        placeholder="Enter additional document type (e.g., Roof Certification, Elevation Certificate)">
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

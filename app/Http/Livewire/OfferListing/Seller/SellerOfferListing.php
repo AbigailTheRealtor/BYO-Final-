@@ -571,6 +571,17 @@ class SellerOfferListing extends Component
     public $pet_restrictions = '';
     public $pet_restrictions_detail = '';
 
+    // Group 5 — Documents & Disclosures
+    public $seller_disclosure_available = '';
+    public $survey_available = '';
+    public $inspection_report_available = '';
+    public $hoa_condo_docs_available = '';
+    public $flood_disclosure_available = '';
+    public $lead_based_paint_disclosure = '';
+    public $environmental_report_available = '';
+    public $additional_documents = [];
+    public $other_document_type = '';
+
     // Property Showings
     public $schedule_showings = false;
     public $number_of_showings_to_schedule = 0;
@@ -2232,6 +2243,18 @@ class SellerOfferListing extends Component
             $this->pet_restrictions = $auction->get->pet_restrictions ?? '';
             $this->pet_restrictions_detail = $auction->get->pet_restrictions_detail ?? '';
 
+            // Documents & Disclosures
+            $this->seller_disclosure_available = $auction->get->seller_disclosure_available ?? '';
+            $this->survey_available = $auction->get->survey_available ?? '';
+            $this->inspection_report_available = $auction->get->inspection_report_available ?? '';
+            $this->hoa_condo_docs_available = $auction->get->hoa_condo_docs_available ?? '';
+            $this->flood_disclosure_available = $auction->get->flood_disclosure_available ?? '';
+            $this->lead_based_paint_disclosure = $auction->get->lead_based_paint_disclosure ?? '';
+            $this->environmental_report_available = $auction->get->environmental_report_available ?? '';
+            $rawAdditionalDocs = $auction->get->additional_documents ?? [];
+            $this->additional_documents = is_string($rawAdditionalDocs) ? json_decode($rawAdditionalDocs, true) ?? [] : (array)$rawAdditionalDocs;
+            $this->other_document_type = $auction->get->other_document_type ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -2706,6 +2729,17 @@ class SellerOfferListing extends Component
         $auction->saveMeta('additional_lease_restrictions', $this->additional_lease_restrictions);
         $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
         $auction->saveMeta('pet_restrictions_detail', $this->pet_restrictions_detail);
+
+        // Documents & Disclosures
+        $auction->saveMeta('seller_disclosure_available', $this->seller_disclosure_available);
+        $auction->saveMeta('survey_available', $this->survey_available);
+        $auction->saveMeta('inspection_report_available', $this->inspection_report_available);
+        $auction->saveMeta('hoa_condo_docs_available', $this->hoa_condo_docs_available);
+        $auction->saveMeta('flood_disclosure_available', $this->flood_disclosure_available);
+        $auction->saveMeta('lead_based_paint_disclosure', $this->lead_based_paint_disclosure);
+        $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
+        $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
+        $auction->saveMeta('other_document_type', $this->other_document_type);
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
