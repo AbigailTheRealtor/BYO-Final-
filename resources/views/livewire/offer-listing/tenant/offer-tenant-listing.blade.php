@@ -1699,12 +1699,16 @@ $lease_types = [
                     : ($user_type === 'seller'
                     ? 'Sale Terms'
                     : 'Leasing Terms');
+                    if ($user_type === 'tenant') {
+                    $restTabs = [$firstRest, 'Pre-Screening', 'Additional Details'];
+                    } else {
                     $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
                     if ($isAgentUser) {
                     $restTabs[] = 'Referral & Cooperation Terms';
+                    }
                     }
 
                     $infoTabs = [
@@ -1868,12 +1872,11 @@ $lease_types = [
 
                                 <!-- Services Tab - Adjust index based on user_type -->
 
+                                @if ($user_type !== 'tenant')
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
 
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
+                                    @if ($user_type === 'seller')
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
                                     @elseif($user_type === 'buyer')
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
@@ -1881,10 +1884,11 @@ $lease_types = [
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
                                     @endif
                                 </div>
+                                @endif
 
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller', 'tenant']) ? 4 : 5) ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1900,12 +1904,11 @@ $lease_types = [
 
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
+                                @if ($user_type !== 'tenant')
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
-                                    @if ($user_type === 'tenant')
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
-                                    @elseif($user_type === 'seller')
+                                    @if ($user_type === 'seller')
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'buyer')
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
@@ -1913,9 +1916,10 @@ $lease_types = [
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
                                     @endif
                                 </div>
+                                @endif
 
-                                <!-- Referral & Cooperation Terms Tab - Agent only -->
-                                @if ($isAgentUser)
+                                <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant offer listings -->
+                                @if ($isAgentUser && $user_type !== 'tenant')
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
                                     id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
                                     <div class="p-3">
@@ -1946,9 +1950,11 @@ $lease_types = [
                                         'landlord' => 'landlord-information',
                                         default => 'tenant-information'
                                     };
-                                    $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller'])
-                                        ? ($isAgentUser ? 7 : 6)
-                                        : ($isAgentUser ? 8 : 7);
+                                    $infoTabIndex = $user_type === 'tenant'
+                                        ? 5
+                                        : (in_array($user_type, ['landlord', 'buyer', 'seller'])
+                                            ? ($isAgentUser ? 7 : 6)
+                                            : ($isAgentUser ? 8 : 7));
                                 @endphp
                                 <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                                     id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
