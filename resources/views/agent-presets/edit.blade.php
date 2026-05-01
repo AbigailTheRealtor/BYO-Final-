@@ -383,16 +383,6 @@
                             $groupedPresetRender[$catLabel] = $row;
                         }
                     }
-                    // Orphan services: in flat catalog but absent from config (safety net)
-                    $orphans = [];
-                    foreach ($services as $svc) {
-                        if (!isset($usedNorms[$normPreset($svc)])) {
-                            $orphans[] = $svc;
-                        }
-                    }
-                    if (!empty($orphans)) {
-                        $groupedPresetRender['✍️ Additional Services'] = $orphans;
-                    }
                 @endphp
 
                 <div class="services-grid" id="services-grid">
@@ -411,6 +401,9 @@
                             @endforeach
                         @endforeach
                     @elseif (!empty($services))
+                        {{-- Fallback flat list — not reachable for valid role/property-type combos
+                             because ServicesFormatter::groupedCatalog() returns a populated array
+                             for all supported combinations. Kept as a defensive last resort. --}}
                         @foreach ($services as $service)
                             @php $checked = in_array($service, $selectedServices); @endphp
                             <label class="service-item {{ $checked ? 'checked' : '' }}">
