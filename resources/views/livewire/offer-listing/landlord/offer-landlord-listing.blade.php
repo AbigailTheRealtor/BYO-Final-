@@ -3369,4 +3369,38 @@
             document.addEventListener('DOMContentLoaded', syncWizardButtons);
         })();
     </script>
+    <script>
+        var _landlordAutofilling = false;
+
+        function landlordAutoFillLeaseNow() {
+            var desired  = document.getElementById('landlord_desired_lease_price');
+            var leaseNow = document.getElementById('landlord_lease_now_price');
+            if (!desired || !leaseNow) return;
+            // Fill if empty OR if previously auto-filled (user hasn't manually edited it yet)
+            if (!leaseNow.value.trim() || leaseNow.dataset.autofilled === '1') {
+                _landlordAutofilling = true;
+                leaseNow.value = desired.value;
+                leaseNow.dataset.autofilled = '1';
+                leaseNow.dispatchEvent(new Event('input', { bubbles: true }));
+                _landlordAutofilling = false;
+            }
+        }
+
+        document.addEventListener('input', function (e) {
+            // User manually typed into Lease Now — clear the autofilled marker
+            if (e.target && e.target.id === 'landlord_lease_now_price' && !_landlordAutofilling) {
+                e.target.dataset.autofilled = '';
+            }
+            // Desired Lease Price changed — trigger auto-fill
+            if (e.target && e.target.id === 'landlord_desired_lease_price') {
+                landlordAutoFillLeaseNow();
+            }
+        });
+
+        document.addEventListener('livewire:load', function () {
+            Livewire.hook('message.processed', function () {
+                landlordAutoFillLeaseNow();
+            });
+        });
+    </script>
 @endpush

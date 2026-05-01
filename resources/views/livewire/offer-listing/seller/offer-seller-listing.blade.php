@@ -3243,4 +3243,38 @@
             document.addEventListener('DOMContentLoaded', syncWizardButtons);
         })();
     </script>
+    <script>
+        var _sellerAutofilling = false;
+
+        function sellerAutoFillBuyNow() {
+            var desired = document.getElementById('seller_desired_sale_price');
+            var buyNow  = document.getElementById('seller_buy_now_price');
+            if (!desired || !buyNow) return;
+            // Fill if empty OR if previously auto-filled (user hasn't manually edited it yet)
+            if (!buyNow.value.trim() || buyNow.dataset.autofilled === '1') {
+                _sellerAutofilling = true;
+                buyNow.value = desired.value;
+                buyNow.dataset.autofilled = '1';
+                buyNow.dispatchEvent(new Event('input', { bubbles: true }));
+                _sellerAutofilling = false;
+            }
+        }
+
+        document.addEventListener('input', function (e) {
+            // User manually typed into Buy Now — clear the autofilled marker
+            if (e.target && e.target.id === 'seller_buy_now_price' && !_sellerAutofilling) {
+                e.target.dataset.autofilled = '';
+            }
+            // Desired Sale Price changed — trigger auto-fill
+            if (e.target && e.target.id === 'seller_desired_sale_price') {
+                sellerAutoFillBuyNow();
+            }
+        });
+
+        document.addEventListener('livewire:load', function () {
+            Livewire.hook('message.processed', function () {
+                sellerAutoFillBuyNow();
+            });
+        });
+    </script>
 @endpush

@@ -1014,7 +1014,7 @@
             style="padding-left: 12px;"
             placeholder="Enter desired lease price (e.g., 5000)" required
             data-error-id="desired_rental_amount_error"
-            oninput="validateInput(this); landlordAutoFillLeaseNow(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
     <span class="error mt-2" id="desired_rental_amount_error"></span>
 </div>
@@ -1060,15 +1060,6 @@
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
-<script>
-    function landlordAutoFillLeaseNow(desiredPriceInput) {
-        var leaseNowInput = document.getElementById('landlord_lease_now_price');
-        if (leaseNowInput && leaseNowInput.value.trim() === '') {
-            leaseNowInput.value = desiredPriceInput.value;
-            leaseNowInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }
-</script>
 @else
 <div class="form-group">
     <label class="fw-bold">Desired Lease Price:<span class="text-danger">*</span></label>

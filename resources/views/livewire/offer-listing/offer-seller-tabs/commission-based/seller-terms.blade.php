@@ -263,7 +263,7 @@
         <span class="input-group-text-seller">$</span>
         <input type="text" wire:model="maximum_budget" id="seller_desired_sale_price" class="form-control"
             placeholder="Enter desired sale price (e.g., 500000)" data-error-id="maximum_budget_error"
-            oninput="validateInput(this); sellerAutoFillBuyNow(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
+            oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)" required>
     </div>
     <span class="error mt-2" id="maximum_budget_error"></span>
 </div>
@@ -309,15 +309,6 @@
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
-<script>
-    function sellerAutoFillBuyNow(desiredPriceInput) {
-        var buyNowInput = document.getElementById('seller_buy_now_price');
-        if (buyNowInput && buyNowInput.value.trim() === '') {
-            buyNowInput.value = desiredPriceInput.value;
-            buyNowInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-    }
-</script>
 @else
 <div>
     <div class="form-group">
