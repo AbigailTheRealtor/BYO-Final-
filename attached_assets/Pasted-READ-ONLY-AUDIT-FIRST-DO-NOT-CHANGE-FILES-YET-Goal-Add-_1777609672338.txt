@@ -1,0 +1,154 @@
+READ-ONLY AUDIT FIRST — DO NOT CHANGE FILES YET.
+
+Goal:
+Add Bidding Period pricing fields to Create/Edit Seller Offer Listing and Create/Edit Landlord Offer Listing.
+
+Scope:
+- Offer Listings only
+- Seller Sale Terms
+- Landlord Leasing Terms
+- Bidding Period listings only
+
+Do NOT touch:
+- Hire Agent flows
+- Buyer/Tenant flows
+- dashboards
+- accepted bid summaries
+- listing detail pages
+- compensation logic
+- unrelated forms
+
+Terminology:
+Use “Bidding Period Listing” — do NOT use “auction.”
+
+Current labels to preserve/change:
+- Seller currently uses “Desired Sale Price.”
+- Landlord currently uses “Desired Rental Amount” / “Desired Lease Price.”
+- For consistency, use:
+  - Seller: Desired Sale Price
+  - Landlord: Desired Lease Price
+
+Required behavior:
+
+1. Traditional Listing behavior
+If listing type is NOT Bidding Period:
+- Show only the normal price field:
+  - Seller: Desired Sale Price
+  - Landlord: Desired Lease Price
+- Do NOT show Starting Price, Reserve Price, Buy Now Price, Starting Rent, Reserve Rent, or Lease Now Price.
+
+2. Bidding Period Listing behavior
+If listing type IS Bidding Period:
+Show a new section at the top of the Sale Terms / Leasing Terms tab:
+
+For Seller:
+Section title:
+Bidding Period Pricing
+
+Fields:
+- Desired Sale Price
+- Starting Price / Opening Bid
+- Reserve Price
+- Buy Now Price
+
+For Landlord:
+Section title:
+Bidding Period Lease Pricing
+
+Fields:
+- Desired Lease Price
+- Starting Rent / Opening Offer
+- Reserve Rent
+- Lease Now Price
+
+3. Default logic
+When user enters Desired Sale Price:
+- Auto-fill Buy Now Price with the same amount if Buy Now Price is empty.
+
+When user enters Desired Lease Price:
+- Auto-fill Lease Now Price with the same amount if Lease Now Price is empty.
+
+Do not overwrite Buy Now Price / Lease Now Price after the user manually edits it.
+
+4. Reserve field logic
+- Reserve Price and Reserve Rent should be optional.
+- Do not make reserve required.
+- Do not expose hidden/public logic yet.
+- Only collect/store the value for now.
+
+5. Placement
+Seller:
+- Place Bidding Period Pricing section at the top of Sale Terms tab.
+- Then keep the existing Seller’s Purchase Terms section below it.
+
+Landlord:
+- Place Bidding Period Lease Pricing section at the top of Leasing Terms tab.
+- Then keep the existing Lease Terms below it.
+
+6. Field styling
+- Use the same compact money input style already used for Desired Sale Price / Desired Lease Price.
+- Use $ prefix.
+- Text should align correctly next to $.
+- Placeholder examples:
+  - Desired Sale Price: Enter desired sale price (e.g., 500000)
+  - Starting Price / Opening Bid: Enter starting price (e.g., 450000)
+  - Reserve Price: Enter reserve price (optional)
+  - Buy Now Price: Enter buy now price (e.g., 500000)
+  - Desired Lease Price: Enter desired lease price (e.g., 5000)
+  - Starting Rent / Opening Offer: Enter starting rent (e.g., 4500)
+  - Reserve Rent: Enter reserve rent (optional)
+  - Lease Now Price: Enter lease now price (e.g., 5000)
+
+7. Tooltips
+Add tooltip icons for every new field.
+
+Tooltip text:
+- Desired Sale Price:
+  The Seller’s preferred sale price for the property.
+- Starting Price / Opening Bid:
+  The price where bidding begins for a Bidding Period Listing.
+- Reserve Price:
+  The minimum sale price the Seller may be willing to accept. This field is optional.
+- Buy Now Price:
+  A price that may allow a Buyer to immediately secure the property if the Seller accepts those terms.
+- Desired Lease Price:
+  The Landlord’s preferred lease price or rental amount.
+- Starting Rent / Opening Offer:
+  The rent amount where bidding begins for a Bidding Period Listing.
+- Reserve Rent:
+  The minimum rent amount the Landlord may be willing to accept. This field is optional.
+- Lease Now Price:
+  A rent amount that may allow a Tenant to immediately secure the property if the Landlord accepts those terms.
+
+8. Save/load requirements
+Audit existing save/load/meta patterns first.
+If new fields are needed, add them using the safest existing meta pattern.
+
+Suggested field names:
+Seller:
+- starting_price
+- reserve_price
+- buy_now_price
+
+Landlord:
+- starting_rent
+- reserve_rent
+- lease_now_price
+
+Do not rename the existing desired price database/meta field unless absolutely necessary.
+
+9. Validation
+For now:
+- Do not add hard validation that blocks saving.
+- Optional soft validation message is okay only if existing form already supports it safely.
+- Do not prevent drafts from saving.
+
+10. Output after audit
+Before coding, report:
+- exact files involved
+- current listing type field/value used to detect Bidding Period
+- current desired price property names
+- whether new fields require Livewire public properties and save/load additions
+- implementation plan
+
+STOP after audit and wait for approval before editing.
