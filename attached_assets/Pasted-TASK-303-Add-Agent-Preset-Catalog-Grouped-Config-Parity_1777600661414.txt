@@ -1,0 +1,75 @@
+TASK #303 — Add Agent Preset Catalog / Grouped Config Parity Tests
+
+GOAL:
+Add unit tests that ensure AgentPresetCatalog flat service lists and grouped service config files stay perfectly aligned.
+
+WHY:
+After #302 removed the orphan safety-net, any future mismatch between AgentPresetCatalog and grouped configs could cause services to disappear from the Agent Preset editor. CI should catch that immediately.
+
+SCOPE:
+Testing only.
+
+DO NOT:
+- Do not change production code.
+- Do not edit AgentPresetCatalog.
+- Do not edit ServicesFormatter.
+- Do not edit service config files.
+- Do not touch Blade views.
+- Do not use the database.
+- Do not run migrations.
+
+CREATE:
+tests/Unit/PresetCatalogGroupingParityTest.php
+
+REQUIREMENTS:
+- Namespace: Tests\Unit
+- Extend Tests\TestCase
+- Pure unit test, no DB
+- Cover every valid role/property-type combo:
+  - Buyer x 5
+  - Seller x 5
+  - Tenant x 2
+  - Landlord x 2
+  - Total: 14 combos
+- Derive combos from:
+  AgentPresetCatalog::getRoles()
+  AgentPresetCatalog::getPropertyTypes($role)
+
+TEST ASSERTIONS FOR EACH COMBO:
+1. ServicesFormatter::groupedCatalog($flowKey) returns a non-empty grouped array.
+2. Every service from AgentPresetCatalog::getServices($role, $propertyType) appears exactly once across non-Additional-Services categories.
+3. No catalog service is missing from grouped config.
+4. No duplicate service values exist across grouped categories, excluding Additional Services.
+5. Additional Services, if present, contains no service that also appears in AgentPresetCatalog::getServices().
+6. Assertion failure messages must include:
+   - role
+   - property type
+   - offending service strings
+
+FLOW KEY HELPER:
+Add a private method mapping role/property type to the same flow-key format used by ServicesFormatter:
+- buyer -> buyer_agent.residential / buyer_agent.income / buyer_agent.commercial / buyer_agent.business / buyer_agent.vacant_land
+- seller -> seller_agent.residential / seller_agent.income / seller_agent.commercial / seller_agent.business / seller_agent.vacant_land
+- tenant -> tenant_agent.residential / tenant_agent.commercial
+- landlord -> landlord_agent.residential / landlord_agent.commercial
+
+NORMALIZATION:
+Use normalization that matches ServicesFormatter::normalizeString() behavior.
+If that method is private, mirror its unicode punctuation normalization inside the test.
+Do not change ServicesFormatter.
+
+VERIFY:
+Run:
+php artisan test tests/Unit/PresetCatalogGroupingParityTest.php
+
+If a real mismatch is found:
+- Stop
+- Do not patch production code
+- Report the role/property type and offending services
+
+REPORT BACK:
+- Test file created
+- Number of test iterations
+- Test result
+- Any mismatches found
+- Confirm no production files changed

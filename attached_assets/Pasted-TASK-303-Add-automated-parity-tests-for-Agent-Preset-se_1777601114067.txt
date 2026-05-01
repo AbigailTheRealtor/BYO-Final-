@@ -1,0 +1,77 @@
+TASK #303 — Add automated parity tests for Agent Preset services
+
+GOAL:
+Add a pure unit test that ensures AgentPresetCatalog flat service strings and grouped service config files stay aligned.
+
+SCOPE:
+Tests only.
+
+DO NOT:
+- Do not change production code.
+- Do not edit AgentPresetCatalog.
+- Do not edit ServicesFormatter.
+- Do not edit service config files.
+- Do not edit Blade views.
+- Do not use database.
+- Do not run migrations.
+
+CREATE:
+tests/Unit/PresetCatalogGroupingParityTest.php
+
+REQUIREMENTS:
+- Namespace Tests\Unit
+- Extend Tests\TestCase
+- No database usage
+- Cover all valid role/property-type combos dynamically from:
+  AgentPresetCatalog::getRoles()
+  AgentPresetCatalog::getPropertyTypes($role)
+
+Expected 14 combos:
+- buyer x 5
+- seller x 5
+- tenant x 2
+- landlord x 2
+
+ASSERT FOR EACH COMBO:
+1. ServicesFormatter::groupedCatalog($flowKey) returns non-empty grouped data.
+2. Every service from AgentPresetCatalog::getServices($role, $propertyType) appears exactly once across non-Additional-Services categories.
+3. No catalog service is missing.
+4. No duplicate service values exist across grouped categories, excluding Additional Services.
+5. Additional Services, if present, contains no catalog service.
+
+FLOW KEY HELPER:
+Map:
+- buyer -> buyer_agent.{propertyType}
+- seller -> seller_agent.{propertyType}
+- tenant -> tenant_agent.{propertyType}
+- landlord -> landlord_agent.{propertyType}
+
+NORMALIZATION:
+Mirror ServicesFormatter::normalizeString():
+- curly quotes to straight quotes
+- en/em dash to hyphen
+- collapse whitespace
+- trim
+- lowercase with mb_strtolower
+
+FAILURE MESSAGES:
+Every assertion failure must include:
+- role
+- property type
+- offending services
+
+VERIFY:
+Run:
+php artisan test tests/Unit/PresetCatalogGroupingParityTest.php
+
+If mismatches are found:
+- Stop
+- Do not patch production code
+- Report the role/property type and offending service strings.
+
+REPORT BACK:
+- Test file created
+- Number of iterations
+- Test result
+- Any mismatches found
+- Confirmation no production files changed
