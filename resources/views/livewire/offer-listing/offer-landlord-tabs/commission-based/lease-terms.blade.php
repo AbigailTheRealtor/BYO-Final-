@@ -1333,6 +1333,15 @@
             </select>
         </div>
     </div>
+    @if ($commercial_lease_type === 'Other')
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model="commercial_lease_type_other" class="form-control has-icon"
+                data-icon="fa-solid fa-building"
+                placeholder="Enter commercial lease type (e.g., Ground Lease, Build-to-Suit)">
+        </div>
+    </div>
+    @endif
 
     {{-- CAM/NNN/Additional Rent Charges --}}
     <div class="form-group">

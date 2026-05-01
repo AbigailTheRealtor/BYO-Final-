@@ -534,8 +534,10 @@ class SellerOfferListing extends Component
     // Sale Terms Questions
     public $initial_deposit_requested = '';
     public $initial_deposit_timeframe = '';
+    public $initial_deposit_timeframe_other = '';
     public $additional_deposit_requested = '';
     public $additional_deposit_timeframe = '';
+    public $additional_deposit_timeframe_other = '';
     public $escrow_agent_preference = '';
     public $preferred_inspection_period = '';
     public $appraisal_contingency_preference = '';
@@ -2238,8 +2240,10 @@ class SellerOfferListing extends Component
             // Sale Terms Questions
             $this->initial_deposit_requested = $auction->get->initial_deposit_requested ?? '';
             $this->initial_deposit_timeframe = $auction->get->initial_deposit_timeframe ?? '';
+            $this->initial_deposit_timeframe_other = $auction->get->initial_deposit_timeframe_other ?? '';
             $this->additional_deposit_requested = $auction->get->additional_deposit_requested ?? '';
             $this->additional_deposit_timeframe = $auction->get->additional_deposit_timeframe ?? '';
+            $this->additional_deposit_timeframe_other = $auction->get->additional_deposit_timeframe_other ?? '';
             $this->escrow_agent_preference = $auction->get->escrow_agent_preference ?? '';
             $this->preferred_inspection_period = $auction->get->preferred_inspection_period ?? '';
             $this->appraisal_contingency_preference = $auction->get->appraisal_contingency_preference ?? '';
@@ -2754,8 +2758,10 @@ class SellerOfferListing extends Component
         // Sale Terms Questions
         $auction->saveMeta('initial_deposit_requested', $this->initial_deposit_requested);
         $auction->saveMeta('initial_deposit_timeframe', $this->initial_deposit_timeframe);
+        $auction->saveMeta('initial_deposit_timeframe_other', $this->initial_deposit_timeframe_other);
         $auction->saveMeta('additional_deposit_requested', $this->additional_deposit_requested);
         $auction->saveMeta('additional_deposit_timeframe', $this->additional_deposit_timeframe);
+        $auction->saveMeta('additional_deposit_timeframe_other', $this->additional_deposit_timeframe_other);
         $auction->saveMeta('escrow_agent_preference', $this->escrow_agent_preference);
         $auction->saveMeta('preferred_inspection_period', $this->preferred_inspection_period);
         $auction->saveMeta('appraisal_contingency_preference', $this->appraisal_contingency_preference);

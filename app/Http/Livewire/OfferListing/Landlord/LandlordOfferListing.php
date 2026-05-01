@@ -318,6 +318,7 @@ class LandlordOfferListing extends Component
     public $landlord_approval_conditions = '';
     public $additional_landlord_lease_terms = '';
     public $commercial_lease_type = '';
+    public $commercial_lease_type_other = '';
     public $cam_nnn_additional_rent_charges = '';
     public $rent_escalation_terms = '';
     public $tenant_improvement_buildout_terms = '';
@@ -2070,6 +2071,7 @@ class LandlordOfferListing extends Component
             $this->landlord_approval_conditions = $auction->get->landlord_approval_conditions ?? '';
             $this->additional_landlord_lease_terms = $auction->get->additional_landlord_lease_terms ?? '';
             $this->commercial_lease_type = $auction->get->commercial_lease_type ?? '';
+            $this->commercial_lease_type_other = $auction->get->commercial_lease_type_other ?? '';
             $this->cam_nnn_additional_rent_charges = $auction->get->cam_nnn_additional_rent_charges ?? '';
             $this->rent_escalation_terms = $auction->get->rent_escalation_terms ?? '';
             $this->tenant_improvement_buildout_terms = $auction->get->tenant_improvement_buildout_terms ?? '';
@@ -2688,6 +2690,7 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
         $auction->saveMeta('additional_landlord_lease_terms', $this->additional_landlord_lease_terms);
         $auction->saveMeta('commercial_lease_type', $this->commercial_lease_type);
+        $auction->saveMeta('commercial_lease_type_other', $this->commercial_lease_type_other);
         $auction->saveMeta('cam_nnn_additional_rent_charges', $this->cam_nnn_additional_rent_charges);
         $auction->saveMeta('rent_escalation_terms', $this->rent_escalation_terms);
         $auction->saveMeta('tenant_improvement_buildout_terms', $this->tenant_improvement_buildout_terms);

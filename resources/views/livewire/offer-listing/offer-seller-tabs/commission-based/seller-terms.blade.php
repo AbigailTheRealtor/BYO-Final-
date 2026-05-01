@@ -1685,6 +1685,15 @@
         </select>
     </div>
 </div>
+@if ($initial_deposit_timeframe === 'Other')
+<div class="form-group">
+    <div class="input-cover">
+        <input type="text" wire:model="initial_deposit_timeframe_other" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days"
+            placeholder="Enter initial deposit timeframe (e.g., Within 21 Days)">
+    </div>
+</div>
+@endif
 
 {{-- 3. Additional Deposit Requested --}}
 <div class="form-group mt-3">
@@ -1727,6 +1736,15 @@
         </select>
     </div>
 </div>
+@if ($additional_deposit_timeframe === 'Other')
+<div class="form-group">
+    <div class="input-cover">
+        <input type="text" wire:model="additional_deposit_timeframe_other" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days"
+            placeholder="Enter additional deposit timeframe (e.g., Within 21 Days)">
+    </div>
+</div>
+@endif
 
 {{-- 5. Escrow Agent Preference --}}
 <div class="form-group mt-3">
