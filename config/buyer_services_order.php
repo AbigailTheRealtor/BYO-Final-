@@ -40,6 +40,7 @@ return [
                 "Provide referrals to Attorneys, Title Companies, Escrow Professionals, or Lenders (referrals only — no endorsement or warranty is made)",
             ],
             '📋 Closing Coordination & Transaction Management' => [
+                "Review and provide the Buyer with Seller-supplied due diligence documentation, including property disclosures, inspection reports, HOA documents, and utility summaries (as available)",
                 "Coordinate inspections, appraisals, and lease audits (if applicable)",
                 "Coordinate with the Lender, Title, Escrow, and/or Attorney to prepare for Closing",
                 "Review the Settlement Statement for accuracy and coordinate with relevant parties if corrections are needed (no legal or financial advice provided)",

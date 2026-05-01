@@ -323,6 +323,16 @@
         </div>
     @endif
 
+    {{-- ── MARKETING PLAN ───────────────────────────────────────────── --}}
+    @if (!empty($data['marketing_plan']))
+        <div class="profile-section">
+            <div class="profile-section-header"><i class="fa-solid fa-bullhorn"></i> Marketing Plan</div>
+            <div class="profile-section-body">
+                <div class="profile-field-value">{{ $data['marketing_plan'] }}</div>
+            </div>
+        </div>
+    @endif
+
     {{-- ── QUICK HIGHLIGHTS ────────────────────────────────────────── --}}
     @php
         $hasHighlights = !empty($data['years_experience'])
@@ -618,46 +628,126 @@
 
     {{-- ── SERVICES OFFERED ─────────────────────────────────────────── --}}
     @php
-        // Collect all standard services that were successfully grouped by catalog category.
-        // $groupedProfileServices is passed from AgentProfileController::show().
-        $allStandardServicesLower = [];
-        foreach ($groupedProfileServices as $catSvcs) {
+        // Separate the auto-bucketed "Additional Services" from the named catalog sections.
+        $additionalServicesKey = '✍️ Additional Services';
+        $namedGroupedServices  = array_filter(
+            $groupedProfileServices,
+            fn($k) => $k !== $additionalServicesKey,
+            ARRAY_FILTER_USE_KEY
+        );
+        $autoBucketAdditional = $groupedProfileServices[$additionalServicesKey] ?? [];
+
+        // Collect all named-section service strings (lowercase) for deduplication.
+        $allNamedServicesLower = [];
+        foreach ($namedGroupedServices as $catSvcs) {
             foreach ($catSvcs as $svc) {
-                $allStandardServicesLower[] = mb_strtolower(trim($svc));
+                $allNamedServicesLower[] = mb_strtolower(trim($svc));
             }
         }
-        // Deduplicate: custom services not already in the standard grouped list.
-        $profileOtherServices = array_values(array_filter(
+
+        // Custom other_services not already in any named section.
+        $customOtherServices = array_values(array_filter(
             is_array($data['other_services'] ?? null) ? $data['other_services'] : [],
             fn($s) => is_string($s) && trim($s) !== ''
-                   && !in_array(mb_strtolower(trim($s)), $allStandardServicesLower, true)
+                   && !in_array(mb_strtolower(trim($s)), $allNamedServicesLower, true)
         ));
-        $hasServices = !empty($groupedProfileServices) || count($profileOtherServices) > 0;
+
+        // Merge auto-bucketed and custom into one deduplicated Additional Services list.
+        // Use case-insensitive dedup: preserve first-seen original text per normalized key.
+        $mergedAdditional = [];
+        $mergedAdditionalSeen = [];
+        foreach (array_merge($autoBucketAdditional, $customOtherServices) as $svc) {
+            $key = mb_strtolower(trim($svc));
+            if (!isset($mergedAdditionalSeen[$key])) {
+                $mergedAdditionalSeen[$key] = true;
+                $mergedAdditional[] = $svc;
+            }
+        }
+        $mergedAdditional = array_values($mergedAdditional);
+
+        $hasServices = !empty($namedGroupedServices) || count($mergedAdditional) > 0;
     @endphp
     @if ($hasServices)
         <div class="profile-section">
             <div class="profile-section-header"><i class="fa-solid fa-list-check"></i> Services Offered</div>
             <div class="profile-section-body">
-                @if (!empty($groupedProfileServices))
-                    @foreach ($groupedProfileServices as $catLabel => $catSvcs)
-                        <div class="profile-field-label" style="margin-top:{{ $loop->first ? '0' : '1rem' }};">{{ $catLabel }}</div>
-                        <ul class="mb-0" style="padding-left:1.25rem;line-height:1.7;">
-                            @foreach ($catSvcs as $svc)
-                                <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
-                            @endforeach
-                        </ul>
-                    @endforeach
-                @endif
-                @if (count($profileOtherServices) > 0)
-                    <div class="{{ !empty($groupedProfileServices) ? 'mt-3' : '' }}">
+                @php $isFirst = true; @endphp
+                @foreach ($namedGroupedServices as $catLabel => $catSvcs)
+                    <div class="profile-field-label" style="margin-top:{{ $isFirst ? '0' : '1rem' }};">{{ $catLabel }}</div>
+                    <ul class="mb-0" style="padding-left:1.25rem;line-height:1.7;">
+                        @foreach ($catSvcs as $svc)
+                            <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
+                        @endforeach
+                    </ul>
+                    @php $isFirst = false; @endphp
+                @endforeach
+                @if (count($mergedAdditional) > 0)
+                    <div class="{{ !$isFirst ? 'mt-3' : '' }}">
                         <div class="profile-field-label">Additional Services</div>
                         <ul class="mb-0" style="padding-left:1.25rem;line-height:1.7;">
-                            @foreach ($profileOtherServices as $svc)
+                            @foreach ($mergedAdditional as $svc)
                                 <li style="font-size:.92rem;color:#1a1a1a;">{{ $svc }}</li>
                             @endforeach
                         </ul>
                     </div>
                 @endif
+            </div>
+        </div>
+    @endif
+
+    {{-- ── BROKER COMPENSATION & AGENCY AGREEMENT TERMS ────────────── --}}
+    @if (Auth::check() && !empty($compensationData))
+        @php
+            $compensationLabels = [
+                'commission_structure'         => 'Commission Structure',
+                'purchase_fee_type'            => 'Purchase Fee Type',
+                'purchase_fee_flat'            => 'Purchase Fee (Flat)',
+                'purchase_fee_percentage'      => 'Purchase Fee (%)',
+                'lease_fee_type'               => 'Lease Fee Type',
+                'lease_fee_flat'               => 'Lease Fee (Flat)',
+                'lease_fee_percentage'         => 'Lease Fee (%)',
+                'lease_option_fee_type'        => 'Lease-Option Fee Type',
+                'lease_option_fee_flat'        => 'Lease-Option Fee (Flat)',
+                'lease_option_fee_percentage'  => 'Lease-Option Fee (%)',
+                'broker_fee_timing'            => 'Broker Fee Timing',
+                'agency_agreement_timeframe'   => 'Agency Agreement Timeframe',
+                'agency_agreement_custom'      => 'Agency Agreement Timeframe',
+                'protection_period'            => 'Protection Period (days)',
+                'brokerage_relationship'       => 'Brokerage Relationship',
+                'early_termination_fee_option' => 'Early Termination Fee',
+                'early_termination_fee_amount' => 'Early Termination Fee',
+                'retainer_fee_option'          => 'Retainer Fee',
+                'retainer_fee_amount'          => 'Retainer Fee',
+                'retainer_fee_application'     => 'Retainer Fee Application',
+                'additional_details_broker'    => 'Additional Broker Details',
+                'retained_deposits'            => 'Retained Deposits',
+                'renewal_fee_type'             => 'Renewal Fee Type',
+                'expansion_commission_percentage' => 'Expansion Commission (%)',
+            ];
+            $flatFields       = ['purchase_fee_flat', 'lease_fee_flat', 'lease_option_fee_flat', 'early_termination_fee_amount', 'retainer_fee_amount'];
+            $percentageFields = ['purchase_fee_percentage', 'lease_fee_percentage', 'lease_option_fee_percentage', 'expansion_commission_percentage'];
+        @endphp
+        <div class="profile-section">
+            <div class="profile-section-header"><i class="fa-solid fa-file-contract"></i> Broker Compensation &amp; Agency Agreement Terms</div>
+            <div class="profile-section-body">
+                <div class="row g-3">
+                    @foreach ($compensationLabels as $field => $label)
+                        @if (!empty($compensationData[$field]))
+                            <div class="col-sm-6">
+                                <div class="profile-field-label">{{ $label }}</div>
+                                <div class="profile-field-value">
+                                    @if (in_array($field, $flatFields))
+                                        ${{ number_format((float) $compensationData[$field]) }}
+                                    @elseif (in_array($field, $percentageFields))
+                                        {{ $compensationData[$field] }}%
+                                    @else
+                                        {{ $compensationData[$field] }}
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
             </div>
         </div>
     @endif

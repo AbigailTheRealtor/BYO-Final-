@@ -64,6 +64,8 @@ class AgentProfileController extends Controller
         'weekends_available',
         'communication_style',
         'preferred_contact_method',
+        // Marketing plan (visible to all)
+        'marketing_plan',
     ];
 
     public function show(string $agentShortId)
@@ -119,6 +121,27 @@ class AgentProfileController extends Controller
             ?? null;
         $data = $primaryProfile?->profile_data ?? [];
 
+        // Build compensation data for authenticated viewers only (before whitelist strip).
+        $compensationFields = [
+            'commission_structure', 'purchase_fee_type', 'purchase_fee_flat',
+            'purchase_fee_percentage', 'lease_fee_type', 'lease_fee_flat',
+            'lease_fee_percentage', 'broker_fee_timing', 'agency_agreement_timeframe',
+            'agency_agreement_custom', 'protection_period', 'brokerage_relationship',
+            'early_termination_fee_option', 'early_termination_fee_amount',
+            'retainer_fee_option', 'retainer_fee_amount', 'retainer_fee_application',
+            'additional_details_broker', 'retained_deposits', 'renewal_fee_type',
+            'expansion_commission_percentage', 'lease_option_fee_type',
+            'lease_option_fee_flat', 'lease_option_fee_percentage',
+        ];
+        $compensationData = [];
+        if (Auth::check()) {
+            foreach ($compensationFields as $field) {
+                if (isset($data[$field]) && $data[$field] !== '' && $data[$field] !== null) {
+                    $compensationData[$field] = $data[$field];
+                }
+            }
+        }
+
         // Strip every key that is not on the public-safe whitelist so that
         // private compensation/fee fields are never present in the view,
         // regardless of what any future template edit might reference.
@@ -152,7 +175,8 @@ class AgentProfileController extends Controller
             'hireButtons',
             'isOwnerPreview',
             'agentShortId',
-            'groupedProfileServices'
+            'groupedProfileServices',
+            'compensationData'
         ));
     }
 }

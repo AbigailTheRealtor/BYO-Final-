@@ -236,4 +236,148 @@ class AgentProfileHireButtonsTest extends TestCase
 
         $response->assertStatus(404);
     }
+
+    // =========================================================================
+    // Test 9 — Marketing Plan appears when non-empty
+    // =========================================================================
+
+    public function test_marketing_plan_section_appears_when_non_empty(): void
+    {
+        $agent = $this->makeAgent('aa11bb22cc33');
+
+        AgentDefaultProfile::create([
+            'user_id'       => $agent->id,
+            'role_type'     => 'seller',
+            'property_type' => 'residential',
+            'profile_data'  => [
+                'services'       => ['List property on MLS'],
+                'marketing_plan' => 'I use social media and open houses to attract qualified buyers.',
+            ],
+        ]);
+
+        $response = $this->get("/agent/aa11bb22cc33/profile");
+
+        $response->assertStatus(200);
+        $response->assertSee('Marketing Plan', false);
+        $response->assertSee('I use social media and open houses to attract qualified buyers.', false);
+    }
+
+    public function test_marketing_plan_section_absent_when_empty(): void
+    {
+        $agent = $this->makeAgent('aa11bb22cc44');
+
+        AgentDefaultProfile::create([
+            'user_id'       => $agent->id,
+            'role_type'     => 'seller',
+            'property_type' => 'residential',
+            'profile_data'  => [
+                'services'       => ['List property on MLS'],
+                'marketing_plan' => '',
+            ],
+        ]);
+
+        $response = $this->get("/agent/aa11bb22cc44/profile");
+
+        $response->assertStatus(200);
+        $response->assertDontSee('Marketing Plan', false);
+    }
+
+    // =========================================================================
+    // Test 10 — Exactly one "Additional Services" heading when both sources populated
+    // =========================================================================
+
+    public function test_only_one_additional_services_heading_rendered(): void
+    {
+        $agent = $this->makeAgent('dd11ee22ff33');
+
+        // 'other_services' provides custom services and the selected services
+        // list contains an item that will be auto-bucketed into Additional Services.
+        AgentDefaultProfile::create([
+            'user_id'       => $agent->id,
+            'role_type'     => 'seller',
+            'property_type' => 'residential',
+            'profile_data'  => [
+                'services'       => ['Some custom unlisted service for auto-bucket'],
+                'other_services' => ['Another custom service from other_services field'],
+            ],
+        ]);
+
+        $response = $this->get("/agent/dd11ee22ff33/profile");
+
+        $response->assertStatus(200);
+
+        // The "Additional Services" label must appear exactly once in the profile body.
+        // We search for the rendered heading style which has the "profile-field-label" class.
+        $html = $response->getContent();
+        $count = substr_count($html, 'Additional Services');
+        $this->assertSame(1, $count, 'Expected exactly one "Additional Services" heading but found: ' . $count);
+    }
+
+    // =========================================================================
+    // Test 11 — Anonymous visitors never see compensation field values (Task #195)
+    // =========================================================================
+
+    public function test_anonymous_visitor_does_not_see_compensation_fields(): void
+    {
+        $agent = $this->makeAgent('beefcafe5678');
+
+        AgentDefaultProfile::create([
+            'user_id'       => $agent->id,
+            'role_type'     => 'buyer',
+            'property_type' => 'residential',
+            'profile_data'  => [
+                'services'             => ['Find buyer properties'],
+                'commission_structure' => 'percentage',
+                'purchase_fee_percentage' => '3',
+                'agency_agreement_timeframe' => '90 days',
+                'protection_period'    => '30',
+            ],
+        ]);
+
+        $response = $this->get("/agent/beefcafe5678/profile");
+
+        $response->assertStatus(200);
+
+        // Compensation section heading must not appear for anonymous visitors.
+        $response->assertDontSee('Broker Compensation', false);
+
+        // Specific compensation values must not be rendered in the HTML.
+        $response->assertDontSee('Agency Agreement Terms', false);
+        $response->assertDontSee('3%', false);
+        $response->assertDontSee('90 days', false);
+    }
+
+    // =========================================================================
+    // Test 10 — Authenticated visitors do see compensation fields (Task #195)
+    // =========================================================================
+
+    public function test_authenticated_visitor_sees_compensation_fields(): void
+    {
+        $agent  = $this->makeAgent('cafe1234abcd');
+        $viewer = User::factory()->create();
+
+        AgentDefaultProfile::create([
+            'user_id'       => $agent->id,
+            'role_type'     => 'buyer',
+            'property_type' => 'residential',
+            'profile_data'  => [
+                'services'                => ['Find buyer properties'],
+                'commission_structure'    => 'Percentage',
+                'purchase_fee_percentage' => '3',
+                'agency_agreement_timeframe' => '90 days',
+            ],
+        ]);
+
+        $response = $this->actingAs($viewer)->get("/agent/cafe1234abcd/profile");
+
+        $response->assertStatus(200);
+
+        // Compensation section heading must appear for authenticated visitors.
+        $response->assertSee('Broker Compensation', false);
+
+        // Specific compensation values must be rendered.
+        $response->assertSee('Percentage', false);
+        $response->assertSee('3%', false);
+        $response->assertSee('90 days', false);
+    }
 }
