@@ -2910,6 +2910,12 @@ class SellerOfferListing extends Component
     public function updatedNewPropertyPhotos()
     {
         $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+        $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
+        if (count($this->propertyPhotos) + $incoming > 50) {
+            $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
+            $this->newPropertyPhotos = [];
+            return;
+        }
         $this->processPendingPhotoUploads();
         if ($this->listingId) {
             $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
@@ -2936,6 +2942,53 @@ class SellerOfferListing extends Component
                     $auction->saveMeta('property_photos', $this->propertyPhotos);
                 }
             }
+        }
+    }
+
+    public function reorderPhotos(array $orderedFilenames): void
+    {
+        $current  = $this->propertyPhotos;
+        $newOrder = [];
+        foreach ($orderedFilenames as $fname) {
+            if (in_array($fname, $current, true)) {
+                $newOrder[] = $fname;
+            }
+        }
+        foreach ($current as $fname) {
+            if (!in_array($fname, $newOrder, true)) {
+                $newOrder[] = $fname;
+            }
+        }
+        $this->propertyPhotos = $newOrder;
+        if ($this->listingId) {
+            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function movePhotoUp(int $index): void
+    {
+        if ($index <= 0 || !isset($this->propertyPhotos[$index])) {
+            return;
+        }
+        [$this->propertyPhotos[$index - 1], $this->propertyPhotos[$index]] =
+            [$this->propertyPhotos[$index], $this->propertyPhotos[$index - 1]];
+        if ($this->listingId) {
+            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function movePhotoDown(int $index): void
+    {
+        if (!isset($this->propertyPhotos[$index + 1])) {
+            return;
+        }
+        [$this->propertyPhotos[$index], $this->propertyPhotos[$index + 1]] =
+            [$this->propertyPhotos[$index + 1], $this->propertyPhotos[$index]];
+        if ($this->listingId) {
+            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }
 
