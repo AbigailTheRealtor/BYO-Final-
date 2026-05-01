@@ -194,13 +194,20 @@
                                                 <div>
                                                     @php
                                                         $wLink = data_get($bid, 'get.website_link');
+                                                        // website_link may be stored as a plain string or a JSON-decoded array (hire-me auto-bids)
+                                                        if (is_array($wLink)) {
+                                                            $wLink = $wLink[0] ?? '';
+                                                        }
+                                                        $wLink = (string) $wLink;
                                                         if (!empty($wLink) && !str_starts_with($wLink, 'http://') && !str_starts_with($wLink, 'https://')) {
                                                             $wLink = 'https://' . $wLink;
                                                         }
                                                     @endphp
+                                                    @if(!empty($wLink))
                                                     <a href="{{ $wLink }}" target="_blank" rel="noopener noreferrer" class="text-primary text-decoration-none">
                                                         <i class="fa-solid fa-globe me-1"></i> Visit Website
                                                     </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                             @endif

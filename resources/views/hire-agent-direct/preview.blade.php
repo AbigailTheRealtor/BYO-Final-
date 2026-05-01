@@ -397,6 +397,26 @@
                 </div>
             </div>
 
+            {{-- ── Client Requested Services ────────────────────────── --}}
+            <div class="preview-section">
+                <div class="preview-section-header"><i class="fa-solid fa-list-plus"></i> Additional Services You'd Like to Request</div>
+                <div class="preview-section-body">
+                    <p class="text-muted small mb-2">
+                        Request any additional services you'd like the Agent to consider.
+                        These are not included unless agreed upon.
+                    </p>
+                    <textarea name="client_custom_services"
+                              class="form-control @error('client_custom_services') is-invalid @enderror"
+                              rows="4"
+                              placeholder="Enter one service per line, e.g.:&#10;Provide virtual staging for the listing&#10;Coordinate with HOA for access"
+                              @if($isOwnerPreview) disabled @endif>{{ old('client_custom_services') }}</textarea>
+                    <div class="text-muted" style="font-size:.78rem;margin-top:.35rem;">Enter one service per line.</div>
+                    @error('client_custom_services')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+
             {{-- ── Additional Services Requested ──────────────────── --}}
             <div class="preview-section">
                 <div class="preview-section-header"><i class="fa-solid fa-plus-circle"></i> Additional Services Requested</div>

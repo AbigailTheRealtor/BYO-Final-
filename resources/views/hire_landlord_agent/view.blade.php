@@ -1468,6 +1468,24 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
             </div>
             @endif
 
+            @php
+                $ccsRawLandlord = @$auction->get->client_custom_services;
+                $clientCustomServicesLandlord = is_array($ccsRawLandlord)
+                    ? $ccsRawLandlord
+                    : (is_string($ccsRawLandlord) ? (json_decode($ccsRawLandlord, true) ?? []) : []);
+                $clientCustomServicesLandlord = array_values(array_filter($clientCustomServicesLandlord, fn($s) => is_string($s) && trim($s) !== ''));
+            @endphp
+            @if (!empty($clientCustomServicesLandlord))
+            <div class="mt-3">
+                <strong>📋 Client Requested Services</strong>
+                <ul class="services">
+                    @foreach ($clientCustomServicesLandlord as $ccs)
+                    <li style="font-size: 16px;">{{ $ccs }}</li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
         </div>
         @endif
 

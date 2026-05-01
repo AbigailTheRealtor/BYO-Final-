@@ -220,12 +220,13 @@ class HireAgentDirectController extends Controller
 
         // Validate minimal client inputs
         $validated = $request->validate([
-            'address'              => 'required|string|max:500',
-            'services'             => 'nullable|array',
-            'services.*'           => 'string|max:500',
-            'other_services'       => 'nullable|array',
-            'other_services.*'     => 'string|max:500',
-            'additional_requested' => 'nullable|string|max:3000',
+            'address'               => 'required|string|max:500',
+            'services'              => 'nullable|array',
+            'services.*'            => 'string|max:500',
+            'other_services'        => 'nullable|array',
+            'other_services.*'      => 'string|max:500',
+            'additional_requested'  => 'nullable|string|max:3000',
+            'client_custom_services' => 'nullable|string|max:3000',
         ]);
 
         // Load the preset — block confirmation if no profile exists
@@ -268,6 +269,18 @@ class HireAgentDirectController extends Controller
             $presetOtherServices
         ));
 
+        // Parse client_custom_services: split by newline, trim, deduplicate, cap entries
+        $clientCustomServices = [];
+        $rawCustom = $validated['client_custom_services'] ?? null;
+        if (!empty($rawCustom)) {
+            $lines = preg_split('/\r\n|\r|\n/', $rawCustom);
+            $lines = array_map('trim', $lines);
+            $lines = array_filter($lines, fn($l) => $l !== '');
+            $lines = array_values(array_unique($lines));
+            // Cap at 50 entries to prevent abuse
+            $clientCustomServices = array_slice($lines, 0, 50);
+        }
+
         DB::beginTransaction();
         try {
             // ── 1. Create the listing ────────────────────────────────────
@@ -295,6 +308,10 @@ class HireAgentDirectController extends Controller
 
             if (!empty($validated['additional_requested'])) {
                 $listing->saveMeta('client_additional_requested', $validated['additional_requested']);
+            }
+
+            if (!empty($clientCustomServices)) {
+                $listing->saveMeta('client_custom_services', json_encode($clientCustomServices));
             }
 
             // ── 3. Create the bid (on behalf of the agent's standing offer) ──
@@ -326,6 +343,11 @@ class HireAgentDirectController extends Controller
             // Other services on the bid mirror only what the client kept checked
             $bid->saveMeta('other_services', json_encode($clientOtherServices));
             $bid->saveMeta('hire_me_auto_bid', '1');
+
+            // Client-requested custom services — stored separately, never merged into services/other_services
+            if (!empty($clientCustomServices)) {
+                $bid->saveMeta('client_custom_services', json_encode($clientCustomServices));
+            }
 
             DB::commit();
 

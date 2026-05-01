@@ -216,10 +216,15 @@
                                                             <div>
                                                                 @php
                                                                     $websiteLink = data_get($bid, 'get.website_link');
+                                                                    if (is_array($websiteLink)) {
+                                                                        $websiteLink = $websiteLink[0] ?? '';
+                                                                    }
+                                                                    $websiteLink = (string) $websiteLink;
                                                                     if (!empty($websiteLink) && !str_starts_with($websiteLink, 'http://') && !str_starts_with($websiteLink, 'https://')) {
                                                                         $websiteLink = 'https://' . $websiteLink;
                                                                     }
                                                                 @endphp
+                                                                @if(!empty($websiteLink))
                                                                 <a href="{{ $websiteLink }}"
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
@@ -227,6 +232,7 @@
                                                                     <i class="fa-solid fa-globe me-1"></i>
                                                                     Visit Website
                                                                 </a>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                         @endif

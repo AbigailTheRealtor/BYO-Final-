@@ -1682,6 +1682,24 @@
                                 </ul>
                             </div>
                             @endif
+
+                            @php
+                                $ccsRawBuyer = @$auction->get->client_custom_services;
+                                $clientCustomServicesBuyer = is_array($ccsRawBuyer)
+                                    ? $ccsRawBuyer
+                                    : (is_string($ccsRawBuyer) ? (json_decode($ccsRawBuyer, true) ?? []) : []);
+                                $clientCustomServicesBuyer = array_values(array_filter($clientCustomServicesBuyer, fn($s) => is_string($s) && trim($s) !== ''));
+                            @endphp
+                            @if (!empty($clientCustomServicesBuyer))
+                            <div class="mt-3">
+                                <strong>📋 Client Requested Services</strong>
+                                <ul class="services">
+                                    @foreach ($clientCustomServicesBuyer as $ccs)
+                                    <li style="font-size: 16px;">{{ $ccs }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @endif
                         </div>
                         @endif
                         <hr>

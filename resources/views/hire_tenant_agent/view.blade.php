@@ -861,6 +861,26 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 {{-- Use shared partial for services display - supports snapshot + canonical fallback --}}
                 @include('partials.tenant.services_snapshot', ['auction' => $auction])
                 @endif
+
+                @php
+                    $ccsRawTenant = @$auction->get->client_custom_services;
+                    $clientCustomServicesTenant = is_array($ccsRawTenant)
+                        ? $ccsRawTenant
+                        : (is_string($ccsRawTenant) ? (json_decode($ccsRawTenant, true) ?? []) : []);
+                    $clientCustomServicesTenant = array_values(array_filter($clientCustomServicesTenant, fn($s) => is_string($s) && trim($s) !== ''));
+                @endphp
+                @if (!empty($clientCustomServicesTenant))
+                <div class="col-md-12 col-12 pt-2">
+                    <div class="mt-3">
+                        <strong>📋 Client Requested Services</strong>
+                        <ul class="services">
+                            @foreach ($clientCustomServicesTenant as $ccs)
+                            <li style="font-size: 16px;">{{ $ccs }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+                @endif
                 <hr>
                 @if (\App\Helpers\ListingDisplayHelper::hasValue(@$auction->get->additional_details))
                 <div class="card-header section-header">
@@ -2640,10 +2660,15 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                             <div>
                                                                 @php
                                                                     $websiteLink = data_get($bid, 'get.website_link');
+                                                                    if (is_array($websiteLink)) {
+                                                                        $websiteLink = $websiteLink[0] ?? '';
+                                                                    }
+                                                                    $websiteLink = (string) $websiteLink;
                                                                     if (!empty($websiteLink) && !str_starts_with($websiteLink, 'http://') && !str_starts_with($websiteLink, 'https://')) {
                                                                         $websiteLink = 'https://' . $websiteLink;
                                                                     }
                                                                 @endphp
+                                                                @if(!empty($websiteLink))
                                                                 <a href="{{ $websiteLink }}"
                                                                     target="_blank"
                                                                     rel="noopener noreferrer"
@@ -2651,6 +2676,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                                                                     <i class="fa-solid fa-globe me-1"></i>
                                                                     Visit Website
                                                                 </a>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                         @endif
