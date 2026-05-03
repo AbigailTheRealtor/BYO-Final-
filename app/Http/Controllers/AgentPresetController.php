@@ -115,35 +115,6 @@ class AgentPresetController extends Controller
         $selectedServices = $data['services'] ?? [];
         $otherServices    = $data['other_services'] ?? [];
 
-        // Autofill fallback: for any profile field that is missing or empty on
-        // the current preset, look up the most-recently-updated other preset
-        // that has that field filled and use its value as the display default.
-        // This does NOT persist anything — it is display-only until the agent saves.
-        $missingFields = [];
-        foreach (static::PROFILE_FIELDS as $field) {
-            $val = $data[$field] ?? null;
-            if ($val === null || $val === '' || $val === []) {
-                $missingFields[] = $field;
-            }
-        }
-
-        if (!empty($missingFields)) {
-            $otherPresets = AgentDefaultProfile::where('user_id', $userId)
-                ->when($profile !== null, fn ($q) => $q->where('id', '!=', $profile->id))
-                ->orderBy('updated_at', 'desc')
-                ->get();
-
-            foreach ($missingFields as $field) {
-                foreach ($otherPresets as $otherPreset) {
-                    $val = $otherPreset->profile_data[$field] ?? null;
-                    if ($val !== null && $val !== '' && $val !== []) {
-                        $data[$field] = $val;
-                        break;
-                    }
-                }
-            }
-        }
-
         $roleLabel     = AgentDefaultProfile::roleLabel($role);
         $propertyLabel = AgentDefaultProfile::propertyLabel($propertyType);
         $profileExists = $profile !== null;

@@ -113,12 +113,40 @@ class AgentProfileController extends Controller
             }
         }
 
-        // Prefer the most recently updated profile that has actual bio content;
-        // fall back to the most recently updated profile overall.
-        $primaryProfile = $profiles->sortByDesc('updated_at')
-                ->first(fn($p) => !empty($p->profile_data['bio']))
-            ?? $profiles->sortByDesc('updated_at')->first()
-            ?? null;
+        // Select a stable primary profile using a fixed priority order so that
+        // saving any preset last does not change the public identity.
+        $hasProfileContent = function ($p) {
+            $data = $p->profile_data ?? [];
+            foreach (self::PUBLIC_PROFILE_KEYS as $key) {
+                $val = $data[$key] ?? null;
+                if ($val !== null && $val !== '' && $val !== []) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        $priorityOrder = [
+            ['buyer',    'residential'],
+            ['seller',   'residential'],
+            ['landlord', 'residential'],
+            ['tenant',   'residential'],
+        ];
+
+        $primaryProfile = null;
+        foreach ($priorityOrder as [$r, $pt]) {
+            $candidate = $profiles->first(fn($p) => $p->role_type === $r && $p->property_type === $pt);
+            if ($candidate && $hasProfileContent($candidate)) {
+                $primaryProfile = $candidate;
+                break;
+            }
+        }
+
+        if ($primaryProfile === null) {
+            $primaryProfile = $profiles->first(fn($p) => $hasProfileContent($p))
+                ?? $profiles->sortBy('id')->first()
+                ?? null;
+        }
         $data = $primaryProfile?->profile_data ?? [];
 
         // Build compensation data for authenticated viewers only (before whitelist strip).
