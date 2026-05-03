@@ -1688,14 +1688,22 @@
                         allowClear: true
                     });
                     $('#view_preference').on('change', function() {
-                        let selectedValues = $(this).val();
-                        Livewire.emit('updatePreference', selectedValues);
+                        let selectedValues = $(this).val() || [];
+                        @this.set('view_preference', selectedValues);
                         if (selectedValues.includes('Other')) {
                             $('#other_preferences').show();
                         } else {
                             $('#other_preferences').hide();
                         }
                     });
+                }
+                if ($('#view_preference').length) {
+                    var _vpVals = $('#view_preference').val() || [];
+                    if (_vpVals.includes('Other')) {
+                        $('#other_preferences').show();
+                    } else {
+                        $('#other_preferences').hide();
+                    }
                 }
             }
             initViewPreferenceSelect2();
@@ -1731,6 +1739,13 @@
                                 }
                             }
                         });
+                    }
+                    if ($el.length && cfg.otherId) {
+                        var _currentVals = $el.val() || [];
+                        var $wrapper = $('#' + cfg.otherId);
+                        if ($wrapper.length) {
+                            $wrapper.css('display', _currentVals.includes('Other') ? 'block' : 'none');
+                        }
                     }
                 });
             }
@@ -1988,7 +2003,14 @@
                         let selectedValues = $(this).val() || [];
                         @this.set('appliances', selectedValues);
                         @this.call('updateAppliances', selectedValues);
+                        var _appEl = document.getElementById('other_appliances');
+                        if (_appEl) _appEl.style.display = selectedValues.includes('Other') ? '' : 'none';
                     });
+                }
+                if ($('#appliances').length) {
+                    var _appVals = $('#appliances').val() || [];
+                    var _appEl = document.getElementById('other_appliances');
+                    if (_appEl) _appEl.style.display = _appVals.includes('Other') ? '' : 'none';
                 }
             }
             initAppliancesSelect2();

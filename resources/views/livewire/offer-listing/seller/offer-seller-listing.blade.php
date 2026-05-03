@@ -1543,6 +1543,16 @@
                     }
                 }
 
+                var $assets = $('#included_assets');
+                if ($assets.length && $assets.hasClass('select2-hidden-accessible')) {
+                    var assetData = $assets.val() || [];
+                    if (assetData.includes('Other')) {
+                        $('.other_assets').show();
+                    } else {
+                        $('.other_assets').hide();
+                    }
+                }
+
                 initializeMlsPropertyMultiSelects();
 
                 var $feeIncludes = $('#association_fee_includes');

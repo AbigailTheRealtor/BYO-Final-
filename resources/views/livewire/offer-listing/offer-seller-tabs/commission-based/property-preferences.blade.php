@@ -1318,7 +1318,7 @@
             @if (in_array($property_type, ['Residential', 'Income']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter amenities or property features (e.g., Sauna, Ev Charger, Outdoor Kitchen)">
+                    placeholder="Enter amenities or property features (e.g., Sauna, EV Charger, Outdoor Kitchen)">
             @elseif(in_array($property_type, ['Business', 'Commercial']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"

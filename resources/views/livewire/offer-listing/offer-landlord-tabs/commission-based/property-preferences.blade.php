@@ -747,7 +747,7 @@
 </div>
 
 <!-- Other Preferences Input (Hidden or Visible based on Livewire state) -->
-<div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
+<div class="form-group" id="other_preferences" style="display: {{ is_array($view_preference ?? []) && in_array('Other', $view_preference ?? []) ? 'block' : 'none' }}">
     <div class="input-cover">
         <input type="text" wire:model="other_preferences" class="form-control has-icon"
             data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
@@ -917,7 +917,6 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <i class="input-icon fa-solid fa-pipe-section input-icon2"></i>
             <select id="sewer" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-pipe-section input-icon2" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
@@ -1193,7 +1192,6 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover" wire:ignore>
-            <i class="input-icon fa-solid fa-pipe-section input-icon2"></i>
             <select id="sewer" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-pipe-section input-icon2" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
