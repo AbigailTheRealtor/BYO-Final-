@@ -16,6 +16,7 @@ use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
 use App\Models\CounterTerm;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
 class BuyerAgentAuctionController extends Controller
@@ -249,8 +250,11 @@ class BuyerAgentAuctionController extends Controller
             return redirect()->to($route)->with('success', 'Buyer\'s Agent Auction is added successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e->getMessage();
-            return redirect()->back()->with('error', 'There was some error while adding Buyer\'s Agent Auction.');
+            Log::error('BuyerAgentAuctionController@store failed: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'There was a problem adding the auction. Please try again.');
         }
     }
 
@@ -371,8 +375,12 @@ class BuyerAgentAuctionController extends Controller
             return redirect()->back()->with('success', 'Buyer\'s Agent Auction updated successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e->getMessage();
-            return redirect()->back()->with('error', 'Unable to update Buyer\'s Agent Auction.');
+            Log::error('BuyerAgentAuctionController@update failed: ' . $e->getMessage(), [
+                'user_id'    => Auth::id(),
+                'auction_id' => $id ?? null,
+                'trace'      => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to update the auction. Please try again.');
         }
     }
 

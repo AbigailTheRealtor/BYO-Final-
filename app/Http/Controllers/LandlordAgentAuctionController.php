@@ -8,6 +8,7 @@ use App\Models\Financing;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\LandlordAgentAuction;
 use App\Models\LandlordAgentAuctionBid;
 use App\Models\LandlordAgentAuctionMeta;
@@ -37,7 +38,7 @@ class LandlordAgentAuctionController extends Controller
 
             $auction = new LandlordAgentAuction();
             $auction->user_id = Auth::user()->id;
-            $auction->address = $request->address;
+            // address is stored in meta via saveMeta("address") below — landlord_agent_auctions has no address column
             $auction->auction_type = $request->auction_type;
             $auction->auction_length = $auction_length_days;
             $auction->is_approved = true;
@@ -199,10 +200,12 @@ class LandlordAgentAuctionController extends Controller
             DB::commit();
             return redirect()->route('landlord.agent.auction.view', $auction->id)->with('success', 'Auction added successfully');
         } catch (\Exception $e) {
-            //throw $e;
             DB::rollBack();
-            return $e->getMessage();
-            return redirect()->back()->with('error', 'Unable to add auction');
+            Log::error('LandlordAgentAuctionController@store failed: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to add auction. Please try again.');
         }
     }
     public function edit($id, Request $request)
@@ -227,7 +230,7 @@ class LandlordAgentAuctionController extends Controller
 
             $auction = LandlordAgentAuction::find($id);
             $auction->user_id = Auth::user()->id;
-            $auction->address = $request->address;
+            // address is stored in meta via saveMeta("address") below — landlord_agent_auctions has no address column
             $auction->auction_type = $request->auction_type;
             $auction->auction_length = $auction_length_days;
             $auction->save();
@@ -358,10 +361,13 @@ class LandlordAgentAuctionController extends Controller
             DB::commit();
             return redirect()->route('landlord.agent.auction.view', $id)->with('success', 'Auction updated successfully!');
         } catch (\Exception $e) {
-            //throw $e;
             DB::rollBack();
-            return $e->getMessage();
-            return redirect()->back()->with('error', 'Unable to update auction!');
+            Log::error('LandlordAgentAuctionController@update failed: ' . $e->getMessage(), [
+                'user_id'    => Auth::id(),
+                'auction_id' => $id ?? null,
+                'trace'      => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to update auction. Please try again.');
         }
     }
 

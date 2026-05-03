@@ -9,6 +9,7 @@ use App\Models\TenantAgentAuctionBidMeta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 
@@ -40,10 +41,7 @@ class TenantAgentAuctionController extends Controller
             DB::beginTransaction();
             $auction = new TenantAgentAuction();
             $auction->user_id = Auth::user()->id;
-            // $auction->title = $request->title;
-            // 14 Jul 2023
-
-            $auction->title = $request->listing_title;
+            // title is stored in meta as 'listing_title' — tenant_agent_auctions has no title column
             $auction->save();
             $auction->saveMeta('working_with_agent', $request->working_with_agent);
             $auction->saveMeta('cities', json_encode($request->cities));
@@ -161,8 +159,11 @@ class TenantAgentAuctionController extends Controller
             return redirect()->back()->with('success', 'Auction added successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e->getMessage();
-            return redirect()->back()->with('error', 'Unable to add auction');
+            Log::error('TenantAgentAuctionController@store failed: ' . $e->getMessage(), [
+                'user_id' => Auth::id(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to add auction. Please try again.');
         }
     }
 
@@ -180,8 +181,7 @@ class TenantAgentAuctionController extends Controller
             DB::beginTransaction();
             $auction = TenantAgentAuction::findOrFail($id);
             $auction->user_id = Auth::user()->id;
-            // $auction->title = $request->title;
-            $auction->title = "Tenant’s Agent Required for " . $request->property_type;
+            // title is stored in meta as 'listing_title' — tenant_agent_auctions has no title column
             $auction->save();
             $auction->saveMeta('working_with_agent', $request->working_with_agent);
             $auction->saveMeta('auction_type', $request->auction_type);
@@ -235,8 +235,12 @@ class TenantAgentAuctionController extends Controller
             return redirect()->back()->with('success', 'Auction updated successfully');
         } catch (\Exception $e) {
             DB::rollBack();
-            return $e->getMessage();
-            return redirect()->back()->with('error', 'Unable to update auction');
+            Log::error('TenantAgentAuctionController@update failed: ' . $e->getMessage(), [
+                'user_id'    => Auth::id(),
+                'auction_id' => $id ?? null,
+                'trace'      => $e->getTraceAsString(),
+            ]);
+            return redirect()->back()->with('error', 'Unable to update auction. Please try again.');
         }
     }
 
