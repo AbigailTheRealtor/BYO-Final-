@@ -1947,6 +1947,19 @@ class TenantOfferListing extends Component
                         $this->property_county = $countyName . ', ' . $stateAbbrev;
                     }
                 }
+
+                if (empty($this->property_county)) {
+                    $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+                        ->where('state_abbrev', strtoupper($stateAbbrev))
+                        ->first();
+                    if ($zipCode && !empty($zipCode->county)) {
+                        $countyName = $zipCode->county;
+                        if (!str_contains(strtolower($countyName), 'county')) {
+                            $countyName .= ' County';
+                        }
+                        $this->property_county = $countyName . ', ' . strtoupper($stateAbbrev);
+                    }
+                }
             }
         }
     }
@@ -2302,6 +2315,18 @@ class TenantOfferListing extends Component
                 if ($city->county) {
                     $countyString = $city->county->name . ', ' . ($city->county->state ? $city->county->state->abbreviation : strtoupper($stateAbbr));
                     
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
+
+            if (empty($this->counties)) {
+                $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+                    ->where('state_abbrev', strtoupper($stateAbbr))
+                    ->first();
+                if ($zipCode && !empty($zipCode->county)) {
+                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
                     if (!$this->countyExistsIgnoreCase($countyString)) {
                         $this->counties[] = $countyString;
                     }

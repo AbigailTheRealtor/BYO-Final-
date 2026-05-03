@@ -1,0 +1,89 @@
+SAFE TASK — Fix Seller + Landlord Offer Listing Other Inputs + Placeholder Matching
+
+Issue:
+On Offer Listing forms, several fields allow “Other” but do not reveal the custom Other input box. This is happening on both:
+- /offer-listing/seller
+- /offer-listing/landlord
+
+Correct behavior:
+Seller and Landlord Offer Listing “Other” inputs should match the working Hire Agent form behavior and placeholder wording.
+
+Scope ONLY:
+- Seller Offer Listing create/edit form
+- Landlord Offer Listing create/edit form
+- Property Details tabs/partials
+- Related SellerOfferListing / LandlordOfferListing Livewire components or JS only if needed
+
+Do NOT touch:
+- Hire Agent flows
+- Agent presets
+- Agent profile/Hire Me pages
+- Buyer/Tenant Offer Listing forms unless a shared partial must be adjusted safely
+- Services
+- Broker compensation
+- Database schema
+- Public listing display
+
+Placeholder rule:
+1. Appliances Included and View must match Hire Agent placeholder text exactly.
+2. Shared fields between Seller Offer Listing and Landlord Offer Listing must use the same placeholder text.
+3. Do not invent new placeholder text if an approved Hire Agent or Seller/Landlord matching placeholder already exists.
+
+Fields to audit/fix on BOTH Seller and Landlord where applicable:
+- Appliances Included
+- View
+- Amenities and Property Features
+- Included Property or Business Assets
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Laundry Features
+- Floor Covering
+- Security Features
+- Any other Property Details field with “Other”
+
+Correct Other behavior:
+When “Other” is selected:
+- Show custom text input directly under that field.
+- Placeholder must follow approved matching wording.
+- Style must match working Other input pattern.
+- Value must save in draft.
+- Value must reload in edit/draft.
+
+Sewer icon:
+- Landlord Sewer field is still missing icon.
+- Add icon consistent with Seller/Hire Agent utility field styling.
+
+Implementation steps:
+1. Audit working Hire Agent “Other” implementation.
+2. Audit Seller Offer Listing fields where “Other” works and where it does not.
+3. Audit Landlord Offer Listing fields where “Other” works and where it does not.
+4. Copy the correct conditional display pattern to missing fields.
+5. Ensure Select2/multi-select changes trigger Livewire/JS updates immediately.
+6. Ensure all required `other_*` properties exist in SellerOfferListing and LandlordOfferListing.
+7. Ensure all `other_*` values are included in saveAllMetadata() and loadDraft().
+8. Do not alter the list of selectable options.
+
+Testing:
+Seller:
+- Select Other for every applicable field above.
+- Confirm input appears immediately.
+- Confirm placeholder matches Hire Agent/Seller-approved wording.
+- Enter value.
+- Save draft.
+- Reload draft.
+- Confirm Other selected and value persists.
+
+Landlord:
+- Repeat same tests.
+- Confirm Sewer icon appears.
+
+Return:
+- Root cause
+- Files changed
+- Fields fixed
+- Exact placeholders copied and source
+- Save/reload test results
+- Screenshot or rendered verification if possible

@@ -1,0 +1,104 @@
+SAFE TASK — Fix Agent Profile Services Display Grouping Only
+
+Issue:
+On role/property-specific Agent Profile / Hire Me pages, services currently display as one flat checklist.
+
+Correct behavior:
+Services should display like Hire Agent listing service sections:
+- Show each service category title
+- Include the category emoji/icon
+- Show selected services under that category as bullet points or grouped checkboxes
+- Preserve the correct order from the service catalog
+- Only show categories that have selected services
+
+Example format:
+📣 Rental Marketing & Listing Promotion
+- List the property on the local Multiple Listing Service (MLS)
+- Syndicate the listing to third-party platforms
+- Post the property on Facebook Marketplace
+
+📋 Listing Presentation & Preparation
+- Conduct a property walkthrough and provide recommendations
+- Provide a custom listing preparation checklist
+
+Scope:
+- Role/property-specific Agent Profile / Hire Me pages only
+- Services display/rendering only
+- Related formatter/helper if needed
+
+Do NOT:
+- Change service saving
+- Change selected services
+- Change preset scope logic
+- Change broker compensation
+- Change agency agreement terms
+- Change referral fee logic
+- Change Offer Listing flows
+- Change Hire Agent listing forms
+- Change database schema
+- Change generic profile fallback logic unless it shares the same service partial
+
+Tasks:
+1. Audit how Hire Agent listing pages render grouped services correctly.
+   - Find the service catalog/source that includes category names and emoji/icons.
+   - Reuse that structure if possible.
+
+2. Audit how Agent Profile / Hire Me pages currently render services.
+   - Identify where the flat checklist is generated.
+   - Identify whether services are stored as plain labels, keys, or grouped arrays.
+
+3. Update the Agent Profile / Hire Me services display so selected services are grouped under their original service category.
+
+4. The grouping must work for every role/property type:
+Buyer:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Seller:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Landlord:
+- Residential
+- Commercial
+
+Tenant:
+- Residential
+- Commercial
+
+5. Preserve service isolation:
+- Buyer Residential shows only Buyer Residential selected services
+- Seller Residential shows only Seller Residential selected services
+- Landlord Commercial shows only Landlord Commercial selected services
+- Tenant Commercial shows only Tenant Commercial selected services
+
+6. Preserve decoding fix:
+- No \u2019 text should appear
+- Apostrophes should display normally
+
+7. Only show selected services.
+Do not show unselected services.
+Do not show empty categories.
+
+Testing:
+For each role/property type above:
+- Open the exact Hire Me link
+- Confirm URL is role/property-specific
+- Confirm services are grouped by category
+- Confirm category emoji/title appears
+- Confirm only selected services appear
+- Confirm no empty categories appear
+- Confirm no \u2019 text appears
+
+Return:
+- Root cause
+- Files changed
+- Whether existing Hire Agent service catalog was reused
+- Example output for Seller Residential and Landlord Residential
+- Test results for all role/property combinations

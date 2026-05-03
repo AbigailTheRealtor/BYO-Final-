@@ -1,0 +1,93 @@
+SAFE TASK — Fix Offer Listing City/County/State Auto-Population Only
+
+Issue:
+Offer Listing forms are NOT auto-populating City, County, and State like Hire Agent listing forms.
+
+Scope ONLY:
+Offer Listing create/edit forms:
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant/tenant
+
+Do NOT touch:
+- Hire Agent flows
+- Agent presets
+- Agent bids/counters
+- Accepted summaries
+- Services
+- Broker compensation
+- Database schema unless you report first
+
+Correct behavior:
+
+Seller + Landlord Offer Listings:
+When user enters/selects City:
+- Auto-populate State
+- Auto-populate County
+- Match the same behavior/format used in Hire Agent forms
+
+Buyer + Tenant Offer Listings:
+When user enters/selects Acceptable Cities:
+- Auto-populate Acceptable State
+- Auto-populate Acceptable Counties
+- Match the same behavior/format used in Hire Agent forms
+
+Important:
+Use the working Hire Agent implementation as the source of truth.
+Do not invent new city/state/county logic if reusable logic already exists.
+
+Tasks:
+1. Audit working Hire Agent city/state/county auto-population:
+   - Find the JS/Livewire method/component responsible
+   - Identify field names, event listeners, and data source
+
+2. Audit Offer Listing forms:
+   - Seller city/state/county fields
+   - Landlord city/state/county fields
+   - Buyer acceptable_cities / acceptable_state / acceptable_counties fields
+   - Tenant acceptable_cities / acceptable_state / acceptable_counties fields
+
+3. Fix Offer Listing forms so they use the same working pattern.
+
+4. Confirm both create and edit/draft reload behavior:
+   - auto-filled state/county save
+   - reload correctly in draft
+   - reload correctly in edit
+
+5. Make sure manual overrides still work if user edits State or County after auto-population.
+
+Testing:
+Seller:
+- Enter/select Tampa
+- Confirm State = FL / Florida
+- Confirm County = Hillsborough
+- Save draft
+- Reload draft
+- Confirm values remain
+
+Landlord:
+- Enter/select Largo
+- Confirm State = FL / Florida
+- Confirm County = Pinellas
+- Save draft
+- Reload draft
+- Confirm values remain
+
+Buyer:
+- Add acceptable city Tampa
+- Confirm acceptable state/county populate
+- Add acceptable city Largo
+- Confirm acceptable counties include Hillsborough and Pinellas if multi-city logic supports multiple counties
+- Save draft/reload
+
+Tenant:
+- Add acceptable city Tampa
+- Confirm acceptable state/county populate
+- Save draft/reload
+
+Return:
+- Root cause
+- Files changed
+- Whether Hire Agent logic was reused
+- Test results for Seller, Landlord, Buyer, Tenant

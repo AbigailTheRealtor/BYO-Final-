@@ -1087,6 +1087,18 @@ class BuyerOfferListing extends Component
                     }
                 }
             }
+
+            if (empty($this->counties)) {
+                $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+                    ->where('state_abbrev', strtoupper($stateAbbr))
+                    ->first();
+                if ($zipCode && !empty($zipCode->county)) {
+                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
         }
     }
     

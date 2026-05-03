@@ -61,6 +61,26 @@ Phase 5 — Client-Requested Custom Services: The hire preview page (`resources/
 
 Schema Architecture Note — Listing Table Asymmetry: `seller_agent_auctions` and `buyer_agent_auctions` have native `address` and `title` columns. `landlord_agent_auctions` and `tenant_agent_auctions` do NOT — all data for these models is stored via EAV meta. `HireAgentDirectController::confirm()` uses `Schema::hasColumn()` to guard column assignments and falls back to `saveMeta()` for address/title on landlord/tenant. Two previously missing meta tables were created via migration: `landlord_agent_auction_metas` (FK: `landlord_agent_auction_id`) and `landlord_agent_auction_bid_metas` (FK: `landlord_agent_auction_bid_id`). These were silently absent from the DB schema; their corresponding Eloquent models (`LandlordAgentAuctionMeta`, `LandlordAgentAuctionBidMeta`) already existed. Any future code that calls `saveMeta()` on `LandlordAgentAuction` or `LandlordAgentAuctionBid` instances now works correctly.
 
+## U.S. Geography Data — City/County/State Auto-Population
+
+All four Offer Listing forms (Seller, Landlord, Buyer, Tenant) and all Hire Agent forms use `UsCity`, `UsState`, `UsCounty`, and `UsZipCode` models (mapping to `us_cities`, `us_states`, `us_counties`, `us_zip_codes` tables). These tables must be seeded in any environment for auto-populate to work.
+
+**Seeders to run in order:**
+1. `UsStatesSeeder` — 56 states/territories
+2. `UsCountiesSeeder` — 875 counties
+3. `UsCitiesSeeder` — 971 cities
+4. `UsZipCodesSeeder` — 34,741 ZIP codes (run with `-d memory_limit=512M`)
+5. `FixCityCountyMappings` — links city → county via Census data (requires Census file download to `/tmp/national_places_2020.txt`)
+
+**County auto-populate fallback chain** (applied to all 4 Offer Listing components in `autoPopulateFromPropertyCity` and `autoPopulateFromCity`):
+1. Use `$city->county` relationship (primary — works when `FixCityCountyMappings` has run)
+2. Fall back to `us_zip_codes.county` field if `$city->county` is null (covers cities not in Census mapping)
+3. If neither works, county field remains blank (user can type manually)
+
+**Behavior per role:**
+- Seller/Landlord: single `property_city` field → auto-fills `property_state`, `property_county`, `property_zip`
+- Buyer/Tenant: multi-city chips via `newCity` → auto-fills `state` string and `counties[]` array
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.
