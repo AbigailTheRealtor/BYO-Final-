@@ -1,0 +1,86 @@
+APPROVE — Fix Agent Preset Autofill + Public Profile Selection Only
+
+Scope:
+- AgentPresetController
+- AgentProfileController
+- Agent preset edit/save behavior
+- Public agent profile selection logic
+
+Do NOT:
+- Change services
+- Change other_services
+- Change broker compensation
+- Change agency agreement terms
+- Change referral fee/cooperation terms
+- Change preset database schema unless absolutely required
+- Change Hire This Agent role/property-specific public route if it is already loading the exact preset correctly
+
+Bug 1 Fix — Stop Autofill Contamination:
+Problem:
+edit() autofills empty PROFILE_FIELDS from the most recently updated other preset. Those fallback values look real in the form, then save() permanently writes them into the current preset even when scope = This preset only.
+
+Task:
+1. Remove or disable the autofill fallback at AgentPresetController lines 118–145.
+2. Empty profile fields on a preset should remain empty unless the agent enters values or intentionally uses a scope option.
+3. save() should only save actual submitted values for the current preset.
+4. Do not copy fallback values into profile_data.
+
+Preferred behavior:
+- “This preset only” updates only the current preset.
+- “All [Role] presets” copies only approved PROFILE_FIELDS to that role’s presets.
+- “All roles and property types” copies only approved PROFILE_FIELDS to all presets.
+- Services, other_services, broker compensation, agency terms, and referral terms always remain preset-specific.
+
+Bug 2 Fix — Stable Public Profile Selection:
+Problem:
+AgentProfileController::show() chooses the most recently updated preset with bio, so /agent/{id} changes depending on whichever preset was saved last.
+
+Task:
+1. Stop selecting primary profile purely by most recently updated preset.
+2. Use a stable priority order instead.
+3. Recommended priority:
+   - Prefer Buyer Residential if it exists and has profile content
+   - Else Seller Residential
+   - Else Landlord Residential
+   - Else Tenant Residential
+   - Else first preset with public profile content
+   - Else first preset for that agent
+4. Do not let last updated order control public profile identity.
+
+Do NOT change:
+- /agent/{id}/{role}/{property_type} or equivalent role/property-specific public route if it already loads the exact preset correctly.
+
+Testing:
+1. Edit Buyer Residential with “This preset only.”
+   - Confirm only Buyer Residential profile_data changes.
+   - Confirm Seller/Tenant/Landlord presets do not inherit Buyer profile text.
+
+2. Edit Seller Residential with “This preset only.”
+   - Confirm only Seller Residential changes.
+   - Confirm Buyer Residential remains unchanged.
+
+3. Leave empty fields empty.
+   - Confirm they are not silently prefilled from other presets.
+   - Confirm saving does not permanently copy borrowed values.
+
+4. Test “All Buyer presets.”
+   - Confirm only Buyer presets receive public PROFILE_FIELDS.
+   - Confirm services/compensation/agreement fields are not copied.
+
+5. Test “All roles and property types.”
+   - Confirm only public PROFILE_FIELDS are copied.
+   - Confirm services/compensation/agreement/referral fields remain unchanged.
+
+6. Test public profile:
+   - Visit /agent/{id}
+   - Confirm it uses stable priority, not last-updated preset.
+   - Save Seller preset last.
+   - Revisit /agent/{id}
+   - Confirm it does not switch to Seller just because Seller was updated last.
+
+Return:
+- Exact root cause confirmed
+- Files changed
+- Whether autofill fallback was removed or replaced
+- Public profile priority logic used
+- Test results

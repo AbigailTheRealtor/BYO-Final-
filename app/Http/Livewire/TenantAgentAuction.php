@@ -2729,8 +2729,8 @@ class TenantAgentAuction extends Component
             $this->desired_agent_hire_date = $auction->get->desired_agent_hire_date;
             $this->expiration_date = $auction->get->expiration_date;
             $this->auction_time = $auction->get->auction_time;
-            $this->agent_bid_visibility = $auction->get->agent_bid_visibility;
-            $this->meeting_Preference = $auction->get->meeting_Preference;
+            $this->agent_bid_visibility = $auction->get->agent_bid_visibility ?? '';
+            $this->meeting_Preference   = $auction->get->meeting_Preference   ?? '';
 
 
             $this->number_of_unit = $auction->get->number_of_unit;
