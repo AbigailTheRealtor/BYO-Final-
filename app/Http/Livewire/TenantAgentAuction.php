@@ -2798,100 +2798,100 @@ class TenantAgentAuction extends Component
             $this->common_areas_access = $auction->get->common_areas_access ?? '';
             $this->maintenance_response_time = $auction->get->maintenance_response_time ?? '';
             $this->storage_space = $auction->get->storage_space ?? '';
-            $this->included_storage_space_com_entire = $auction->get->included_storage_space_com_entire;
-            $this->storage_space_com_entire = $auction->get->storage_space_com_entire;
-            $this->utilities = $auction->get->utilities;
-            $this->common_areas_cleaning = $auction->get->common_areas_cleaning;
-            $this->included_storage_space_com_single = $auction->get->included_storage_space_com_single;
-            $this->storage_space_com_single = $auction->get->storage_space_com_single;
-            $this->included_storage_space_res_both = $auction->get->included_storage_space_res_both;
-            $this->storage_space_res_both = $auction->get->storage_space_res_both;
-            $this->included_storage_space_res_single = $auction->get->included_storage_space_res_single;
-            $this->storage_space_res_single = $auction->get->storage_space_res_single;
-            $this->bathroom_facilities = $auction->get->bathroom_facilities;
-            $this->room_size = $auction->get->room_size;
-            $this->building_hours = $auction->get->building_hours;
-            $this->access_24_7 = $auction->get->access_24_7;
-            $this->zoning_allows = $auction->get->zoning_allows;
-            $this->shared_amenities = $auction->get->shared_amenities;
-            $this->space_features = $auction->get->space_features;
-            $this->neighboring_tenants = $auction->get->neighboring_tenants;
-            $this->guests_allowed = $auction->get->guests_allowed;
-            $this->maintenance_by = $auction->get->maintenance_by;
-            $this->other_property_condition = $auction->get->other_property_condition;
-            $this->bathrooms = $auction->get->bathrooms;
+            $this->included_storage_space_com_entire = $auction->get->included_storage_space_com_entire ?? '';
+            $this->storage_space_com_entire = $auction->get->storage_space_com_entire ?? '';
+            $this->utilities = $auction->get->utilities ?? '';
+            $this->common_areas_cleaning = $auction->get->common_areas_cleaning ?? '';
+            $this->included_storage_space_com_single = $auction->get->included_storage_space_com_single ?? '';
+            $this->storage_space_com_single = $auction->get->storage_space_com_single ?? '';
+            $this->included_storage_space_res_both = $auction->get->included_storage_space_res_both ?? '';
+            $this->storage_space_res_both = $auction->get->storage_space_res_both ?? '';
+            $this->included_storage_space_res_single = $auction->get->included_storage_space_res_single ?? '';
+            $this->storage_space_res_single = $auction->get->storage_space_res_single ?? '';
+            $this->bathroom_facilities = $auction->get->bathroom_facilities ?? '';
+            $this->room_size = $auction->get->room_size ?? '';
+            $this->building_hours = $auction->get->building_hours ?? '';
+            $this->access_24_7 = $auction->get->access_24_7 ?? '';
+            $this->zoning_allows = $auction->get->zoning_allows ?? '';
+            $this->shared_amenities = $auction->get->shared_amenities ?? '';
+            $this->space_features = $auction->get->space_features ?? '';
+            $this->neighboring_tenants = $auction->get->neighboring_tenants ?? '';
+            $this->guests_allowed = $auction->get->guests_allowed ?? '';
+            $this->maintenance_by = $auction->get->maintenance_by ?? '';
+            $this->other_property_condition = $auction->get->other_property_condition ?? '';
+            $this->bathrooms = $auction->get->bathrooms ?? '';
 
-            $this->tenant_pays = is_string($auction->get->tenant_pays) ? json_decode($auction->get->tenant_pays, true) ?? [] : (array)$auction->get->tenant_pays;
-            $this->other_tenant_pays = $auction->get->other_tenant_pays;
+            $this->tenant_pays = is_string($auction->get->tenant_pays ?? null) ? json_decode($auction->get->tenant_pays, true) ?? [] : (array)($auction->get->tenant_pays ?? []);
+            $this->other_tenant_pays = $auction->get->other_tenant_pays ?? '';
 
-            $this->desired_lease_length = is_string($auction->get->desired_lease_length) ? json_decode($auction->get->desired_lease_length, true) ?? [] : (array)$auction->get->desired_lease_length;
-            $this->other_lease_term = $auction->get->other_lease_term;
+            $this->desired_lease_length = is_string($auction->get->desired_lease_length ?? null) ? json_decode($auction->get->desired_lease_length, true) ?? [] : (array)($auction->get->desired_lease_length ?? []);
+            $this->other_lease_term = $auction->get->other_lease_term ?? '';
             $this->is_update_lease_term_option_visible = is_array($this->desired_lease_length) && in_array('Other', $this->desired_lease_length);
 
-            $this->rent_includes = is_string($auction->get->rent_includes) ? json_decode($auction->get->rent_includes, true) ?? [] : (array)$auction->get->rent_includes;
-            $this->other_rent_include = $auction->get->other_rent_include;
+            $this->rent_includes = is_string($auction->get->rent_includes ?? null) ? json_decode($auction->get->rent_includes, true) ?? [] : (array)($auction->get->rent_includes ?? []);
+            $this->other_rent_include = $auction->get->other_rent_include ?? '';
 
-            $this->owner_pays = is_string($auction->get->owner_pays) ? json_decode($auction->get->owner_pays, true) ?? [] : (array)$auction->get->owner_pays;
-            $this->other_owner_pays = $auction->get->other_owner_pays;
-            $this->owner_pays_other = $auction->get->owner_pays_other;
-            $this->leasing_spaces_tenant = is_string($auction->get->leasing_spaces_tenant) ? json_decode($auction->get->leasing_spaces_tenant, true) ?? [] : (array)$auction->get->leasing_spaces_tenant;
+            $this->owner_pays = is_string($auction->get->owner_pays ?? null) ? json_decode($auction->get->owner_pays, true) ?? [] : (array)($auction->get->owner_pays ?? []);
+            $this->other_owner_pays = $auction->get->other_owner_pays ?? '';
+            $this->owner_pays_other = $auction->get->owner_pays_other ?? '';
+            $this->leasing_spaces_tenant = is_string($auction->get->leasing_spaces_tenant ?? null) ? json_decode($auction->get->leasing_spaces_tenant, true) ?? [] : (array)($auction->get->leasing_spaces_tenant ?? []);
 
-            $this->terms_of_lease = is_string($auction->get->terms_of_lease) ? json_decode($auction->get->terms_of_lease, true) ?? [] : (array)$auction->get->terms_of_lease;
-            $this->custom_lease_term = $auction->get->custom_lease_term;
+            $this->terms_of_lease = is_string($auction->get->terms_of_lease ?? null) ? json_decode($auction->get->terms_of_lease, true) ?? [] : (array)($auction->get->terms_of_lease ?? []);
+            $this->custom_lease_term = $auction->get->custom_lease_term ?? '';
 
-            $this->other_bathrooms = $auction->get->other_bathrooms;
-            $this->bedrooms = $auction->get->bedrooms;
-            $this->other_bedrooms = $auction->get->other_bedrooms;
-            $this->minimum_heated_square = $auction->get->minimum_heated_square;
-            $this->minimum_leaseable = $auction->get->minimum_leaseable;
-            $this->min_acreage = $auction->get->min_acreage;
-            $this->total_acreage = $auction->get->total_acreage;
+            $this->other_bathrooms = $auction->get->other_bathrooms ?? '';
+            $this->bedrooms = $auction->get->bedrooms ?? '';
+            $this->other_bedrooms = $auction->get->other_bedrooms ?? '';
+            $this->minimum_heated_square = $auction->get->minimum_heated_square ?? '';
+            $this->minimum_leaseable = $auction->get->minimum_leaseable ?? '';
+            $this->min_acreage = $auction->get->min_acreage ?? '';
+            $this->total_acreage = $auction->get->total_acreage ?? '';
 
             // Amenities and features
 
-            $this->tenant_require = is_string($auction->get->tenant_require) ? json_decode($auction->get->tenant_require, true) ?? [] : (array)$auction->get->tenant_require;
+            $this->tenant_require = is_string($auction->get->tenant_require ?? null) ? json_decode($auction->get->tenant_require, true) ?? [] : (array)($auction->get->tenant_require ?? []);
 
-            $this->garage_parking_spaces_option_buyer = is_string($auction->get->garage_parking_spaces_option_buyer) ? json_decode($auction->get->garage_parking_spaces_option_buyer, true) ?? [] : (array)$auction->get->garage_parking_spaces_option_buyer;
-
-
-            $this->carport_needed = $auction->get->carport_needed;
-            $this->other_carport_needed = $auction->get->other_carport_needed;
-            $this->total_square_feet = $auction->get->total_square_feet;
-            $this->sqft_heated_source = $auction->get->sqft_heated_source;
-            $this->garage_needed = $auction->get->garage_needed;
-            $this->other_garage_needed = $auction->get->other_garage_needed;
-            $this->garage_parking_spaces = $auction->get->garage_parking_spaces;
+            $this->garage_parking_spaces_option_buyer = is_string($auction->get->garage_parking_spaces_option_buyer ?? null) ? json_decode($auction->get->garage_parking_spaces_option_buyer, true) ?? [] : (array)($auction->get->garage_parking_spaces_option_buyer ?? []);
 
 
-
-            $this->garage_parking_spaces_option = is_string($auction->get->garage_parking_spaces_option) ? json_decode($auction->get->garage_parking_spaces_option, true) ?? [] : (array)$auction->get->garage_parking_spaces_option;
+            $this->carport_needed = $auction->get->carport_needed ?? '';
+            $this->other_carport_needed = $auction->get->other_carport_needed ?? '';
+            $this->total_square_feet = $auction->get->total_square_feet ?? '';
+            $this->sqft_heated_source = $auction->get->sqft_heated_source ?? '';
+            $this->garage_needed = $auction->get->garage_needed ?? '';
+            $this->other_garage_needed = $auction->get->other_garage_needed ?? '';
+            $this->garage_parking_spaces = $auction->get->garage_parking_spaces ?? '';
 
 
 
-            $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper;
-            $this->pool_needed = $auction->get->pool_needed;
-
-            $this->pool_type = is_string($auction->get->pool_type) ? json_decode($auction->get->pool_type, true) ?? [] : (array)$auction->get->pool_type;
+            $this->garage_parking_spaces_option = is_string($auction->get->garage_parking_spaces_option ?? null) ? json_decode($auction->get->garage_parking_spaces_option, true) ?? [] : (array)($auction->get->garage_parking_spaces_option ?? []);
 
 
 
+            $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper ?? '';
+            $this->pool_needed = $auction->get->pool_needed ?? '';
 
-            $this->view_preference = is_string($auction->get->view_preference) ? json_decode($auction->get->view_preference, true) ?? [] : (array)$auction->get->view_preference;
-
-
-
-            $this->other_preferences = $auction->get->other_preferences;
-
-            $this->appliances = is_string($auction->get->appliances) ? json_decode($auction->get->appliances, true) ?? [] : (array)$auction->get->appliances;
+            $this->pool_type = is_string($auction->get->pool_type ?? null) ? json_decode($auction->get->pool_type, true) ?? [] : (array)($auction->get->pool_type ?? []);
 
 
 
-            $this->other_appliances = $auction->get->other_appliances;
-            $this->leasing_55_plus = $auction->get->leasing_55_plus;
 
-            $this->non_negotiable_amenities = is_string($auction->get->non_negotiable_amenities) ? json_decode($auction->get->non_negotiable_amenities, true) ?? [] : (array)$auction->get->non_negotiable_amenities;
+            $this->view_preference = is_string($auction->get->view_preference ?? null) ? json_decode($auction->get->view_preference, true) ?? [] : (array)($auction->get->view_preference ?? []);
 
-            $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities;
+
+
+            $this->other_preferences = $auction->get->other_preferences ?? '';
+
+            $this->appliances = is_string($auction->get->appliances ?? null) ? json_decode($auction->get->appliances, true) ?? [] : (array)($auction->get->appliances ?? []);
+
+
+
+            $this->other_appliances = $auction->get->other_appliances ?? '';
+            $this->leasing_55_plus = $auction->get->leasing_55_plus ?? '';
+
+            $this->non_negotiable_amenities = is_string($auction->get->non_negotiable_amenities ?? null) ? json_decode($auction->get->non_negotiable_amenities, true) ?? [] : (array)($auction->get->non_negotiable_amenities ?? []);
+
+            $this->other_non_negotiable_amenities = $auction->get->other_non_negotiable_amenities ?? '';
             $this->real_estate_purchase = $auction->get->real_estate_purchase ?? '';
             $rawAssets = $auction->get->assets ?? '';
             $this->assets = $rawAssets ? (is_string($rawAssets) ? json_decode($rawAssets, true) ?? [] : (array)$rawAssets) : [];
