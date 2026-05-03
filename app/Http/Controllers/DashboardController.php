@@ -79,10 +79,10 @@ class DashboardController extends Controller
                     ->whereNull('rejected_date')
                     ->count()
                 : 0,
-            // Landlord: accepted='no' = undecided
+            // Landlord: accepted=0 = undecided (integer column)
             'landlord' => $landlordAuctionIds->isNotEmpty()
                 ? LandlordAgentAuctionBid::whereIn('landlord_agent_auction_id', $landlordAuctionIds)
-                    ->where('accepted', 'no')
+                    ->where('accepted', 0)
                     ->count()
                 : 0,
             // Buyer: accepted='0' = undecided
