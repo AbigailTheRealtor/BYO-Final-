@@ -2780,8 +2780,9 @@ class TenantAgentAuction extends Component
                 // Otherwise, treat $this->property_items as JSON and decode it
                 $this->property_items = is_string($auction->get->property_items) ? json_decode($auction->get->property_items, true) ?? [] : (array)$auction->get->property_items;
             }
-            $this->other_property_items = $auction->get->other_property_items;
-            $rawConditionPropBuyer = is_string($auction->get->condition_prop_buyer) ? json_decode($auction->get->condition_prop_buyer, true) ?? [] : (array)$auction->get->condition_prop_buyer;
+            $this->other_property_items = $auction->get->other_property_items ?? '';
+            $rawConditionPropBuyerVal = $auction->get->condition_prop_buyer ?? null;
+            $rawConditionPropBuyer = is_string($rawConditionPropBuyerVal) ? json_decode($rawConditionPropBuyerVal, true) ?? [] : (array)($rawConditionPropBuyerVal ?? []);
             $this->condition_prop_buyer = $this->mapLegacyPropertyConditions($rawConditionPropBuyer);
             $this->condition_prop_buyer_json = json_encode($this->condition_prop_buyer ?? []);
 
@@ -2789,13 +2790,13 @@ class TenantAgentAuction extends Component
             $this->condition_prop = ($this->user_type === 'seller' || $this->user_type === 'landlord')
                 ? $rawConditionProp
                 : $this->mapLegacyPropertyConditions($rawConditionProp);
-            $this->business_type = $auction->get->business_type;
+            $this->business_type = $auction->get->business_type ?? '';
             $this->business_type_selected = $auction->get->business_type_selected ?? '';
-            $this->other_business_type = $auction->get->other_business_type;
-            $this->leasing_space = $auction->get->leasing_space;
-            $this->restrictions = $auction->get->restrictions;
-            $this->common_areas_access = $auction->get->common_areas_access;
-            $this->maintenance_response_time = $auction->get->maintenance_response_time;
+            $this->other_business_type = $auction->get->other_business_type ?? '';
+            $this->leasing_space = $auction->get->leasing_space ?? '';
+            $this->restrictions = $auction->get->restrictions ?? '';
+            $this->common_areas_access = $auction->get->common_areas_access ?? '';
+            $this->maintenance_response_time = $auction->get->maintenance_response_time ?? '';
             $this->storage_space = $auction->get->storage_space ?? '';
             $this->included_storage_space_com_entire = $auction->get->included_storage_space_com_entire;
             $this->storage_space_com_entire = $auction->get->storage_space_com_entire;
