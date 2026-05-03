@@ -485,11 +485,11 @@
                                                 data-hire-url="{{ $fullHireUrl }}">
                                             <i class="fa-solid fa-copy me-1"></i>Copy Link
                                         </button>
-                                        <a href="{{ route('agent.profile.public', ['agentShortId' => $agentShortId]) }}"
+                                        <a href="{{ $fullHireUrl }}"
                                            target="_blank"
                                            rel="noopener noreferrer"
                                            class="btn btn-open-hire"
-                                           title="Preview your public agent profile">
+                                           title="Open your Hire Me page for this role and property type">
                                             <i class="fa-solid fa-external-link me-1"></i>Open
                                         </a>
                                     </div>

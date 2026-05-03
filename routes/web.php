@@ -174,7 +174,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/bid/{bidId}/summary', [AcceptedBidSummaryController::class, 'getByBid'])->name('accepted-bid-summary.by-bid');
 });
 
-// Public agent profile — fully public, no auth required.
+// Public agent profile — generic fallback only. No auth required.
+// This route is intentionally role/property-type agnostic (defaults to Buyer Residential).
+// For preset-specific sharing, use the `hire.agent.public` route instead.
+// Preset cards on the index and edit pages must NOT link here.
 Route::get('/agent/{agentShortId}/profile', [\App\Http\Controllers\AgentProfileController::class, 'show'])
     ->name('agent.profile.public')
     ->where('agentShortId', '[0-9a-f]+');
