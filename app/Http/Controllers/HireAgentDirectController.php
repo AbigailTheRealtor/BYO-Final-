@@ -161,6 +161,11 @@ class HireAgentDirectController extends Controller
         // Resolve services from the preset (handles array or JSON-string storage)
         $agentServices = self::resolveServices($profile);
 
+        // Build grouped services for display (category → [services]) — display only,
+        // the flat $agentServices is still used by confirm() for the intersection check.
+        $flowKey = $role . '_agent.' . $propertyType;
+        $groupedAgentServices = \App\Support\ServicesFormatter::orderSelectedServices($agentServices, $flowKey);
+
         // Resolve custom / additional services from the preset
         $otherServices = [];
         if ($profile) {
@@ -189,6 +194,7 @@ class HireAgentDirectController extends Controller
             'profile',
             'mapped',
             'agentServices',
+            'groupedAgentServices',
             'otherServices',
             'presetValid',
             'submitToken',

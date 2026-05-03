@@ -306,17 +306,26 @@
                         These are the services {{ $agentDisplayName }} has included in their standing offer.
                         Uncheck any you do not need — only services from this preset can be selected.
                     </p>
-                    <div class="service-checkbox-list">
-                        @foreach($agentServices as $svc)
-                        <label class="service-item">
-                            <input type="checkbox"
-                                   name="services[]"
-                                   value="{{ $svc }}"
-                                   checked>
-                            {{ $svc }}
-                        </label>
-                        @endforeach
-                    </div>
+                    @php $isFirstGroup = true; @endphp
+                    @foreach($groupedAgentServices as $categoryLabel => $categoryServices)
+                        @if(!empty($categoryServices))
+                        <div style="margin-top: {{ $isFirstGroup ? '0' : '1.1rem' }};">
+                            <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;">{{ $categoryLabel }}</div>
+                            <div class="service-checkbox-list">
+                                @foreach($categoryServices as $svc)
+                                <label class="service-item">
+                                    <input type="checkbox"
+                                           name="services[]"
+                                           value="{{ $svc }}"
+                                           checked>
+                                    {{ $svc }}
+                                </label>
+                                @endforeach
+                            </div>
+                        </div>
+                        @php $isFirstGroup = false; @endphp
+                        @endif
+                    @endforeach
                     @php
                         $agentServicesLower = array_map('mb_strtolower', $agentServices);
                         $filteredOtherServices = array_values(array_filter(
