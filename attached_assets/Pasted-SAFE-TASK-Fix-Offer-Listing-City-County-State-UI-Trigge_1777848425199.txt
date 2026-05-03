@@ -1,0 +1,92 @@
+SAFE TASK — Fix Offer Listing City/County/State UI Trigger, Not Just Backend Fallback
+
+Issue:
+The prior commit added zip-code fallback logic, but City/County/State still does not auto-populate in Offer Listings.
+
+Likely problem:
+The Offer Listing UI fields are not triggering the Livewire/JS method when City or Acceptable Cities changes.
+
+Scope ONLY:
+- Offer Listing create/edit forms:
+  - Seller
+  - Landlord
+  - Buyer
+  - Tenant
+- City / County / State auto-population only
+
+Do NOT touch:
+- Hire Agent flows
+- Agent presets
+- Services
+- Broker compensation
+- Other input fixes
+- Database schema
+- Public listing views
+
+Correct behavior:
+Seller + Landlord:
+- When City is selected/changed, State and County auto-fill immediately.
+- If ZIP is available and city-county mapping fails, ZIP fallback may be used.
+- Values save/reload in draft/edit.
+
+Buyer + Tenant:
+- When Acceptable Cities are selected/changed, Acceptable State and Acceptable Counties auto-fill immediately.
+- Multiple cities should populate multiple counties where applicable.
+- Values save/reload in draft/edit.
+
+Task:
+1. Audit working Hire Agent implementation:
+   - Find exact Blade field attributes
+   - Find JS event listener
+   - Find Livewire updated* method
+   - Find Select2 change trigger, if used
+
+2. Compare Offer Listing fields:
+   - Seller city field
+   - Landlord city field
+   - Buyer acceptable_cities field
+   - Tenant acceptable_cities field
+
+3. Fix the front-end trigger:
+   - If Select2 is used, ensure change event calls @this.set(...) or Livewire.dispatch correctly.
+   - If wire:model is missing/deferred, add correct binding.
+   - If updatedCity/updatedAcceptableCities method names mismatch property names, correct them.
+   - If fields are plain inputs, use wire:model.live/debounce or equivalent compatible with current Livewire version.
+
+4. Add temporary logging only if needed:
+   - Log when city update method is called
+   - Remove debug logs before final commit
+
+5. Verify backend mapping:
+   - Confirm City → State/County mapping works without requiring ZIP.
+   - ZIP fallback should only be fallback, not the primary requirement.
+
+Testing:
+Seller:
+- Select/enter Tampa
+- Confirm State and County fill immediately
+
+Landlord:
+- Select/enter Largo
+- Confirm State and County fill immediately
+
+Buyer:
+- Select Tampa and Largo in Acceptable Cities
+- Confirm Acceptable State includes FL
+- Confirm Acceptable Counties include Hillsborough and Pinellas
+
+Tenant:
+- Select Tampa
+- Confirm Acceptable State and Acceptable County populate
+
+Also test:
+- Save draft
+- Reload draft
+- Values persist
+
+Return:
+- Root cause
+- Files changed
+- Exact UI event/binding fix
+- Whether Hire Agent implementation was reused
+- Test results
