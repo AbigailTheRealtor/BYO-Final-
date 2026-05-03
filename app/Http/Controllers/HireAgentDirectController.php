@@ -91,8 +91,15 @@ class HireAgentDirectController extends Controller
             return [];
         }
 
-        // Filter out blank entries
-        return array_values(array_filter($services, fn($s) => is_string($s) && trim($s) !== ''));
+        // Filter out blank entries and decode any literal JSON unicode escapes
+        // (e.g. \u2019 stored as raw text rather than the decoded UTF-8 char).
+        return array_values(array_filter(
+            array_map(
+                fn($s) => is_string($s) ? \App\Support\ServicesFormatter::decodeServiceLabel(trim($s)) : '',
+                $services
+            ),
+            fn($s) => $s !== ''
+        ));
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -136,8 +143,11 @@ class HireAgentDirectController extends Controller
         // Owner preview: agent may view their own page but cannot submit (confirm() still aborts).
         $isOwnerPreview = Auth::id() === $agent->id;
 
-        // Load the agent's preset for this role + property type
-        $profile = AgentDefaultProfile::findForAgentWithFallback(
+        // Load the agent's preset for this exact role + property type.
+        // A strict lookup is used deliberately — findForAgentWithFallback could
+        // silently return a role-default (__default__) preset that belongs to a
+        // different property type, causing the wrong services to be displayed.
+        $profile = AgentDefaultProfile::findForAgent(
             $agentId,
             $role,
             $propertyType
@@ -230,8 +240,9 @@ class HireAgentDirectController extends Controller
             'client_custom_services' => 'nullable|string|max:3000',
         ]);
 
-        // Load the preset — block confirmation if no profile exists
-        $profile = AgentDefaultProfile::findForAgentWithFallback(
+        // Load the preset using a strict lookup — no fallback to a role-default
+        // preset that could belong to a different property type.
+        $profile = AgentDefaultProfile::findForAgent(
             $agentId,
             $role,
             $propertyType

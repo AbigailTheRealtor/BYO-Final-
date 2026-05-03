@@ -184,11 +184,11 @@ class ServicesFormatter
             if (is_array($item)) {
                 foreach ($item as $subItem) {
                     if (is_string($subItem) && trim($subItem) !== '') {
-                        $flat[] = trim($subItem);
+                        $flat[] = self::decodeServiceLabel(trim($subItem));
                     }
                 }
             } elseif (is_string($item) && trim($item) !== '') {
-                $flat[] = trim($item);
+                $flat[] = self::decodeServiceLabel(trim($item));
             }
         }
 
@@ -197,11 +197,37 @@ class ServicesFormatter
 
     protected static function normalizeString(string $str): string
     {
+        // If the string contains literal JSON unicode escape sequences (e.g. \u2019
+        // stored as the six characters \, u, 2, 0, 1, 9) rather than the decoded
+        // Unicode character, decode them first so comparisons always work correctly.
+        if (strpos($str, '\u') !== false || strpos($str, '\U') !== false) {
+            $decoded = json_decode('"' . str_replace('"', '\\"', $str) . '"');
+            if ($decoded !== null && is_string($decoded)) {
+                $str = $decoded;
+            }
+        }
+
         $str = preg_replace('/[\x{2018}\x{2019}]/u', "'", $str);
         $str = preg_replace('/[\x{201C}\x{201D}]/u', '"', $str);
         $str = preg_replace('/[\x{2013}\x{2014}]/u', '-', $str);
         $str = preg_replace('/\s+/', ' ', $str);
         $str = trim($str);
         return mb_strtolower($str, 'UTF-8');
+    }
+
+    /**
+     * Decode any literal JSON unicode escape sequences (e.g. \u2019 stored as
+     * six raw characters) in a service label string so they render as the
+     * correct UTF-8 character rather than as raw escape text.
+     *
+     * Safe to call on already-correct UTF-8 strings — no double-decoding occurs.
+     */
+    public static function decodeServiceLabel(string $str): string
+    {
+        if (strpos($str, '\u') === false && strpos($str, '\U') === false) {
+            return $str;
+        }
+        $decoded = json_decode('"' . str_replace('"', '\\"', $str) . '"');
+        return ($decoded !== null && is_string($decoded)) ? $decoded : $str;
     }
 }
