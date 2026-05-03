@@ -301,13 +301,13 @@
     <div class="form-group">
         <label class="fw-bold">Listing Title: <span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter a short, clear title describing the type of Agent the Tenant needs and the location.">
+                title="Enter a clear title describing the Tenant's rental search criteria. Focus on property type, size, and target location.">
                 <i class="fa-solid fa-circle-info"></i></span>
         </label>
         <div class="input-cover">
             <input type="text" wire:model="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Need a Rental Agent in Tampa, FL to Help Me Find a Rental Property)"
+                placeholder="Enter listing title (e.g., Tenant Seeking Commercial Retail Space in Tampa, FL)"
                 required>
         </div>
         <span class="error mt-2" id="listing_title_error"></span>

@@ -250,7 +250,7 @@
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="annual_cdd_fee" class="form-control"
-                        placeholder="Enter Annual CDD Fee (e.g., 1,800)"
+                        placeholder="Enter Annual CDD Fee (e.g., 1800)"
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -288,7 +288,7 @@
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="special_assessment_amount" class="form-control"
-                        placeholder="Enter Special Assessment Amount (e.g., 4,500)"
+                        placeholder="Enter Special Assessment Amount (e.g., 4500)"
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -715,11 +715,6 @@
         <i class="fa-solid fa-file-shield me-2 text-primary"></i>Documents &amp; Disclosures
     </div>
     <div class="card-body">
-
-        <p class="text-muted small mb-3">
-            <i class="fa-solid fa-circle-info me-1 text-info"></i>
-            Upload available documents in the Photos, Tours &amp; Documents tab.
-        </p>
 
         {{-- Landlord Disclosure Available --}}
         <div class="form-group">

@@ -229,6 +229,42 @@
     </div>
     @endif
 
+    {{-- AI FAQ --}}
+    @php
+        $faqEntries = collect($data['listing_ai_faq'] ?? [])->filter(fn($v) => !empty(trim((string)$v)));
+    @endphp
+    @if($faqEntries->isNotEmpty())
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold py-3" style="border-bottom:1px solid #f0f0f0;">
+            <i class="fa-solid fa-robot me-2" style="color:#049399;"></i>AI Listing Questions &amp; Answers
+        </div>
+        <div class="card-body p-0">
+            <div class="accordion" id="aiFaqAccordion">
+                @foreach($faqEntries as $key => $answer)
+                @php
+                    $faqId   = 'faq-' . md5($key);
+                    $label   = ucwords(str_replace(['_', '-'], ' ', $key));
+                @endphp
+                <div class="accordion-item border-0 border-bottom">
+                    <h2 class="accordion-header" id="heading-{{ $faqId }}">
+                        <button class="accordion-button collapsed py-3 small fw-semibold" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapse-{{ $faqId }}"
+                            aria-expanded="false" aria-controls="collapse-{{ $faqId }}"
+                            style="background:transparent;">
+                            {{ $label }}
+                        </button>
+                    </h2>
+                    <div id="collapse-{{ $faqId }}" class="accordion-collapse collapse"
+                        aria-labelledby="heading-{{ $faqId }}" data-bs-parent="#aiFaqAccordion">
+                        <div class="accordion-body py-3 small text-muted" style="white-space:pre-wrap;">{{ $answer }}</div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Footer actions --}}
     <div class="d-flex gap-2 justify-content-end">
         <a href="{{ $data['hub_route'] }}" class="btn btn-outline-secondary btn-sm">

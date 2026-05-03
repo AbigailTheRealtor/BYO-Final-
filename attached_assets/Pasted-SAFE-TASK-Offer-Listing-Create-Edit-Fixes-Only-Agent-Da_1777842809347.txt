@@ -1,0 +1,330 @@
+SAFE TASK — Offer Listing Create/Edit Fixes Only (Agent Dashboard)
+
+SCOPE ONLY:
+Offer Listing create/edit flows in Agent Dashboard:
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant/tenant
+
+Do NOT touch:
+- Hire Agent listing flows
+- Agent preset flows
+- Agent bids/counters
+- Accepted bid summaries
+- Dashboards except links needed to access these forms
+- Database schema unless a field cannot save without it and you report first
+- Public listing views except removing AI questions from visible listing display if currently shown
+
+Main goal:
+Fix Offer Listing form behavior, tooltips, placeholders, “Other” inputs, draft/edit saving, uploads, and visibility issues.
+
+IMPORTANT:
+Services and Broker Compensation are not part of this task.
+
+--------------------------------------------------
+PART 1 — Audit First
+--------------------------------------------------
+
+Before editing, inspect:
+- Livewire component/controller for Seller Offer Listing
+- Livewire component/controller for Landlord Offer Listing
+- Livewire component/controller for Buyer Offer Listing
+- Livewire component/controller for Tenant Offer Listing
+- Blade tab partials for:
+  - Listing Details
+  - Property Details / Property Preferences
+  - Leasing Terms
+  - Sale Terms / Purchase Terms
+  - Tax, Legal, HOA & Disclosures
+  - Photos, Tours & Documents
+  - AI / Q&A questions if displayed
+
+Return exact files before changing if anything is unclear.
+
+--------------------------------------------------
+PART 2 — “Other” Input Boxes
+--------------------------------------------------
+
+Fix all fields where selecting “Other” should reveal an input box but currently does not.
+
+Apply to:
+- Seller Offer Listing fields
+- Landlord Offer Listing fields
+- Buyer Offer Listing fields
+- Tenant Offer Listing fields
+
+Landlord priority:
+All new landlord questions must show the Other input when “Other” is selected.
+
+Other input format:
+Placeholder should follow existing correct pattern:
+Enter [Field Title] (e.g., [example values])
+
+Use the same UI style/size as existing working “Other” fields such as Amenities and Property Features.
+
+Also apply to:
+- Additional Documents Available
+- Any Tax, Legal, HOA & Disclosures field with “Other”
+- Any new seller fields if missed
+- Any buyer/tenant acceptable criteria fields if missed
+
+--------------------------------------------------
+PART 3 — Listing Title Tooltip + Placeholder
+--------------------------------------------------
+
+Update Listing Title tooltip and placeholder because Offer Listings may be:
+- A property listing for Seller/Landlord
+- Search criteria for Buyer/Tenant
+
+Use role-specific placeholder text:
+
+Seller:
+Listing Title placeholder:
+Example: Updated 3-Bedroom Home in Tampa
+
+Tooltip:
+Enter a clear title for the property being offered for sale. This should briefly describe the property and help identify the listing.
+
+Landlord:
+Listing Title placeholder:
+Example: Waterfront Condo Available for Lease
+
+Tooltip:
+Enter a clear title for the rental property being offered for lease. This should briefly describe the property and help identify the listing.
+
+Buyer:
+Listing Title placeholder:
+Example: Buyer Seeking 3-Bedroom Home in Pinellas County
+
+Tooltip:
+Enter a clear title describing the Buyer’s property search criteria. This helps identify what type of property the Buyer is looking to purchase.
+
+Tenant:
+Listing Title placeholder:
+Example: Tenant Seeking Commercial Retail Space in Tampa
+
+Tooltip:
+Enter a clear title describing the Tenant’s rental search criteria. This helps identify what type of property or lease space the Tenant is looking for.
+
+--------------------------------------------------
+PART 4 — City / County / State Auto-Population
+--------------------------------------------------
+
+For Seller and Landlord Offer Listings:
+When user enters/selects City:
+- Auto-populate State
+- Auto-populate County
+
+Use same format and logic already working in Hire Agent flows.
+
+For Buyer and Tenant Offer Listings:
+When user enters/selects Acceptable Cities:
+- Auto-populate Acceptable Counties
+- Auto-populate Acceptable State
+
+Use the same format and logic already working in Hire Agent flows.
+
+Do not break manual editing if user needs to adjust values.
+
+--------------------------------------------------
+PART 5 — Missing Tooltips
+--------------------------------------------------
+
+Add correct tooltips for every new field added to Offer Listing forms that currently has no tooltip.
+
+Requirements:
+- Match existing tooltip tone/style
+- Use role-neutral wording where appropriate
+- Do not add legal advice
+- Keep explanations short and field-specific
+- Apply to all Seller/Landlord/Buyer/Tenant new fields
+
+Return a list of new tooltips added.
+
+--------------------------------------------------
+PART 6 — Landlord-Specific UI Fixes
+--------------------------------------------------
+
+1. Sewer icon:
+Landlord Listings are missing the icon for Sewer.
+Add the correct icon consistent with other utility/system fields.
+
+2. Desired Lease Term:
+Placeholder should be:
+Select
+
+3. These fields have oversized boxes and should match normal input height:
+- Additional Landlord Lease Terms
+- Additional Leasing Restrictions
+- Legal Description
+
+Make them the same size/style as regular input fields unless they are intentionally textarea fields elsewhere.
+
+4. Association Fee Amount:
+Placeholder text should start at far left.
+Fix padding/alignment only.
+Do not change field meaning.
+
+5. Association Amenities:
+Placeholder should be:
+Select
+
+6. What Does the Association Fee Include?
+Placeholder should be:
+Select
+
+7. Additional Documents Available:
+Placeholder should be:
+Select
+
+8. Special Assessment Amount:
+Remove comma from placeholder example.
+Placeholder text should start far left.
+
+9. Annual CDD Fee:
+Remove comma from placeholder example.
+Placeholder text should start far left.
+
+--------------------------------------------------
+PART 7 — Documents / Disclosures Upload Logic
+--------------------------------------------------
+
+Remove this message:
+“Upload available documents in the Photos, Tours & Documents tab.”
+
+New behavior:
+On Tax, Legal, HOA, and Disclosures tab, if user answers Yes to any document/disclosure-related question, allow document upload directly in that section.
+
+Apply to Seller and Landlord if those tabs exist for both.
+
+Additional Documents Available:
+- If user selects Other, show Other input box.
+- Allow upload document directly.
+
+Do not break the existing Photos, Tours & Documents upload tab.
+Documents uploaded here should save/reload in drafts and edits.
+
+--------------------------------------------------
+PART 8 — Draft/Edit Saving
+--------------------------------------------------
+
+Every field in Offer Listing forms must save and reload in:
+- Draft save
+- Edit save
+- Return to draft
+- Final submit
+
+This includes:
+- all new Seller fields
+- all new Landlord fields
+- all Buyer acceptable city/county/state fields
+- all Tenant acceptable city/county/state fields
+- all Other input values
+- all uploaded documents
+- Tax, Legal, HOA & Disclosures fields
+- Additional Documents Available
+- Association fields
+- utility fields
+- sewer field
+
+Do not skip multi-select fields.
+
+Verify JSON/meta persistence if fields are dynamic.
+
+--------------------------------------------------
+PART 9 — Photo Upload Bug
+--------------------------------------------------
+
+Issue:
+Uploading photos gets stuck on:
+“Uploading photos, please wait”
+
+Task:
+Audit only the Offer Listing photo upload flow.
+
+Check:
+- Livewire upload binding
+- validation
+- temporary file handling
+- loading state reset
+- save method
+- JavaScript event if any
+- network/backend errors
+
+Fix only the cause of the stuck upload state.
+
+Do not redesign uploader.
+Do not change file storage architecture unless required and reported first.
+
+Verify:
+- Photo uploads complete
+- Loading message disappears
+- Uploaded photos preview
+- Photos save and reload in draft/edit
+
+--------------------------------------------------
+PART 10 — AI Questions Visibility
+--------------------------------------------------
+
+AI questions should NOT show on public listing/detail pages.
+
+They are backend data only for future chatbot integration.
+
+Task:
+- Keep AI questions available in create/edit forms if currently intended.
+- Save them normally.
+- Hide them from visible listing display/public listing pages.
+
+Do not delete AI question fields or data.
+
+--------------------------------------------------
+TESTING REQUIRED
+--------------------------------------------------
+
+Run these tests manually or with existing test tooling:
+
+Seller Offer Listing:
+- Create draft
+- Select Other fields
+- Save draft
+- Reload draft
+- Submit
+- Edit
+- Confirm all fields reload
+
+Landlord Offer Listing:
+- City auto-populates county/state
+- Sewer icon visible
+- Other boxes appear for all new fields
+- Desired Lease Term placeholder = Select
+- Association placeholders correct
+- Documents upload directly from Tax/Legal/HOA/Disclosures tab
+- Photos upload successfully
+- Draft/edit reload works
+
+Buyer Offer Listing:
+- Acceptable Cities auto-populate Acceptable Counties and Acceptable State
+- Other boxes work
+- Draft/edit reload works
+
+Tenant Offer Listing:
+- Acceptable Cities auto-populate Acceptable Counties and Acceptable State
+- Other boxes work
+- Draft/edit reload works
+
+Public/detail listing pages:
+- AI questions do not display
+- Normal property/listing fields still display
+- Uploaded photos/documents still display where appropriate
+
+RETURN:
+- Files changed
+- Root causes found
+- Fields/tooltips/placeholders updated
+- Upload bug cause and fix
+- Draft/edit save verification results
+- Any fields that require schema changes before they can save
+
+IMPORTANT:
+This is Offer Listing create/edit only. Do not touch Hire Agent flows.

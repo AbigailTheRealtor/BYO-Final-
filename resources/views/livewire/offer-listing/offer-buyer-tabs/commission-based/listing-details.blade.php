@@ -233,14 +233,14 @@
         <label class="fw-bold">Listing Title: <span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter a short, clear title describing the type of Agent the Buyer needs and the location.">
+            title="Enter a clear title describing the Buyer's property search criteria. Focus on property type, size, and target location.">
             <i class="fa-solid fa-circle-info"></i> </span>
 
         <div class="input-cover">
             <i class="input-icon fa-solid fa-tag"></i>
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Need a Buyer’s Agent in Tampa, FL to Help Me Purchase a Property)"
+                placeholder="Enter listing title (e.g., Buyer Seeking 3-Bedroom Home in Pinellas County, FL)"
                 required>
         </div>
         <span class="error mt-2" id="listing_title_error"></span>

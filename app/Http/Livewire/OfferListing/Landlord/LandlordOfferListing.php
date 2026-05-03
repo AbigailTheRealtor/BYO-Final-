@@ -2845,17 +2845,22 @@ class LandlordOfferListing extends Component
 
     public function updatedNewPropertyPhotos()
     {
-        $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
-        $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
-        if (count($this->propertyPhotos) + $incoming > 50) {
-            $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
+        try {
+            $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+            $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
+            if (count($this->propertyPhotos) + $incoming > 50) {
+                $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
+                $this->newPropertyPhotos = [];
+                return;
+            }
+            $this->processPendingPhotoUploads();
+            if ($this->listingId) {
+                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+                $auction->saveMeta('property_photos', $this->propertyPhotos);
+            }
+        } catch (\Throwable $e) {
             $this->newPropertyPhotos = [];
-            return;
-        }
-        $this->processPendingPhotoUploads();
-        if ($this->listingId) {
-            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
-            $auction->saveMeta('property_photos', $this->propertyPhotos);
+            $this->addError('newPropertyPhotos', 'Photo upload failed. Please try again.');
         }
     }
 
