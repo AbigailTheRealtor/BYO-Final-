@@ -84,30 +84,24 @@
     }
     .preview-section-header i { color: #049399; }
     .preview-section-body { padding: 1.2rem 1.4rem; }
-    /* ── Service checkboxes ── */
-    .service-checkbox-list {
+    /* ── Read-only service bullet lists ── */
+    .service-bullet-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
+        flex-direction: column;
+        gap: 4px;
     }
-    .service-checkbox-list .service-item {
-        background: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 8px 14px;
-        cursor: pointer;
-        transition: border-color .15s, background .15s;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    .service-bullet-list li {
         font-size: .9rem;
+        color: #1a1a1a;
+        padding: 2px 0;
     }
-    .service-checkbox-list .service-item:has(input:checked) {
-        border-color: #049399;
-        background: #f0fafa;
-    }
-    .service-checkbox-list .service-item input[type="checkbox"] {
-        accent-color: #049399;
+    .service-bullet-list li::before {
+        content: "✓ ";
+        color: #049399;
+        font-weight: 700;
     }
     /* ── Text content blocks ── */
     .bio-block {
@@ -157,7 +151,7 @@
         padding: 20px;
         margin-bottom: 24px;
     }
-    /* ── Submit button ── */
+    /* ── Submit buttons ── */
     .confirm-btn {
         background: #049399;
         border: none;
@@ -170,6 +164,18 @@
     }
     .confirm-btn:hover:not(:disabled) { opacity: .85; }
     .confirm-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .counter-btn {
+        background: #fff;
+        border: 2px solid #049399;
+        border-radius: 7px;
+        padding: 11px 28px;
+        font-weight: 700;
+        font-size: 1rem;
+        color: #049399;
+        transition: background .15s, color .15s, opacity .15s;
+    }
+    .counter-btn:hover:not(:disabled) { background: #f0fafa; }
+    .counter-btn:disabled { opacity: .55; cursor: not-allowed; }
 </style>
 @endpush
 
@@ -295,33 +301,24 @@
               onsubmit="return hireDirectSubmit(this)">
             @csrf
             <input type="hidden" name="_hire_token" value="{{ $submitToken }}">
+            <input type="hidden" name="intent" id="hire-intent" value="accept">
 
-            {{-- ── Services ──────────────────────────────────────── --}}
+            {{-- ── Services (read-only bullet list) ──────────────── --}}
             <div class="preview-section">
                 <div class="preview-section-header">
                     <i class="fa-solid fa-square-check"></i> Services Included in This Agent's Proposal
                 </div>
                 <div class="preview-section-body">
-                    <p class="text-muted small mb-3">
-                        These are the services {{ $agentDisplayName }} has included in their standing offer.
-                        Uncheck any you do not need — only services from this preset can be selected.
-                    </p>
                     @php $isFirstGroup = true; @endphp
                     @foreach($groupedAgentServices as $categoryLabel => $categoryServices)
                         @if(!empty($categoryServices))
                         <div style="margin-top: {{ $isFirstGroup ? '0' : '1.1rem' }};">
                             <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;">{{ $categoryLabel }}</div>
-                            <div class="service-checkbox-list">
+                            <ul class="service-bullet-list">
                                 @foreach($categoryServices as $svc)
-                                <label class="service-item">
-                                    <input type="checkbox"
-                                           name="services[]"
-                                           value="{{ $svc }}"
-                                           checked>
-                                    {{ $svc }}
-                                </label>
+                                <li>{{ $svc }}</li>
                                 @endforeach
-                            </div>
+                            </ul>
                         </div>
                         @php $isFirstGroup = false; @endphp
                         @endif
@@ -337,22 +334,13 @@
                     @if(!empty($filteredOtherServices))
                     <div class="mt-3">
                         <div style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;">Additional Services</div>
-                        <p class="text-muted small mb-2">These are custom services added by the agent. Uncheck any you do not need.</p>
-                        <div class="service-checkbox-list">
+                        <ul class="service-bullet-list">
                             @foreach($filteredOtherServices as $svc)
-                            <label class="service-item">
-                                <input type="checkbox"
-                                       name="other_services[]"
-                                       value="{{ $svc }}"
-                                       checked>
-                                {{ $svc }}
-                            </label>
+                            <li>{{ $svc }}</li>
                             @endforeach
-                        </div>
+                        </ul>
                     </div>
                     @endif
-                    @error('services') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
-                    @error('services.*') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
                 </div>
             </div>
 
@@ -382,6 +370,9 @@
                         </tr>
                         @endforeach
                     </table>
+                    <p class="text-muted small mt-3 mb-0">
+                        These are the Agent's proposed terms. To request changes to services, compensation, or agreement terms, select "Request Changes / Counter Terms".
+                    </p>
                 </div>
             </div>
             @endif
@@ -465,8 +456,17 @@
                 </div>
             @else
                 <div class="d-flex align-items-center gap-3 flex-wrap">
-                    <button type="submit" id="hire-direct-submit" class="confirm-btn btn">
-                        <i class="fa-solid fa-handshake me-2"></i>Start Direct Hire Request
+                    <button type="submit"
+                            id="hire-direct-submit"
+                            class="confirm-btn btn"
+                            onclick="document.getElementById('hire-intent').value='accept';">
+                        <i class="fa-solid fa-handshake me-2"></i>Accept &amp; Submit Hire Request
+                    </button>
+                    <button type="submit"
+                            id="hire-direct-counter"
+                            class="counter-btn btn"
+                            onclick="document.getElementById('hire-intent').value='counter';">
+                        <i class="fa-solid fa-pen-to-square me-2"></i>Request Changes / Counter Terms
                     </button>
                     <a href="{{ route('search.agents') }}" class="btn btn-outline-secondary">
                         Cancel
@@ -482,12 +482,21 @@
 
 <script>
 function hireDirectSubmit(form) {
-    var btn = document.getElementById('hire-direct-submit');
-    if (!btn || btn.disabled) {
+    var primaryBtn = document.getElementById('hire-direct-submit');
+    if (!primaryBtn || primaryBtn.disabled) {
         return false;
     }
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending…';
+    var intent = document.getElementById('hire-intent').value;
+    var submitBtns = form.querySelectorAll('button[type="submit"]');
+    submitBtns.forEach(function(b) { b.disabled = true; });
+    if (intent === 'counter') {
+        var counterBtn = document.getElementById('hire-direct-counter');
+        if (counterBtn) {
+            counterBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
+        }
+    } else {
+        primaryBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
+    }
     return true;
 }
 </script>

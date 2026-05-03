@@ -22,7 +22,8 @@ use Illuminate\Support\Facades\Schema;
  * POST /hire/agent/direct/{agentId}/{role}/{propertyType}
  *      → Confirmation: creates listing + bid atomically inside a
  *        DB::transaction(), then redirects to the existing listing
- *        detail page so the client can accept / counter / reject.
+ *        detail page (accept intent) or the per-role view-counter
+ *        route (counter intent) so the client can accept / counter / reject.
  *
  * Design constraints (enforced throughout)
  * ─────────────────────────────────────────
@@ -59,12 +60,20 @@ class HireAgentDirectController extends Controller
         'seller'   => \App\Models\SellerAgentAuctionBid::class,
     ];
 
-    /** Role → existing listing-detail route (client lands here after confirmation) */
+    /** Role → existing listing-detail route (client lands here after accept) */
     private const LISTING_VIEW_ROUTES = [
         'tenant'   => 'tenant.agent.auction.view',
         'landlord' => 'landlord.agent.auction.view',
         'buyer'    => 'buyer.view-auction',
         'seller'   => 'seller.agent.auction.detail',
+    ];
+
+    /** Role → existing per-role view-counter route (client lands here after counter) */
+    private const COUNTER_ROUTES = [
+        'buyer'    => 'buyer.hire.agent.auction.bid.view-counter',
+        'seller'   => 'hire.seller.agent.auction.bid.view-counter',
+        'landlord' => 'landlord.hire.agent.auction.bid.view-counter',
+        'tenant'   => 'tenant.hire.agent.auction.bid.view-counter',
     ];
 
     /**
@@ -244,6 +253,7 @@ class HireAgentDirectController extends Controller
             'other_services.*'      => 'string|max:500',
             'additional_requested'  => 'nullable|string|max:3000',
             'client_custom_services' => 'nullable|string|max:3000',
+            'intent'                => 'nullable|string|in:accept,counter',
         ]);
 
         // Load the preset using a strict lookup — no fallback to a role-default
@@ -268,22 +278,25 @@ class HireAgentDirectController extends Controller
 
         $mapped = AgentBidMapperService::mapFromProfile($profile->profile_data ?? []);
 
-        // Services the client confirmed (must be a subset of agent's preset services)
-        $clientServices = array_values(array_intersect(
-            $validated['services'] ?? [],
-            $agentServices
-        ));
-
-        // Additional services the agent defined — intersect against the preset's
-        // other_services list so clients cannot inject arbitrary values
+        // Additional services the agent defined
         $presetOtherServices = array_values(array_filter(
             is_array($profile->profile_data['other_services'] ?? null)
                 ? $profile->profile_data['other_services']
                 : [],
             fn($s) => is_string($s) && trim($s) !== ''
         ));
+
+        // Services the client confirmed — default to the full agent preset when
+        // services[] is absent from the POST body (the read-only review page sends none).
+        // The intersection security check remains as a no-op when both sides are identical.
+        $clientServices = array_values(array_intersect(
+            $validated['services'] ?? $agentServices,
+            $agentServices
+        ));
+
+        // Other services — default to full preset list when other_services[] is absent.
         $clientOtherServices = array_values(array_intersect(
-            $validated['other_services'] ?? [],
+            $validated['other_services'] ?? $presetOtherServices,
             $presetOtherServices
         ));
 
@@ -298,6 +311,9 @@ class HireAgentDirectController extends Controller
             // Cap at 50 entries to prevent abuse
             $clientCustomServices = array_slice($lines, 0, 50);
         }
+
+        // Read intent — determines redirect target after commit
+        $intent = $validated['intent'] ?? 'accept';
 
         DB::beginTransaction();
         try {
@@ -376,7 +392,7 @@ class HireAgentDirectController extends Controller
 
             // Services on the bid mirror what the client confirmed
             $bid->saveMeta('services',       json_encode($clientServices));
-            // Other services on the bid mirror only what the client kept checked
+            // Other services on the bid mirror only what the client kept
             $bid->saveMeta('other_services', json_encode($clientOtherServices));
             $bid->saveMeta('hire_me_auto_bid', '1');
 
@@ -391,10 +407,17 @@ class HireAgentDirectController extends Controller
                 'listing_id'  => $listing->id,
                 'bid_id'      => $bid->id,
                 'role'        => $role,
+                'intent'      => $intent,
                 'client_id'   => Auth::id(),
                 'agent_id'    => $agent->id,
                 'property_type' => $propertyType,
             ]);
+
+            // ── 5. Redirect based on intent ─────────────────────────────
+            if ($intent === 'counter') {
+                return redirect()
+                    ->route(self::COUNTER_ROUTES[$role], ['bid_id' => $bid->id]);
+            }
 
             $viewRoute = self::LISTING_VIEW_ROUTES[$role];
 
