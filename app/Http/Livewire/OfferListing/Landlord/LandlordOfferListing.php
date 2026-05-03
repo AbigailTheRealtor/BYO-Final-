@@ -673,6 +673,24 @@ class LandlordOfferListing extends Component
     public $additional_documents = [];
     public $other_document_type = '';
 
+    // Disclosure file uploads (temporary Livewire upload objects)
+    public $landlord_disclosure_file;
+    public $survey_file;
+    public $inspection_report_file;
+    public $hoa_condo_docs_file;
+    public $flood_disclosure_file;
+    public $lead_based_paint_file;
+    public $environmental_report_file;
+
+    // Disclosure file stored paths (persisted via meta)
+    public $landlord_disclosure_file_path = '';
+    public $survey_file_path = '';
+    public $inspection_report_file_path = '';
+    public $hoa_condo_docs_file_path = '';
+    public $flood_disclosure_file_path = '';
+    public $lead_based_paint_file_path = '';
+    public $environmental_report_file_path = '';
+
     // Payment Timing
 
 
@@ -2140,6 +2158,15 @@ class LandlordOfferListing extends Component
             $this->additional_documents = is_string($rawAdditionalDocs) ? json_decode($rawAdditionalDocs, true) ?? [] : (array)$rawAdditionalDocs;
             $this->other_document_type = $auction->get->other_document_type ?? '';
 
+            // Disclosure file paths (for "View current file" links when resuming a draft)
+            $this->landlord_disclosure_file_path  = $auction->get->landlord_disclosure_file_path ?? '';
+            $this->survey_file_path               = $auction->get->survey_file_path ?? '';
+            $this->inspection_report_file_path    = $auction->get->inspection_report_file_path ?? '';
+            $this->hoa_condo_docs_file_path        = $auction->get->hoa_condo_docs_file_path ?? '';
+            $this->flood_disclosure_file_path     = $auction->get->flood_disclosure_file_path ?? '';
+            $this->lead_based_paint_file_path     = $auction->get->lead_based_paint_file_path ?? '';
+            $this->environmental_report_file_path = $auction->get->environmental_report_file_path ?? '';
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -2759,6 +2786,34 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
         $auction->saveMeta('other_document_type', $this->other_document_type);
 
+        // Disclosure file uploads
+        $disclosureUploads = [
+            ['file' => 'landlord_disclosure_file',  'path' => 'landlord_disclosure_file_path',  'dir' => 'landlord-disclosure'],
+            ['file' => 'survey_file',               'path' => 'survey_file_path',               'dir' => 'survey'],
+            ['file' => 'inspection_report_file',    'path' => 'inspection_report_file_path',    'dir' => 'inspection-report'],
+            ['file' => 'hoa_condo_docs_file',       'path' => 'hoa_condo_docs_file_path',       'dir' => 'hoa-condo-docs'],
+            ['file' => 'flood_disclosure_file',     'path' => 'flood_disclosure_file_path',     'dir' => 'flood-disclosure'],
+            ['file' => 'lead_based_paint_file',     'path' => 'lead_based_paint_file_path',     'dir' => 'lead-based-paint'],
+            ['file' => 'environmental_report_file', 'path' => 'environmental_report_file_path', 'dir' => 'environmental-report'],
+        ];
+        foreach ($disclosureUploads as $item) {
+            $fileVal  = $this->{$item['file']};
+            $pathProp = $item['path'];
+            if ($fileVal && !is_string($fileVal)) {
+                $ext      = $fileVal->getClientOriginalExtension();
+                $uuid     = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $dir      = 'landlord-disclosures/' . $auction->id . '/' . $item['dir'];
+                Storage::disk('public')->makeDirectory($dir);
+                $fileVal->storeAs($dir, $fileName, 'public');
+                $storedPath        = $dir . '/' . $fileName;
+                $this->{$pathProp} = $storedPath;
+                $auction->saveMeta($pathProp, $storedPath);
+            } elseif ($this->{$pathProp}) {
+                $auction->saveMeta($pathProp, $this->{$pathProp});
+            }
+        }
+
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
         $auction->saveMeta('last_name', $this->last_name);
@@ -2867,6 +2922,41 @@ class LandlordOfferListing extends Component
     public function updatedListingDocuments()
     {
         $this->validate(['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240']);
+    }
+
+    public function updatedLandlordDisclosureFile()
+    {
+        $this->validate(['landlord_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedSurveyFile()
+    {
+        $this->validate(['survey_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedInspectionReportFile()
+    {
+        $this->validate(['inspection_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedHoaCondoDocsFile()
+    {
+        $this->validate(['hoa_condo_docs_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedFloodDisclosureFile()
+    {
+        $this->validate(['flood_disclosure_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedLeadBasedPaintFile()
+    {
+        $this->validate(['lead_based_paint_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedEnvironmentalReportFile()
+    {
+        $this->validate(['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
     }
 
     public function deletePropertyPhoto($index)

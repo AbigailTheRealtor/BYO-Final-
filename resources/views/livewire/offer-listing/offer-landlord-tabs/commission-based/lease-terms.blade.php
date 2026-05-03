@@ -1370,7 +1370,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="2"
+        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="3"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional lease terms or special conditions"></textarea>
     </div>

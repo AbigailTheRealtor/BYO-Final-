@@ -554,8 +554,6 @@ class AgentController extends Controller
             // Additional
             'custom_terms' => $meta['custom_terms'] ?? '',
             'notes'        => $meta['notes']        ?? '',
-            // AI FAQ
-            'listing_ai_faq' => json_decode($meta['listing_ai_faq'] ?? '{}', true) ?? [],
             // Links
             'edit_route'   => route('offer.listing.draft', $auction->id),
             'hub_route'    => route('agent.offer-listings'),

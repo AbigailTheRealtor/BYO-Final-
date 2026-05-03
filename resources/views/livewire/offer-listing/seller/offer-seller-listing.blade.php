@@ -2308,14 +2308,8 @@
                 return true;
             }
 
-            // Function to show loader for at least 20 seconds
             function showLoaderForMinimumTime() {
                 videoLoader.style.visibility = "visible";
-
-                // Ensure the loader is visible for at least 20 seconds
-                setTimeout(() => {
-                    videoLoader.style.visibility = "hidden";
-                }, 30000);
             }
 
             // Function to handle video upload
@@ -2355,10 +2349,7 @@
             });
 
             Livewire.on("upload:finish", () => {
-                // Wait for at least 20 seconds before hiding the loader
-                setTimeout(() => {
-                    videoLoader.style.visibility = "hidden";
-                }, 30000);
+                videoLoader.style.visibility = "hidden";
             });
 
 

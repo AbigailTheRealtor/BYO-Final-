@@ -1,0 +1,130 @@
+SAFE TASK — Correct Missed Items + Remove Incorrect AI FAQ Display
+
+Issue:
+Previous implementation was incomplete and included one incorrect feature.
+
+CRITICAL CORRECTION:
+AI FAQ must NOT display on public listing.
+
+REMOVE:
+- listing_ai_faq from AgentController::offerListingView()
+- AI FAQ accordion from agent/offer-listing-view.blade.php
+
+AI questions are backend-only for future chatbot use.
+
+----------------------------------
+PART 1 — “Other” Field Fixes (REQUIRED)
+----------------------------------
+
+Fix ALL “Other” selections across:
+- Seller
+- Landlord
+- Buyer
+- Tenant
+
+When “Other” is selected:
+- Show input box
+- Use format:
+  Enter [Field Name] (e.g., example values)
+
+Must match working:
+- Amenities
+- Property Features
+
+Apply to:
+- ALL new landlord fields
+- ALL disclosures fields
+- Additional Documents Available
+- Any missed seller/buyer/tenant fields
+
+----------------------------------
+PART 2 — City / County / State Auto-Population
+----------------------------------
+
+Seller + Landlord:
+- City input → auto-fill State + County
+
+Buyer + Tenant:
+- Acceptable Cities → auto-fill Acceptable State + Acceptable Counties
+
+Must match existing Hire Agent behavior.
+
+----------------------------------
+PART 3 — Document Upload in Disclosures
+----------------------------------
+
+When user selects YES:
+- Allow file upload directly in that section
+
+Apply to:
+- Tax
+- Legal
+- HOA
+- Disclosures
+
+Also:
+- Additional Documents Available → allow upload + “Other” input
+
+----------------------------------
+PART 4 — Landlord UI Fixes (Complete)
+----------------------------------
+
+Fix ALL of the following:
+
+- Add missing Sewer icon
+- Fix oversized inputs:
+  - Additional Lease Terms
+  - Leasing Restrictions
+  - Legal Description
+
+- Fix placeholders:
+  Desired Lease Term → Select
+  Association Amenities → Select
+  Fee Includes → Select
+  Additional Documents → Select
+
+- Fix left alignment:
+  Association Fee Amount
+  Special Assessment Amount
+  Annual CDD Fee
+
+----------------------------------
+PART 5 — Draft + Edit Saving (FULL VERIFICATION)
+----------------------------------
+
+Verify ALL fields save and reload:
+- Other inputs
+- New fields
+- Documents
+- Multi-selects
+- Acceptable cities/counties/state
+
+Return confirmation per role.
+
+----------------------------------
+PART 6 — Photo Upload Root Cause
+----------------------------------
+
+Do NOT just use try/catch.
+
+Find actual cause:
+- Livewire upload binding
+- loading state not resetting
+- temp file issues
+
+Ensure:
+- spinner disappears
+- upload completes
+- preview shows
+- saves to draft
+
+----------------------------------
+IMPORTANT:
+Do NOT skip any section.
+
+Return:
+- Root causes
+- Files changed
+- What was missing before
+- What is now fixed
+- Test results per role
