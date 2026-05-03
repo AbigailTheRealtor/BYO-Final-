@@ -1507,6 +1507,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         @include('partials.listing-photos-tours-documents')
 
+        @if (Auth::check()) {{-- broker compensation: hidden from anonymous visitors --}}
         @php
             $hasLandlordBrokerCompData = !empty(@$auction->get->purchase_fee_type)
                 || !empty(@$auction->get->tenant_broker_commission_structure)
@@ -1921,6 +1922,7 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
 
         </div> <!-- end broker-compensation-section -->
         @endif
+        @endif {{-- /Auth::check() broker compensation --}}
         @php
             $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
             $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
