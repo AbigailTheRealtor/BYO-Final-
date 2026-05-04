@@ -820,21 +820,35 @@
     @php $ofv::row('Other Document Type', $fmt($d['other_document_type'])); @endphp
 
     {{-- Disclosure Checklist --}}
+    @php
+    $disclosures = [
+        'Seller Disclosure'    => $d['seller_disclosure_available'],
+        'Landlord Disclosure'  => $d['landlord_disclosure_available'],
+        'Survey'               => $d['survey_available'],
+        'Inspection Report'    => $d['inspection_report_available'],
+        'HOA / Condo Docs'     => $d['hoa_condo_docs_available'],
+        'Flood Disclosure'     => $d['flood_disclosure_available'],
+        'Lead-Based Paint'     => $d['lead_based_paint_disclosure'],
+        'Environmental Report' => $d['environmental_report_available'],
+    ];
+    $docFiles = [
+        'Seller Disclosure'    => $d['seller_disclosure_file_path'],
+        'Survey'               => $d['survey_file_path'],
+        'Inspection Report'    => $d['inspection_report_file_path'],
+        'HOA / Condo Docs'     => $d['hoa_condo_docs_file_path'],
+        'Flood Disclosure'     => $d['flood_disclosure_file_path'],
+        'Lead-Based Paint'     => $d['lead_based_paint_file_path'],
+        'Environmental Report' => $d['environmental_report_file_path'],
+    ];
+    $hasAnyFile = array_filter($docFiles);
+    $hasDisclosureSection = !empty(array_filter($disclosures, fn($v) => $v !== '' && $v !== null))
+                         || $hasAnyFile
+                         || !empty($d['additional_documents']);
+    @endphp
+    @if($hasDisclosureSection)
     <div class="col-12">
         <div class="text-muted small mb-2 border-top pt-2 mt-1">Documents & Disclosures</div>
         <div class="d-flex flex-wrap gap-2 mb-3">
-            @php
-            $disclosures = [
-                'Seller Disclosure'    => $d['seller_disclosure_available'],
-                'Landlord Disclosure'  => $d['landlord_disclosure_available'],
-                'Survey'               => $d['survey_available'],
-                'Inspection Report'    => $d['inspection_report_available'],
-                'HOA / Condo Docs'     => $d['hoa_condo_docs_available'],
-                'Flood Disclosure'     => $d['flood_disclosure_available'],
-                'Lead-Based Paint'     => $d['lead_based_paint_disclosure'],
-                'Environmental Report' => $d['environmental_report_available'],
-            ];
-            @endphp
             @foreach($disclosures as $dname => $dval)
             @if($dval !== '' && $dval !== null)
             @php
@@ -847,18 +861,6 @@
         </div>
 
         {{-- Uploaded disclosure document download links --}}
-        @php
-        $docFiles = [
-            'Seller Disclosure'    => $d['seller_disclosure_file_path'],
-            'Survey'               => $d['survey_file_path'],
-            'Inspection Report'    => $d['inspection_report_file_path'],
-            'HOA / Condo Docs'     => $d['hoa_condo_docs_file_path'],
-            'Flood Disclosure'     => $d['flood_disclosure_file_path'],
-            'Lead-Based Paint'     => $d['lead_based_paint_file_path'],
-            'Environmental Report' => $d['environmental_report_file_path'],
-        ];
-        $hasAnyFile = array_filter($docFiles);
-        @endphp
         @if($hasAnyFile)
         <div class="text-muted small mb-1">Download Uploaded Documents</div>
         <div class="d-flex flex-wrap gap-2">
@@ -871,11 +873,9 @@
             @endforeach
         </div>
         @endif
-    </div>
 
-    @if(!empty($d['additional_documents']))
-    <div class="col-12">
-        <div class="text-muted small mb-1">Additional Documents</div>
+        @if(!empty($d['additional_documents']))
+        <div class="text-muted small mb-1 mt-2">Additional Documents</div>
         <div class="d-flex flex-wrap gap-1">
             @foreach($d['additional_documents'] as $addlDoc)
             @if($addlDoc)
@@ -883,6 +883,7 @@
             @endif
             @endforeach
         </div>
+        @endif
     </div>
     @endif
 
