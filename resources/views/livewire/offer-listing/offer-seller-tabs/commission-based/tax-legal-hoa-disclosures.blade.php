@@ -39,7 +39,6 @@
                 </span>
             </label>
             <input type="text" wire:model="tax_year" class="form-control"
-                style="padding-left: 12px;"
                 placeholder="Enter Tax Year (e.g., 2025)">
         </div>
 
@@ -54,7 +53,6 @@
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="annual_property_taxes" class="form-control"
-                    style="padding-left: 12px;"
                     placeholder="Enter Annual Property Taxes (e.g., 5,200)"
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -90,7 +88,6 @@
                     </span>
                 </label>
                 <input type="number" wire:model="total_parcel_count" class="form-control"
-                    style="padding-left: 12px;"
                     placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
             </div>
 
@@ -102,7 +99,6 @@
                     </span>
                 </label>
                 <textarea wire:model="additional_parcel_ids" class="form-control" rows="3"
-                    style="padding: 10px; font-size: 16px;"
                     placeholder="Enter each additional parcel ID on a new line"></textarea>
             </div>
         @endif
@@ -116,7 +112,6 @@
                 </span>
             </label>
             <textarea wire:model="legal_description" class="form-control" rows="3"
-                style="padding: 10px; font-size: 16px;"
                 placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
         </div>
 
@@ -246,7 +241,6 @@
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="annual_cdd_fee" class="form-control"
-                        style="padding-left: 12px;"
                         placeholder="Enter Annual CDD Fee (e.g., 1800)"
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -285,7 +279,6 @@
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="special_assessment_amount" class="form-control"
-                        style="padding-left: 12px;"
                         placeholder="Enter Special Assessment Amount (e.g., 4500)"
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -301,7 +294,6 @@
                     </span>
                 </label>
                 <textarea wire:model="special_assessment_description" class="form-control" rows="2"
-                    style="padding: 10px; font-size: 16px;"
                     placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
             </div>
         @endif
@@ -399,7 +391,6 @@
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
                             <input type="text" wire:model="association_fee_amount" class="form-control"
-                                style="padding-left: 12px;"
                                 placeholder="Enter Association Fee Amount (e.g., 350)"
                                 data-error-id="association_fee_amount_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -472,7 +463,6 @@
                         </span>
                     </label>
                     <textarea wire:model="association_approval_process" class="form-control" rows="2"
-                        style="padding: 10px; font-size: 16px;"
                         placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                 </div>
 
@@ -486,7 +476,6 @@
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
                         <input type="text" wire:model="association_application_fee" class="form-control"
-                            style="padding-left: 12px;"
                             placeholder="Enter Association Application Fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -633,7 +622,6 @@
                                 </span>
                             </label>
                             <input type="number" wire:model="max_leases_per_year" class="form-control"
-                                    style="padding-left: 12px;"
                                     placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
                         </div>
                     </div>
@@ -657,7 +645,6 @@
                         </span>
                     </label>
                     <textarea wire:model="additional_lease_restrictions" class="form-control" rows="2"
-                        style="padding: 10px; font-size: 16px;"
                         placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
                 </div>
             @endif
@@ -691,7 +678,6 @@
                         </span>
                     </label>
                     <textarea wire:model="pet_restrictions_detail" class="form-control" rows="2"
-                        style="padding: 10px; font-size: 16px;"
                         placeholder="Describe pet restrictions (e.g., Max 2 pets, no dogs over 25 lbs, no aggressive breeds)"></textarea>
                 </div>
             @endif

@@ -12,7 +12,7 @@
                                 <div class="form-group">
                                 <label class="fw-bold">Provide any additional information you would like to share:</label>
                                     <div class="input-cover">
-                                        <textarea wire:model="additional_details" class="form-control" rows="4" style="padding: 10px; font-size: 16px;"
-                                            placeholder="Enter additional details"></textarea>
+                                        <textarea wire:model="additional_details" class="form-control" rows="4"
+                                            placeholder="Enter additional details (e.g., Recent renovations, unique property features, special instructions for Agents)"></textarea>
                                     </div>
                                 </div>

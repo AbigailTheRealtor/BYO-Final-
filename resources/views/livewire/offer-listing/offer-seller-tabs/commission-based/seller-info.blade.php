@@ -59,7 +59,7 @@
     </span>
     <div class="input-cover">
         <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie">
-            <option value="">Select status</option>
+            <option value="">Select</option>
             <option value="First-Time Seller">First-Time Seller</option>
             <option value="Selling Primary Residence">Selling Primary Residence</option>
             <option value="Selling Secondary/Vacation Home">Selling Secondary/Vacation Home</option>

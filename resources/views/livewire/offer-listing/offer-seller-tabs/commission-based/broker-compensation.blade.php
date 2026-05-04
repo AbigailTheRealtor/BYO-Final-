@@ -65,15 +65,13 @@ $safeKey = function(...$parts) {
 
     <div class="mt-3">
         @if ($purchase_fee_type === 'flat')
-            <div class="input-group">
-                <span class="input-group-text">$</span>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="purchase_fee_flat" class="form-control"
                     placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-                <span class="error mt-2" id="purchase_fee_flat_error"></span>
-
             </div>
+            <span class="error mt-2" id="purchase_fee_flat_error"></span>
         @elseif($purchase_fee_type === 'percentage')
             <div class="input-group">
                 <input type="number" wire:model="purchase_fee_percentage" class="form-control"
@@ -123,9 +121,9 @@ $safeKey = function(...$parts) {
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-group">
-            <span class="input-group-text">$</span>
-            <input type="text" wire:model="nominal" class="form-control has-icon"
+        <div class="input-cover">
+            <span class="input-group-text-seller">$</span>
+            <input type="text" wire:model="nominal" class="form-control"
                 placeholder="Enter nominal consideration fee amount (e.g., 1000)"
                 data-error-id="nominal_error"
                 oninput="validateInput(this)"
@@ -188,16 +186,14 @@ $safeKey = function(...$parts) {
 
         <div class="mt-3">
             @if ($commission_structure_type === 'Flat Fee')
-                <div class="input-group">
-                    <span class="input-group-text">$</span>
+                <div class="input-cover">
+                    <span class="input-group-text-seller">$</span>
                     <input type="text" wire:model="commission_structure_type_fee_flat" class="form-control"
                         placeholder="Enter flat fee amount (e.g., 4000)"
                         data-error-id="commission_structure_type_fee_flat_error" oninput="validateInput(this)"
                         onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
-                    <span class="error mt-2" id="commission_structure_type_fee_flat_error"></span>
-
                 </div>
+                <span class="error mt-2" id="commission_structure_type_fee_flat_error"></span>
             @elseif($commission_structure_type === 'Percentage of the Total Purchase Price')
                 <div class="input-group">
                     <input type="number" wire:model="commission_structure_type_fee_percentage" class="form-control"
@@ -476,8 +472,8 @@ $safeKey = function(...$parts) {
                     </div>
                 </div>
             @endif
-            <div class="input-group mt-3">
-                <span class="input-group-text"> $</span>
+            <div class="input-cover mt-3">
+                <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="seller_leasing_gross_purchase_fee_flat_amount" class="form-control"
                     placeholder="Enter flat fee amount (e.g., 5000)"
                     data-error-id="seller_leasing_gross_purchase_fee_flat_amount_error"
@@ -647,15 +643,13 @@ $safeKey = function(...$parts) {
 
     @if ($early_termination_fee_option === 'yes')
         <div class="mt-3">
-            <div class="input-group">
-                <span class="input-group-text">$</span>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1000)"   data-error-id="early_termination_fee_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    placeholder="Enter early termination fee amount (e.g., 1000)" data-error-id="early_termination_fee_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
-
-                                    <span class="error mt-2" id="early_termination_fee_amount_error"></span>
-
+            <span class="error mt-2" id="early_termination_fee_amount_error"></span>
         </div>
     @endif
 </div>
@@ -681,14 +675,12 @@ $safeKey = function(...$parts) {
 
     @if ($retainer_fee_option === 'yes')
         <div class="mt-3">
-            <div class="input-group">
-                <span class="input-group-text">$</span>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model="retainer_fee_amount" class="form-control"
                     placeholder="Enter retainer fee amount (e.g., 500)"
-
-                     data-error-id="retainer_fee_amount_error"
-                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-
+                    data-error-id="retainer_fee_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="retainer_fee_amount_error"></span>
 
@@ -703,7 +695,7 @@ $safeKey = function(...$parts) {
                     </span>
                 </label>
                 <select wire:model="retainer_fee_application" class="form-control mt-2">
-                    <option value="">Select application method</option>
+                    <option value="">Select</option>
                     <option value="Applied Toward Final Compensation">Applied Toward Final Compensation</option>
                     <option value="Charged in Addition to Final Compensation">Charged in Addition to Final Compensation
                     </option>
