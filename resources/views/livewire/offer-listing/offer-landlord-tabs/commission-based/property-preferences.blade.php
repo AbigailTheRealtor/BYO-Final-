@@ -901,12 +901,18 @@
         <div class="input-cover" wire:ignore>
             <select id="water" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-droplet input-icon2" multiple>
-                @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None'] as $opt)
+                @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $water ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
             </select>
         </div>
         <span class="error mt-2" id="water_error"></span>
+    </div>
+    <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
+        <div class="input-cover">
+            <input type="text" wire:model="other_water" class="form-control has-icon"
+                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Cistern)">
+        </div>
     </div>
 
     <!-- Sewer -->
@@ -1019,12 +1025,18 @@
         <div class="input-cover" wire:ignore>
             <select id="security_features" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-shield-halved input-icon2" multiple>
-                @foreach (['Closed Circuit Camera(s)', 'Fire Alarm', 'Fire Sprinkler System', 'Gated Community', 'Key Card Entry', 'Medical Alarm', 'Secured Garage/Parking', 'Security Fencing/Lighting/Alarms', 'Security Gate', 'Security Lights', 'Security System', 'Security System Leased', 'Security System Owned', 'Smoke Detector(s)'] as $opt)
+                @foreach (['Closed Circuit Camera(s)', 'Fire Alarm', 'Fire Sprinkler System', 'Gated Community', 'Key Card Entry', 'Medical Alarm', 'Secured Garage/Parking', 'Security Fencing/Lighting/Alarms', 'Security Gate', 'Security Lights', 'Security System', 'Security System Leased', 'Security System Owned', 'Smoke Detector(s)', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $security_features ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
             </select>
         </div>
         <span class="error mt-2" id="security_features_error"></span>
+    </div>
+    <div class="form-group" style="display: {{ (is_array($security_features ?? []) && in_array('Other', $security_features ?? [])) ? 'block' : 'none' }};" id="other_security_features_wrapper">
+        <div class="input-cover">
+            <input type="text" wire:model="other_security_features" class="form-control has-icon"
+                data-icon="fa-solid fa-shield-halved" placeholder="Enter security feature (e.g., Video Doorbell, Smart Lock, Guard Service)">
+        </div>
     </div>
 
 @endif
@@ -1176,12 +1188,18 @@
         <div class="input-cover" wire:ignore>
             <select id="water" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-droplet input-icon2" multiple>
-                @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None'] as $opt)
+                @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $water ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
             </select>
         </div>
         <span class="error mt-2" id="water_error"></span>
+    </div>
+    <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
+        <div class="input-cover">
+            <input type="text" wire:model="other_water" class="form-control has-icon"
+                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Cistern)">
+        </div>
     </div>
 
     <!-- Sewer -->
