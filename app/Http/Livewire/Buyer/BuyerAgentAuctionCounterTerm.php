@@ -284,11 +284,13 @@ public $isListingCreatedByAgent = false;
 
     public function render()
     {
+        $flowKey = \App\Support\ServicesFormatter::keyForBuyerAgent($this->property_type ?: 'Residential');
         return view('livewire.buyer.buyer-agent-auction-counter-term', [
-            'pab' => $this->pab, // explicitly pass if you like
-            'bidId' => $this->bidId, // explicitly pass if you like
-            'property_type' => $this->property_type, // explicitly pass if you like
-            'parent_counter_id' => $this->parent_counter_id, // explicitly pass if you like
+            'pab'               => $this->pab,
+            'bidId'             => $this->bidId,
+            'property_type'     => $this->property_type,
+            'parent_counter_id' => $this->parent_counter_id,
+            'groupedServices'   => \App\Support\ServicesFormatter::orderSelectedServices($this->services, $flowKey),
         ])->extends('layouts.main')
             ->section('content');
     }

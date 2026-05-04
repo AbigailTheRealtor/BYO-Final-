@@ -364,10 +364,12 @@ class SellerAgentAuctionCounterTerm extends Component
 
     public function render()
     {
+        $flowKey = \App\Support\ServicesFormatter::keyForSellerAgent($this->property_type ?: 'Residential');
         return view('livewire.seller.seller-agent-auction-counter-term', [
-            'pab'         => $this->pab,
-            'bidId'       => $this->bidId,
-            'property_type' => $this->property_type,
+            'pab'             => $this->pab,
+            'bidId'           => $this->bidId,
+            'property_type'   => $this->property_type,
+            'groupedServices' => \App\Support\ServicesFormatter::orderSelectedServices($this->services, $flowKey),
         ])->extends('layouts.main')
             ->section('content');
     }

@@ -81,7 +81,7 @@ return [
                 "Schedule and attend property showings with the Buyer",
                 "Coordinate or conduct virtual showings via live video or pre-recorded walkthroughs",
                 "Preview properties on behalf of the Buyer upon request",
-                "Provide observations on tenant occupancy, building condition, and operating expenses",
+                "Provide observations on Tenant occupancy, building condition, and operating expenses",
             ],
             '📝 Offer & Contract Management' => [
                 "Draft and submit offers using state-approved purchase forms",
@@ -125,7 +125,7 @@ return [
                 "Launch hyperlocal or interest-based digital ad campaigns targeting desired commercial property types",
             ],
             '🔍 Property Search, Alerts & Matching' => [
-                "Send property alerts that match the Buyer's purchase criteria from the MLS or commercial listing platforms",
+                "Send listing alerts from real estate platforms that match the Buyer's purchase criteria",
                 "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired listings that meet the Buyer's criteria",
                 "Communicate with the Seller's Agent or Seller to confirm availability, purchase terms, and showing instructions",
                 "Analyze building class, property zoning, income potential, and redevelopment opportunities",
@@ -134,7 +134,7 @@ return [
                 "Schedule and attend property showings with the Buyer",
                 "Coordinate or conduct virtual showings via live video or recorded walkthroughs",
                 "Preview properties on behalf of the Buyer upon request",
-                "Provide insights on layout, access, visibility, tenant mix, and surrounding infrastructure",
+                "Provide insights on layout, access, visibility, Tenant mix, and surrounding infrastructure",
             ],
             '📝 Offer & Contract Management' => [
                 "Draft and submit offers using state-approved purchase agreements or Letters of Intent (LOIs)",
@@ -179,7 +179,7 @@ return [
                 "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
             ],
             '🔍 Business Search, Alerts & Matching' => [
-                "Send alerts for businesses that match the Buyer's acquisition criteria from MLS, BizBuySell, or other listing platforms",
+                "Send alerts for businesses that match the Buyer's acquisition criteria from available business listing sources",
                 "Search for off-market, pre-market, distressed, or recently closed businesses that meet the Buyer's criteria",
                 "Communicate with the Seller's Broker or Seller to confirm pricing, lease terms, licensing status, and showing availability",
                 "Analyze financials, lease assignments, business licensing requirements, and overall market positioning",
@@ -232,7 +232,7 @@ return [
                 "Launch hyperlocal digital ads targeting the Buyer's preferred purchase areas",
             ],
             '🔍 Property Search, Alerts & Matching' => [
-                "Send property alerts for land listings that match the Buyer's goals from MLS and land-specific platforms",
+                "Send property alerts for land listings that match the Buyer's goals from relevant real estate and land-specific platforms",
                 "Search for off-market, pre-market, distressed, withdrawn, canceled, or expired properties that meet the Buyer's purchase criteria",
                 "Communicate with the Seller's Agent or Seller to confirm zoning, access, utilities, and pricing",
                 "Assess development feasibility, land use restrictions, or agricultural potential (non-legal advice)",

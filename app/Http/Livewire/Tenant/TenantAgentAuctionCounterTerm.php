@@ -491,12 +491,14 @@ class TenantAgentAuctionCounterTerm extends Component
 
     public function render()
     {
+        $flowKey = \App\Support\ServicesFormatter::keyForTenantAgent($this->property_type ?: 'Residential');
         return view('livewire.tenant.tenant-agent-auction-counter-term', [
             'pab'              => $this->pab,
             'bidId'            => $this->bidId,
             'property_type'    => $this->property_type,
             'parent_counter_id'=> $this->parent_counter_id,
             'servicesConfig'   => $this->servicesConfig,
+            'groupedServices'  => \App\Support\ServicesFormatter::orderSelectedServices($this->services, $flowKey),
         ])->extends('layouts.main')
             ->section('content');
     }

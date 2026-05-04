@@ -7,21 +7,23 @@
     </div>
 </div>
 
-@if (!empty($services))
+@if (!empty($groupedServices))
+@foreach ($groupedServices as $categoryName => $categoryServices)
 <div class="service-section mb-4">
-    <h5 class="section-header bg-info text-white p-2 mb-3">Offered Services</h5>
+    <h5 class="section-header bg-info text-white p-2 mb-3">{{ $categoryName }}</h5>
     <div class="service-options">
-        @foreach ($services as $index => $service)
+        @foreach ($categoryServices as $service)
             <div class="form-check service-item" wire:key="counter-svc-{{ Str::slug($service) }}">
                 <input class="form-check-input" type="checkbox" wire:model="services"
-                    value="{{ $service }}" id="counter-service-{{ $index }}">
-                <label class="form-check-label" for="counter-service-{{ $index }}">
+                    value="{{ $service }}" id="counter-service-{{ Str::slug($service) }}">
+                <label class="form-check-label" for="counter-service-{{ Str::slug($service) }}">
                     {{ $service }}
                 </label>
             </div>
         @endforeach
     </div>
 </div>
+@endforeach
 @else
 <div class="alert alert-secondary mb-4">
     <strong>No services were included in the Agent's offer.</strong>
