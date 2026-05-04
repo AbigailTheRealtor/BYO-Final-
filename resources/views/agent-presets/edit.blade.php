@@ -1574,7 +1574,8 @@
                         </div>
                     </div>
 
-                    {{-- Payment Timing for Broker Fees (Landlord) --}}
+                    @if ($propertyType === 'commercial')
+                    {{-- Payment Timing for Broker Fees (Landlord Commercial) --}}
                     <div class="mb-4">
                         <label class="form-label fw-bold">Payment Timing for Broker Fees</label>
                         <div class="input-cover mt-2">
@@ -1590,7 +1591,7 @@
                         </div>
                     </div>
 
-                    {{-- Payment Timing — If Other, Specify (Landlord, only when "Other" is selected) --}}
+                    {{-- Payment Timing — If Other, Specify (Landlord Commercial, only when "Other" is selected) --}}
                     <div data-cp-parent="cp_split_payment_due" data-cp-values="Other" class="mb-4">
                         <label class="form-label fw-bold">If Other, Specify</label>
                         <input type="text"
@@ -1599,6 +1600,7 @@
                                value="{{ old('split_payment_due_other', $data['split_payment_due_other'] ?? '') }}"
                                placeholder="Describe custom payment timing">
                     </div>
+                    @endif
                 @endif
 
                 @if ($role === 'tenant')
