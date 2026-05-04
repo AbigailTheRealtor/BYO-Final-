@@ -1,0 +1,147 @@
+SAFE TASK — Audit + Fix Agent Preset Edit Save/Reload for Every Field
+
+Issue:
+On Agent Preset edit pages, some fields are not reloading/autopopulating after saving and reopening the preset.
+
+Observed not saving/reloading:
+- Broker Compensation & Agency Agreement Terms section
+- Availability & Service Style section
+- Full-Time Agent? in Quick Highlights
+
+Goal:
+Every field on the Agent Preset edit form must save and reload correctly for every role/property type.
+
+Scope:
+Agent Presets only:
+- /agent/presets
+- Edit Preset pages for all roles/property types
+
+Roles/property types:
+Buyer:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Seller:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Landlord:
+- Residential
+- Commercial
+
+Tenant:
+- Residential
+- Commercial
+
+Do NOT:
+- Change Offer Listing flows
+- Change Hire Agent listing flows
+- Change bids/counters
+- Change service catalog wording
+- Change profile routing
+- Change database schema unless you report first
+- Reintroduce old autofill fallback from other presets
+- Change field labels/tooltips unless required to fix binding
+
+AUDIT FIRST:
+1. Identify every input/select/textarea on the Agent Preset edit form.
+2. For each field, confirm:
+   - input name
+   - profile_data key
+   - request key
+   - saved key
+   - reload key used in Blade
+   - whether value is rendered with old() / $data correctly
+   - whether select uses @selected correctly
+   - whether checkbox/radio uses @checked correctly
+   - whether conditional amount/detail fields save/reload
+
+Return a table:
+Section | Field Label | Input Name | Saves? | Reloads? | Issue | Fix Needed
+
+Sections to audit:
+- Agent Overview / Bio
+- Quick Highlights
+- Availability & Service Style
+- Services
+- Other Services / Additional Services
+- Broker Compensation & Agency Agreement Terms
+- Referral Fee / Cooperation Terms if present
+- Marketing / Presentation fields
+- Contact / Profile fields
+- Any hidden fields
+
+SPECIFIC FIX REQUIREMENTS:
+
+1. Quick Highlights:
+- Full-Time Agent? must save and reload.
+
+2. Availability & Service Style:
+All fields must save and reload:
+- Availability Status
+- Evenings Available?
+- Weekends Available?
+- Communication Style
+- Preferred Contact Method
+
+3. Broker Compensation & Agency Agreement Terms:
+All fields in this section must save and reload, including:
+- all select fields
+- all amount fields
+- all percent fields
+- protection period
+- early termination fee
+- retainer fee
+- brokerage relationship
+- agency agreement timeframe
+- additional terms
+- any conditional fields that appear when Yes/Other is selected
+
+4. Scope dropdown behavior:
+When saving:
+- This preset only: save every field only to current role/property type.
+- All [Current Role] presets: save every field to every property type for that role, creating missing presets if needed.
+- All roles and property types: audit current behavior and do not expand beyond safe global fields unless already implemented.
+
+5. Do not copy fields from another preset into the current preset unless user selected a propagation option.
+Empty fields should remain empty unless user entered data.
+
+TESTING REQUIRED:
+For each role/property type:
+1. Enter unique values in:
+   - Full-Time Agent?
+   - Availability Status
+   - Evenings Available?
+   - Weekends Available?
+   - Communication Style
+   - Preferred Contact Method
+   - Broker Compensation section
+   - Additional Terms
+2. Save with “This preset only.”
+3. Reopen same preset.
+4. Confirm every value reloads.
+
+Then test:
+1. Buyer Residential
+2. Save with “All Buyer presets.”
+3. Open Buyer Income, Commercial, Business, Vacant Land.
+4. Confirm every field copied/reloaded.
+5. Confirm Seller/Landlord/Tenant did not change.
+
+Repeat role-scope test for:
+- Seller
+- Landlord
+- Tenant
+
+Return:
+- Root cause
+- Files changed
+- Fields fixed
+- Scope behavior confirmed
+- Test results by role/property type
