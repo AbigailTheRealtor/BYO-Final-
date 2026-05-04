@@ -246,7 +246,7 @@ class HireAgentDirectController extends Controller
 
         // Validate minimal client inputs
         $validated = $request->validate([
-            'address'               => 'required|string|max:500',
+            'address'               => 'nullable|string|max:500',
             'services'              => 'nullable|array',
             'services.*'            => 'string|max:500',
             'other_services'        => 'nullable|array',
@@ -315,22 +315,211 @@ class HireAgentDirectController extends Controller
         // Read intent — determines redirect target after commit
         $intent = $validated['intent'] ?? 'accept';
 
+        // ── Accept intent: store pending data in session, redirect to acknowledgment ──
+        if ($intent === 'accept') {
+            // Generate a one-time nonce for the acknowledgment form — prevents
+            // duplicate submission if the client reloads or submits the ack form twice.
+            $ackNonce = bin2hex(random_bytes(16));
+
+            session([
+                'hire_direct_pending' => [
+                    'agent_id'               => $agentId,
+                    'role'                   => $role,
+                    'property_type'          => $propertyType,
+                    'services'               => $clientServices,
+                    'other_services'         => $clientOtherServices,
+                    'additional_requested'   => $validated['additional_requested'] ?? null,
+                    'client_custom_services' => $clientCustomServices,
+                    'ack_nonce'              => $ackNonce,
+                ],
+            ]);
+
+            return redirect()->route('hire.agent.direct.acknowledge', [
+                'agentId'      => $agentId,
+                'role'         => $role,
+                'propertyType' => $propertyType,
+            ]);
+        }
+
+        // ── Counter intent: commit transaction immediately ────────────────
+        return $this->commitListingAndBid(
+            $agent, $role, $propertyType, $mapped,
+            $clientServices, $clientOtherServices, $clientCustomServices,
+            $validated, $intent
+        );
+    }
+
+    /**
+     * GET — Acknowledgment page for accept intent.
+     * Reads session-stored pending data and shows terms summary + contact form.
+     */
+    public function acknowledge(Request $request, int $agentId, string $role, string $propertyType = 'residential')
+    {
+        if (!in_array($role, self::VALID_ROLES, true)) {
+            abort(404);
+        }
+        if (!in_array($propertyType, self::VALID_PROPERTY_TYPES, true)) {
+            $propertyType = 'residential';
+        }
+
+        $pending = session('hire_direct_pending');
+        if (
+            !$pending
+            || ($pending['agent_id'] ?? null) != $agentId
+            || ($pending['role'] ?? null) !== $role
+            || ($pending['property_type'] ?? null) !== $propertyType
+        ) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'Your session has expired. Please review the agent\'s terms again and resubmit.');
+        }
+
+        $agent = User::where('id', $agentId)->where('user_type', 'agent')->firstOrFail();
+
+        $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
+        $mapped  = $profile
+            ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? [])
+            : [];
+
+        $compRows = \App\Support\CompensationFormatter::formatPresetRows(
+            $role,
+            $propertyType,
+            $mapped
+        );
+
+        $services      = $pending['services']      ?? [];
+        $otherServices = $pending['other_services'] ?? [];
+
+        $flowKey = $role . '_agent.' . $propertyType;
+        $groupedServices = \App\Support\ServicesFormatter::orderSelectedServices($services, $flowKey);
+
+        return view('hire-agent-direct.acknowledge', compact(
+            'agent', 'role', 'propertyType', 'mapped', 'compRows',
+            'services', 'otherServices', 'groupedServices', 'pending'
+        ));
+    }
+
+    /**
+     * POST — Acknowledgment submit: validate contact info, create listing + bid.
+     */
+    public function acknowledgeSubmit(Request $request, int $agentId, string $role, string $propertyType = 'residential')
+    {
+        if (!in_array($role, self::VALID_ROLES, true)) {
+            abort(404);
+        }
+        if (!in_array($propertyType, self::VALID_PROPERTY_TYPES, true)) {
+            abort(422);
+        }
+
+        $pending = session('hire_direct_pending');
+        if (
+            !$pending
+            || ($pending['agent_id'] ?? null) != $agentId
+            || ($pending['role'] ?? null) !== $role
+            || ($pending['property_type'] ?? null) !== $propertyType
+        ) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'Your session has expired. Please review the agent\'s terms again and resubmit.');
+        }
+
+        // Validate and atomically consume the one-time acknowledgment nonce
+        // to prevent duplicate submissions (back-button replay, concurrent requests).
+        $submittedNonce = $request->input('_ack_nonce');
+        $expectedNonce  = $pending['ack_nonce'] ?? null;
+        if (!$expectedNonce || !$submittedNonce || !hash_equals($expectedNonce, $submittedNonce)) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'This request has already been submitted or the page has expired. Please start again.');
+        }
+        // NOTE: session is NOT cleared here — it is consumed only after all validation
+        // succeeds (see session()->forget() below), so users can safely retry on
+        // validation failures (e.g. invalid email format).
+
+        $agent = User::where('id', $agentId)->where('user_type', 'agent')->firstOrFail();
+
+        if (Auth::id() === $agent->id) {
+            abort(403, 'You cannot hire yourself.');
+        }
+
+        $contactValidated = $request->validate([
+            'client_name'             => 'nullable|string|max:255',
+            'client_phone'            => 'nullable|string|max:50',
+            'client_email'            => 'nullable|email|max:255',
+            'client_property_address' => 'nullable|string|max:500',
+            'client_property_city'    => 'nullable|string|max:255',
+            'client_property_state'   => 'nullable|string|max:100',
+            'client_property_zip'     => 'nullable|string|max:20',
+        ]);
+
+        $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
+        if (!$profile) {
+            return redirect()->back()->with('error', 'Agent profile not found. Please try again.');
+        }
+
+        $mapped = AgentBidMapperService::mapFromProfile($profile->profile_data ?? []);
+
+        $clientServices      = $pending['services']               ?? [];
+        $clientOtherServices = $pending['other_services']         ?? [];
+        $clientCustomServices = $pending['client_custom_services'] ?? [];
+        $additionalRequested  = $pending['additional_requested']   ?? null;
+
+        $validated = [
+            'address'              => null,
+            'additional_requested' => $additionalRequested,
+        ];
+
+        session()->forget('hire_direct_pending');
+
+        $result = $this->commitListingAndBid(
+            $agent, $role, $propertyType, $mapped,
+            $clientServices, $clientOtherServices, $clientCustomServices,
+            $validated, 'accept',
+            $contactValidated
+        );
+
+        return $result;
+    }
+
+    /**
+     * Shared helper: execute DB transaction to create listing + bid, then redirect.
+     *
+     * @param  array  $contactInfo  Optional client contact fields (from acknowledge form).
+     */
+    private function commitListingAndBid(
+        User   $agent,
+        string $role,
+        string $propertyType,
+        array  $mapped,
+        array  $clientServices,
+        array  $clientOtherServices,
+        array  $clientCustomServices,
+        array  $validated,
+        string $intent,
+        array  $contactInfo = []
+    ) {
         DB::beginTransaction();
         try {
             // ── 1. Create the listing ────────────────────────────────────
             $listingClass = self::LISTING_MODELS[$role];
             $listing = new $listingClass();
-            $listing->user_id    = Auth::id();
+            $listing->user_id     = Auth::id();
             $listing->is_approved = true;
             $listing->is_draft    = false;
             $listing->is_sold     = false;
 
-            // Only assign columns that exist on this model's table.
-            // landlord_agent_auctions and tenant_agent_auctions do not
-            // have address/title columns — those are stored as meta instead.
+            $address      = !empty($contactInfo['client_property_address'])
+                ? trim(implode(', ', array_filter([
+                    $contactInfo['client_property_address'],
+                    $contactInfo['client_property_city']    ?? '',
+                    $contactInfo['client_property_state']   ?? '',
+                    $contactInfo['client_property_zip']     ?? '',
+                ])))
+                : ($validated['address'] ?? null);
+
             $listingTable = $listing->getTable();
-            if (Schema::hasColumn($listingTable, 'address')) {
-                $listing->address = $validated['address'];
+            if (Schema::hasColumn($listingTable, 'address') && !empty($address)) {
+                $listing->address = $address;
             }
             if (Schema::hasColumn($listingTable, 'title')) {
                 $listing->title = 'Direct Hire – ' . ucfirst($role) . ' Agent';
@@ -349,10 +538,8 @@ class HireAgentDirectController extends Controller
             $listing->saveMeta('other_services_enabled', empty($clientOtherServices) ? '0' : '1');
             $listing->saveMeta('hire_me_flow',     '1');
 
-            // For models without native address/title columns (landlord, tenant),
-            // persist these values via meta so detail views can read them.
-            if (!Schema::hasColumn($listingTable, 'address')) {
-                $listing->saveMeta('address', $validated['address']);
+            if (!Schema::hasColumn($listingTable, 'address') && !empty($address)) {
+                $listing->saveMeta('address', $address);
             }
             if (!Schema::hasColumn($listingTable, 'title')) {
                 $listing->saveMeta('title', 'Direct Hire – ' . ucfirst($role) . ' Agent');
@@ -366,7 +553,30 @@ class HireAgentDirectController extends Controller
                 $listing->saveMeta('client_custom_services', json_encode($clientCustomServices));
             }
 
-            // ── 3. Create the bid (on behalf of the agent's standing offer) ──
+            // Save client contact info on listing meta
+            if (!empty($contactInfo['client_name'])) {
+                $listing->saveMeta('client_name', $contactInfo['client_name']);
+            }
+            if (!empty($contactInfo['client_phone'])) {
+                $listing->saveMeta('client_phone', $contactInfo['client_phone']);
+            }
+            if (!empty($contactInfo['client_email'])) {
+                $listing->saveMeta('client_email', $contactInfo['client_email']);
+            }
+            if (!empty($contactInfo['client_property_address'])) {
+                $listing->saveMeta('client_property_address', $contactInfo['client_property_address']);
+            }
+            if (!empty($contactInfo['client_property_city'])) {
+                $listing->saveMeta('client_property_city', $contactInfo['client_property_city']);
+            }
+            if (!empty($contactInfo['client_property_state'])) {
+                $listing->saveMeta('client_property_state', $contactInfo['client_property_state']);
+            }
+            if (!empty($contactInfo['client_property_zip'])) {
+                $listing->saveMeta('client_property_zip', $contactInfo['client_property_zip']);
+            }
+
+            // ── 3. Create the bid ────────────────────────────────────────
             $bidClass = self::BID_MODELS[$role];
             $bid = new $bidClass();
             $bid->user_id = $agent->id;
@@ -381,7 +591,6 @@ class HireAgentDirectController extends Controller
                 );
             }
 
-            // Credential fields: prefer profile data, fall back to agent's user record
             $bid->saveMeta('first_name',  $mapped['first_name']  ?: ($agent->first_name ?? ''));
             $bid->saveMeta('last_name',   $mapped['last_name']   ?: ($agent->last_name  ?? ''));
             $bid->saveMeta('phone',       $mapped['phone']       ?: ($agent->phone      ?? ''));
@@ -390,30 +599,49 @@ class HireAgentDirectController extends Controller
             $bid->saveMeta('license_no',  $mapped['license_no']  ?: ($agent->license_no ?? ''));
             $bid->saveMeta('nar_id',      $mapped['nar_id']      ?: ($agent->nar_id     ?? ''));
 
-            // Services on the bid mirror what the client confirmed
             $bid->saveMeta('services',       json_encode($clientServices));
-            // Other services on the bid mirror only what the client kept
             $bid->saveMeta('other_services', json_encode($clientOtherServices));
             $bid->saveMeta('hire_me_auto_bid', '1');
 
-            // Client-requested custom services — stored separately, never merged into services/other_services
             if (!empty($clientCustomServices)) {
                 $bid->saveMeta('client_custom_services', json_encode($clientCustomServices));
+            }
+
+            // Save client contact info on bid meta (using counter_* keys for consistency)
+            if (!empty($contactInfo['client_name'])) {
+                $bid->saveMeta('counter_client_name', $contactInfo['client_name']);
+            }
+            if (!empty($contactInfo['client_phone'])) {
+                $bid->saveMeta('counter_client_phone', $contactInfo['client_phone']);
+            }
+            if (!empty($contactInfo['client_email'])) {
+                $bid->saveMeta('counter_client_email', $contactInfo['client_email']);
+            }
+            if (!empty($contactInfo['client_property_address'])) {
+                $bid->saveMeta('counter_property_address', $contactInfo['client_property_address']);
+            }
+            if (!empty($contactInfo['client_property_city'])) {
+                $bid->saveMeta('counter_property_city', $contactInfo['client_property_city']);
+            }
+            if (!empty($contactInfo['client_property_state'])) {
+                $bid->saveMeta('counter_property_state', $contactInfo['client_property_state']);
+            }
+            if (!empty($contactInfo['client_property_zip'])) {
+                $bid->saveMeta('counter_property_zip', $contactInfo['client_property_zip']);
             }
 
             DB::commit();
 
             Log::info('HireAgentDirect: listing + bid created', [
-                'listing_id'  => $listing->id,
-                'bid_id'      => $bid->id,
-                'role'        => $role,
-                'intent'      => $intent,
-                'client_id'   => Auth::id(),
-                'agent_id'    => $agent->id,
+                'listing_id'   => $listing->id,
+                'bid_id'       => $bid->id,
+                'role'         => $role,
+                'intent'       => $intent,
+                'client_id'    => Auth::id(),
+                'agent_id'     => $agent->id,
                 'property_type' => $propertyType,
             ]);
 
-            // ── 5. Redirect based on intent ─────────────────────────────
             if ($intent === 'counter') {
                 return redirect()
                     ->route(self::COUNTER_ROUTES[$role], ['id' => $bid->id]);
@@ -429,7 +657,7 @@ class HireAgentDirectController extends Controller
             DB::rollBack();
             Log::error('HireAgentDirect confirm failed', [
                 'error'    => $e->getMessage(),
-                'agentId'  => $agentId,
+                'agentId'  => $agent->id,
                 'role'     => $role,
                 'clientId' => Auth::id(),
             ]);

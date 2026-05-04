@@ -41,6 +41,12 @@ class TenantAgentAuctionCounterTerm extends Component
     public $client_phone = '';
     public $client_email = '';
 
+    // Client Property Address
+    public $client_property_address = '';
+    public $client_property_city = '';
+    public $client_property_state = '';
+    public $client_property_zip = '';
+
     // --- Broker Compensation (common to both blades) ---
     public $commission_structure = '';
 
@@ -651,6 +657,18 @@ class TenantAgentAuctionCounterTerm extends Component
         if (array_key_exists('counter_client_email', $m)) {
             $this->client_email = $m['counter_client_email'];
         }
+        if (array_key_exists('counter_property_address', $m)) {
+            $this->client_property_address = $m['counter_property_address'];
+        }
+        if (array_key_exists('counter_property_city', $m)) {
+            $this->client_property_city = $m['counter_property_city'];
+        }
+        if (array_key_exists('counter_property_state', $m)) {
+            $this->client_property_state = $m['counter_property_state'];
+        }
+        if (array_key_exists('counter_property_zip', $m)) {
+            $this->client_property_zip = $m['counter_property_zip'];
+        }
     }
     public function submit()
     {
@@ -821,5 +839,9 @@ class TenantAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('counter_client_name', $this->client_name);
         $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
         $counterTerm->saveMeta('counter_client_email', $this->client_email);
+        $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
+        $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
+        $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
+        $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
     }
 }

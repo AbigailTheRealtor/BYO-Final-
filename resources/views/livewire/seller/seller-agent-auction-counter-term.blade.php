@@ -42,9 +42,11 @@
                         }
                         $tabs[] = 'Additional Details';
                         $tabs[] = 'Offered Services';
-                        $referralTabIndex          = $isListingCreatedByAgent ? 1 : null;
-                        $additionalDetailsTabIndex = $isListingCreatedByAgent ? 2 : 1;
-                        $servicesTabIndex          = $isListingCreatedByAgent ? 3 : 2;
+                        $tabs[] = 'Client Contact Information';
+                        $referralTabIndex             = $isListingCreatedByAgent ? 1 : null;
+                        $additionalDetailsTabIndex    = $isListingCreatedByAgent ? 2 : 1;
+                        $servicesTabIndex             = $isListingCreatedByAgent ? 3 : 2;
+                        $clientContactTabIndex        = $isListingCreatedByAgent ? 4 : 3;
                     @endphp
 
                     <ul class="nav nav-tabs" id="sellerCounterTab" role="tablist">
@@ -78,6 +80,10 @@
 
                         <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-counter-tabs.services')
+                        </div>
+
+                        <div class="tab-pane fade {{ $activeTab === $clientContactTabIndex ? 'show active' : '' }}">
+                            @include('livewire.seller-agent-auction-counter-tabs.client-contact-information')
                         </div>
                     </div>
 

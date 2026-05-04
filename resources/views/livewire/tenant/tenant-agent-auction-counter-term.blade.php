@@ -59,8 +59,10 @@
                 'buyer' => 'Services the Buyer Requests from Their Agent',
                 default => 'Services',
             };
+            $tabs[] = 'Client Contact Information';
             $additionalDetailsTabIndex = $isListingCreatedByAgent ? 2 : 1;
             $servicesTabIndex          = $isListingCreatedByAgent ? 3 : 2;
+            $clientContactTabIndex     = $isListingCreatedByAgent ? 4 : 3;
           @endphp
 
           <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -105,6 +107,10 @@
 
             <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}" id="services">
               @include('livewire.tenant-agent-auction-bid-counter-tabs.services')
+            </div>
+
+            <div class="tab-pane fade {{ $activeTab === $clientContactTabIndex ? 'show active' : '' }}">
+              @include('livewire.tenant-agent-auction-counter-term-tabs.client-contact-information')
             </div>
           </div>
 

@@ -150,6 +150,10 @@ Route::middleware('auth')->group(function () {
     // Phase-2 Hire-Me direct entry — confirm/create (POST) only; GET preview is public below
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}', [\App\Http\Controllers\HireAgentDirectController::class, 'confirm'])->name('hire.agent.direct.confirm');
 
+    // Phase-2 Hire-Me acknowledgment page (accept flow only)
+    Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType}/acknowledge', [\App\Http\Controllers\HireAgentDirectController::class, 'acknowledge'])->name('hire.agent.direct.acknowledge');
+    Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}/acknowledge', [\App\Http\Controllers\HireAgentDirectController::class, 'acknowledgeSubmit'])->name('hire.agent.direct.acknowledge.submit');
+
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
 

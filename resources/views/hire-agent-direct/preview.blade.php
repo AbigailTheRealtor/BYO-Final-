@@ -918,26 +918,6 @@
             </div>
             @endif
 
-            {{-- ── Property Address ───────────────────────────────── --}}
-            <div class="preview-section">
-                <div class="preview-section-header"><i class="fa-solid fa-map-marker"></i> Property Address</div>
-                <div class="preview-section-body">
-                    <p class="text-muted small mb-2">
-                        Enter the address of the property this hire request relates to.
-                    </p>
-                    <input type="text"
-                           name="address"
-                           class="form-control @error('address') is-invalid @enderror"
-                           placeholder="e.g. 123 Main St, Miami, FL 33101"
-                           value="{{ old('address') }}"
-                           @if($isOwnerPreview) disabled @endif
-                           required>
-                    @error('address')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-
             {{-- ── Process notice ─────────────────────────────────── --}}
             <div class="process-notice">
                 <i class="fa-solid fa-circle-info me-2"></i>
