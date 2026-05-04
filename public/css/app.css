@@ -743,6 +743,9 @@ select {
 .order-3 {
   order: 3;
 }
+.col-auto {
+  grid-column: auto;
+}
 .m-2 {
   margin: 0.5rem;
 }
