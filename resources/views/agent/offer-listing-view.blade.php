@@ -24,6 +24,29 @@
     $otLabels = ['sale' => 'Sale', 'rental' => 'Rental', 'lease' => 'Lease'];
     $ot = $d['offer_type'];
     $ofv = \App\Helpers\OfferListingViewHelper::class;
+
+    /*
+     * Meta fallback helper.
+     *
+     * Usage: $getMeta('some_key')
+     *
+     * Resolution order:
+     *   1. $data array  – structured, already-decoded value (preferred)
+     *   2. raw $meta    – full EAV payload from the DB; JSON-decoded automatically
+     *
+     * This lets new/unmapped meta keys surface in the view without any
+     * controller changes, while keeping $data as the authoritative source
+     * for every key that has already been explicitly mapped.
+     */
+    $getMeta = function(string $key, $default = null) use ($d, $meta) {
+        if (array_key_exists($key, $d) && $d[$key] !== '' && $d[$key] !== null && $d[$key] !== []) {
+            return $d[$key];
+        }
+        $raw = $meta[$key] ?? null;
+        if ($raw === null || $raw === '') return $default;
+        $decoded = json_decode($raw, true);
+        return (json_last_error() === JSON_ERROR_NONE) ? $decoded : $raw;
+    };
 @endphp
 
 <div class="container-fluid py-4" style="max-width:960px;">

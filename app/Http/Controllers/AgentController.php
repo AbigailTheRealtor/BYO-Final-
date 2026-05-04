@@ -1344,7 +1344,7 @@ class AgentController extends Controller
             'photo'                                        => $meta['photo']                                        ?? '',
         ];
 
-        return view('agent.offer-listing-view', compact('data'));
+        return view('agent.offer-listing-view', compact('data', 'meta'));
     }
 
     public function offerListings(Request $request)
