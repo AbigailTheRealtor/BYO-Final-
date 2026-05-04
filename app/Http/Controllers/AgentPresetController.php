@@ -490,15 +490,85 @@ class AgentPresetController extends Controller
 
         AgentDefaultProfile::upsertForAgent($userId, $role, $propertyType, $profileData);
 
-        // Scope-aware propagation of public profile fields to other presets.
-        // Only the PROFILE_FIELDS keys are written to other records; all other
-        // profile_data keys (services, compensation, agreement terms) are untouched.
-        // Invariant: 'current_role' scope is strictly filtered by role_type === $role,
-        // preventing any cross-role contamination of profile fields.
+        // Scope-aware propagation to other presets.
+        //
+        // 'current_preset' (default): saves only to the current role/property-type
+        //   record — no propagation to other presets.
+        //
+        // 'current_role': propagates ALL profile_data fields (except per-preset file-
+        //   upload paths) to every other property-type preset for the same role.
+        //   e.g. saving "All Buyer presets" writes compensation, services, agreement
+        //   terms, and profile fields to buyer/income, buyer/commercial, etc.
+        //   File-upload paths (presentation_upload_path, business_card_upload_path) are
+        //   excluded because each preset manages its own uploaded files independently.
+        //   Cross-role isolation is enforced: only records where role_type === $role
+        //   are ever updated.
+        //
+        // 'all_roles': propagates only PROFILE_FIELDS (safe public-profile keys) across
+        //   all roles and property types. Compensation, services, and agreement-term
+        //   fields are intentionally excluded until a cross-role compensation field
+        //   mapping audit confirms that those fields are safe to propagate universally.
         $scope = $request->input('profile_save_scope', 'current_preset');
 
+        // Keys that must never be propagated by any scope selector — each preset manages
+        // its own uploaded file paths independently. Note: these keys also appear in
+        // PROFILE_FIELDS but must be excluded from all scope propagation.
+        $fileUploadKeys = ['presentation_upload_path', 'business_card_upload_path'];
+
         if ($scope === 'current_role' || $scope === 'all_roles') {
-            $profileFields = array_intersect_key($profileData, array_flip(static::PROFILE_FIELDS));
+            if ($scope === 'current_role') {
+                // Build propagation set from keys that were actually present in the HTTP
+                // request, not from the full $profileData map.
+                //
+                // $profileData is constructed with request->input($key, '') for every
+                // known field, so absent keys default to ''. Relying on $profileData alone
+                // would propagate empty strings for property-type-specific fields that do
+                // not appear in the source form's HTML, silently blanking out target-preset
+                // values that were set for a different context.
+                //
+                // Using request key presence instead gives the correct semantics:
+                //   - A field submitted as '' (agent intentionally cleared it) propagates.
+                //   - A field absent from the HTTP body (not in the form HTML) does not
+                //     propagate and leaves the target preset's value intact.
+                //   - File-upload path keys are always excluded regardless.
+                //
+                // Values are taken from $profileData (not raw request data) so that any
+                // controller-side normalisation (splitLines, array casting, etc.) is kept.
+                //
+                // Three form inputs use a different name from their stored profile_data key
+                // because the controller transforms their values via splitLines():
+                //   reviews_links_raw  → reviews_links
+                //   website_link_raw   → website_link
+                //   social_media_raw   → social_media
+                // These must be explicitly mapped so they are included in propagation.
+                // File-upload inputs (presentation_upload, business_card_upload) map to
+                // the excluded _path keys and are handled by $fileUploadKeys below.
+                $rawKeyToProfileKey = [
+                    'reviews_links_raw' => 'reviews_links',
+                    'website_link_raw'  => 'website_link',
+                    'social_media_raw'  => 'social_media',
+                ];
+                $submittedProfileKeys = [];
+                foreach (array_keys($request->all()) as $requestKey) {
+                    $storedKey = $rawKeyToProfileKey[$requestKey] ?? $requestKey;
+                    if (array_key_exists($storedKey, $profileData)) {
+                        $submittedProfileKeys[] = $storedKey;
+                    }
+                }
+                $propagateFields = array_diff_key(
+                    array_intersect_key($profileData, array_flip($submittedProfileKeys)),
+                    array_flip($fileUploadKeys)
+                );
+            } else {
+                // all_roles: only safe public-profile keys until cross-role compensation
+                // audit is complete — do not expand this list without that audit.
+                // File-upload paths are explicitly stripped even though they appear in
+                // PROFILE_FIELDS, because each preset manages its own uploaded files.
+                $propagateFields = array_diff_key(
+                    array_intersect_key($profileData, array_flip(static::PROFILE_FIELDS)),
+                    array_flip($fileUploadKeys)
+                );
+            }
 
             $query = AgentDefaultProfile::where('user_id', $userId)
                 ->where(function ($q) use ($role, $propertyType) {
@@ -515,7 +585,7 @@ class AgentPresetController extends Controller
 
             foreach ($otherPresets as $otherPreset) {
                 $existing = $otherPreset->profile_data ?? [];
-                foreach ($profileFields as $field => $value) {
+                foreach ($propagateFields as $field => $value) {
                     $existing[$field] = $value;
                 }
                 $otherPreset->profile_data = $existing;

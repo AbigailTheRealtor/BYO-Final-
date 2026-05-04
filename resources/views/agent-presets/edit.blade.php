@@ -1963,7 +1963,9 @@
                     <option value="all_roles" {{ old('profile_save_scope') === 'all_roles' ? 'selected' : '' }}>All roles and property types</option>
                 </select>
                 <small class="profile-save-scope-hint">
-                    Scope applies only to public Agent Profile sections. Services, compensation, and agreement terms are always saved to this preset only.
+                    <strong>This preset only</strong> — saves all fields to this preset only.<br>
+                    <strong>All {{ ucfirst($role) }} presets</strong> — copies every field (profile, services, compensation, and agreement terms) to all your {{ ucfirst($role) }} property-type presets.<br>
+                    <strong>All roles and property types</strong> — copies only public profile fields (bio, contact info, etc.) across all presets. Services and compensation remain preset-specific.
                 </small>
             </div>
 
