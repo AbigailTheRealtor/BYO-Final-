@@ -15,6 +15,9 @@ class SellerOfferListingEdit extends Component
 {
     use WithFileUploads;
 
+    protected $listeners = [
+        'setActiveTab' => 'setActiveTab',
+    ];
 
     // Livewire properties for form fields
     public $hasDrafts = false;
@@ -22,6 +25,7 @@ class SellerOfferListingEdit extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isLoadingData = false;
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -814,6 +818,7 @@ class SellerOfferListingEdit extends Component
 
     public function updatedOfferedFinancing()
     {
+        if ($this->isLoadingData) return;
         // Only reset fields when their corresponding financing option is deselected
         $financing = $this->offered_financing ?? [];
 
@@ -945,6 +950,7 @@ class SellerOfferListingEdit extends Component
 
     public function updatedSaleProvision()
     {
+        if ($this->isLoadingData) return;
         // Reset all dependent fields when main selection changes
         $this->reset([
             'sale_provision_other',
@@ -956,11 +962,13 @@ class SellerOfferListingEdit extends Component
 
     public function updatedSaleProvisionAssignment()
     {
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount', 'buyer_sell_contract']);
     }
 
     public function updatedBuyerSellContract()
     {
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount']);
     }
 
@@ -1061,6 +1069,7 @@ class SellerOfferListingEdit extends Component
 
     public function updatedWorkingWithAgent($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Represented') {
             $this->dispatchBrowserEvent('show-representation-notice');
         } else {
@@ -1070,6 +1079,7 @@ class SellerOfferListingEdit extends Component
 
     public function updatedAuctionType($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Auction') {
             $this->dispatchBrowserEvent('show-auction-time');
         } else {
@@ -1318,6 +1328,8 @@ class SellerOfferListingEdit extends Component
 
     public function loadAuctionData($listingId)
     {
+        $this->isLoadingData = true;
+        try {
         $auction = SellerAgentAuctionModel::where('id', $listingId)
             ->where('user_id', Auth::id())
             ->first();
@@ -2004,6 +2016,9 @@ class SellerOfferListingEdit extends Component
             $this->commission_structure_type_fee_other        = $auction->get->commission_structure_type_fee_other ?? '';
             $this->commission_structure_type_fee_flat_combo   = $auction->get->commission_structure_type_fee_flat_combo ?? '';
             $this->commission_structure_type_fee_percentage_combo = $auction->get->commission_structure_type_fee_percentage_combo ?? '';
+        }
+        } finally {
+            $this->isLoadingData = false;
         }
     }
 

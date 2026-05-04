@@ -807,6 +807,7 @@
                                         id="listing-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#listing-details"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(0)"
                                         aria-controls="listing-details"
                                         aria-selected="{{ $activeTab === 0 ? 'true' : 'false' }}">
                                         Listing Details
@@ -817,6 +818,7 @@
                                         id="property-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#property-details"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(1)"
                                         aria-controls="property-details"
                                         aria-selected="{{ $activeTab === 1 ? 'true' : 'false' }}">
                                         Property Details
@@ -828,6 +830,7 @@
                                         id="financial-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#financial-details"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(2)"
                                         aria-controls="financial-details"
                                         aria-selected="{{ $activeTab === 2 ? 'true' : 'false' }}">
                                         Financial Details
@@ -839,6 +842,7 @@
                                         id="sale-terms-tab" data-bs-toggle="tab"
                                         data-bs-target="#sale-terms"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab({{ $saleTermsIdx }})"
                                         aria-controls="sale-terms"
                                         aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
                                         Sale Terms
@@ -849,6 +853,7 @@
                                         id="additional-details-tab" data-bs-toggle="tab"
                                         data-bs-target="#additional-details"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab({{ $additionalDetailsIdx }})"
                                         aria-controls="additional-details"
                                         aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
                                         Additional Details
@@ -859,6 +864,7 @@
                                         id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
                                         data-bs-target="#tax-legal-hoa-disclosures"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab({{ $taxLegalIdx }})"
                                         aria-controls="tax-legal-hoa-disclosures"
                                         aria-selected="{{ $activeTab === $taxLegalIdx ? 'true' : 'false' }}">
                                         Tax, Legal, HOA &amp; Disclosures
@@ -869,6 +875,7 @@
                                         id="photos-tours-documents-tab" data-bs-toggle="tab"
                                         data-bs-target="#photos-tours-documents"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab({{ $photosIdx }})"
                                         aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === $photosIdx ? 'true' : 'false' }}">
                                         Photos &amp; Tours
@@ -879,6 +886,7 @@
                                         id="seller-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#seller-information"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab({{ $sellerInfoIdx }})"
                                         aria-controls="seller-information"
                                         aria-selected="{{ $activeTab === $sellerInfoIdx ? 'true' : 'false' }}">
                                         Agent Credentials & Contact Info
@@ -889,6 +897,7 @@
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab({{ $aiIdx }})"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === $aiIdx ? 'true' : 'false' }}">
                                         AI Questions
@@ -903,6 +912,7 @@
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
+                                            wire:click="setActiveTab({{ $index }})"
                                             aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
                                             {{ $tab }}
@@ -927,6 +937,7 @@
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         id="information-tab" data-bs-toggle="tab"
                                         data-bs-target="#information" type="button" role="tab"
+                                        wire:click="setActiveTab(5)"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
                                         Agent Credentials & Contact Info
@@ -937,6 +948,7 @@
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(6)"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
                                         AI Questions
@@ -1919,6 +1931,11 @@
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
+                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                        const nextIndex = allNavLinks.indexOf(nextTab);
+                        if (nextIndex !== -1) {
+                            Livewire.emit('setActiveTab', nextIndex);
+                        }
                         new bootstrap.Tab(nextTab).show();
                     }
                 }
@@ -1933,6 +1950,11 @@
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
+                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                    const prevIndex = allNavLinks.indexOf(prevTab);
+                    if (prevIndex !== -1) {
+                        Livewire.emit('setActiveTab', prevIndex);
+                    }
                     new bootstrap.Tab(prevTab).show();
                 }
             });
@@ -2091,6 +2113,11 @@
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
+                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                        const nextIndex = allNavLinks.indexOf(nextTab);
+                        if (nextIndex !== -1) {
+                            Livewire.emit('setActiveTab', nextIndex);
+                        }
                         new bootstrap.Tab(nextTab).show();
                     }
                 }
@@ -2105,6 +2132,11 @@
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
+                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                    const prevIndex = allNavLinks.indexOf(prevTab);
+                    if (prevIndex !== -1) {
+                        Livewire.emit('setActiveTab', prevIndex);
+                    }
                     new bootstrap.Tab(prevTab).show();
                 }
             });

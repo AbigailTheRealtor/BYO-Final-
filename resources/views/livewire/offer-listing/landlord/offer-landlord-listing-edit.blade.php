@@ -1018,6 +1018,7 @@ $tenantPays = [
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
+                                            wire:click="setActiveTab({{ $index }})"
                                             aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
                                             {{ $tab }}
@@ -1029,6 +1030,7 @@ $tenantPays = [
                                         id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
                                         data-bs-target="#tax-legal-hoa-disclosures"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(4)"
                                         aria-controls="tax-legal-hoa-disclosures"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         Tax, Legal, HOA &amp; Disclosures
@@ -1039,6 +1041,7 @@ $tenantPays = [
                                         id="photos-tours-documents-tab" data-bs-toggle="tab"
                                         data-bs-target="#photos-tours-documents"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(5)"
                                         aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
                                         Photos &amp; Tours
@@ -1049,6 +1052,7 @@ $tenantPays = [
                                         id="landlord-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#landlord-information"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(6)"
                                         aria-controls="landlord-information"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
                                         Agent Credentials & Contact Info
@@ -1059,6 +1063,7 @@ $tenantPays = [
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(7)"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
                                         AI Questions
@@ -1073,6 +1078,7 @@ $tenantPays = [
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"
                                             data-bs-target="#{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             type="button" role="tab"
+                                            wire:click="setActiveTab({{ $index }})"
                                             aria-controls="{{ str_replace(' ', '-', strtolower($tab)) }}"
                                             aria-selected="{{ $activeTab === $index ? 'true' : 'false' }}">
                                             {{ $tab }}
@@ -1098,6 +1104,7 @@ $tenantPays = [
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         id="information-tab" data-bs-toggle="tab"
                                         data-bs-target="#information" type="button" role="tab"
+                                        wire:click="setActiveTab(5)"
                                         aria-controls="information"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
                                         Agent Credentials & Contact Info
@@ -1108,6 +1115,7 @@ $tenantPays = [
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
+                                        wire:click="setActiveTab(6)"
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
                                         AI Questions
@@ -2119,6 +2127,11 @@ $tenantPays = [
                     const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTabEl) {
+                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                        const nextIndex = allNavLinks.indexOf(nextTabEl);
+                        if (nextIndex !== -1) {
+                            Livewire.emit('setActiveTab', nextIndex);
+                        }
                         var bsTab = new bootstrap.Tab(nextTabEl);
                         bsTab.show();
                     }
@@ -2138,6 +2151,11 @@ $tenantPays = [
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
+                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                    const prevIndex = allNavLinks.indexOf(prevTabEl);
+                    if (prevIndex !== -1) {
+                        Livewire.emit('setActiveTab', prevIndex);
+                    }
                     var bsTab = new bootstrap.Tab(prevTabEl);
                     bsTab.show();
                 }
@@ -2349,6 +2367,11 @@ $tenantPays = [
                     const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTabEl) {
+                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                        const nextIndex = allNavLinks.indexOf(nextTabEl);
+                        if (nextIndex !== -1) {
+                            Livewire.emit('setActiveTab', nextIndex);
+                        }
                         var bsTab = new bootstrap.Tab(nextTabEl);
                         bsTab.show();
                     }
@@ -2368,6 +2391,11 @@ $tenantPays = [
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
+                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
+                    const prevIndex = allNavLinks.indexOf(prevTabEl);
+                    if (prevIndex !== -1) {
+                        Livewire.emit('setActiveTab', prevIndex);
+                    }
                     var bsTab = new bootstrap.Tab(prevTabEl);
                     bsTab.show();
                 }
