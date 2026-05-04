@@ -988,10 +988,34 @@ class BuyerOfferListing extends Component
 
     protected function getCitySuggestionsFromDb($input)
     {
-        $cities = UsCity::with('state')
-            ->where('name', 'ILIKE', '%' . $input . '%')
+        $normalizedInput = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $input)));
+        
+        $citiesStartWith = UsCity::with('state')
+            ->where(function ($q) use ($input, $normalizedInput) {
+                $q->where('name', 'ILIKE', $input . '%')
+                  ->orWhere('name', 'ILIKE', $normalizedInput . '%')
+                  ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedInput . '%']);
+            })
+            ->orderBy('name')
             ->limit(10)
             ->get();
+        
+        $citiesContain = UsCity::with('state')
+            ->where(function ($q) use ($input, $normalizedInput) {
+                $q->where('name', 'ILIKE', '%' . $input . '%')
+                  ->orWhere('name', 'ILIKE', '%' . $normalizedInput . '%')
+                  ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $normalizedInput . '%']);
+            })
+            ->where(function ($q) use ($input, $normalizedInput) {
+                $q->where('name', 'NOT ILIKE', $input . '%')
+                  ->where('name', 'NOT ILIKE', $normalizedInput . '%')
+                  ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$normalizedInput . '%']);
+            })
+            ->orderBy('name')
+            ->limit(max(0, 10 - $citiesStartWith->count()))
+            ->get();
+        
+        $cities = $citiesStartWith->merge($citiesContain);
 
         return $cities->map(function ($city) {
             return $city->name . ', ' . ($city->state ? $city->state->abbreviation : '');
@@ -1030,7 +1054,7 @@ class BuyerOfferListing extends Component
 
     public function selectCitySuggestion($suggestion = null)
     {
-        $suggestion = $suggestion ?? $this->citySuggestions[$this->highlightedCityIndex] ?? $this->newCity;
+        $suggestion = $suggestion ?? ($this->highlightedCityIndex >= 0 ? ($this->citySuggestions[$this->highlightedCityIndex] ?? null) : null) ?? ($this->citySuggestions[0] ?? null) ?? $this->newCity;
         $this->newCity = $suggestion;
 
         if (!in_array(trim($suggestion), $this->cities)) {
@@ -1070,9 +1094,14 @@ class BuyerOfferListing extends Component
         }
         
         $cityName = $this->extractNameFromLocationString($cityString);
+        $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', (string) $cityName)));
         if ($cityName && $stateAbbr) {
             $cities = UsCity::with(['state', 'county.state'])
-                ->where('name', $cityName)
+                ->where(function ($q) use ($cityName, $normalizedCityName) {
+                    $q->where('name', 'ILIKE', $cityName)
+                      ->orWhere('name', 'ILIKE', $normalizedCityName)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedCityName]);
+                })
                 ->whereHas('state', function($q) use ($stateAbbr) {
                     $q->where('abbreviation', strtoupper($stateAbbr));
                 })
@@ -1089,9 +1118,13 @@ class BuyerOfferListing extends Component
             }
 
             if (empty($this->counties)) {
-                $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
-                    ->where('state_abbrev', strtoupper($stateAbbr))
-                    ->first();
+                $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
+                    $q->where('city', 'ILIKE', $cityName)
+                      ->orWhere('city', 'ILIKE', $normalizedCityName)
+                      ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
+                })
+                ->where('state_abbrev', strtoupper($stateAbbr))
+                ->first();
                 if ($zipCode && !empty($zipCode->county)) {
                     $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
                     if (!$this->countyExistsIgnoreCase($countyString)) {

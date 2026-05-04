@@ -1236,7 +1236,7 @@ class LandlordOfferListing extends Component
     
     public function selectPropertyCitySuggestion($suggestion = null)
     {
-        $suggestion = $suggestion ?? $this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? $this->property_city;
+        $suggestion = $suggestion ?? ($this->highlightedPropertyCityIndex >= 0 ? ($this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? null) : null) ?? ($this->propertyCitySuggestions[0] ?? null) ?? $this->property_city;
         $this->property_city = $suggestion;
         $this->propertyCitySuggestions = [];
         $this->highlightedPropertyCityIndex = -1;
@@ -1272,7 +1272,14 @@ class LandlordOfferListing extends Component
             }
         }
         
-        $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+        // Normalize city name to handle punctuation variations (e.g. "St." → "St")
+        $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $cityName)));
+
+        $city = \App\Models\UsCity::where(function ($q) use ($cityName, $normalizedCityName) {
+                $q->where('name', 'ILIKE', $cityName)
+                  ->orWhere('name', 'ILIKE', $normalizedCityName)
+                  ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedCityName]);
+            })
             ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
                 return $query->whereHas('state', function ($q) use ($stateAbbrev) {
                     $q->where('abbreviation', strtoupper($stateAbbrev));
@@ -1281,7 +1288,11 @@ class LandlordOfferListing extends Component
             ->with(['county', 'state'])
             ->first();
         
-        $zipCode = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName)
+        $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
+                $q->where('city', 'ILIKE', $cityName)
+                  ->orWhere('city', 'ILIKE', $normalizedCityName)
+                  ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
+            })
             ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
                 return $query->where('state_abbrev', strtoupper($stateAbbrev));
             })
@@ -1347,11 +1358,33 @@ class LandlordOfferListing extends Component
                 $results[] = $countyName . ', ' . $stateAbbrev;
             }
         } else {
-            $cities = \App\Models\UsCity::where('name', 'ILIKE', $input . '%')
-                ->with('state')
+            $normalizedInput = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $input)));
+            $citiesStartWith = \App\Models\UsCity::with('state')
+                ->where(function ($q) use ($input, $normalizedInput) {
+                    $q->where('name', 'ILIKE', $input . '%')
+                      ->orWhere('name', 'ILIKE', $normalizedInput . '%')
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedInput . '%']);
+                })
                 ->orderBy('name')
                 ->limit(10)
                 ->get();
+            
+            $citiesContain = \App\Models\UsCity::with('state')
+                ->where(function ($q) use ($input, $normalizedInput) {
+                    $q->where('name', 'ILIKE', '%' . $input . '%')
+                      ->orWhere('name', 'ILIKE', '%' . $normalizedInput . '%')
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $normalizedInput . '%']);
+                })
+                ->where(function ($q) use ($input, $normalizedInput) {
+                    $q->where('name', 'NOT ILIKE', $input . '%')
+                      ->where('name', 'NOT ILIKE', $normalizedInput . '%')
+                      ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$normalizedInput . '%']);
+                })
+                ->orderBy('name')
+                ->limit(max(0, 10 - $citiesStartWith->count()))
+                ->get();
+            
+            $cities = $citiesStartWith->merge($citiesContain);
             
             foreach ($cities as $city) {
                 $stateAbbrev = $city->state ? $city->state->abbreviation : '';
@@ -1364,7 +1397,7 @@ class LandlordOfferListing extends Component
 
     public function selectCitySuggestion($suggestion = null)
     {
-        $suggestion = $suggestion ?? $this->citySuggestions[$this->highlightedCityIndex] ?? $this->newCity;
+        $suggestion = $suggestion ?? ($this->highlightedCityIndex >= 0 ? ($this->citySuggestions[$this->highlightedCityIndex] ?? null) : null) ?? ($this->citySuggestions[0] ?? null) ?? $this->newCity;
         $this->newCity = $suggestion;
 
         if (!in_array(trim($suggestion), $this->cities)) {
@@ -1375,6 +1408,7 @@ class LandlordOfferListing extends Component
         $this->highlightedCityIndex = -1;
         
         $this->autoPopulateZipCodesFromCity($suggestion);
+        $this->autoPopulateFromCity($suggestion);
     }
     
     protected function autoPopulateZipCodesFromCity($cityWithState)
@@ -1398,7 +1432,59 @@ class LandlordOfferListing extends Component
             }
         }
     }
-    
+
+    private function autoPopulateFromCity($cityString)
+    {
+        $stateAbbr = $this->extractStateFromLocationString($cityString);
+
+        if ($stateAbbr && empty($this->state)) {
+            $stateRecord = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbr))->first();
+            if ($stateRecord) {
+                $this->state = $stateRecord->name;
+            }
+        }
+
+        $cityName = $this->extractNameFromLocationString($cityString);
+        $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', (string) $cityName)));
+        if ($cityName && $stateAbbr) {
+            $cities = \App\Models\UsCity::with(['state', 'county.state'])
+                ->where(function ($q) use ($cityName, $normalizedCityName) {
+                    $q->where('name', 'ILIKE', $cityName)
+                      ->orWhere('name', 'ILIKE', $normalizedCityName)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedCityName]);
+                })
+                ->whereHas('state', function ($q) use ($stateAbbr) {
+                    $q->where('abbreviation', strtoupper($stateAbbr));
+                })
+                ->get();
+
+            foreach ($cities as $city) {
+                if ($city->county) {
+                    $countyString = $city->county->name . ', ' . ($city->county->state ? $city->county->state->abbreviation : strtoupper($stateAbbr));
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
+
+            if (empty($this->counties)) {
+                $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
+                    $q->where('city', 'ILIKE', $cityName)
+                      ->orWhere('city', 'ILIKE', $normalizedCityName)
+                      ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
+                })
+                ->where('state_abbrev', strtoupper($stateAbbr))
+                ->first();
+                if ($zipCode && !empty($zipCode->county)) {
+                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
+        }
+    }
+
     protected function extractStateFromLocationString($locationString)
     {
         if (preg_match('/,\s*([A-Z]{2})(?:\s|$|,)/', $locationString, $matches)) {
