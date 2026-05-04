@@ -1208,16 +1208,17 @@ $tenantPays = [
                                 <button type="button" class="btn btn-secondary wizard-step-back" wire:loading.attr="disabled">Back</button>
                             </div>
                             <div>
-                                <button type="button" wire:click="update" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
-                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
-                                    <span wire:loading wire:target="update">Saving...</span>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncSelectValues()" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft">
+                                    <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
 
                                 <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button">
-                                    Submit
+                                    id="save-button" wire:loading.attr="disabled" wire:target="update">
+                                    <span wire:loading.remove wire:target="update">Submit</span>
+                                    <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
                             </div>
 

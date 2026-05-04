@@ -1084,6 +1084,7 @@ class BuyerOfferListingEdit extends Component
        
         if ($auctionId) {
             $this->auctionId = $auctionId;
+            $this->listingId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
         }
         

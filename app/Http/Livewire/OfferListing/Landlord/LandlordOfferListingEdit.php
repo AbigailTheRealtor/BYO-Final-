@@ -1380,6 +1380,7 @@ class LandlordOfferListingEdit extends Component
 
         if ($auctionId) {
             $this->auctionId = $auctionId;
+            $this->listingId = $auctionId;
             $this->loadAuctionData($auctionId); // Load auction data if auctionId is provided
         }
     }
@@ -1401,9 +1402,10 @@ class LandlordOfferListingEdit extends Component
                 : new HirelandLordAgentAuction();
 
             $auction->user_id = Auth::id();
-            $auction->title = $this->listing_title;
             $auction->is_draft = true;
             $auction->save();
+
+            $auction->saveMeta('title', $this->listing_title);
 
             $this->listingId = $auction->id;
 
@@ -1426,7 +1428,7 @@ class LandlordOfferListingEdit extends Component
         if ($auction) {
 
             // Load all metadata fields
-            $this->listing_title = $auction->title;
+            $this->listing_title = $auction->get->title ?? '';
             $this->service_type = $auction->get->service_type ?? null;
             $this->user_type = $auction->get->user_type ?? null;
             $this->listing_status = $auction->get->listing_status ?? null;
@@ -2791,9 +2793,10 @@ class LandlordOfferListingEdit extends Component
             $auction = $this->auctionId
                 ? HirelandLordAgentAuction::find($this->auctionId)
                 : new HirelandLordAgentAuction();
-            $auction->title = $this->listing_title;
             $auction->is_draft = 0;
             $auction->save();
+
+            $auction->saveMeta('title', $this->listing_title);
 
             $this->listingId = $auction->id;
 

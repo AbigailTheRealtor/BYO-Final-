@@ -1982,9 +1982,9 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
-                                <button type="button" onclick="doSaveEditWithSync()" class="btn btn-outline-primary me-2 wizard-save-edit" wire:loading.attr="disabled" wire:target="update">
-                                    <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
-                                    <span wire:loading wire:target="update">Saving...</span>
+                                <button type="button" onclick="doSaveDraftWithSync()" class="btn btn-outline-primary me-2" wire:loading.attr="disabled" wire:target="saveDraftOnly">
+                                    <span wire:loading.remove wire:target="saveDraftOnly"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraftOnly">Saving...</span>
                                 </button>
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>

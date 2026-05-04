@@ -2425,9 +2425,9 @@ class TenantOfferListingEdit extends Component
 
         // $auction = HireTenantAgentAuction::findOrFail($auctionId);
         // Populate Livewire properties with the fetched data
-        $this->listing_title = $auction->title;
+        $this->listing_title = $auction->info('title') ?? '';
         $this->service_type = $auction->info('service_type');
-        $this->user_type = $auction->info('user_type');
+        $this->user_type = $auction->info('user_type') ?: $user_type;
         $this->listing_status = $auction->info('listing_status');
         $this->working_with_agent = $auction->info('working_with_agent');
         $this->listing_date = $auction->info('listing_date');
@@ -3159,9 +3159,9 @@ class TenantOfferListingEdit extends Component
 
 
             // Update the auction properties
-            $auction->title = $this->listing_title;
             $auction->save();
 
+            $auction->saveMeta('title', $this->listing_title);
             $auction->saveMeta('workflow_type', $this->workflow_type ?: 'hire_agent');
             $auction->saveMeta('service_type', $this->service_type);
             $auction->saveMeta('user_type', $this->user_type);
