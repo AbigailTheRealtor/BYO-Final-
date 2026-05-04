@@ -93,8 +93,20 @@ class SellerAgentAuctionCounterTerm extends Component
 
     // Services
     public $services = [];
+    public $proposedServices = [];
     public bool $other_services_enabled = false;
     public array $other_services = [];
+
+    // Client Contact Info
+    public $client_name = '';
+    public $client_phone = '';
+    public $client_email = '';
+
+    // Client Property Address
+    public $client_property_address = '';
+    public $client_property_city = '';
+    public $client_property_state = '';
+    public $client_property_zip = '';
 
     // Services UI toggles (required by services partial)
     public bool $showEnhancements = false;
@@ -191,6 +203,23 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->auctionId     = $pab->seller_agent_auction_id ?? null;
         }
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
+
+        // Always load proposed services from the agent's original bid (immutable reference)
+        $bidData = $pab->get ?? null;
+        if ($bidData) {
+            $rawSvc = is_object($bidData) ? ($bidData->services ?? null) : ($bidData['services'] ?? null);
+            $rawProposed = [];
+            if ($rawSvc !== null) {
+                $rawProposed = is_string($rawSvc) ? (json_decode($rawSvc, true) ?? []) : (is_array($rawSvc) ? $rawSvc : []);
+            }
+            if (is_array($rawProposed) && !empty($this->property_type)) {
+                $catalog = \App\Helpers\SellerBidMatchScoreHelper::getCatalog($this->property_type);
+                $rawProposed = array_values(array_filter($rawProposed, function ($svc) use ($catalog) {
+                    return in_array(\App\Helpers\SellerBidMatchScoreHelper::normalizeService((string) $svc), $catalog, true);
+                }));
+            }
+            $this->proposedServices = array_values(array_filter((array) $rawProposed));
+        }
 
         // Determine role: seller = listing owner, agent = bidder responding to seller counter
         $isSeller = $auction && ($auction->user_id === Auth::id());
@@ -360,6 +389,29 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->other_services_enabled = filter_var($m['other_services_enabled'], FILTER_VALIDATE_BOOLEAN)
                 || $m['other_services_enabled'] === '1';
         }
+
+        // Counter-specific client contact and property fields
+        if (array_key_exists('counter_client_name', $m)) {
+            $this->client_name = $m['counter_client_name'];
+        }
+        if (array_key_exists('counter_client_phone', $m)) {
+            $this->client_phone = $m['counter_client_phone'];
+        }
+        if (array_key_exists('counter_client_email', $m)) {
+            $this->client_email = $m['counter_client_email'];
+        }
+        if (array_key_exists('counter_property_address', $m)) {
+            $this->client_property_address = $m['counter_property_address'];
+        }
+        if (array_key_exists('counter_property_city', $m)) {
+            $this->client_property_city = $m['counter_property_city'];
+        }
+        if (array_key_exists('counter_property_state', $m)) {
+            $this->client_property_state = $m['counter_property_state'];
+        }
+        if (array_key_exists('counter_property_zip', $m)) {
+            $this->client_property_zip = $m['counter_property_zip'];
+        }
     }
 
     public function render()
@@ -369,7 +421,7 @@ class SellerAgentAuctionCounterTerm extends Component
             'pab'             => $this->pab,
             'bidId'           => $this->bidId,
             'property_type'   => $this->property_type,
-            'groupedServices' => \App\Support\ServicesFormatter::orderSelectedServices($this->services, $flowKey),
+            'groupedServices' => \App\Support\ServicesFormatter::orderSelectedServices($this->proposedServices, $flowKey),
         ])->extends('layouts.main')
             ->section('content');
     }
@@ -524,5 +576,14 @@ class SellerAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('photo_enhancements', json_encode($this->photo_enhancements ?? []));
         $counterTerm->saveMeta('custom_enhancement', $this->custom_enhancement ?? '');
         $counterTerm->saveMeta('openHouseCount', $this->openHouseCount ?? '');
+
+        // Counter-specific client contact and property fields
+        $counterTerm->saveMeta('counter_client_name', $this->client_name);
+        $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
+        $counterTerm->saveMeta('counter_client_email', $this->client_email);
+        $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
+        $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
+        $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
+        $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
     }
 }

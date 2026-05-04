@@ -59,11 +59,17 @@ class BuyerAgentAuctionCounterTerm extends Component
 
     // Tenant Services
     public $services = [];
+    public $proposedServices = [];
     public bool $other_services_enabled = false;
     public array $other_services = []; // Always initialize as an array
     // public $flat_fee_services = [];
     public $total_flat_fee = 0;
     public $total_marketing_fee = 0;
+
+    // Client Contact Info
+    public $client_name = '';
+    public $client_phone = '';
+    public $client_email = '';
 
 
     // Broker
@@ -226,6 +232,17 @@ public $isListingCreatedByAgent = false;
         $this->property_type = $auction ? ($auction->get->property_type ?? '') : '';
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
 
+        // Always load proposed services from the agent's original bid (immutable reference)
+        $bidData = $pab->get ?? null;
+        if ($bidData) {
+            $rawSvc = is_object($bidData) ? ($bidData->services ?? null) : ($bidData['services'] ?? null);
+            $rawProposed = [];
+            if ($rawSvc !== null) {
+                $rawProposed = is_string($rawSvc) ? (json_decode($rawSvc, true) ?? []) : (is_array($rawSvc) ? $rawSvc : []);
+            }
+            $this->proposedServices = $this->filterServicesToCurrentCatalog(array_values(array_filter((array) $rawProposed)));
+        }
+
         // EDIT MODE: Try load existing active counter term for this buyer (current user) + specific bid.
         // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
         $existing = BuyerCounterTerm::with('meta')
@@ -290,7 +307,7 @@ public $isListingCreatedByAgent = false;
             'bidId'             => $this->bidId,
             'property_type'     => $this->property_type,
             'parent_counter_id' => $this->parent_counter_id,
-            'groupedServices'   => \App\Support\ServicesFormatter::orderSelectedServices($this->services, $flowKey),
+            'groupedServices'   => \App\Support\ServicesFormatter::orderSelectedServices($this->proposedServices, $flowKey),
         ])->extends('layouts.main')
             ->section('content');
     }
@@ -365,6 +382,17 @@ public $isListingCreatedByAgent = false;
         if (isset($m['other_services_enabled'])) {
             $this->other_services_enabled = filter_var($m['other_services_enabled'], FILTER_VALIDATE_BOOLEAN)
                 || $m['other_services_enabled'] === '1';
+        }
+
+        // Counter-specific client contact fields
+        if (array_key_exists('counter_client_name', $m)) {
+            $this->client_name = $m['counter_client_name'];
+        }
+        if (array_key_exists('counter_client_phone', $m)) {
+            $this->client_phone = $m['counter_client_phone'];
+        }
+        if (array_key_exists('counter_client_email', $m)) {
+            $this->client_email = $m['counter_client_email'];
         }
     }
     public function submit()
@@ -502,5 +530,10 @@ public $isListingCreatedByAgent = false;
         if ($this->isListingCreatedByAgent) {
             $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
         }
+
+        // Counter-specific client contact fields
+        $counterTerm->saveMeta('counter_client_name', $this->client_name);
+        $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
+        $counterTerm->saveMeta('counter_client_email', $this->client_email);
     }
 }

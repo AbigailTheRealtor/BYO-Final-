@@ -100,7 +100,7 @@
             @endif
 
             <div class="tab-pane fade {{ $activeTab === $additionalDetailsTabIndex ? 'show active' : '' }}">
-                                @include('livewire.landlord-agent-auction-bid-tabs.commission-based.additional-details')
+                                @include('livewire.landlord-agent-auction-bid-counter-tabs.additional-details')
             </div>
 
             <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}" id="services">

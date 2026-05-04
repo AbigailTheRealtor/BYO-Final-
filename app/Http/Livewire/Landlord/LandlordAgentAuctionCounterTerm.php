@@ -30,8 +30,20 @@ class LandlordAgentAuctionCounterTerm extends Component
     public $additional_details;
 
     public $services = [];
+    public $proposedServices = [];
     public bool $other_services_enabled = false;
     public array $other_services = []; // Always initialize as an array
+
+    // Client Contact Info
+    public $client_name = '';
+    public $client_phone = '';
+    public $client_email = '';
+
+    // Client Property Address
+    public $client_property_address = '';
+    public $client_property_city = '';
+    public $client_property_state = '';
+    public $client_property_zip = '';
 
     // ===== Broker Lease Fee (Residential + Commercial shared selector) =====
     public $purchase_fee_type = '';
@@ -453,6 +465,17 @@ class LandlordAgentAuctionCounterTerm extends Component
             $this->property_type = $pab->get->property_type ?? '';
         }
 
+        // Always load proposed services from the agent's original bid (immutable reference)
+        $agentBid = \App\Models\LandlordAgentAuctionBid::with('meta')->find($bidId);
+        if ($agentBid) {
+            $agentMeta = $agentBid->meta->pluck('meta_value', 'meta_key')->toArray();
+            if (isset($agentMeta['services'])) {
+                $raw = $agentMeta['services'];
+                $rawProposed = is_string($raw) ? (json_decode($raw, true) ?? []) : (is_array($raw) ? $raw : []);
+                $this->proposedServices = array_values(array_filter((array) $rawProposed));
+            }
+        }
+
         $currentUserId = \Illuminate\Support\Facades\Auth::id();
 
         // EDIT MODE: Look for an active counter (status=1) THIS USER already submitted for this bid.
@@ -655,6 +678,29 @@ class LandlordAgentAuctionCounterTerm extends Component
         $this->showEnhancements = !empty($this->photo_enhancements)
             || in_array('Provide digital photo enhancements', $this->services);
         $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
+
+        // Counter-specific client contact and property fields
+        if (array_key_exists('counter_client_name', $m)) {
+            $this->client_name = $m['counter_client_name'];
+        }
+        if (array_key_exists('counter_client_phone', $m)) {
+            $this->client_phone = $m['counter_client_phone'];
+        }
+        if (array_key_exists('counter_client_email', $m)) {
+            $this->client_email = $m['counter_client_email'];
+        }
+        if (array_key_exists('counter_property_address', $m)) {
+            $this->client_property_address = $m['counter_property_address'];
+        }
+        if (array_key_exists('counter_property_city', $m)) {
+            $this->client_property_city = $m['counter_property_city'];
+        }
+        if (array_key_exists('counter_property_state', $m)) {
+            $this->client_property_state = $m['counter_property_state'];
+        }
+        if (array_key_exists('counter_property_zip', $m)) {
+            $this->client_property_zip = $m['counter_property_zip'];
+        }
     }
 
     public function render()
@@ -665,7 +711,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             'bidId'           => $this->bidId,
             'property_type'   => $this->property_type,
             'parent_counter_id' => $this->parent_counter_id,
-            'groupedServices' => \App\Support\ServicesFormatter::orderSelectedServices($this->services, $flowKey),
+            'groupedServices' => \App\Support\ServicesFormatter::orderSelectedServices($this->proposedServices, $flowKey),
         ])->extends('layouts.main')
             ->section('content');
     }
@@ -857,5 +903,14 @@ class LandlordAgentAuctionCounterTerm extends Component
         if ($this->isListingCreatedByAgent) {
             $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
         }
+
+        // Counter-specific client contact and property fields
+        $counterTerm->saveMeta('counter_client_name', $this->client_name);
+        $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
+        $counterTerm->saveMeta('counter_client_email', $this->client_email);
+        $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
+        $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
+        $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
+        $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
     }
 }
