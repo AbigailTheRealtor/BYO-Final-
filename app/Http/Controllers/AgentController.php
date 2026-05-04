@@ -508,15 +508,19 @@ class AgentController extends Controller
         $auction = null;
         $role    = null;
 
+        // Admins may view any listing regardless of ownership (oversight access).
+        $isAdmin = Auth::user()?->user_type === 'admin';
+
         // Prefer an explicit role discriminator passed via query string to avoid
         // cross-table ID collisions (each role table uses its own auto-increment).
         $requestedRole = request()->query('role');
         if ($requestedRole && isset($roleMap[$requestedRole])) {
             $modelClass = $roleMap[$requestedRole];
-            $found = $modelClass::where('id', $id)
-                ->where('user_id', $uid)
-                ->with('meta')
-                ->first();
+            $query = $modelClass::where('id', $id)->with('meta');
+            if (!$isAdmin) {
+                $query->where('user_id', $uid);
+            }
+            $found = $query->first();
             if ($found) {
                 $auction = $found;
                 $role    = $requestedRole;
@@ -526,10 +530,11 @@ class AgentController extends Controller
         // Fall back to priority-order search when no role discriminator provided.
         if (!$auction) {
             foreach ($roleMap as $r => $modelClass) {
-                $found = $modelClass::where('id', $id)
-                    ->where('user_id', $uid)
-                    ->with('meta')
-                    ->first();
+                $query = $modelClass::where('id', $id)->with('meta');
+                if (!$isAdmin) {
+                    $query->where('user_id', $uid);
+                }
+                $found = $query->first();
                 if ($found) {
                     $auction = $found;
                     $role    = $r;
