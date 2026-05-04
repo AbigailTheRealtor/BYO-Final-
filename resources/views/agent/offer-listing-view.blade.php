@@ -39,13 +39,16 @@
      * for every key that has already been explicitly mapped.
      */
     $getMeta = function(string $key, $default = null) use ($d, $meta) {
-        if (array_key_exists($key, $d) && $d[$key] !== '' && $d[$key] !== null && $d[$key] !== []) {
+        if (array_key_exists($key, $d) && $d[$key] !== '' && $d[$key] !== null && $d[$key] !== [] && $d[$key] !== '[]') {
             return $d[$key];
         }
         $raw = $meta[$key] ?? null;
-        if ($raw === null || $raw === '') return $default;
+        if ($raw === null || $raw === '' || $raw === '[]' || $raw === '{}') return $default;
         $decoded = json_decode($raw, true);
-        return (json_last_error() === JSON_ERROR_NONE) ? $decoded : $raw;
+        if (json_last_error() === JSON_ERROR_NONE) {
+            return (is_array($decoded) && empty($decoded)) ? $default : $decoded;
+        }
+        return $raw;
     };
 @endphp
 
@@ -220,7 +223,7 @@
     @php $ofv::row('Other Air Conditioning', $fmt($d['other_air_conditioning'])); @endphp
     @if(!empty($d['floor_covering'])) @php $ofv::tags('Floor Covering', $d['floor_covering']); @endphp @endif
     @php $ofv::row('Other Floor Covering', $fmt($d['other_floor_covering'])); @endphp
-    @if(!empty($d['laundry_features'])) @php $ofv::row('Laundry Features', $fmt($d['laundry_features'])); @endphp @endif
+    @if(!empty($d['laundry_features'])) @php $ofv::tags('Laundry Features', $d['laundry_features']); @endphp @endif
     @php $ofv::row('Other Laundry Features', $fmt($d['other_laundry_features'])); @endphp
     @if(!empty($d['security_features'])) @php $ofv::tags('Security Features', $d['security_features']); @endphp @endif
     @php $ofv::row('Other Security Features', $fmt($d['other_security_features'])); @endphp
@@ -229,7 +232,7 @@
     @php $ofv::row('Other Water', $fmt($d['other_water'])); @endphp
     @if(!empty($d['sewer'])) @php $ofv::tags('Sewer', $d['sewer']); @endphp @endif
     @php $ofv::row('Other Sewer', $fmt($d['other_sewer'])); @endphp
-    @php $ofv::row('Utilities', $fmt(is_array($d['utilities']) ? implode(', ', $d['utilities']) : $d['utilities'])); @endphp
+    @if(!empty($d['utilities'])) @php $ofv::tags('Utilities', $d['utilities']); @endphp @endif
     @php $ofv::row('Other Utilities', $fmt($d['other_utilities'])); @endphp
     @if(!empty($d['property_utilities'])) @php $ofv::tags('Property Utilities', $d['property_utilities']); @endphp @endif
     @php $ofv::row('Other Property Utilities', $fmt($d['other_property_utilities'])); @endphp
@@ -274,9 +277,9 @@
     @endif
     @if($isLandlord || $isTenant)
     {{-- Commercial space details --}}
-    @php $ofv::row('Space Type', $fmt($d['space_type'])); @endphp
+    @php $ofv::row('Space Type', $fmtArr($d['space_type']) ?? $fmt(is_string($d['space_type']) ? $d['space_type'] : null)); @endphp
     @php $ofv::row('Other Space Type', $fmt($d['other_space_type'])); @endphp
-    @php $ofv::row('Space Classification', $fmt($d['space_classification'])); @endphp
+    @php $ofv::row('Space Classification', $fmtArr($d['space_classification']) ?? $fmt(is_string($d['space_classification']) ? $d['space_classification'] : null)); @endphp
     @php $ofv::row('Other Space Classification', $fmt($d['other_space_classification'])); @endphp
     @if(!empty($d['space_features'])) @php $ofv::tags('Space Features', $d['space_features']); @endphp @endif
     @php $ofv::row('Office / Retail Sq Ft', $d['office_retail_sqft'] ? number_format((float)$d['office_retail_sqft']) . ' sq ft' : null); @endphp
@@ -308,12 +311,13 @@
     @endif
     @php $ofv::row('Number of Units', $fmt($getMeta('number_of_unit') ?? $getMeta('number_of_units'))); @endphp
     @php $ofv::row('Other No. of Units', $fmt($d['number_of_unit_other'])); @endphp
-    @php $ofv::row('No. of Unit Types', $fmt($d['number_of_unit_type'])); @endphp
+    @if(!empty($d['number_of_unit_type'])) @php $ofv::tags('No. of Unit Types', $d['number_of_unit_type']); @endphp @endif
     @php $ofv::row('Other Unit Type', $fmt($d['number_of_unit_type_other'])); @endphp
     @php $ofv::row('Unit Number', $fmt($d['unit_number'])); @endphp
     @php $ofv::row('Unit Buildings', $fmt($d['unit_buildings'])); @endphp
 
-    @if(!empty($d['unit_type_configurations']))
+    @php $hasValidUnitRows = !empty($d['unit_type_configurations']) && collect($d['unit_type_configurations'])->contains(fn($uc) => is_array($uc) && !empty(array_filter($uc, fn($v) => $v !== '' && $v !== null))); @endphp
+    @if($hasValidUnitRows)
     <div class="col-12">
         <div class="text-muted small mb-1">Unit Type Configurations</div>
         <div class="table-responsive">
@@ -348,7 +352,7 @@
     @php $ofv::row('Other Sale Includes', $fmt($d['other_sale_includes'])); @endphp
     @if(!empty($d['business_assets'])) @php $ofv::tags('Business Assets', $d['business_assets']); @endphp @endif
     @php $ofv::row('Other Business Type', $fmt($d['other_business_type'])); @endphp
-    @php $ofv::row('Assets', $fmt(is_array($d['assets']) ? implode(', ', array_filter($d['assets'])) : $d['assets'])); @endphp
+    @if(!empty($d['assets'])) @php $ofv::tags('Assets', $d['assets']); @endphp @endif
     @php $ofv::row('Other Assets', $fmt($d['assets_other'])); @endphp
 
     @php $ofv::sectionEnd(); @endphp
@@ -775,7 +779,7 @@
     {{-- 6. TAX, LEGAL, HOA & DISCLOSURES (Seller only)               --}}
     
     @if(($isSeller || $isLandlord) && ($d['parcel_id'] || $d['annual_property_taxes'] || $d['has_hoa'] || $d['seller_disclosure_available'] || $d['landlord_disclosure_available'] || $d['flood_zone_code']))
-    @php $ofv::section('fa-solid fa-scale-balanced', 'Tax, Legal, HOA &amp; Disclosures'); @endphp
+    @php $ofv::section('fa-solid fa-scale-balanced', 'Tax, Legal, HOA & Disclosures'); @endphp
 
     {{-- Tax / Legal --}}
     @php $ofv::row('Parcel ID', $fmt($d['parcel_id'])); @endphp
@@ -895,7 +899,7 @@
     $hasBrokerSection = $d['commission_structure'] || $d['lease_fee_type'] || $d['purchase_fee_type'] || $d['protection_period'] || $d['brokerage_relationship'] || !empty($d['services']) || !empty($d['services_snapshot']);
     @endphp
     @if($hasBrokerSection)
-    @php $ofv::section('fa-solid fa-handshake-angle', 'Broker Compensation &amp; Services'); @endphp
+    @php $ofv::section('fa-solid fa-handshake-angle', 'Broker Compensation & Services'); @endphp
 
     @php $ofv::row('Commission Structure', $fmt($d['commission_structure'])); @endphp
     @php $ofv::row('Brokerage Relationship', $fmt($d['brokerage_relationship'])); @endphp
@@ -968,7 +972,7 @@
     @php $ofv::tags('Selected Services', $d['services']); @endphp
     @endif
     @if(!empty($d['flat_fee_services'])) @php $ofv::tags('Flat-Fee Services', $d['flat_fee_services']); @endphp @endif
-    @php $ofv::row('Other Services', $fmt(is_array($d['other_services']) ? implode(', ', array_filter($d['other_services'])) : $d['other_services'])); @endphp
+    @if(!empty($d['other_services'])) @php $ofv::tags('Other Services', $d['other_services']); @endphp @endif
     @endif
 
     @php $ofv::row('Additional Broker Notes', $fmt($d['additional_details_broker'])); @endphp
@@ -1000,7 +1004,7 @@
     $hasMedia = !empty($d['property_photos']) || $d['video_tour_url'] || $d['virtual_tour_url'] || $d['agent_video'] || $d['listing_documents'];
     @endphp
     @if($hasMedia)
-    @php $ofv::section('fa-solid fa-images', 'Photos, Tours &amp; Documents'); @endphp
+    @php $ofv::section('fa-solid fa-images', 'Photos, Tours & Documents'); @endphp
 
     @if(!empty($d['property_photos']))
     <div class="col-12">
