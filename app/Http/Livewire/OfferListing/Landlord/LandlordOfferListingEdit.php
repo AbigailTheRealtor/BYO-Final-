@@ -559,6 +559,133 @@ class LandlordOfferListingEdit extends Component
     public $service_animal = '';
     public $support_animal = '';
 
+    // MLS Property Detail Fields — Residential + Commercial shared
+    public $year_built = '';
+    public $heating_fuel = [];
+    public $other_heating_fuel = '';
+    public $air_conditioning = [];
+    public $other_air_conditioning = '';
+    public $water = [];
+    public $other_water = '';
+    public $sewer = [];
+    public $other_sewer = '';
+    public $property_utilities = [];
+    public $other_property_utilities = '';
+
+    // MLS Property Detail Fields — Residential only
+    public $laundry_features = [];
+    public $other_laundry_features = '';
+    public $floor_covering = [];
+    public $other_floor_covering = '';
+    public $security_features = [];
+    public $other_security_features = '';
+
+    // MLS Property Detail Fields — Commercial only
+    public $zoning = '';
+    public $total_buildings = '';
+    public $total_units_on_property = '';
+    public $office_retail_sqft = '';
+    public $flex_space_sqft = '';
+    public $road_surface_type = [];
+    public $other_road_surface_type = '';
+    public $electrical_service = [];
+    public $other_electrical_service = '';
+    public $ceiling_height = '';
+    public $building_features = [];
+    public $other_building_features = '';
+    public $number_electric_meters = '';
+    public $number_water_meters = '';
+    public $number_gas_meters = '';
+    public $space_type = [];
+    public $other_space_type = '';
+    public $space_classification = [];
+    public $other_space_classification = '';
+    public $number_of_restrooms = '';
+    public $number_of_offices = '';
+    public $number_of_conference_rooms = '';
+
+    // Tax, Legal, HOA & Disclosures
+    public $parcel_id = '';
+    public $tax_year = '';
+    public $annual_property_taxes = '';
+    public $additional_parcels = '';
+    public $total_parcel_count = '';
+    public $additional_parcel_ids = '';
+    public $legal_description = '';
+    public $flood_zone_code = '';
+    public $flood_zone_code_other = '';
+    public $flood_insurance_required = '';
+    public $flood_zone_panel = '';
+    public $has_cdd = '';
+    public $annual_cdd_fee = '';
+    public $has_special_assessments = '';
+    public $special_assessment_amount = '';
+    public $special_assessment_description = '';
+    public $has_hoa = '';
+    public $association_type = '';
+    public $association_type_other = '';
+    public $association_name = '';
+    public $association_fee_amount = '';
+    public $association_fee_frequency = '';
+    public $association_fee_frequency_other = '';
+    public $association_approval_required = '';
+    public $association_approval_process = '';
+    public $association_application_fee = '';
+    public $association_fee_includes = [];
+    public $association_fee_includes_other = '';
+    public $association_amenities = [];
+    public $association_amenities_other = '';
+    public $leasing_restrictions = '';
+    public $min_lease_period = '';
+    public $min_lease_period_other = '';
+    public $max_leases_per_year = '';
+    public $additional_lease_restrictions = '';
+    public $pet_restrictions = '';
+    public $pet_restrictions_detail = '';
+
+    // Documents & Disclosures
+    public $landlord_disclosure_available = '';
+    public $survey_available = '';
+    public $inspection_report_available = '';
+    public $hoa_condo_docs_available = '';
+    public $flood_disclosure_available = '';
+    public $lead_based_paint_disclosure = '';
+    public $environmental_report_available = '';
+    public $additional_documents = [];
+    public $other_document_type = '';
+
+    // Disclosure file uploads (temporary Livewire upload objects)
+    public $landlord_disclosure_file;
+    public $survey_file;
+    public $inspection_report_file;
+    public $hoa_condo_docs_file;
+    public $flood_disclosure_file;
+    public $lead_based_paint_file;
+    public $environmental_report_file;
+
+    // Disclosure file stored paths (persisted via meta)
+    public $landlord_disclosure_file_path = '';
+    public $survey_file_path = '';
+    public $inspection_report_file_path = '';
+    public $hoa_condo_docs_file_path = '';
+    public $flood_disclosure_file_path = '';
+    public $lead_based_paint_file_path = '';
+    public $environmental_report_file_path = '';
+
+    // Photos, Tours & Documents
+    public $propertyPhotos = [];
+    public $newPropertyPhotos = [];
+    public $videoTourUrl = '';
+    public $virtualTourUrl = '';
+    public $listingDocuments = null;
+
+    // Misc visibility flags and other
+    public $commercial_lease_type_other = '';
+    public $is_other_tenant_pay_visible = false;
+    public $is_other_owner_pays_visible = false;
+    public $is_rent_include_visible = false;
+    public $is_other_appliances_visible = false;
+
     // Enable/disable checkboxes
     public $enable = [
         // Marketing & Promotion
@@ -1472,6 +1599,10 @@ class LandlordOfferListingEdit extends Component
             $this->other_lease_term = $auction->get->other_lease_term ?? null;
             $this->other_rent_include = $auction->get->other_rent_include ?? null;
 
+            $this->is_other_tenant_pay_visible = is_array($this->tenant_pays) && in_array('Other', $this->tenant_pays);
+            $this->is_other_owner_pays_visible = is_array($this->owner_pays) && in_array('Other', $this->owner_pays);
+            $this->is_rent_include_visible = is_array($this->rent_includes) && in_array('Other', $this->rent_includes);
+            $this->is_other_appliances_visible = is_array($this->appliances) && in_array('Other', $this->appliances);
 
             $this->garage_needed = $auction->get->garage_needed ?? null;
             $this->other_garage_needed = $auction->get->other_garage_needed ?? null;
@@ -1755,6 +1886,136 @@ class LandlordOfferListingEdit extends Component
             $this->service_animal = $auction->get->service_animal ?? null;
             $this->support_animal = $auction->get->support_animal ?? null;
 
+            // MLS Property Detail Fields
+            $this->year_built = $auction->get->year_built ?? '';
+            $raw = $auction->get->heating_fuel ?? null;
+            $this->heating_fuel = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_heating_fuel = $auction->get->other_heating_fuel ?? '';
+            $raw = $auction->get->air_conditioning ?? null;
+            $this->air_conditioning = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_air_conditioning = $auction->get->other_air_conditioning ?? '';
+            $raw = $auction->get->water ?? null;
+            $this->water = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_water = $auction->get->other_water ?? '';
+            $raw = $auction->get->sewer ?? null;
+            $this->sewer = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_sewer = $auction->get->other_sewer ?? '';
+            $raw = $auction->get->property_utilities ?? null;
+            $this->property_utilities = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_property_utilities = $auction->get->other_property_utilities ?? '';
+            $raw = $auction->get->laundry_features ?? null;
+            $this->laundry_features = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_laundry_features = $auction->get->other_laundry_features ?? '';
+            $raw = $auction->get->floor_covering ?? null;
+            $this->floor_covering = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_floor_covering = $auction->get->other_floor_covering ?? '';
+            $raw = $auction->get->security_features ?? null;
+            $this->security_features = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_security_features = $auction->get->other_security_features ?? '';
+            $this->zoning = $auction->get->zoning ?? '';
+            $this->total_buildings = $auction->get->total_buildings ?? '';
+            $this->total_units_on_property = $auction->get->total_units_on_property ?? '';
+            $this->office_retail_sqft = $auction->get->office_retail_sqft ?? '';
+            $this->flex_space_sqft = $auction->get->flex_space_sqft ?? '';
+            $raw = $auction->get->road_surface_type ?? null;
+            $this->road_surface_type = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_road_surface_type = $auction->get->other_road_surface_type ?? '';
+            $raw = $auction->get->electrical_service ?? null;
+            $this->electrical_service = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_electrical_service = $auction->get->other_electrical_service ?? '';
+            $this->ceiling_height = $auction->get->ceiling_height ?? '';
+            $raw = $auction->get->building_features ?? null;
+            $this->building_features = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_building_features = $auction->get->other_building_features ?? '';
+            $this->number_electric_meters = $auction->get->number_electric_meters ?? '';
+            $this->number_water_meters = $auction->get->number_water_meters ?? '';
+            $this->number_gas_meters = $auction->get->number_gas_meters ?? '';
+            $raw = $auction->get->space_type ?? null;
+            $this->space_type = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_space_type = $auction->get->other_space_type ?? '';
+            $raw = $auction->get->space_classification ?? null;
+            $this->space_classification = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_space_classification = $auction->get->other_space_classification ?? '';
+            $this->number_of_restrooms = $auction->get->number_of_restrooms ?? '';
+            $this->number_of_offices = $auction->get->number_of_offices ?? '';
+            $this->number_of_conference_rooms = $auction->get->number_of_conference_rooms ?? '';
+
+            // Tax, Legal, HOA & Disclosures
+            $this->parcel_id = $auction->get->parcel_id ?? '';
+            $this->tax_year = $auction->get->tax_year ?? '';
+            $this->annual_property_taxes = $auction->get->annual_property_taxes ?? '';
+            $this->additional_parcels = $auction->get->additional_parcels ?? '';
+            $this->total_parcel_count = $auction->get->total_parcel_count ?? '';
+            $this->additional_parcel_ids = $auction->get->additional_parcel_ids ?? '';
+            $this->legal_description = $auction->get->legal_description ?? '';
+            $this->flood_zone_code = $auction->get->flood_zone_code ?? '';
+            $this->flood_zone_code_other = $auction->get->flood_zone_code_other ?? '';
+            $this->flood_insurance_required = $auction->get->flood_insurance_required ?? '';
+            $this->flood_zone_panel = $auction->get->flood_zone_panel ?? '';
+            $this->has_cdd = $auction->get->has_cdd ?? '';
+            $this->annual_cdd_fee = $auction->get->annual_cdd_fee ?? '';
+            $this->has_special_assessments = $auction->get->has_special_assessments ?? '';
+            $this->special_assessment_amount = $auction->get->special_assessment_amount ?? '';
+            $this->special_assessment_description = $auction->get->special_assessment_description ?? '';
+            $this->has_hoa = $auction->get->has_hoa ?? '';
+            $this->association_type = $auction->get->association_type ?? '';
+            $this->association_type_other = $auction->get->association_type_other ?? '';
+            $this->association_name = $auction->get->association_name ?? '';
+            $this->association_fee_amount = $auction->get->association_fee_amount ?? '';
+            $this->association_fee_frequency = $auction->get->association_fee_frequency ?? '';
+            $this->association_fee_frequency_other = $auction->get->association_fee_frequency_other ?? '';
+            $this->association_approval_required = $auction->get->association_approval_required ?? '';
+            $this->association_approval_process = $auction->get->association_approval_process ?? '';
+            $this->association_application_fee = $auction->get->association_application_fee ?? '';
+            $raw = $auction->get->association_fee_includes ?? null;
+            $this->association_fee_includes = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->association_fee_includes_other = $auction->get->association_fee_includes_other ?? '';
+            $raw = $auction->get->association_amenities ?? null;
+            $this->association_amenities = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->association_amenities_other = $auction->get->association_amenities_other ?? '';
+            $this->leasing_restrictions = $auction->get->leasing_restrictions ?? '';
+            $this->min_lease_period = $auction->get->min_lease_period ?? '';
+            $this->min_lease_period_other = $auction->get->min_lease_period_other ?? '';
+            $this->max_leases_per_year = $auction->get->max_leases_per_year ?? '';
+            $this->additional_lease_restrictions = $auction->get->additional_lease_restrictions ?? '';
+            $this->pet_restrictions = $auction->get->pet_restrictions ?? '';
+            $this->pet_restrictions_detail = $auction->get->pet_restrictions_detail ?? '';
+
+            // Documents & Disclosures
+            $this->landlord_disclosure_available = $auction->get->landlord_disclosure_available ?? '';
+            $this->survey_available = $auction->get->survey_available ?? '';
+            $this->inspection_report_available = $auction->get->inspection_report_available ?? '';
+            $this->hoa_condo_docs_available = $auction->get->hoa_condo_docs_available ?? '';
+            $this->flood_disclosure_available = $auction->get->flood_disclosure_available ?? '';
+            $this->lead_based_paint_disclosure = $auction->get->lead_based_paint_disclosure ?? '';
+            $this->environmental_report_available = $auction->get->environmental_report_available ?? '';
+            $raw = $auction->get->additional_documents ?? null;
+            $this->additional_documents = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
+            $this->other_document_type = $auction->get->other_document_type ?? '';
+
+            // Disclosure file stored paths
+            $this->landlord_disclosure_file_path  = $auction->get->landlord_disclosure_file_path ?? '';
+            $this->survey_file_path               = $auction->get->survey_file_path ?? '';
+            $this->inspection_report_file_path    = $auction->get->inspection_report_file_path ?? '';
+            $this->hoa_condo_docs_file_path        = $auction->get->hoa_condo_docs_file_path ?? '';
+            $this->flood_disclosure_file_path     = $auction->get->flood_disclosure_file_path ?? '';
+            $this->lead_based_paint_file_path     = $auction->get->lead_based_paint_file_path ?? '';
+            $this->environmental_report_file_path = $auction->get->environmental_report_file_path ?? '';
+
+            // Photos, Tours & Documents
+            $rawPhotos = $auction->get->property_photos ?? null;
+            if (is_array($rawPhotos)) {
+                $this->propertyPhotos = $rawPhotos;
+            } elseif (is_string($rawPhotos) && $rawPhotos !== '') {
+                $decoded = json_decode($rawPhotos, true);
+                $this->propertyPhotos = is_array($decoded) ? $decoded : [$rawPhotos];
+            } else {
+                $this->propertyPhotos = [];
+            }
+            $this->videoTourUrl = $auction->get->video_tour_url ?? '';
+            $this->virtualTourUrl = $auction->get->virtual_tour_url ?? '';
+            $this->listingDocuments = $auction->get->listing_documents ?? null;
+
             // Lease-Option Agreement Compensation
             $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? null;
             $this->lease_type = $auction->get->lease_type ?? 'percent';
@@ -1819,6 +2080,7 @@ class LandlordOfferListingEdit extends Component
             $this->landlord_approval_conditions = $auction->get->landlord_approval_conditions ?? '';
             $this->additional_landlord_lease_terms = $auction->get->additional_landlord_lease_terms ?? '';
             $this->commercial_lease_type = $auction->get->commercial_lease_type ?? '';
+            $this->commercial_lease_type_other = $auction->get->commercial_lease_type_other ?? '';
             $this->cam_nnn_additional_rent_charges = $auction->get->cam_nnn_additional_rent_charges ?? '';
             $this->rent_escalation_terms = $auction->get->rent_escalation_terms ?? '';
             $this->tenant_improvement_buildout_terms = $auction->get->tenant_improvement_buildout_terms ?? '';
@@ -2328,6 +2590,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('landlord_approval_conditions', $this->landlord_approval_conditions);
         $auction->saveMeta('additional_landlord_lease_terms', $this->additional_landlord_lease_terms);
         $auction->saveMeta('commercial_lease_type', $this->commercial_lease_type);
+        $auction->saveMeta('commercial_lease_type_other', $this->commercial_lease_type_other);
         $auction->saveMeta('cam_nnn_additional_rent_charges', $this->cam_nnn_additional_rent_charges);
         $auction->saveMeta('rent_escalation_terms', $this->rent_escalation_terms);
         $auction->saveMeta('tenant_improvement_buildout_terms', $this->tenant_improvement_buildout_terms);
@@ -2336,6 +2599,147 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('commercial_parking_terms', $this->commercial_parking_terms);
         $auction->saveMeta('personal_guarantee_requirement', $this->personal_guarantee_requirement);
         $auction->saveMeta('commercial_approval_conditions', $this->commercial_approval_conditions);
+
+        // MLS Property Detail Fields
+        $auction->saveMeta('year_built', $this->year_built);
+        $auction->saveMeta('heating_fuel', json_encode($this->heating_fuel));
+        $auction->saveMeta('other_heating_fuel', $this->other_heating_fuel);
+        $auction->saveMeta('air_conditioning', json_encode($this->air_conditioning));
+        $auction->saveMeta('other_air_conditioning', $this->other_air_conditioning);
+        $auction->saveMeta('water', json_encode($this->water));
+        $auction->saveMeta('other_water', $this->other_water);
+        $auction->saveMeta('sewer', json_encode($this->sewer));
+        $auction->saveMeta('other_sewer', $this->other_sewer);
+        $auction->saveMeta('property_utilities', json_encode($this->property_utilities));
+        $auction->saveMeta('other_property_utilities', $this->other_property_utilities);
+        $auction->saveMeta('laundry_features', json_encode($this->laundry_features));
+        $auction->saveMeta('other_laundry_features', $this->other_laundry_features);
+        $auction->saveMeta('floor_covering', json_encode($this->floor_covering));
+        $auction->saveMeta('other_floor_covering', $this->other_floor_covering);
+        $auction->saveMeta('security_features', json_encode($this->security_features));
+        $auction->saveMeta('other_security_features', $this->other_security_features);
+        $auction->saveMeta('zoning', $this->zoning);
+        $auction->saveMeta('total_buildings', $this->total_buildings);
+        $auction->saveMeta('total_units_on_property', $this->total_units_on_property);
+        $auction->saveMeta('office_retail_sqft', $this->office_retail_sqft);
+        $auction->saveMeta('flex_space_sqft', $this->flex_space_sqft);
+        $auction->saveMeta('road_surface_type', json_encode($this->road_surface_type));
+        $auction->saveMeta('other_road_surface_type', $this->other_road_surface_type);
+        $auction->saveMeta('electrical_service', json_encode($this->electrical_service));
+        $auction->saveMeta('other_electrical_service', $this->other_electrical_service);
+        $auction->saveMeta('ceiling_height', $this->ceiling_height);
+        $auction->saveMeta('building_features', json_encode($this->building_features));
+        $auction->saveMeta('other_building_features', $this->other_building_features);
+        $auction->saveMeta('number_electric_meters', $this->number_electric_meters);
+        $auction->saveMeta('number_water_meters', $this->number_water_meters);
+        $auction->saveMeta('number_gas_meters', $this->number_gas_meters);
+        $auction->saveMeta('space_type', json_encode($this->space_type));
+        $auction->saveMeta('other_space_type', $this->other_space_type);
+        $auction->saveMeta('space_classification', json_encode($this->space_classification));
+        $auction->saveMeta('other_space_classification', $this->other_space_classification);
+        $auction->saveMeta('number_of_restrooms', $this->number_of_restrooms);
+        $auction->saveMeta('number_of_offices', $this->number_of_offices);
+        $auction->saveMeta('number_of_conference_rooms', $this->number_of_conference_rooms);
+
+        // Tax, Legal, HOA & Disclosures
+        $auction->saveMeta('parcel_id', $this->parcel_id);
+        $auction->saveMeta('tax_year', $this->tax_year);
+        $auction->saveMeta('annual_property_taxes', $this->stripCommas($this->annual_property_taxes));
+        $auction->saveMeta('additional_parcels', $this->additional_parcels);
+        $auction->saveMeta('total_parcel_count', $this->total_parcel_count);
+        $auction->saveMeta('additional_parcel_ids', $this->additional_parcel_ids);
+        $auction->saveMeta('legal_description', $this->legal_description);
+        $auction->saveMeta('flood_zone_code', $this->flood_zone_code);
+        $auction->saveMeta('flood_zone_code_other', $this->flood_zone_code_other);
+        $auction->saveMeta('flood_insurance_required', $this->flood_insurance_required);
+        $auction->saveMeta('flood_zone_panel', $this->flood_zone_panel);
+        $auction->saveMeta('has_cdd', $this->has_cdd);
+        $auction->saveMeta('annual_cdd_fee', $this->stripCommas($this->annual_cdd_fee));
+        $auction->saveMeta('has_special_assessments', $this->has_special_assessments);
+        $auction->saveMeta('special_assessment_amount', $this->stripCommas($this->special_assessment_amount));
+        $auction->saveMeta('special_assessment_description', $this->special_assessment_description);
+        $auction->saveMeta('has_hoa', $this->has_hoa);
+        $auction->saveMeta('association_type', $this->association_type);
+        $auction->saveMeta('association_type_other', $this->association_type_other);
+        $auction->saveMeta('association_name', $this->association_name);
+        $auction->saveMeta('association_fee_amount', $this->stripCommas($this->association_fee_amount));
+        $auction->saveMeta('association_fee_frequency', $this->association_fee_frequency);
+        $auction->saveMeta('association_fee_frequency_other', $this->association_fee_frequency_other);
+        $auction->saveMeta('association_approval_required', $this->association_approval_required);
+        $auction->saveMeta('association_approval_process', $this->association_approval_process);
+        $auction->saveMeta('association_application_fee', $this->stripCommas($this->association_application_fee));
+        $auction->saveMeta('association_fee_includes', json_encode($this->association_fee_includes));
+        $auction->saveMeta('association_fee_includes_other', $this->association_fee_includes_other);
+        $auction->saveMeta('association_amenities', json_encode($this->association_amenities));
+        $auction->saveMeta('association_amenities_other', $this->association_amenities_other);
+        $auction->saveMeta('leasing_restrictions', $this->leasing_restrictions);
+        $auction->saveMeta('min_lease_period', $this->min_lease_period);
+        $auction->saveMeta('min_lease_period_other', $this->min_lease_period_other);
+        $auction->saveMeta('max_leases_per_year', $this->max_leases_per_year);
+        $auction->saveMeta('additional_lease_restrictions', $this->additional_lease_restrictions);
+        $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
+        $auction->saveMeta('pet_restrictions_detail', $this->pet_restrictions_detail);
+
+        // Documents & Disclosures
+        $auction->saveMeta('landlord_disclosure_available', $this->landlord_disclosure_available);
+        $auction->saveMeta('survey_available', $this->survey_available);
+        $auction->saveMeta('inspection_report_available', $this->inspection_report_available);
+        $auction->saveMeta('hoa_condo_docs_available', $this->hoa_condo_docs_available);
+        $auction->saveMeta('flood_disclosure_available', $this->flood_disclosure_available);
+        $auction->saveMeta('lead_based_paint_disclosure', $this->lead_based_paint_disclosure);
+        $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
+        $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
+        $auction->saveMeta('other_document_type', $this->other_document_type);
+
+        // Disclosure file uploads
+        $disclosureUploads = [
+            ['file' => 'landlord_disclosure_file',  'path' => 'landlord_disclosure_file_path',  'dir' => 'landlord-disclosure'],
+            ['file' => 'survey_file',               'path' => 'survey_file_path',               'dir' => 'survey'],
+            ['file' => 'inspection_report_file',    'path' => 'inspection_report_file_path',    'dir' => 'inspection-report'],
+            ['file' => 'hoa_condo_docs_file',       'path' => 'hoa_condo_docs_file_path',       'dir' => 'hoa-condo-docs'],
+            ['file' => 'flood_disclosure_file',     'path' => 'flood_disclosure_file_path',     'dir' => 'flood-disclosure'],
+            ['file' => 'lead_based_paint_file',     'path' => 'lead_based_paint_file_path',     'dir' => 'lead-based-paint'],
+            ['file' => 'environmental_report_file', 'path' => 'environmental_report_file_path', 'dir' => 'environmental-report'],
+        ];
+        foreach ($disclosureUploads as $item) {
+            $fileVal  = $this->{$item['file']};
+            $pathProp = $item['path'];
+            if ($fileVal && !is_string($fileVal)) {
+                $ext      = $fileVal->getClientOriginalExtension();
+                $uuid     = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $dir      = 'landlord-disclosures/' . $auction->id . '/' . $item['dir'];
+                Storage::disk('public')->makeDirectory($dir);
+                $fileVal->storeAs($dir, $fileName, 'public');
+                $storedPath        = $dir . '/' . $fileName;
+                $this->{$pathProp} = $storedPath;
+                $auction->saveMeta($pathProp, $storedPath);
+            } elseif ($this->{$pathProp}) {
+                $auction->saveMeta($pathProp, $this->{$pathProp});
+            }
+        }
+
+        // Photos, Tours & Documents
+        $auction->saveMeta('video_tour_url', $this->videoTourUrl ?? '');
+        $auction->saveMeta('virtual_tour_url', $this->virtualTourUrl ?? '');
+        if (!empty($this->propertyPhotos)) {
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+        if ($this->listingDocuments && !is_string($this->listingDocuments)) {
+            $allowedMimes = ['application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg', 'image/png'];
+            if (in_array($this->listingDocuments->getMimeType(), $allowedMimes)) {
+                $ext = $this->listingDocuments->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                Storage::disk('public')->makeDirectory('auction/documents');
+                $this->listingDocuments->storeAs('auction/documents', $fileName, 'public');
+                $auction->saveMeta('listing_documents', $fileName);
+            }
+        } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
+            $auction->saveMeta('listing_documents', $this->listingDocuments);
+        }
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
