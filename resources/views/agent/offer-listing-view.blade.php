@@ -140,8 +140,8 @@
     @endif
     @endif
 
-    @php $ofv::row('Bedrooms', $d['bedrooms'] ?: ($d['other_bedrooms'] ?: null)); @endphp
-    @php $ofv::row('Bathrooms', $d['bathrooms'] ?: ($d['other_bathrooms'] ?: null)); @endphp
+    @php $ofv::row('Bedrooms', $fmt($getMeta('bedrooms') ?? $getMeta('other_bedrooms'))); @endphp
+    @php $ofv::row('Bathrooms', $fmt($getMeta('bathrooms') ?? $getMeta('other_bathrooms'))); @endphp
     @php $ofv::row('Min. Heated Sq Ft', $d['minimum_heated_square'] ? number_format((float)$d['minimum_heated_square']) . ' sq ft' : null); @endphp
     @php $ofv::row('Total Sq Ft', $d['total_square_feet'] ? number_format((float)$d['total_square_feet']) . ' sq ft' : null); @endphp
     @php $ofv::row('Sq Ft Source', $fmt($d['sqft_heated_source'])); @endphp
@@ -178,7 +178,7 @@
     @php $ofv::row('Garage', $fmt($d['garage_needed'])); @endphp
     @php $ofv::row('Other Garage', $fmt($d['other_garage_needed'])); @endphp
     @php $ofv::row('Garage Spaces', $fmt($d['garage_parking_spaces'])); @endphp
-    @php $ofv::row('Garage Spaces Option', $fmt($d['garage_parking_spaces_option'] ?: $d['garage_parking_spaces_option_buyer'] ?: null)); @endphp
+    @php $ofv::row('Garage Spaces Option', $fmt($getMeta('garage_parking_spaces_option') ?? $getMeta('garage_parking_spaces_option_buyer'))); @endphp
     @php $ofv::row('Carport', $fmt($d['carport_needed'])); @endphp
     @php $ofv::row('Other Carport', $fmt($d['other_carport_needed'])); @endphp
     @php $ofv::row('Parking', $fmt($d['parking_needed'])); @endphp
@@ -194,7 +194,7 @@
     @if(!empty($d['appliances']))
     @php $ofv::tags('Appliances', $d['appliances']); @endphp
     @endif
-    @php $ofv::row('Other Appliances', $fmt($d['other_appliances'] ?: $d['appliances_other'] ?: null)); @endphp
+    @php $ofv::row('Other Appliances', $fmt($getMeta('other_appliances') ?? $getMeta('appliances_other'))); @endphp
     @if(!empty($d['non_negotiable_amenities']))
     @php $ofv::tags('Non-Negotiable Amenities', $d['non_negotiable_amenities']); @endphp
     @endif
@@ -214,7 +214,7 @@
     @if(!empty($d['foundation'])) @php $ofv::tags('Foundation', $d['foundation']); @endphp @endif
     @php $ofv::row('Other Foundation', $fmt($d['other_foundation'])); @endphp
     @if(!empty($d['heating_and_fuel'])) @php $ofv::tags('Heating & Fuel', $d['heating_and_fuel']); @endphp @endif
-    @php $ofv::row('Other Heating & Fuel', $fmt($d['other_heating_and_fuel'] ?: $d['other_heating_fuel'] ?: null)); @endphp
+    @php $ofv::row('Other Heating & Fuel', $fmt($getMeta('other_heating_and_fuel') ?? $getMeta('other_heating_fuel'))); @endphp
     @if(!empty($d['heating_fuel'])) @php $ofv::tags('Heating Fuel', $d['heating_fuel']); @endphp @endif
     @if(!empty($d['air_conditioning'])) @php $ofv::tags('Air Conditioning', $d['air_conditioning']); @endphp @endif
     @php $ofv::row('Other Air Conditioning', $fmt($d['other_air_conditioning'])); @endphp
@@ -241,7 +241,7 @@
     @php $ofv::row('Other Electrical Service', $fmt($d['other_electrical_service'])); @endphp
     @php $ofv::row('Ceiling Height', $fmt($d['ceiling_height'])); @endphp
     @if(!empty($d['building_features'])) @php $ofv::tags('Building Features', $d['building_features']); @endphp @endif
-    @php $ofv::row('Other Building Features', $fmt($d['other_building_features'] ?: $d['other_building_features_txt'] ?: null)); @endphp
+    @php $ofv::row('Other Building Features', $fmt($getMeta('other_building_features') ?? $getMeta('other_building_features_txt'))); @endphp
     @php $ofv::row('Water Meters', $fmt($d['number_water_meters'])); @endphp
     @php $ofv::row('Electric Meters', $fmt($d['number_electric_meters'])); @endphp
     @php $ofv::row('Gas Meters', $fmt($d['number_gas_meters'])); @endphp
@@ -306,7 +306,7 @@
     @if($d['real_estate_purchase'])
     @php $ofv::row('Real Estate Purchase', $fmt($d['real_estate_purchase'])); @endphp
     @endif
-    @php $ofv::row('Number of Units', $fmt($d['number_of_unit'] ?: $d['number_of_units'] ?: null)); @endphp
+    @php $ofv::row('Number of Units', $fmt($getMeta('number_of_unit') ?? $getMeta('number_of_units'))); @endphp
     @php $ofv::row('Other No. of Units', $fmt($d['number_of_unit_other'])); @endphp
     @php $ofv::row('No. of Unit Types', $fmt($d['number_of_unit_type'])); @endphp
     @php $ofv::row('Other Unit Type', $fmt($d['number_of_unit_type_other'])); @endphp
@@ -439,15 +439,15 @@
     @php $ofv::row('Rent Frequency', $fmt($d['lease_amount_frequency'])); @endphp
     @if(!empty($d['desired_lease_length'])) @php $ofv::tags('Desired Lease Length', $d['desired_lease_length']); @endphp @endif
     @php $ofv::row('Lease Type', $fmt($d['lease_type'])); @endphp
-    @php $ofv::row('Other Lease Type', $fmt($d['lease_type_other'] ?: $d['other_lease_type'] ?: null)); @endphp
+    @php $ofv::row('Other Lease Type', $fmt($getMeta('lease_type_other') ?? $getMeta('other_lease_type'))); @endphp
     @php $ofv::row('Custom Lease Term', $fmt($d['custom_lease_term'])); @endphp
     @if(!empty($d['rent_includes'])) @php $ofv::tags('Rent Includes', $d['rent_includes']); @endphp @endif
     @php $ofv::row('Other Rent Includes', $fmt($d['other_rent_include'])); @endphp
     @if(!empty($d['terms_of_lease'])) @php $ofv::tags('Lease Terms', $d['terms_of_lease']); @endphp @endif
     @if(!empty($d['tenant_pays'])) @php $ofv::tags('Tenant Pays', $d['tenant_pays']); @endphp @endif
-    @php $ofv::row('Other Tenant Pays', $fmt($d['tenant_pays_other'] ?: $d['other_tenant_pays'] ?: null)); @endphp
+    @php $ofv::row('Other Tenant Pays', $fmt($getMeta('tenant_pays_other') ?? $getMeta('other_tenant_pays'))); @endphp
     @if(!empty($d['owner_pays'])) @php $ofv::tags('Owner Pays', $d['owner_pays']); @endphp @endif
-    @php $ofv::row('Other Owner Pays', $fmt($d['owner_pays_other'] ?: $d['other_owner_pays'] ?: null)); @endphp
+    @php $ofv::row('Other Owner Pays', $fmt($getMeta('owner_pays_other') ?? $getMeta('other_owner_pays'))); @endphp
     @php $ofv::row('Occupant Types', $fmt($d['occupant_types'])); @endphp
     @php $ofv::row('Occupant Types (Tenant)', $fmt($d['occupant_types_tenant'])); @endphp
     @php $ofv::row('Lease Available Date', $fmtDate($d['lease_available_date'])); @endphp
@@ -483,7 +483,7 @@
     @php $ofv::badge('Signage Rights', $fmtBool($d['signage_rights'])); @endphp
     @php $ofv::row('Permitted Use / Restrictions', $fmt($d['permitted_use_restrictions'])); @endphp
     @php $ofv::row('Rent Escalation Terms', $fmt($d['rent_escalation_terms'])); @endphp
-    @php $ofv::row('Buildout / Tenant Improvement', $fmt($d['buildout_tenant_improvement_request'] ?: $d['tenant_improvement_buildout_terms'] ?: null)); @endphp
+    @php $ofv::row('Buildout / Tenant Improvement', $fmt($getMeta('buildout_tenant_improvement_request') ?? $getMeta('tenant_improvement_buildout_terms'))); @endphp
     @php $ofv::row('Personal Guarantee', $fmt($d['personal_guarantee_requirement'])); @endphp
     @php $ofv::row('Split Payment Due', $fmt($d['split_payment_due'])); @endphp
     @php $ofv::row('Split Payment Due (Other)', $fmt($d['split_payment_due_other'])); @endphp
@@ -509,9 +509,9 @@
     @php $ofv::row('Other Rent Includes', $fmt($d['other_rent_include'])); @endphp
     @if(!empty($d['terms_of_lease'])) @php $ofv::tags('Lease Terms', $d['terms_of_lease']); @endphp @endif
     @if(!empty($d['tenant_pays'])) @php $ofv::tags('Tenant Pays', $d['tenant_pays']); @endphp @endif
-    @php $ofv::row('Other Tenant Pays', $fmt($d['tenant_pays_other'] ?: $d['other_tenant_pays'] ?: null)); @endphp
+    @php $ofv::row('Other Tenant Pays', $fmt($getMeta('tenant_pays_other') ?? $getMeta('other_tenant_pays'))); @endphp
     @if(!empty($d['owner_pays'])) @php $ofv::tags('Owner Pays', $d['owner_pays']); @endphp @endif
-    @php $ofv::row('Other Owner Pays', $fmt($d['owner_pays_other'] ?: $d['other_owner_pays'] ?: null)); @endphp
+    @php $ofv::row('Other Owner Pays', $fmt($getMeta('owner_pays_other') ?? $getMeta('other_owner_pays'))); @endphp
     @if(!empty($d['lease_for'])) @php $ofv::tags('Lease For', $d['lease_for']); @endphp @endif
     @php $ofv::row('Other Lease For', $fmt($d['other_lease_for'])); @endphp
     @php $ofv::row('Move-In Date', $fmtDate($d['lease_date'])); @endphp
@@ -530,7 +530,7 @@
     @php $ofv::row('CAM / NNN Preference', $fmt($d['cam_nnn_preference'])); @endphp
     @php $ofv::row('Commercial Parking Needs', $fmt($d['commercial_parking_access_needs'])); @endphp
     @php $ofv::row('Intended Business Use', $fmt($d['intended_business_use'])); @endphp
-    @php $ofv::row('Business Type', $fmt($d['business_type'] ?: $d['business_type_selected'] ?: null)); @endphp
+    @php $ofv::row('Business Type', $fmt($getMeta('business_type') ?? $getMeta('business_type_selected'))); @endphp
     @php $ofv::badge('Signage Request', $fmtBool($d['signage_request'])); @endphp
     @php $ofv::row('Personal Guarantee Preference', $fmt($d['personal_guarantee_preference'])); @endphp
     @php $ofv::row('Rent Escalation Preference', $fmt($d['rent_escalation_preference'])); @endphp
@@ -616,9 +616,9 @@
     @php $ofv::row('Conditions', $fmt($d['lease_option_conditions'])); @endphp
     @php $ofv::row('Option Fee Required', $fmtBool($d['has_option_fee'])); @endphp
     @php $ofv::row('Option Fee Amount', $d['option_fee_amount'] ? '$' . number_format((float)str_replace(',', '', $d['option_fee_amount'])) : null); @endphp
-    @php $ofv::row('Rent Credit', $fmt($d['seller_lease_option_fee_credit'] ?: $d['lease_option_fee_credit'] ?: null)); @endphp
-    @php $ofv::row('Maintenance Responsibility', $fmt($d['seller_lease_option_maintenance'] ?: $d['lease_option_maintenance'] ?: null)); @endphp
-    @php $ofv::row('Extension Terms', $fmt($d['seller_lease_option_extension_terms'] ?: $d['lease_option_extension_terms'] ?: null)); @endphp
+    @php $ofv::row('Rent Credit', $fmt($getMeta('seller_lease_option_fee_credit') ?? $getMeta('lease_option_fee_credit'))); @endphp
+    @php $ofv::row('Maintenance Responsibility', $fmt($getMeta('seller_lease_option_maintenance') ?? $getMeta('lease_option_maintenance'))); @endphp
+    @php $ofv::row('Extension Terms', $fmt($getMeta('seller_lease_option_extension_terms') ?? $getMeta('lease_option_extension_terms'))); @endphp
     @endif
 
     {{-- Lease Purchase --}}
@@ -762,7 +762,7 @@
     @php $ofv::row('Felony Explanation', $fmt($d['prior_felony_explanation'])); @endphp
     @endif
     @php $ofv::row('Monthly Income', $d['monthly_income'] ? '$' . number_format((float)str_replace(',', '', $d['monthly_income'])) : null); @endphp
-    @php $ofv::row('Number of Occupants', $fmt($d['number_occupant'] ?: $d['number_of_occupants'] ?: null)); @endphp
+    @php $ofv::row('Number of Occupants', $fmt($getMeta('number_occupant') ?? $getMeta('number_of_occupants'))); @endphp
     @php $ofv::badge('Screening Concerns', $fmtBool($d['screening_concerns'])); @endphp
     @php $ofv::row('Screening Concerns Details', $fmt($d['screening_concerns_explanation'])); @endphp
     @endif
