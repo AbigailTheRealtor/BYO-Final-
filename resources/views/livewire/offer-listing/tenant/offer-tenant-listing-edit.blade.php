@@ -1825,14 +1825,13 @@
                             </div>
                         @endif
 
-                        <!-- Services Tab - Adjust index based on user_type -->
+                        <!-- Services Tab - Adjust index based on user_type (excluded for tenant) -->
 
+                        @if ($user_type !== 'tenant')
                         <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
 
-                            @if ($user_type === 'tenant')
-                                @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
-                            @elseif($user_type === 'seller')
+                            @if ($user_type === 'seller')
                                 @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
                             @elseif($user_type === 'buyer')
                                 @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
@@ -1840,10 +1839,11 @@
                                 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
                             @endif
                         </div>
+                        @endif
 
                         <!-- Additional Details Tab - Adjust index based on user_type -->
 
-                        <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
+                        <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller', 'tenant']) ? 4 : 5) ? 'show active' : '' }}"
                             id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                             @if ($user_type === 'tenant')
@@ -1857,14 +1857,13 @@
                             @endif
                         </div>
 
-                        <!-- Broker Compensation Tab - Adjust index based on user_type -->
+                        <!-- Broker Compensation Tab - Adjust index based on user_type (excluded for tenant) -->
 
+                        @if ($user_type !== 'tenant')
                         <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
                             id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
-                            @if ($user_type === 'tenant')
-                                @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
-                            @elseif($user_type === 'seller')
+                            @if ($user_type === 'seller')
                                 @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
                             @elseif($user_type === 'buyer')
                                 @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
@@ -1872,9 +1871,10 @@
                                 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
                             @endif
                         </div>
+                        @endif
 
-                        <!-- Referral & Cooperation Terms Tab - Agent only -->
-                        @if ($isAgentUser)
+                        <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant -->
+                        @if ($isAgentUser && $user_type !== 'tenant')
                         <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
                             id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
                             <div class="p-3">
@@ -1905,9 +1905,11 @@
                                 'landlord' => 'landlord-information',
                                 default => 'tenant-information'
                             };
-                            $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller'])
-                                ? ($isAgentUser ? 7 : 6)
-                                : ($isAgentUser ? 8 : 7);
+                            $infoTabIndex = $user_type === 'tenant'
+                                ? 5
+                                : (in_array($user_type, ['landlord', 'buyer', 'seller'])
+                                    ? ($isAgentUser ? 7 : 6)
+                                    : ($isAgentUser ? 8 : 7));
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                             id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
@@ -4097,11 +4099,12 @@
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                if (iconClass && !input.previousElementSibling?.classList.contains('input-icon')) {
-                    const icon = document.createElement('i');
-                    icon.className = `input-icon ${iconClass}`;
-                    input.parentNode.insertBefore(icon, input);
-                }
+                const parent = input.parentNode;
+                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
+                if (parent.querySelector(':scope > .input-icon')) return;
+                const icon = document.createElement('i');
+                icon.className = `input-icon ${iconClass}`;
+                parent.insertBefore(icon, input);
             });
         }
 
@@ -4118,6 +4121,10 @@
                 saveBtn.disabled = isRepresented;
             }
         }
+
+        document.addEventListener('livewire:load', function() {
+            addIconsToInputs();
+        });
 
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
