@@ -1,0 +1,110 @@
+URGENT SAFE TASK — Fix Landlord Offer Listing Edit Component Missing 110 Fields
+
+Issue:
+LandlordOfferListingEdit.php is missing ~110 fields that exist in LandlordOfferListing.php.
+
+This causes:
+- MLS Property Details not loading
+- “Other” inputs not persisting
+- Data being silently lost on update
+- Draft/edit flow broken
+
+Confirmed:
+The blade and JS are correct.
+The Edit component is missing properties, load logic, and save logic.
+
+Reference:
+Use LandlordOfferListing.php as the source of truth.
+
+----------------------------------
+SCOPE
+----------------------------------
+
+ONLY:
+- app/Http/Livewire/OfferListing/Landlord/LandlordOfferListingEdit.php
+
+Do NOT touch:
+- Create component
+- Blade UI
+- JS toggle logic
+- Other roles (Seller/Buyer/Tenant)
+- Database schema
+
+----------------------------------
+TASKS
+----------------------------------
+
+1. PROPERTY DECLARATIONS
+
+Copy ALL missing public properties from:
+LandlordOfferListing.php (lines ~575–625)
+
+Into:
+LandlordOfferListingEdit.php
+
+Including:
+- water / other_water
+- security_features / other_security_features
+- all MLS property fields (~39)
+- tax/legal/HOA fields (~30)
+- tenancy rules (~8)
+- photos/docs fields (~28)
+
+----------------------------------
+
+2. LOAD LOGIC
+
+In loadAuctionData():
+
+Add assignments for ALL missing fields.
+
+Match pattern used in create component:
+- JSON decode arrays where needed
+- assign scalar values directly
+
+----------------------------------
+
+3. SAVE LOGIC
+
+In update() and saveDraft():
+
+Add missing saveMeta() calls for ALL fields.
+
+Ensure:
+- arrays are json_encoded
+- scalars saved directly
+- other_* fields saved correctly
+
+----------------------------------
+
+4. DO NOT BREAK EXISTING DATA
+
+- Only add missing fields
+- Do not rename keys
+- Do not overwrite existing logic
+- Do not remove anything
+
+----------------------------------
+
+5. TESTING
+
+Create listing:
+- Fill Water “Other”
+- Fill Security Features “Other”
+- Fill multiple MLS fields
+- Save draft
+
+Edit listing:
+- Confirm all values load correctly
+- Change values
+- Save again
+- Reload
+- Confirm values persist
+
+----------------------------------
+
+RETURN:
+- Number of fields added
+- Sections fixed (MLS, HOA, Docs, etc.)
+- Confirmation Water/Other works in edit
+- Confirmation no data loss on save
