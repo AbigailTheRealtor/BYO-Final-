@@ -131,6 +131,96 @@
         padding-right: 1rem;
     }
     .comp-table td:last-child { color: #1a1a1a; }
+    /* ── Profile field labels ── */
+    .preview-field-label {
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: #6c757d;
+        margin-bottom: .2rem;
+    }
+    .preview-field-value {
+        font-size: .92rem;
+        color: #1a1a1a;
+        line-height: 1.6;
+    }
+    /* ── Highlight grid ── */
+    .preview-highlight-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+    .preview-highlight-card {
+        background: #f0fafa;
+        border: 1px solid #c8e8ea;
+        border-radius: 8px;
+        padding: .75rem 1rem;
+        text-align: center;
+    }
+    .preview-highlight-card .phc-value {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #049399;
+        line-height: 1.1;
+    }
+    .preview-highlight-card .phc-label {
+        font-size: .75rem;
+        color: #5a7a82;
+        margin-top: .2rem;
+    }
+    /* ── Review block ── */
+    .preview-review-block {
+        background: #f8f9fa;
+        border-left: 4px solid #049399;
+        border-radius: 6px;
+        padding: .9rem 1.1rem;
+        font-size: .9rem;
+        color: #333;
+        line-height: 1.6;
+        margin-bottom: .75rem;
+    }
+    .preview-review-block:last-child { margin-bottom: 0; }
+    /* ── Video embed ── */
+    .preview-video-wrap {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+        border-radius: 8px;
+        background: #000;
+    }
+    .preview-video-wrap iframe {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        border: 0;
+    }
+    /* ── Link pill ── */
+    .preview-link-pill {
+        display: inline-block;
+        background: #f0fafa;
+        border: 1px solid #c8e8ea;
+        border-radius: 20px;
+        padding: .25rem .75rem;
+        font-size: .82rem;
+        color: #049399;
+        text-decoration: none;
+        margin: .2rem .2rem .2rem 0;
+        word-break: break-all;
+    }
+    .preview-link-pill:hover { background: #e0f5f5; color: #036b70; }
+    /* ── Availability tag ── */
+    .preview-avail-tag {
+        display: inline-block;
+        background: #e8f7f7;
+        color: #036b70;
+        border-radius: 20px;
+        padding: .2rem .65rem;
+        font-size: .82rem;
+        font-weight: 600;
+        margin: .15rem .15rem 0 0;
+    }
     /* ── Notice block ── */
     .process-notice {
         background: #f0fafa;
@@ -266,6 +356,83 @@
 
     @else
 
+        @php
+            $pd = $profile->profile_data ?? [];
+
+            // Agent Overview extras
+            $pdWhatSetsYouApart  = $mapped['what_sets_you_apart'] ?? '';
+            $pdAdditionalDetails = $mapped['additional_details']  ?? '';
+
+            // Credentials
+            $pdYearLicensed        = $mapped['year_licensed']        ?? '';
+            $pdBrokerageRelationship = $mapped['brokerage_relationship'] ?? '';
+
+            // Quick Highlights
+            $pdYearsExperience       = $pd['years_experience']           ?? '';
+            $pdTransactions          = $pd['transactions_last_12_months'] ?? null;
+            $pdAvgResponseTime       = $pd['avg_response_time']           ?? '';
+            $pdIsFullTime            = $pd['is_full_time']                ?? '';
+
+            // Areas Served
+            $pdPrimaryAreas      = $pd['primary_areas_served']    ?? '';
+            $pdCitiesServed      = $pd['cities_served']            ?? '';
+            $pdCountiesServed    = $pd['counties_served']          ?? '';
+            $pdNeighborhoods     = $pd['neighborhoods_served']     ?? '';
+            $pdAreasNotes        = $pd['areas_notes']              ?? '';
+
+            // Presentation & Links — normalize array fields (may be stored as newline string)
+            $normalizeLinks = function($val) {
+                if (is_array($val)) {
+                    return array_values(array_filter(array_map('trim', $val)));
+                }
+                if (is_string($val) && $val !== '') {
+                    return array_values(array_filter(array_map('trim', explode("\n", str_replace("\r", '', $val)))));
+                }
+                return [];
+            };
+            $pdWebsiteLinks    = $normalizeLinks($mapped['website_link']   ?? ($pd['website_link']   ?? []));
+            $pdSocialMedia     = $normalizeLinks($mapped['social_media']   ?? ($pd['social_media']   ?? []));
+            $pdReviewsLinks    = $normalizeLinks($mapped['reviews_links']  ?? ($pd['reviews_links']  ?? []));
+            $pdPresentationLink = $mapped['presentation_link'] ?? '';
+            $pdBusinessCardLink = $mapped['business_card_link'] ?? '';
+            $pdPresentationUpload = $pd['presentation_upload_path'] ?? '';
+            $pdBusinessCardUpload = $pd['business_card_upload_path'] ?? '';
+
+            // Social Proof
+            $pdReviews = array_values(array_filter([
+                $pd['review_1'] ?? '',
+                $pd['review_2'] ?? '',
+                $pd['review_3'] ?? '',
+            ], fn($r) => trim($r) !== ''));
+            $pdAwards = $pd['awards_recognition'] ?? '';
+
+            // Video Intro — use canonical VideoEmbedHelper for consistency
+            $pdVideoUrl     = $pd['intro_video_url'] ?? '';
+            $pdVideoCaption = $pd['video_caption']   ?? '';
+            $pdEmbedUrl = $pdVideoUrl !== ''
+                ? \App\Support\VideoEmbedHelper::getEmbedUrl($pdVideoUrl)
+                : null;
+
+            // Boolean-ish normalization helper (handles 'yes','1',1,true → true)
+            $boolTrue = fn($v) => in_array(strtolower((string)$v), ['yes','1','true'], true);
+
+            // Quick Highlights — normalize is_full_time
+            $pdIsFullTimeNorm = '';
+            if (!empty($pdIsFullTime)) {
+                $pdIsFullTimeNorm = $boolTrue($pdIsFullTime) ? 'Full-Time' : 'Part-Time';
+            }
+
+            // Availability & Service Style — normalize boolean fields
+            $pdAvailabilityStatus    = $pd['availability_status']      ?? '';
+            $pdEveningsAvailableRaw  = $pd['evenings_available']       ?? '';
+            $pdWeekendsAvailableRaw  = $pd['weekends_available']       ?? '';
+            $pdEveningsAvailable     = $boolTrue($pdEveningsAvailableRaw);
+            $pdWeekendsAvailable     = $boolTrue($pdWeekendsAvailableRaw);
+            $pdHasFlexibleHours      = !empty($pdEveningsAvailableRaw) || !empty($pdWeekendsAvailableRaw);
+            $pdCommunicationStyle    = $pd['communication_style']      ?? '';
+            $pdPreferredContact      = $pd['preferred_contact_method']  ?? '';
+        @endphp
+
         {{-- ── Agent overview sections ─────────────────────────────── --}}
         @if(!empty($mapped['bio']))
         <div class="preview-section">
@@ -290,6 +457,319 @@
             <div class="preview-section-header"><i class="fa-solid fa-chart-line"></i> Marketing Plan</div>
             <div class="preview-section-body">
                 <div class="bio-block">{{ $mapped['marketing_plan'] }}</div>
+            </div>
+        </div>
+        @endif
+
+        @if(!empty($pdWhatSetsYouApart))
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-lightbulb"></i> What Sets Me Apart</div>
+            <div class="preview-section-body">
+                <div class="bio-block">{{ $pdWhatSetsYouApart }}</div>
+            </div>
+        </div>
+        @endif
+
+        @if(!empty($pdAdditionalDetails))
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-circle-info"></i> Additional Details</div>
+            <div class="preview-section-body">
+                <div class="bio-block">{{ $pdAdditionalDetails }}</div>
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Agent Credentials ────────────────────────────────────── --}}
+        @php
+            $hasCredentials = !empty($agentLicense) || !empty($mapped['nar_id'])
+                || !empty($pdYearLicensed) || !empty($pdBrokerageRelationship);
+        @endphp
+        @if($hasCredentials)
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-id-card"></i> Agent Credentials</div>
+            <div class="preview-section-body">
+                <div class="row g-3">
+                    @if(!empty($agentLicense))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">License Number</div>
+                        <div class="preview-field-value">{{ $agentLicense }}</div>
+                    </div>
+                    @endif
+                    @if(!empty($mapped['nar_id']))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">NAR ID</div>
+                        <div class="preview-field-value">{{ $mapped['nar_id'] }}</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdYearLicensed))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Year Licensed</div>
+                        <div class="preview-field-value">{{ $pdYearLicensed }}</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdBrokerageRelationship))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Brokerage Relationship</div>
+                        <div class="preview-field-value">{{ $pdBrokerageRelationship }}</div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Quick Highlights ─────────────────────────────────────── --}}
+        @php
+            $hasHighlights = !empty($pdYearsExperience)
+                || ($pdTransactions !== null && $pdTransactions !== '')
+                || !empty($pdAvgResponseTime)
+                || !empty($pdIsFullTimeNorm);
+        @endphp
+        @if($hasHighlights)
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-star"></i> Quick Highlights</div>
+            <div class="preview-section-body">
+                <div class="preview-highlight-grid">
+                    @if(!empty($pdYearsExperience))
+                    <div class="preview-highlight-card">
+                        <div class="phc-value">{{ $pdYearsExperience }}</div>
+                        <div class="phc-label">Years Experience</div>
+                    </div>
+                    @endif
+                    @if($pdTransactions !== null && $pdTransactions !== '')
+                    <div class="preview-highlight-card">
+                        <div class="phc-value">{{ $pdTransactions }}</div>
+                        <div class="phc-label">Transactions (Last 12 Mo.)</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdAvgResponseTime))
+                    <div class="preview-highlight-card">
+                        <div class="phc-value" style="font-size:1.05rem;">{{ $pdAvgResponseTime }}</div>
+                        <div class="phc-label">Avg. Response Time</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdIsFullTimeNorm))
+                    <div class="preview-highlight-card">
+                        <div class="phc-value" style="font-size:1.05rem;">{{ $pdIsFullTimeNorm }}</div>
+                        <div class="phc-label">Agent Status</div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Areas Served ──────────────────────────────────────────── --}}
+        @php
+            $hasAreas = !empty($pdPrimaryAreas) || !empty($pdCitiesServed)
+                || !empty($pdCountiesServed) || !empty($pdNeighborhoods) || !empty($pdAreasNotes);
+        @endphp
+        @if($hasAreas)
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-map-marker-alt"></i> Areas Served</div>
+            <div class="preview-section-body">
+                @if(!empty($pdPrimaryAreas))
+                <div class="mb-3">
+                    <div class="preview-field-label">Primary Areas</div>
+                    <div class="preview-field-value">{{ $pdPrimaryAreas }}</div>
+                </div>
+                @endif
+                @if(!empty($pdCitiesServed))
+                <div class="mb-3">
+                    <div class="preview-field-label">Cities</div>
+                    <div class="preview-field-value">{{ $pdCitiesServed }}</div>
+                </div>
+                @endif
+                @if(!empty($pdCountiesServed))
+                <div class="mb-3">
+                    <div class="preview-field-label">Counties</div>
+                    <div class="preview-field-value">{{ $pdCountiesServed }}</div>
+                </div>
+                @endif
+                @if(!empty($pdNeighborhoods))
+                <div class="mb-3">
+                    <div class="preview-field-label">Neighborhoods</div>
+                    <div class="preview-field-value">{{ $pdNeighborhoods }}</div>
+                </div>
+                @endif
+                @if(!empty($pdAreasNotes))
+                <div class="mb-0">
+                    <div class="preview-field-label">Additional Notes</div>
+                    <div class="preview-field-value">{{ $pdAreasNotes }}</div>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Presentation & Links ──────────────────────────────────── --}}
+        @php
+            $hasPresentationUpload = !empty($pdPresentationUpload);
+            $hasBusinessCardUpload = !empty($pdBusinessCardUpload);
+            $hasLinks = $hasPresentationUpload || !empty($pdPresentationLink)
+                || $hasBusinessCardUpload || !empty($pdBusinessCardLink)
+                || count($pdWebsiteLinks) > 0
+                || count($pdSocialMedia) > 0
+                || count($pdReviewsLinks) > 0;
+        @endphp
+        @if($hasLinks)
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-link"></i> Presentation &amp; Links</div>
+            <div class="preview-section-body">
+                @if($hasPresentationUpload || !empty($pdPresentationLink))
+                <div class="mb-3">
+                    <div class="preview-field-label">Presentation</div>
+                    @if($hasPresentationUpload)
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                           target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                            <i class="fa-solid fa-file-lines me-1"></i>View Presentation
+                        </a>
+                    @elseif(!empty($pdPresentationLink))
+                        <a href="{{ $pdPresentationLink }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                            <i class="fa-solid fa-file-lines me-1"></i>View Presentation
+                        </a>
+                    @endif
+                </div>
+                @endif
+                @if($hasBusinessCardUpload || !empty($pdBusinessCardLink))
+                <div class="mb-3">
+                    <div class="preview-field-label">Business Card / Headshot</div>
+                    @if($hasBusinessCardUpload)
+                        <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                           target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                            <i class="fa-solid fa-id-card me-1"></i>View Business Card
+                        </a>
+                    @elseif(!empty($pdBusinessCardLink))
+                        <a href="{{ $pdBusinessCardLink }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                            <i class="fa-solid fa-id-card me-1"></i>View Business Card
+                        </a>
+                    @endif
+                </div>
+                @endif
+                @if(count($pdWebsiteLinks) > 0)
+                <div class="mb-3">
+                    <div class="preview-field-label">Website{{ count($pdWebsiteLinks) > 1 ? 's' : '' }}</div>
+                    <div style="display:flex;flex-direction:column;gap:.25rem;">
+                        @foreach($pdWebsiteLinks as $url)
+                        <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill" style="display:block;width:fit-content;">
+                            <i class="fa-solid fa-globe me-1"></i>{{ $url }}
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                @if(count($pdSocialMedia) > 0)
+                <div class="mb-3">
+                    <div class="preview-field-label">Social Media</div>
+                    <div style="display:flex;flex-direction:column;gap:.25rem;">
+                        @foreach($pdSocialMedia as $url)
+                        <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill" style="display:block;width:fit-content;">
+                            <i class="fa-solid fa-share-alt me-1"></i>{{ $url }}
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+                @if(count($pdReviewsLinks) > 0)
+                <div class="mb-0">
+                    <div class="preview-field-label">Review Links</div>
+                    <div style="display:flex;flex-direction:column;gap:.25rem;">
+                        @foreach($pdReviewsLinks as $url)
+                        <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill" style="display:block;width:fit-content;">
+                            <i class="fa-solid fa-star me-1"></i>{{ $url }}
+                        </a>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Social Proof ──────────────────────────────────────────── --}}
+        @if(count($pdReviews) > 0 || !empty($pdAwards))
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-quote-left"></i> Social Proof</div>
+            <div class="preview-section-body">
+                @foreach($pdReviews as $review)
+                <div class="preview-review-block">
+                    <i class="fa-solid fa-quote-left text-muted me-2" style="font-size:.75rem;"></i>{{ $review }}
+                </div>
+                @endforeach
+                @if(!empty($pdAwards))
+                <div class="{{ count($pdReviews) > 0 ? 'mt-3' : '' }}">
+                    <div class="preview-field-label">Awards &amp; Recognition</div>
+                    <div class="preview-field-value">{{ $pdAwards }}</div>
+                </div>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Video Intro ───────────────────────────────────────────── --}}
+        @if(!empty($pdVideoUrl))
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-play-circle"></i> Video Intro</div>
+            <div class="preview-section-body">
+                @if($pdEmbedUrl)
+                    <div class="preview-video-wrap">
+                        <iframe src="{{ $pdEmbedUrl }}"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowfullscreen></iframe>
+                    </div>
+                @else
+                    <a href="{{ $pdVideoUrl }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                        <i class="fa-solid fa-external-link me-1"></i>Watch Intro Video
+                    </a>
+                @endif
+                @if(!empty($pdVideoCaption))
+                    <p class="text-muted small mt-2 mb-0">{{ $pdVideoCaption }}</p>
+                @endif
+            </div>
+        </div>
+        @endif
+
+        {{-- ── Availability & Service Style ─────────────────────────── --}}
+        @php
+            $hasAvail = !empty($pdAvailabilityStatus) || $pdHasFlexibleHours
+                || !empty($pdCommunicationStyle) || !empty($pdPreferredContact);
+        @endphp
+        @if($hasAvail)
+        <div class="preview-section">
+            <div class="preview-section-header"><i class="fa-solid fa-calendar-check"></i> Availability &amp; Service Style</div>
+            <div class="preview-section-body">
+                <div class="row g-3">
+                    @if(!empty($pdAvailabilityStatus))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Availability</div>
+                        <span class="preview-avail-tag"><i class="fa-solid fa-circle-check me-1"></i>{{ $pdAvailabilityStatus }}</span>
+                    </div>
+                    @endif
+                    @if(!empty($pdEveningsAvailableRaw))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Evenings Available</div>
+                        <div class="preview-field-value">{{ $pdEveningsAvailable ? 'Yes' : 'No' }}</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdWeekendsAvailableRaw))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Weekends Available</div>
+                        <div class="preview-field-value">{{ $pdWeekendsAvailable ? 'Yes' : 'No' }}</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdCommunicationStyle))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Communication Style</div>
+                        <div class="preview-field-value">{{ $pdCommunicationStyle }}</div>
+                    </div>
+                    @endif
+                    @if(!empty($pdPreferredContact))
+                    <div class="col-sm-6">
+                        <div class="preview-field-label">Preferred Contact</div>
+                        <div class="preview-field-value">{{ $pdPreferredContact }}</div>
+                    </div>
+                    @endif
+                </div>
             </div>
         </div>
         @endif
