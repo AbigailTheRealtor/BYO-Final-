@@ -208,12 +208,7 @@
         ['name' => 'Other', 'class' => 'vacant-land-length', 'id' => 'vacant-land-length-other'],
     ];
 
-    $property_condition_seller = [
-        ['name' => 'Updated/Renovated',  'display' => 'Updated / Renovated'],
-        ['name' => 'Partially Updated',   'display' => 'Partially Updated'],
-        ['name' => 'Older but Clean',     'display' => 'Older but Clean & Well Maintained'],
-        ['name' => 'No Preference',       'display' => 'No Preference'],
-    ];
+    $property_condition_seller = $property_condition_seller ?? [];
 
     $bedroomsRes = [
         ['name' => '1'],
