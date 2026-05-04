@@ -1,0 +1,77 @@
+ROOT FIX REQUIRED — Save Draft/Edit Must Reuse Create Offer Listing UI Exactly
+
+Issue:
+Offer Listing Save Draft/Edit pages are still missing ALL field icons. The edit/draft page is not identical to the create page.
+
+Requirement:
+For every Offer Listing role and property/user type, Save Draft/Edit must use the exact same UI as Create.
+
+Applies to:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+- All property types
+- All tabs
+- Save Draft resume/edit pages
+- Direct edit pages
+
+Observed bug:
+Seller edit/draft Property Details tab shows no teal field icons, while create flow shows icons.
+
+Root cause expectation:
+Edit/draft is likely using duplicated/legacy blades, missing the create flow’s icon wrappers/classes/scripts.
+
+Required fix:
+1. Trace the exact blade partials used by Create for each role.
+2. Trace the exact blade partials used by Save Draft/Edit for each role.
+3. Refactor edit/draft to reuse the same create partials wherever possible.
+4. Do NOT manually patch icons one field at a time unless there is no shared partial available.
+5. Ensure these match create exactly:
+   - field icons
+   - input wrappers
+   - Select2 styling
+   - multi-select styling
+   - currency prefixes
+   - tab styling
+   - spacing
+   - labels
+   - required indicators
+   - tooltips
+   - conditional fields
+6. Apply to Seller, Buyer, Landlord, and Tenant.
+7. Apply across all property/user types inside each role.
+
+Do NOT:
+- Change database schema
+- Change validation rules
+- Touch Hire Agent flows
+- Touch Direct Hire counter forms
+- Change field names
+- Change saved data mapping
+- Change service catalog wording
+- Remove existing Save Draft or Submit behavior
+
+Verification required:
+For Seller, Buyer, Landlord, and Tenant:
+1. Open Create flow.
+2. Fill enough fields to show conditional sections.
+3. Click Save Draft.
+4. Reopen draft/edit URL.
+5. Compare every tab side by side with Create:
+   - Listing Details
+   - Property Details/Preferences
+   - Sale/Purchase/Lease Terms
+   - Additional Details
+   - Tax/Legal/HOA/Disclosures where applicable
+   - Photos & Tours/Documents
+   - Agent Credentials & Contact Info
+   - AI Questions
+6. Confirm ALL icons match create.
+7. Confirm no double icons.
+8. Confirm saved values reload.
+9. Confirm Save Draft still works.
+10. Confirm Submit still works.
+
+Important:
+Do not close this task by saying tabs match. The issue is now full UI parity. Save Draft/Edit must be visually identical to Create.
