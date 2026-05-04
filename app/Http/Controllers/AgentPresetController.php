@@ -570,31 +570,47 @@ class AgentPresetController extends Controller
                 );
             }
 
-            $query = AgentDefaultProfile::where('user_id', $userId)
-                ->where(function ($q) use ($role, $propertyType) {
-                    $q->where('role_type', '!=', $role)
-                      ->orWhere('property_type', '!=', $propertyType);
-                });
-
-            // current_role: apply only to presets of the same role — no cross-role writes.
             if ($scope === 'current_role') {
-                $query->where('role_type', $role);
-            }
-
-            $otherPresets = $query->get();
-
-            foreach ($otherPresets as $otherPreset) {
-                $existing = $otherPreset->profile_data ?? [];
-                foreach ($propagateFields as $field => $value) {
-                    $existing[$field] = $value;
+                // Iterate over ALL known property types for this role and upsert each one.
+                // This ensures missing presets are created rather than silently skipped.
+                // Cross-role isolation is maintained: only records where role_type === $role
+                // are ever written.
+                $allPropertyTypes = AgentPresetCatalog::getPropertyTypes($role);
+                foreach ($allPropertyTypes as $targetPropertyType) {
+                    if ($targetPropertyType === $propertyType) {
+                        // Already saved as the primary preset above — skip.
+                        continue;
+                    }
+                    $targetProfile = AgentDefaultProfile::findForAgent($userId, $role, $targetPropertyType);
+                    $existing = $targetProfile?->profile_data ?? [];
+                    foreach ($propagateFields as $field => $value) {
+                        $existing[$field] = $value;
+                    }
+                    AgentDefaultProfile::upsertForAgent($userId, $role, $targetPropertyType, $existing);
                 }
-                $otherPreset->profile_data = $existing;
-                $otherPreset->save();
+            } else {
+                // all_roles: update only existing presets (leave as-is per task scope).
+                $query = AgentDefaultProfile::where('user_id', $userId)
+                    ->where(function ($q) use ($role, $propertyType) {
+                        $q->where('role_type', '!=', $role)
+                          ->orWhere('property_type', '!=', $propertyType);
+                    });
+
+                $otherPresets = $query->get();
+
+                foreach ($otherPresets as $otherPreset) {
+                    $existing = $otherPreset->profile_data ?? [];
+                    foreach ($propagateFields as $field => $value) {
+                        $existing[$field] = $value;
+                    }
+                    $otherPreset->profile_data = $existing;
+                    $otherPreset->save();
+                }
             }
         }
 
         return redirect()
-            ->route('agent.presets.edit', ['role' => $role, 'propertyType' => $propertyType, 'saved' => 1]);
+            ->route('agent.presets.edit', ['role' => $role, 'propertyType' => $propertyType, 'saved' => 1, 'scope' => $scope]);
     }
 
     public function uploadAvatar(Request $request)

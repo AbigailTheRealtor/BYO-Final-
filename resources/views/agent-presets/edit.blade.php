@@ -311,8 +311,15 @@
     </div>
 
     @if (request()->query('saved'))
+        @php
+            $savedScope = request()->query('scope', 'current_preset');
+        @endphp
         <div class="alert alert-success d-flex align-items-center justify-content-between gap-3 mb-4" role="alert">
-            <span><i class="fa-solid fa-circle-check me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
+            @if ($savedScope === 'current_role')
+                <span><i class="fa-solid fa-circle-check me-1"></i>{{ $roleLabel }} presets saved for all {{ ucfirst($role) }} property types.</span>
+            @else
+                <span><i class="fa-solid fa-circle-check me-1"></i>{{ $roleLabel }} &mdash; {{ $propertyLabel }} preset saved.</span>
+            @endif
             <a href="{{ $hireMeUrl }}" target="_blank" class="btn btn-sm btn-success text-nowrap">
                 <i class="fa-solid fa-eye me-1"></i>Preview Hire Me Page
             </a>
@@ -1964,8 +1971,8 @@
                 </select>
                 <small class="profile-save-scope-hint">
                     <strong>This preset only</strong> — saves all fields to this preset only.<br>
-                    <strong>All {{ ucfirst($role) }} presets</strong> — copies every field (profile, services, compensation, and agreement terms) to all your {{ ucfirst($role) }} property-type presets.<br>
-                    <strong>All roles and property types</strong> — copies only public profile fields (bio, contact info, etc.) across all presets. Services and compensation remain preset-specific.
+                    <strong>All {{ ucfirst($role) }} presets</strong> — creates or updates all your {{ ucfirst($role) }} property-type presets with these profile, services, compensation, and agreement-term settings.<br>
+                    <strong>All roles and property types</strong> — copies only public profile fields (bio, contact info, etc.) across all existing presets. Services and compensation remain preset-specific.
                 </small>
             </div>
 
