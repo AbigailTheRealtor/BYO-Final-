@@ -2118,11 +2118,7 @@
                     return;
                 }
                 var vals = $(selectElement).val() || [];
-                if (vals.includes('Other')) {
-                    otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
-                } else {
-                    otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
-                }
+                otherAmenitiesDiv.style.display = vals.includes('Other') ? '' : 'none';
             }
             // Function to attach the event listener to the bathrooms dropdown
             function attachAmenitiesDropdownListener() {
@@ -2721,6 +2717,61 @@
                     window._wizardBackHandler();
                 }
             });
+        }
+
+        // Submit intercept — validate all required Select2 fields across all tabs before allowing form submit
+        if (!window.__submitInterceptBound) {
+            window.__submitInterceptBound = true;
+            document.addEventListener('click', function(e) {
+                var btn = e.target.closest('.wizard-step-finish');
+                if (!btn) return;
+
+                var select2RequiredMap = {
+                    '#offered_financing': '#offered_financing_error',
+                    '#sale_provision': '#sale_provision_error',
+                    '#appliances': '#appliances_error',
+                };
+
+                // Build ordered list of tab pane IDs from the nav so we can pick the earliest invalid tab
+                var tabPaneOrder = Array.from(document.querySelectorAll('#myTab .nav-link')).map(function(link) {
+                    var target = link.getAttribute('data-bs-target');
+                    return target ? target : null;
+                }).filter(Boolean);
+
+                var invalidTabIds = [];
+
+                Object.keys(select2RequiredMap).forEach(function(selector) {
+                    var $el = $(selector);
+                    if (!$el.length) return;
+                    var val = $el.val();
+                    var errorSpan = document.querySelector(select2RequiredMap[selector]);
+                    if (!val || val.length === 0) {
+                        if (errorSpan) errorSpan.textContent = 'This field is required.';
+                        var pane = $el[0].closest('.tab-pane');
+                        if (pane) invalidTabIds.push('#' + pane.id);
+                    } else {
+                        if (errorSpan) errorSpan.textContent = '';
+                    }
+                });
+
+                if (invalidTabIds.length > 0) {
+                    // Navigate to whichever invalid tab appears earliest in the wizard nav order
+                    var firstInvalidTabId = invalidTabIds.reduce(function(earliest, current) {
+                        var earliestIdx = tabPaneOrder.indexOf(earliest);
+                        var currentIdx = tabPaneOrder.indexOf(current);
+                        if (earliestIdx === -1) return current;
+                        if (currentIdx === -1) return earliest;
+                        return currentIdx < earliestIdx ? current : earliest;
+                    });
+
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    if (typeof window._manualTabSwitch === 'function') {
+                        window._manualTabSwitch(firstInvalidTabId);
+                        sessionStorage.setItem('seller_create_active_tab', firstInvalidTabId);
+                    }
+                }
+            }, true);
         }
 
         function addIconsToInputs() {

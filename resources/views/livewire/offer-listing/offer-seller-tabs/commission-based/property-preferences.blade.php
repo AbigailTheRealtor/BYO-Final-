@@ -1307,7 +1307,7 @@
         <span class="error mt-2" id="non_negotiable_amenities_error"></span>
     </div>
     <!-- Other Non-Negotiable Amenities and Property Features Input (Hidden by Default) -->
-    <div class="form-group other_non_negotiable_amenities @if (!(is_array($non_negotiable_amenities) && in_array('Other', $non_negotiable_amenities))) d-none @endif">
+    <div class="form-group other_non_negotiable_amenities" style="{{ is_array($non_negotiable_amenities) && in_array('Other', $non_negotiable_amenities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             @if (in_array($property_type, ['Residential', 'Income']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
