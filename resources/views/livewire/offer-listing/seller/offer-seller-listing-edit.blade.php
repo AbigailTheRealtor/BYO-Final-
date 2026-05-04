@@ -1834,8 +1834,7 @@
 
                 return isValid;
             }
-            // MODIFY your existing next button click handler like this:
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+            window._wizardNextHandler = function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 if (!currentTab) return;
 
@@ -1931,12 +1930,8 @@
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                        const nextIndex = allNavLinks.indexOf(nextTab);
-                        if (nextIndex !== -1) {
-                            Livewire.emit('setActiveTab', nextIndex);
-                        }
                         new bootstrap.Tab(nextTab).show();
+                        nextTab.click();
                     }
                 }
 
@@ -1944,20 +1939,16 @@
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
-            });
+            };
 
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+            window._wizardBackHandler = function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                    const prevIndex = allNavLinks.indexOf(prevTab);
-                    if (prevIndex !== -1) {
-                        Livewire.emit('setActiveTab', prevIndex);
-                    }
                     new bootstrap.Tab(prevTab).show();
+                    prevTab.click();
                 }
-            });
+            };
 
             document.addEventListener('DOMContentLoaded', function() {
                 checkFormValidity();
@@ -1999,8 +1990,7 @@
                 return allValid;
             }
 
-            // MODIFY your existing next button click handler like this:
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+            window._wizardNextHandler = function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 if (!currentTab) return;
 
@@ -2113,12 +2103,8 @@
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTab) {
-                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                        const nextIndex = allNavLinks.indexOf(nextTab);
-                        if (nextIndex !== -1) {
-                            Livewire.emit('setActiveTab', nextIndex);
-                        }
                         new bootstrap.Tab(nextTab).show();
+                        nextTab.click();
                     }
                 }
 
@@ -2126,20 +2112,16 @@
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
-            });
+            };
 
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+            window._wizardBackHandler = function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                    const prevIndex = allNavLinks.indexOf(prevTab);
-                    if (prevIndex !== -1) {
-                        Livewire.emit('setActiveTab', prevIndex);
-                    }
                     new bootstrap.Tab(prevTab).show();
+                    prevTab.click();
                 }
-            });
+            };
 
             document.addEventListener('DOMContentLoaded', function() {
                 checkFormValidity();
@@ -2156,6 +2138,19 @@
         }
 
 
+
+        // Delegated wizard nav — bound once, survives Livewire DOM morphing
+        if (!window.__wizardNavBound) {
+            window.__wizardNavBound = true;
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                    window._wizardNextHandler();
+                }
+                if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
+                    window._wizardBackHandler();
+                }
+            });
+        }
 
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {

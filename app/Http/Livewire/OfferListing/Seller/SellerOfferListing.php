@@ -17,6 +17,7 @@ class SellerOfferListing extends Component
 
     protected $listeners = [
         'updatePreference' => 'handleUpdatePreference',
+        'setActiveTab'     => 'setActiveTab',
     ];
 
     // Livewire properties for form fields

@@ -1055,7 +1055,7 @@
                         <!-- Navigation Buttons -->
                         <div class="d-flex justify-content-between form-group mt-4">
                             <div>
-                                <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
+                                <button type="button" class="btn btn-secondary wizard-step-back" onclick="(function(){var a=Array.from(document.querySelectorAll('#myTab .nav-link')),c=a.find(function(t){return t.classList.contains('active')}),i=c?a.indexOf(c):-1;if(!c||i<=0)return;var p=a[i-1].getAttribute('data-bs-target');if(!p)return;a.forEach(function(l){var lt=l.getAttribute('data-bs-target'),h=(lt===p);l.classList.toggle('active',h);l.setAttribute('aria-selected',h?'true':'false');if(lt){var pn=document.querySelector(lt);if(pn){pn.classList.toggle('show',h);pn.classList.toggle('active',h);}}});sessionStorage.setItem('buyer_create_active_tab',p);var _we=document.querySelector('[wire\\:id]');if(_we&&window.Livewire){var _comp=window.Livewire.find(_we.getAttribute('wire:id'));if(_comp)_comp.call('setActiveTab',i-1);}})();">Back</button>
                             </div>
                             <div>
 
@@ -1064,7 +1064,7 @@
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
 
-                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next" onclick="if(typeof window._wizardNextHandler==='function')window._wizardNextHandler();">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store">
@@ -1291,6 +1291,13 @@
         }
 
         function initializeFullService() {
+            if (!document._buyerCreateTabNavListenerAdded) {
+                document._buyerCreateTabNavListenerAdded = true;
+                document.addEventListener('shown.bs.tab', function(e) {
+                    var _tgt = e.target.getAttribute('data-bs-target');
+                    if (_tgt && e.target.closest('#myTab')) sessionStorage.setItem('buyer_create_active_tab', _tgt);
+                });
+            }
 
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
@@ -2136,9 +2143,8 @@
 
                 return isValid;
             }
-            // MODIFY your existing next button click handler like this:
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            window._wizardNextHandler = function() {
+                const currentTab = document.querySelector('#myTab .nav-link.active');
                 if (!currentTab) return;
 
                 const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
@@ -2204,15 +2210,18 @@
 
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
-                    if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
+                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                    const _curIdx = _allTabs.indexOf(currentTab);
+                    if (_curIdx < _allTabs.length - 1) {
+                        const _nextTab = _allTabs[_curIdx + 1];
+                        var _nId = _nextTab.getAttribute('data-bs-target');
+                        if (_nId) {
+                            window._manualTabSwitch(_nId);
+                            sessionStorage.setItem('buyer_create_active_tab', _nId);
+                            var _we = document.querySelector('[wire\\:id]');
+                            if (_we && window.Livewire) {
+                                var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
+                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
                             }
                         }
                     }
@@ -2223,18 +2232,20 @@
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
-            });
+            };
 
-            // Handle back button click (new implementation that works with your code)
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
-                }
-            });
+            window._wizardBackHandler = function() {
+                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                const _curTab = _allTabs.find(t => t.classList.contains('active'));
+                if (!_curTab) return;
+                const _curIdx = _allTabs.indexOf(_curTab);
+                if (_curIdx <= 0) return;
+                const _prevTab = _allTabs[_curIdx - 1];
+                var _pId = _prevTab.getAttribute('data-bs-target');
+                if (!_pId) return;
+                window._manualTabSwitch(_pId);
+                sessionStorage.setItem('buyer_create_active_tab', _pId);
+            };
 
             // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
@@ -2396,9 +2407,8 @@
                 return allValid;
             }
 
-            // MODIFY your existing next button click handler like this:
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            window._wizardNextHandler = function() {
+                const currentTab = document.querySelector('#myTab .nav-link.active');
                 if (!currentTab) return;
 
                 const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
@@ -2501,15 +2511,18 @@
 
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
-                    if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
-                        if (tabs) {
-                            const tabIndex = Array.from(tabs).indexOf(nextTab);
-                            if (tabIndex !== -1) {
-                                Livewire.emit('setActiveTab', tabIndex);
-                                nextTab.click();
+                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                    const _curIdx = _allTabs.indexOf(currentTab);
+                    if (_curIdx < _allTabs.length - 1) {
+                        const _nextTab = _allTabs[_curIdx + 1];
+                        var _nId = _nextTab.getAttribute('data-bs-target');
+                        if (_nId) {
+                            window._manualTabSwitch(_nId);
+                            sessionStorage.setItem('buyer_create_active_tab', _nId);
+                            var _we = document.querySelector('[wire\\:id]');
+                            if (_we && window.Livewire) {
+                                var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
+                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
                             }
                         }
                     }
@@ -2520,18 +2533,20 @@
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
-            });
+            };
 
-            // Handle back button click (new implementation that works with your code)
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
-                        .indexOf(prevTab));
-                    prevTab.click();
-                }
-            });
+            window._wizardBackHandler = function() {
+                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                const _curTab = _allTabs.find(t => t.classList.contains('active'));
+                if (!_curTab) return;
+                const _curIdx = _allTabs.indexOf(_curTab);
+                if (_curIdx <= 0) return;
+                const _prevTab = _allTabs[_curIdx - 1];
+                var _pId = _prevTab.getAttribute('data-bs-target');
+                if (!_pId) return;
+                window._manualTabSwitch(_pId);
+                sessionStorage.setItem('buyer_create_active_tab', _pId);
+            };
 
             // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
@@ -2552,6 +2567,37 @@
         }
 
 
+
+        // Direct DOM tab switch — bypasses Bootstrap Tab API entirely
+        window._manualTabSwitch = function(targetId) {
+            var _links = Array.from(document.querySelectorAll('#myTab .nav-link'));
+            _links.forEach(function(link) {
+                var _lt = link.getAttribute('data-bs-target');
+                var _hit = (_lt === targetId);
+                link.classList.toggle('active', _hit);
+                link.setAttribute('aria-selected', _hit ? 'true' : 'false');
+                if (_lt) {
+                    var _pane = document.querySelector(_lt);
+                    if (_pane) {
+                        _pane.classList.toggle('show', _hit);
+                        _pane.classList.toggle('active', _hit);
+                    }
+                }
+            });
+        };
+
+        // Delegated wizard nav — bound once, survives Livewire DOM morphing
+        if (!window.__wizardNavBound) {
+            window.__wizardNavBound = true;
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                    window._wizardNextHandler();
+                }
+                if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
+                    window._wizardBackHandler();
+                }
+            });
+        }
 
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {
@@ -2610,6 +2656,14 @@
                     initializeFullService();
                 } else if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
+                }
+            }
+
+            var _savedTabId = sessionStorage.getItem('buyer_create_active_tab');
+            if (_savedTabId && typeof window._manualTabSwitch === 'function') {
+                var _tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + _savedTabId + '"]');
+                if (_tabTrigger && !_tabTrigger.classList.contains('active')) {
+                    window._manualTabSwitch(_savedTabId);
                 }
             }
         });

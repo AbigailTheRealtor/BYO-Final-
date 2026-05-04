@@ -15,6 +15,8 @@ class LandlordOfferListing extends Component
 {
     use WithFileUploads;
 
+    protected $listeners = ['setActiveTab' => 'setActiveTab'];
+
 
     // Livewire properties for form fields
     public $hasDrafts = false;

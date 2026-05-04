@@ -2031,7 +2031,7 @@ $tenantPays = [
 
                 return isValid;
             }
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+            window._wizardNextHandler = function() {
                 if (__tabNavLock) return;
                 __tabNavLock = true;
                 setTimeout(function() { __tabNavLock = false; }, 250);
@@ -2127,13 +2127,8 @@ $tenantPays = [
                     const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTabEl) {
-                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                        const nextIndex = allNavLinks.indexOf(nextTabEl);
-                        if (nextIndex !== -1) {
-                            Livewire.emit('setActiveTab', nextIndex);
-                        }
-                        var bsTab = new bootstrap.Tab(nextTabEl);
-                        bsTab.show();
+                        new bootstrap.Tab(nextTabEl).show();
+                        nextTabEl.click();
                     }
                 }
 
@@ -2141,9 +2136,9 @@ $tenantPays = [
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
-            });
+            };
 
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+            window._wizardBackHandler = function() {
                 if (__tabNavLock) return;
                 __tabNavLock = true;
                 setTimeout(function() { __tabNavLock = false; }, 250);
@@ -2151,15 +2146,10 @@ $tenantPays = [
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
-                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                    const prevIndex = allNavLinks.indexOf(prevTabEl);
-                    if (prevIndex !== -1) {
-                        Livewire.emit('setActiveTab', prevIndex);
-                    }
-                    var bsTab = new bootstrap.Tab(prevTabEl);
-                    bsTab.show();
+                    new bootstrap.Tab(prevTabEl).show();
+                    prevTabEl.click();
                 }
-            });
+            };
 
             // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
@@ -2257,7 +2247,7 @@ $tenantPays = [
                 return allValid;
             }
 
-            document.querySelector('.wizard-step-next')?.addEventListener('click', function() {
+            window._wizardNextHandler = function() {
                 if (__tabNavLock) return;
                 __tabNavLock = true;
                 setTimeout(function() { __tabNavLock = false; }, 250);
@@ -2367,13 +2357,8 @@ $tenantPays = [
                     const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
                         '.nav-link');
                     if (nextTabEl) {
-                        const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                        const nextIndex = allNavLinks.indexOf(nextTabEl);
-                        if (nextIndex !== -1) {
-                            Livewire.emit('setActiveTab', nextIndex);
-                        }
-                        var bsTab = new bootstrap.Tab(nextTabEl);
-                        bsTab.show();
+                        new bootstrap.Tab(nextTabEl).show();
+                        nextTabEl.click();
                     }
                 }
 
@@ -2381,9 +2366,9 @@ $tenantPays = [
                 if (saveButton) {
                     saveButton.disabled = !isValid;
                 }
-            });
+            };
 
-            document.querySelector('.wizard-step-back')?.addEventListener('click', function() {
+            window._wizardBackHandler = function() {
                 if (__tabNavLock) return;
                 __tabNavLock = true;
                 setTimeout(function() { __tabNavLock = false; }, 250);
@@ -2391,15 +2376,10 @@ $tenantPays = [
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
-                    const allNavLinks = Array.from(document.querySelectorAll('.nav-tabs .nav-link'));
-                    const prevIndex = allNavLinks.indexOf(prevTabEl);
-                    if (prevIndex !== -1) {
-                        Livewire.emit('setActiveTab', prevIndex);
-                    }
-                    var bsTab = new bootstrap.Tab(prevTabEl);
-                    bsTab.show();
+                    new bootstrap.Tab(prevTabEl).show();
+                    prevTabEl.click();
                 }
-            });
+            };
 
             // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
@@ -2420,6 +2400,19 @@ $tenantPays = [
         }
 
 
+
+        // Delegated wizard nav — bound once, survives Livewire DOM morphing
+        if (!window.__wizardNavBound) {
+            window.__wizardNavBound = true;
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                    window._wizardNextHandler();
+                }
+                if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
+                    window._wizardBackHandler();
+                }
+            });
+        }
 
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {

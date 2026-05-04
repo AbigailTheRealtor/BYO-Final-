@@ -1,0 +1,81 @@
+PHASE 1 — READ-ONLY AUDIT (NO CODE CHANGES)
+
+SCOPE:
+Agent Offer Preset / Hire This Agent flow only.
+
+DO NOT:
+- Modify any files
+- Add or remove code
+- Change UI
+- Change routes
+- Change controllers
+- Change database
+- Do not “start implementing”
+
+GOAL:
+Map the current system so we can safely implement changes in later phases.
+
+AUDIT REQUIREMENTS:
+
+1. Identify where Agent Offer Preset accept flow is handled:
+   - Route name + URL
+   - Controller method
+   - Any middleware
+   - What triggers “This request has already been submitted or the page has expired”
+
+2. Identify where normal Hire Agent bid accept flow is handled:
+   - Route name + URL
+   - Controller method
+   - Blade view used for acknowledgment summary
+   - How accepted summary is created
+   - How duplicate submissions are prevented
+
+3. Identify counter flow for:
+   - Agent Offer Preset
+   - Normal Hire Agent listing bids
+
+For both:
+   - Where counter terms are saved
+   - Where latest terms are loaded
+   - Whether latest terms overwrite previous OR new record is created
+
+4. Identify where Client Contact Information is currently rendered:
+   - Blade file(s)
+   - Which tab it lives in
+   - Field names / request keys
+
+5. Identify where tabs are defined for:
+   - Seller
+   - Landlord
+   - Buyer
+   - Tenant
+   (Agent Preset / Hire This Agent flow only)
+
+6. Identify where Property Address is rendered in Agent Offer Preset presentation:
+   - Exact blade file
+   - Component/section name
+
+7. Identify if Agent Offer Preset uses:
+   - Existing bid table/structure OR
+   - Separate preset/negotiation storage
+
+8. Identify how “Accept & Submit Hire Request” currently works:
+   - What route it posts to
+   - What happens before the error is thrown
+   - Whether it tries to create a record or reuse one
+
+OUTPUT FORMAT:
+
+Return a structured report:
+
+SECTION 1 — ACCEPT FLOW (Agent Preset)
+SECTION 2 — ACCEPT FLOW (Hire Agent Listing)
+SECTION 3 — COUNTER FLOW COMPARISON
+SECTION 4 — CONTACT INFO LOCATION
+SECTION 5 — TAB STRUCTURE
+SECTION 6 — PROPERTY ADDRESS LOCATION
+SECTION 7 — DATA STRUCTURE (Preset vs Bid)
+SECTION 8 — ROOT CAUSE OF ERROR
+
+DO NOT IMPLEMENT ANYTHING YET.
+STOP AFTER AUDIT.
