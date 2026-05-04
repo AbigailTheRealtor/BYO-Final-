@@ -486,6 +486,8 @@ class LandlordAgentAuctionCounterTerm extends Component
             // No counter from the other party yet — prefill from the agent's original bid terms.
             $this->prefillFromAgentBid($this->bidId);
         }
+        // New counters always start with a blank Additional Details field
+        $this->additional_details = '';
     }
 
     /**

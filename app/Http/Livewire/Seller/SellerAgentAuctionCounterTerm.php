@@ -234,6 +234,8 @@ class SellerAgentAuctionCounterTerm extends Component
             } else {
                 $this->prefillFromAgentBid($pab);
             }
+            // New counters always start with a blank Additional Details field
+            $this->additional_details = '';
         }
     }
 

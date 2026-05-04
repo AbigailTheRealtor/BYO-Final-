@@ -464,6 +464,8 @@ class TenantAgentAuctionCounterTerm extends Component
         } else {
             // NEW COUNTER: Prefill with the Agent's bid terms (other party's latest offer)
             $this->prefillFromAgentBid($pab);
+            // New counters always start with a blank Additional Details field
+            $this->additional_details = '';
         }
     }
     

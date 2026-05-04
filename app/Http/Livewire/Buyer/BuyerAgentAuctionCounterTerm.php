@@ -259,6 +259,8 @@ public $isListingCreatedByAgent = false;
                 // Fall back to agent's original bid terms if no counter exists
                 $this->prefillFromAgentBid($pab);
             }
+            // New counters always start with a blank Additional Details field
+            $this->additional_details = '';
         }
     }
 
