@@ -68,12 +68,12 @@ class HireAgentDirectController extends Controller
         'seller'   => 'seller.agent.auction.detail',
     ];
 
-    /** Role → 3-tab edit-counter-terms form (client lands here directly after counter intent) */
+    /** Role → per-role view-counter page (client lands here directly after counter intent) */
     private const COUNTER_ROUTES = [
-        'buyer'    => 'buyer.edit-counter-terms',
-        'seller'   => 'seller.edit-counter-terms',
-        'landlord' => 'landlord.edit-counter-terms',
-        'tenant'   => 'tenant.edit-counter-terms',
+        'buyer'    => 'buyer.hire.agent.auction.bid.view-counter',
+        'seller'   => 'hire.seller.agent.auction.bid.view-counter',
+        'landlord' => 'landlord.hire.agent.auction.bid.view-counter',
+        'tenant'   => 'tenant.hire.agent.auction.bid.view-counter',
     ];
 
     /**
@@ -222,7 +222,7 @@ class HireAgentDirectController extends Controller
             abort(404);
         }
         if (!in_array($propertyType, self::VALID_PROPERTY_TYPES, true)) {
-            abort(422);
+            $propertyType = 'residential';
         }
 
         // Re-verify agent identity
@@ -644,7 +644,7 @@ class HireAgentDirectController extends Controller
 
             if ($intent === 'counter') {
                 return redirect()
-                    ->route(self::COUNTER_ROUTES[$role], ['id' => $bid->id]);
+                    ->route(self::COUNTER_ROUTES[$role], ['bid_id' => $bid->id]);
             }
 
             $viewRoute = self::LISTING_VIEW_ROUTES[$role];
