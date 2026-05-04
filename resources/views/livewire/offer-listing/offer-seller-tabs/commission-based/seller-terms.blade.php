@@ -354,6 +354,7 @@
         <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
         <select id="offered_financing" class="form-control has-icon select2-multiple"
             multiple>
+            <option value=""></option>
             @foreach ($financing_options_seller as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}" {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
                     {{ $option['name'] }}

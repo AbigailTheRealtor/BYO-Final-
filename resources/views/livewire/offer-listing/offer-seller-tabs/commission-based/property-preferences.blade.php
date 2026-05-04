@@ -1036,7 +1036,7 @@
 <!-- Carport Spaces Needed (Residential Only) -->
 @if ($property_type === 'Residential')
     <div class="form-group">
-        <label c lass="fw-bold">Carport:
+        <label class="fw-bold">Carport:
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

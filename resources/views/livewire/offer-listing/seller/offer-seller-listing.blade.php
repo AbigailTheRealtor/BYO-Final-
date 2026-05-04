@@ -2369,50 +2369,58 @@
                 videoLoader.style.visibility = "hidden";
             });
 
+            initializeWizardHandlers();
+        }
+
+        function initializeLimitedService() {
+            initializeWizardHandlers();
+        }
+
+        function initializeWizardHandlers() {
 
             // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
             function isElementVisible(element) {
                 if (!element) return false;
                 if (element.disabled) return false;
                 if (element.type === 'hidden') return false;
-                
+
                 if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
                     if (element.offsetHeight === 0 && element.offsetWidth === 0) {
                         return false;
                     }
                 }
-                
+
                 if (element.offsetHeight === 0 || element.offsetWidth === 0) {
                     return false;
                 }
-                
+
                 if (element.getAttribute('aria-hidden') === 'true') {
                     return false;
                 }
-                
+
                 let el = element;
                 while (el && el !== document.body) {
                     if (el.classList && (
-                        el.classList.contains('d-none') || 
+                        el.classList.contains('d-none') ||
                         el.classList.contains('hidden') ||
                         el.classList.contains('collapse') && !el.classList.contains('show')
                     )) {
                         return false;
                     }
-                    
+
                     if (el.getAttribute('aria-hidden') === 'true') {
                         return false;
                     }
-                    
+
                     const style = window.getComputedStyle(el);
                     if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
                         return false;
                     }
-                    
+
                     if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
                         return false;
                     }
-                    
+
                     el = el.parentElement;
                 }
                 return true;
@@ -2425,7 +2433,6 @@
                 // Check all tabs for required fields (skip hidden/disabled fields)
                 document.querySelectorAll('.tab-pane').forEach(tabPane => {
                     tabPane.querySelectorAll('[required]').forEach(field => {
-                        // Skip hidden or disabled fields - they should not block form validity
                         if (!isElementVisible(field)) {
                             return;
                         }
@@ -2433,6 +2440,18 @@
                             allValid = false;
                         }
                     });
+                });
+
+                // Validate required Select2 multi-selects
+                var select2RequiredSelectors = ['#offered_financing', '#sale_provision', '#appliances'];
+                select2RequiredSelectors.forEach(function(selector) {
+                    var $el = $(selector);
+                    if ($el.length) {
+                        var val = $el.val();
+                        if (!val || val.length === 0) {
+                            allValid = false;
+                        }
+                    }
                 });
 
                 // Enable/disable save button (both CSS class and attribute)
@@ -2450,18 +2469,12 @@
                 return allValid;
             }
 
-            // Add this function to validate services tab
+            // Function to validate services tab
             function validateServicesTab(tabContent) {
                 if (!tabContent || tabContent.id !== 'services') return true;
 
                 let isValid = true;
 
-                // Check at least one service is selected (excluding "Other" checkbox)
-                const hasServices = tabContent.querySelectorAll(
-                    'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
-                ).length > 0;
-
-                // Check "Other Services" if enabled
                 const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
                 const otherTextarea = tabContent.querySelector('#other-services-input');
                 const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
@@ -2472,9 +2485,6 @@
                     existingErrors.forEach(el => el.remove());
                 }
                 if (otherTextarea) otherTextarea.classList.remove('is-invalid');
-
-                // Services validation removed - selecting services is now optional
-                // No validation error will be shown if no services are selected
 
                 if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
                     isValid = false;
@@ -2493,6 +2503,7 @@
 
                 return isValid;
             }
+
             window._wizardNextHandler = function() {
                 const currentTab = document.querySelector('#myTab .nav-link.active');
                 if (!currentTab) return;
@@ -2502,7 +2513,7 @@
 
                 let isValid = true;
 
-                // Validate all required fields in the current tab (your existing code)
+                // Validate all required fields in the current tab
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
                 if (requiredFields) {
@@ -2536,7 +2547,7 @@
                     });
                 }
 
-                // Validate cities array (your existing code)
+                // Validate cities array
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
                 if (citiesContainer) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
@@ -2547,8 +2558,7 @@
                             const citiesError = document.createElement('div');
                             citiesError.className = 'error';
                             citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
+                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer.nextSibling);
                         }
                     } else {
                         const existingError = citiesContainer.parentNode.querySelector('.error');
@@ -2558,7 +2568,7 @@
                     }
                 }
 
-                // Validate counties array (your existing code)
+                // Validate counties array
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
                 if (countiesContainer) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
@@ -2569,8 +2579,7 @@
                             const countiesError = document.createElement('div');
                             countiesError.className = 'error';
                             countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
+                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer.nextSibling);
                         }
                     } else {
                         const existingError = countiesContainer.parentNode.querySelector('.error');
@@ -2580,238 +2589,34 @@
                     }
                 }
 
-                // ADD THIS: Validate services tab if it's the current tab
+                // Validate services tab if it's the current tab
                 if (currentTabContent.id === 'services') {
                     isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
-                // If all fields are valid, proceed to the next tab (your existing code)
-                if (isValid) {
-                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                    const _curIdx = _allTabs.indexOf(currentTab);
-                    if (_curIdx < _allTabs.length - 1) {
-                        const _nextTab = _allTabs[_curIdx + 1];
-                        var _nId = _nextTab.getAttribute('data-bs-target');
-                        if (_nId) {
-                            window._manualTabSwitch(_nId);
-                            sessionStorage.setItem('seller_create_active_tab', _nId);
-                            var _we = document.querySelector('[wire\\:id]');
-                            if (_we && window.Livewire) {
-                                var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
-                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
-                            }
-                        }
+                // Validate required Select2 multi-selects present in current tab
+                var select2RequiredMap = {
+                    '#offered_financing': '#offered_financing_error',
+                    '#sale_provision': '#sale_provision_error',
+                    '#appliances': '#appliances_error',
+                };
+                Object.keys(select2RequiredMap).forEach(function(selector) {
+                    var $el = $(selector, currentTabContent);
+                    if (!$el.length) {
+                        $el = $(selector);
+                        if (!$el.length || !currentTabContent.querySelector(selector)) return;
                     }
-                }
-
-                // Update save button state after validation (your existing code)
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !isValid;
-                }
-            };
-
-            window._wizardBackHandler = function() {
-                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                const _curTab = _allTabs.find(t => t.classList.contains('active'));
-                if (!_curTab) return;
-                const _curIdx = _allTabs.indexOf(_curTab);
-                if (_curIdx <= 0) return;
-                const _prevTab = _allTabs[_curIdx - 1];
-                var _pId = _prevTab.getAttribute('data-bs-target');
-                if (!_pId) return;
-                window._manualTabSwitch(_pId);
-                sessionStorage.setItem('seller_create_active_tab', _pId);
-            };
-
-            // Add event listeners to update save button state when fields change
-            document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
-                checkFormValidity();
-
-                // Update on any input change
-                document.querySelectorAll('input, select, textarea').forEach(field => {
-                    field.addEventListener('change', checkFormValidity);
-                    field.addEventListener('keyup', checkFormValidity);
-                });
-
-                // Special handling for Livewire-updated fields
-                document.addEventListener('livewire:update', function() {
-                    setTimeout(checkFormValidity, 100);
-                });
-            });
-
-
-        }
-
-        function initializeLimitedService() {
-
-            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-                
-                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
-                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
-                        return false;
-                    }
-                }
-                
-                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-                    return false;
-                }
-                
-                if (element.getAttribute('aria-hidden') === 'true') {
-                    return false;
-                }
-                
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (
-                        el.classList.contains('d-none') || 
-                        el.classList.contains('hidden') ||
-                        el.classList.contains('collapse') && !el.classList.contains('show')
-                    )) {
-                        return false;
-                    }
-                    
-                    if (el.getAttribute('aria-hidden') === 'true') {
-                        return false;
-                    }
-                    
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                        return false;
-                    }
-                    
-                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
-                        return false;
-                    }
-                    
-                    el = el.parentElement;
-                }
-                return true;
-            }
-
-            // Function to check if all required fields are filled
-            function checkFormValidity() {
-                let allValid = true;
-
-                // Check all tabs for required fields (skip hidden/disabled fields)
-                document.querySelectorAll('.tab-pane').forEach(tabPane => {
-                    tabPane.querySelectorAll('[required]').forEach(field => {
-                        // Skip hidden or disabled fields - they should not block form validity
-                        if (!isElementVisible(field)) {
-                            return;
-                        }
-                        if (!field.value) {
-                            allValid = false;
-                        }
-                    });
-                });
-
-                // Enable/disable save button (both CSS class and attribute)
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    if (allValid) {
-                        saveButton.classList.remove('disabled');
-                        saveButton.removeAttribute('disabled');
-                    } else {
-                        saveButton.classList.add('disabled');
-                        saveButton.setAttribute('disabled', 'disabled');
-                    }
-                }
-
-                return allValid;
-            }
-
-            window._wizardNextHandler = function() {
-                const currentTab = document.querySelector('#myTab .nav-link.active');
-                if (!currentTab) return;
-
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
-                let isValid = true;
-
-                // Validate all required fields in the current tab (your existing code)
-                const requiredFields = currentTabContent.querySelectorAll(
-                    'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
-
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Validate cities array (your existing code)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
+                    var errorSpan = document.querySelector(select2RequiredMap[selector]);
+                    var val = $el.val();
+                    if (!val || val.length === 0) {
                         isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
+                        if (errorSpan) errorSpan.textContent = 'This field is required.';
                     } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
+                        if (errorSpan) errorSpan.textContent = '';
                     }
-                }
+                });
 
-                // Validate counties array (your existing code)
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
+                // Limited-Service-only: require #understandTerms on the service-selection-and-pricing tab
                 if (currentTabContent.id === 'service-selection-and-pricing') {
                     const understandTerms = currentTabContent.querySelector('#understandTerms');
                     if (understandTerms && !understandTerms.checked) {
@@ -2823,7 +2628,7 @@
                             termsError.textContent = 'You must accept the terms to continue';
                             understandTerms.parentNode.appendChild(termsError);
                         }
-                    } else {
+                    } else if (understandTerms) {
                         const existingError = understandTerms.parentNode.querySelector('.error');
                         if (existingError) {
                             existingError.remove();
@@ -2831,11 +2636,7 @@
                     }
                 }
 
-                // In your validation function
-
-
-
-                // If all fields are valid, proceed to the next tab (your existing code)
+                // If all fields are valid, proceed to the next tab
                 if (isValid) {
                     const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
                     const _curIdx = _allTabs.indexOf(currentTab);
@@ -2854,7 +2655,7 @@
                     }
                 }
 
-                // Update save button state after validation (your existing code)
+                // Update save button state after validation
                 const saveButton = document.querySelector('.wizard-step-finish');
                 if (saveButton) {
                     saveButton.disabled = !isValid;
@@ -2876,16 +2677,13 @@
 
             // Add event listeners to update save button state when fields change
             document.addEventListener('DOMContentLoaded', function() {
-                // Initial check
                 checkFormValidity();
 
-                // Update on any input change
                 document.querySelectorAll('input, select, textarea').forEach(field => {
                     field.addEventListener('change', checkFormValidity);
                     field.addEventListener('keyup', checkFormValidity);
                 });
 
-                // Special handling for Livewire-updated fields
                 document.addEventListener('livewire:update', function() {
                     setTimeout(checkFormValidity, 100);
                 });

@@ -689,9 +689,8 @@ $safeKey = function(...$parts) {
                      data-error-id="retainer_fee_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
-                                        <span class="error mt-2" id="retainer_fee_amount_error"></span>
-
             </div>
+            <span class="error mt-2" id="retainer_fee_amount_error"></span>
 
 
             <div class="mt-3">
