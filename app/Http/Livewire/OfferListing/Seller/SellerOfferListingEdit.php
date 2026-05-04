@@ -558,7 +558,48 @@ class SellerOfferListingEdit extends Component
     public $showCustomEnhancement = false;
     public $showOpenHouseInput = false;
     public $is_other_visible = false;
-    public $applianceOptions = [];
+    public $applianceOptions = [
+        ['name' => 'Bar Fridge'],
+        ['name' => 'Built-In Oven'],
+        ['name' => 'Central Vacuum'],
+        ['name' => 'Convection Oven'],
+        ['name' => 'Cooktop'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Disposal'],
+        ['name' => 'Dryer'],
+        ['name' => 'Electric Water Heater'],
+        ['name' => 'Exhaust Fan'],
+        ['name' => 'Freezer'],
+        ['name' => 'Garbage Disposal'],
+        ['name' => 'Gas Water Heater'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Indoor Grill'],
+        ['name' => 'Kitchen Reverse Osmosis System'],
+        ['name' => 'Microwave'],
+        ['name' => 'Oven'],
+        ['name' => 'Range Electric'],
+        ['name' => 'Range Gas'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Refrigerator'],
+        ['name' => 'Solar Hot Water'],
+        ['name' => 'Solar Hot Water Owned'],
+        ['name' => 'Solar Hot Water Rented'],
+        ['name' => 'Stove/Range'],
+        ['name' => 'Tankless Water Heater'],
+        ['name' => 'Touchless Faucet'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Washer'],
+        ['name' => 'Washer/Dryer Combo'],
+        ['name' => 'Water Filtration System'],
+        ['name' => 'Water Heater'],
+        ['name' => 'Water Purifier'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Whole House R.O. System'],
+        ['name' => 'Wine Cooler'],
+        ['name' => 'Wine Refrigerator'],
+        ['name' => 'None'],
+        ['name' => 'Other'],
+    ];
     public $gross_annual_income = '';
     public $annual_operating_expenses = '';
     public $rent_roll_available = '';
@@ -727,8 +768,10 @@ class SellerOfferListingEdit extends Component
     public $additional_documents = [];
     public $other_document_type = '';
     public $propertyPhotos = [];
+    public $newPropertyPhotos = [];
     public $videoTourUrl = '';
     public $virtualTourUrl = '';
+    public $listingDocuments = null;
     public $cityFieldVisible = false;
     public $stateFieldVisible = false;
     public $zipCodeFieldVisible = false;
@@ -1661,7 +1704,426 @@ class SellerOfferListingEdit extends Component
             $this->flood_disclosure_file_path     = $auction->get->flood_disclosure_file_path ?? '';
             $this->lead_based_paint_file_path     = $auction->get->lead_based_paint_file_path ?? '';
             $this->environmental_report_file_path = $auction->get->environmental_report_file_path ?? '';
+
+            // Location sub-fields
+            $this->zipCodes = is_string($auction->get->zipCodes) ? json_decode($auction->get->zipCodes, true) ?? [] : (array)($auction->get->zipCodes ?? []);
+            $this->zip_code = $this->zipCodes[0] ?? ($auction->get->zip_code ?? '');
+            $this->property_city   = $auction->get->property_city ?? '';
+            $this->property_county = $auction->get->property_county ?? '';
+            $this->property_state  = $auction->get->property_state ?? '';
+            $this->property_zip    = $auction->get->property_zip ?? '';
+
+            // Occupant / Business
+            $this->occupant_status     = $auction->get->occupant_status ?? '';
+            $this->occupant_tenant     = $auction->get->occupant_tenant ?? '';
+            $this->business_type       = $auction->get->business_type ?? '';
+            $this->other_business_type = $auction->get->other_business_type ?? '';
+            $this->target_closing_date = $auction->get->target_closing_date ?? '';
+
+            // Financial — Income
+            $this->gross_annual_income          = $auction->get->gross_annual_income ?? '';
+            $this->annual_operating_expenses    = $auction->get->annual_operating_expenses ?? '';
+            $this->rent_roll_available          = $auction->get->rent_roll_available ?? '';
+            $this->operating_statement_available = $auction->get->operating_statement_available ?? '';
+
+            // Financial — Commercial
+            $this->price_per_sqft     = $auction->get->price_per_sqft ?? '';
+            $this->existing_lease_type = $auction->get->existing_lease_type ?? '';
+            $this->other_lease_type   = $auction->get->other_lease_type ?? '';
+            $this->lease_expiration   = $auction->get->lease_expiration ?? '';
+            $this->lease_assignable   = $auction->get->lease_assignable ?? '';
+
+            // Financial — Business
+            $this->annual_revenue                = $auction->get->annual_revenue ?? '';
+            $this->gross_profit                  = $auction->get->gross_profit ?? '';
+            $this->sde_ebitda                    = $auction->get->sde_ebitda ?? '';
+            $this->inventory_value               = $auction->get->inventory_value ?? '';
+            $this->ffe_value                     = $auction->get->ffe_value ?? '';
+            $this->reason_for_sale               = $auction->get->reason_for_sale ?? '';
+            $this->other_reason_for_sale         = $auction->get->other_reason_for_sale ?? '';
+            $this->employee_count                = $auction->get->employee_count ?? '';
+            $this->financial_statements_available = $auction->get->financial_statements_available ?? '';
+            $this->tax_returns_available         = $auction->get->tax_returns_available ?? '';
+            $this->nda_required                  = $auction->get->nda_required ?? '';
+
+            // MLS property detail fields
+            $this->year_built        = $auction->get->year_built ?? '';
+            $this->zoning            = $auction->get->zoning ?? '';
+            $this->roof_type         = is_string($auction->get->roof_type) ? json_decode($auction->get->roof_type, true) ?? [] : (array)($auction->get->roof_type ?? []);
+            $this->other_roof_type   = $auction->get->other_roof_type ?? '';
+            $this->exterior_construction      = is_string($auction->get->exterior_construction) ? json_decode($auction->get->exterior_construction, true) ?? [] : (array)($auction->get->exterior_construction ?? []);
+            $this->other_exterior_construction = $auction->get->other_exterior_construction ?? '';
+            $this->foundation        = is_string($auction->get->foundation) ? json_decode($auction->get->foundation, true) ?? [] : (array)($auction->get->foundation ?? []);
+            $this->other_foundation  = $auction->get->other_foundation ?? '';
+            $this->heating_and_fuel  = is_string($auction->get->heating_and_fuel) ? json_decode($auction->get->heating_and_fuel, true) ?? [] : (array)($auction->get->heating_and_fuel ?? []);
+            $this->other_heating_and_fuel = $auction->get->other_heating_and_fuel ?? '';
+            $this->air_conditioning  = is_string($auction->get->air_conditioning) ? json_decode($auction->get->air_conditioning, true) ?? [] : (array)($auction->get->air_conditioning ?? []);
+            $this->other_air_conditioning = $auction->get->other_air_conditioning ?? '';
+            $this->water             = is_string($auction->get->water) ? json_decode($auction->get->water, true) ?? [] : (array)($auction->get->water ?? []);
+            $this->other_water       = $auction->get->other_water ?? '';
+            $this->sewer             = is_string($auction->get->sewer) ? json_decode($auction->get->sewer, true) ?? [] : (array)($auction->get->sewer ?? []);
+            $this->other_sewer       = $auction->get->other_sewer ?? '';
+            $this->utilities         = is_string($auction->get->utilities) ? json_decode($auction->get->utilities, true) ?? [] : (array)($auction->get->utilities ?? []);
+            $this->other_utilities   = $auction->get->other_utilities ?? '';
+            $this->road_frontage     = is_string($auction->get->road_frontage) ? json_decode($auction->get->road_frontage, true) ?? [] : (array)($auction->get->road_frontage ?? []);
+            $this->other_road_frontage = $auction->get->other_road_frontage ?? '';
+            $this->road_surface_type = is_string($auction->get->road_surface_type) ? json_decode($auction->get->road_surface_type, true) ?? [] : (array)($auction->get->road_surface_type ?? []);
+            $this->other_road_surface_type = $auction->get->other_road_surface_type ?? '';
+            $this->electrical_service = is_string($auction->get->electrical_service) ? json_decode($auction->get->electrical_service, true) ?? [] : (array)($auction->get->electrical_service ?? []);
+            $this->other_electrical_service = $auction->get->other_electrical_service ?? '';
+            $this->ceiling_height    = $auction->get->ceiling_height ?? '';
+            $this->building_features = is_string($auction->get->building_features) ? json_decode($auction->get->building_features, true) ?? [] : (array)($auction->get->building_features ?? []);
+            $this->other_building_features = $auction->get->other_building_features ?? '';
+            $this->number_water_meters   = $auction->get->number_water_meters ?? '';
+            $this->number_electric_meters = $auction->get->number_electric_meters ?? '';
+            $this->business_name     = $auction->get->business_name ?? '';
+            $this->year_established  = $auction->get->year_established ?? '';
+            $this->licenses          = is_string($auction->get->licenses) ? json_decode($auction->get->licenses, true) ?? [] : (array)($auction->get->licenses ?? []);
+            $this->other_licenses    = $auction->get->other_licenses ?? '';
+            $this->sale_includes     = is_string($auction->get->sale_includes) ? json_decode($auction->get->sale_includes, true) ?? [] : (array)($auction->get->sale_includes ?? []);
+            $this->other_sale_includes = $auction->get->other_sale_includes ?? '';
+            $this->current_use       = is_string($auction->get->current_use) ? json_decode($auction->get->current_use, true) ?? [] : (array)($auction->get->current_use ?? []);
+            $this->other_current_use = $auction->get->other_current_use ?? '';
+            $this->lot_dimensions    = $auction->get->lot_dimensions ?? '';
+            $this->front_footage     = $auction->get->front_footage ?? '';
+            $this->number_of_wells   = $auction->get->number_of_wells ?? '';
+            $this->number_of_septics = $auction->get->number_of_septics ?? '';
+            $this->current_adjacent_use     = is_string($auction->get->current_adjacent_use) ? json_decode($auction->get->current_adjacent_use, true) ?? [] : (array)($auction->get->current_adjacent_use ?? []);
+            $this->other_current_adjacent_use = $auction->get->other_current_adjacent_use ?? '';
+            $this->fences            = is_string($auction->get->fences) ? json_decode($auction->get->fences, true) ?? [] : (array)($auction->get->fences ?? []);
+            $this->other_fences      = $auction->get->other_fences ?? '';
+            $this->vegetation        = is_string($auction->get->vegetation) ? json_decode($auction->get->vegetation, true) ?? [] : (array)($auction->get->vegetation ?? []);
+            $this->other_vegetation  = $auction->get->other_vegetation ?? '';
+            $this->buildable         = $auction->get->buildable ?? '';
+            $this->easements         = is_string($auction->get->easements) ? json_decode($auction->get->easements, true) ?? [] : (array)($auction->get->easements ?? []);
+            $this->other_easements   = $auction->get->other_easements ?? '';
+
+            // Tax / Legal / Parcel
+            $this->parcel_id            = $auction->get->parcel_id ?? '';
+            $this->tax_year             = $auction->get->tax_year ?? '';
+            $this->annual_property_taxes = $auction->get->annual_property_taxes ?? '';
+            $this->additional_parcels   = $auction->get->additional_parcels ?? '';
+            $this->total_parcel_count   = $auction->get->total_parcel_count ?? '';
+            $this->additional_parcel_ids = $auction->get->additional_parcel_ids ?? '';
+            $this->legal_description    = $auction->get->legal_description ?? '';
+
+            // Flood Zone
+            $this->flood_zone_code         = $auction->get->flood_zone_code ?? '';
+            $this->flood_zone_code_other   = $auction->get->flood_zone_code_other ?? '';
+            $this->flood_insurance_required = $auction->get->flood_insurance_required ?? '';
+            $this->flood_zone_panel        = $auction->get->flood_zone_panel ?? '';
+
+            // CDD / Special Assessments
+            $this->has_cdd                     = $auction->get->has_cdd ?? '';
+            $this->annual_cdd_fee              = $auction->get->annual_cdd_fee ?? '';
+            $this->has_special_assessments     = $auction->get->has_special_assessments ?? '';
+            $this->special_assessment_amount   = $auction->get->special_assessment_amount ?? '';
+            $this->special_assessment_description = $auction->get->special_assessment_description ?? '';
+
+            // HOA
+            $this->has_hoa                      = $auction->get->has_hoa ?? '';
+            $this->association_type             = $auction->get->association_type ?? '';
+            $this->association_type_other       = $auction->get->association_type_other ?? '';
+            $this->association_name             = $auction->get->association_name ?? '';
+            $this->association_fee_amount       = $auction->get->association_fee_amount ?? '';
+            $this->association_fee_frequency    = $auction->get->association_fee_frequency ?? '';
+            $this->association_fee_frequency_other = $auction->get->association_fee_frequency_other ?? '';
+            $this->association_approval_required = $auction->get->association_approval_required ?? '';
+            $this->association_approval_process = $auction->get->association_approval_process ?? '';
+            $this->association_application_fee  = $auction->get->association_application_fee ?? '';
+            $rawFeeIncludes = $auction->get->association_fee_includes ?? [];
+            $this->association_fee_includes     = is_string($rawFeeIncludes) ? json_decode($rawFeeIncludes, true) ?? [] : (array)$rawFeeIncludes;
+            $this->association_fee_includes_other = $auction->get->association_fee_includes_other ?? '';
+            $rawAmenities = $auction->get->association_amenities ?? [];
+            $this->association_amenities        = is_string($rawAmenities) ? json_decode($rawAmenities, true) ?? [] : (array)$rawAmenities;
+            $this->association_amenities_other  = $auction->get->association_amenities_other ?? '';
+            $this->leasing_restrictions         = $auction->get->leasing_restrictions ?? '';
+            $this->min_lease_period             = $auction->get->min_lease_period ?? '';
+            $this->min_lease_period_other       = $auction->get->min_lease_period_other ?? '';
+            $this->max_leases_per_year          = $auction->get->max_leases_per_year ?? '';
+            $this->additional_lease_restrictions = $auction->get->additional_lease_restrictions ?? '';
+            $this->pet_restrictions             = $auction->get->pet_restrictions ?? '';
+            $this->pet_restrictions_detail      = $auction->get->pet_restrictions_detail ?? '';
+
+            // Documents
+            $rawAdditionalDocs = $auction->get->additional_documents ?? [];
+            $this->additional_documents = is_string($rawAdditionalDocs) ? json_decode($rawAdditionalDocs, true) ?? [] : (array)$rawAdditionalDocs;
+            $this->other_document_type = $auction->get->other_document_type ?? '';
+
+            // Photos, Tours & Documents
+            $rawPhotos = $auction->get->property_photos ?? null;
+            if (is_array($rawPhotos)) {
+                $this->propertyPhotos = array_values($rawPhotos);
+            } elseif (is_string($rawPhotos) && $rawPhotos !== '') {
+                $decoded = json_decode($rawPhotos, true);
+                if (is_array($decoded)) {
+                    $this->propertyPhotos = array_values($decoded);
+                } else {
+                    $this->propertyPhotos = [$rawPhotos];
+                }
+            } else {
+                $this->propertyPhotos = [];
+            }
+            $this->videoTourUrl    = $auction->get->video_tour_url ?? '';
+            $this->virtualTourUrl  = $auction->get->virtual_tour_url ?? '';
+            $rawDoc = $auction->get->listing_documents ?? null;
+            $this->listingDocuments = $rawDoc ?: null;
+
+            // Extended Exchange
+            $this->exchange_transfer_method  = $auction->get->exchange_transfer_method ?? '';
+            $this->exchange_liens_disclosure = $auction->get->exchange_liens_disclosure ?? '';
+            $this->exchange_liens_details    = $auction->get->exchange_liens_details ?? '';
+            $this->exchange_inspection_rights = $auction->get->exchange_inspection_rights ?? '';
+
+            // Extended Assumable Loan
+            $this->assumable_loan_type            = $auction->get->assumable_loan_type ?? '';
+            $this->outstanding_balance            = $auction->get->outstanding_balance ?? '';
+            $this->lender_approval_required       = $auction->get->lender_approval_required ?? '';
+            $this->assumable_monthly_escrow       = $auction->get->assumable_monthly_escrow ?? '';
+            $this->assumable_loan_term_remaining  = $auction->get->assumable_loan_term_remaining ?? '';
+            $this->assumable_loan_origination_date = $auction->get->assumable_loan_origination_date ?? '';
+            $this->assumable_loan_servicer        = $auction->get->assumable_loan_servicer ?? '';
+            $this->assumable_fee_type             = $auction->get->assumable_fee_type ?? '$';
+            $this->assumable_fee_amount           = $auction->get->assumable_fee_amount ?? '';
+            $this->assumable_occupancy_requirement = $auction->get->assumable_occupancy_requirement ?? '';
+            $this->assumable_occupancy_other      = $auction->get->assumable_occupancy_other ?? '';
+            $this->balloon_payment                = $auction->get->balloon_payment ?? '';
+
+            // Extended Lease Option
+            $this->seller_lease_option_fee_credit        = $auction->get->seller_lease_option_fee_credit ?? '';
+            $this->seller_lease_option_fee_credit_percent = $auction->get->seller_lease_option_fee_credit_percent ?? '';
+            $this->seller_lease_option_maintenance       = $auction->get->seller_lease_option_maintenance ?? '';
+            $this->seller_lease_option_extension_terms   = $auction->get->seller_lease_option_extension_terms ?? '';
+            $this->lease_option_fee_credit               = $auction->get->lease_option_fee_credit ?? '';
+            $this->lease_option_fee_credit_percentage    = $auction->get->lease_option_fee_credit_percentage ?? '';
+            $this->lease_option_maintenance              = $auction->get->lease_option_maintenance ?? '';
+            $this->lease_option_extension_terms          = $auction->get->lease_option_extension_terms ?? '';
+
+            // Extended Lease Purchase
+            $this->seller_lease_purchase_rent_credit        = $auction->get->seller_lease_purchase_rent_credit ?? '';
+            $this->seller_lease_purchase_rent_credit_type   = $auction->get->seller_lease_purchase_rent_credit_type ?? '$';
+            $this->seller_lease_purchase_rent_credit_amount = $auction->get->seller_lease_purchase_rent_credit_amount ?? '';
+            $this->seller_lease_purchase_deposit            = $auction->get->seller_lease_purchase_deposit ?? '';
+            $this->seller_lease_purchase_maintenance        = $auction->get->seller_lease_purchase_maintenance ?? '';
+            $this->seller_lease_purchase_extension_terms    = $auction->get->seller_lease_purchase_extension_terms ?? '';
+            $this->lease_purchase_rent_credit               = $auction->get->lease_purchase_rent_credit ?? '';
+            $this->lease_purchase_rent_credit_amount        = $auction->get->lease_purchase_rent_credit_amount ?? '';
+            $this->lease_purchase_deposit                   = $auction->get->lease_purchase_deposit ?? '';
+            $this->lease_purchase_maintenance               = $auction->get->lease_purchase_maintenance ?? '';
+            $this->lease_purchase_extension_terms           = $auction->get->lease_purchase_extension_terms ?? '';
+
+            // Seller-specific financials
+            $this->seller_down_payment_amount = $auction->get->seller_down_payment_amount ?? '';
+            $this->seller_late_fee_amount     = $auction->get->seller_late_fee_amount ?? '';
+
+            // Seller amortization / payment frequency
+            $this->seller_amortization_type       = $auction->get->seller_amortization_type ?? '';
+            $this->seller_amortization_other      = $auction->get->seller_amortization_other ?? '';
+            $this->seller_payment_frequency       = $auction->get->seller_payment_frequency ?? '';
+            $this->seller_payment_frequency_other = $auction->get->seller_payment_frequency_other ?? '';
+
+            // Extended Cryptocurrency
+            $this->crypto_transfer_timing       = $auction->get->crypto_transfer_timing ?? '';
+            $this->crypto_transfer_timing_other = $auction->get->crypto_transfer_timing_other ?? '';
+            $this->crypto_exchange_method       = $auction->get->crypto_exchange_method ?? '';
+            $this->crypto_custodian_wallet      = $auction->get->crypto_custodian_wallet ?? '';
+            $this->crypto_transaction_fees      = $auction->get->crypto_transaction_fees ?? '';
+
+            // Extended NFT
+            $this->nft_gas_fees       = $auction->get->nft_gas_fees ?? '';
+            $this->nft_transfer_method = $auction->get->nft_transfer_method ?? '';
+            $this->nft_valuation_method = $auction->get->nft_valuation_method ?? '';
+
+            // Appliances
+            $rawAppliances = $auction->get->appliances ?? [];
+            $this->appliances = is_string($rawAppliances) ? json_decode($rawAppliances, true) ?? [] : (array)$rawAppliances;
+            $this->other_appliances = $auction->get->other_appliances ?? '';
+
+            // Additional multi-unit fields
+            $this->number_of_units      = $auction->get->number_of_units ?? '';
+            $this->number_occupied      = $auction->get->number_occupied ?? '';
+            $this->expected_rent        = $auction->get->expected_rent ?? '';
+            $this->sqft_heated_source   = $auction->get->sqft_heated_source ?? '';
+            $this->beds_unit            = $auction->get->beds_unit ?? '';
+            $this->baths_unit           = $auction->get->baths_unit ?? '';
+            $this->garage_spaces        = $auction->get->garage_spaces ?? '';
+            $this->carport_spaces       = $auction->get->carport_spaces ?? '';
+            $this->unit_type_description = $auction->get->unit_type_description ?? '';
+            $this->breed_restrictions   = $auction->get->breed_restrictions ?? '';
+
+            // Unit type configurations
+            $unitTypeConfigRaw = $auction->get->unit_type_configurations ?? null;
+            if ($unitTypeConfigRaw) {
+                $decoded = is_array($unitTypeConfigRaw) ? $unitTypeConfigRaw : json_decode($unitTypeConfigRaw, true);
+                if (is_array($decoded) && count($decoded) > 0) {
+                    $this->unit_type_configurations = array_values($decoded);
+                }
+            }
+
+            // Current status & misc timeframe others
+            $this->current_status                  = $auction->get->current_status ?? '';
+            $this->initial_deposit_timeframe_other  = $auction->get->initial_deposit_timeframe_other ?? '';
+            $this->additional_deposit_timeframe_other = $auction->get->additional_deposit_timeframe_other ?? '';
+
+            // Broker compensation — seller-specific
+            $this->nominal                       = $auction->get->nominal ?? '';
+            $this->interested_purchase_fee_type  = $auction->get->interested_purchase_fee_type ?? '';
+            $this->interested_lease_option_agreement = $auction->get->interested_lease_option_agreement ?? '';
+            $this->lease_type                    = $auction->get->lease_type ?? 'percent';
+            $this->lease_value                   = $auction->get->lease_value ?? null;
+            $this->purchase_type                 = $auction->get->purchase_type ?? 'percent';
+            $this->purchase_value                = $auction->get->purchase_value ?? null;
+            $this->retained_deposits             = $auction->get->retained_deposits ?? '';
+
+            // Seller leasing fee fields
+            $this->seller_leasing_fee_type                         = $auction->get->seller_leasing_fee_type ?? '';
+            $this->seller_leasing_gross                            = $auction->get->seller_leasing_gross ?? '';
+            $this->seller_leasing_gross_rental                     = $auction->get->seller_leasing_gross_rental ?? '';
+            $this->seller_leasing_gross_month_rent                 = $auction->get->seller_leasing_gross_month_rent ?? '';
+            $this->seller_leasing_gross_no_of_months               = $auction->get->seller_leasing_gross_no_of_months ?? '';
+            $this->seller_leasing_gross_flat                       = $auction->get->seller_leasing_gross_flat ?? '';
+            $this->seller_leasing_gross_other                      = $auction->get->seller_leasing_gross_other ?? '';
+            $this->seller_leasing_each_rental                      = $auction->get->seller_leasing_each_rental ?? '';
+            $this->seller_leasing_gross_percentage                 = $auction->get->seller_leasing_gross_percentage ?? '';
+            $this->seller_leasing_gross_percentage_combo           = $auction->get->seller_leasing_gross_percentage_combo ?? '';
+            $this->seller_leasing_gross_flat_combo                 = $auction->get->seller_leasing_gross_flat_combo ?? '';
+            $this->seller_leasing_gross_flat_net_combo             = $auction->get->seller_leasing_gross_flat_net_combo ?? '';
+            $this->seller_leasing_gross_percentage_net_combo       = $auction->get->seller_leasing_gross_percentage_net_combo ?? '';
+            $this->seller_leasing_gross_purchase_fee_flat_amount   = $auction->get->seller_leasing_gross_purchase_fee_flat_amount ?? '';
+            $this->seller_leasing_gross_purchase_fee_other         = $auction->get->seller_leasing_gross_purchase_fee_other ?? '';
+            $this->sales_tax_option_gross                          = $auction->get->sales_tax_option_gross ?? '';
+            $this->seller_leasing_gross_sales_tax_first_month      = $auction->get->seller_leasing_gross_sales_tax_first_month ?? '';
+            $this->seller_leasing_gross_sales_tax_flat_free_gross  = $auction->get->seller_leasing_gross_sales_tax_flat_free_gross ?? '';
+            $this->seller_leasing_gross_sales_tax_option_gross     = $auction->get->seller_leasing_gross_sales_tax_option_gross ?? '';
+
+            // Commission structure type fields
+            $this->commission_structure_type                  = $auction->get->commission_structure_type ?? '';
+            $this->commission_structure_type_fee_flat         = $auction->get->commission_structure_type_fee_flat ?? '';
+            $this->commission_structure_type_fee_percentage   = $auction->get->commission_structure_type_fee_percentage ?? '';
+            $this->commission_structure_type_fee_other        = $auction->get->commission_structure_type_fee_other ?? '';
+            $this->commission_structure_type_fee_flat_combo   = $auction->get->commission_structure_type_fee_flat_combo ?? '';
+            $this->commission_structure_type_fee_percentage_combo = $auction->get->commission_structure_type_fee_percentage_combo ?? '';
         }
+    }
+
+    private function processPendingPhotoUploads(): void
+    {
+        if (empty($this->newPropertyPhotos)) {
+            return;
+        }
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        foreach ($this->newPropertyPhotos as $photo) {
+            if (in_array($photo->getMimeType(), $allowedMimes)) {
+                $ext = $photo->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $photo->storeAs('auction/images', $fileName, 'public');
+                $this->propertyPhotos[] = $fileName;
+            }
+        }
+        $this->newPropertyPhotos = [];
+    }
+
+    public function updatedNewPropertyPhotos()
+    {
+        try {
+            $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+            $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
+            if (count($this->propertyPhotos) + $incoming > 50) {
+                $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
+                $this->newPropertyPhotos = [];
+                return;
+            }
+            $this->processPendingPhotoUploads();
+            if ($this->listingId) {
+                $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+                $auction->saveMeta('property_photos', $this->propertyPhotos);
+            }
+        } catch (\Throwable $e) {
+            $this->newPropertyPhotos = [];
+            $this->addError('newPropertyPhotos', 'Photo upload failed. Please try again.');
+        }
+    }
+
+    public function updatedListingDocuments()
+    {
+        $this->validate(['listingDocuments' => 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240']);
+    }
+
+    public function deletePropertyPhoto($index)
+    {
+        if (isset($this->propertyPhotos[$index])) {
+            $filename = $this->propertyPhotos[$index];
+            Storage::disk('public')->delete('auction/images/' . $filename);
+            array_splice($this->propertyPhotos, $index, 1);
+            if ($this->listingId) {
+                $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+                if (empty($this->propertyPhotos)) {
+                    $auction->deleteMeta('property_photos');
+                } else {
+                    $auction->saveMeta('property_photos', $this->propertyPhotos);
+                }
+            }
+        }
+    }
+
+    public function reorderPhotos(array $orderedFilenames): void
+    {
+        $current  = $this->propertyPhotos;
+        $newOrder = [];
+        foreach ($orderedFilenames as $fname) {
+            if (in_array($fname, $current, true)) {
+                $newOrder[] = $fname;
+            }
+        }
+        foreach ($current as $fname) {
+            if (!in_array($fname, $newOrder, true)) {
+                $newOrder[] = $fname;
+            }
+        }
+        $this->propertyPhotos = $newOrder;
+        if ($this->listingId) {
+            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function movePhotoUp(int $index): void
+    {
+        if ($index <= 0 || !isset($this->propertyPhotos[$index])) {
+            return;
+        }
+        [$this->propertyPhotos[$index - 1], $this->propertyPhotos[$index]] =
+            [$this->propertyPhotos[$index], $this->propertyPhotos[$index - 1]];
+        if ($this->listingId) {
+            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function movePhotoDown(int $index): void
+    {
+        if (!isset($this->propertyPhotos[$index + 1])) {
+            return;
+        }
+        [$this->propertyPhotos[$index], $this->propertyPhotos[$index + 1]] =
+            [$this->propertyPhotos[$index + 1], $this->propertyPhotos[$index]];
+        if ($this->listingId) {
+            $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function deleteListingDocument()
+    {
+        if ($this->listingDocuments && is_string($this->listingDocuments)) {
+            Storage::disk('public')->delete('auction/documents/' . $this->listingDocuments);
+            if ($this->listingId) {
+                $auction = SellerAgentAuctionModel::findOrFail($this->listingId);
+                $auction->deleteMeta('listing_documents');
+            }
+        }
+        $this->listingDocuments = null;
     }
 
     public function updatedSellerDisclosureFile()
@@ -1719,6 +2181,12 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('cities', json_encode($this->cities));
         $auction->saveMeta('counties', json_encode($this->counties));
         $auction->saveMeta('state', $this->state);
+        $auction->saveMeta('zip_code', $this->zip_code);
+        $auction->saveMeta('zipCodes', json_encode($this->zipCodes));
+        $auction->saveMeta('property_city', $this->property_city);
+        $auction->saveMeta('property_county', $this->property_county);
+        $auction->saveMeta('property_state', $this->property_state);
+        $auction->saveMeta('property_zip', $this->property_zip);
 
         // Property Details
         $auction->saveMeta('property_type', $this->property_type);
@@ -1736,7 +2204,7 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('minimum_leaseable', $this->minimum_leaseable);
         $auction->saveMeta('min_acreage', $this->min_acreage);
         $auction->saveMeta('total_acreage', $this->total_acreage);
-        $auction->saveMeta('minimum_cap_rate', $this->minimum_cap_rate);
+        $auction->saveMeta('minimum_cap_rate', $this->stripCommas($this->minimum_cap_rate));
         $auction->saveMeta('unit_number', $this->unit_number);
         $auction->saveMeta('unit_buildings', $this->unit_buildings);
         $assetsToSave = (!empty($this->business_assets) && is_array($this->business_assets))
@@ -1749,40 +2217,155 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('unit_size_other', $this->unit_size_other);
         $auction->saveMeta('preferance_details', $this->preferance_details);
 
+        // Occupant / Business
+        $auction->saveMeta('occupant_status', $this->occupant_status);
+        $auction->saveMeta('occupant_tenant', $this->occupant_tenant);
+        $auction->saveMeta('business_type', $this->business_type);
+        $auction->saveMeta('other_business_type', $this->other_business_type);
+        $auction->saveMeta('target_closing_date', $this->target_closing_date);
+
+        // Financial Details tab — Income
+        $auction->saveMeta('gross_annual_income', $this->stripCommas($this->gross_annual_income));
+        $auction->saveMeta('annual_operating_expenses', $this->stripCommas($this->annual_operating_expenses));
+        $auction->saveMeta('rent_roll_available', $this->rent_roll_available);
+        $auction->saveMeta('operating_statement_available', $this->operating_statement_available);
+
+        // Financial Details tab — Commercial
+        $auction->saveMeta('price_per_sqft', $this->stripCommas($this->price_per_sqft));
+        $auction->saveMeta('existing_lease_type', $this->existing_lease_type);
+        $auction->saveMeta('other_lease_type', $this->other_lease_type);
+        $auction->saveMeta('lease_expiration', $this->lease_expiration);
+        $auction->saveMeta('lease_assignable', $this->lease_assignable);
+
+        // Financial Details tab — Business
+        $auction->saveMeta('annual_revenue', $this->stripCommas($this->annual_revenue));
+        $auction->saveMeta('gross_profit', $this->stripCommas($this->gross_profit));
+        $auction->saveMeta('sde_ebitda', $this->stripCommas($this->sde_ebitda));
+        $auction->saveMeta('inventory_value', $this->stripCommas($this->inventory_value));
+        $auction->saveMeta('ffe_value', $this->stripCommas($this->ffe_value));
+        $auction->saveMeta('reason_for_sale', $this->reason_for_sale);
+        $auction->saveMeta('other_reason_for_sale', $this->other_reason_for_sale);
+        $auction->saveMeta('employee_count', $this->employee_count);
+        $auction->saveMeta('financial_statements_available', $this->financial_statements_available);
+        $auction->saveMeta('tax_returns_available', $this->tax_returns_available);
+        $auction->saveMeta('nda_required', $this->nda_required);
+
+        // Unit type configurations
+        $configs = is_array($this->unit_type_configurations) ? $this->unit_type_configurations : [];
+        $auction->saveMeta('unit_type_configurations', json_encode(array_values($configs)));
+
+        // Additional multi-unit fields
+        $auction->saveMeta('number_of_units', $this->number_of_units);
+        $auction->saveMeta('number_occupied', $this->number_occupied);
+        $auction->saveMeta('expected_rent', $this->expected_rent);
+        $auction->saveMeta('sqft_heated_source', $this->sqft_heated_source);
+        $auction->saveMeta('beds_unit', $this->beds_unit);
+        $auction->saveMeta('baths_unit', $this->baths_unit);
+        $auction->saveMeta('garage_spaces', $this->garage_spaces);
+        $auction->saveMeta('carport_spaces', $this->carport_spaces);
+        $auction->saveMeta('unit_type_description', $this->unit_type_description);
+        $auction->saveMeta('breed_restrictions', $this->breed_restrictions);
+
+        // MLS property detail fields
+        $auction->saveMeta('year_built', $this->year_built);
+        $auction->saveMeta('zoning', $this->zoning);
+        $auction->saveMeta('roof_type', json_encode($this->roof_type));
+        $auction->saveMeta('other_roof_type', $this->other_roof_type);
+        $auction->saveMeta('exterior_construction', json_encode($this->exterior_construction));
+        $auction->saveMeta('other_exterior_construction', $this->other_exterior_construction);
+        $auction->saveMeta('foundation', json_encode($this->foundation));
+        $auction->saveMeta('other_foundation', $this->other_foundation);
+        $auction->saveMeta('heating_and_fuel', json_encode($this->heating_and_fuel));
+        $auction->saveMeta('other_heating_and_fuel', $this->other_heating_and_fuel);
+        $auction->saveMeta('air_conditioning', json_encode($this->air_conditioning));
+        $auction->saveMeta('other_air_conditioning', $this->other_air_conditioning);
+        $auction->saveMeta('water', json_encode($this->water));
+        $auction->saveMeta('other_water', $this->other_water);
+        $auction->saveMeta('sewer', json_encode($this->sewer));
+        $auction->saveMeta('other_sewer', $this->other_sewer);
+        $auction->saveMeta('utilities', json_encode($this->utilities));
+        $auction->saveMeta('other_utilities', $this->other_utilities);
+        $auction->saveMeta('road_frontage', json_encode($this->road_frontage));
+        $auction->saveMeta('other_road_frontage', $this->other_road_frontage);
+        $auction->saveMeta('road_surface_type', json_encode($this->road_surface_type));
+        $auction->saveMeta('other_road_surface_type', $this->other_road_surface_type);
+        $auction->saveMeta('electrical_service', json_encode($this->electrical_service));
+        $auction->saveMeta('other_electrical_service', $this->other_electrical_service);
+        $auction->saveMeta('ceiling_height', $this->ceiling_height);
+        $auction->saveMeta('building_features', json_encode($this->building_features));
+        $auction->saveMeta('other_building_features', $this->other_building_features);
+        $auction->saveMeta('number_water_meters', $this->number_water_meters);
+        $auction->saveMeta('number_electric_meters', $this->number_electric_meters);
+        $auction->saveMeta('business_name', $this->business_name);
+        $auction->saveMeta('year_established', $this->year_established);
+        $auction->saveMeta('licenses', json_encode($this->licenses));
+        $auction->saveMeta('other_licenses', $this->other_licenses);
+        $auction->saveMeta('sale_includes', json_encode($this->sale_includes));
+        $auction->saveMeta('other_sale_includes', $this->other_sale_includes);
+        $auction->saveMeta('current_use', json_encode($this->current_use));
+        $auction->saveMeta('other_current_use', $this->other_current_use);
+        $auction->saveMeta('lot_dimensions', $this->lot_dimensions);
+        $auction->saveMeta('front_footage', $this->front_footage);
+        $auction->saveMeta('number_of_wells', $this->number_of_wells);
+        $auction->saveMeta('number_of_septics', $this->number_of_septics);
+        $auction->saveMeta('current_adjacent_use', json_encode($this->current_adjacent_use));
+        $auction->saveMeta('other_current_adjacent_use', $this->other_current_adjacent_use);
+        $auction->saveMeta('fences', json_encode($this->fences));
+        $auction->saveMeta('other_fences', $this->other_fences);
+        $auction->saveMeta('vegetation', json_encode($this->vegetation));
+        $auction->saveMeta('other_vegetation', $this->other_vegetation);
+        $auction->saveMeta('buildable', $this->buildable);
+        $auction->saveMeta('easements', json_encode($this->easements));
+        $auction->saveMeta('other_easements', $this->other_easements);
+
         // Sale Provisions
         $auction->saveMeta('sale_provision', $this->sale_provision);
         $auction->saveMeta('sale_provision_other', $this->sale_provision_other);
         $auction->saveMeta('sale_provision_assignment', $this->sale_provision_assignment);
         $auction->saveMeta('assignment_fee_type', $this->assignment_fee_type);
-        $auction->saveMeta('assignment_fee_amount', $this->assignment_fee_amount);
+        $auction->saveMeta('assignment_fee_amount', $this->stripCommas($this->assignment_fee_amount));
         $auction->saveMeta('buyer_sell_contract', $this->buyer_sell_contract);
 
         // Budget & Financing
-        $auction->saveMeta('maximum_budget', $this->maximum_budget);
-        $auction->saveMeta('starting_price', $this->starting_price);
-        $auction->saveMeta('reserve_price', $this->reserve_price);
-        $auction->saveMeta('buy_now_price', $this->buy_now_price);
+        $auction->saveMeta('maximum_budget', $this->stripCommas($this->maximum_budget));
+        $auction->saveMeta('starting_price', $this->stripCommas($this->starting_price));
+        $auction->saveMeta('reserve_price', $this->stripCommas($this->reserve_price));
+        $auction->saveMeta('buy_now_price', $this->stripCommas($this->buy_now_price));
         $auction->saveMeta('offered_financing', json_encode($this->offered_financing));
         $auction->saveMeta('other_financing', $this->other_financing);
         $auction->saveMeta('cash_budget', $this->cash_budget);
         $auction->saveMeta('pre_approved', $this->pre_approved);
         $auction->saveMeta('pre_approval_amount', $this->pre_approval_amount);
-        $auction->saveMeta('purchase_price', $this->purchase_price);
+        $auction->saveMeta('purchase_price', $this->stripCommas($this->purchase_price));
         $auction->saveMeta('down_payment_type', $this->down_payment_type);
-        $auction->saveMeta('down_payment_amount', $this->down_payment_amount);
+        $auction->saveMeta('down_payment_amount', $this->stripCommas($this->down_payment_amount));
         $auction->saveMeta('seller_financing_type', $this->seller_financing_type);
-        $auction->saveMeta('seller_financing_amount', $this->seller_financing_amount);
+        $auction->saveMeta('seller_financing_amount', $this->stripCommas($this->seller_financing_amount));
+        $auction->saveMeta('seller_down_payment_amount', $this->stripCommas($this->seller_down_payment_amount));
+        $auction->saveMeta('seller_late_fee_amount', $this->stripCommas($this->seller_late_fee_amount));
         $auction->saveMeta('interest_rate', $this->interest_rate);
         $auction->saveMeta('loan_duration', $this->loan_duration);
         $auction->saveMeta('prepayment_penalty', $this->prepayment_penalty);
-        $auction->saveMeta('prepayment_penalty_amount', $this->prepayment_penalty_amount);
-        $auction->saveMeta('balloon_payment_amount', $this->balloon_payment_amount);
+        $auction->saveMeta('prepayment_penalty_amount', $this->stripCommas($this->prepayment_penalty_amount));
+        $auction->saveMeta('balloon_payment', $this->balloon_payment);
+        $auction->saveMeta('balloon_payment_amount', $this->stripCommas($this->balloon_payment_amount));
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
         $auction->saveMeta('assumable_terms', $this->assumable_terms);
-        $auction->saveMeta('max_assumable_rate', $this->max_assumable_rate);
-        $auction->saveMeta('max_monthly_payment', $this->max_monthly_payment);
+        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
+        $auction->saveMeta('outstanding_balance', $this->outstanding_balance);
+        $auction->saveMeta('lender_approval_required', $this->lender_approval_required);
+        $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
+        $auction->saveMeta('assumable_monthly_escrow', $this->stripCommas($this->assumable_monthly_escrow));
+        $auction->saveMeta('assumable_loan_term_remaining', $this->assumable_loan_term_remaining);
+        $auction->saveMeta('assumable_loan_origination_date', $this->assumable_loan_origination_date);
+        $auction->saveMeta('assumable_loan_servicer', $this->assumable_loan_servicer);
+        $auction->saveMeta('assumable_fee_type', $this->assumable_fee_type);
+        $auction->saveMeta('assumable_fee_amount', $this->stripCommas($this->assumable_fee_amount));
+        $auction->saveMeta('assumable_occupancy_requirement', $this->assumable_occupancy_requirement);
+        $auction->saveMeta('assumable_occupancy_other', $this->assumable_occupancy_other);
+        $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
-        $auction->saveMeta('gap_payment_amount', $this->gap_payment_amount);
+        $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));
 
         // Exchange / Trade
         $exchangeItemVal = $this->exchange_item;
@@ -1790,38 +2373,75 @@ class SellerOfferListingEdit extends Component
         if (is_string($exchangeItemVal)) $exchangeItemVal = json_decode($exchangeItemVal, true) ?? [];
         $auction->saveMeta('exchange_item', json_encode(array_values(array_filter((array) $exchangeItemVal))));
         $auction->saveMeta('other_exchange_item', $this->other_exchange_item);
-        $auction->saveMeta('exchange_item_value', $this->exchange_item_value);
+        $auction->saveMeta('exchange_item_value', $this->stripCommas($this->exchange_item_value));
         $auction->saveMeta('exchange_item_condition', $this->exchange_item_condition);
-        $auction->saveMeta('additional_cash', $this->additional_cash);
+        $auction->saveMeta('additional_cash', $this->stripCommas($this->additional_cash));
         $auction->saveMeta('value_determination', $this->value_determination);
+        $auction->saveMeta('exchange_transfer_method', $this->exchange_transfer_method);
+        $auction->saveMeta('exchange_liens_disclosure', $this->exchange_liens_disclosure);
+        $auction->saveMeta('exchange_liens_details', $this->exchange_liens_details);
+        $auction->saveMeta('exchange_inspection_rights', $this->exchange_inspection_rights);
 
         // Lease Option
-        $auction->saveMeta('lease_option_price', $this->lease_option_price);
+        $auction->saveMeta('lease_option_price', $this->stripCommas($this->lease_option_price));
         $auction->saveMeta('lease_option_terms', $this->lease_option_terms);
         $auction->saveMeta('lease_option_duration', $this->lease_option_duration);
-        $auction->saveMeta('lease_option_payment', $this->lease_option_payment);
+        $auction->saveMeta('lease_option_payment', $this->stripCommas($this->lease_option_payment));
         $auction->saveMeta('lease_option_conditions', $this->lease_option_conditions);
         $auction->saveMeta('has_option_fee', $this->has_option_fee);
-        $auction->saveMeta('option_fee_amount', $this->option_fee_amount);
+        $auction->saveMeta('option_fee_amount', $this->stripCommas($this->option_fee_amount));
+        $auction->saveMeta('seller_lease_option_fee_credit', $this->seller_lease_option_fee_credit);
+        $auction->saveMeta('seller_lease_option_fee_credit_percent', $this->seller_lease_option_fee_credit_percent);
+        $auction->saveMeta('seller_lease_option_maintenance', $this->seller_lease_option_maintenance);
+        $auction->saveMeta('seller_lease_option_extension_terms', $this->seller_lease_option_extension_terms);
+        $auction->saveMeta('lease_option_fee_credit', $this->lease_option_fee_credit);
+        $auction->saveMeta('lease_option_fee_credit_percentage', $this->lease_option_fee_credit_percentage);
+        $auction->saveMeta('lease_option_maintenance', $this->lease_option_maintenance);
+        $auction->saveMeta('lease_option_extension_terms', $this->lease_option_extension_terms);
 
         // Lease Purchase
-        $auction->saveMeta('lease_purchase_price', $this->lease_purchase_price);
+        $auction->saveMeta('lease_purchase_price', $this->stripCommas($this->lease_purchase_price));
         $auction->saveMeta('lease_purchase_terms', $this->lease_purchase_terms);
         $auction->saveMeta('lease_purchase_duration', $this->lease_purchase_duration);
-        $auction->saveMeta('lease_purchase_payment', $this->lease_purchase_payment);
+        $auction->saveMeta('lease_purchase_payment', $this->stripCommas($this->lease_purchase_payment));
         $auction->saveMeta('lease_purchase_conditions', $this->lease_purchase_conditions);
         $auction->saveMeta('lease_purchase_option_fee', $this->lease_purchase_option_fee);
-        $auction->saveMeta('lease_purchase_option_fee_amount', $this->lease_purchase_option_fee_amount);
+        $auction->saveMeta('lease_purchase_option_fee_amount', $this->stripCommas($this->lease_purchase_option_fee_amount));
+        $auction->saveMeta('seller_lease_purchase_rent_credit', $this->seller_lease_purchase_rent_credit);
+        $auction->saveMeta('seller_lease_purchase_rent_credit_type', $this->seller_lease_purchase_rent_credit_type);
+        $auction->saveMeta('seller_lease_purchase_rent_credit_amount', $this->stripCommas($this->seller_lease_purchase_rent_credit_amount));
+        $auction->saveMeta('seller_lease_purchase_deposit', $this->stripCommas($this->seller_lease_purchase_deposit));
+        $auction->saveMeta('seller_lease_purchase_maintenance', $this->seller_lease_purchase_maintenance);
+        $auction->saveMeta('seller_lease_purchase_extension_terms', $this->seller_lease_purchase_extension_terms);
+        $auction->saveMeta('lease_purchase_rent_credit', $this->lease_purchase_rent_credit);
+        $auction->saveMeta('lease_purchase_rent_credit_amount', $this->stripCommas($this->lease_purchase_rent_credit_amount));
+        $auction->saveMeta('lease_purchase_deposit', $this->stripCommas($this->lease_purchase_deposit));
+        $auction->saveMeta('lease_purchase_maintenance', $this->lease_purchase_maintenance);
+        $auction->saveMeta('lease_purchase_extension_terms', $this->lease_purchase_extension_terms);
+
+        // Seller Amortization
+        $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
+        $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
+        $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
+        $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
 
         // Cryptocurrency
         $auction->saveMeta('cryptocurrency_type', $this->cryptocurrency_type);
         $auction->saveMeta('crypto_percentage', $this->crypto_percentage);
         $auction->saveMeta('cash_percentage_crypto', $this->cash_percentage_crypto);
+        $auction->saveMeta('crypto_transfer_timing', $this->crypto_transfer_timing);
+        $auction->saveMeta('crypto_transfer_timing_other', $this->crypto_transfer_timing_other);
+        $auction->saveMeta('crypto_exchange_method', $this->crypto_exchange_method);
+        $auction->saveMeta('crypto_custodian_wallet', $this->crypto_custodian_wallet);
+        $auction->saveMeta('crypto_transaction_fees', $this->crypto_transaction_fees);
 
         // NFT
         $auction->saveMeta('nft_description', $this->nft_description);
         $auction->saveMeta('nft_percentage', $this->nft_percentage);
         $auction->saveMeta('cash_percentage_nft', $this->cash_percentage_nft);
+        $auction->saveMeta('nft_gas_fees', $this->nft_gas_fees);
+        $auction->saveMeta('nft_transfer_method', $this->nft_transfer_method);
+        $auction->saveMeta('nft_valuation_method', $this->nft_valuation_method);
 
         // Amenities and Features
         $auction->saveMeta('tenant_require', json_encode($this->tenant_require));
@@ -1836,10 +2456,12 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
         $auction->saveMeta('view_preference', json_encode($this->view_preference));
         $auction->saveMeta('other_preferences', $this->other_preferences);
+        $auction->saveMeta('appliances', json_encode($this->appliances));
+        $auction->saveMeta('other_appliances', $this->other_appliances);
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);
-        $auction->saveMeta('minimum_annual_net_income', $this->minimum_annual_net_income);
+        $auction->saveMeta('minimum_annual_net_income', $this->stripCommas($this->minimum_annual_net_income));
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
 
         // Requirements
@@ -1879,39 +2501,76 @@ class SellerOfferListingEdit extends Component
 
         // Lease Fee
         $auction->saveMeta('lease_fee_type', $this->lease_fee_type);
-        $auction->saveMeta('lease_fee_flat', $this->lease_fee_flat);
+        $auction->saveMeta('lease_fee_flat', $this->stripCommas($this->lease_fee_flat));
         $auction->saveMeta('lease_fee_percentage', $this->lease_fee_percentage);
         $auction->saveMeta('lease_fee_months', $this->lease_fee_months);
         $auction->saveMeta('lease_fee_percentage_monthly_rent', $this->lease_fee_percentage_monthly_rent);
-        $auction->saveMeta('lease_fee_flat_combo', $this->lease_fee_flat_combo);
+        $auction->saveMeta('lease_fee_flat_combo', $this->stripCommas($this->lease_fee_flat_combo));
         $auction->saveMeta('lease_fee_percentage_combo', $this->lease_fee_percentage_combo);
         $auction->saveMeta('lease_fee_other', $this->lease_fee_other);
 
         // Purchase Fee
         $auction->saveMeta('purchase_fee_type', $this->purchase_fee_type);
         $auction->saveMeta('purchase_fee_percentage', $this->purchase_fee_percentage);
-        $auction->saveMeta('purchase_fee_flat', $this->purchase_fee_flat);
+        $auction->saveMeta('purchase_fee_flat', $this->stripCommas($this->purchase_fee_flat));
         $auction->saveMeta('purchase_fee_percentage_combo', $this->purchase_fee_percentage_combo);
-        $auction->saveMeta('purchase_fee_flat_combo', $this->purchase_fee_flat_combo);
+        $auction->saveMeta('purchase_fee_flat_combo', $this->stripCommas($this->purchase_fee_flat_combo));
         $auction->saveMeta('purchase_fee_other', $this->purchase_fee_other);
 
         // Lease-Option Fee
         $auction->saveMeta('lease_option_fee_type', $this->lease_option_fee_type);
-        $auction->saveMeta('lease_option_fee_flat', $this->lease_option_fee_flat);
+        $auction->saveMeta('lease_option_fee_flat', $this->stripCommas($this->lease_option_fee_flat));
         $auction->saveMeta('lease_option_fee_percentage', $this->lease_option_fee_percentage);
         $auction->saveMeta('lease_option_fee_other', $this->lease_option_fee_other);
 
         // Other Broker Terms
         $auction->saveMeta('protection_period', $this->protection_period);
         $auction->saveMeta('early_termination_fee_option', $this->early_termination_fee_option);
-        $auction->saveMeta('early_termination_fee_amount', $this->early_termination_fee_amount);
+        $auction->saveMeta('early_termination_fee_amount', $this->stripCommas($this->early_termination_fee_amount));
         $auction->saveMeta('retainer_fee_option', $this->retainer_fee_option);
-        $auction->saveMeta('retainer_fee_amount', $this->retainer_fee_amount);
+        $auction->saveMeta('retainer_fee_amount', $this->stripCommas($this->retainer_fee_amount));
         $auction->saveMeta('retainer_fee_application', $this->retainer_fee_application);
         $auction->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);
         $auction->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
         $auction->saveMeta('brokerage_relationship', $this->brokerage_relationship);
         $auction->saveMeta('additional_details_broker', $this->additional_details_broker);
+        $auction->saveMeta('lease_type', $this->lease_type);
+        $auction->saveMeta('lease_value', $this->stripCommas($this->lease_value));
+        $auction->saveMeta('purchase_type', $this->purchase_type);
+        $auction->saveMeta('purchase_value', $this->stripCommas($this->purchase_value));
+        $auction->saveMeta('interested_lease_option_agreement', $this->interested_lease_option_agreement);
+        $auction->saveMeta('interested_purchase_fee_type', $this->interested_purchase_fee_type);
+        $auction->saveMeta('nominal', $this->nominal);
+        $auction->saveMeta('retained_deposits', $this->retained_deposits);
+
+        // Seller Leasing Fee
+        $auction->saveMeta('seller_leasing_fee_type', $this->seller_leasing_fee_type);
+        $auction->saveMeta('seller_leasing_gross', $this->seller_leasing_gross);
+        $auction->saveMeta('seller_leasing_gross_rental', $this->seller_leasing_gross_rental);
+        $auction->saveMeta('seller_leasing_gross_month_rent', $this->seller_leasing_gross_month_rent);
+        $auction->saveMeta('seller_leasing_gross_no_of_months', $this->seller_leasing_gross_no_of_months);
+        $auction->saveMeta('seller_leasing_gross_flat', $this->stripCommas($this->seller_leasing_gross_flat));
+        $auction->saveMeta('seller_leasing_gross_other', $this->seller_leasing_gross_other);
+        $auction->saveMeta('seller_leasing_each_rental', $this->seller_leasing_each_rental);
+        $auction->saveMeta('seller_leasing_gross_percentage', $this->seller_leasing_gross_percentage);
+        $auction->saveMeta('seller_leasing_gross_percentage_combo', $this->seller_leasing_gross_percentage_combo);
+        $auction->saveMeta('seller_leasing_gross_flat_combo', $this->stripCommas($this->seller_leasing_gross_flat_combo));
+        $auction->saveMeta('seller_leasing_gross_flat_net_combo', $this->stripCommas($this->seller_leasing_gross_flat_net_combo));
+        $auction->saveMeta('seller_leasing_gross_percentage_net_combo', $this->seller_leasing_gross_percentage_net_combo);
+        $auction->saveMeta('seller_leasing_gross_purchase_fee_flat_amount', $this->stripCommas($this->seller_leasing_gross_purchase_fee_flat_amount));
+        $auction->saveMeta('seller_leasing_gross_purchase_fee_other', $this->seller_leasing_gross_purchase_fee_other);
+        $auction->saveMeta('sales_tax_option_gross', $this->sales_tax_option_gross);
+        $auction->saveMeta('seller_leasing_gross_sales_tax_first_month', $this->seller_leasing_gross_sales_tax_first_month);
+        $auction->saveMeta('seller_leasing_gross_sales_tax_flat_free_gross', $this->seller_leasing_gross_sales_tax_flat_free_gross);
+        $auction->saveMeta('seller_leasing_gross_sales_tax_option_gross', $this->seller_leasing_gross_sales_tax_option_gross);
+
+        // Commission Structure Type
+        $auction->saveMeta('commission_structure_type', $this->commission_structure_type);
+        $auction->saveMeta('commission_structure_type_fee_flat', $this->stripCommas($this->commission_structure_type_fee_flat));
+        $auction->saveMeta('commission_structure_type_fee_percentage', $this->commission_structure_type_fee_percentage);
+        $auction->saveMeta('commission_structure_type_fee_other', $this->commission_structure_type_fee_other);
+        $auction->saveMeta('commission_structure_type_fee_flat_combo', $this->stripCommas($this->commission_structure_type_fee_flat_combo));
+        $auction->saveMeta('commission_structure_type_fee_percentage_combo', $this->commission_structure_type_fee_percentage_combo);
 
         // 2nd tab limited services
         // Meeting details
@@ -2018,8 +2677,10 @@ class SellerOfferListingEdit extends Component
         // Sale Terms Questions
         $auction->saveMeta('initial_deposit_requested', $this->initial_deposit_requested);
         $auction->saveMeta('initial_deposit_timeframe', $this->initial_deposit_timeframe);
+        $auction->saveMeta('initial_deposit_timeframe_other', $this->initial_deposit_timeframe_other);
         $auction->saveMeta('additional_deposit_requested', $this->additional_deposit_requested);
         $auction->saveMeta('additional_deposit_timeframe', $this->additional_deposit_timeframe);
+        $auction->saveMeta('additional_deposit_timeframe_other', $this->additional_deposit_timeframe_other);
         $auction->saveMeta('escrow_agent_preference', $this->escrow_agent_preference);
         $auction->saveMeta('preferred_inspection_period', $this->preferred_inspection_period);
         $auction->saveMeta('appraisal_contingency_preference', $this->appraisal_contingency_preference);
@@ -2036,6 +2697,45 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('hoa_condo_association_terms', $this->hoa_condo_association_terms);
         $auction->saveMeta('additional_seller_sale_terms', $this->additional_seller_sale_terms);
 
+        // Tax, Legal, HOA & Disclosures tab
+        $auction->saveMeta('parcel_id', $this->parcel_id);
+        $auction->saveMeta('tax_year', $this->tax_year);
+        $auction->saveMeta('annual_property_taxes', $this->stripCommas($this->annual_property_taxes));
+        $auction->saveMeta('additional_parcels', $this->additional_parcels);
+        $auction->saveMeta('total_parcel_count', $this->total_parcel_count);
+        $auction->saveMeta('additional_parcel_ids', $this->additional_parcel_ids);
+        $auction->saveMeta('legal_description', $this->legal_description);
+        $auction->saveMeta('flood_zone_code', $this->flood_zone_code);
+        $auction->saveMeta('flood_zone_code_other', $this->flood_zone_code_other);
+        $auction->saveMeta('flood_insurance_required', $this->flood_insurance_required);
+        $auction->saveMeta('flood_zone_panel', $this->flood_zone_panel);
+        $auction->saveMeta('has_cdd', $this->has_cdd);
+        $auction->saveMeta('annual_cdd_fee', $this->stripCommas($this->annual_cdd_fee));
+        $auction->saveMeta('has_special_assessments', $this->has_special_assessments);
+        $auction->saveMeta('special_assessment_amount', $this->stripCommas($this->special_assessment_amount));
+        $auction->saveMeta('special_assessment_description', $this->special_assessment_description);
+        $auction->saveMeta('has_hoa', $this->has_hoa);
+        $auction->saveMeta('association_type', $this->association_type);
+        $auction->saveMeta('association_type_other', $this->association_type_other);
+        $auction->saveMeta('association_name', $this->association_name);
+        $auction->saveMeta('association_fee_amount', $this->stripCommas($this->association_fee_amount));
+        $auction->saveMeta('association_fee_frequency', $this->association_fee_frequency);
+        $auction->saveMeta('association_fee_frequency_other', $this->association_fee_frequency_other);
+        $auction->saveMeta('association_approval_required', $this->association_approval_required);
+        $auction->saveMeta('association_approval_process', $this->association_approval_process);
+        $auction->saveMeta('association_application_fee', $this->stripCommas($this->association_application_fee));
+        $auction->saveMeta('association_fee_includes', json_encode($this->association_fee_includes));
+        $auction->saveMeta('association_fee_includes_other', $this->association_fee_includes_other);
+        $auction->saveMeta('association_amenities', json_encode($this->association_amenities));
+        $auction->saveMeta('association_amenities_other', $this->association_amenities_other);
+        $auction->saveMeta('leasing_restrictions', $this->leasing_restrictions);
+        $auction->saveMeta('min_lease_period', $this->min_lease_period);
+        $auction->saveMeta('min_lease_period_other', $this->min_lease_period_other);
+        $auction->saveMeta('max_leases_per_year', $this->max_leases_per_year);
+        $auction->saveMeta('additional_lease_restrictions', $this->additional_lease_restrictions);
+        $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
+        $auction->saveMeta('pet_restrictions_detail', $this->pet_restrictions_detail);
+
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
         $auction->saveMeta('last_name', $this->last_name);
@@ -2047,6 +2747,7 @@ class SellerOfferListingEdit extends Component
             $auction->saveMeta('agent_license_number', $this->agent_license_number);
             $auction->saveMeta('agent_nar_member_id', $this->agent_nar_member_id);
         }
+        $auction->saveMeta('current_status', $this->current_status);
         $auction->saveMeta('video_link', $this->video_link);
         $auction->saveMeta('listing_ai_faq', json_encode($this->listing_ai_faq ?: []));
 
@@ -2084,6 +2785,8 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('flood_disclosure_available', $this->flood_disclosure_available);
         $auction->saveMeta('lead_based_paint_disclosure', $this->lead_based_paint_disclosure);
         $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
+        $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
+        $auction->saveMeta('other_document_type', $this->other_document_type);
 
         // Disclosure file uploads
         $disclosureUploads = [
@@ -2111,6 +2814,29 @@ class SellerOfferListingEdit extends Component
             } elseif ($this->{$pathProp}) {
                 $auction->saveMeta($pathProp, $this->{$pathProp});
             }
+        }
+
+        // Save Photos, Tours & Documents fields
+        $auction->saveMeta('video_tour_url', $this->videoTourUrl ?? '');
+        $auction->saveMeta('virtual_tour_url', $this->virtualTourUrl ?? '');
+
+        $this->processPendingPhotoUploads();
+        $auction->saveMeta('property_photos', $this->propertyPhotos);
+
+        if ($this->listingDocuments && !is_string($this->listingDocuments)) {
+            $allowedMimes = ['application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'image/jpeg', 'image/png'];
+            if (in_array($this->listingDocuments->getMimeType(), $allowedMimes)) {
+                $ext = $this->listingDocuments->getClientOriginalExtension();
+                $uuid = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                Storage::disk('public')->makeDirectory('auction/documents');
+                $this->listingDocuments->storeAs('auction/documents', $fileName, 'public');
+                $auction->saveMeta('listing_documents', $fileName);
+            }
+        } elseif ($this->listingDocuments && is_string($this->listingDocuments)) {
+            $auction->saveMeta('listing_documents', $this->listingDocuments);
         }
     }
 
@@ -2140,5 +2866,11 @@ class SellerOfferListingEdit extends Component
         }
     }
 
-
+    protected function stripCommas($value)
+    {
+        if ($value === null || $value === '') {
+            return $value;
+        }
+        return str_replace(',', '', $value);
+    }
 }
