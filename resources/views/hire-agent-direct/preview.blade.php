@@ -938,45 +938,6 @@
                 </div>
             </div>
 
-            {{-- ── Client Requested Services ────────────────────────── --}}
-            <div class="preview-section">
-                <div class="preview-section-header"><i class="fa-solid fa-list-plus"></i> Additional Services You'd Like to Request</div>
-                <div class="preview-section-body">
-                    <p class="text-muted small mb-2">
-                        Request any additional services you'd like the Agent to consider.
-                        These are not included unless agreed upon.
-                    </p>
-                    <textarea name="client_custom_services"
-                              class="form-control @error('client_custom_services') is-invalid @enderror"
-                              rows="4"
-                              placeholder="Enter one service per line, e.g.:&#10;Provide virtual staging for the listing&#10;Coordinate with HOA for access"
-                              @if($isOwnerPreview) disabled @endif>{{ old('client_custom_services') }}</textarea>
-                    <div class="text-muted" style="font-size:.78rem;margin-top:.35rem;">Enter one service per line.</div>
-                    @error('client_custom_services')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-
-            {{-- ── Additional Services Requested ──────────────────── --}}
-            <div class="preview-section">
-                <div class="preview-section-header"><i class="fa-solid fa-plus-circle"></i> Additional Services Requested</div>
-                <div class="preview-section-body">
-                    <p class="text-muted small mb-2">
-                        Optional. List any additional services you would like this agent to consider.
-                        These are requests only — the agent's preset determines what is formally included.
-                    </p>
-                    <textarea name="additional_requested"
-                              class="form-control @error('additional_requested') is-invalid @enderror"
-                              rows="3"
-                              placeholder="List any additional services you would like this Agent to consider."
-                              @if($isOwnerPreview) disabled @endif>{{ old('additional_requested') }}</textarea>
-                    @error('additional_requested')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-            </div>
-
             {{-- ── Process notice ─────────────────────────────────── --}}
             <div class="process-notice">
                 <i class="fa-solid fa-circle-info me-2"></i>

@@ -69,9 +69,10 @@ class SellerCounteredTermsController extends Controller
     }
     public function edit(Request $request, $id)
     {
-        // Legacy static edit form deprecated — counter terms are now managed via
-        // the SellerAgentAuctionCounterTerm Livewire component (seller.counter-terms route).
-        return redirect()->route('dashboard')->with('error', 'This page is no longer available. Please use the counter terms form from your listing.');
+        $pab = SellerAgentAuctionBid::findOrFail($id);
+        $bid_id = $id;
+
+        return view('seller_counter_terms.add', compact('pab', 'bid_id'));
     }
     public function update(Request $request, $id)
     {

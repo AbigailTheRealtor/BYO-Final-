@@ -68,12 +68,12 @@ class HireAgentDirectController extends Controller
         'seller'   => 'seller.agent.auction.detail',
     ];
 
-    /** Role → existing per-role view-counter route (client lands here after counter) */
+    /** Role → 3-tab edit-counter-terms form (client lands here directly after counter intent) */
     private const COUNTER_ROUTES = [
-        'buyer'    => 'buyer.hire.agent.auction.bid.view-counter',
-        'seller'   => 'hire.seller.agent.auction.bid.view-counter',
-        'landlord' => 'landlord.hire.agent.auction.bid.view-counter',
-        'tenant'   => 'tenant.hire.agent.auction.bid.view-counter',
+        'buyer'    => 'buyer.edit-counter-terms',
+        'seller'   => 'seller.edit-counter-terms',
+        'landlord' => 'landlord.edit-counter-terms',
+        'tenant'   => 'tenant.edit-counter-terms',
     ];
 
     /**
@@ -416,7 +416,7 @@ class HireAgentDirectController extends Controller
             // ── 5. Redirect based on intent ─────────────────────────────
             if ($intent === 'counter') {
                 return redirect()
-                    ->route(self::COUNTER_ROUTES[$role], ['bid_id' => $bid->id]);
+                    ->route(self::COUNTER_ROUTES[$role], ['id' => $bid->id]);
             }
 
             $viewRoute = self::LISTING_VIEW_ROUTES[$role];
