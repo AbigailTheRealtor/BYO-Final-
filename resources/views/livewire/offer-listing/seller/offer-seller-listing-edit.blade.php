@@ -277,6 +277,35 @@
                 font-size: 1rem;
             }
         }
+
+        /* Agent type selection button text styling */
+        .user-selected {
+            color: #0ce7ef;
+            font-weight: 600;
+        }
+
+        .input-group-text-seller {
+            display: flex;
+            align-items: center;
+            padding: 0.7rem 0.75rem;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1.5;
+            color: #212529;
+            text-align: center;
+            white-space: nowrap;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: .375rem;
+        }
+
+        .input-group-text-seller+input.form-control {
+            padding-left: 8px;
+        }
+
+        .percentage-value-set {
+            padding-left: 9px !important;
+        }
     </style>
 @endpush
 
@@ -285,18 +314,13 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'Completely Updated: No updates needed'],
-        ['name' => 'Currently Being Built'],
-        ['name' => 'New Construction'],
-        ['name' => 'Not Updated: Requires a complete update'],
-        ['name' => 'Open to any type of property condition'],
-        ['name' => 'Pre-Construction'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
-        // ['name' => 'Open to any type of property condition.'],
-        // ['name' => 'Semi-updated: Needs minor updates.'],
-        // ['name' => 'Other'],
+        ['name' => 'Updated/Renovated', 'display' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
+        ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
+        ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
+
+    $property_condition_seller = $property_condition;
 
     $bedroomsRes = [
         ['name' => '1'],
@@ -365,6 +389,50 @@
         ['name' => 'Tennis Court'],
         ['name' => 'Trees/Woods'],
         ['name' => 'Water'],
+        ['name' => 'Other'],
+    ];
+
+    // Appliances list matching Landlord Agent with legacy options for backwards compatibility
+    $applianceOptions = [
+        ['name' => 'Bar Fridge'],
+        ['name' => 'Built-In Oven'],
+        ['name' => 'Central Vacuum'],
+        ['name' => 'Convection Oven'],
+        ['name' => 'Cooktop'],
+        ['name' => 'Dishwasher'],
+        ['name' => 'Disposal'],
+        ['name' => 'Dryer'],
+        ['name' => 'Electric Water Heater'],
+        ['name' => 'Exhaust Fan'],
+        ['name' => 'Freezer'],
+        ['name' => 'Garbage Disposal'],
+        ['name' => 'Gas Water Heater'],
+        ['name' => 'Ice Maker'],
+        ['name' => 'Indoor Grill'],
+        ['name' => 'Kitchen Reverse Osmosis System'],
+        ['name' => 'Microwave'],
+        ['name' => 'Oven'],
+        ['name' => 'Range Electric'],
+        ['name' => 'Range Gas'],
+        ['name' => 'Range Hood'],
+        ['name' => 'Refrigerator'],
+        ['name' => 'Solar Hot Water'],
+        ['name' => 'Solar Hot Water Owned'],
+        ['name' => 'Solar Hot Water Rented'],
+        ['name' => 'Stove/Range'],
+        ['name' => 'Tankless Water Heater'],
+        ['name' => 'Touchless Faucet'],
+        ['name' => 'Trash Compactor'],
+        ['name' => 'Washer'],
+        ['name' => 'Washer/Dryer Combo'],
+        ['name' => 'Water Filtration System'],
+        ['name' => 'Water Heater'],
+        ['name' => 'Water Purifier'],
+        ['name' => 'Water Softener'],
+        ['name' => 'Whole House R.O. System'],
+        ['name' => 'Wine Cooler'],
+        ['name' => 'Wine Refrigerator'],
+        ['name' => 'None'],
         ['name' => 'Other'],
     ];
 

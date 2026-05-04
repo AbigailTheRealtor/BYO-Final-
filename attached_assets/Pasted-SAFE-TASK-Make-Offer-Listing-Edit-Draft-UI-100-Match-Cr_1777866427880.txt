@@ -1,0 +1,51 @@
+SAFE TASK — Make Offer Listing Edit/Draft UI 100% Match Create UI
+
+Issue:
+The Offer Listing edit/resume draft pages now have the correct tabs, but the UI is still not identical to the create flow.
+
+Observed differences:
+- “Create Seller Listing / Create Buyer Listing / Create Landlord Listing / Create Tenant Listing” text appears black on edit/draft, but teal on create.
+- Several field icons are missing or different on edit/draft.
+- Field styling/layout does not fully match create.
+- Edit/draft appears to be using duplicated or older blade markup instead of the exact current create UI.
+
+Requirement:
+For Seller, Buyer, Landlord, and Tenant Offer Listings, edit/resume draft must visually and structurally match create 100%.
+
+Scope:
+- Offer Listing edit/resume draft pages
+- Seller, Buyer, Landlord, Tenant
+- Blade/UI rendering only unless a small Livewire binding adjustment is required
+
+Do NOT:
+- Change database schema
+- Touch Hire Agent flows
+- Touch Direct Hire counter form
+- Change validation rules unless required for matching existing create behavior
+- Rename saved fields
+- Add new fields
+- Change create flow styling unless absolutely necessary and reported first
+
+Required Fix:
+1. Compare create blade/partials against edit/resume draft blade/partials for each role.
+2. Identify duplicated legacy edit markup.
+3. Refactor edit/resume draft to reuse the same current create partials/classes/components wherever possible.
+4. Ensure listing type cards, labels, icons, input wrappers, select styling, currency prefixes, and tab styling match create exactly.
+5. Preserve edit/draft data loading and Save Draft/Submit behavior.
+6. Do this for:
+   - Seller
+   - Buyer
+   - Landlord
+   - Tenant
+
+Verification:
+For each role:
+- Open create page.
+- Screenshot Listing Details, Property Details/Preferences, and Terms tabs.
+- Save Draft.
+- Reopen/edit draft.
+- Compare same tabs side by side.
+- Confirm text color, icons, spacing, tabs, input wrappers, and labels match.
+- Confirm saved data still reloads.
+- Confirm Save Draft still works.
+- Confirm Submit still works.

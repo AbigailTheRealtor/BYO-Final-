@@ -319,10 +319,10 @@
     $property_types = [['name' => 'Residential Property'], ['name' => 'Commercial Property']];
 
     $property_condition = [
-        ['name' => 'Updated / Renovated'],
-        ['name' => 'Partially updated (some older finishes OK)'],
-        ['name' => 'Older but clean & well maintained'],
-        ['name' => 'No preference (open to any condition)'],
+        ['name' => 'Updated/Renovated', 'display' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated', 'display' => 'Partially Updated'],
+        ['name' => 'Older but Clean', 'display' => 'Older but Clean & Well Maintained'],
+        ['name' => 'No Preference', 'display' => 'No Preference'],
     ];
 
     $bedroomsRes = [
@@ -339,7 +339,7 @@
         ['name' => 'Other'],
     ];
 
-    $bathrooms = [
+    $bathroomsRes = [
         ['name' => '1'],
         ['name' => '1.5'],
         ['name' => '2'],
@@ -741,6 +741,60 @@
         ['name' => 'Probate Listing', 'description' => 'The Buyer is open to purchasing properties being sold through probate court.'],
         ['name' => 'Short Sale', 'description' => 'The Buyer is open to purchasing a property where the sale price is less than the outstanding mortgage balance.'],
         ['name' => 'Other', 'description' => 'The Buyer is open to other special sale provisions not listed here.'],
+    ];
+
+    $business_type = [
+        ['name' => 'Aeronautical'],
+        ['name' => 'Agriculture'],
+        ['name' => 'Arts and Entertainment'],
+        ['name' => 'Assembly Hall'],
+        ['name' => 'Assisted Living'],
+        ['name' => 'Auto Dealer'],
+        ['name' => 'Auto Service'],
+        ['name' => 'Bar/Tavern/Lounge'],
+        ['name' => 'Barber/Beauty'],
+        ['name' => 'Car Wash'],
+        ['name' => 'Child Care'],
+        ['name' => 'Church'],
+        ['name' => 'Commercial'],
+        ['name' => 'Concession Trailers/Vehicles'],
+        ['name' => 'Construction/Contractor'],
+        ['name' => 'Convenience Store'],
+        ['name' => 'Distribution'],
+        ['name' => 'Distributor Routine Ven'],
+        ['name' => 'Education/School'],
+        ['name' => 'Farm'],
+        ['name' => 'Fashion/Specialty'],
+        ['name' => 'Flex Space'],
+        ['name' => 'Florist/Nursery'],
+        ['name' => 'Food & Beverage'],
+        ['name' => 'Gas Station'],
+        ['name' => 'Grocery'],
+        ['name' => 'Heavy Weight Sales Service'],
+        ['name' => 'Hotel/Motel'],
+        ['name' => 'Industrial'],
+        ['name' => 'Light Items Sales Only'],
+        ['name' => 'Manufacturing'],
+        ['name' => 'Marine/Marina'],
+        ['name' => 'Medical'],
+        ['name' => 'Mixed'],
+        ['name' => 'Mobile/Trailer Park'],
+        ['name' => 'Personal Service'],
+        ['name' => 'Professional Service'],
+        ['name' => 'Professional/Office'],
+        ['name' => 'Recreation'],
+        ['name' => 'Research & Development'],
+        ['name' => 'Residential'],
+        ['name' => 'Restaurant'],
+        ['name' => 'Retail'],
+        ['name' => 'Shopping Center/Strip Center'],
+        ['name' => 'Storage'],
+        ['name' => 'Theatre'],
+        ['name' => 'Timberland'],
+        ['name' => 'Veterinary'],
+        ['name' => 'Warehouse'],
+        ['name' => 'Wholesale'],
+        ['name' => 'Other'],
     ];
 @endphp
 

@@ -368,10 +368,9 @@
         .percentage-value-set {
             padding-left: 9px !important;
         }
-        .user-selected{
-
+        .user-selected {
             color: #0ce7ef;
-            font-size: 18px;
+            font-weight: 600;
         }
     </style>
 @endpush

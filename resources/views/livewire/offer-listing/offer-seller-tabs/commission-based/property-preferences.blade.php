@@ -209,13 +209,10 @@
     ];
 
     $property_condition_seller = [
-        ['name' => 'No updates needed: Completely updated'],
-        ['name' => 'Currently being built'],
-        ['name' => 'New Construction'],
-        ['name' => 'Not updated: Requires a complete update'],
-        ['name' => 'Pre-Construction'],
-        ['name' => 'Semi-updated: Needs minor updates'],
-        ['name' => 'Tear Down: Requires complete demolition and reconstruction'],
+        ['name' => 'Updated/Renovated',  'display' => 'Updated / Renovated'],
+        ['name' => 'Partially Updated',   'display' => 'Partially Updated'],
+        ['name' => 'Older but Clean',     'display' => 'Older but Clean & Well Maintained'],
+        ['name' => 'No Preference',       'display' => 'No Preference'],
     ];
 
     $bedroomsRes = [
@@ -819,7 +816,7 @@
                 data-icon="fa-solid fa-screwdriver-wrench" required>
                 <option value="">Select</option>
                 @foreach ($property_condition_seller as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['display'] ?? $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>

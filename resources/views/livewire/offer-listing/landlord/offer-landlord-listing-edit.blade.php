@@ -277,6 +277,23 @@
                 font-size: 1rem;
             }
         }
+
+        .input-group-text-seller {
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            background: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-right: 0;
+            border-radius: 6px 0 0 6px;
+            font-weight: 500;
+        }
+
+        /* Agent type selection button text styling */
+        .user-selected {
+            color: #0ce7ef;
+            font-weight: 600;
+        }
     </style>
 @endpush
 
