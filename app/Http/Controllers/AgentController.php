@@ -491,13 +491,40 @@ class AgentController extends Controller
 
     public function offerListingView(int $id)
     {
-        $uid     = Auth::id();
-        $auction = OfferAuctionModel::where('id', $id)
-            ->where('user_id', $uid)
-            ->with('metas')
-            ->firstOrFail();
+        $uid = Auth::id();
 
-        $meta = $auction->metas->pluck('meta_value', 'meta_key');
+        // Each role uses its own auto-increment table, so the same $id can appear
+        // in more than one table. We search in a fixed priority order and return
+        // the first match owned by the current user. Callers that need a specific
+        // role should pass a role discriminator (e.g. via query param or session)
+        // and extend this method once the route is made role-aware.
+        $roleMap = [
+            'seller'   => SellerAgentAuction::class,
+            'landlord' => LandlordAgentAuction::class,
+            'buyer'    => BuyerAgentAuction::class,
+            'tenant'   => TenantAgentAuctionModel::class,
+        ];
+
+        $auction = null;
+        $role    = null;
+
+        foreach ($roleMap as $r => $modelClass) {
+            $found = $modelClass::where('id', $id)
+                ->where('user_id', $uid)
+                ->with('meta')
+                ->first();
+            if ($found) {
+                $auction = $found;
+                $role    = $r;
+                break;
+            }
+        }
+
+        if (!$auction) {
+            abort(404);
+        }
+
+        $meta = $auction->meta->pluck('meta_value', 'meta_key');
 
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = (bool) $auction->is_approved;
@@ -516,6 +543,13 @@ class AgentController extends Controller
         } else {
             $statusLabel = $meta['listing_status'] ?? 'Active'; $statusClass = 'primary';
         }
+
+        $editRoute = match ($role) {
+            'seller'   => route('offer.listing.seller.edit', ['auctionId' => $auction->id]),
+            'landlord' => route('offer.listing.landlord.edit', ['auctionId' => $auction->id]),
+            'buyer'    => route('offer.listing.buyer.edit', ['auctionId' => $auction->id]),
+            'tenant'   => route('offer.listing.tenant.edit', ['auctionId' => $auction->id]),
+        };
 
         $data = [
             'id'           => $auction->id,
@@ -555,7 +589,7 @@ class AgentController extends Controller
             'custom_terms' => $meta['custom_terms'] ?? '',
             'notes'        => $meta['notes']        ?? '',
             // Links
-            'edit_route'   => route('offer.listing.draft', $auction->id),
+            'edit_route'   => $editRoute,
             'hub_route'    => route('agent.offer-listings'),
         ];
 
@@ -677,70 +711,6 @@ class AgentController extends Controller
             'edit_route'   => $editRoute,
             'view_route'   => $viewRoute,
             'hub_route'    => route('agent.offer-listings'),
-        ];
-    }
-
-    private function normalizeOfferListing(OfferAuctionModel $auction): array
-    {
-        $meta = $auction->metas->pluck('meta_value', 'meta_key');
-
-        $isDraft    = (bool) $auction->is_draft;
-        $isApproved = (bool) $auction->is_approved;
-        $isSold     = (bool) $auction->is_sold;
-
-        $expiryRaw  = $meta['listing_expiration'] ?? null;
-        $isExpired  = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
-
-        if ($isDraft) {
-            $statusLabel = 'Draft';
-            $statusClass = 'secondary';
-        } elseif ($isSold) {
-            $statusLabel = 'Accepted';
-            $statusClass = 'success';
-        } elseif (!$isApproved) {
-            $statusLabel = 'Pending Review';
-            $statusClass = 'warning';
-        } elseif ($isExpired) {
-            $statusLabel = 'Expired';
-            $statusClass = 'danger';
-        } else {
-            $statusLabel = $meta['listing_status'] ?? 'Active';
-            $statusClass = 'primary';
-        }
-
-        $offerType = $meta['offer_type'] ?? '';
-        $address   = $meta['property_address'] ?? '';
-        $state     = $meta['state'] ?? '';
-        $title     = $auction->title ?? $meta['listing_title'] ?? ($address ?: 'Offer Listing #' . $auction->id);
-
-        $draftRoute = $isDraft
-            ? route('offer.listing.draft', $auction->id)
-            : null;
-
-        $editRoute  = route('offer.listing.draft', $auction->id);
-        $viewRoute  = route('offer.listing.view', $auction->id);
-
-        return [
-            'id'           => $auction->id,
-            'listing_id'   => $auction->listing_id ?? 'OFA-' . $auction->id,
-            'title'        => $title,
-            'address'      => $address,
-            'state'        => $state,
-            'offer_type'   => $offerType,
-            'offer_price'  => $meta['offer_price']  ?? null,
-            'monthly_rent' => $meta['monthly_rent'] ?? null,
-            'closing_date' => $meta['closing_date'] ?? null,
-            'expiry'       => $expiryRaw,
-            'created_at'   => $auction->created_at,
-            'status_label' => $statusLabel,
-            'status_class' => $statusClass,
-            'draft_route'  => $draftRoute,
-            'edit_route'   => $editRoute,
-            'view_route'   => $viewRoute,
-            '_draft'       => $isDraft,
-            '_approved'    => $isApproved,
-            '_sold'        => $isSold,
-            '_expired'     => $isExpired,
         ];
     }
 

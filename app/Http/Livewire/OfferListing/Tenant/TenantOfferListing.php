@@ -4461,7 +4461,7 @@ class TenantOfferListing extends Component
                 'landlord' => 'landlord.agent.auction.view',
                 'buyer'    => 'buyer.view-auction',
                 'seller'   => 'seller.agent.auction.detail',
-                default    => 'hire.agent.auction',
+                default    => 'agent.offer-listings',
             };
 
             $url = route($routeName, ['id' => $auction->id]);

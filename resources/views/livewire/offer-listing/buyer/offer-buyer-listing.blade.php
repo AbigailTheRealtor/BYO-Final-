@@ -817,13 +817,13 @@
                                             <div
                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                                                 <a class="btn btn-link text-start flex-grow-1"
-                                                    href="{{ route('hire.agent.auction.draft', ['user_type' => $user_type, 'listingId' => $draft->id]) }}">
+                                                    href="{{ route('offer.listing.buyer.edit', ['auctionId' => $draft->id]) }}">
                                                     {{ $draft->title }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif ({{ $draft->updated_at->format('m/d/Y H:i') }})
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"
                                                     data-bs-dismiss="modal"
                                                     wire:click="deleteDraft('{{ $draft->id }}')" wire:ignore.self
-                                                    onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
+                                                    onclick="setTimeout(() => { window.location = '{{ route('offer.listing.buyer')}}' }, 100)">
                                                     <i class="fa-solid fa-trash"></i>
                                                 </button>
                                             </div>
@@ -837,7 +837,7 @@
                                     </button>
                                     <button type="button" class="btn btn-danger" style="background-color: #dc3545; color: #fff; border-color: #dc3545;" data-bs-dismiss="modal"
                                         wire:click="deleteAllDrafts" wire:ignore.self
-                                        onclick="setTimeout(() => { window.location = '{{ route('hire.agent.auction' , ['user_type' => $user_type])}}' }, 100)">
+                                        onclick="setTimeout(() => { window.location = '{{ route('offer.listing.buyer')}}' }, 100)">
                                         <i class="fa-solid fa-trash me-1"></i> Delete All Drafts
                                     </button>
                                 </div>
