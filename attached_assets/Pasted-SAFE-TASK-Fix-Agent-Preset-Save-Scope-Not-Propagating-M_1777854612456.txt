@@ -1,0 +1,182 @@
+SAFE TASK — Fix Agent Preset Save Scope Not Propagating + Missing Select Field Saves
+
+Issue:
+Agent Preset save scope is still not working correctly.
+
+Observed on Buyer Residential preset:
+1. User selected “All Buyer presets.”
+2. After save, only Buyer Residential showed as saved.
+3. Buyer Income, Commercial, Business, and Vacant Land remained “Not set.”
+4. Success message incorrectly said:
+   “Hire a Buyer Agent — Residential preset saved.”
+5. Broker Compensation & Agency Agreement Terms only partially saved:
+   - Protection Period saved
+   - Additional Terms saved
+   - Most dropdown/select fields did NOT save or reload
+6. Quick Highlights field “Full-Time Agent?” did NOT save.
+
+Likely root cause:
+The save logic may only be capturing normal inputs/textareas but not select/dropdown values, especially Select2/custom select fields, or the scope field is not being read correctly on submit.
+
+Scope:
+- Agent Preset edit/save only
+- AgentPresetController
+- agent-presets edit Blade
+- related JS for select/dropdown sync if needed
+- tests
+
+Do NOT touch:
+- Offer Listing flows
+- Hire Me preview services display
+- Agent profile public routes
+- bid/counter flows
+- database schema unless reported first
+- service catalog wording
+- compensation wording
+
+Correct behavior:
+
+1. This preset only:
+- Save every submitted field only to the current preset.
+
+2. All [Current Role] presets:
+- Save every submitted/applicable field to every preset for that same role/property set.
+- Buyer Residential save with “All Buyer presets” should create/update:
+  - Buyer Residential
+  - Buyer Income
+  - Buyer Commercial
+  - Buyer Business
+  - Buyer Vacant Land
+
+- Seller should update:
+  - Seller Residential
+  - Seller Income
+  - Seller Commercial
+  - Seller Business
+  - Seller Vacant Land
+
+- Landlord should update:
+  - Landlord Residential
+  - Landlord Commercial
+
+- Tenant should update:
+  - Tenant Residential
+  - Tenant Commercial
+
+3. All roles and property types:
+- Leave as currently designed unless audit proves safe.
+- Do NOT expand cross-role compensation/services without explicit approval.
+
+Required audit:
+
+1. Confirm the scope dropdown posts the correct value.
+Inspect the form submit payload and confirm:
+- name attribute
+- selected value
+- value received by AgentPresetController::save()
+
+2. Confirm all select/dropdown fields post values.
+Specifically audit:
+Quick Highlights:
+- full_time_agent
+
+Buyer Broker Compensation & Agency Agreement Terms:
+- buyer_broker_commission_structure
+- buyer_broker_purchase_fee
+- interested_in_lease_agreement
+- interested_in_lease_option_agreement
+- early_termination_fee
+- retainer_fee
+- acceptable_brokerage_relationship
+- agency_agreement_timeframe
+- protection_period_timeframe
+- additional_terms
+
+Also audit equivalent select fields for:
+- Seller
+- Landlord
+- Tenant
+
+3. Determine why only protection_period_timeframe and additional_terms saved.
+This strongly suggests text/number fields save but select fields are not syncing/posting.
+
+4. Fix select/dropdown syncing:
+- If custom JS/Select2 is used, ensure selected values are synced to the actual form input before submit.
+- If fields use custom components, ensure each has a valid name attribute.
+- If disabled fields are being skipped, do not disable fields that need saving.
+- If wire:model exists but form POST does not include it, add hidden inputs or proper binding.
+
+5. Fix current_role propagation:
+- If “All Buyer presets” is selected, target all Buyer presets.
+- If target preset does not exist, create it safely for that same agent/role/property type.
+- Do not only update existing Residential preset.
+- Do not change other roles.
+
+6. Fix success message:
+If user selected All Buyer presets, message should say:
+“Hire a Buyer Agent presets saved for all Buyer property types.”
+
+If All Seller:
+“Hire a Seller Agent presets saved for all Seller property types.”
+
+If All Landlord:
+“Hire a Landlord Agent presets saved for all Landlord property types.”
+
+If All Tenant:
+“Hire a Tenant Agent presets saved for all Tenant property types.”
+
+If This preset only:
+Current message is okay.
+
+7. Fix helper text:
+The current helper still says:
+“Services, compensation, and agreement terms are always saved to this preset only.”
+
+That is now wrong.
+
+Replace with dynamic/helpful wording:
+- This preset only: Saves all fields to this role/property type only.
+- All [Role] presets: Saves all submitted fields across all property types for this role only.
+- All roles and property types: Saves public profile fields across all roles/property types. Role-specific services and compensation are not copied across roles.
+
+Testing required:
+
+Buyer:
+1. Open Buyer Residential preset.
+2. Fill:
+   - full_time_agent = Yes
+   - buyer broker commission structure
+   - buyer broker purchase fee
+   - interested in lease agreement
+   - interested in lease-option agreement
+   - early termination fee
+   - retainer fee
+   - acceptable brokerage relationship
+   - agency agreement timeframe
+   - protection period timeframe
+   - additional terms
+   - selected services
+3. Select “All Buyer presets.”
+4. Save.
+5. Confirm Buyer Residential, Income, Commercial, Business, Vacant Land are all marked Saved.
+6. Open each Buyer preset and confirm all fields copied/reloaded.
+
+Repeat abbreviated role-scope test for:
+- Seller Residential → All Seller presets
+- Landlord Residential → All Landlord presets
+- Tenant Residential → All Tenant presets
+
+Cross-role protection:
+- Buyer save must not update Seller, Landlord, or Tenant.
+- Seller save must not update Buyer, Landlord, or Tenant.
+- Landlord save must not update Buyer, Seller, or Tenant.
+- Tenant save must not update Buyer, Seller, or Landlord.
+
+Return:
+- Root cause
+- Exact scope value received
+- Which select fields were not posting/syncing
+- Files changed
+- Whether missing target presets were created
+- Test results for Buyer full test
+- Test results for Seller/Landlord/Tenant abbreviated tests
