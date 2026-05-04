@@ -468,7 +468,7 @@ class TenantAgentAuctionCounterTerm extends Component
         // Check for existing active Tenant counter to determine if this is EDIT mode.
         // Only load status=1 (active) records — terminal or stale counters should not be reactivated via edit.
         $existingTenantCounter = TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $this->pab->id)
+            ->where('tenant_agent_auction_id', $this->pab->tenant_agent_auction_id)
             ->where('user_id', Auth::id())
             ->where('status', 1)
             ->latest()
@@ -701,7 +701,7 @@ class TenantAgentAuctionCounterTerm extends Component
                 // CREATE new record
                 $counterTerm = TenantCounterTerm::create([
                     'user_id' => Auth::id(),
-                    'tenant_agent_auction_id' => $this->pab->id,
+                    'tenant_agent_auction_id' => $this->pab->tenant_agent_auction_id,
                     'property_type' => $this->property_type,
                     'parent_counter_id' => $this->parent_counter_id,
                     'status' => 1,
