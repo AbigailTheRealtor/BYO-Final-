@@ -1,0 +1,75 @@
+VERIFY TASK #406 ONLY — Agent Preset Accept/Counter Contact Info Flow
+
+Goal:
+Confirm the new Client Contact Information tab and accept acknowledgment flow work correctly across all four roles.
+
+Scope:
+- Seller Agent counter-term wizard
+- Landlord Agent counter-term wizard
+- Buyer Agent counter-term wizard
+- Tenant Agent counter-term wizard
+- Hire This Agent direct accept flow only
+
+DO NOT:
+- Change database schema
+- Touch Offer Listing create/edit flows
+- Touch limited-service legacy files
+- Touch unrelated dashboards
+- Refactor unrelated controller logic
+- Change counter intent behavior unless a bug is directly found
+
+Verify:
+
+1. Counter-term tabs
+For Seller, Landlord, Buyer, and Tenant:
+- Confirm “Client Contact Information” appears as its own tab.
+- Confirm it appears immediately after Services.
+- Confirm Additional Details no longer contains:
+  - Client Contact Info card
+  - Property Address card
+- Confirm fields still save/reload correctly.
+
+2. Buyer/Tenant address persistence
+Verify BuyerAgentAuctionCounterTerm and TenantAgentAuctionCounterTerm:
+- client_property_address
+- client_property_city
+- client_property_state
+- client_property_zip
+
+Confirm these load in mount() and save through saveMeta().
+
+3. Accept path acknowledgment flow
+For Hire This Agent direct accept:
+- Clicking accept should NOT immediately create listing + bid.
+- It should redirect to the acknowledgment page.
+- Acknowledgment page should show read-only accepted terms summary.
+- Contact fields should be editable/submit-able.
+- Hidden nonce should exist.
+
+4. Nonce/session safety
+Confirm:
+- Invalid nonce fails safely.
+- Duplicate submit/replay does not create duplicate listing/bid.
+- Validation errors return back with pending session data intact.
+- Session is forgotten only after validation passes and before commit.
+
+5. Counter path unchanged
+Confirm intent=counter:
+- Still commits immediately.
+- Still redirects to the correct counter Livewire component.
+- Does not use the acknowledgment page.
+
+6. Preview page
+Confirm hire-agent-direct/preview.blade.php no longer shows duplicate Property Address preview-section.
+Confirm confirm() validation allows nullable address fields.
+
+7. Routes
+Confirm both routes exist and are auth-protected:
+- GET hire.agent.direct.acknowledge
+- POST hire.agent.direct.acknowledge
+
+Report:
+- PASS/FAIL for each section
+- Exact files inspected
+- Any bugs found
+- Do not make changes unless a direct Task #406 bug is found.
