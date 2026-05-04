@@ -567,11 +567,24 @@ class AgentController extends Controller
         $uid    = Auth::id();
         $filter = $request->get('filter', 'all');
 
-        $all = OfferAuctionModel::where('user_id', $uid)
-            ->with('metas')
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(fn($a) => $this->normalizeOfferListing($a));
+        $roleModels = [
+            'seller'   => \App\Models\SellerAgentAuction::class,
+            'landlord' => \App\Models\LandlordAgentAuction::class,
+            'buyer'    => \App\Models\BuyerAgentAuction::class,
+            'tenant'   => \App\Models\TenantAgentAuction::class,
+        ];
+
+        $all = collect();
+        foreach ($roleModels as $role => $modelClass) {
+            $modelClass::where('user_id', $uid)
+                ->with('meta')
+                ->orderByDesc('created_at')
+                ->get()
+                ->each(function ($auction) use ($role, &$all) {
+                    $all->push($this->normalizeRoleOfferListing($auction, $role));
+                });
+        }
+        $all = $all->sortByDesc('created_at')->values();
 
         $counts = [
             'all'      => $all->count(),
@@ -592,6 +605,79 @@ class AgentController extends Controller
         };
 
         return view('agent.offer-listings', compact('listings', 'filter', 'counts'));
+    }
+
+    private function normalizeRoleOfferListing($auction, string $role): array
+    {
+        $meta = $auction->meta->pluck('meta_value', 'meta_key');
+
+        $isDraft    = (bool) $auction->is_draft;
+        $isApproved = in_array($auction->is_approved ?? false, [true, 1, '1', 'true'], true);
+        $isSold     = in_array($auction->is_sold     ?? false, [true, 1, '1', 'true'], true);
+
+        $expiryRaw = $meta['listing_expiration'] ?? null;
+        $isExpired = $expiryRaw && Carbon::now()->gt(Carbon::parse($expiryRaw));
+
+        if ($isDraft) {
+            $statusLabel = 'Draft';
+            $statusClass = 'secondary';
+        } elseif ($isSold) {
+            $statusLabel = 'Accepted';
+            $statusClass = 'success';
+        } elseif (!$isApproved) {
+            $statusLabel = 'Pending Review';
+            $statusClass = 'warning';
+        } elseif ($isExpired) {
+            $statusLabel = 'Expired';
+            $statusClass = 'danger';
+        } else {
+            $statusLabel = $meta['listing_status'] ?? 'Active';
+            $statusClass = 'primary';
+        }
+
+        $address = $auction->address ?? $meta['property_address'] ?? $meta['address'] ?? '';
+        $state   = $meta['property_state'] ?? $meta['state'] ?? '';
+        $title   = $auction->title ?? $meta['listing_title'] ?? ($address ?: ucfirst($role) . ' Offer Listing #' . $auction->id);
+
+        $editRouteParams = $role === 'tenant'
+            ? ['auctionId' => $auction->id, 'user_type' => 'tenant']
+            : ['auctionId' => $auction->id];
+
+        $editRoute = route('offer.listing.' . $role . '.edit', $editRouteParams);
+        $draftRoute = $isDraft ? $editRoute : null;
+
+        $viewRouteMap = [
+            'seller'   => 'seller.agent.auction.detail',
+            'landlord' => 'landlord.agent.auction.view',
+            'buyer'    => 'buyer.view-auction',
+            'tenant'   => 'tenant.agent.auction.view',
+        ];
+        $viewRoute = route($viewRouteMap[$role], ['id' => $auction->id]);
+
+        return [
+            'id'           => $auction->id,
+            'role'         => $role,
+            'listing_id'   => $auction->listing_id ?? strtoupper($role[0]) . 'OA-' . $auction->id,
+            'title'        => $title,
+            'address'      => $address,
+            'state'        => $state,
+            'offer_type'   => $meta['offer_type'] ?? $meta['auction_type'] ?? '',
+            'offer_price'  => $meta['offer_price']  ?? $meta['asking_price'] ?? null,
+            'monthly_rent' => $meta['monthly_rent'] ?? $meta['rent_amount']  ?? null,
+            'closing_date' => $meta['closing_date'] ?? null,
+            'expiry'       => $expiryRaw,
+            'created_at'   => $auction->created_at,
+            'status_label' => $statusLabel,
+            'status_class' => $statusClass,
+            '_draft'       => $isDraft,
+            '_approved'    => $isApproved,
+            '_sold'        => $isSold,
+            '_expired'     => $isExpired,
+            'draft_route'  => $draftRoute,
+            'edit_route'   => $editRoute,
+            'view_route'   => $viewRoute,
+            'hub_route'    => route('agent.offer-listings'),
+        ];
     }
 
     private function normalizeOfferListing(OfferAuctionModel $auction): array

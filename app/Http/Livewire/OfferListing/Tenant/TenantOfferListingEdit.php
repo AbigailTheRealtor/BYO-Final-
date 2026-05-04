@@ -158,7 +158,7 @@ class TenantOfferListingEdit extends Component
 
     public $appliances = [];
     public $other_appliances = '';
-    public $assets = '';
+    public $assets = [];
     public $assets_other = '';
     public $business_assets = [];
     public $unit_number = '';
@@ -229,9 +229,9 @@ class TenantOfferListingEdit extends Component
     public $owner_pays_other = '';
     public $purchase_fee_rental_period = '';
 
-    public $tenant_pays = '';
+    public $tenant_pays = [];
     public $other_tenant_pays = '';
-    public $owner_pays = '';
+    public $owner_pays = [];
     public $other_owner_pays = '';
     public $preference_details = '';
     public $property_criteria = '';
@@ -2360,6 +2360,12 @@ class TenantOfferListingEdit extends Component
     // Methods
     public function mount($auctionId = null, $user_type = null)
     {
+        // TenantOfferListingEdit always edits TenantAgentAuction records.
+        // Default user_type to 'tenant' so loadAuctionData() resolves the correct model.
+        if (empty($user_type)) {
+            $user_type = 'tenant';
+        }
+
         $this->initializeFeeStructure();
         $this->addService();
 

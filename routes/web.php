@@ -917,6 +917,27 @@ Route::middleware(['auth'])->group(function () {
         \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class
     )->name('offer.listing.landlord');
 
+    // ── Offer Listing Edit routes (production) ─────────────────────────────
+    // IMPORTANT: specific /edit/ routes must be declared BEFORE any catch-all
+    // {user_type?} routes to prevent Laravel matching 'edit' as a route param.
+    Route::get('/offer-listing/seller/edit/{auctionId}',
+        \App\Http\Livewire\OfferListing\Seller\SellerOfferListingEdit::class
+    )->name('offer.listing.seller.edit');
+
+    Route::get('/offer-listing/landlord/edit/{auctionId}',
+        \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListingEdit::class
+    )->name('offer.listing.landlord.edit');
+
+    Route::get('/offer-listing/buyer/edit/{auctionId}',
+        \App\Http\Livewire\OfferListing\Buyer\BuyerOfferListingEdit::class
+    )->name('offer.listing.buyer.edit');
+
+    Route::get('/offer-listing/tenant/edit/{auctionId}',
+        \App\Http\Livewire\OfferListing\Tenant\TenantOfferListingEdit::class
+    )->name('offer.listing.tenant.edit');
+    // ── End Offer Listing Edit routes ──────────────────────────────────────
+
+    // Tenant create — catch-all AFTER specific /edit/ route
     Route::get('/offer-listing/tenant/{user_type?}',
         \App\Http\Livewire\OfferListing\Tenant\TenantOfferListing::class
     )->name('offer.listing.tenant');

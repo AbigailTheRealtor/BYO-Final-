@@ -2265,8 +2265,8 @@ class BuyerOfferListing extends Component
 
             // Delete all metadata associated with these drafts
             if ($draftIds->isNotEmpty()) {
-                DB::table('tenant_agent_auction_metas') // Replace with your actual meta table name
-                    ->whereIn('tenant_agent_auction_id', $draftIds)
+                DB::table('buyer_agent_auction_metas')
+                    ->whereIn('buyer_agent_auction_id', $draftIds)
                     ->delete();
             }
 
@@ -2286,8 +2286,8 @@ class BuyerOfferListing extends Component
     {
         try {
             // Delete metadata first
-            DB::table('tenant_agent_auction_metas')
-                ->where('tenant_agent_auction_id', $draftId)
+            DB::table('buyer_agent_auction_metas')
+                ->where('buyer_agent_auction_id', $draftId)
                 ->delete();
 
             // Delete the draft

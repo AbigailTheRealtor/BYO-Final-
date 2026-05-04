@@ -1647,7 +1647,7 @@ class TenantOfferListing extends Component
 
             if (!$draftRecord) {
                 session()->flash('error', 'Draft not found. It may have been deleted or belongs to another account.');
-                return redirect()->route('hire.agent.auction', ['user_type' => $this->user_type]);
+                return redirect()->route('offer.listing.tenant', ['user_type' => $this->user_type]);
             }
 
             $this->loadDraft($listingId);
@@ -2609,7 +2609,7 @@ class TenantOfferListing extends Component
                 $oldHash = $previousDraft->info('draft_payload_hash') ?? '';
                 if ($oldHash === $newPayloadHash) {
                     session()->flash('success', 'No changes detected — draft is already up to date.');
-                    return redirect()->route('hire.agent.auction.draft', ['user_type' => $this->user_type, 'listingId' => $this->listingId]);
+                    return redirect()->route('offer.listing.tenant.edit', ['auctionId' => $this->listingId, 'user_type' => $this->user_type]);
                 }
                 $previousVersion = (int) ($previousDraft->info('draft_version') ?? 1);
                 $parentDraftId = $previousDraft->id;
@@ -2645,7 +2645,7 @@ class TenantOfferListing extends Component
             $auction->saveMeta('draft_payload_hash', $newPayloadHash);
 
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
-            return redirect()->route('hire.agent.auction.draft', ['user_type' => $this->user_type, 'listingId' => $this->listingId]);
+            return redirect()->route('offer.listing.tenant.edit', ['auctionId' => $this->listingId, 'user_type' => $this->user_type]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
         }
@@ -4530,7 +4530,7 @@ class TenantOfferListing extends Component
                 ->delete();
 
             session()->flash('success', 'All drafts and their associated data have been deleted successfully.');
-            return redirect()->route('hire.agent.auction', ['user_type' => $this->user_type]);
+            return redirect()->route('offer.listing.tenant', ['user_type' => $this->user_type]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting drafts: ' . $e->getMessage());
         }
@@ -4573,7 +4573,7 @@ class TenantOfferListing extends Component
                 ->exists();
 
             session()->flash('success', 'Draft deleted successfully.');
-            return redirect()->route('hire.agent.auction', ['user_type' => $this->user_type]);
+            return redirect()->route('offer.listing.tenant', ['user_type' => $this->user_type]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error deleting draft: ' . $e->getMessage());
         }

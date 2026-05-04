@@ -4,7 +4,7 @@ namespace App\Http\Livewire\OfferListing\Seller;
 
 use Livewire\Component;
 use Livewire\WithFileUploads;
-use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
+use App\Models\SellerAgentAuction as SellerAgentAuctionModel;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -25,7 +25,7 @@ class SellerOfferListingEdit extends Component
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
-    public $user_type = 'buyer'; // Default to tenant or whatever makes sense
+    public $user_type = 'seller'; // Seller Offer Listing
     public $auction_type = '';
     public $listing_title = '';
     public $working_with_agent = '';
@@ -57,7 +57,7 @@ class SellerOfferListingEdit extends Component
     public $other_carport_needed = '';
 
     // Properties
-    public $sale_provision = '';
+    public $sale_provision = [];
     public $sale_provision_other = '';
     public $sale_provision_assignment = '';
     public $assignment_fee_type = '$';
@@ -69,7 +69,7 @@ class SellerOfferListingEdit extends Component
     public $starting_price = '';
     public $reserve_price = '';
     public $buy_now_price = '';
-    public $offered_financing = '';
+    public $offered_financing = [];
     public $other_financing = '';
     public $cash_budget = '';
     public $pre_approved = '';
@@ -131,7 +131,7 @@ class SellerOfferListingEdit extends Component
     public $garage_needed = '';
     public $other_garage_needed = '';
     public $garage_parking_spaces = '';
-    public $garage_parking_spaces_option = '';
+    public $garage_parking_spaces_option = [];
     public $other_parking_space_wrapper = '';
     public $pool_needed = '';
     public $pool_type = [];
@@ -494,6 +494,251 @@ class SellerOfferListingEdit extends Component
 
     ];
 
+
+    // ── Properties ported from SellerOfferListing (needed by shared blade tabs) ──
+    public $occupant_status = '';
+    public $occupant_tenant = '';
+    public $business_type = '';
+    public $other_business_type = '';
+    public $target_closing_date = '';
+    public $seller_down_payment_amount = '';
+    public $seller_late_fee_amount = '';
+    public $balloon_payment = '';
+    public $assumable_loan_type = '';
+    public $outstanding_balance = '';
+    public $lender_approval_required = '';
+    public $assumable_monthly_escrow = '';
+    public $assumable_loan_term_remaining = '';
+    public $assumable_loan_origination_date = '';
+    public $assumable_loan_servicer = '';
+    public $assumable_fee_type = '$';
+    public $assumable_fee_amount = '';
+    public $assumable_occupancy_requirement = '';
+    public $assumable_occupancy_other = '';
+    public $exchange_transfer_method = '';
+    public $exchange_liens = '';
+    public $exchange_liens_disclosure = '';
+    public $exchange_liens_details = '';
+    public $exchange_inspection_rights = '';
+    public $lease_option_fee_credit = '';
+    public $lease_option_fee_credit_percentage = '';
+    public $lease_option_maintenance = '';
+    public $lease_option_extension_terms = '';
+    public $seller_lease_option_fee_credit = '';
+    public $seller_lease_option_fee_credit_percent = '';
+    public $seller_lease_option_maintenance = '';
+    public $seller_lease_option_extension_terms = '';
+    public $lease_purchase_rent_credit = '';
+    public $lease_purchase_rent_credit_amount = '';
+    public $lease_purchase_deposit = '';
+    public $lease_purchase_maintenance = '';
+    public $lease_purchase_extension_terms = '';
+    public $seller_lease_purchase_rent_credit = '';
+    public $seller_lease_purchase_rent_credit_type = '$';
+    public $seller_lease_purchase_rent_credit_amount = '';
+    public $seller_lease_purchase_deposit = '';
+    public $seller_lease_purchase_maintenance = '';
+    public $seller_lease_purchase_extension_terms = '';
+    public $seller_amortization_type = '';
+    public $seller_amortization_other = '';
+    public $seller_payment_frequency = '';
+    public $seller_payment_frequency_other = '';
+    public $crypto_transfer_timing = '';
+    public $crypto_transfer_timing_other = '';
+    public $crypto_exchange_method = '';
+    public $crypto_custodian_wallet = '';
+    public $crypto_transaction_fees = '';
+    public $nft_gas_fees = '';
+    public $nft_transfer_method = '';
+    public $nft_valuation_method = '';
+    public $appliances = [];
+    public $other_appliances = '';
+    public $showOtherAppliances = false;
+    public $showEnhancements = false;
+    public $showCustomEnhancement = false;
+    public $showOpenHouseInput = false;
+    public $is_other_visible = false;
+    public $applianceOptions = [];
+    public $gross_annual_income = '';
+    public $annual_operating_expenses = '';
+    public $rent_roll_available = '';
+    public $operating_statement_available = '';
+    public $price_per_sqft = '';
+    public $existing_lease_type = '';
+    public $other_lease_type = '';
+    public $lease_expiration = '';
+    public $lease_assignable = '';
+    public $annual_revenue = '';
+    public $gross_profit = '';
+    public $sde_ebitda = '';
+    public $inventory_value = '';
+    public $ffe_value = '';
+    public $reason_for_sale = '';
+    public $other_reason_for_sale = '';
+    public $employee_count = '';
+    public $financial_statements_available = '';
+    public $tax_returns_available = '';
+    public $nda_required = '';
+    public $number_of_units = '';
+    public $number_occupied = '';
+    public $expected_rent = '';
+    public $sqft_heated_source = '';
+    public $beds_unit = '';
+    public $baths_unit = '';
+    public $garage_spaces = '';
+    public $carport_spaces = '';
+    public $unit_type_description = '';
+    public $unit_type_configurations = [];
+    public $breed_restrictions = '';
+    public $year_built = '';
+    public $zoning = '';
+    public $roof_type = [];
+    public $exterior_construction = [];
+    public $foundation = [];
+    public $heating_and_fuel = [];
+    public $air_conditioning = [];
+    public $water = [];
+    public $sewer = [];
+    public $utilities = [];
+    public $road_frontage = [];
+    public $road_surface_type = [];
+    public $electrical_service = [];
+    public $ceiling_height = '';
+    public $building_features = [];
+    public $number_water_meters = '';
+    public $number_electric_meters = '';
+    public $business_name = '';
+    public $year_established = '';
+    public $licenses = [];
+    public $sale_includes = [];
+    public $current_use = [];
+    public $lot_dimensions = '';
+    public $front_footage = '';
+    public $number_of_wells = '';
+    public $number_of_septics = '';
+    public $current_adjacent_use = [];
+    public $fences = [];
+    public $vegetation = [];
+    public $buildable = '';
+    public $easements = [];
+    public $other_roof_type = '';
+    public $other_exterior_construction = '';
+    public $other_foundation = '';
+    public $other_heating_and_fuel = '';
+    public $other_air_conditioning = '';
+    public $other_water = '';
+    public $other_sewer = '';
+    public $other_utilities = '';
+    public $other_road_frontage = '';
+    public $other_road_surface_type = '';
+    public $other_electrical_service = '';
+    public $other_building_features = '';
+    public $other_licenses = '';
+    public $other_sale_includes = '';
+    public $other_current_use = '';
+    public $other_current_adjacent_use = '';
+    public $other_fences = '';
+    public $other_vegetation = '';
+    public $other_easements = '';
+    public $meeting_Preference = '';
+    public $custom_enhancement = '';
+    public $openHouseCount = '';
+    public $photo_enhancements = '';
+    public $nominal = '';
+    public $interested_purchase_fee_type = '';
+    public $seller_leasing_fee_type = '';
+    public $seller_leasing_gross = '';
+    public $seller_leasing_gross_rental = '';
+    public $seller_leasing_gross_month_rent = '';
+    public $seller_leasing_gross_no_of_months = '';
+    public $seller_leasing_gross_flat = '';
+    public $seller_leasing_gross_other = '';
+    public $seller_leasing_each_rental = '';
+    public $seller_leasing_gross_percentage = '';
+    public $seller_leasing_gross_percentage_combo = '';
+    public $seller_leasing_gross_flat_combo = '';
+    public $seller_leasing_gross_flat_net_combo = '';
+    public $seller_leasing_gross_percentage_net_combo = '';
+    public $seller_leasing_gross_purchase_fee_flat_amount = '';
+    public $seller_leasing_gross_purchase_fee_other = '';
+    public $sales_tax_option_gross = '';
+    public $seller_leasing_gross_sales_tax_first_month = '';
+    public $seller_leasing_gross_sales_tax_flat_free_gross = '';
+    public $seller_leasing_gross_sales_tax_option_gross = '';
+    public $commission_structure_type = '';
+    public $commission_structure_type_fee_flat = '';
+    public $commission_structure_type_fee_percentage = '';
+    public $commission_structure_type_fee_other = '';
+    public $commission_structure_type_fee_flat_combo = '';
+    public $commission_structure_type_fee_percentage_combo = '';
+    public $interested_lease_option_agreement = '';
+    public $lease_type = 'percent';
+    public $purchase_type = 'percent';
+    public $lease_value = null;
+    public $purchase_value = null;
+    public $retained_deposits = '';
+    public $current_status = '';
+    public $embedUrl = null;
+    public $property_city = '';
+    public $property_state = '';
+    public $property_zip = '';
+    public $property_county = '';
+    public $propertyCitySuggestions = [];
+    public $highlightedPropertyCityIndex = -1;
+    public $initial_deposit_timeframe_other = '';
+    public $additional_deposit_timeframe_other = '';
+    public $parcel_id = '';
+    public $tax_year = '';
+    public $annual_property_taxes = '';
+    public $additional_parcels = '';
+    public $total_parcel_count = '';
+    public $additional_parcel_ids = '';
+    public $legal_description = '';
+    public $flood_zone_code = '';
+    public $flood_zone_code_other = '';
+    public $flood_insurance_required = '';
+    public $flood_zone_panel = '';
+    public $has_cdd = '';
+    public $annual_cdd_fee = '';
+    public $has_special_assessments = '';
+    public $special_assessment_amount = '';
+    public $special_assessment_description = '';
+    public $has_hoa = '';
+    public $association_type = '';
+    public $association_type_other = '';
+    public $association_name = '';
+    public $association_fee_amount = '';
+    public $association_fee_frequency = '';
+    public $association_fee_frequency_other = '';
+    public $association_approval_required = '';
+    public $association_approval_process = '';
+    public $association_application_fee = '';
+    public $association_fee_includes = [];
+    public $association_fee_includes_other = '';
+    public $association_amenities = [];
+    public $association_amenities_other = '';
+    public $leasing_restrictions = '';
+    public $min_lease_period = '';
+    public $min_lease_period_other = '';
+    public $max_leases_per_year = '';
+    public $additional_lease_restrictions = '';
+    public $pet_restrictions = '';
+    public $pet_restrictions_detail = '';
+    public $additional_documents = [];
+    public $other_document_type = '';
+    public $propertyPhotos = [];
+    public $videoTourUrl = '';
+    public $virtualTourUrl = '';
+    public $cityFieldVisible = false;
+    public $stateFieldVisible = false;
+    public $zipCodeFieldVisible = false;
+    public $zipCodes = [];
+    public $zip_code = '';
+    public $zipCodeSuggestions = [];
+    public $highlightedZipCodeIndex = -1;
+    public $addressPlaceIds = [];
+    // ── End ported properties ────────────────────────────────────────────────
+
     // Computed Properties
     public function getIsOtherVisibleProperty()
     {
@@ -691,7 +936,7 @@ class SellerOfferListingEdit extends Component
     }
     public function getDrafts()
     {
-        return HireBuyerAgentAuction::where('user_id', Auth::id())
+        return SellerAgentAuctionModel::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->latest()
             ->get();
@@ -1009,8 +1254,8 @@ class SellerOfferListingEdit extends Component
             $this->isDraft = true;
 
             $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+                ? SellerAgentAuctionModel::find($this->listingId)
+                : new SellerAgentAuctionModel();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
@@ -1029,7 +1274,7 @@ class SellerOfferListingEdit extends Component
 
     public function loadAuctionData($listingId)
     {
-        $auction = HireBuyerAgentAuction::where('id', $listingId)
+        $auction = SellerAgentAuctionModel::where('id', $listingId)
             ->where('user_id', Auth::id())
             ->first();
         if ($auction) {
@@ -1875,8 +2120,8 @@ class SellerOfferListingEdit extends Component
             $this->isDraft = 0;
 
             $auction =$this->auctionId
-                ? HireBuyerAgentAuction::find($this->auctionId)
-                : new HireBuyerAgentAuction();
+                ? SellerAgentAuctionModel::find($this->auctionId)
+                : new SellerAgentAuctionModel();
             $auction->title = $this->listing_title;
             $auction->is_draft = 0;
             $auction->save();

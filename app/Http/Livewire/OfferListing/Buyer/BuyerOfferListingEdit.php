@@ -100,7 +100,7 @@ class BuyerOfferListingEdit extends Component
     public $seller_late_fee_amount = '';
 
     // Exchange/Trade Properties
-    public $exchange_item = '';
+    public $exchange_item = [];
     public $other_exchange_item = '';
     public $exchange_item_value = '';
     public $exchange_item_condition = '';
@@ -161,7 +161,7 @@ class BuyerOfferListingEdit extends Component
     public $garage_needed = '';
     public $other_garage_needed = '';
     public $garage_parking_spaces = '';
-    public $garage_parking_spaces_option = '';
+    public $garage_parking_spaces_option = [];
     public $other_parking_space_wrapper = '';
     public $pool_needed = '';
     public $pool_type = [];
@@ -174,7 +174,7 @@ class BuyerOfferListingEdit extends Component
     public $number_of_unit_type_other = '';
     public $minimum_annual_net_income = '';
     public $minimum_cap_rate = '';
-    public $assets = '';
+    public $assets = [];
     public $assets_other = '';
     public $property_criteria = '';
     public $unit_size = '';
@@ -519,6 +519,22 @@ class BuyerOfferListingEdit extends Component
     ];
 
     // Computed Properties
+
+    // ── Properties ported from BuyerOfferListing (needed by shared blade tabs) ──
+    public $condition_prop_buyer_json = '[]';
+    public $number_of_unit_type_json = '[]';
+    public $property_items_json = '[]';
+    public $assumable_loan_type = '';
+    public $business_type_selected = '';
+    public $other_business_type = '';
+    public $property_city = '';
+    public $property_state = '';
+    public $property_zip = '';
+    public $property_county = '';
+    public $propertyCitySuggestions = [];
+    public $highlightedPropertyCityIndex = -1;
+    // ── End ported properties ────────────────────────────────────────────────
+
     public function getIsOtherVisibleProperty()
     {
         return is_array($this->view_preference) && in_array('Other', $this->view_preference);
@@ -1162,7 +1178,7 @@ class BuyerOfferListingEdit extends Component
             $this->min_acreage = $auction->get->min_acreage ?? '';
             $this->total_acreage = $auction->get->total_acreage ?? '';
             $this->minimum_cap_rate = $auction->get->minimum_cap_rate ?? '';
-            $this->assets = $auction->get->assets ?? '';
+            $this->assets = $auction->get->assets ?? [];
             $this->assets_other = $auction->get->assets_other ?? '';
             $this->property_criteria = $auction->get->property_criteria ?? '';
             $this->unit_size = $auction->get->unit_size ?? '';
@@ -1214,7 +1230,7 @@ class BuyerOfferListingEdit extends Component
             $this->seller_late_fee_amount = $auction->get->seller_late_fee_amount ?? '';
 
             // Exchange/Trade
-            $this->exchange_item = $auction->get->exchange_item ?? '';
+            $this->exchange_item = $auction->get->exchange_item ?? [];
             $this->other_exchange_item = $auction->get->other_exchange_item ?? '';
             $this->exchange_item_value = $auction->get->exchange_item_value ?? '';
             $this->exchange_item_condition = $auction->get->exchange_item_condition ?? '';
@@ -1281,7 +1297,7 @@ class BuyerOfferListingEdit extends Component
             $this->garage_needed = $auction->get->garage_needed ?? '';
             $this->other_garage_needed = $auction->get->other_garage_needed ?? '';
             $this->garage_parking_spaces = $auction->get->garage_parking_spaces ?? '';
-            $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option ?? '';
+            $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option ?? [];
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper ?? '';
             $this->pool_needed = $auction->get->pool_needed ?? '';
 

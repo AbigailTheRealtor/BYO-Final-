@@ -107,6 +107,10 @@ public function deleteMeta($key)
         $data = [];
         $metas = $this->meta;
         foreach ($metas as $row) {
+            if ($row->meta_value === null) {
+                $data[$row->meta_key] = null;
+                continue;
+            }
             $decoded = json_decode($row->meta_value, true);
             if (json_last_error() === JSON_ERROR_NONE && (is_array($decoded) || is_object($decoded))) {
                 $value = $decoded;
@@ -115,8 +119,11 @@ public function deleteMeta($key)
             }
             $data[$row->meta_key] = $value;
         }
-        $collection = new Collection();
-        $collection->push((object) $data);
-        return $collection->first();
+        return new class($data) {
+            private $data;
+            public function __construct($data) { $this->data = $data; }
+            public function __get($name) { return $this->data[$name] ?? null; }
+            public function __isset($name) { return isset($this->data[$name]); }
+        };
     }
 }

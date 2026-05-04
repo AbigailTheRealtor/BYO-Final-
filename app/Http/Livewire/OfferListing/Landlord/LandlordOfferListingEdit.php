@@ -63,7 +63,7 @@ class LandlordOfferListingEdit extends Component
     public $lease_now_price = '';
     public $desired_rental_amount_tenant = '';
     public $lease_amount_frequency = '';
-    public $desired_lease_length = '';
+    public $desired_lease_length = [];
     public $rent_includes = []; // Residential only
     public $terms_of_lease = []; // Commercial only
     public $tenant_pays = []; // Commercial only
@@ -80,7 +80,7 @@ class LandlordOfferListingEdit extends Component
 
     // Properties
     public $maximum_budget = '';
-    public $offered_financing = '';
+    public $offered_financing = [];
     public $other_financing = '';
     public $cash_budget = '';
     public $pre_approved = '';
@@ -158,7 +158,7 @@ class LandlordOfferListingEdit extends Component
     public $property_criteria = '';
     public $unit_size = '';
     public $unit_size_other = '';
-    public $appliances = '';
+    public $appliances = [];
     public $appliances_other = '';
     public $preferance_details = '';
 
