@@ -467,7 +467,7 @@ class AgentPresetController extends Controller
             'split_payment_due_other'                        => $request->input('split_payment_due_other', ''),
             // Profile-only display fields
             'years_experience'              => $request->input('years_experience', ''),
-            'transactions_last_12_months'   => $request->input('transactions_last_12_months') !== null ? (int) $request->input('transactions_last_12_months') : null,
+            'transactions_last_12_months'   => $request->filled('transactions_last_12_months') ? (int) $request->input('transactions_last_12_months') : null,
             'primary_areas_served'          => $request->input('primary_areas_served', ''),
             'avg_response_time'             => $request->input('avg_response_time', ''),
             'is_full_time'                  => $request->input('is_full_time', ''),
