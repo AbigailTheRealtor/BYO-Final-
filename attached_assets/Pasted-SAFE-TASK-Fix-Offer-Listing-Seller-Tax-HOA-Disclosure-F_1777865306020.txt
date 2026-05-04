@@ -1,0 +1,63 @@
+SAFE TASK — Fix Offer Listing Seller Tax/HOA/Disclosure Field Overlap Only
+
+Issue:
+On Seller Offer Listing Tax, Legal, HOA & Disclosures tab, several fields overlap visually after the form is filled out.
+
+Observed:
+- Icons overlap labels/fields around:
+  - Approval Process Details
+  - Association Application Fee
+  - Flood Disclosure Available
+  - Lead-Based Paint Disclosure Required
+  - Environmental Report Available
+- Some select/file upload sections are stacked too tightly.
+- Inputs/selects appear to lack consistent vertical spacing when conditional fields are shown.
+
+Scope ONLY:
+- Seller Offer Listing create/edit form
+- Tax, Legal, HOA & Disclosures tab/partial
+- Related CSS/classes only if scoped to this tab/form
+
+Do NOT:
+- Change save/load logic
+- Change database schema
+- Change field names
+- Change tooltips/wording unless clearly broken
+- Touch Landlord/Buyer/Tenant unless shared CSS change is required and safe
+- Touch Hire Agent flows
+- Touch Agent Presets
+
+Tasks:
+1. Audit the Seller Tax/Legal/HOA/Disclosures blade section.
+2. Identify why icons are overlapping labels/fields:
+   - duplicate inline icons?
+   - icon absolute positioning without enough padding?
+   - missing input-cover wrapper?
+   - missing margin-bottom?
+   - conditional fields inserted without proper wrapper?
+   - Select2 container layout issue?
+3. Fix layout so every field uses the same consistent structure:
+   - label on top
+   - icon inside input/select at far left
+   - input/select text aligned correctly
+   - tooltip does not overlap
+   - conditional upload sections have spacing
+4. Ensure dollar-prefix inputs remain aligned correctly.
+5. Ensure file upload sections have enough spacing under each “Yes” disclosure.
+6. Verify no field overlaps at 30%, 50%, and 100% browser zoom if possible.
+
+Testing:
+- Open /offer-listing/seller.
+- Fill all Tax/Legal/HOA/Disclosures fields.
+- Select Yes for all disclosure document questions.
+- Upload/select files where available.
+- Confirm no visual overlap.
+- Save draft.
+- Reopen edit.
+- Confirm layout still clean with saved values loaded.
+
+Return:
+- Root cause
+- Files changed
+- Fields/layout wrappers fixed
+- Screenshot or rendered verification

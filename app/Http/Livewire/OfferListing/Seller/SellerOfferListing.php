@@ -3316,12 +3316,12 @@ class SellerOfferListing extends Component
         $rules = [
             'listing_title'  => 'required|string|max:255',
             'property_type'  => 'required|string',
-            'state'          => 'required|string',
+            'state'          => 'nullable|string',
             'first_name'     => 'required|string',
             'last_name'      => 'required|string',
             'phone_number'   => 'required|string',
             'email'          => 'required|email',
-            'current_status' => 'required|string',
+            'current_status' => 'nullable|string',
         ];
 
         // ── MLS / Property Detail scalar fields ───────────────────────────────
@@ -3463,13 +3463,11 @@ class SellerOfferListing extends Component
         return [
             'listing_title.required'   => 'Listing Title is required',
             'property_type.required'   => 'Property Type is required',
-            'state.required'           => 'State is required',
             'first_name.required'      => 'First Name is required',
             'last_name.required'       => 'Last Name is required',
             'phone_number.required'    => 'Phone Number is required',
             'email.required'           => 'Email Address is required',
             'email.email'              => 'Please enter a valid email address',
-            'current_status.required'  => 'Seller\'s Current Status is required',
             'auction_time.required' => 'Bidding Period Length is required for Bidding Period listings',
             'seller_leasing_fee_type.required' => 'Seller\'s Broker Leasing Fee type is required when offering leasing',
             'seller_leasing_gross_flat.required' => 'Flat Fee amount is required',
