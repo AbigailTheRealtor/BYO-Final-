@@ -102,7 +102,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="additional_parcel_ids" class="form-control" rows="3"
+                    <textarea wire:model="additional_parcel_ids" class="form-control" rows="2"
                         style="padding: 10px; font-size: 16px;"
                         placeholder="Enter each additional parcel ID on a new line"></textarea>
                 </div>
@@ -118,7 +118,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <textarea wire:model="legal_description" class="form-control" rows="3"
+                <textarea wire:model="legal_description" class="form-control" rows="2"
                     style="padding: 10px; font-size: 16px;"
                     placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
             </div>

@@ -1172,8 +1172,11 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="number" wire:model="security_deposit_required" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar-sign" min="0" step="0.01" placeholder="Enter security deposit amount (e.g., 2500.00)">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="security_deposit_required" class="form-control"
+            style="padding-left: 12px;"
+            placeholder="Enter security deposit amount (e.g., 2500)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
 
@@ -1220,12 +1223,16 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="number" wire:model="total_move_in_funds_required" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar-sign" min="0" step="0.01" placeholder="Enter total move-in amount (e.g., 7500.00)">
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="total_move_in_funds_required" class="form-control"
+            style="padding-left: 12px;"
+            placeholder="Enter total move-in amount (e.g., 7500)"
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
 
-{{-- Pet Policy --}}
+{{-- Pet Policy (hidden — duplicate of Pets Allowed in property-preferences; backend property/save/load untouched) --}}
+<div style="display: none;">
 <div class="form-group">
     <label class="fw-bold">Pet Policy:</label>
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1241,6 +1248,7 @@
             <option value="Pets Allowed">Pets Allowed</option>
         </select>
     </div>
+</div>
 </div>
 
 {{-- Pet Deposit / Fee / Rent (hidden when No Pets Allowed) --}}
@@ -1341,7 +1349,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="renewal_option_details" class="form-control has-icon" rows="3"
+            <textarea wire:model="renewal_option_details" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-file-signature"
                 placeholder="Describe renewal option terms (e.g., 1-year renewal at market rate, 60-day notice required)"></textarea>
         </div>
@@ -1370,7 +1378,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="3"
+        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="2"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional lease terms or special conditions"></textarea>
     </div>
@@ -1416,7 +1424,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon" rows="3"
+            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-receipt"
                 placeholder="Describe CAM/NNN charges (e.g., estimated $3/sqft annually for taxes, insurance, and maintenance)"></textarea>
         </div>
@@ -1430,7 +1438,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="rent_escalation_terms" class="form-control has-icon" rows="3"
+            <textarea wire:model="rent_escalation_terms" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-arrow-trend-up"
                 placeholder="Describe rent escalation (e.g., 3% annual increase beginning year 2)"></textarea>
         </div>
@@ -1444,7 +1452,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon" rows="3"
+            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-hammer"
                 placeholder="Describe TI/buildout terms (e.g., $20/sqft TI allowance, delivered in shell condition)"></textarea>
         </div>
@@ -1458,7 +1466,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon" rows="3"
+            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-building-columns"
                 placeholder="Describe permitted uses and restrictions (e.g., General office use only, no retail or food service)"></textarea>
         </div>
@@ -1472,7 +1480,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="signage_rights" class="form-control has-icon" rows="3"
+            <textarea wire:model="signage_rights" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-sign-hanging"
                 placeholder="Describe signage rights (e.g., Tenant may install one suite sign and one directory listing)"></textarea>
         </div>
@@ -1486,7 +1494,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="commercial_parking_terms" class="form-control has-icon" rows="3"
+            <textarea wire:model="commercial_parking_terms" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-square-parking"
                 placeholder="Describe commercial parking terms (e.g., 4 spaces per 1,000 sqft, 2 reserved spaces included)"></textarea>
         </div>
@@ -1518,7 +1526,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="3"
+            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="2"
                 data-icon="fa-solid fa-clipboard-check"
                 placeholder="Enter commercial approval conditions (e.g., 2 years of financial statements, business plan, references)"></textarea>
         </div>

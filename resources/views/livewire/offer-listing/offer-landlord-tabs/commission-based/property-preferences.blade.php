@@ -864,7 +864,7 @@
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="Enter heating and fuel type (e.g., Solar, Propane, Radiant Heat)">
+                data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
         </div>
     </div>
 
@@ -889,7 +889,7 @@
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Mini-Split, Evaporative Cooler)">
+                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
         </div>
     </div>
 
@@ -913,7 +913,7 @@
     <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
         <div class="input-cover">
             <input type="text" wire:model="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Cistern)">
+                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
         </div>
     </div>
 
@@ -926,7 +926,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="sewer" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-pipe-section input-icon2" multiple>
+                data-icon="fa-solid fa-water input-icon2" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $sewer ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -938,7 +938,7 @@
         {{-- <label class="fw-bold">Other Sewer:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pipe-section" placeholder="Enter sewer type (e.g., Holding Tank, Community Septic)">
+                data-icon="fa-solid fa-water" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
         </div>
     </div>
 
@@ -1069,7 +1069,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model="zoning" class="form-control has-icon"
-                data-icon="fa-solid fa-map" placeholder="e.g. C-2, I-1, B-3">
+                data-icon="fa-solid fa-map" placeholder="Enter zoning code (e.g., C-1, B-2)">
         </div>
         <span class="error mt-2" id="zoning_error"></span>
     </div>
@@ -1151,7 +1151,7 @@
         {{-- <label class="fw-bold">Other Road Surface Type:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-road" placeholder="Describe other road surface type">
+                data-icon="fa-solid fa-road" placeholder="Enter road surface type (e.g., Cobblestone, Shell)">
         </div>
     </div>
 
@@ -1200,7 +1200,7 @@
     <div class="form-group" style="display: {{ (is_array($water ?? []) && in_array('Other', $water ?? [])) ? 'block' : 'none' }};" id="other_water_wrapper">
         <div class="input-cover">
             <input type="text" wire:model="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Cistern)">
+                data-icon="fa-solid fa-droplet" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
         </div>
     </div>
 
@@ -1213,7 +1213,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="sewer" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-pipe-section input-icon2" multiple>
+                data-icon="fa-solid fa-water input-icon2" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $sewer ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1225,7 +1225,7 @@
         {{-- <label class="fw-bold">Other Sewer:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pipe-section" placeholder="Enter sewer type (e.g., Holding Tank, Community Septic)">
+                data-icon="fa-solid fa-water" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
         </div>
     </div>
 
@@ -1250,7 +1250,7 @@
         {{-- <label class="fw-bold">Other Heating / Fuel:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_heating_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-fire" placeholder="Enter heating and fuel type (e.g., Solar, Propane, Radiant Heat)">
+                data-icon="fa-solid fa-fire" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
         </div>
     </div>
 
@@ -1275,7 +1275,7 @@
         {{-- <label class="fw-bold">Other Air Conditioning:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Mini-Split, Evaporative Cooler)">
+                data-icon="fa-solid fa-snowflake" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
         </div>
     </div>
 
@@ -1300,7 +1300,7 @@
         {{-- <label class="fw-bold">Other Electrical Service:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-plug" placeholder="Describe other electrical service">
+                data-icon="fa-solid fa-plug" placeholder="Enter electrical service (e.g., 600 Volts, DC Power)">
         </div>
     </div>
 
@@ -1343,7 +1343,7 @@
         {{-- <label class="fw-bold">Other Building Features:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_building_features" class="form-control has-icon"
-                data-icon="fa-solid fa-building" placeholder="Describe other building features">
+                data-icon="fa-solid fa-building" placeholder="Enter building features (e.g., Skylight, Automated Gate)">
         </div>
     </div>
 
@@ -1356,7 +1356,7 @@
         </span>
         <div class="input-cover">
             <input type="number" wire:model="number_electric_meters" class="form-control has-icon"
-                data-icon="fa-solid fa-bolt" placeholder="e.g. 1" min="0">
+                data-icon="fa-solid fa-bolt" placeholder="Enter number of electric meters (e.g., 4)" min="0">
         </div>
         <span class="error mt-2" id="number_electric_meters_error"></span>
     </div>
@@ -1370,7 +1370,7 @@
         </span>
         <div class="input-cover">
             <input type="number" wire:model="number_water_meters" class="form-control has-icon"
-                data-icon="fa-solid fa-droplet" placeholder="e.g. 1" min="0">
+                data-icon="fa-solid fa-droplet" placeholder="Enter number of water meters (e.g., 4)" min="0">
         </div>
         <span class="error mt-2" id="number_water_meters_error"></span>
     </div>
