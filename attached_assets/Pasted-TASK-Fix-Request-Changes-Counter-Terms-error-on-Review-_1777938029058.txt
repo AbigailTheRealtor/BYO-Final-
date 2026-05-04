@@ -1,0 +1,115 @@
+TASK: Fix “Request Changes / Counter Terms” error on Review This Agent’s Proposed Terms page
+
+Example failing route:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/hire/agent/direct/142/buyer/residentia
+
+Issue:
+On the “Review This Agent’s Proposed Terms” page, clicking “Request Changes / Counter Terms” shows:
+“Error, Something went wrong please try again.”
+
+Scope:
+- Hire This Agent direct flow only
+- Review This Agent’s Proposed Terms page only
+- Counter/request changes action only
+
+DO NOT touch:
+- Offer Listing create/edit flows
+- Seller/Landlord/Buyer/Tenant offer listing forms
+- Agent preset creation/edit flows
+- Dashboards
+- Accepted Bid Summary logic
+- Referral tracking logic
+- Database schema unless absolutely required and approved
+- CompensationFormatter or ServicesFormatter unless the bug is directly inside this flow
+
+Required safeguard:
+Start with a read-only audit first. Do not change code until the exact backend error is identified.
+
+Step 1 — Reproduce and capture the real error:
+1. Visit the failing direct hire review page.
+2. Click “Request Changes / Counter Terms.”
+3. Check browser DevTools Network tab for the failed request.
+4. Record the HTTP status:
+   - 419 = CSRF/session issue
+   - 500 = backend exception
+   - 404 = route/method issue
+   - 422 = validation issue
+5. Immediately check:
+   storage/logs/laravel.log
+
+Step 2 — Locate the exact files involved:
+Find the route/controller/view/component for:
+- /hire/agent/direct/{agent}/{role}/{propertyType}
+- Review This Agent’s Proposed Terms
+- Request Changes / Counter Terms button/action
+
+Likely files may include:
+- routes/web.php
+- app/Http/Controllers/HireAgentDirectController.php
+- resources/views/hire-agent-direct/preview.blade.php
+- any Livewire component or JS used by this page
+
+Step 3 — Diagnose only:
+Report the exact root cause before editing:
+- Is the button pointing to a missing route or missing method?
+- Is there a typo in the property type? Example URL shows “residentia” instead of “residential.”
+- Is the route parameter failing validation because propertyType is invalid?
+- Is the user unauthenticated and being blocked?
+- Is the counter action expecting a listing/bid record that does not exist yet?
+- Is a required field missing from the request?
+- Is CSRF missing or expired?
+- Is the response JSON expected but HTML/error page returned?
+
+Step 4 — Fix surgically:
+After identifying the root cause, make the smallest safe fix only.
+
+Approved fixes:
+- Correct route/action mismatch.
+- Add missing CSRF/meta token handling if needed.
+- Fix typo/normalization for propertyType if “residentia” is causing failure.
+- Add graceful validation and visible error messages instead of generic failure.
+- Ensure “Request Changes / Counter Terms” redirects to the correct counter form/page.
+- Ensure the action only runs for authenticated users and redirects to login cleanly if needed.
+- Add safe null checks if the direct-hire preview has no listing/bid yet.
+
+Do NOT:
+- Rewrite the whole direct hire flow.
+- Change how agent presets save.
+- Change service catalog logic.
+- Change bid/counter logic globally.
+- Rename columns or run destructive migrations.
+- Use migrate:fresh.
+- Delete existing data.
+- Modify unrelated role/property type flows.
+
+Step 5 — Add defensive handling:
+If an invalid propertyType is passed, such as “residentia,” do not throw a generic error.
+Instead:
+- either normalize to “residential” if clearly intended,
+- or return a clear validation message / redirect.
+
+Step 6 — Verification:
+Test all valid direct hire review routes for at least:
+- buyer/residential
+- seller/residential
+- landlord/residential
+- tenant/residential
+
+For each:
+1. Page loads.
+2. “Request Changes / Counter Terms” works.
+3. No generic “Something went wrong” message appears.
+4. No new Laravel log errors are created.
+5. Auth redirect works cleanly if user is logged out.
+6. Agent-selected services still display correctly.
+7. Compensation terms remain read-only on preview.
+8. Client can still accept terms if that already worked before.
+
+Step 7 — Report back:
+Provide:
+- Root cause
+- Files changed
+- Exact fix made
+- Verification results
+- Any routes tested
+- Confirmation that no offer listing flows, dashboards, referral tracking, or database schema were changed
