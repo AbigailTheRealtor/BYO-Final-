@@ -1,0 +1,127 @@
+AUDIT ONLY — Why Offer Listing Edits Are Not Appearing on Live Forms
+
+Context:
+The original requested fixes were for Offer Listing create/edit forms only:
+
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant/tenant
+
+Repeated fixes have been committed, but the live browser still shows:
+- Landlord “Other” fields not appearing
+- City/County/State not auto-populating
+- Acceptable Cities not auto-populating County/State
+- Some placeholder/icon fixes not reflected
+
+DO NOT MODIFY FILES.
+This is audit only.
+
+Goal:
+Find whether the wrong files, wrong components, wrong Blade partials, wrong JS, wrong Livewire properties, or cached assets are being edited.
+
+1. Route/component audit:
+For each URL, return:
+- route name
+- controller or Livewire component
+- parent Blade
+- included tab partials
+
+2. Active field source audit:
+For the live /offer-listing/landlord Property Details tab, find the exact active file and line numbers rendering:
+- Appliances Included
+- View
+- Sewer
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Utilities
+- Laundry Features
+- Floor Covering
+- Security Features
+
+3. Duplicate file audit:
+Search for duplicate/old versions of:
+- property-preferences.blade.php
+- property-details.blade.php
+- landlord property tab
+- seller property tab
+- other_appliances
+- other_preferences
+- other_sewer
+- acceptable_cities
+- city/state/county scripts
+
+Identify if previous edits were made to inactive duplicates.
+
+4. JavaScript/Livewire audit:
+For Landlord Other inputs, return a table:
+
+Field | Select ID | Livewire property | Other input wrapper ID | JS handler exists? | JS selector matches? | Livewire property updates? | Save key | Load key | Issue
+
+Include:
+- Appliances
+- View
+- Heating/Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Laundry
+- Floor Covering
+- Security Features
+
+5. City/County/State audit:
+Compare working Hire Agent flow to Offer Listing flow.
+
+Return:
+- working Hire Agent file/function
+- Offer Listing file/function
+- whether event fires
+- whether backend method runs
+- whether fields are actually bound to backend properties
+- why state/county are not updating
+
+6. Cache/build audit:
+Confirm:
+- Is JS inline Blade or compiled asset?
+- Does npm/Vite need rebuild?
+- Are views cached?
+- Was server restarted?
+- Is Replit running latest commit?
+
+Run/report:
+- git status
+- current commit hash
+- php artisan view:clear
+- php artisan cache:clear
+- php artisan config:clear
+- php artisan route:clear
+- server restart result
+
+7. Original task completion audit:
+Compare original requested items against current live status:
+
+Return table:
+Requested Fix | Claimed Fixed? | Actually Working in Browser? | Active File | Reason Not Working | Next Surgical Fix
+
+Original requested items:
+- Other input boxes
+- Listing title tooltip/placeholders
+- Seller/Landlord city → county/state
+- Buyer/Tenant acceptable cities → counties/state
+- missing tooltips
+- Landlord sewer icon
+- Desired Lease Term placeholder
+- oversized fields
+- Association placeholders
+- draft/edit save
+- documents upload in disclosures
+- remove upload message
+- photo upload stuck
+- AI questions hidden
+
+Final deliverable:
+- Root cause of why repeated fixes are not visible
+- Exact active files to change next
+- Do not implement yet
