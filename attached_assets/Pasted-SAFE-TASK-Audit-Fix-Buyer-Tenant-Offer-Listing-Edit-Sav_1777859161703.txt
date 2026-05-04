@@ -1,0 +1,105 @@
+SAFE TASK — Audit + Fix Buyer/Tenant Offer Listing Edit Save/Reload Parity
+
+Goal:
+Make Buyer and Tenant Offer Listing edit components match their create components so Save Draft and Edit reload every field correctly.
+
+Scope ONLY:
+- Buyer Offer Listing create/edit
+- Tenant Offer Listing create/edit
+- BuyerOfferListing.php
+- BuyerOfferListingEdit.php
+- TenantOfferListing.php
+- TenantOfferListingEdit.php
+- Related Buyer/Tenant Offer Listing blade partials only if needed
+
+Do NOT:
+- Touch Seller or Landlord in this task
+- Touch Hire Agent flows
+- Touch Agent Presets
+- Touch bids/counters
+- Change database schema unless a missing table/column is found and reported first
+- Change UI wording unless required for save/reload binding
+
+Audit first:
+1. Compare BuyerOfferListing.php vs BuyerOfferListingEdit.php.
+2. Compare TenantOfferListing.php vs TenantOfferListingEdit.php.
+3. Identify every field/property that exists in create but is missing in edit.
+4. Identify every loadAuctionData() assignment missing in edit.
+5. Identify every saveAllMetadata()/saveMeta() call missing in edit.
+6. Identify fields that are declared with wrong default type:
+   - arrays must default to []
+   - strings to ''
+   - booleans to false
+7. Identify any in_array() risks caused by string values loaded instead of arrays.
+
+Buyer fields to verify:
+- Listing Details
+- Property Preferences
+- Purchasing Terms
+- Financing/Currency
+- Additional Details
+- Photos, Tours & Documents
+- Agent Credentials & Contact Info
+- acceptable cities/counties/state
+- amenities/features
+- assets/exchange/trade fields
+- all “Other” fields
+- all multi-select fields
+- all uploaded documents/photos if applicable
+
+Tenant fields to verify:
+- Listing Details
+- Property Preferences
+- Leasing Terms
+- Pre-Screening
+- Additional Details
+- Photos, Tours & Documents
+- Agent Credentials & Contact Info
+- acceptable cities/counties/state
+- commercial/residential criteria fields
+- tenant_pays / owner_pays if applicable
+- all “Other” fields
+- all multi-select fields
+- all uploaded documents/photos if applicable
+
+Implementation:
+- Add missing public properties to Edit components only.
+- Add missing loadAuctionData() assignments.
+- Add missing saveMeta() calls.
+- Match create component naming exactly.
+- Do not rename existing keys.
+- Do not remove existing keys.
+- Keep array fields as arrays on load.
+- Keep file upload paths loading correctly.
+- Fix Save Draft so it stays in Offer Listing flow and edit reloads same data.
+
+Testing:
+Buyer:
+1. Create Buyer Offer Listing draft.
+2. Fill every tab with representative data.
+3. Include multi-selects, Other fields, acceptable cities/counties/state, financing fields, and uploads if available.
+4. Save draft.
+5. Reopen Buyer edit route.
+6. Confirm all values reload.
+7. Save again from edit.
+8. Reopen again and confirm values persist.
+
+Tenant:
+1. Create Tenant Offer Listing draft.
+2. Fill every tab with representative data.
+3. Include multi-selects, Other fields, acceptable cities/counties/state, leasing terms, pre-screening, and uploads if available.
+4. Save draft.
+5. Reopen Tenant edit route.
+6. Confirm all values reload.
+7. Save again from edit.
+8. Reopen again and confirm values persist.
+
+Return:
+- Missing fields found
+- Files changed
+- Number of properties added
+- Number of load assignments added
+- Number of saveMeta calls added
+- Any type mismatch fixes
+- Buyer save/reload test result
+- Tenant save/reload test result
