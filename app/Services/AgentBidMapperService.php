@@ -59,8 +59,10 @@ class AgentBidMapperService
 
             // ── Media / link fields ─────────────────────────────────────────
             'presentation_link'         => $profileData['presentation_link']          ?? '',
+            'presentation_upload_path'  => $profileData['presentation_upload_path']   ?? '',
             'business_card_link'        => $profileData['business_card_link']         ?? '',
             'business_card_stored_path' => $profileData['business_card_stored_path']  ?? '',
+            'business_card_upload_path' => $profileData['business_card_upload_path']  ?? '',
 
             // ── Services (agent's standard offering from the preset editor) ─
             'services'                  => $profileData['services']       ?? [],

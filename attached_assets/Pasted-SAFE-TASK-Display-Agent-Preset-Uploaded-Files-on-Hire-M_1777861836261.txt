@@ -1,0 +1,74 @@
+SAFE TASK — Display Agent Preset Uploaded Files on Hire Me Review Page
+
+Issue:
+Agent Preset uploaded files, such as Business Card / Headshot Upload, are saved in the preset but do not appear on the “Review This Agent’s Proposed Terms” / Hire Me preview page.
+
+Goal:
+Any uploaded image/document from the Agent Offer Preset should display on the Hire Me review page when available.
+
+Scope:
+- Agent Presets uploaded files
+- Hire Me / Agent Proposed Terms review page
+- Role/property-specific Hire Me preview route
+- File display only
+
+Do NOT:
+- Change file upload saving logic unless the file path is not being saved
+- Change preset scope logic
+- Change services
+- Change broker compensation
+- Change agency agreement terms
+- Change Offer Listing flows
+- Change database schema unless absolutely required and reported first
+
+Audit first:
+1. Identify all upload/link fields in Agent Presets.
+   Include:
+   - Business Card / Headshot Link
+   - Business Card / Headshot Upload
+   - Marketing Plan upload/link if present
+   - Presentation materials upload/link if present
+   - Any other uploaded image/document fields in preset data
+
+2. Confirm where each field is stored:
+   - profile_data key
+   - file path key
+   - URL/link key
+
+3. Confirm HireAgentDirectController passes these fields to the preview view.
+
+Implementation:
+1. On the Hire Me review page, add a section such as:
+   Agent Documents & Materials
+
+2. Display uploaded files when present:
+   - If image file: show image preview/thumbnail and filename/link
+   - If PDF/document: show downloadable/openable link with filename
+   - If external URL/link: show clickable link
+
+3. Use safe storage URLs:
+   - Do not expose raw server paths
+   - Use Storage::url() or existing app helper pattern
+   - Handle missing files gracefully
+
+4. Show only files/links that exist.
+   - Do not show empty placeholders.
+
+5. Keep this section read-only.
+
+Testing:
+1. Upload Business Card / Headshot in a preset.
+2. Save preset.
+3. Open role/property-specific Hire Me review page.
+4. Confirm file appears.
+5. Test image preview.
+6. Test PDF/document link if available.
+7. Confirm no broken links or raw storage paths.
+8. Repeat for Buyer, Seller, Landlord, Tenant preset if fields exist across all.
+
+Return:
+- Files changed
+- Fields found
+- Storage keys used
+- Screenshot/rendered proof
+- Test results

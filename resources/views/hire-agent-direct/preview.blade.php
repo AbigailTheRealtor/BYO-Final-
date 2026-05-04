@@ -210,6 +210,18 @@
         word-break: break-all;
     }
     .preview-link-pill:hover { background: #e0f5f5; color: #036b70; }
+    /* ── Upload thumbnail ── */
+    .preview-upload-thumb {
+        display: block;
+        max-width: 120px;
+        max-height: 120px;
+        width: auto;
+        height: auto;
+        border-radius: 8px;
+        border: 1px solid #c8e8ea;
+        object-fit: cover;
+        margin-bottom: .5rem;
+    }
     /* ── Availability tag ── */
     .preview-avail-tag {
         display: inline-block;
@@ -395,8 +407,21 @@
             $pdReviewsLinks    = $normalizeLinks($mapped['reviews_links']  ?? ($pd['reviews_links']  ?? []));
             $pdPresentationLink = $mapped['presentation_link'] ?? '';
             $pdBusinessCardLink = $mapped['business_card_link'] ?? '';
-            $pdPresentationUpload = $pd['presentation_upload_path'] ?? '';
-            $pdBusinessCardUpload = $pd['business_card_upload_path'] ?? '';
+            $pdPresentationUploadRaw = $pd['presentation_upload_path'] ?? '';
+            $pdBusinessCardUploadRaw = $pd['business_card_upload_path'] ?? '';
+            // Resolve to empty string if the file no longer exists on disk
+            $pdPresentationUpload = ($pdPresentationUploadRaw && \Illuminate\Support\Facades\Storage::disk('public')->exists($pdPresentationUploadRaw))
+                ? $pdPresentationUploadRaw : '';
+            $pdBusinessCardUpload = ($pdBusinessCardUploadRaw && \Illuminate\Support\Facades\Storage::disk('public')->exists($pdBusinessCardUploadRaw))
+                ? $pdBusinessCardUploadRaw : '';
+            // Helper: classify a file path as 'image', 'pdf', 'document', or 'unknown'
+            $fileType = function($path) {
+                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif'])) return 'image';
+                if ($ext === 'pdf') return 'pdf';
+                if (in_array($ext, ['doc', 'docx', 'ppt', 'pptx'])) return 'document';
+                return 'unknown';
+            };
 
             // Social Proof
             $pdReviews = array_values(array_filter([
@@ -620,10 +645,28 @@
                 <div class="mb-3">
                     <div class="preview-field-label">Presentation</div>
                     @if($hasPresentationUpload)
-                        <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
-                           target="_blank" rel="noopener noreferrer" class="preview-link-pill">
-                            <i class="fa-solid fa-file-lines me-1"></i>View Presentation
-                        </a>
+                        @php $presType = $fileType($pdPresentationUpload); @endphp
+                        @if($presType === 'image')
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                               target="_blank" rel="noopener noreferrer">
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                                     alt="Presentation" class="preview-upload-thumb">
+                            </a>
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                               target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                                <i class="fa-solid fa-image me-1"></i>{{ basename($pdPresentationUpload) }}
+                            </a>
+                        @else
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdPresentationUpload) }}"
+                               target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                                @if($presType === 'pdf')
+                                    <i class="fa-solid fa-file-pdf me-1"></i>
+                                @else
+                                    <i class="fa-solid fa-file-lines me-1"></i>
+                                @endif
+                                {{ basename($pdPresentationUpload) }}
+                            </a>
+                        @endif
                     @elseif(!empty($pdPresentationLink))
                         <a href="{{ $pdPresentationLink }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill">
                             <i class="fa-solid fa-file-lines me-1"></i>View Presentation
@@ -635,10 +678,28 @@
                 <div class="mb-3">
                     <div class="preview-field-label">Business Card / Headshot</div>
                     @if($hasBusinessCardUpload)
-                        <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
-                           target="_blank" rel="noopener noreferrer" class="preview-link-pill">
-                            <i class="fa-solid fa-id-card me-1"></i>View Business Card
-                        </a>
+                        @php $bcType = $fileType($pdBusinessCardUpload); @endphp
+                        @if($bcType === 'image')
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                               target="_blank" rel="noopener noreferrer">
+                                <img src="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                                     alt="Business Card / Headshot" class="preview-upload-thumb">
+                            </a>
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                               target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                                <i class="fa-solid fa-id-card me-1"></i>{{ basename($pdBusinessCardUpload) }}
+                            </a>
+                        @else
+                            <a href="{{ \Illuminate\Support\Facades\Storage::url($pdBusinessCardUpload) }}"
+                               target="_blank" rel="noopener noreferrer" class="preview-link-pill">
+                                @if($bcType === 'pdf')
+                                    <i class="fa-solid fa-file-pdf me-1"></i>
+                                @else
+                                    <i class="fa-solid fa-id-card me-1"></i>
+                                @endif
+                                {{ basename($pdBusinessCardUpload) }}
+                            </a>
+                        @endif
                     @elseif(!empty($pdBusinessCardLink))
                         <a href="{{ $pdBusinessCardLink }}" target="_blank" rel="noopener noreferrer" class="preview-link-pill">
                             <i class="fa-solid fa-id-card me-1"></i>View Business Card
