@@ -571,9 +571,8 @@ class BuyerOfferListingEdit extends Component
         $previousTypes = $this->previousOfferedFinancing ?? [];
         
         // Skip reset during draft/edit load to preserve loaded data
-        // Use one-shot mechanism: flag stays true until this method clears it
+        // Flag is cleared at the end of loadAuctionData() - do NOT clear it here
         if ($this->isLoadingData) {
-            $this->isLoadingData = false; // Clear flag after first call
             // Still update the previous snapshot before returning so subsequent comparisons work
             $this->previousOfferedFinancing = $currentTypes;
             return;
@@ -610,7 +609,7 @@ class BuyerOfferListingEdit extends Component
                 'seller_payment_frequency', 'seller_payment_frequency_other',
                 'seller_late_fee_amount'
             ],
-            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'max_monthly_payment'],
+            'Assumable' => ['assumable_terms', 'max_assumable_rate', 'assumable_loan_type', 'max_monthly_payment'],
             'Bridge Loan' => ['gap_payment_amount', 'gap_payment_type'],
             'Exchange/Trade' => [
                 'exchange_item', 'other_exchange_item', 'exchange_item_value', 
@@ -665,6 +664,7 @@ class BuyerOfferListingEdit extends Component
 
     public function updatedSaleProvision()
     {
+        if ($this->isLoadingData) return;
         // Reset all dependent fields when main selection changes
         $this->reset([
             'sale_provision_other',
@@ -676,16 +676,19 @@ class BuyerOfferListingEdit extends Component
 
     public function updatedSaleProvisionAssignment()
     {
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount', 'buyer_sell_contract']);
     }
 
     public function updatedBuyerSellContract()
     {
+        if ($this->isLoadingData) return;
         $this->reset(['assignment_fee_amount']);
     }
 
     public function updatedPurchaseFeeType()
     {
+        if ($this->isLoadingData) return;
         $this->reset([
             'purchase_fee_flat',
             'purchase_fee_percentage',
@@ -697,6 +700,7 @@ class BuyerOfferListingEdit extends Component
 
     public function updatedLeaseFeeType()
     {
+        if ($this->isLoadingData) return;
         $this->reset([
             'lease_fee_flat',
             'lease_fee_percentage',
@@ -1162,11 +1166,13 @@ class BuyerOfferListingEdit extends Component
             // Property details
             $propertyItemsRaw = $auction->get->property_items ?? null;
             $this->property_items = $propertyItemsRaw ? (is_string($propertyItemsRaw) ? json_decode($propertyItemsRaw, true) ?? [] : (array)$propertyItemsRaw) : [];
+            $this->property_items_json = json_encode($this->property_items ?? []);
 
             $this->other_property_items = $auction->get->other_property_items ?? '';
             $this->condition_prop = $auction->get->condition_prop ?? '';
             $conditionPropBuyerRaw = $auction->get->condition_prop_buyer ?? null;
             $this->condition_prop_buyer = $conditionPropBuyerRaw ? (is_string($conditionPropBuyerRaw) ? json_decode($conditionPropBuyerRaw, true) ?? [] : (array)$conditionPropBuyerRaw) : [];
+            $this->condition_prop_buyer_json = json_encode($this->condition_prop_buyer ?? []);
             $this->leasing_space = $auction->get->leasing_space ?? '';
             $this->other_property_condition = $auction->get->other_property_condition ?? '';
             $this->bathrooms = $auction->get->bathrooms ?? '';
@@ -1218,6 +1224,7 @@ class BuyerOfferListingEdit extends Component
             $this->balloon_payment_date = $auction->get->balloon_payment_date ?? '';
             $this->assumable_terms = $auction->get->assumable_terms ?? '';
             $this->max_assumable_rate = $auction->get->max_assumable_rate ?? '';
+            $this->assumable_loan_type = $auction->get->assumable_loan_type ?? '';
             $this->max_monthly_payment = $auction->get->max_monthly_payment ?? '';
             $this->gap_payment_type = $auction->get->gap_payment_type ?? '$';
             $this->gap_payment_amount = $auction->get->gap_payment_amount ?? '';
@@ -1230,7 +1237,17 @@ class BuyerOfferListingEdit extends Component
             $this->seller_late_fee_amount = $auction->get->seller_late_fee_amount ?? '';
 
             // Exchange/Trade
-            $this->exchange_item = $auction->get->exchange_item ?? [];
+            // Canonical type: array. Create may persist as raw string (legacy) or JSON-encoded
+            // array; normalize to array here so saveAllMetadata always writes a consistent value.
+            $rawExchangeItem = $auction->get->exchange_item ?? null;
+            if (is_string($rawExchangeItem)) {
+                $decoded = json_decode($rawExchangeItem, true);
+                $this->exchange_item = is_array($decoded) ? $decoded : ($rawExchangeItem !== '' ? [$rawExchangeItem] : []);
+            } elseif (is_array($rawExchangeItem)) {
+                $this->exchange_item = $rawExchangeItem;
+            } else {
+                $this->exchange_item = [];
+            }
             $this->other_exchange_item = $auction->get->other_exchange_item ?? '';
             $this->exchange_item_value = $auction->get->exchange_item_value ?? '';
             $this->exchange_item_condition = $auction->get->exchange_item_condition ?? '';
@@ -1315,6 +1332,7 @@ class BuyerOfferListingEdit extends Component
             $this->number_of_unit_other = $auction->get->number_of_unit_other ?? '';
             $numberUnitTypeRaw = $auction->get->number_of_unit_type ?? null;
             $this->number_of_unit_type = $numberUnitTypeRaw ? (is_string($numberUnitTypeRaw) ? json_decode($numberUnitTypeRaw, true) ?? [] : (array)$numberUnitTypeRaw) : [];
+            $this->number_of_unit_type_json = json_encode($this->number_of_unit_type ?? []);
             $this->number_of_unit_type_other = $auction->get->number_of_unit_type_other ?? '';
             $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? '';
             $this->leasing_55_plus = $auction->get->leasing_55_plus ?? '';
@@ -1542,6 +1560,9 @@ class BuyerOfferListingEdit extends Component
             $this->closing_cost_responsibility = $auction->get->closing_cost_responsibility ?? '';
             $this->additional_purchase_terms = $auction->get->additional_purchase_terms ?? '';
 
+            // All data loaded; clear the flag so subsequent updated* hooks run normally
+            $this->isLoadingData = false;
+
             // Dispatch browser event to sync Select2 elements after loading
             $this->dispatchBrowserEvent('buyer-agent-select2-sync', [
                 'view_preference' => $this->view_preference,
@@ -1650,6 +1671,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
         $auction->saveMeta('assumable_terms', $this->assumable_terms);
         $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
+        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
         $auction->saveMeta('max_monthly_payment', $this->stripCommas($this->max_monthly_payment));
         $auction->saveMeta('gap_payment_type', $this->gap_payment_type);
         $auction->saveMeta('gap_payment_amount', $this->stripCommas($this->gap_payment_amount));

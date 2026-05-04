@@ -461,6 +461,7 @@ class TenantOfferListingEdit extends Component
     public $assumable_fee_amount = '';
     public $assumable_occupancy_requirement = '';
     public $assumable_occupancy_other = '';
+    public $landlord_broker_flate_fee_type = '$';
     public $video_link = '';
     public array $listing_ai_faq = [];
 
@@ -986,30 +987,35 @@ class TenantOfferListingEdit extends Component
     // Handle interested in selling type changes
     public function updatedInterestedInSellingType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetSellingFields();
     }
 
     // Handle renewal fee type changes
     public function updatedRenewalFeeType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetRenewalFeeFields();
     }
 
     // Handle tenant broker fee structure changes
     public function updatedTenantBrokerFeeStructure($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetTenantBrokerFields();
     }
 
     // Handle property management fee changes
     public function updatedInterestedInPropertyManagementFee($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetPropertyManagementFields();
     }
 
     // Handle lease option agreement changes
     public function updatedInterestedLeaseOptionAgreement($value)
     {
+        if ($this->isLoadingData) return;
         if ($value !== 'Yes') {
             $this->reset([
                 'lease_type',
@@ -1023,6 +1029,7 @@ class TenantOfferListingEdit extends Component
     // Handle interested in selling changes
     public function updatedInterestedInSelling($value)
     {
+        if ($this->isLoadingData) return;
         if ($value !== 'Yes') {
             $this->reset([
                 'interested_in_selling_type',
@@ -1038,6 +1045,7 @@ class TenantOfferListingEdit extends Component
     // Handle broker fee timing changes
     public function updatedBrokerFeeTiming($value)
     {
+        if ($this->isLoadingData) return;
         $this->reset([
             'broker_fee_days_from_rent',
             'broker_fee_days_after_lease',
@@ -1066,6 +1074,7 @@ class TenantOfferListingEdit extends Component
     // Handle early termination fee option changes
     public function updatedEarlyTerminationFeeOption($value)
     {
+        if ($this->isLoadingData) return;
         if ($value !== 'yes') {
             $this->reset(['early_termination_fee_amount']);
         }
@@ -1074,6 +1083,7 @@ class TenantOfferListingEdit extends Component
     // Handle agency agreement timeframe changes
     public function updatedAgencyAgreementTimeframe($value)
     {
+        if ($this->isLoadingData) return;
         if ($value !== 'Other') {
             $this->reset(['agency_agreement_custom']);
         }
@@ -1081,12 +1091,14 @@ class TenantOfferListingEdit extends Component
 
     public function updatedLeaseFeeType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetTenantBrokerLeaseFee();
     }
 
     // Ensure lease_type never becomes empty during transitions
     public function updatedLeaseType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         
@@ -1099,6 +1111,7 @@ class TenantOfferListingEdit extends Component
     // Ensure purchase_type never becomes empty during transitions
     public function updatedPurchaseType($value)
     {
+        if ($this->isLoadingData) return;
         $this->resetValidation();
         $this->resetErrorBag();
         
@@ -1254,6 +1267,7 @@ class TenantOfferListingEdit extends Component
 
     public function updatedServices()
     {
+        if ($this->isLoadingData) return;
         $hasEnhancements = in_array('Provide digital photo enhancements', $this->services)
             || in_array('Provide digital enhancements to media assets', $this->services);
         if ($hasEnhancements) {
@@ -1286,6 +1300,7 @@ class TenantOfferListingEdit extends Component
 
     public function updatedPhotoEnhancements()
     {
+        if ($this->isLoadingData) return;
         // Automatically show custom field when "Other" is selected
         $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
     }
@@ -1575,6 +1590,7 @@ class TenantOfferListingEdit extends Component
 
     public function updatedWorkingWithAgent($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Represented') {
             $this->dispatchBrowserEvent('show-representation-notice');
         } else {
@@ -1584,6 +1600,7 @@ class TenantOfferListingEdit extends Component
 
     public function updatedAuctionType($value)
     {
+        if ($this->isLoadingData) return;
         if ($value === 'Auction') {
             $this->dispatchBrowserEvent('show-auction-time');
         } else {
@@ -2499,6 +2516,7 @@ class TenantOfferListingEdit extends Component
         $this->storage_space_res_both = $auction->info('storage_space_res_both');
         $this->included_storage_space_res_single = $auction->info('included_storage_space_res_single');
         $this->storage_space_res_single = $auction->info('storage_space_res_single');
+        $this->storage_space = $auction->info('storage_space') ?? '';
         $this->bathroom_facilities = $auction->info('bathroom_facilities');
         $this->room_size = $auction->info('room_size');
         $this->building_hours = $auction->info('building_hours');
@@ -2560,6 +2578,8 @@ class TenantOfferListingEdit extends Component
         $this->other_garage_needed = $auction->info('other_garage_needed');
         $this->garage_parking_spaces = $auction->info('garage_parking_spaces');
         $this->garage_parking_spaces_option = json_decode($auction->info('garage_parking_spaces_option'), true) ?? [];
+        $rawGarageBuyer = $auction->info('garage_parking_spaces_option_buyer');
+        $this->garage_parking_spaces_option_buyer = $rawGarageBuyer ? (is_string($rawGarageBuyer) ? json_decode($rawGarageBuyer, true) ?? [] : (array)$rawGarageBuyer) : [];
         $this->other_parking_space_wrapper = $auction->info('other_parking_space_wrapper');
         $this->pool_needed = $auction->info('pool_needed');
         $this->pool_type = json_decode($auction->info('pool_type'), true) ?? [];
@@ -2587,9 +2607,10 @@ class TenantOfferListingEdit extends Component
         $this->preferance_details = $auction->info('preferance_details');
         $this->sale_provision_other = $auction->info('sale_provision_other');
         $this->assignment_fee_amount = $auction->info('assignment_fee_amount');
+        $this->assignment_fee_type = $auction->info('assignment_fee_type') ?: '$';
         $this->sale_provision_assignment = $auction->info('sale_provision_assignment');
         $this->sale_provision_other = $auction->info('sale_provision_other');
-        $this->has_breed_restrictions  = $auction->info('has_breed_restrictions ');
+        $this->has_breed_restrictions = $auction->info('has_breed_restrictions');
         $this->breed_restrictions = $auction->info('breed_restrictions');
         $this->credit_scroe_rating = json_decode($auction->info('credit_scroe_rating'), true) ?? [];
         $this->sale_provision = json_decode($auction->info('sale_provision'), true) ?? [];
@@ -2607,6 +2628,8 @@ class TenantOfferListingEdit extends Component
         $this->number_occupant = $auction->info('number_occupant');
         $this->occupant_status = $auction->info('occupant_status');
         $this->occupant_tenant = $auction->info('occupant_tenant');
+        $this->occupied_until = $auction->info('occupied_until') ?? '';
+        $this->occupancy_status = $auction->info('occupancy_status') ?? '';
         $this->desired_rental_amount = $auction->info('desired_rental_amount');
         $this->lease_amount_frequency = $auction->info('lease_amount_frequency');
         $this->leasing_spaces = $auction->info('leasing_spaces');
@@ -2766,6 +2789,7 @@ class TenantOfferListingEdit extends Component
         $this->landlord_broker_percentage_price = $auction->info('landlord_broker_percentage_price');
         $this->landlord_broker_dollar_price = $auction->info('landlord_broker_dollar_price');
         $this->landlord_broker_flate_fee = $auction->info('landlord_broker_flate_fee');
+        $this->landlord_broker_flate_fee_type = $auction->info('landlord_broker_flate_fee_type') ?: '$';
         $this->landlord_broker_other = $auction->info('landlord_broker_other');
 
 
@@ -2844,12 +2868,15 @@ class TenantOfferListingEdit extends Component
         $this->seller_leasing_gross_purchase_fee_flat_amount = $auction->info('seller_leasing_gross_purchase_fee_flat_amount');
         $this->seller_leasing_gross_purchase_fee_other = $auction->info('seller_leasing_gross_purchase_fee_other');
         $this->seller_leasing_gross_other = $auction->info('seller_leasing_gross_other');
+        $this->seller_broker_leasing_fee = $auction->info('seller_broker_leasing_fee') ?? '';
+        $this->seller_leasing_gross_percentage_net_combo = $auction->info('seller_leasing_gross_percentage_net_combo') ?? '';
         $this->retained_deposits = $auction->info('retained_deposits');
         $this->lease_fee_type = $auction->info('lease_fee_type');
         $this->lease_fee_flat = $auction->info('lease_fee_flat');
         $this->lease_fee_flat_type = $auction->info('lease_fee_flat_type');
         $this->lease_fee_percentage = $auction->info('lease_fee_percentage');
         $this->lease_fee_percentage_monthly_rent = $auction->info('lease_fee_percentage_monthly_rent');
+        $this->lease_fee_percentage_monthly_number = $auction->info('lease_fee_percentage_monthly_number') ?? '';
         $this->lease_fee_months = $auction->info('lease_fee_months');
         $this->lease_fee_flat_combo = $auction->info('lease_fee_flat_combo');
         $this->lease_fee_percentage_combo = $auction->info('lease_fee_percentage_combo');
@@ -3283,6 +3310,7 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('storage_space_res_both', $this->storage_space_res_both);
             $auction->saveMeta('included_storage_space_res_single', $this->included_storage_space_res_single);
             $auction->saveMeta('storage_space_res_single', $this->storage_space_res_single);
+            $auction->saveMeta('storage_space', $this->storage_space);
             $auction->saveMeta('bathroom_facilities', $this->bathroom_facilities);
             $auction->saveMeta('room_size', $this->room_size);
             $auction->saveMeta('access_24_7', $this->access_24_7);
@@ -3533,6 +3561,7 @@ class TenantOfferListingEdit extends Component
             $auction->saveMeta('landlord_broker_percentage_price', $this->landlord_broker_percentage_price);
             $auction->saveMeta('landlord_broker_dollar_price', $this->landlord_broker_dollar_price);
             $auction->saveMeta('landlord_broker_flate_fee', $this->landlord_broker_flate_fee);
+            $auction->saveMeta('landlord_broker_flate_fee_type', $this->landlord_broker_flate_fee_type);
             $auction->saveMeta('landlord_broker_other', $this->landlord_broker_other);
 
 
