@@ -101,11 +101,9 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="input-cover">
-                    <textarea wire:model="additional_parcel_ids" class="form-control" rows="3"
-                        style="padding: 10px; font-size: 16px;"
-                        placeholder="Enter each additional parcel ID on a new line"></textarea>
-                </div>
+                <textarea wire:model="additional_parcel_ids" class="form-control" rows="3"
+                    style="padding: 10px; font-size: 16px;"
+                    placeholder="Enter each additional parcel ID on a new line"></textarea>
             </div>
         @endif
 
@@ -117,11 +115,9 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <div class="input-cover">
-                <textarea wire:model="legal_description" class="form-control" rows="3"
-                    style="padding: 10px; font-size: 16px;"
-                    placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
-            </div>
+            <textarea wire:model="legal_description" class="form-control" rows="3"
+                style="padding: 10px; font-size: 16px;"
+                placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
         </div>
 
     </div>
@@ -304,11 +300,9 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="input-cover">
-                    <textarea wire:model="special_assessment_description" class="form-control" rows="2"
-                        style="padding: 10px; font-size: 16px;"
-                        placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
-                </div>
+                <textarea wire:model="special_assessment_description" class="form-control" rows="2"
+                    style="padding: 10px; font-size: 16px;"
+                    placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
             </div>
         @endif
 
@@ -477,11 +471,9 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control" rows="2"
-                            style="padding: 10px; font-size: 16px;"
-                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
-                    </div>
+                    <textarea wire:model="association_approval_process" class="form-control" rows="2"
+                        style="padding: 10px; font-size: 16px;"
+                        placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                 </div>
 
                 <div class="form-group mt-3">
@@ -494,6 +486,7 @@
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
                         <input type="text" wire:model="association_application_fee" class="form-control"
+                            style="padding-left: 12px;"
                             placeholder="Enter Association Application Fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -522,7 +515,7 @@
                 @endphp
                 <div class="input-cover" wire:ignore>
                     <i class="input-icon fa-solid fa-list-check input-icon2"></i>
-                    <select id="association_fee_includes" class="form-control has-icon select2-multiple" multiple>
+                    <select id="association_fee_includes" class="form-control select2-multiple" multiple>
                         @foreach ($feeIncludesOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
@@ -559,7 +552,7 @@
                 @endphp
                 <div class="input-cover" wire:ignore>
                     <i class="input-icon fa-solid fa-star input-icon2"></i>
-                    <select id="association_amenities" class="form-control has-icon select2-multiple" multiple>
+                    <select id="association_amenities" class="form-control select2-multiple" multiple>
                         @foreach ($amenityOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_amenities ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
@@ -663,11 +656,9 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <div class="input-cover">
-                        <textarea wire:model="additional_lease_restrictions" class="form-control" rows="2"
-                            style="padding: 10px; font-size: 16px;"
-                            placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
-                    </div>
+                    <textarea wire:model="additional_lease_restrictions" class="form-control" rows="2"
+                        style="padding: 10px; font-size: 16px;"
+                        placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
                 </div>
             @endif
 
@@ -699,11 +690,9 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <div class="input-cover">
-                        <textarea wire:model="pet_restrictions_detail" class="form-control" rows="2"
-                            style="padding: 10px; font-size: 16px;"
-                            placeholder="Describe pet restrictions (e.g., Max 2 pets, no dogs over 25 lbs, no aggressive breeds)"></textarea>
-                    </div>
+                    <textarea wire:model="pet_restrictions_detail" class="form-control" rows="2"
+                        style="padding: 10px; font-size: 16px;"
+                        placeholder="Describe pet restrictions (e.g., Max 2 pets, no dogs over 25 lbs, no aggressive breeds)"></textarea>
                 </div>
             @endif
 
@@ -739,7 +728,7 @@
             </div>
         </div>
         @if ($seller_disclosure_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload Seller Disclosure:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="seller_disclosure_file" class="form-control"
@@ -778,7 +767,7 @@
             </div>
         </div>
         @if ($survey_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload Survey:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="survey_file" class="form-control"
@@ -817,7 +806,7 @@
             </div>
         </div>
         @if ($inspection_report_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload Inspection Report:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="inspection_report_file" class="form-control"
@@ -856,7 +845,7 @@
             </div>
         </div>
         @if ($hoa_condo_docs_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload HOA/Condo Documents:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="hoa_condo_docs_file" class="form-control"
@@ -895,7 +884,7 @@
             </div>
         </div>
         @if ($flood_disclosure_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload Flood Disclosure:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="flood_disclosure_file" class="form-control"
@@ -933,7 +922,7 @@
             </div>
         </div>
         @if ($lead_based_paint_disclosure === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload Lead-Based Paint Disclosure:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="lead_based_paint_file" class="form-control"
@@ -972,7 +961,7 @@
             </div>
         </div>
         @if ($environmental_report_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="form-group mt-3 border-start border-2 border-light ps-3">
                 <label class="fw-bold">Upload Environmental Report:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="environmental_report_file" class="form-control"
@@ -1011,7 +1000,7 @@
             @endphp
             <div class="input-cover" wire:ignore>
                 <i class="input-icon fa-solid fa-folder-open input-icon2"></i>
-                <select id="additional_documents" class="form-control has-icon select2-multiple" multiple>
+                <select id="additional_documents" class="form-control select2-multiple" multiple>
                     <option value=""></option>
                     @foreach ($additionalDocumentOptions as $option)
                         <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
