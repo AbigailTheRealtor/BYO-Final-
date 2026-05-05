@@ -988,7 +988,7 @@
         {{-- <label class="fw-bold">Other Laundry Features:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_laundry_features" class="form-control has-icon"
-                data-icon="fa-solid fa-shirt" placeholder="Enter laundry features (e.g., Laundry Room, Stackable Washer/Dryer)">
+                data-icon="fa-solid fa-shirt" placeholder="Enter laundry features (e.g., In-Unit, Coin Laundry, Laundry Room)">
         </div>
     </div>
 
@@ -1013,7 +1013,7 @@
         {{-- <label class="fw-bold">Other Floor Covering:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_floor_covering" class="form-control has-icon"
-                data-icon="fa-solid fa-layer-group" placeholder="Enter floor covering (e.g., Luxury Vinyl Plank, Terrazzo)">
+                data-icon="fa-solid fa-layer-group" placeholder="Enter floor covering (e.g., Hardwood, Tile, Vinyl Plank)">
         </div>
     </div>
 
@@ -1037,7 +1037,7 @@
     <div class="form-group" style="display: {{ (is_array($security_features ?? []) && in_array('Other', $security_features ?? [])) ? 'block' : 'none' }};" id="other_security_features_wrapper">
         <div class="input-cover">
             <input type="text" wire:model="other_security_features" class="form-control has-icon"
-                data-icon="fa-solid fa-shield-halved" placeholder="Enter security feature (e.g., Video Doorbell, Smart Lock, Guard Service)">
+                data-icon="fa-solid fa-shield-halved" placeholder="Enter security features (e.g., Deadbolt, Security Camera, Intercom)">
         </div>
     </div>
 

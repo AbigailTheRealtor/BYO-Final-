@@ -898,7 +898,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_tenant_pays" class="form-control has-icon"
                 data-icon="fa-solid fa-user"
-                placeholder="Enter expenses the Tenant is responsible for (e.g., HVAC Maintenance, Janitorial Services, Security Monitoring)">
+                placeholder="Enter what tenant pays (e.g., Gas, Electric, Internet)">
         </div>
     </div>
 
@@ -933,7 +933,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_owner_pays" class="form-control has-icon"
                 data-icon="fa-solid fa-user-tie"
-                placeholder="Enter expenses paid by Owner (e.g., Elevator Maintenance, Window Cleaning, Janitorial Services)">
+                placeholder="Enter what owner pays (e.g., HOA Fees, Water, Trash)">
         </div>
     </div>
 
@@ -981,7 +981,7 @@
             {{-- <label class="fw-bold">Custom Lease Term:</label> --}}
             <div class="input-cover">
                 <input type="text" wire:model="custom_lease_term" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-signature" placeholder="Enter lease type (e.g., Build-to-Suit Lease)">
+                    data-icon="fa-solid fa-file-signature" placeholder="Enter lease terms (e.g., Month-to-Month, Furnished, Pet Addendum)">
             </div>
         </div>
     </div>
@@ -1139,7 +1139,7 @@
         {{-- <label class="fw-bold">Other Lease Term:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_lease_term" class="form-control has-icon"
-                data-icon="fa-solid fa-calendar-days" placeholder="Enter desired lease term (e.g., 8 Months)">
+                data-icon="fa-solid fa-calendar-days" placeholder="Enter lease term (e.g., 6-Month, Week-to-Week)">
         </div>
     </div>
 
@@ -1394,7 +1394,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="commercial_lease_type" class="form-control has-icon"
+            <select id="commercial_lease_type" wire:model="commercial_lease_type" class="form-control has-icon"
                 data-icon="fa-solid fa-building">
                 <option value="">Select</option>
                 <option value="Gross Lease">Gross Lease</option>
@@ -1406,15 +1406,13 @@
             </select>
         </div>
     </div>
-    @if ($commercial_lease_type === 'Other')
-    <div class="form-group">
+    <div class="form-group" id="commercial_lease_type_other_wrapper" style="display: {{ $commercial_lease_type === 'Other' ? 'block' : 'none' }}">
         <div class="input-cover">
             <input type="text" wire:model="commercial_lease_type_other" class="form-control has-icon"
                 data-icon="fa-solid fa-building"
                 placeholder="Enter commercial lease type (e.g., Ground Lease, Build-to-Suit)">
         </div>
     </div>
-    @endif
 
     {{-- CAM/NNN/Additional Rent Charges --}}
     <div class="form-group">
@@ -1560,7 +1558,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_rent_include" class="form-control has-icon"
                 data-icon="fa-solid fa-home"
-                placeholder="Enter items included in rent (e.g., Smart Home Services, Routine Pest Inspections, Appliance Maintenance)">
+                placeholder="Enter what rent includes (e.g., Water, Trash, Cable)">
         </div>
     </div>
 @endif

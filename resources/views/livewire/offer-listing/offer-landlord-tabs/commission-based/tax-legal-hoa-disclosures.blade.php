@@ -143,7 +143,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <select wire:model="flood_zone_code" class="form-control has-icon"
+                <select id="flood_zone_code" wire:model="flood_zone_code" class="form-control has-icon"
                     data-icon="fa-solid fa-map-location-dot">
                     <option value="">Select</option>
                     <option value="X">X — Minimal Flood Hazard</option>
@@ -160,21 +160,19 @@
             </div>
         </div>
 
-        @if ($flood_zone_code === 'Other')
-            <div class="form-group mt-3">
-                <label class="fw-bold">Other Flood Zone Code:
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Enter the FEMA flood zone code exactly as shown on the official flood zone determination or FEMA Flood Map Service Center record.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                </label>
-                <div class="input-cover">
-                    <input type="text" wire:model="flood_zone_code_other" class="form-control has-icon"
-                        data-icon="fa-solid fa-water"
-                        placeholder="Enter flood zone code (e.g., AO, AR, A99)">
-                </div>
+        <div class="form-group mt-3" id="flood_zone_code_other_wrapper" style="display: {{ $flood_zone_code === 'Other' ? 'block' : 'none' }}">
+            <label class="fw-bold">Other Flood Zone Code:
+                <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                    title="Enter the FEMA flood zone code exactly as shown on the official flood zone determination or FEMA Flood Map Service Center record.">
+                    <i class="fa-solid fa-circle-info"></i>
+                </span>
+            </label>
+            <div class="input-cover">
+                <input type="text" wire:model="flood_zone_code_other" class="form-control has-icon"
+                    data-icon="fa-solid fa-water"
+                    placeholder="Enter flood zone code (e.g., AO, AR, A99)">
             </div>
-        @endif
+        </div>
 
         {{-- Flood Insurance Required --}}
         <div class="form-group mt-3">
@@ -352,7 +350,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <select wire:model="association_type" class="form-control has-icon"
+                    <select id="association_type" wire:model="association_type" class="form-control has-icon"
                         data-icon="fa-solid fa-sitemap">
                         <option value="">Select</option>
                         <option value="Homeowners Association (HOA)">Homeowners Association (HOA)</option>
@@ -367,15 +365,13 @@
                 </div>
             </div>
 
-            @if ($association_type === 'Other')
-                <div class="form-group mt-2">
-                    <div class="input-cover">
-                        <input type="text" wire:model="association_type_other" class="form-control has-icon"
-                            data-icon="fa-solid fa-sitemap"
-                            placeholder="Describe the association type">
-                    </div>
+            <div class="form-group mt-2" id="association_type_other_wrapper" style="display: {{ $association_type === 'Other' ? 'block' : 'none' }}">
+                <div class="input-cover">
+                    <input type="text" wire:model="association_type_other" class="form-control has-icon"
+                        data-icon="fa-solid fa-sitemap"
+                        placeholder="Describe the association type">
                 </div>
-            @endif
+            </div>
 
             {{-- Association Name --}}
             <div class="form-group mt-3">
@@ -424,7 +420,7 @@
                             </span>
                         </label>
                         <div class="input-cover">
-                            <select wire:model="association_fee_frequency" class="form-control has-icon"
+                            <select id="association_fee_frequency" wire:model="association_fee_frequency" class="form-control has-icon"
                                 data-icon="fa-regular fa-calendar-days">
                                 <option value="">Select</option>
                                 <option value="Monthly">Monthly</option>
@@ -440,15 +436,13 @@
                 </div>
             </div>
 
-            @if ($association_fee_frequency === 'Other')
-                <div class="form-group mt-2">
-                    <div class="input-cover">
-                        <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
-                            data-icon="fa-regular fa-calendar-days"
-                            placeholder="Describe the fee frequency">
-                    </div>
+            <div class="form-group mt-2" id="association_fee_frequency_other_wrapper" style="display: {{ $association_fee_frequency === 'Other' ? 'block' : 'none' }}">
+                <div class="input-cover">
+                    <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
+                        data-icon="fa-regular fa-calendar-days"
+                        placeholder="Describe the fee frequency">
                 </div>
-            @endif
+            </div>
 
             {{-- Approval Required --}}
             <div class="form-group mt-3">
@@ -609,7 +603,7 @@
                                 </span>
                             </label>
                             <div class="input-cover">
-                                <select wire:model="min_lease_period" class="form-control has-icon"
+                                <select id="min_lease_period" wire:model="min_lease_period" class="form-control has-icon"
                                     data-icon="fa-regular fa-clock">
                                     <option value="">Select</option>
                                     <option value="1 Week">1 Week</option>
@@ -646,15 +640,13 @@
                     </div>
                 </div>
 
-                @if ($min_lease_period === 'Other')
-                    <div class="form-group mt-2">
-                        <div class="input-cover">
-                            <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
-                                data-icon="fa-regular fa-clock"
-                                placeholder="Specify minimum lease period">
-                        </div>
+                <div class="form-group mt-2" id="min_lease_period_other_wrapper" style="display: {{ $min_lease_period === 'Other' ? 'block' : 'none' }}">
+                    <div class="input-cover">
+                        <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
+                            data-icon="fa-regular fa-clock"
+                            placeholder="Specify minimum lease period">
                     </div>
-                @endif
+                </div>
 
                 <div class="form-group mt-3">
                     <label class="fw-bold">Additional Leasing Restrictions:
@@ -1032,7 +1024,7 @@
                 <div class="input-cover">
                     <input type="text" wire:model="other_document_type" class="form-control has-icon"
                         data-icon="fa-solid fa-folder-open"
-                        placeholder="Enter additional document type (e.g., Roof Certification, Elevation Certificate)">
+                        placeholder="Enter document type (e.g., Lead Paint Disclosure, Inspection Report)">
                 </div>
             </div>
         </div>

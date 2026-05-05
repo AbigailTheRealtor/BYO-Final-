@@ -2139,6 +2139,35 @@
 
             initLeaseTermSelect2();
 
+            function handleOtherToggle(selectId, wrapperId) {
+                var $select = $('#' + selectId);
+                var $wrapper = $('#' + wrapperId);
+                if (!$select.length || !$wrapper.length) return;
+                function toggle() {
+                    var val = $select.val();
+                    var show = Array.isArray(val) ? val.includes('Other') : val === 'Other';
+                    show ? $wrapper.show() : $wrapper.hide();
+                }
+                toggle();
+                $select.off('change.otherToggle').on('change.otherToggle', toggle);
+            }
+
+            var singleSelectOtherPairs = [
+                { selectId: 'flood_zone_code',              wrapperId: 'flood_zone_code_other_wrapper' },
+                { selectId: 'association_type',             wrapperId: 'association_type_other_wrapper' },
+                { selectId: 'association_fee_frequency',    wrapperId: 'association_fee_frequency_other_wrapper' },
+                { selectId: 'min_lease_period',             wrapperId: 'min_lease_period_other_wrapper' },
+                { selectId: 'commercial_lease_type',        wrapperId: 'commercial_lease_type_other_wrapper' },
+            ];
+
+            function initSingleSelectOtherToggles() {
+                singleSelectOtherPairs.forEach(function(pair) {
+                    handleOtherToggle(pair.selectId, pair.wrapperId);
+                });
+            }
+
+            initSingleSelectOtherToggles();
+
             function initTaxLegalSelect2() {
                 if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
                     $('#association_fee_includes').select2({
@@ -2195,6 +2224,7 @@
                 initLeaseTermSelect2();
                 initTaxLegalSelect2();
                 initLeaseMetaSelect2();
+                initSingleSelectOtherToggles();
             });
 
             window.syncLandlordSelect2BeforeSave = function() {
