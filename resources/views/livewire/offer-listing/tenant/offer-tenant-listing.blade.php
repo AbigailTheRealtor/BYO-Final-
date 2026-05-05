@@ -1700,9 +1700,9 @@ $lease_types = [
                     ? 'Sale Terms'
                     : 'Leasing Terms');
                     if ($user_type === 'tenant') {
-                    $restTabs = [$firstRest, 'Pre-Screening', 'Additional Details'];
+                    $restTabs = [$firstRest, 'Pre-Screening', 'Description'];
                     } else {
-                    $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms'];
+                    $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }

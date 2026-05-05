@@ -1,18 +1,18 @@
                                 <!-- Section Heading -->
-                                <h3>Additional Details</h3>
+                                <h3>Describe your criteria, preferences, and requirements.</h3>
                                 <div class="alert alert-info bg-light-info border-info mb-4">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <strong>📋 Share any special instructions, notes, or preferences to help the Agent better understand the Tenant’s needs.
+                                            <strong>📋 Share your rental criteria and preferences to help Agents understand exactly what you are looking for.
                                             </strong>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="fw-bold">Provide any additional information you would like to
-                                        share:</label>
+                                    <label class="fw-bold">Criteria &amp; Preferences</label>
                                     <div class="input-cover">
                                         <textarea wire:model="additional_details" class="form-control" rows="4" style="padding: 10px; font-size: 16px;"
-                                            placeholder="Enter additional details"></textarea>
+                                            placeholder="Enter your criteria and preferences (e.g., 3-bedroom home, pet-friendly, close to downtown)"></textarea>
                                     </div>
                                 </div>
+

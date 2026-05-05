@@ -1019,7 +1019,7 @@ $tenantPays = [
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                              <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Additional Details'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Description'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             id="{{ str_replace(' ', '-', strtolower($tab)) }}-tab" data-bs-toggle="tab"

@@ -914,7 +914,7 @@
                                         </button>
                                     </li>
 
-                                    {{-- Additional Details --}}
+                                    {{-- Description --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $additionalDetailsIdx ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $additionalDetailsIdx }})"
@@ -923,7 +923,7 @@
                                             type="button" role="tab"
                                             aria-controls="additional-details"
                                             aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
-                                            Additional Details
+                                            Description
                                         </button>
                                     </li>
 
@@ -979,7 +979,7 @@
                                         </button>
                                     </li>
                                 @else
-                                    {{-- Non-seller: Sale Terms, Additional Details (indices 2, 3 — no financial tab) --}}
+                                    {{-- Non-seller: Sale Terms, Description (indices 2, 3 — no financial tab) --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === 2 ? 'active' : '' }}"
                                             wire:click="setActiveTab(2)"
@@ -1007,7 +1007,7 @@
                                             type="button" role="tab"
                                             aria-controls="additional-details"
                                             aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
-                                            Additional Details
+                                            Description
                                         </button>
                                     </li>
                                     <li class="nav-item" role="presentation">

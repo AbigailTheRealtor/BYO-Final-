@@ -863,7 +863,7 @@
                                         wire:click="setActiveTab({{ $additionalDetailsIdx }})"
                                         aria-controls="additional-details"
                                         aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
-                                        Additional Details
+                                        Description
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">

@@ -825,7 +825,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Description'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"

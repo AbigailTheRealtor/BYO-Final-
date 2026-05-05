@@ -1655,7 +1655,7 @@
                                         : ($user_type === 'seller'
                                             ? 'Sale Terms'
                                             : 'Leasing Terms');
-                                $restTabs = [$firstRest, 'Services', 'Additional Details', 'Broker Compensation & Agency Agreement Terms'];
+                                $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                                 if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                                 }
