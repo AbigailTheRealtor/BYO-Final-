@@ -1,0 +1,89 @@
+READ-ONLY AUDIT ONLY — DO NOT CHANGE CODE YET
+
+Issue:
+Create Offer Listing for Landlord:
+URL: /offer-listing/landlord
+
+Several Landlord fields are missing the left icon and/or visible “Select” placeholder text.
+
+Broken/mismatched fields shown in screenshots:
+PROPERTY DETAILS TAB:
+- Appliances Included: missing icon + missing Select
+- View: missing icon + missing Select
+- Amenities and Property Features: missing icon, Select appears but styling does not match icon fields
+- Heating and Fuel: missing icon, Select appears but styling does not match icon fields
+- Air Conditioning: missing icon, Select appears but styling does not match icon fields
+- Water: missing icon, Select appears but styling does not match icon fields
+- Sewer: missing icon, Select appears but styling does not match icon fields
+- Utilities: missing icon, Select appears but styling does not match icon fields
+- Laundry Features: missing icon, Select appears but styling does not match icon fields
+- Floor Covering: missing icon, Select appears but styling does not match icon fields
+- Security Features: missing icon, Select appears but styling does not match icon fields
+
+LEASING TERMS TAB:
+- Rent Includes: missing icon + missing Select
+
+Working reference fields:
+- Furnishings
+- Carport
+- Garage
+- Pool
+- Age-Restricted Community
+- Pets Allowed
+
+Audit requirements:
+1. Locate the exact Blade/Livewire partials rendering:
+   - Landlord Property Details tab
+   - Landlord Leasing Terms tab
+
+2. For every broken/mismatched field listed above, report:
+   - file path
+   - line number
+   - label
+   - wire:model
+   - current field type
+   - current class list
+   - current data-icon value, if any
+   - whether it has `<option value="">Select</option>`
+   - whether it is missing `.has-icon`
+   - whether it is missing `.input-cover`
+   - whether it is a select, text input, Select2, multiselect, or custom component
+
+3. Compare each broken field against a working field such as Furnishings or Garage.
+
+4. Search for duplicate landlord field definitions that may be rendering instead of the edited file:
+   - appliances_included
+   - view
+   - amenities
+   - heating
+   - air_conditioning
+   - water
+   - sewer
+   - utilities
+   - laundry
+   - floor_covering
+   - security_features
+   - rent_includes
+
+5. Determine whether these fields are intentionally multi-select fields. If yes, explain whether they should still show:
+   - left icon
+   - visible placeholder “Select”
+   - consistent height/padding
+   - Select2 placeholder initialization
+
+6. Do NOT edit code yet.
+7. Do NOT touch Seller, Buyer, Tenant, Hire Agent, Agent Presets, profiles, routes, controllers, database, migrations, or seeders.
+8. Return only:
+   - findings
+   - exact root cause
+   - minimal fix plan
+   - list of files that need editing
+
+Expected final fix direction after audit:
+All affected Landlord Create Offer Listing fields should visually match the working fields:
+- wrapped in `.input-cover`
+- left icon visible
+- placeholder text “Select”
+- consistent padding/height
+- no icon overlap
+- no blank empty field

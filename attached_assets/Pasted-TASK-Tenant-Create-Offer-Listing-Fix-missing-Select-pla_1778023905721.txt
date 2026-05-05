@@ -1,0 +1,70 @@
+TASK: Tenant Create Offer Listing — Fix missing Select placeholders
+
+SCOPE:
+Tenant Create Offer Listing full_service flow only.
+
+URL FOR QA:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/tenant
+
+TEST LOGIN:
+abigailbaschuk@gmail.com / 12345678
+
+FIELDS TO FIX:
+1. Acceptable Property Conditions
+2. Offered Lease Term
+3. Leasing Space
+
+DO NOT:
+- Do not modify Seller, Buyer, or Landlord files
+- Do not modify Livewire PHP
+- Do not change wire:model names
+- Do not change validation
+- Do not change save/draft logic
+- Do not replace Select2 with plain selects
+- Do not add <i class="input-icon">
+- Do not change working fields
+
+FILES TO INSPECT:
+- resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-preferences.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+READ-ONLY AUDIT FIRST:
+Compare the broken fields against working Tenant fields that already show Select correctly.
+
+Find what is missing:
+- data-placeholder="Select"
+- placeholder: "Select" in Select2 initialization
+- first blank option
+- width: "100%" in Select2 initialization
+- class="form-control has-icon"
+- data-icon
+
+FIX:
+For the affected selectors/fields:
+- Acceptable Property Conditions
+- Offered Lease Term
+- Leasing Space
+
+Ensure:
+- Empty collapsed field displays: Select
+- class includes form-control has-icon
+- data-placeholder="Select"
+- data-icon remains or is added with a Font Awesome Free icon
+- Select2 initialization includes:
+  placeholder: "Select",
+  allowClear: true,
+  width: "100%"
+
+If this Select2 version requires it, add first option:
+<option value=""></option>
+
+Do not duplicate options.
+
+DONE WHEN:
+- Acceptable Property Conditions shows Select when empty
+- Offered Lease Term shows Select when empty
+- Leasing Space shows Select when empty
+- Saved draft/edit values still reload
+- Tenant Next/Back/Save Draft/Submit still work
+- Seller, Buyer, and Landlord are unaffected
