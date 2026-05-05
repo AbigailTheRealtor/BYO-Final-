@@ -1,0 +1,148 @@
+TASK #504: Tenant Offer Listing — Placeholder, Duplicate & Height Cleanup (SAFE VERSION)
+
+SCOPE (STRICT):
+ONLY Tenant Offer Listing (commission-based create flow):
+- /offer-listing/tenant/tenant
+
+FILES ALLOWED:
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php
+- resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+REFERENCE ONLY (DO NOT MODIFY):
+- pre-screening.blade.php
+- Livewire PHP class unless absolutely required
+
+LOGIN:
+Abigailbaschuk@gmail.com
+12345678
+
+HARD RULES:
+- NO schema changes
+- NO migrations
+- NO touching Seller/Buyer/Landlord flows
+- NO touching Hire Agent flows
+- NO touching validation unless a removed field breaks it
+- NO refactoring
+- STOP if unsure
+
+--------------------------------------------------
+PART 1 — FIX SELECT PLACEHOLDERS
+--------------------------------------------------
+
+FIELDS:
+- Acceptable Property Conditions (#condition_prop_buyer)
+- Offered Lease Term (.lease_for)
+- Leasing Space (#leasing_spaces_tenant)
+
+FIX:
+All must display placeholder EXACTLY:
+
+Select
+
+REQUIREMENTS:
+- Ensure Select2 init includes:
+  placeholder: "Select"
+- Add <option value="">Select</option> ONLY if needed for placeholder rendering
+- Do NOT change other Select2 behavior
+
+--------------------------------------------------
+PART 2 — REMOVE DUPLICATE FIELDS (LEASING TERMS ONLY)
+--------------------------------------------------
+
+FILE:
+leasing-terms.blade.php
+
+REMOVE ONLY THESE:
+- Pet Information (textarea)
+- Number of Occupants (input)
+- Parking Needed (input)
+
+CRITICAL SAFEGUARD:
+- These fields MUST already exist in Pre-Screening tab
+- DO NOT touch pre-screening.blade.php
+- IF you cannot confirm duplicate exists → STOP and report
+
+--------------------------------------------------
+PART 3 — FIX OVERSIZED TEXTAREAS
+--------------------------------------------------
+
+CONVERT THESE FROM textarea → single-line input:
+
+- Tenant Conditions
+- Additional Tenant Lease Terms
+- CAM / NNN Preference
+- Commercial Approval Conditions
+
+REQUIREMENTS:
+- Use SAME structure as Parking Needed field:
+  class="form-control has-icon"
+  data-icon pattern
+- Keep SAME wire:model
+- REMOVE rows="" attributes
+- No multi-line boxes
+
+--------------------------------------------------
+PART 4 — STANDARDIZE PLACEHOLDERS (LEASING TERMS)
+--------------------------------------------------
+
+FORMAT RULE:
+All must follow EXACT format:
+
+Enter [field title] (e.g., example)
+
+APPLY TO:
+- Desired Lease Length → (e.g., 12 months)
+- Utility Preference → (e.g., Tenant pays electric and water)
+- Maintenance Preference → (e.g., Landlord handles exterior maintenance)
+- Tenant Conditions → (e.g., No smoking allowed)
+- Additional Tenant Lease Terms → (e.g., Early termination option after 6 months)
+- CAM / NNN Preference → (e.g., Prefer gross lease with limited pass-throughs)
+- Rent Escalation Preference → (e.g., No more than 3% annually)
+- Buildout / Tenant Improvement Request → (e.g., Paint and flooring allowance)
+- Intended Business Use → (e.g., Retail clothing boutique)
+- Signage Request → (e.g., Exterior monument sign preferred)
+- Commercial Parking / Access Needs → (e.g., Customer parking near entrance)
+- Personal Guarantee Preference → (e.g., Prefer no personal guarantee)
+- Commercial Approval Conditions → (e.g., Subject to zoning approval)
+
+DO NOT:
+- Add commas in numeric examples
+- Change labels
+- Change wire:model
+
+--------------------------------------------------
+VERIFICATION (MANDATORY)
+--------------------------------------------------
+
+TEST:
+https://.../offer-listing/tenant/tenant
+
+CONFIRM:
+
+✔ Acceptable Property Conditions shows "Select"
+✔ Offered Lease Term shows "Select"
+✔ Leasing Space shows "Select"
+
+✔ Pet Information (duplicate) is removed
+✔ Number of Occupants (duplicate) is removed
+✔ Parking Needed (duplicate) is removed
+✔ Pre-Screening tab still has those fields
+
+✔ These are now single-line inputs:
+- Tenant Conditions
+- Additional Tenant Lease Terms
+- CAM / NNN Preference
+- Commercial Approval Conditions
+
+✔ All placeholders follow:
+Enter [field] (e.g., example)
+
+✔ No UI breakage
+✔ No console errors
+✔ No other flows affected
+
+--------------------------------------------------
+RUN:
+php -l on all edited PHP files
+--------------------------------------------------

@@ -1,0 +1,167 @@
+TASK: Tenant Offer Listing — Placeholder, Duplicate Field Removal, and Field Height Cleanup
+
+SCOPE:
+Create Offer Listing → Tenant flow only:
+- /offer-listing/tenant/tenant
+- Tenant Offer Listing Blade/Livewire files only
+
+LOGIN TEST:
+Abigailbaschuk@gmail.com
+12345678
+
+DO NOT TOUCH:
+- Seller Offer Listing
+- Buyer Offer Listing
+- Landlord Offer Listing
+- Hire Agent flows
+- Limited Service flows
+- Agent Profile flows
+- Routes
+- Database schema
+- Validation / Next button logic
+
+--------------------------------------------------
+PART 1 — FIX SELECT PLACEHOLDERS
+--------------------------------------------------
+
+These fields are missing the plain “Select” placeholder:
+
+- Acceptable Property Conditions
+- Offered Lease Term
+- Leasing Space
+
+Fix:
+Placeholder must be exactly:
+
+Select
+
+Do NOT use:
+- Select acceptable property conditions
+- Select lease term
+- Select leasing space
+- Example text
+- Field-specific select text
+
+--------------------------------------------------
+PART 2 — REMOVE DUPLICATE QUESTIONS
+--------------------------------------------------
+
+Delete these duplicate fields from the Tenant Offer Listing form because these questions already exist elsewhere:
+
+- Pet Information
+- Number of Occupants
+- Parking Needed
+
+Important:
+- Remove only the duplicate instances.
+- Do NOT remove the correct/main existing versions of these questions.
+- Do NOT remove related saved data fields from database or schema.
+- Do NOT change validation unless the removed duplicate field was creating duplicate required validation.
+
+--------------------------------------------------
+PART 3 — FIX OVERSIZED TEXT BOXES
+--------------------------------------------------
+
+These fields are currently too tall / too large:
+
+- Tenant Conditions
+- Additional Tenant Lease Terms
+- Commercial Approval Conditions
+- CAM / NNN Preference
+
+Fix:
+- Make these fields the same visual height/size as the “Parking Needed” field.
+- Use the same textarea/input class pattern used by Parking Needed.
+- Do not make them large multi-row boxes unless Parking Needed is also multi-row.
+- Keep existing wire:model bindings.
+
+--------------------------------------------------
+PART 4 — STANDARDIZE LEASING TERMS PLACEHOLDERS
+--------------------------------------------------
+
+Under Leasing Terms, placeholder text should follow this format:
+
+Enter [field title] (e.g., [example])
+
+Use the same style as “Maximum Monthly Lease Price.”
+
+Update placeholders for these Tenant fields:
+
+- Desired Lease Length:
+  Enter desired lease length (e.g., 12 months)
+
+- Number of Occupants:
+  Enter number of occupants (e.g., 2)
+
+- Parking Needed:
+  Enter parking needed (e.g., 2 spaces)
+
+- Utility Preference:
+  Enter utility preference (e.g., Tenant pays electric and water)
+
+- Maintenance Preference:
+  Enter maintenance preference (e.g., Landlord handles exterior maintenance)
+
+- Tenant Conditions:
+  Enter tenant conditions (e.g., No smoking allowed)
+
+- Additional Tenant Lease Terms:
+  Enter additional tenant lease terms (e.g., Early termination option after 6 months)
+
+- CAM / NNN Preference:
+  Enter CAM / NNN preference (e.g., Prefer gross lease with limited pass-throughs)
+
+- Rent Escalation Preference:
+  Enter rent escalation preference (e.g., No more than 3% annually)
+
+- Buildout / Tenant Improvement Request:
+  Enter buildout or tenant improvement request (e.g., Paint and flooring allowance)
+
+- Intended Business Use:
+  Enter intended business use (e.g., Retail clothing boutique)
+
+- Signage Request:
+  Enter signage request (e.g., Exterior monument sign preferred)
+
+- Commercial Parking / Access Needs:
+  Enter commercial parking or access needs (e.g., Customer parking near entrance)
+
+- Personal Guarantee Preference:
+  Enter personal guarantee preference (e.g., Prefer no personal guarantee)
+
+- Commercial Approval Conditions:
+  Enter commercial approval conditions (e.g., Subject to zoning approval)
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Go to:
+/offer-listing/tenant/tenant
+
+Confirm:
+- Acceptable Property Conditions placeholder says “Select”
+- Offered Lease Term placeholder says “Select”
+- Leasing Space placeholder says “Select”
+- Duplicate Pet Information field is removed
+- Duplicate Number of Occupants field is removed
+- Duplicate Parking Needed field is removed
+- Correct/main Number of Occupants and Parking Needed fields still exist if intended
+- Tenant Conditions box matches Parking Needed size
+- Additional Tenant Lease Terms box matches Parking Needed size
+- Commercial Approval Conditions box matches Parking Needed size
+- CAM / NNN Preference box matches Parking Needed size
+- All Leasing Terms placeholders follow:
+  Enter [title] (e.g., example)
+- No other flows were changed
+
+RUN:
+php -l on every edited PHP file.
+
+HARD SAFEGUARDS:
+- No migrations
+- No migrate:fresh
+- No schema changes
+- No broad refactors
+- No unrelated flow edits
+- Stop and report if a field cannot be found or if there are multiple versions and it is unclear which one is duplicate.
