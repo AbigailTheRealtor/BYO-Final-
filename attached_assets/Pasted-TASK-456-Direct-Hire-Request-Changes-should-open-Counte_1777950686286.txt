@@ -1,0 +1,135 @@
+TASK #456 — Direct Hire Request Changes should open Counter Agent Bid form directly
+
+Issue:
+In Direct Hire “Review This Agent’s Proposed Terms,” when user clicks:
+Request Changes / Counter Terms
+
+Current behavior:
+- Redirects to old auction “Agent’s Counter Terms” pre-page:
+  /hire/seller/agent/auction/bid/{bid}/view-counter
+- User then has to click “Submit Counter Terms”
+- Only then does it open the actual “Counter Agent Bid” form.
+
+Desired behavior:
+Clicking “Request Changes / Counter Terms” should go directly to the “Counter Agent Bid” form.
+
+Use Seller as the working example because Seller currently has the most complete Counter Agent Bid form.
+
+Apply the same direct-to-form behavior to:
+- Buyer
+- Seller
+- Tenant
+- Landlord
+
+Scope:
+- Direct Hire flow only
+- Request Changes / Counter Terms redirect only
+- Existing counter form routes/views only
+
+DO NOT touch:
+- Offer Listing create/edit flows
+- Normal auction listing creation/edit forms
+- Agent preset save/edit
+- Dashboards
+- Accepted Bid Summary
+- Referral tracking
+- Database schema
+- migrate:fresh
+- Service catalog logic
+- CompensationFormatter unless directly required
+
+Step 1 — Read-only audit first:
+Find the current redirect for Direct Hire counter intent in:
+app/Http/Controllers/HireAgentDirectController.php
+
+Find the route currently used after the user clicks “Submit Counter Terms” on Seller:
+- /hire/seller/agent/auction/bid/{bid}/view-counter
+- then “Submit Counter Terms”
+- actual “Counter Agent Bid” form route
+
+Identify the final form route name for Seller.
+
+Step 2 — Replace Direct Hire counter redirect target:
+When Direct Hire intent is “counter” or “request changes,” do NOT redirect to:
+*.view-counter
+
+Instead, redirect directly to the actual Counter Agent Bid form route.
+
+Example:
+If current route is:
+hire.seller.agent.auction.bid.view-counter
+
+And the form route is something like:
+hire.seller.agent.auction.bid.counter
+or
+hire.seller.agent.auction.bid.create-counter
+
+Use the form route directly.
+
+Step 3 — Apply role mapping:
+Create/adjust Direct Hire counter route mapping so:
+
+seller → Seller Counter Agent Bid form route
+buyer → Buyer Counter Agent Bid form route
+tenant → Tenant Counter Agent Bid form route
+landlord → Landlord Counter Agent Bid form route
+
+Do not modify normal auction route behavior.
+Only Direct Hire redirect target changes.
+
+Step 4 — Keep old view-counter pages untouched:
+Do not delete or rewrite:
+- Listing Information / Bid Information pre-page
+- Submit Counter Terms button
+- Back to Listing button
+
+Those can remain for normal auction flows.
+Direct Hire should bypass them.
+
+Step 5 — Verify route parameters:
+Make sure each direct-to-form route receives exactly the parameters it expects.
+If route expects:
+- bid
+- bid id
+- listing id
+- role-specific naming
+
+Pass the correct parameter.
+
+Do not guess. Use php artisan route:list and existing button/form hrefs.
+
+Step 6 — Browser verification:
+Test all Direct Hire routes:
+
+1. /hire/agent/direct/142/seller/residential
+Click Request Changes / Counter Terms
+Expected:
+Goes directly to “Counter Agent Bid” form.
+Does NOT show Listing Information / Bid Information pre-page.
+
+2. /hire/agent/direct/142/buyer/residential
+Expected:
+Same behavior using Buyer counter form.
+
+3. /hire/agent/direct/142/tenant/residential
+Expected:
+Same behavior using Tenant counter form.
+
+4. /hire/agent/direct/142/landlord/residential
+Expected:
+Same behavior using Landlord counter form.
+
+Step 7 — Confirm no regressions:
+Normal auction counter routes should still work:
+- view-counter pages still accessible
+- Submit Counter Terms still works there
+- Back to Listing remains unchanged there
+
+Step 8 — Report back:
+Return:
+- Seller form route discovered
+- Buyer/Tenant/Landlord form routes discovered
+- Files changed
+- Exact redirect mapping before/after
+- Browser verification results
+- Confirmation no database/schema/offer listing/dashboard/referral files changed
