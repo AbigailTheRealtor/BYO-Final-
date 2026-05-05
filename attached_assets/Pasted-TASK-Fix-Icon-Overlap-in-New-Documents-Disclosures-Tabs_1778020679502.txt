@@ -1,0 +1,90 @@
+TASK: Fix Icon Overlap in New Documents & Disclosures Tabs
+
+SCOPE:
+Full Service Offer Listing only:
+- Seller Documents & Disclosures tab
+- Landlord Documents & Disclosures tab
+
+FILES:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/documents-disclosures.blade.php
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/documents-disclosures.blade.php
+
+DO NOT TOUCH:
+- Tab navigation
+- Tax/Legal/HOA tab
+- Buyer/Tenant flows
+- Limited Service
+- Routes
+- Schema
+- Validation
+- Save/load logic
+
+ISSUE:
+After moving Documents & Disclosures into its own tab, icons still overlap labels around:
+- Flood Disclosure Available
+- Lead-Based Paint Disclosure Required
+- Environmental Report Available
+- Additional Documents Available
+
+FIX:
+Audit only the new documents-disclosures partials.
+
+For each affected field:
+- Remove any standalone/manual icon tag:
+  <i class="input-icon ..."></i>
+- Do not leave icons outside the input/select wrapper.
+- Use the same clean has-icon + data-icon pattern used by the working fields above, such as:
+  Seller/Landlord Disclosure Available
+  Survey Available
+  Inspection Report Available
+  HOA/Condo Documents Available
+
+Correct pattern:
+<div class="input-cover">
+    <select class="form-control has-icon" data-icon="fa-solid fa-ICON">
+        <option value="">Select</option>
+        ...
+    </select>
+</div>
+
+For Select2 multi-select:
+<div class="input-cover" wire:ignore>
+    <select class="form-control has-icon select2-multiple" data-icon="fa-solid fa-ICON" multiple>
+        <option value="">Select</option>
+        ...
+    </select>
+</div>
+
+Rules:
+- Exactly ONE select/input per field
+- Exactly ONE data-icon per field
+- No manual <i class="input-icon ..."> tags
+- No input-icon2 in data-icon
+- Keep existing wire:model bindings
+- Keep existing upload @if ($field === 'Yes') logic
+- Keep all file upload fields unchanged
+
+VERIFICATION:
+Test:
+/offer-listing/seller
+/offer-listing/landlord
+
+Go to Documents & Disclosures tab and confirm:
+- No icons overlap labels
+- Flood Disclosure Available renders correctly
+- Lead-Based Paint Disclosure Required renders correctly
+- Environmental Report Available renders correctly
+- Additional Documents Available renders correctly
+- Upload fields still appear only when related dropdown = Yes
+- Save Draft still works
+- No console errors
+
+RUN:
+php -l on both edited Blade files.
+
+HARD SAFEGUARDS:
+- No migrations
+- No migrate:fresh
+- No schema changes
+- No broad refactor
+- Stop if the same partial is used by Limited Service.
