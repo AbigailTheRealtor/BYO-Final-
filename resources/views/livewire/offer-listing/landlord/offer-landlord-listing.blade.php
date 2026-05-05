@@ -1215,8 +1215,8 @@
                             </div>
                             @if ($service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"
-                                    id="property-preferences" role="tabpanel"
-                                    aria-labelledby="property-preferences-tab">
+                                    id="property-details" role="tabpanel"
+                                    aria-labelledby="property-details-tab">
 
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.property-details')
@@ -1561,6 +1561,7 @@
         }
 
         function initializeFullService() {
+            try {
             if (!document._landlordCreateTabNavListenerAdded) {
                 document._landlordCreateTabNavListenerAdded = true;
                 document.addEventListener('shown.bs.tab', function(e) {
@@ -2466,6 +2467,7 @@
                 return allValid;
             }
 
+            } catch (_setupErr) { console.warn('[landlord offer-listing] initializeFullService setup error:', _setupErr); }
             // Add this function to validate services tab
             function validateServicesTab(tabContent) {
                 if (!tabContent || tabContent.id !== 'services') return true;
@@ -2515,6 +2517,10 @@
 
                 const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
                 if (!currentTabContent) return;
+
+                // Hide any previous validation error banner
+                const _valBanner = document.getElementById('submit-error-banner');
+                if (_valBanner) _valBanner.classList.add('d-none');
 
                 let isValid = true;
 
@@ -2643,6 +2649,30 @@
                                 if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
                             }
                         }
+                    }
+                } else {
+                    // Show validation error banner so the user sees why Next is blocked
+                    var _errBanner = document.getElementById('submit-error-banner');
+                    var _errList   = document.getElementById('submit-error-list');
+                    if (_errBanner && _errList) {
+                        _errList.innerHTML = '';
+                        var _seen = new Set();
+                        currentTabContent.querySelectorAll('.is-invalid').forEach(function(f) {
+                            var _lbl = f.closest('.form-group') && f.closest('.form-group').querySelector('label');
+                            var _name = _lbl ? _lbl.textContent.replace(/[*:]/g, '').trim() : (f.placeholder || f.name || 'Required field');
+                            if (_name && !_seen.has(_name)) { _seen.add(_name); var _li = document.createElement('li'); _li.textContent = _name; _errList.appendChild(_li); }
+                        });
+                        currentTabContent.querySelectorAll('.error').forEach(function(ec) {
+                            var _t = ec.textContent.trim();
+                            if (_t && _t !== 'This field is required.') {
+                                var _lbl = ec.closest('.form-group') && ec.closest('.form-group').querySelector('label');
+                                var _fn = _lbl ? _lbl.textContent.replace(/[*:]/g, '').trim() : null;
+                                if (_fn && !_seen.has(_fn)) { _seen.add(_fn); var _li = document.createElement('li'); _li.textContent = _fn; _errList.appendChild(_li); }
+                            }
+                        });
+                        _errBanner.querySelector('strong').textContent = 'Please complete the required fields before continuing.';
+                        _errBanner.classList.remove('d-none');
+                        _errBanner.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 }
 
@@ -2873,7 +2903,7 @@
 
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
-                    '#property-preferences',
+                    '#property-details',
                     '#leasing-terms',
                     '#services',
                     '#additional-details',
