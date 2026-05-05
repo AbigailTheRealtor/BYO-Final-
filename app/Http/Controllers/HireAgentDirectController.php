@@ -518,8 +518,8 @@ class HireAgentDirectController extends Controller
                 : ($validated['address'] ?? null);
 
             $listingTable = $listing->getTable();
-            if (Schema::hasColumn($listingTable, 'address') && !empty($address)) {
-                $listing->address = $address;
+            if (Schema::hasColumn($listingTable, 'address')) {
+                $listing->address = $address ?? '';
             }
             if (Schema::hasColumn($listingTable, 'title')) {
                 $listing->title = 'Direct Hire – ' . ucfirst($role) . ' Agent';
