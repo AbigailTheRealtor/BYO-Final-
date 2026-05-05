@@ -1,0 +1,80 @@
+URGENT FIX — SELLER “OTHER” INPUTS STILL NOT SHOWING
+
+Scope:
+- /offer-listing/seller
+- Agent Dashboard Create Offer Listing flow
+- Full-Service / Commission-Based path only
+
+DO NOT touch:
+- Landlord
+- Buyer/Tenant
+- Limited Service
+- Hire Agent legacy files
+- Database schema
+- Backend save/load logic
+
+Confirmed live browser bug:
+In Seller Property Details:
+- Appliances Included: selecting Other does NOT reveal custom input
+- View: selecting Other does NOT reveal custom input
+
+Working reference:
+- Amenities and Property Features works correctly.
+- Selecting Other shows the custom input below the Select2 field.
+- Use that working pattern as the reference.
+
+Fields to fix first:
+1. Appliances Included
+2. View
+
+Also audit/fix if failing:
+3. Garage/Parking Features
+4. Included Property or Business Assets
+5. Reason for Sale
+
+Required approach:
+1. Use live rendered DOM as source of truth.
+2. Inspect working Amenities field:
+   - select ID
+   - wrapper structure
+   - visibility mechanism
+   - JS change handler
+   - Livewire message.processed restoration
+3. Apply the same pattern to Appliances and View.
+
+For each broken field:
+- Confirm actual select ID
+- Confirm custom wrapper ID/class
+- Confirm wrapper exists directly below field
+- Ensure wrapper is always present in DOM
+- Use one visibility system only
+- Selecting Other must show input immediately
+- Removing Other must hide input immediately
+- Visibility must survive Livewire re-render
+- Do not rely on Livewire round-trip only
+
+Important:
+Do NOT add more duplicate handlers if an existing handler is wrong.
+Replace or correct the broken handler so only one system controls each field.
+
+Placeholder text:
+- Appliances Included should match Seller standard:
+  Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)
+- View should match Seller standard:
+  Enter view (e.g., Lake, Desert, Courtyard)
+
+Browser verification required:
+- Select Other for Appliances → input appears
+- Remove Other → input hides
+- Select Other for View → input appears
+- Remove Other → input hides
+- Test after switching tabs or triggering Livewire update
+- No console errors
+- Next/Back still work
+
+Report:
+- Root cause
+- Exact files changed
+- Fields fixed
+- Fields already working
+- Browser PASS/FAIL per field
