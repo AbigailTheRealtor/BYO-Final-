@@ -54,10 +54,9 @@
                 </span>
             </label>
             <div class="input-cover">
-                <span class="input-group-text-seller">$</span>
-                <input type="text" wire:model="annual_property_taxes" class="form-control"
-                    style="padding-left: 12px;"
-                    placeholder="Enter Annual Property Taxes (e.g., 5,200)"
+                <input type="text" wire:model="annual_property_taxes" class="form-control has-icon"
+                    data-icon="fa-solid fa-dollar-sign"
+                    placeholder="Enter annual property taxes (e.g., 4500)"
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>

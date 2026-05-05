@@ -1009,10 +1009,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control"
-            style="padding-left: 12px;"
-            placeholder="Enter desired lease price (e.g., 5000)" required
+        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control has-icon"
+            data-icon="fa-solid fa-dollar-sign"
+            placeholder="Enter desired lease price (e.g., 2500)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1068,11 +1067,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-
-        <input type="text" wire:model="desired_rental_amount" class="form-control"
-            style="padding-left: 12px;"
-            placeholder="Enter desired lease price (e.g., 5000)" required
+        <input type="text" wire:model="desired_rental_amount" class="form-control has-icon"
+            data-icon="fa-solid fa-dollar-sign"
+            placeholder="Enter desired lease price (e.g., 2500)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1172,9 +1169,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="security_deposit_required" class="form-control"
-            style="padding-left: 12px;"
+        <input type="text" wire:model="security_deposit_required" class="form-control has-icon"
+            data-icon="fa-solid fa-dollar-sign"
             placeholder="Enter security deposit amount (e.g., 2500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1223,10 +1219,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="total_move_in_funds_required" class="form-control"
-            style="padding-left: 12px;"
-            placeholder="Enter total move-in amount (e.g., 7500)"
+        <input type="text" wire:model="total_move_in_funds_required" class="form-control has-icon"
+            data-icon="fa-solid fa-dollar-sign"
+            placeholder="Enter total move-in funds required (e.g., 7500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>

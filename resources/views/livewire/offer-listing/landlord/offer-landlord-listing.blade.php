@@ -1573,7 +1573,7 @@
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#property_items').on('change', function(e) {
@@ -1780,20 +1780,20 @@
 
             // MLS Property Detail — multi-select fields with Other-toggle
             var mlsMultiSelects = [
-                { id: 'heating_fuel',      field: 'heating_fuel',      placeholder: 'Select heating / fuel type(s)',   otherId: 'other_heating_fuel_wrapper' },
-                { id: 'air_conditioning',  field: 'air_conditioning',  placeholder: 'Select air conditioning type(s)', otherId: 'other_air_conditioning_wrapper' },
-                { id: 'water',             field: 'water',             placeholder: 'Select water source(s)',          otherId: 'other_water_wrapper' },
-                { id: 'sewer',             field: 'sewer',             placeholder: 'Select sewer type(s)',            otherId: 'other_sewer_wrapper' },
-                { id: 'property_utilities',field: 'property_utilities',placeholder: 'Select utilities',                otherId: 'other_property_utilities_wrapper' },
-                { id: 'laundry_features',  field: 'laundry_features',  placeholder: 'Select laundry features',        otherId: 'other_laundry_features_wrapper' },
-                { id: 'floor_covering',    field: 'floor_covering',    placeholder: 'Select floor covering',          otherId: 'other_floor_covering_wrapper' },
-                { id: 'security_features', field: 'security_features', placeholder: 'Select security features',      otherId: 'other_security_features_wrapper' },
-                { id: 'road_surface_type', field: 'road_surface_type', placeholder: 'Select road surface type(s)',    otherId: 'other_road_surface_type_wrapper' },
-                { id: 'electrical_service',field: 'electrical_service',placeholder: 'Select electrical service',      otherId: 'other_electrical_service_wrapper' },
-                { id: 'building_features', field: 'building_features', placeholder: 'Select building features',       otherId: 'other_building_features_wrapper' },
-                { id: 'space_type',           field: 'space_type',           placeholder: 'Select space type(s)' },
-                { id: 'space_classification', field: 'space_classification', placeholder: 'Select space classification' },
-                { id: 'garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', placeholder: 'Select garage features', otherId: 'other_garage_parking_spaces_option_landlord' },
+                { id: 'heating_fuel',      field: 'heating_fuel',      placeholder: 'Select',   otherId: 'other_heating_fuel_wrapper' },
+                { id: 'air_conditioning',  field: 'air_conditioning',  placeholder: 'Select', otherId: 'other_air_conditioning_wrapper' },
+                { id: 'water',             field: 'water',             placeholder: 'Select',          otherId: 'other_water_wrapper' },
+                { id: 'sewer',             field: 'sewer',             placeholder: 'Select',            otherId: 'other_sewer_wrapper' },
+                { id: 'property_utilities',field: 'property_utilities',placeholder: 'Select',                otherId: 'other_property_utilities_wrapper' },
+                { id: 'laundry_features',  field: 'laundry_features',  placeholder: 'Select',        otherId: 'other_laundry_features_wrapper' },
+                { id: 'floor_covering',    field: 'floor_covering',    placeholder: 'Select',          otherId: 'other_floor_covering_wrapper' },
+                { id: 'security_features', field: 'security_features', placeholder: 'Select',      otherId: 'other_security_features_wrapper' },
+                { id: 'road_surface_type', field: 'road_surface_type', placeholder: 'Select',    otherId: 'other_road_surface_type_wrapper' },
+                { id: 'electrical_service',field: 'electrical_service',placeholder: 'Select',      otherId: 'other_electrical_service_wrapper' },
+                { id: 'building_features', field: 'building_features', placeholder: 'Select',       otherId: 'other_building_features_wrapper' },
+                { id: 'space_type',           field: 'space_type',           placeholder: 'Select' },
+                { id: 'space_classification', field: 'space_classification', placeholder: 'Select' },
+                { id: 'garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', placeholder: 'Select', otherId: 'other_garage_parking_spaces_option_landlord' },
             ];
             function initMlsMultiSelects() {
                 mlsMultiSelects.forEach(function(cfg) {
@@ -2089,7 +2089,7 @@
             function initLeaseMetaSelect2() {
                 if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
                     $('#rent_includes').select2({
-                        placeholder: "Select rent",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                     $('#rent_includes').on('change', function(e) {
@@ -2108,7 +2108,7 @@
 
                 if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
                     $('#terms_of_lease').select2({
-                        placeholder: "Select terms of lease",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                     $('#terms_of_lease').on('change', function(e) {
@@ -2138,7 +2138,7 @@
 
                 if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
                     $('#tenant_pays').select2({
-                        placeholder: "Select tenant pays",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                     $('#tenant_pays').on('change', function(e) {
@@ -2157,7 +2157,7 @@
 
                 if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
                     $('#owner_pays').select2({
-                        placeholder: "Select owner pays",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                     $('#owner_pays').on('change', function(e) {
@@ -2180,7 +2180,7 @@
                 var $dlt = $('.lease_term_options');
                 if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
                 $dlt.select2({
-                    placeholder: "Select desired lease term",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $dlt.off('change.ltsSync').on('change.ltsSync', function() {
