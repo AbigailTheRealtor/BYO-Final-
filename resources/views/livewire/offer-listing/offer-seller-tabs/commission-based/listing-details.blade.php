@@ -255,37 +255,6 @@ $auction_lengths_seller = [
 
     </div>
 
-    <!-- Current Representation Agreement Status with Broker -->
-    <div class="form-group">
-        <label class="fw-bold">Current Representation Status with Broker:<span class="text-danger">*</span></label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the Seller is currently under a signed agreement with a Broker. “Represented” means the Seller has signed a Seller representation agreement; “Not Represented” means no agreement has been signed, and the Seller is free to hire a Broker.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        @if (!empty($isEditMode))
-            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Current Representation Status with Broker cannot be edited once the listing is created.">
-                <i class="input-icon fa-solid fa-lock"></i>
-                <input type="text" class="form-control has-icon" value="{{ $working_with_agent }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
-            </div>
-            <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Current Representation Status with Broker cannot be changed after the listing has been created.</p>
-        @else
-            <div class="input-cover">
-                <i class="input-icon fa-solid fa-handshake"></i>
-                <select wire:model="working_with_agent" id="working_with_agent" class="form-control has-icon"
-                    data-icon="fa-solid fa-handshake" required>
-                    <option value="">Select</option>
-                    <option value="Represented">Represented</option>
-                    <option value="Not Represented">Not Represented</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="working_with_agent_error"></span>
-            <!-- Representation Notice (hidden by default) -->
-            <div id="representation_notice" class="alert alert-danger mt-2 d-none">
-                This service is exclusively available to Sellers who are not currently represented by a Broker. </div>
-        @endif
-    </div>
     <!-- Listing Date -->
     <div class="form-group">
         <label class="fw-bold">Listing Date:<span class="text-danger">*</span></label>

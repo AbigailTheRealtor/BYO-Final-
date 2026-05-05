@@ -2272,12 +2272,10 @@ $lease_types = [
         }
 
         addIconsToInputs();
-        checkRepresentationStatus();
     });
 
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
-        checkRepresentationStatus();
 
         const fullServiceChecked = document.getElementById('fullService')?.checked;
         const limitedServiceChecked = document.getElementById('limitedService')?.checked;
@@ -4150,19 +4148,6 @@ $lease_types = [
         });
     }
 
-    function checkRepresentationStatus() {
-        const select = document.getElementById('working_with_agent');
-        const notice = document.getElementById('representation_notice');
-        const nextBtn = document.querySelector('.wizard-step-next');
-        const saveBtn = document.querySelector('.wizard-step-finish');
-
-        if (select && notice) {
-            const isRepresented = select.value === 'Represented';
-            notice.classList.toggle('d-none', !isRepresented);
-            nextBtn.disabled = isRepresented;
-            saveBtn.disabled = isRepresented;
-        }
-    }
 
     // Seller Sale Terms visibility logic must remain identical between the dedicated Seller path and the shared TenantAgentAuction seller path.
     // If changes are made to one path, they must also be applied to the other to keep both Seller flows consistent.
@@ -4267,7 +4252,6 @@ $lease_types = [
 
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
-        checkRepresentationStatus();
         
         // Re-add icons to inputs that might have been replaced by Livewire
         $('.input-cover').each(function() {
@@ -4648,7 +4632,6 @@ $lease_types = [
             // and deduplication.  Labels match exact wording shown in the live UI.
             const TENANT_FIELD_LABELS = {
                 'listing_title':           'Listing Title',
-                'working_with_agent':      'Current Representation Status with Broker',
                 'desired_agent_hire_date': 'Desired Agent Hire Date',
                 'listing_date':            'Listing Date',
                 'expiration_date':         'Expiration Date',

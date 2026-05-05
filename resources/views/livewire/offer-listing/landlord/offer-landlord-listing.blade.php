@@ -1364,7 +1364,6 @@
             }
 
             addIconsToInputs();
-            checkRepresentationStatus();
         });
         
         // Sync select element values from Livewire component data
@@ -2824,27 +2823,9 @@
             });
         }
 
-        function checkRepresentationStatus() {
-            const select = document.getElementById('working_with_agent');
-            const notice = document.getElementById('representation_notice');
-            const nextBtn = document.querySelector('.wizard-step-next');
-            const saveBtn = document.querySelector('.wizard-step-finish');
-
-            if (select && notice) {
-                const isRepresented = select.value === 'Represented';
-                notice.classList.toggle('d-none', !isRepresented);
-                nextBtn.disabled = isRepresented;
-                if (isRepresented) {
-                    saveBtn.disabled = true;
-                    saveBtn.classList.add('disabled');
-                }
-                // When NOT represented, let updateSaveButton() control the button state
-            }
-        }
 
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
-            checkRepresentationStatus();
 
             const fullServiceChecked = document.getElementById('fullService')?.checked;
             const limitedServiceChecked = document.getElementById('limitedService')?.checked;
@@ -3010,7 +2991,6 @@
             // Stable label map: property name -> exact user-facing label shown in the UI.
             var LANDLORD_FIELD_LABELS = {
                 'listing_title':           'Listing Title',
-                'working_with_agent':      'Currently Working with an Agent',
                 'desired_agent_hire_date': 'Desired Agent Hire Date',
                 'listing_date':            'Listing Date',
                 'expiration_date':         'Expiration Date',

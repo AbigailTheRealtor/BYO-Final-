@@ -1116,7 +1116,6 @@
             }
 
             addIconsToInputs();
-            checkRepresentationStatus();
         });
         
         // Sync select element values from Livewire component data
@@ -2519,23 +2518,9 @@
             });
         }
 
-        function checkRepresentationStatus() {
-            const select = document.getElementById('working_with_agent');
-            const notice = document.getElementById('representation_notice');
-            const nextBtn = document.querySelector('.wizard-step-next');
-            const saveBtn = document.querySelector('.wizard-step-finish');
-
-            if (select && notice) {
-                const isRepresented = select.value === 'Represented';
-                notice.classList.toggle('d-none', !isRepresented);
-                nextBtn.disabled = isRepresented;
-                saveBtn.disabled = isRepresented;
-            }
-        }
 
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
-            checkRepresentationStatus();
 
             // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;
@@ -2706,7 +2691,6 @@
                 // Keyed by wire:model property name.  Labels match exact wording shown in the live UI.
                 const BUYER_FIELD_LABELS = {
                     'listing_title':           'Listing Title',
-                    'working_with_agent':      'Current Representation Status with Broker',
                     'desired_agent_hire_date': 'Desired Agent Hire Date',
                     'listing_date':            'Listing Date',
                     'expiration_date':         'Expiration Date',

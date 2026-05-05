@@ -1613,7 +1613,6 @@
             }
 
             addIconsToInputs();
-            checkRepresentationStatus();
 
             // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
             // regardless of whether jQuery event binding caught the change event.
@@ -2761,23 +2760,9 @@
             });
         }
 
-        function checkRepresentationStatus() {
-            const select = document.getElementById('working_with_agent');
-            const notice = document.getElementById('representation_notice');
-            const nextBtn = document.querySelector('.wizard-step-next');
-            const saveBtn = document.querySelector('.wizard-step-finish');
-
-            if (select && notice) {
-                const isRepresented = select.value === 'Represented';
-                notice.classList.toggle('d-none', !isRepresented);
-                nextBtn.disabled = isRepresented;
-                saveBtn.disabled = isRepresented;
-            }
-        }
 
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
-            checkRepresentationStatus();
 
             // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;

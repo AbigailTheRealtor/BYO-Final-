@@ -3435,7 +3435,6 @@ class TenantOfferListing extends Component
             'service_type'        => 'required',
             'user_type'           => 'required',
             'listing_title'       => 'required|string|max:255',
-            'working_with_agent'  => 'required',
             'listing_date'        => 'required|date',
             'expiration_date'     => 'required',
             'auction_type'        => 'required',

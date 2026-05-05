@@ -182,7 +182,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model.defer="existing_lease_type" class="form-control has-icon"
+            <select wire:model="existing_lease_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract">
                 <option value="">Select</option>
                 <option value="NNN (Triple Net)">NNN (Triple Net)</option>
@@ -373,7 +373,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select id="reason_for_sale_select" wire:model.defer="reason_for_sale" class="form-control has-icon"
+            <select id="reason_for_sale_select" wire:model="reason_for_sale" class="form-control has-icon"
                 data-icon="fa-solid fa-tag">
                 <option value="">Select</option>
                 <option value="Retirement">Retirement</option>
