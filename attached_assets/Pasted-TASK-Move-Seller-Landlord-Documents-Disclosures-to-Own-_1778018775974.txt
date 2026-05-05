@@ -1,0 +1,135 @@
+TASK: Move Seller/Landlord Documents & Disclosures to Own Tab + Conditional Upload Display
+
+SCOPE:
+Create Offer Listing flows only:
+- Seller Offer Listing Full Service
+- Landlord Offer Listing Full Service
+
+LOGIN TEST:
+Abigailbaschuk@gmail.com
+12345678
+
+DO NOT TOUCH:
+- Buyer Offer Listing
+- Tenant Offer Listing
+- Limited Service files
+- Hire Agent flows
+- Agent Profile flows
+- Routes
+- Database schema
+- Save/load logic
+- Validation unless tab navigation requires existing field references only
+
+GOAL:
+The Documents & Disclosures section is visually cluttered inside the current Tax/Legal/HOA area. Do not delete it. Move it into its own tab and clean the display.
+
+--------------------------------------------------
+PART 1 — ADD NEW TAB
+--------------------------------------------------
+
+Add a new wizard tab for both Seller and Landlord:
+
+Documents & Disclosures
+
+This tab should contain the existing Documents & Disclosures section only.
+
+Requirements:
+- Move existing section markup; do not recreate fields from scratch.
+- Keep all existing wire:model bindings.
+- Keep existing file upload bindings.
+- Keep existing dropdown options.
+- Keep existing saved file preview/link behavior if present.
+- Do not change database fields.
+
+--------------------------------------------------
+PART 2 — REMOVE SECTION FROM OLD LOCATION
+--------------------------------------------------
+
+Remove the Documents & Disclosures block from its current location inside:
+- Seller Tax / Legal / HOA / Disclosures area
+- Landlord Tax / Legal / HOA / Disclosures area
+
+Important:
+- Leave Tax, Legal, HOA fields in their current tab.
+- Only move Documents & Disclosures.
+
+--------------------------------------------------
+PART 3 — CONDITIONAL UPLOAD DISPLAY
+--------------------------------------------------
+
+For each document/disclosure availability field:
+
+If dropdown value is "Yes":
+- Show the upload field beneath it.
+
+If dropdown value is "No" or blank:
+- Hide the upload field.
+
+Apply to existing upload fields only, such as:
+- Seller/Landlord Disclosure
+- Survey
+- Inspection Report
+- HOA/Condo Documents
+- Any other document upload fields already present
+
+Do not add new upload fields unless already present in existing code.
+
+--------------------------------------------------
+PART 4 — CLEAN LAYOUT
+--------------------------------------------------
+
+Inside the new Documents & Disclosures tab:
+
+Use clean stacked rows:
+- Label
+- Availability dropdown
+- Upload field only if Yes
+
+Spacing should be consistent with the rest of the wizard.
+
+Do not use floating/manual <i class="input-icon"> icons.
+Use existing has-icon + data-icon pattern already working on nearby select fields.
+
+--------------------------------------------------
+PART 5 — TAB NAVIGATION
+--------------------------------------------------
+
+Update wizard tab index/navigation safely for Seller and Landlord only.
+
+Requirements:
+- Back, Next, Save Draft, and Submit still work.
+- No skipped tabs.
+- No duplicate tab numbers.
+- Existing validation still targets the correct tab.
+- Do not change Buyer/Tenant tab order.
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Test:
+/offer-listing/seller
+/offer-listing/landlord
+
+Confirm:
+- New “Documents & Disclosures” tab appears for Seller.
+- New “Documents & Disclosures” tab appears for Landlord.
+- Documents section no longer appears inside old Tax/Legal/HOA area.
+- Dropdowns still save existing values.
+- Upload fields appear only when related field = Yes.
+- Upload fields hide when related field = No or blank.
+- Existing uploaded file display still works.
+- Back/Next navigation works through all tabs.
+- Save Draft still works.
+- Submit still works.
+- No Buyer/Tenant/Limited Service/Hire Agent files changed.
+
+RUN:
+php -l on every edited PHP/Blade file.
+
+HARD SAFEGUARDS:
+- No migrations
+- No migrate:fresh
+- No schema changes
+- No broad refactors
+- Stop and report if tab numbering or validation logic is unclear.
