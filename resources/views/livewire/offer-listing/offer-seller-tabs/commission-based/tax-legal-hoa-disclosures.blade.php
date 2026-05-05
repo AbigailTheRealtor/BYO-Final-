@@ -462,7 +462,7 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <textarea wire:model="association_approval_process" class="form-control" rows="2"
+                    <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
                         placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                 </div>
 
@@ -677,7 +677,7 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <textarea wire:model="pet_restrictions_detail" class="form-control" rows="2"
+                    <textarea wire:model="pet_restrictions_detail" class="form-control seller-compact-textarea" rows="2"
                         placeholder="Describe pet restrictions (e.g., Max 2 pets, no dogs over 25 lbs, no aggressive breeds)"></textarea>
                 </div>
             @endif
