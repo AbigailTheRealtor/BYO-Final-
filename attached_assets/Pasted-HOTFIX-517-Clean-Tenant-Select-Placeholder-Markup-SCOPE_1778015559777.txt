@@ -1,0 +1,68 @@
+HOTFIX #517 — Clean Tenant Select Placeholder Markup
+
+SCOPE:
+Tenant Offer Listing create flow only.
+
+FILES:
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/property-details.blade.php
+
+ISSUE:
+data-placeholder="Select" was added, but the affected <select> tags now show duplicated/broken attribute lines.
+
+FIX:
+For each affected select, keep ONE clean opening <select> tag only.
+
+FIELDS:
+1. Residential Offered Lease Term (.lease_for)
+2. Commercial Offered Lease Term (.lease_for)
+3. Leasing Space (#leasing_spaces_tenant)
+4. Acceptable Property Conditions (#condition_prop_buyer)
+
+REQUIRED PATTERN:
+- Keep existing class
+- Keep existing data-icon
+- Keep existing multiple/required attributes
+- Add data-placeholder="Select"
+- Keep only one <option value="">Select</option>
+- Do not duplicate attribute lines
+
+Example pattern:
+
+<select class="lease_for form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-file-pen input-icon2"
+    data-placeholder="Select"
+    multiple required>
+
+For #leasing_spaces_tenant:
+
+<select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-building input-icon2"
+    data-placeholder="Select"
+    multiple required>
+
+For #condition_prop_buyer:
+
+<select id="condition_prop_buyer"
+    class="condition_prop_buyer form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-screwdriver-wrench input-icon2"
+    data-placeholder="Select"
+    multiple
+    style="visibility:hidden;height:0;overflow:hidden">
+
+DO NOT:
+- Change JS
+- Change wire:model
+- Change options
+- Touch Seller/Buyer/Landlord
+- Touch validation/schema/routes
+
+VERIFY:
+- No duplicate data-icon lines
+- No duplicate multiple/required lines
+- One <option value="">Select</option> per field
+- Acceptable Property Conditions shows Select
+- Offered Lease Term shows Select
+- Leasing Space shows Select
+- View Preference Needed unchanged
+- php -l passes

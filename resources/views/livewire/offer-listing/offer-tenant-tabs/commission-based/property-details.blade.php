@@ -320,10 +320,12 @@
     </label>
 
     <div class="input-cover" wire:key="condition-prop-buyer-wrapper" wire:ignore>
-              <select id="condition_prop_buyer"
-                class="condition_prop_buyer form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple
-                style="visibility:hidden;height:0;overflow:hidden">
+        <select id="condition_prop_buyer"
+            class="condition_prop_buyer form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-screwdriver-wrench input-icon2"
+            data-placeholder="Select"
+            multiple
+            style="visibility:hidden;height:0;overflow:hidden">
             <option value="">Select</option>
             @php
                 $displayMapping = [

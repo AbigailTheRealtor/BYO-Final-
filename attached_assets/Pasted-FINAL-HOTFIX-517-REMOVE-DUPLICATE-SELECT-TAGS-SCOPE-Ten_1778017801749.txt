@@ -1,0 +1,94 @@
+FINAL HOTFIX #517 — REMOVE DUPLICATE SELECT TAGS
+
+SCOPE:
+Tenant Offer Listing ONLY
+
+FILES:
+- leasing-terms.blade.php
+- property-details.blade.php
+
+--------------------------------------------------
+PART 1 — REMOVE DUPLICATE <select> TAGS (CRITICAL)
+--------------------------------------------------
+
+For ALL affected fields:
+
+- .lease_for (Residential)
+- .lease_for (Commercial)
+- #leasing_spaces_tenant
+- #condition_prop_buyer
+
+DELETE the FIRST/OLD <select> tag.
+
+KEEP ONLY ONE clean <select> element.
+
+--------------------------------------------------
+PART 2 — FINAL CLEAN STRUCTURE
+--------------------------------------------------
+
+Each field must look like this:
+
+<select class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-file-pen input-icon2"
+    data-placeholder="Select"
+    multiple required>
+
+OR (with ID):
+
+<select id="leasing_spaces_tenant"
+    class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-building input-icon2"
+    data-placeholder="Select"
+    multiple required>
+
+--------------------------------------------------
+PART 3 — REMOVE DUPLICATE ATTRIBUTES
+--------------------------------------------------
+
+Ensure each <select> has:
+
+✔ ONE data-icon
+✔ ONE data-placeholder
+✔ ONE multiple (if needed)
+✔ ONE required (if needed)
+
+NO duplicates allowed.
+
+--------------------------------------------------
+PART 4 — KEEP ONLY ONE BLANK OPTION
+--------------------------------------------------
+
+Ensure:
+
+<option value="">Select</option>
+
+exists ONCE.
+
+--------------------------------------------------
+PART 5 — DO NOT CHANGE ANYTHING ELSE
+--------------------------------------------------
+
+- Do NOT touch JS
+- Do NOT touch wire:model
+- Do NOT change options
+- Do NOT touch other flows
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Confirm:
+
+✔ Only ONE <select> per field
+✔ No duplicate attributes
+✔ Acceptable Property Conditions shows "Select"
+✔ Offered Lease Term shows "Select"
+✔ Leasing Space shows "Select"
+✔ View Preference Needed unchanged
+✔ No console errors
+✔ php -l passes
+
+--------------------------------------------------
+STOP IF:
+- Any field loses binding
+- Select2 stops working
