@@ -1,0 +1,112 @@
+TASK: Landlord Create Offer Listing — Restore icons and Select placeholders (Property Details)
+
+SCOPE:
+Landlord Create Offer Listing → Property Details tab only.
+
+DO NOT:
+- Do not modify Seller, Buyer, or Tenant files
+- Do not modify Livewire PHP
+- Do not modify validation
+- Do not change wire:model names
+- Do not change save/submit logic
+- Do not add <i class="input-icon">
+- Do not replace Select2
+
+--------------------------------------------------
+
+READ-ONLY AUDIT FIRST:
+Compare broken fields against working fields like:
+- Property Condition
+- Bedrooms
+- Bathrooms
+- Furnishings
+- Carport
+- Garage
+- Pool
+- Pets Allowed
+
+Identify missing:
+- class="form-control has-icon"
+- data-icon
+- placeholder / Select behavior
+
+--------------------------------------------------
+
+FIELDS TO FIX (EXPLICIT):
+
+1. Appliances Included
+2. Rent Includes
+3. View
+4. Amenities and Property Features
+5. Heating and Fuel
+6. Air Conditioning
+7. Water
+8. Sewer
+9. Utilities
+10. Laundry Features
+11. Floor Covering
+12. Security Features
+
+--------------------------------------------------
+
+FIX RULES:
+
+FOR SELECT / SELECT2 FIELDS:
+- Ensure class includes: form-control has-icon
+- Ensure data-icon exists
+- Ensure placeholder shows: Select
+
+If Select2:
+- Add data-placeholder="Select"
+- Ensure JS uses placeholder: "Select"
+- Ensure empty state displays Select
+- Keep allowClear if already present
+
+If normal select:
+- First option must be:
+  <option value="">Select</option>
+
+--------------------------------------------------
+
+FOR TEXT INPUT FIELDS:
+- class="form-control has-icon"
+- data-icon exists
+- placeholder="Select" (unless field already has specific example text)
+
+--------------------------------------------------
+
+ICON MAPPING (Font Awesome Free ONLY):
+
+- Appliances Included → fa-solid fa-utensils
+- Rent Includes → fa-solid fa-receipt
+- View → fa-solid fa-eye
+- Amenities → fa-solid fa-star
+- Heating → fa-solid fa-fire
+- Air Conditioning → fa-solid fa-wind
+- Water → fa-solid fa-faucet
+- Sewer → fa-solid fa-toilet
+- Utilities → fa-solid fa-plug
+- Laundry → fa-solid fa-shirt
+- Floor → fa-solid fa-layer-group
+- Security → fa-solid fa-shield-halved
+
+Fallback if any icon fails:
+fa-solid fa-circle-info
+
+--------------------------------------------------
+
+IMPORTANT:
+- Do NOT modify fields that are already correct
+- Do NOT duplicate icons
+- Do NOT break Select2 behavior
+- Do NOT change layout structure
+
+--------------------------------------------------
+
+DONE WHEN:
+- Appliances Included shows icon + Select placeholder
+- Rent Includes shows icon + Select placeholder
+- All listed fields show Select when empty
+- All listed fields have one icon (no overlap)
+- No working fields are changed
+- Navigation and Save Draft still work
