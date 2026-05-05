@@ -34,6 +34,8 @@ class FlCitiesPatchSeeder extends Seeder
             ['name' => 'Redington Beach',       'county' => 'Pinellas County'],
             ['name' => 'Belleair',              'county' => 'Pinellas County'],
             ['name' => 'Belleair Beach',        'county' => 'Pinellas County'],
+            ['name' => 'Belleair Bluffs',       'county' => 'Pinellas County'],
+            ['name' => 'Largo',                 'county' => 'Pinellas County'],
             ['name' => 'Indian Shores',         'county' => 'Pinellas County'],
             ['name' => 'Redington Shores',      'county' => 'Pinellas County'],
             ['name' => 'North Redington Beach', 'county' => 'Pinellas County'],
@@ -126,6 +128,9 @@ class FlCitiesPatchSeeder extends Seeder
             ['zip_code' => '34689', 'city' => 'Tarpon Springs',      'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
             ['zip_code' => '33786', 'city' => 'Belleair Beach',      'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
             ['zip_code' => '33756', 'city' => 'Belleair',            'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
+            ['zip_code' => '33770', 'city' => 'Belleair Bluffs',     'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
+            ['zip_code' => '33770', 'city' => 'Largo',               'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
+            ['zip_code' => '33771', 'city' => 'Largo',               'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
             ['zip_code' => '33785', 'city' => 'Indian Rocks Beach',  'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
             ['zip_code' => '34683', 'city' => 'Palm Harbor',         'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
             ['zip_code' => '33703', 'city' => 'St. Pete Beach',      'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Pinellas'],
@@ -147,6 +152,11 @@ class FlCitiesPatchSeeder extends Seeder
         $zipAdded = 0;
         $now = now();
         foreach ($zips as $zip) {
+            // us_zip_codes.zip_code has a unique constraint — one row per zip.
+            // Where two cities share a zip (e.g. 33770 for both Belleair Bluffs
+            // and Largo), the first entry in the array wins. City-to-county
+            // auto-population relies on us_cities (not us_zip_codes), so both
+            // cities resolve correctly regardless of which zip row exists.
             $exists = DB::table('us_zip_codes')->where('zip_code', $zip['zip_code'])->exists();
             if (!$exists) {
                 DB::table('us_zip_codes')->insertOrIgnore(array_merge($zip, [
