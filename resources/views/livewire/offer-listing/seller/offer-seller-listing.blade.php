@@ -1239,7 +1239,7 @@
                 <!-- Navigation Buttons -->
                 <div class="d-flex justify-content-between form-group mt-4">
                     <div>
-                        <button type="button" class="btn btn-secondary wizard-step-back" onclick="(function(){var a=Array.from(document.querySelectorAll('#myTab .nav-link')),c=a.find(function(t){return t.classList.contains('active')}),i=c?a.indexOf(c):-1;if(!c||i<=0)return;var p=a[i-1].getAttribute('data-bs-target');if(!p)return;a.forEach(function(l){var lt=l.getAttribute('data-bs-target'),h=(lt===p);l.classList.toggle('active',h);l.setAttribute('aria-selected',h?'true':'false');if(lt){var pn=document.querySelector(lt);if(pn){pn.classList.toggle('show',h);pn.classList.toggle('active',h);}}});sessionStorage.setItem('seller_create_active_tab',p);var _we=document.querySelector('[wire\\:id]');if(_we&&window.Livewire){var _comp=window.Livewire.find(_we.getAttribute('wire:id'));if(_comp)_comp.call('setActiveTab',i-1);}})();">Back</button>
+                        <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                     </div>
                     <div>
 
@@ -1890,33 +1890,6 @@
                 attachAuctionDropdownListener();
             });
 
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAuctionDropdownListener();
-                if ($('#exchange_item').length) {
-                    var $exEl = $('#exchange_item');
-                    if (!$exEl.hasClass('select2-hidden-accessible')) {
-                        $exEl.select2({
-                            placeholder: "Select acceptable exchange items",
-                            allowClear: true,
-                        });
-                    }
-                    var saved = [];
-                    try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                    if (!saved.length) { saved = @this.get('exchange_item') || []; }
-                    var current = $exEl.val() || [];
-                    if (saved.length > 0 && current.length === 0) {
-                        $exEl.val(saved).trigger('change.select2');
-                    }
-                    if (!$exEl.data('exchange-change-bound')) {
-                        $exEl.on('change', function(e) {
-                            var selectedValues = $(this).val() || [];
-                            @this.set('exchange_item', selectedValues);
-                        });
-                        $exEl.data('exchange-change-bound', true);
-                    }
-                }
-            });
 
 
             // Function to toggle "Other Bathrooms" input field
@@ -1983,10 +1956,6 @@
             // Initialize on page load
             toggleGarageOptions();
 
-            // Listen for Livewire updates
-            Livewire.hook('message.processed', () => {
-                toggleGarageOptions();
-            });
 
             // Add event listeners
             let garageSelect = document.getElementById('garage_parking_spaces');
@@ -2033,11 +2002,6 @@
             toggleSpaceInput('carport-needed', 'other-carport-needed');
             toggleSpaceInput('garage-needed', 'other-garage-needed');
 
-            // Reinitialize after Livewire updates
-            Livewire.hook('message.processed', () => {
-                toggleSpaceInput('carport-needed', 'other-carport-needed');
-                toggleSpaceInput('garage-needed', 'other-garage-needed');
-            });
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
                 $('#included_assets').select2({
@@ -2136,10 +2100,6 @@
             // Attach the event listener initially
             attachAmenitiesDropdownListener();
 
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
-            });
 
             // Function to toggle "Other Bedrooms" input field
             function toggleOtherBedrooms(selectElement) {
@@ -2172,10 +2132,6 @@
             // Attach the event listener initially
             attachBedroomsDropdownListener();
 
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachBedroomsDropdownListener();
-            });
 
             // Function to toggle "Other Property Condition" input field
             function toggleOtherCondition(selectElement) {
@@ -2211,10 +2167,6 @@
                 attachConditionDropdownListener();
             });
 
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachConditionDropdownListener();
-            });
 
 
 
@@ -2252,10 +2204,6 @@
                 attachItemConditionDropdownListener();
             });
 
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachItemConditionDropdownListener();
-            });
 
             const photoInput = document.getElementById("photo-input");
             const photoError = document.getElementById("photo-error");
@@ -2364,6 +2312,45 @@
             Livewire.on("upload:finish", () => {
                 videoLoader.style.visibility = "hidden";
             });
+
+            // RC-3: Register all inner message.processed hooks exactly once, regardless of how
+            // many times initializeFullService() is called across Livewire round-trips.
+            if (!window.__innerHooksBound) {
+                window.__innerHooksBound = true;
+                Livewire.hook('message.processed', () => {
+                    attachAuctionDropdownListener();
+                    if ($('#exchange_item').length) {
+                        var $exEl = $('#exchange_item');
+                        if (!$exEl.hasClass('select2-hidden-accessible')) {
+                            $exEl.select2({
+                                placeholder: "Select acceptable exchange items",
+                                allowClear: true,
+                            });
+                        }
+                        var saved = [];
+                        try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
+                        if (!saved.length) { saved = @this.get('exchange_item') || []; }
+                        var current = $exEl.val() || [];
+                        if (saved.length > 0 && current.length === 0) {
+                            $exEl.val(saved).trigger('change.select2');
+                        }
+                        if (!$exEl.data('exchange-change-bound')) {
+                            $exEl.on('change', function(e) {
+                                var selectedValues = $(this).val() || [];
+                                @this.set('exchange_item', selectedValues);
+                            });
+                            $exEl.data('exchange-change-bound', true);
+                        }
+                    }
+                    toggleGarageOptions();
+                    toggleSpaceInput('carport-needed', 'other-carport-needed');
+                    toggleSpaceInput('garage-needed', 'other-garage-needed');
+                    attachAmenitiesDropdownListener();
+                    attachBedroomsDropdownListener();
+                    attachConditionDropdownListener();
+                    attachItemConditionDropdownListener();
+                });
+            }
 
             initializeWizardHandlers();
         }
@@ -2858,10 +2845,12 @@
                     '#listing-details',
                     '#property-details',
                     '#sale-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
-                    '#tenant-info'
+                    '#tax-legal-hoa-disclosures',
+                    '#photos-tours-documents',
+                    '#seller-information',
+                    '#ai-questions',
+                    '#financial-details',
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
