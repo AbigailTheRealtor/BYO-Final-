@@ -2862,11 +2862,12 @@
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                if (iconClass && !input.previousElementSibling?.classList.contains('input-icon')) {
-                    const icon = document.createElement('i');
-                    icon.className = `input-icon ${iconClass}`;
-                    input.parentNode.insertBefore(icon, input);
-                }
+                if (!iconClass) return;
+                const wrapper = input.closest('.input-cover');
+                if (!wrapper || wrapper.querySelector('.input-icon')) return;
+                const icon = document.createElement('i');
+                icon.className = `input-icon ${iconClass}`;
+                wrapper.insertBefore(icon, input);
             });
         }
 
