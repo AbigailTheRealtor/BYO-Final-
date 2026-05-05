@@ -1,0 +1,114 @@
+TASK #421 — SELLER OFFER LISTING FULL-SERVICE READ-ONLY AUDIT
+
+Scope:
+- Seller Offer Listing create flow only
+- URL: /offer-listing/seller
+- Full-Service / Commission-Based path only
+- READ ONLY — no code changes
+
+Important:
+Previous fixes were applied in code, but the browser UI still shows issues. Confirm active rendered files, DOM behavior, CSS overrides, and JS handlers before recommending fixes.
+
+DO NOT:
+- Touch Limited Service files
+- Reference Limited Service files in the fix plan
+- Modify Seller files during this audit
+- Touch Landlord, Buyer, Tenant
+- Touch Hire Agent / Agent Preset / Counter flows
+- Change database schema
+
+Audit required:
+
+1. Active file confirmation
+Confirm /offer-listing/seller renders:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/*.blade.php
+
+List exact active Full-Service partials.
+
+2. Other custom input reveal audit
+Trace why “Other” does not show custom input for:
+- Appliances Included
+- View
+- Garage/Parking Features
+- Included Property or Business Assets
+- Reason for Sale
+
+Compare only against working Full-Service Seller patterns such as Amenities and Property Features.
+
+For each field:
+- Confirm select id/name
+- Confirm custom wrapper id/class
+- Confirm whether wrapper exists in rendered DOM
+- Confirm whether hidden by inline style, d-none, or CSS
+- Confirm whether JS handler exists
+- Confirm whether JS selector matches actual DOM
+- Confirm whether Livewire message.processed overrides visibility
+
+3. Large textarea audit
+Trace why these are still too tall:
+- Additional Seller Sale Terms
+- Additional Parcel IDs
+- Legal Description
+- Special Assessment Description
+- Additional Leasing Restrictions
+
+Compare against compact field:
+- Escrow Agent Preference
+
+Find exact CSS selector causing height/min-height.
+
+4. Icon/spacing audit
+Audit:
+- Included Personal Property text too close to icon
+- Operating Statement Available missing icon
+
+Find exact markup/CSS cause.
+
+5. Placeholder / Select audit
+Audit:
+- Offered Financing/Currency missing “Select”
+- Reason for Sale “Other” should reveal a custom input with placeholder:
+  Enter reason for sale (e.g., Relocation, Retirement, Downsizing)
+
+6. Association layout audit
+Audit:
+- Association Type = Other breaks layout of sub questions
+- Association Fee Frequency = Other breaks layout of sub questions
+
+Find exact markup/CSS cause.
+
+7. Pet Restrictions duplicate audit
+Audit:
+- Pet Restrictions should be removed because Pets Allowed already exists
+- Identify all active Seller Full-Service pet restriction fields
+- Identify exact model properties used
+- Recommend safest field to remove or hide
+- Do not remove in this task
+
+8. Documents & Disclosures layout audit
+Audit:
+- In Tax, Legal, HOA & Disclosures, clicking Yes after Survey Available causes remaining document layout to break
+- Identify exact field/markup where layout breaks
+- Check if upload blocks are inserted incorrectly inside grid/row/input groups
+
+9. Navigation and submit audit
+Verify:
+- Next works
+- Back works
+- Submit works with valid data
+- Submit blocks missing required data
+- Required Select2 validation works on final submit
+- No console errors
+
+Output required:
+- PASS/FAIL table by issue
+- Exact files inspected
+- Exact root cause for each failed item
+- Exact files needing edits
+- Four-stage fix plan:
+  Stage 1: Blocking JS/Other reveal + Next/Submit
+  Stage 2: Layout/textarea/CSS fixes
+  Stage 3: Duplicate Pet Restrictions + placeholders/icons
+  Stage 4: Tooltip polish
+- Confirm no code changes were made
