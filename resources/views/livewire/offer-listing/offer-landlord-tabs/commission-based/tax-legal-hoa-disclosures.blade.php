@@ -518,7 +518,7 @@
                     ];
                 @endphp
                 <div class="input-cover" wire:ignore>
-                    <select id="association_fee_includes" class="form-control has-icon select2-multiple" multiple>
+                    <select id="association_fee_includes" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-list-check" multiple>
                         @foreach ($feeIncludesOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
@@ -554,7 +554,7 @@
                     ];
                 @endphp
                 <div class="input-cover" wire:ignore>
-                    <select id="association_amenities" class="form-control has-icon select2-multiple" multiple>
+                    <select id="association_amenities" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-star" multiple>
                         @foreach ($amenityOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_amenities ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
