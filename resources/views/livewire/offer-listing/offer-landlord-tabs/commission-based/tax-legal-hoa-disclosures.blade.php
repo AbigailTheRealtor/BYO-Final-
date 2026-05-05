@@ -38,9 +38,12 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <input type="text" wire:model="tax_year" class="form-control"
-                style="padding-left: 12px;"
-                placeholder="Enter Tax Year (e.g., 2025)">
+            <div class="input-cover">
+                <i class="input-icon fa-solid fa-calendar-days"></i>
+                <input type="text" wire:model="tax_year" class="form-control has-icon"
+                    data-icon="fa-solid fa-calendar-days"
+                    placeholder="Enter Tax Year (e.g., 2025)">
+            </div>
         </div>
 
         {{-- Annual Property Taxes --}}
@@ -89,9 +92,12 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <input type="number" wire:model="total_parcel_count" class="form-control"
-                    style="padding-left: 12px;"
-                    placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
+                <div class="input-cover">
+                    <i class="input-icon fa-solid fa-layer-group"></i>
+                    <input type="number" wire:model="total_parcel_count" class="form-control has-icon"
+                        data-icon="fa-solid fa-layer-group"
+                        placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
+                </div>
             </div>
 
             <div class="form-group mt-3">
@@ -633,9 +639,12 @@
                                     <i class="fa-solid fa-circle-info"></i>
                                 </span>
                             </label>
-                            <input type="number" wire:model="max_leases_per_year" class="form-control"
-                                    style="padding-left: 12px;"
+                            <div class="input-cover">
+                                <i class="input-icon fa-solid fa-key"></i>
+                                <input type="number" wire:model="max_leases_per_year" class="form-control has-icon"
+                                    data-icon="fa-solid fa-key"
                                     placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
+                            </div>
                         </div>
                     </div>
                 </div>

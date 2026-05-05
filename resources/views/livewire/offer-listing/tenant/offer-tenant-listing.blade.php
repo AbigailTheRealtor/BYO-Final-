@@ -4643,7 +4643,6 @@ $lease_types = [
                 'expiration_date':         'Expiration Date',
                 'auction_type':            'Listing Type',
                 'auction_time':            'Bidding Period Length',
-                'meeting_Preference':      'Meeting Preference',
                 'state':                   'Acceptable State',
                 'property_type':           'Acceptable Property Type',
                 'bedrooms':                'Minimum Bedrooms Needed',

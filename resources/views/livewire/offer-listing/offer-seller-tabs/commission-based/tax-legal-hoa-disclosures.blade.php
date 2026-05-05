@@ -38,8 +38,12 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <input type="text" wire:model="tax_year" class="form-control"
-                placeholder="Enter Tax Year (e.g., 2025)">
+            <div class="input-cover">
+                <i class="input-icon fa-solid fa-calendar-days"></i>
+                <input type="text" wire:model="tax_year" class="form-control has-icon"
+                    data-icon="fa-solid fa-calendar-days"
+                    placeholder="Enter Tax Year (e.g., 2025)">
+            </div>
         </div>
 
         {{-- Annual Property Taxes --}}
@@ -87,8 +91,12 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <input type="number" wire:model="total_parcel_count" class="form-control"
-                    placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
+                <div class="input-cover">
+                    <i class="input-icon fa-solid fa-layer-group"></i>
+                    <input type="number" wire:model="total_parcel_count" class="form-control has-icon"
+                        data-icon="fa-solid fa-layer-group"
+                        placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
+                </div>
             </div>
 
             <div class="form-group mt-3">
@@ -621,8 +629,12 @@
                                     <i class="fa-solid fa-circle-info"></i>
                                 </span>
                             </label>
-                            <input type="number" wire:model="max_leases_per_year" class="form-control"
+                            <div class="input-cover">
+                                <i class="input-icon fa-solid fa-key"></i>
+                                <input type="number" wire:model="max_leases_per_year" class="form-control has-icon"
+                                    data-icon="fa-solid fa-key"
                                     placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -649,38 +661,6 @@
                 </div>
             @endif
 
-            {{-- Pet Restrictions --}}
-            <div class="form-group mt-3">
-                <label class="fw-bold">Pet Restrictions:
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Indicate whether the association imposes any pet restrictions, such as size limits, breed restrictions, or number of pets allowed.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                </label>
-                <div class="input-cover">
-                    <select wire:model="pet_restrictions" class="form-control has-icon"
-                        data-icon="fa-solid fa-paw">
-                        <option value="">Select</option>
-                        <option value="Yes">Yes — Pet restrictions apply</option>
-                        <option value="No">No — No pet restrictions</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                        <option value="Unknown">Unknown</option>
-                    </select>
-                </div>
-            </div>
-
-            @if ($pet_restrictions === 'Yes')
-                <div class="form-group mt-2">
-                    <label class="fw-bold">Pet Restriction Details:
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Describe the pet restrictions imposed by the association, such as size limits, breed restrictions, or the maximum number of pets allowed.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-                    </label>
-                    <textarea wire:model="pet_restrictions_detail" class="form-control seller-compact-textarea" rows="2"
-                        placeholder="Describe pet restrictions (e.g., Max 2 pets, no dogs over 25 lbs, no aggressive breeds)"></textarea>
-                </div>
-            @endif
 
         @endif
 
@@ -987,7 +967,7 @@
             <div class="input-cover" wire:ignore>
                 <i class="input-icon fa-solid fa-folder-open input-icon2"></i>
                 <select id="additional_documents" class="form-control select2-multiple" multiple>
-                    <option value=""></option>
+                    <option value="">Select</option>
                     @foreach ($additionalDocumentOptions as $option)
                         <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
                             {{ $option }}

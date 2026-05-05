@@ -3476,7 +3476,6 @@ class TenantOfferListing extends Component
         if ($this->user_type === 'tenant' && $this->service_type === 'full_service') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
-            $rules['meeting_Preference']      = 'required';
 
             // Tab 1 – Bidding Period Length (only required when auction type is Bidding Period)
             if ($this->auction_type === 'Bidding Period') {
@@ -3517,7 +3516,6 @@ class TenantOfferListing extends Component
         if ($this->user_type === 'landlord' && $this->service_type === 'full_service') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
-            $rules['meeting_Preference']      = 'required';
 
             if ($this->auction_type === 'Bidding Period') {
                 $rules['auction_time'] = 'required';
@@ -3558,7 +3556,6 @@ class TenantOfferListing extends Component
         if ($this->user_type === 'buyer' && $this->service_type === 'full_service') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
-            $rules['meeting_Preference']      = 'required';
 
             if ($this->auction_type === 'Bidding Period') {
                 $rules['auction_time'] = 'required';
@@ -3601,7 +3598,6 @@ class TenantOfferListing extends Component
         if ($this->user_type === 'seller' && $this->service_type === 'full_service') {
             // Tab 1 – Listing Details
             $rules['desired_agent_hire_date'] = 'required|date';
-            $rules['meeting_Preference']      = 'required';
 
             if ($this->auction_type === 'Bidding Period') {
                 $rules['auction_time'] = 'required';

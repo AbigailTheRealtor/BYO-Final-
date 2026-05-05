@@ -1,0 +1,107 @@
+SURGICAL DELETE FIX — DO NOT ADD ANY CODE
+
+This is NOT a refactor.
+This is NOT a restructuring task.
+
+This is a DELETE-ONLY cleanup.
+
+--------------------------------------------------
+STEP 1 — DELETE ALL DUPLICATE INPUTS BY TARGET
+--------------------------------------------------
+
+Search EXACTLY for these fields:
+
+wire:model="tax_year"
+wire:model="total_parcel_count"
+wire:model="max_leases_per_year"
+
+For EACH of these:
+
+If you see TWO inputs like:
+
+<input ... wire:model="FIELD">
+<div class="input-cover">
+    <input ... wire:model="FIELD">
+</div>
+
+👉 DELETE the FIRST input ONLY
+
+DO NOT modify the second one.
+
+--------------------------------------------------
+STEP 2 — DELETE BAD WRAPPERS (UPLOADS)
+--------------------------------------------------
+
+Search for:
+
+<div class="form-group mt-2">
+    <div class="conditional-upload-block">
+
+👉 DELETE the OUTER div.form-group ONLY
+
+Leave:
+
+<div class="conditional-upload-block">
+    ...
+</div>
+
+--------------------------------------------------
+STEP 3 — FIX SELLER “REASON FOR SALE” COMPLETELY
+--------------------------------------------------
+
+Find:
+
+id="other_reason_for_sale_wrapper"
+
+👉 DELETE the ENTIRE block
+
+Replace with ONLY:
+
+@if ($reason_for_sale === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text"
+                   wire:model.defer="other_reason_for_sale"
+                   class="form-control has-icon"
+                   data-icon="fa-solid fa-tag"
+                   placeholder="Enter Reason for Sale (e.g., Relocation)">
+        </div>
+    </div>
+@endif
+
+--------------------------------------------------
+STEP 4 — DO NOT ADD ANYTHING
+--------------------------------------------------
+
+Do NOT:
+- add inputs
+- wrap inputs again
+- create new structures
+
+ONLY DELETE incorrect code
+
+--------------------------------------------------
+FINAL CHECK (MANDATORY)
+--------------------------------------------------
+
+Search:
+
+wire:model="tax_year"
+
+👉 You must see ONLY ONE input
+
+Repeat for:
+- total_parcel_count
+- max_leases_per_year
+- other_reason_for_sale
+
+If more than one exists → fix again
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+- No duplicate inputs anywhere
+- No duplicate wire:model anywhere
+- Clean Livewire binding
+- No UI glitches

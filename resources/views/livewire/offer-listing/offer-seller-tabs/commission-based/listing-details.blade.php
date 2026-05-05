@@ -374,24 +374,6 @@ $auction_lengths_seller = [
         <strong>Bidding Period:</strong> The timer creates a structured window for Agents to submit competitive bids. You may review, accept, counter, or reject bids at any time during or after the bidding period.
     </div>
 
-    <div class="form-group">
-        <label class="fw-bold">Meeting Preference:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how you'd prefer to meet or communicate with the Agent after they are selected. This helps Agents know your expectations in advance.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <i class="input-icon fa-solid fa-list"></i>
-            <select wire:model="meeting_Preference" class="form-control has-icon" data-icon="fa-solid fa-list"
-                required>
-                <option value="">Select</option>
-                <option value="In-Person Meeting">In-Person Meeting</option>
-                <option value="Virtual/Phone Meeting">Virtual/Phone Meeting</option>
-                <option value="Either (In-Person or Virtual/Phone)">Either (In-Person or Virtual/Phone)</option>
-            </select>
-        </div>
-        <span class="error mt-2" id="meeting_Preference_error"></span>
-    </div>
 
 </div>
 

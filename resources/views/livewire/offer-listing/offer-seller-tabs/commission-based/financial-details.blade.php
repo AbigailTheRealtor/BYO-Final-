@@ -106,6 +106,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
+            <i class="input-icon fa-solid fa-file-chart-column"></i>
             <select wire:model.defer="operating_statement_available" class="form-control has-icon"
                 data-icon="fa-solid fa-file-chart-column">
                 <option value="">Select</option>
@@ -202,7 +203,7 @@
             <div class="input-cover">
                 <input type="text" wire:model.defer="other_lease_type" class="form-control has-icon"
                     data-icon="fa-solid fa-file-contract"
-                    placeholder="Describe the existing lease type">
+                    placeholder="Enter Existing Lease Type (e.g., Month-to-Month)">
             </div>
         </div>
     @endif
@@ -386,14 +387,15 @@
         </div>
     </div>
 
-    <div class="form-group mt-2" id="other_reason_for_sale_wrapper"
-        style="{{ $reason_for_sale === 'Other' ? '' : 'display:none;' }}">
-        <div class="input-cover">
-            <input type="text" wire:model.defer="other_reason_for_sale" class="form-control has-icon"
-                data-icon="fa-solid fa-tag"
-                placeholder="Describe the reason for sale">
+    @if ($reason_for_sale === 'Other')
+        <div class="form-group mt-2">
+            <div class="input-cover">
+                <input type="text" wire:model.defer="other_reason_for_sale" class="form-control has-icon"
+                    data-icon="fa-solid fa-tag"
+                    placeholder="Enter Reason for Sale (e.g., Relocation)">
+            </div>
         </div>
-    </div>
+    @endif
 
     {{-- Employee Count --}}
     <div class="form-group mt-3">
