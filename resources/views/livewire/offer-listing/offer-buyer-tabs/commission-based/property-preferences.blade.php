@@ -422,7 +422,7 @@
         <div class="input-cover" wire:ignore>
             <select id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-screwdriver-wrench"
+                data-icon="fa-solid fa-screwdriver-wrench input-icon2"
                 data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($property_condition as $row_pt)
