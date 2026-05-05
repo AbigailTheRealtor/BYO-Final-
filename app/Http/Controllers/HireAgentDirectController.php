@@ -661,9 +661,12 @@ class HireAgentDirectController extends Controller
                 'role'     => $role,
                 'clientId' => Auth::id(),
             ]);
+            $errorMessage = ($intent === 'counter')
+                ? 'Unable to open counter terms. Please contact support.'
+                : 'Something went wrong. Please try again.';
             return redirect()
                 ->back()
-                ->with('error', 'Something went wrong. Please try again.');
+                ->with('error', $errorMessage);
         }
     }
 }
