@@ -4,122 +4,188 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class FixCityCountyMappings extends Seeder
 {
+    private const CENSUS_URL  = 'https://www2.census.gov/geo/docs/reference/codes2020/national_place2020.txt';
+    private const CENSUS_FILE = '/tmp/national_places_2020.txt';
+
     public function run()
     {
-        $censusFile = '/tmp/national_places_2020.txt';
-        
-        if (!file_exists($censusFile)) {
-            $this->command->error("Census file not found at: $censusFile");
-            $this->command->info("Please run: curl -s 'https://www2.census.gov/geo/docs/reference/codes2020/national_place2020.txt' -o /tmp/national_places_2020.txt");
-            return;
+        $this->command->info('Fixing city-to-county mappings...');
+
+        $censusMap = $this->buildCensusMap();
+        $usingCensus = !empty($censusMap);
+
+        if ($usingCensus) {
+            $this->command->info('Using Census 2020 national places data for county mapping.');
+        } else {
+            $this->command->warn('Census data unavailable — falling back to us_zip_codes county data.');
         }
 
-        $this->command->info("Loading Census data...");
-        
-        $stateCache = [];
-        $states = DB::table('us_states')->get();
-        foreach ($states as $state) {
-            $stateCache[$state->abbreviation] = $state->id;
-        }
+        $stateAbbrToId = DB::table('us_states')->pluck('id', 'abbreviation')->toArray();
 
         $countyCache = [];
         $counties = DB::table('us_counties')->get();
         foreach ($counties as $county) {
-            $countyName = strtolower(trim($county->name));
-            $countyCache[$county->state_id][$countyName] = $county->id;
+            $normalized = strtolower(preg_replace('/\s+county$/i', '', trim($county->name)));
+            $countyCache[$county->state_id][$normalized] = $county->id;
         }
 
-        $censusData = [];
-        $handle = fopen($censusFile, 'r');
-        $header = fgetcsv($handle, 0, '|');
-        
-        while (($row = fgetcsv($handle, 0, '|')) !== false) {
-            if (count($row) < 9) continue;
-            
-            $stateAbbr = $row[0];
-            $placeName = $row[4];
-            $countiesStr = $row[8];
-            
-            $counties = explode('~~~', $countiesStr);
-            $primaryCounty = trim($counties[0]);
-            
-            $cityName = preg_replace('/\s+(city|town|CDP|village|borough|municipality)$/i', '', $placeName);
-            $cityName = strtolower(trim($cityName));
-            
-            if (!isset($censusData[$stateAbbr])) {
-                $censusData[$stateAbbr] = [];
+        $zipCountyMap = [];
+        if (!$usingCensus) {
+            $zipRows = DB::table('us_zip_codes')
+                ->whereNotNull('county')
+                ->where('county', '!=', '')
+                ->whereNotNull('state_abbrev')
+                ->select('city', 'state_abbrev', 'county')
+                ->get();
+
+            foreach ($zipRows as $zip) {
+                $stateId = $stateAbbrToId[strtoupper(trim($zip->state_abbrev))] ?? null;
+                if (!$stateId) continue;
+                $cityKey   = strtolower(trim($zip->city));
+                $countyNorm = strtolower(preg_replace('/\s+county$/i', '', trim($zip->county)));
+                $zipCountyMap[$stateId][$cityKey][] = $countyNorm;
             }
-            $censusData[$stateAbbr][$cityName] = strtolower($primaryCounty);
         }
-        fclose($handle);
-        
-        $this->command->info("Loaded " . count($censusData) . " states from Census data");
-
-        $updated = 0;
-        $notFound = 0;
-        $alreadyCorrect = 0;
-        $countyNotFound = 0;
 
         $cities = DB::table('us_cities')
             ->join('us_states', 'us_cities.state_id', '=', 'us_states.id')
-            ->select('us_cities.*', 'us_states.abbreviation as state_abbr')
+            ->select('us_cities.id', 'us_cities.name', 'us_cities.county_id', 'us_cities.state_id', 'us_states.abbreviation as state_abbr')
             ->get();
 
-        $this->command->info("Processing " . count($cities) . " cities...");
+        $this->command->info("Processing " . $cities->count() . " cities...");
 
-        $bar = $this->command->getOutput()->createProgressBar(count($cities));
+        $updated     = 0;
+        $alreadySet  = 0;
+        $noMatch     = 0;
+        $noCountyRow = 0;
+
+        $bar = $this->command->getOutput()->createProgressBar($cities->count());
+        $bar->start();
 
         foreach ($cities as $city) {
             $bar->advance();
-            
-            $cityNameClean = preg_replace('/,\s*[A-Z]{2}$/i', '', $city->name);
-            $cityNameClean = strtolower(trim($cityNameClean));
-            
-            $stateAbbr = $city->state_abbr;
-            
-            if (!isset($censusData[$stateAbbr]) || !isset($censusData[$stateAbbr][$cityNameClean])) {
-                $notFound++;
+
+            $cityKey = strtolower(trim($city->name));
+            $stateId = $city->state_id;
+            $stateAbbr = strtoupper($city->state_abbr);
+
+            $countyNorm = null;
+
+            if ($usingCensus) {
+                $countyNorm = $censusMap[$stateAbbr][$cityKey] ?? null;
+            }
+
+            if ($countyNorm === null && !$usingCensus) {
+                if (isset($zipCountyMap[$stateId][$cityKey])) {
+                    $counts = array_count_values($zipCountyMap[$stateId][$cityKey]);
+                    arsort($counts);
+                    $countyNorm = array_key_first($counts);
+                }
+            }
+
+            if ($countyNorm === null) {
+                $noMatch++;
                 continue;
             }
-            
-            $correctCountyName = $censusData[$stateAbbr][$cityNameClean];
-            $stateId = $stateCache[$stateAbbr] ?? null;
-            
-            if (!$stateId || !isset($countyCache[$stateId])) {
-                $countyNotFound++;
+
+            $countyId = $countyCache[$stateId][$countyNorm] ?? null;
+
+            if (!$countyId) {
+                $noCountyRow++;
                 continue;
             }
-            
-            $correctCountyId = $countyCache[$stateId][$correctCountyName] ?? null;
-            
-            if (!$correctCountyId) {
-                $countyNotFound++;
+
+            if ((int) $city->county_id === (int) $countyId) {
+                $alreadySet++;
                 continue;
             }
-            
-            if ($city->county_id == $correctCountyId) {
-                $alreadyCorrect++;
-                continue;
-            }
-            
+
             DB::table('us_cities')
                 ->where('id', $city->id)
-                ->update(['county_id' => $correctCountyId]);
-            
+                ->update(['county_id' => $countyId, 'updated_at' => now()]);
+
             $updated++;
         }
 
         $bar->finish();
         $this->command->newLine(2);
-        
-        $this->command->info("=== City-to-County Mapping Fix Complete ===");
-        $this->command->info("Updated: $updated");
-        $this->command->info("Already correct: $alreadyCorrect");
-        $this->command->info("City not in Census data: $notFound");
-        $this->command->info("County not found in DB: $countyNotFound");
+
+        $this->command->info('=== City-to-County Mapping Results ===');
+        $this->command->info("Strategy:             " . ($usingCensus ? 'Census 2020 national places' : 'us_zip_codes fallback'));
+        $this->command->info("Updated:              {$updated}");
+        $this->command->info("Already correct:      {$alreadySet}");
+        $this->command->info("No source match:      {$noMatch}");
+        $this->command->info("County not in DB:     {$noCountyRow}");
+        $this->command->info("Total cities:         " . $cities->count());
+    }
+
+    private function buildCensusMap(): array
+    {
+        if (!file_exists(self::CENSUS_FILE)) {
+            $this->command->info('Downloading Census 2020 national places file...');
+            $this->downloadCensusFile();
+        }
+
+        if (!file_exists(self::CENSUS_FILE)) {
+            return [];
+        }
+
+        $map    = [];
+        $handle = fopen(self::CENSUS_FILE, 'r');
+        if (!$handle) return [];
+
+        fgetcsv($handle, 0, '|');
+
+        while (($row = fgetcsv($handle, 0, '|')) !== false) {
+            if (count($row) < 9) continue;
+
+            $stateAbbr   = strtoupper(trim($row[0]));
+            $placeName   = trim($row[4]);
+            $countiesStr = trim($row[8]);
+
+            $cityName = preg_replace(
+                '/\s+(city|town|CDP|village|borough|municipality|unified government|metro government|consolidated government|urban county|census designated place|incorporated place)$/i',
+                '',
+                $placeName
+            );
+            $cityKey = strtolower(trim($cityName));
+
+            $counties = explode('~~~', $countiesStr);
+            $primaryCounty = strtolower(preg_replace('/\s+county$/i', '', trim($counties[0])));
+
+            if ($cityKey && $primaryCounty) {
+                $map[$stateAbbr][$cityKey] = $primaryCounty;
+            }
+        }
+
+        fclose($handle);
+
+        $stateCount = count($map);
+        $placeCount = array_sum(array_map('count', $map));
+        $this->command->info("Census data loaded: {$placeCount} places across {$stateCount} states.");
+
+        return $map;
+    }
+
+    private function downloadCensusFile(): void
+    {
+        $context = stream_context_create([
+            'http' => [
+                'timeout'    => 60,
+                'user_agent' => 'Mozilla/5.0 (compatible; CensusImporter/1.0)',
+            ],
+        ]);
+
+        $content = @file_get_contents(self::CENSUS_URL, false, $context);
+        if ($content === false) {
+            $this->command->warn('Failed to download Census 2020 places file. Will use fallback.');
+            return;
+        }
+
+        file_put_contents(self::CENSUS_FILE, $content);
+        $this->command->info('Census 2020 places file downloaded (' . round(strlen($content) / 1024) . ' KB).');
     }
 }
