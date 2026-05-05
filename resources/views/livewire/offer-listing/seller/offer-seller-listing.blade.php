@@ -311,9 +311,14 @@
            visually match single-line inputs. The global .form-control min-height
            rule is intentionally left untouched. */
         .seller-compact-textarea {
-            min-height: 50px !important;
-            height: 50px;
+            min-height: 42px !important;
+            height: 42px;
             resize: vertical;
+        }
+
+        /* Deep left-padding for inputs that have an icon sitting further right */
+        .seller-icon-deep-pad {
+            padding-left: 56px;
         }
     </style>
 @endpush

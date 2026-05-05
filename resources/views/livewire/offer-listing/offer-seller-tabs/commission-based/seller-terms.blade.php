@@ -1973,8 +1973,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <input type="text" wire:model="included_personal_property" class="form-control has-icon"
-            data-icon="fa-solid fa-couch" style="padding-left: 56px;"
+        <input type="text" wire:model="included_personal_property" class="form-control has-icon seller-icon-deep-pad"
+            data-icon="fa-solid fa-couch"
             placeholder="List items included in the sale (e.g., Refrigerator, washer/dryer, dining room chandelier)">
     </div>
 </div>
