@@ -1490,7 +1490,7 @@ class SellerOfferListing extends Component
         
         if ($stateAbbrev) {
             $state = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbrev))->first();
-            if ($state && empty($this->property_state)) {
+            if ($state) {
                 $this->property_state = $state->name;
             }
         }
@@ -1510,44 +1510,14 @@ class SellerOfferListing extends Component
             })
             ->with(['county', 'state'])
             ->first();
-        
-        $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
-                $q->where('city', 'ILIKE', $cityName)
-                  ->orWhere('city', 'ILIKE', $normalizedCityName)
-                  ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
-            })
-            ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
-                return $query->where('state_abbrev', strtoupper($stateAbbrev));
-            })
-            ->first();
 
-        if ($city) {
-            if ($city->county && empty($this->property_county)) {
-                $countyName = $city->county->name;
-                if (!str_contains(strtolower($countyName), 'county')) {
-                    $countyName .= ' County';
-                }
-                $stateAbbr = $city->state ? $city->state->abbreviation : '';
-                $this->property_county = $countyName . ', ' . $stateAbbr;
-            }
-
-            if (empty($this->property_county) && $zipCode && !empty($zipCode->county)) {
-                $countyName = $zipCode->county;
-                if (!str_contains(strtolower($countyName), 'county')) {
-                    $countyName .= ' County';
-                }
-                $this->property_county = $countyName . ', ' . strtoupper($stateAbbrev ?? '');
-            }
-            
-            if ($zipCode && empty($this->property_zip)) {
-                $this->property_zip = $zipCode->zip_code;
-            }
-        } elseif ($zipCode && empty($this->property_county) && !empty($zipCode->county)) {
-            $countyName = $zipCode->county;
+        if ($city && $city->county) {
+            $countyName = $city->county->name;
             if (!str_contains(strtolower($countyName), 'county')) {
                 $countyName .= ' County';
             }
-            $this->property_county = $countyName . ', ' . strtoupper($stateAbbrev ?? '');
+            $stateAbbr = $city->state ? $city->state->abbreviation : '';
+            $this->property_county = $countyName . ', ' . $stateAbbr;
         }
     }
     
@@ -1690,21 +1660,6 @@ class SellerOfferListing extends Component
                 }
             }
 
-            if (empty($this->counties)) {
-                $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
-                    $q->where('city', 'ILIKE', $cityName)
-                      ->orWhere('city', 'ILIKE', $normalizedCityName)
-                      ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
-                })
-                ->where('state_abbrev', strtoupper($stateAbbr))
-                ->first();
-                if ($zipCode && !empty($zipCode->county)) {
-                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
-                    if (!$this->countyExistsIgnoreCase($countyString)) {
-                        $this->counties[] = $countyString;
-                    }
-                }
-            }
         }
     }
 

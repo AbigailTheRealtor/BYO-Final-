@@ -160,7 +160,6 @@
         <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementHighlight('City')"
             wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-            wire:blur="selectCitySuggestion()"
             class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
             autocomplete="off" placeholder="Enter city or cities">
 
@@ -171,7 +170,7 @@
                 <ul class="list-group">
                     @foreach ($citySuggestions as $index => $suggestion)
                         <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
-                            wire:click="selectCitySuggestion('{{ $suggestion }}')"
+                            @mousedown.prevent="$wire.selectCitySuggestion('{{ $suggestion }}')"
                             wire:key="city-suggestion-{{ $index }}">
                             <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}

@@ -1926,7 +1926,7 @@ class TenantOfferListing extends Component
         // Normalize city name to handle punctuation variations (e.g. "St." → "St")
         $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $cityName)));
         
-        if (!empty($stateAbbrev) && empty($this->property_state)) {
+        if (!empty($stateAbbrev)) {
             $state = \App\Models\UsState::where('abbreviation', 'ILIKE', $stateAbbrev)->first();
             if ($state) {
                 $this->property_state = $state->name;
@@ -1955,22 +1955,6 @@ class TenantOfferListing extends Component
                     }
                 }
 
-                if (empty($this->property_county)) {
-                    $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
-                            $q->where('city', 'ILIKE', $cityName)
-                              ->orWhere('city', 'ILIKE', $normalizedCityName)
-                              ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
-                        })
-                        ->where('state_abbrev', strtoupper($stateAbbrev))
-                        ->first();
-                    if ($zipCode && !empty($zipCode->county)) {
-                        $countyName = $zipCode->county;
-                        if (!str_contains(strtolower($countyName), 'county')) {
-                            $countyName .= ' County';
-                        }
-                        $this->property_county = $countyName . ', ' . strtoupper($stateAbbrev);
-                    }
-                }
             }
         }
     }
@@ -2351,21 +2335,6 @@ class TenantOfferListing extends Component
                 }
             }
 
-            if (empty($this->counties)) {
-                $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
-                    $q->where('city', 'ILIKE', $cityName)
-                      ->orWhere('city', 'ILIKE', $normalizedCityName)
-                      ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
-                })
-                ->where('state_abbrev', strtoupper($stateAbbr))
-                ->first();
-                if ($zipCode && !empty($zipCode->county)) {
-                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
-                    if (!$this->countyExistsIgnoreCase($countyString)) {
-                        $this->counties[] = $countyString;
-                    }
-                }
-            }
         }
     }
     

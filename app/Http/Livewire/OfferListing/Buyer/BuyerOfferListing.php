@@ -1087,7 +1087,7 @@ class BuyerOfferListing extends Component
     {
         $stateAbbr = $this->extractStateFromLocationString($cityString);
         
-        if ($stateAbbr && empty($this->state)) {
+        if ($stateAbbr) {
             $stateRecord = UsState::where('abbreviation', strtoupper($stateAbbr))->first();
             if ($stateRecord) {
                 $this->state = $stateRecord->name;
@@ -1118,21 +1118,6 @@ class BuyerOfferListing extends Component
                 }
             }
 
-            if (empty($this->counties)) {
-                $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
-                    $q->where('city', 'ILIKE', $cityName)
-                      ->orWhere('city', 'ILIKE', $normalizedCityName)
-                      ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
-                })
-                ->where('state_abbrev', strtoupper($stateAbbr))
-                ->first();
-                if ($zipCode && !empty($zipCode->county)) {
-                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
-                    if (!$this->countyExistsIgnoreCase($countyString)) {
-                        $this->counties[] = $countyString;
-                    }
-                }
-            }
         }
     }
     
