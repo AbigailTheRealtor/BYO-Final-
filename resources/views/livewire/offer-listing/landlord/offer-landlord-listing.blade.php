@@ -1106,39 +1106,50 @@
                                         type="button" role="tab"
                                         aria-controls="tax-legal-hoa-disclosures"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Tax, Legal, HOA &amp; Disclosures
+                                        Tax, Legal &amp; HOA
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
+                                        id="documents-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#documents-disclosures"
                                         type="button" role="tab"
-                                        aria-controls="photos-tours-documents"
+                                        aria-controls="documents-disclosures"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Photos &amp; Tours
+                                        Documents &amp; Disclosures
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         wire:click="setActiveTab(6)"
-                                        id="landlord-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#landlord-information"
+                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                        data-bs-target="#photos-tours-documents"
                                         type="button" role="tab"
-                                        aria-controls="landlord-information"
+                                        aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
+                                        Photos &amp; Tours
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
                                         wire:click="setActiveTab(7)"
+                                        id="landlord-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#landlord-information"
+                                        type="button" role="tab"
+                                        aria-controls="landlord-information"
+                                        aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
+                                        Agent Credentials & Contact Info
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(8)"
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
                                         AI Questions
                                     </button>
                                 </li>
@@ -1265,14 +1276,20 @@
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.tax-legal-hoa-disclosures')
                                 </div>
 
-                                <!-- Photos, Tours & Documents Tab (full_service: index 5) -->
+                                <!-- Documents & Disclosures Tab (full_service: index 5) -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                    id="documents-disclosures" role="tabpanel" aria-labelledby="documents-disclosures-tab">
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.documents-disclosures')
+                                </div>
+
+                                <!-- Photos, Tours & Documents Tab (full_service: index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="photos-tours-documents" role="tabpanel" aria-labelledby="photos-tours-documents-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- Landlord Info Tab (full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Landlord Info Tab (full_service: index 7) -->
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1287,8 +1304,8 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Questions Tab (full_service: index 8) -->
+                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>

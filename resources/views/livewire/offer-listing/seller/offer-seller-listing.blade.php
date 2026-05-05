@@ -864,9 +864,10 @@
                                 $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
                                 $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
                                 $taxLegalIdx         = $hasFinancialTab ? 5 : 4;
-                                $photosIdx           = $hasFinancialTab ? 6 : 5;
-                                $sellerInfoIdx       = $hasFinancialTab ? 7 : 6;
-                                $aiIdx               = $hasFinancialTab ? 8 : 7;
+                                $docsIdx             = $hasFinancialTab ? 6 : 5;
+                                $photosIdx           = $hasFinancialTab ? 7 : 6;
+                                $sellerInfoIdx       = $hasFinancialTab ? 8 : 7;
+                                $aiIdx               = $hasFinancialTab ? 9 : 8;
                             @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -936,7 +937,20 @@
                                             type="button" role="tab"
                                             aria-controls="tax-legal-hoa-disclosures"
                                             aria-selected="{{ $activeTab === $taxLegalIdx ? 'true' : 'false' }}">
-                                            Tax, Legal, HOA &amp; Disclosures
+                                            Tax, Legal &amp; HOA
+                                        </button>
+                                    </li>
+
+                                    {{-- Documents & Disclosures --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $docsIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $docsIdx }})"
+                                            id="documents-disclosures-tab" data-bs-toggle="tab"
+                                            data-bs-target="#documents-disclosures"
+                                            type="button" role="tab"
+                                            aria-controls="documents-disclosures"
+                                            aria-selected="{{ $activeTab === $docsIdx ? 'true' : 'false' }}">
+                                            Documents &amp; Disclosures
                                         </button>
                                     </li>
 
@@ -1177,6 +1191,12 @@
                                 <div class="tab-pane fade {{ $activeTab === $taxLegalIdx ? 'show active' : '' }}" id="tax-legal-hoa-disclosures"
                                     role="tabpanel" aria-labelledby="tax-legal-hoa-disclosures-tab">
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.tax-legal-hoa-disclosures')
+                                </div>
+
+                                <!-- Documents & Disclosures Tab (seller full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $docsIdx ? 'show active' : '' }}" id="documents-disclosures"
+                                    role="tabpanel" aria-labelledby="documents-disclosures-tab">
+                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.documents-disclosures')
                                 </div>
 
                                 <!-- Photos, Tours & Documents Tab (seller full_service) -->
