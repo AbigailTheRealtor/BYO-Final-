@@ -1,0 +1,77 @@
+HOTFIX #511 — Clean Buyer Select/Input Markup
+
+SCOPE:
+Buyer Offer Listing create flow only.
+
+FILES:
+- property-preferences.blade.php
+- purchasing-terms.blade.php
+
+ISSUE:
+The diff shows duplicate old + new select/input lines. Clean the markup so only the final intended element remains.
+
+PART 1 — CLEAN #condition_prop_buyer
+Keep only ONE opening select tag:
+
+<select id="condition_prop_buyer"
+    class="condition_prop_buyer form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-screwdriver-wrench"
+    data-placeholder="Select"
+    multiple>
+
+Remove the old line containing:
+data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
+
+PART 2 — CLEAN #sale_provision
+Remove the manual icon:
+<i class="input-icon fa-solid fa-screwdriver-wrench input-icon2"></i>
+
+Keep only ONE select:
+
+<select id="sale_provision"
+    class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-screwdriver-wrench"
+    data-placeholder="Select"
+    multiple>
+
+PART 3 — CLEAN #offered_financing
+Remove the manual icon:
+<i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
+
+Keep only ONE select:
+
+<select id="offered_financing"
+    class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-money-bill-wave"
+    data-placeholder="Select"
+    multiple required>
+
+PART 4 — CLEAN TEXT INPUT CONVERSIONS
+For these fields:
+- property_inclusions
+- property_exclusions
+- additional_purchase_terms
+
+Ensure the old textarea is fully removed.
+
+There should be exactly ONE <input type="text"> per field.
+
+DO NOT:
+- Leave any old <textarea>
+- Leave duplicate input/select tags
+- Change wire:model bindings
+- Change options
+- Touch Seller/Landlord/Tenant
+- Touch validation/schema/routes
+
+VERIFY:
+- No duplicate select tags
+- No duplicate input/textarea pairs
+- No input-icon2 remains in these changed fields
+- Acceptable Property Conditions shows Select
+- Acceptable Special Sale Provisions shows Select
+- Offered Financing/Currency shows Select
+- Property Inclusions is single-line
+- Property Exclusions is single-line
+- Additional Purchase Terms / Notes is single-line
+- php -l passes

@@ -1,0 +1,104 @@
+FINAL HOTFIX #511 — CLEAN BUYER MARKUP (FINAL)
+
+SCOPE:
+Buyer Offer Listing ONLY
+
+FILES:
+- property-preferences.blade.php
+- purchasing-terms.blade.php
+
+--------------------------------------------------
+PART 1 — FIX #condition_prop_buyer
+--------------------------------------------------
+
+DELETE the old/broken line:
+
+data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
+
+KEEP ONLY ONE CLEAN SELECT:
+
+<select id="condition_prop_buyer"
+    class="condition_prop_buyer form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-screwdriver-wrench"
+    data-placeholder="Select"
+    multiple>
+
+--------------------------------------------------
+PART 2 — FIX #sale_provision
+--------------------------------------------------
+
+DELETE:
+- <i class="input-icon ..."></i>
+- the OLD select line
+
+KEEP ONLY:
+
+<select id="sale_provision"
+    class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-screwdriver-wrench"
+    data-placeholder="Select"
+    multiple>
+
+--------------------------------------------------
+PART 3 — FIX #offered_financing
+--------------------------------------------------
+
+DELETE:
+- <i class="input-icon ..."></i>
+- the OLD select line
+
+KEEP ONLY:
+
+<select id="offered_financing"
+    class="form-control has-icon select2-multiple"
+    data-icon="fa-solid fa-money-bill-wave"
+    data-placeholder="Select"
+    multiple required>
+
+--------------------------------------------------
+PART 4 — REMOVE TEXTAREAS (CRITICAL)
+--------------------------------------------------
+
+DELETE COMPLETELY:
+
+- <textarea wire:model="property_inclusions">
+- <textarea wire:model="property_exclusions">
+- <textarea wire:model="additional_purchase_terms">
+
+KEEP ONLY:
+
+<input type="text" wire:model="..." class="form-control has-icon">
+
+ONE input per field. No duplicates.
+
+--------------------------------------------------
+PART 5 — REMOVE input-icon2
+--------------------------------------------------
+
+Ensure NO instances of:
+
+input-icon2
+
+remain in these fields.
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Confirm:
+
+✔ Only ONE <select> per field
+✔ Only ONE <input> per field
+✔ No <textarea> remains
+✔ No <i class="input-icon"> remains
+✔ No input-icon2 anywhere
+✔ Acceptable Property Conditions shows "Select"
+✔ Acceptable Special Sale Provisions shows "Select"
+✔ Offered Financing shows "Select"
+✔ All three text fields are single-line
+✔ php -l passes
+
+--------------------------------------------------
+STOP IF:
+- wire:model breaks
+- Select2 stops working
