@@ -893,7 +893,7 @@
     </div>
 
     {{-- <div class="form-group tenant_pays_other d-none"> --}}
-    <div class="form-group mt-2 tenant_pays_other_wrapper"
+    <div class="form-group mt-2 tenant_pays_other_wrapper" id="other_tenant_pays_wrapper"
         style="display: {{ $is_other_tenant_pay_visible ? 'block' : 'none' }}">
         <div class="input-cover">
             <input type="text" wire:model="other_tenant_pays" class="form-control has-icon"
@@ -929,7 +929,7 @@
         </div>
     </div>
 
-    <div class="form-group other_owner_pays" style="display: {{ $is_other_owner_pays_visible ? 'block' : 'none' }}">
+    <div class="form-group other_owner_pays" id="other_owner_pays_wrapper" style="display: {{ $is_other_owner_pays_visible ? 'block' : 'none' }}">
         <div class="input-cover">
             <input type="text" wire:model="other_owner_pays" class="form-control has-icon"
                 data-icon="fa-solid fa-user-tie"
@@ -1134,7 +1134,7 @@
         </select>
     </div>
 
-    <div class="form-group mt-2 other_lease_term other_lease_term_wrapper"
+    <div class="form-group mt-2 other_lease_term other_lease_term_wrapper" id="other_desired_lease_length_wrapper"
         style="display: {{ $is_update_lease_term_option_visible ? 'block' : 'none' }}">
         {{-- <label class="fw-bold">Other Lease Term:</label> --}}
         <div class="input-cover">
@@ -1349,7 +1349,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="renewal_option_details" class="form-control has-icon" rows="2"
+            <textarea wire:model="renewal_option_details" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-file-signature"
                 placeholder="Describe renewal option terms (e.g., 1-year renewal at market rate, 60-day notice required)"></textarea>
         </div>
@@ -1378,7 +1378,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon" rows="2"
+        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional lease terms or special conditions"></textarea>
     </div>
@@ -1424,7 +1424,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon" rows="2"
+            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-receipt"
                 placeholder="Describe CAM/NNN charges (e.g., estimated $3/sqft annually for taxes, insurance, and maintenance)"></textarea>
         </div>
@@ -1438,7 +1438,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="rent_escalation_terms" class="form-control has-icon" rows="2"
+            <textarea wire:model="rent_escalation_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-arrow-trend-up"
                 placeholder="Describe rent escalation (e.g., 3% annual increase beginning year 2)"></textarea>
         </div>
@@ -1452,7 +1452,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon" rows="2"
+            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-hammer"
                 placeholder="Describe TI/buildout terms (e.g., $20/sqft TI allowance, delivered in shell condition)"></textarea>
         </div>
@@ -1466,7 +1466,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon" rows="2"
+            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-building-columns"
                 placeholder="Describe permitted uses and restrictions (e.g., General office use only, no retail or food service)"></textarea>
         </div>
@@ -1480,7 +1480,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="signage_rights" class="form-control has-icon" rows="2"
+            <textarea wire:model="signage_rights" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-sign-hanging"
                 placeholder="Describe signage rights (e.g., Tenant may install one suite sign and one directory listing)"></textarea>
         </div>
@@ -1494,7 +1494,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="commercial_parking_terms" class="form-control has-icon" rows="2"
+            <textarea wire:model="commercial_parking_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-square-parking"
                 placeholder="Describe commercial parking terms (e.g., 4 spaces per 1,000 sqft, 2 reserved spaces included)"></textarea>
         </div>
@@ -1526,7 +1526,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="2"
+            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="2"
                 data-icon="fa-solid fa-clipboard-check"
                 placeholder="Enter commercial approval conditions (e.g., 2 years of financial statements, business plan, references)"></textarea>
         </div>
@@ -1554,7 +1554,7 @@
         </div>
     </div>
 
-    <div class="form-group mt-2 other_rent_include other_rent_input_wrapper"
+    <div class="form-group mt-2 other_rent_include other_rent_input_wrapper" id="other_rent_includes_wrapper"
         style="display: {{ $is_rent_include_visible ? 'block' : 'none' }}">
         {{-- <label class="fw-bold">Please specify other included items:</label> --}}
         <div class="input-cover">
