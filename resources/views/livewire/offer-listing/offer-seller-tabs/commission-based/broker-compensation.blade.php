@@ -107,7 +107,19 @@ $safeKey = function(...$parts) {
                 placeholder="Enter commission structure (e.g., Tiered fee: 5% on the first $500,000, 3% on any amount above $500,000)">
         @endif
     </div>
-    @error('purchase_fee_*')
+    @error('purchase_fee_flat')
+        <span class="text-danger small">{{ $message }}</span>
+    @enderror
+    @error('purchase_fee_percentage')
+        <span class="text-danger small">{{ $message }}</span>
+    @enderror
+    @error('purchase_fee_flat_combo')
+        <span class="text-danger small">{{ $message }}</span>
+    @enderror
+    @error('purchase_fee_percentage_combo')
+        <span class="text-danger small">{{ $message }}</span>
+    @enderror
+    @error('purchase_fee_other')
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div>
@@ -283,13 +295,10 @@ $safeKey = function(...$parts) {
                     <option value="other">Other</option>
                     {{-- <option value="Flat Fee + Percentage of the Gross Lease Value">Flat Fee + Percentage of the Gross Lease Value</option> --}}
                 @elseif (in_array($property_type, ['Commercial', 'Business']))
-                    <option value="Percentage of Net Aggregate Rent">Percentage of Net Aggregate Rent
-                    <option value="Percentage of Gross Rent">Percentage of Gross Rent </option>
-                    </option>
+                    <option value="Percentage of Net Aggregate Rent">Percentage of Net Aggregate Rent</option>
+                    <option value="Percentage of Gross Rent">Percentage of Gross Rent</option>
                     <option value="Percentage of Month's Rent">Percentage of Month's Rent</option>
-
-                    <option value="Flat Fee">Flat Fee
-                    </option>
+                    <option value="Flat Fee">Flat Fee</option>
                     {{-- <option value="Flat Fee + Percentage of the Net Aggregate Rent">Flat Fee + Percentage of the Net Aggregate Rent</option> --}}
                 @endif
                 {{-- <option value="other">Other</option> --}}
