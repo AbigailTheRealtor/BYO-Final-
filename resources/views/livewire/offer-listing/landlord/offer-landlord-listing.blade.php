@@ -1614,6 +1614,7 @@
                 let garageSelect = document.getElementById('garage_parking_spaces');
                 let optionsWrapper = document.getElementById('garage_parking_spaces_option_wrapper');
                 let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
+                if (!otherInputWrapper) return;
                 let garageOptions = document.getElementById('garage_parking_spaces_option');
 
                 // First check the main garage/parking spaces selection
