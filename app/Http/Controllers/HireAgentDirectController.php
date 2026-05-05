@@ -68,12 +68,12 @@ class HireAgentDirectController extends Controller
         'seller'   => 'seller.agent.auction.detail',
     ];
 
-    /** Role → per-role view-counter page (client lands here directly after counter intent) */
+    /** Role → per-role counter bid form (client lands here directly after counter intent, skipping the view-counter pre-page) */
     private const COUNTER_ROUTES = [
-        'buyer'    => 'buyer.hire.agent.auction.bid.view-counter',
-        'seller'   => 'hire.seller.agent.auction.bid.view-counter',
-        'landlord' => 'landlord.hire.agent.auction.bid.view-counter',
-        'tenant'   => 'tenant.hire.agent.auction.bid.view-counter',
+        'buyer'    => 'buyer.counter-terms',
+        'seller'   => 'seller.counter-terms',
+        'landlord' => 'landlord.counter-terms',
+        'tenant'   => 'tenant.counter-terms',
     ];
 
     /**
@@ -656,7 +656,7 @@ class HireAgentDirectController extends Controller
                         ->with('error', 'Unable to open counter terms. Please contact support.');
                 }
                 return redirect()
-                    ->route($counterRoute, ['bid_id' => $bid->id]);
+                    ->route($counterRoute, ['id' => $bid->id]);
             }
 
             $viewRoute = self::LISTING_VIEW_ROUTES[$role];
