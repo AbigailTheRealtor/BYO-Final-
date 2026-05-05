@@ -3,7 +3,7 @@
                                 <div class="alert alert-info bg-light-info border-info mb-4">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <strong>📋 Share your property criteria and preferences to help Agents understand exactly what you are looking for.</strong>
+                                            <strong>📋 Share your criteria and preferences to help interested parties understand exactly what you are looking for.</strong>
                                         </div>
                                     </div>
                                 </div>

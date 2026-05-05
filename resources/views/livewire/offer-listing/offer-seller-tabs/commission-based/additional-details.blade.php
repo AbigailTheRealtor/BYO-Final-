@@ -3,7 +3,7 @@
                                 <div class="alert alert-info bg-light-info border-info mb-4">
                                     <div class="d-flex align-items-center">
                                         <div>
-                                            <strong>📋 Provide a description of the property to help Agents understand its key features, recent improvements, and standout highlights.
+                                            <strong>📋 Provide a description of the property to help interested parties understand its key features, recent improvements, and standout highlights.
                                             </strong>
                                         </div>
                                     </div>
