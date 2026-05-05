@@ -1,0 +1,90 @@
+TASK #430 — Fix Direct Hire counter page data mismatch
+
+SCOPE:
+Direct Hire → counter redirect → view_counter_terms() only
+
+DO NOT:
+- Change routes
+- Change HireAgentDirectController logic (already correct)
+- Change database schema
+- Modify normal Hire Agent listing counter flows
+
+GOAL:
+Ensure direct-hire created bids can be opened in counter screen without error.
+
+--------------------------------------------------
+PART 1 — FIX TENANT FK BUG
+--------------------------------------------------
+
+In:
+TenantAgentAuctionBidController::view_counter_terms
+
+Replace:
+
+where('tenant_agent_auction_id', $bid_id)
+
+WITH:
+
+$bid = TenantAgentAuctionBid::findOrFail($bid_id);
+
+where('tenant_agent_auction_id', $bid->tenant_agent_auction_id)
+
+--------------------------------------------------
+PART 2 — VERIFY AUTHORIZATION LOGIC
+--------------------------------------------------
+
+In all view_counter_terms() methods (Buyer, Seller, Landlord, Tenant):
+
+Ensure access allows:
+
+IF:
+- Auth::id() === bid->user_id (agent)
+OR
+- Auth::id() === listing->user_id (client)
+
+THEN allow access
+
+DO NOT:
+- restrict to only bid owner
+- restrict to only agent
+
+--------------------------------------------------
+PART 3 — VERIFY RELATIONSHIP LOADING
+--------------------------------------------------
+
+Before rendering view:
+
+Ensure:
+- $bid exists
+- related listing exists via FK:
+   {role}_agent_auction_id
+
+Add safe guard:
+
+if (!$bid || !$auction) {
+    abort(404);
+}
+
+--------------------------------------------------
+PART 4 — DO NOT TOUCH MARKETPLACE LOGIC
+--------------------------------------------------
+
+These fixes must:
+- only correct broken FK + access mismatch
+- not change behavior for normal Hire Agent listings
+
+--------------------------------------------------
+REGRESSION CHECKS
+--------------------------------------------------
+
+✔ Direct hire → Request Changes opens counter screen  
+✔ No error message  
+✔ Tenant counter works  
+✔ Buyer/Seller/Landlord unaffected  
+✔ Normal Hire Agent listing counters still work  
+✔ No 403 errors  
+✔ No missing data in counter view  
+
+STOP if:
+- requires schema changes
+- requires rewriting counter system
