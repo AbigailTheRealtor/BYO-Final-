@@ -1,0 +1,94 @@
+TASK #434 — SELLER OFFER LISTING TEXTAREA / PET / UI CLEANUP ONLY
+
+Scope:
+- /offer-listing/seller
+- Agent Dashboard Create Offer Listing flow
+- Full-Service / Commission-Based path only
+
+DO NOT touch:
+- Limited Service files
+- Landlord, Buyer, Tenant files
+- Hire Agent legacy files
+- Database schema
+- Navigation / Livewire hook logic
+- Task #433 placeholder/error fixes
+
+Fix only these audit items from Task #426:
+
+1. Textarea height cleanup
+Problem:
+Global .form-control { min-height: 50px; } is forcing specific Seller textareas to stay too tall.
+
+Affected fields:
+- additional_seller_sale_terms
+- additional_parcel_ids
+- legal_description
+- special_assessment_description
+- additional_lease_restrictions
+
+Action:
+- Do not change global .form-control.
+- Add a scoped Seller-only compact textarea class.
+- Apply only to affected textareas.
+- Make them visually match compact normal fields like Escrow Agent Preference.
+
+2. Included Personal Property icon spacing
+Problem:
+Text is too close to the icon.
+
+Action:
+- Adjust only this field’s spacing/icon sizing.
+- Do not globally change all input icons.
+- Preserve field behavior.
+
+3. Operating Statement Available missing icon
+Action:
+- Add the correct icon using the same platform pattern as nearby Seller financial/business fields.
+- Do not change backend property names.
+
+4. Pet Restrictions duplicate
+Problem:
+Pet Restrictions duplicates Pets Allowed / related pet logic.
+
+Action:
+- Identify the safest active Seller Full-Service field to hide/remove from UI based on Task #426 audit.
+- Prefer UI-only removal/hide if backend/save logic is shared or uncertain.
+- Do not delete database fields.
+- Do not remove backend properties.
+- Preserve existing saved data compatibility.
+
+5. Association “Other” layout cleanup
+Problem:
+Association Type = Other and Association Fee Frequency = Other distort the layout of following sub-questions.
+
+Action:
+- Fix markup/layout only.
+- Ensure Other custom input appears in its own clean row/group.
+- Ensure subsequent HOA/association fields remain aligned.
+
+6. Documents & Disclosures layout cleanup
+Problem:
+After clicking Yes after Survey Available, remaining disclosure layout breaks.
+
+Action:
+- Fix markup/layout only.
+- Ensure upload blocks render under the related Yes/No field without breaking the following document rows.
+- Do not change upload/backend save logic.
+
+Verification:
+- Seller full-service form loads.
+- Affected textareas are compact.
+- Included Personal Property spacing looks correct.
+- Operating Statement Available has icon.
+- Duplicate Pet Restrictions no longer appears to the user.
+- Association Type/Fee Frequency Other fields do not break layout.
+- Disclosure Yes upload blocks do not break remaining document rows.
+- Next/Back still work.
+- No console errors.
+- No Limited Service files changed.
+
+Report:
+- Files changed
+- Exact fixes made
+- Any UI-only hidden fields
+- Any deferred tooltip polish

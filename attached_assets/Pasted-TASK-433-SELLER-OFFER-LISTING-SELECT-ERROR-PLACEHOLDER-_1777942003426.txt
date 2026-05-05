@@ -1,0 +1,70 @@
+TASK #433 — SELLER OFFER LISTING SELECT / ERROR / PLACEHOLDER FIXES ONLY
+
+Scope:
+- /offer-listing/seller
+- Full-Service / Commission-Based path only
+- Active Agent Dashboard Create Offer Listing files only
+
+DO NOT touch:
+- Limited Service files
+- Landlord, Buyer, Tenant files
+- Hire Agent legacy files
+- Database schema
+- Navigation / Livewire hook logic
+- Textarea height fixes
+- Pet restriction cleanup
+- Tooltip polish
+
+Fix only these audit items:
+
+1. RC-1 — Offered Financing/Currency Select placeholder
+File:
+resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-terms.blade.php
+
+Problem:
+#offered_financing placeholder/blank option behavior is not correct in browser.
+
+Action:
+- Audit current #offered_financing markup and Select2 initialization.
+- Make the empty state show the approved placeholder/Select text.
+- Ensure a blank value is not saved as a selected option.
+- Preserve existing financing/currency options.
+
+2. RC-8 — Malformed HTML
+File:
+resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/broker-compensation.blade.php
+
+Problem:
+Malformed HTML around the audited broker compensation section.
+
+Action:
+- Fix only the malformed tags/attributes.
+- Preserve layout and behavior.
+- Do not refactor the full section.
+
+3. RC-9 — Unsupported @error wildcard
+File:
+resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/broker-compensation.blade.php
+
+Problem:
+Unsupported wildcard @error usage may not render validation errors correctly.
+
+Action:
+- Replace unsupported wildcard usage with explicit supported error rendering.
+- Preserve user-facing validation messages.
+- Do not change backend validation rules.
+
+Verification:
+- Seller full-service form loads.
+- Offered Financing/Currency shows correct placeholder when empty.
+- Blank value is not treated as selected.
+- Broker compensation HTML renders normally.
+- Broker compensation errors still display.
+- No navigation/hook code changed.
+- No Limited Service or other-role files changed.
+
+Report:
+- Files changed
+- Exact fixes made
+- Any already-fixed items
+- Any deferred items
