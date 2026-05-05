@@ -871,7 +871,14 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Description'] as $index => $tab)
+                                @php
+                                    $fullServiceTabs = $user_type === 'buyer'
+                                        ? ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Description']
+                                        : ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Description'];
+                                    $agentCredentialsIndex = $user_type === 'buyer' ? 4 : 5;
+                                    $aiQuestionsIndex = $user_type === 'buyer' ? 5 : 6;
+                                @endphp
+                                @foreach ($fullServiceTabs as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -885,24 +892,24 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
+                                    <button class="nav-link {{ $activeTab === $agentCredentialsIndex ? 'active' : '' }}"
+                                        wire:click="setActiveTab({{ $agentCredentialsIndex }})"
                                         id="buyer-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#buyer-information"
                                         type="button" role="tab"
                                         aria-controls="buyer-information"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === $agentCredentialsIndex ? 'true' : 'false' }}">
                                         Agent Credentials & Contact Info
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
+                                    <button class="nav-link {{ $activeTab === $aiQuestionsIndex ? 'active' : '' }}"
+                                        wire:click="setActiveTab({{ $aiQuestionsIndex }})"
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === $aiQuestionsIndex ? 'true' : 'false' }}">
                                         AI Questions
                                     </button>
                                 </li>
@@ -994,7 +1001,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Services Tab -->
+                                @if($user_type !== 'buyer')
+                                <!-- Services Tab (not shown for buyer) -->
                                 <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
                                     role="tabpanel" aria-labelledby="services-tab">
 
@@ -1002,14 +1010,14 @@
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
                                     @elseif($user_type === 'seller')
                                         @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
                                     @endif
                                 </div>
+                                @endif
                                 <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                @php $additionalDetailsIndex = $user_type === 'buyer' ? 3 : 4; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $additionalDetailsIndex ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1024,7 +1032,8 @@
                                 </div>
 
                                 <!-- Buyer Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                @php $buyerInfoIndex = $user_type === 'buyer' ? 4 : 5; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $buyerInfoIndex ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1039,8 +1048,9 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Questions Tab (full_service buyer: index 5, others: index 6) -->
+                                @php $aiQuestionsTabIndex = $user_type === 'buyer' ? 5 : 6; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
@@ -1393,6 +1403,7 @@
                 $('#condition_prop_buyer').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -1688,6 +1699,7 @@
                 $('#sale_provision').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 // Initial visibility sync
                 window.updateAssignmentContractSection($('#sale_provision').val() || []);
@@ -1708,6 +1720,7 @@
                 $('#offered_financing').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 // Initial visibility sync
                 window.updateFinancingSections($('#offered_financing').val() || []);
