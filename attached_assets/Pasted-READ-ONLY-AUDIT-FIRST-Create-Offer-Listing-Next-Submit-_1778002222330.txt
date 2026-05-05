@@ -1,0 +1,73 @@
+READ-ONLY AUDIT FIRST — Create Offer Listing Next/Submit Button Behavior
+
+Login:
+abigailbaschuk@gmail.com
+Password: 12345678
+
+Scope:
+Create Offer Listing flows only:
+- /offer-listing/seller
+- /offer-listing/buyer
+- /offer-listing/landlord
+- /offer-listing/tenant
+
+Do NOT change anything yet.
+
+Goal:
+Audit why Next and Submit behavior is inconsistent across the four Create Offer Listing flows.
+
+Known issues:
+1. Seller Next button still does not work correctly.
+2. Seller Submit does not work even when all visible required fields are filled.
+3. Tenant shows a red required-fields message at the top.
+4. Buyer and Landlord only show required-field messages on the current tab.
+5. Required fields should match the old Hire Agent required fields unless that field/question was removed from the Create Offer Listing flow.
+
+Audit requirements:
+1. Inspect all four create offer listing pages from the Agent dashboard.
+2. Identify the exact files controlling:
+   - Next button behavior
+   - Previous button behavior
+   - Tab validation
+   - Submit button behavior
+   - Required field validation
+   - Red required-fields message behavior
+3. Compare Seller, Buyer, Landlord, and Tenant behavior.
+4. Identify whether each flow uses:
+   - the same shared JS
+   - separate JS blocks
+   - Livewire validation
+   - browser required validation
+   - custom validation
+5. For each role, document:
+   - Which tab the Next button fails on, if any
+   - Which field blocks progression
+   - Whether the blocked field is visible or hidden
+   - Whether the field exists in the Create Offer Listing flow
+   - Whether hidden required fields are still being validated
+   - Whether Select2/custom select fields are being validated correctly
+   - Whether file upload/document fields are incorrectly required
+   - Whether conditional fields are required when hidden
+6. Audit Submit behavior for all four roles:
+   - Seller
+   - Buyer
+   - Landlord
+   - Tenant
+
+Important:
+Do not fix yet. Return a clear audit report with:
+- root cause
+- exact file names
+- exact line ranges
+- safest minimal fix plan
+- whether the same fix should be shared across all four flows or role-specific
+
+Expected result after future fix:
+- Next works consistently for Seller, Buyer, Landlord, and Tenant.
+- Submit works when all visible required fields are filled.
+- Hidden conditional fields do not block Next or Submit.
+- Removed questions do not remain required in validation.
+- Required-field messaging is consistent across all four flows.
+- No Hire Agent flow is changed.
+- No database schema changes.
+- No routes are changed.

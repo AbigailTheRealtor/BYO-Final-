@@ -3766,7 +3766,13 @@ $lease_types = [
                     if (!isElementVisible(field)) {
                         return;
                     }
-                    if (!field.value) {
+                    const _isEmpty = (
+                        field.type === 'file'     ? !field.files || field.files.length === 0 :
+                        field.type === 'checkbox' ? !field.checked :
+                        field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                        !field.value?.toString().trim()
+                    );
+                    if (_isEmpty) {
                         allValid = false;
                     }
                 });
@@ -3837,39 +3843,44 @@ $lease_types = [
 
         const requiredFields = currentTabContent.querySelectorAll(
             'input[required], select[required], textarea[required]');
-        if (requiredFields) {
-            requiredFields.forEach(function(input) {
-                if (!isElementVisible(input)) {
-                    input.classList.remove('is-invalid');
-                    return;
-                }
+        for (const input of requiredFields) {
+            if (!isElementVisible(input)) {
+                input.classList.remove('is-invalid');
+                continue;
+            }
 
-                if (!input.value) {
-                    isValid = false;
-                    input.classList.add('is-invalid');
-                    const formGroup = input.closest('.form-group');
-                    if (formGroup) {
-                        const errorMessageContainer = formGroup.querySelector('.error');
-                        if (!errorMessageContainer) {
-                            const errorMessage = document.createElement('div');
-                            errorMessage.className = 'error mt-2';
-                            errorMessage.textContent = 'This field is required.';
-                            formGroup.appendChild(errorMessage);
-                        } else {
-                            errorMessageContainer.textContent = 'This field is required.';
-                        }
-                    }
-                } else {
-                    input.classList.remove('is-invalid');
-                    const formGroup = input.closest('.form-group');
-                    if (formGroup) {
-                        const errorMessageContainer = formGroup.querySelector('.error');
-                        if (errorMessageContainer) {
-                            errorMessageContainer.remove();
-                        }
+            const isEmpty = (
+                input.type === 'file'     ? !input.files || input.files.length === 0 :
+                input.type === 'checkbox' ? !input.checked :
+                input.type === 'radio'    ? !currentTabContent.querySelector(`input[name="${input.name}"]:checked`) :
+                !input.value?.toString().trim()
+            );
+
+            if (isEmpty) {
+                isValid = false;
+                input.classList.add('is-invalid');
+                const formGroup = input.closest('.form-group');
+                if (formGroup) {
+                    const errorMessageContainer = formGroup.querySelector('.error');
+                    if (!errorMessageContainer) {
+                        const errorMessage = document.createElement('div');
+                        errorMessage.className = 'error mt-2';
+                        errorMessage.textContent = 'This field is required.';
+                        formGroup.appendChild(errorMessage);
+                    } else {
+                        errorMessageContainer.textContent = 'This field is required.';
                     }
                 }
-            });
+            } else {
+                input.classList.remove('is-invalid');
+                const formGroup = input.closest('.form-group');
+                if (formGroup) {
+                    const errorMessageContainer = formGroup.querySelector('.error');
+                    if (errorMessageContainer) {
+                        errorMessageContainer.remove();
+                    }
+                }
+            }
         }
 
         // Offered Financing (Select2 hides the native select — check explicitly for purchasing-terms tab)
@@ -3917,7 +3928,7 @@ $lease_types = [
 
         const countiesContainer = currentTabContent.querySelector('.counties-container');
         const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-        if (countiesContainer) {
+        if (countiesContainer && isElementVisible(countiesContainer)) {
             const countyBadges = countiesContainer.querySelectorAll('.badge');
             if (!countyBadges || countyBadges.length === 0) {
                 isValid = false;
@@ -4495,22 +4506,22 @@ $lease_types = [
             }
             
             // Now check the actual value for visible required fields
-            if (field.type === 'checkbox' || field.type === 'radio') {
-                return field.checked;
-            }
+            if (field.type === 'file') return field.files && field.files.length > 0;
+            if (field.type === 'checkbox') return field.checked;
+            if (field.type === 'radio') return !!document.querySelector(`input[name="${field.name}"]:checked`);
             if (field.type === 'select-one' || field.type === 'select-multiple') {
                 const value = field.value;
                 return value !== '' && value !== null && value !== undefined;
             }
             const value = field.value;
-            return value !== null && value !== undefined && value.trim() !== '';
+            return value !== null && value !== undefined && value?.toString().trim() !== '';
         }
 
         function validateAllTabsStrictly() {
             const requiredFields = getAllRequiredFields();
             let invalidFields = [];
 
-            requiredFields.forEach(field => {
+            for (const field of requiredFields) {
                 if (!isFieldValid(field)) {
                     const tab = field.closest('.tab-pane');
                     const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
@@ -4521,7 +4532,7 @@ $lease_types = [
                         visible: isFieldVisible(field)
                     });
                 }
-            });
+            }
 
             try {
                 var wireEl = document.querySelector('[wire\\:id]');
@@ -4753,17 +4764,17 @@ $lease_types = [
                 var items = [];
                 var reqFields = getAllRequiredFields();
                 reqFields.forEach(function(field) {
-                    if (isTenantFieldHiddenWithinTab(field)) return;
+                    if (!isElementVisible(field)) return;
                     if (field.tagName === 'SELECT' && field.multiple &&
                         field.classList.contains('select2-hidden-accessible')) return;
-                    var isEmpty = false;
-                    if (field.type === 'checkbox' || field.type === 'radio') {
-                        isEmpty = !field.checked;
-                    } else if (field.type === 'select-one' || field.type === 'select-multiple') {
-                        isEmpty = field.value === '' || field.value === null || field.value === undefined;
-                    } else {
-                        isEmpty = !field.value || field.value.trim() === '';
-                    }
+                    var isEmpty = (
+                        field.type === 'file'     ? !field.files || field.files.length === 0 :
+                        field.type === 'checkbox' ? !field.checked :
+                        field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                        field.type === 'select-one' || field.type === 'select-multiple'
+                            ? field.value === '' || field.value === null || field.value === undefined
+                            : !field.value?.toString().trim()
+                    );
                     if (isEmpty) {
                         var _fKey = resolveTenantFieldKey(field);
                         items.push({ field: field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
@@ -5102,32 +5113,32 @@ $lease_types = [
 
                 const _submitUserType = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';
 
-                requiredFields.forEach(field => {
+                for (const field of requiredFields) {
                     if (_submitUserType === 'tenant' || _submitUserType === 'landlord' || _submitUserType === 'seller' || _submitUserType === 'buyer') {
                         // Tenant/Landlord/Seller/Buyer flow: check required fields across ALL tabs.
                         // Only skip fields that are hidden by conditional rendering within the tab.
-                        if (isTenantFieldHiddenWithinTab(field)) return;
+                        if (!isElementVisible(field)) continue;
 
                         // Skip Select2-managed multi-selects — handled separately via Livewire check.
                         if (field.tagName === 'SELECT' && field.multiple &&
-                            field.classList.contains('select2-hidden-accessible')) return;
+                            field.classList.contains('select2-hidden-accessible')) continue;
 
                         // Direct value check (no tab-visibility gate).
-                        let isEmpty = false;
-                        if (field.type === 'checkbox' || field.type === 'radio') {
-                            isEmpty = !field.checked;
-                        } else if (field.type === 'select-one' || field.type === 'select-multiple') {
-                            isEmpty = field.value === '' || field.value === null || field.value === undefined;
-                        } else {
-                            isEmpty = !field.value || field.value.trim() === '';
-                        }
+                        let isEmpty = (
+                            field.type === 'file'     ? !field.files || field.files.length === 0 :
+                            field.type === 'checkbox' ? !field.checked :
+                            field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                            field.type === 'select-one' || field.type === 'select-multiple'
+                                ? field.value === '' || field.value === null || field.value === undefined
+                                : !field.value?.toString().trim()
+                        );
 
                         if (isEmpty) {
                             const _fKey = resolveTenantFieldKey(field);
                             invalidItems.push({ field, tab: field.closest('.tab-pane'), fieldName: resolveTenantFieldLabel(field), key: _fKey });
                         }
                     }
-                });
+                }
 
                 const citiesContainer = document.querySelector('.cities-container');
                 const CURRENT_USER_TYPE_LOCAL = typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : '';

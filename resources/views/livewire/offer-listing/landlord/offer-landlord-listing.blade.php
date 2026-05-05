@@ -1513,6 +1513,54 @@
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
+        // Shared visibility helper — used across all validation functions in this file
+        function isElementVisible(element) {
+            if (!element) return false;
+            if (element.disabled) return false;
+            if (element.type === 'hidden') return false;
+
+            if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+                if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                    return false;
+                }
+            }
+
+            if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+                return false;
+            }
+
+            if (element.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+
+            let el = element;
+            while (el && el !== document.body) {
+                if (el.classList && (
+                    el.classList.contains('d-none') ||
+                    el.classList.contains('hidden') ||
+                    el.classList.contains('collapse') && !el.classList.contains('show')
+                )) {
+                    return false;
+                }
+
+                if (el.getAttribute('aria-hidden') === 'true') {
+                    return false;
+                }
+
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                    return false;
+                }
+
+                if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
+                    return false;
+                }
+
+                el = el.parentElement;
+            }
+            return true;
+        }
+
         function initializeFullService() {
             if (!document._landlordCreateTabNavListenerAdded) {
                 document._landlordCreateTabNavListenerAdded = true;
@@ -2382,55 +2430,6 @@
                 videoLoader.style.visibility = "hidden";
             });
 
-
-            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-                
-                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
-                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
-                        return false;
-                    }
-                }
-                
-                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-                    return false;
-                }
-                
-                if (element.getAttribute('aria-hidden') === 'true') {
-                    return false;
-                }
-                
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (
-                        el.classList.contains('d-none') || 
-                        el.classList.contains('hidden') ||
-                        el.classList.contains('collapse') && !el.classList.contains('show')
-                    )) {
-                        return false;
-                    }
-                    
-                    if (el.getAttribute('aria-hidden') === 'true') {
-                        return false;
-                    }
-                    
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                        return false;
-                    }
-                    
-                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
-                        return false;
-                    }
-                    
-                    el = el.parentElement;
-                }
-                return true;
-            }
-
             // Function to check if all required fields are filled
             function checkFormValidity() {
                 let allValid = true;
@@ -2442,7 +2441,13 @@
                         if (!isElementVisible(field)) {
                             return;
                         }
-                        if (!field.value) {
+                        const _fIsEmpty = (
+                            field.type === 'file'     ? !field.files || field.files.length === 0 :
+                            field.type === 'checkbox' ? !field.checked :
+                            field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                            !field.value?.toString().trim()
+                        );
+                        if (_fIsEmpty) {
                             allValid = false;
                         }
                     });
@@ -2517,40 +2522,47 @@
                 // Validate all required fields in the current tab (your existing code)
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
+                for (const input of requiredFields) {
+                    if (!isElementVisible(input)) continue;
 
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
+                    const isEmpty = (
+                        input.type === 'file'     ? !input.files || input.files.length === 0 :
+                        input.type === 'checkbox' ? !input.checked :
+                        input.type === 'radio'    ? !currentTabContent.querySelector(`input[name="${input.name}"]:checked`) :
+                        !input.value?.toString().trim()
+                    );
+
+                    if (isEmpty) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (!errorMessageContainer) {
+                                const errorMessage = document.createElement('div');
+                                errorMessage.className = 'error mt-2';
+                                errorMessage.textContent = 'This field is required.';
+                                formGroup.appendChild(errorMessage);
+                            } else {
+                                errorMessageContainer.textContent = 'This field is required.';
                             }
                         }
-                    });
+                    } else {
+                        input.classList.remove('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (errorMessageContainer) {
+                                errorMessageContainer.remove();
+                            }
+                        }
+                    }
                 }
 
                 // Validate cities array (your existing code)
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
+                if (citiesContainer && isElementVisible(citiesContainer)) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
                     if (!cityBadges || cityBadges.length === 0) {
                         isValid = false;
@@ -2572,7 +2584,7 @@
 
                 // Validate counties array (your existing code)
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
+                if (countiesContainer && isElementVisible(countiesContainer)) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         isValid = false;
@@ -2595,6 +2607,25 @@
                 // ADD THIS: Validate services tab if it's the current tab
                 if (currentTabContent.id === 'services') {
                     isValid = isValid && validateServicesTab(currentTabContent);
+                }
+
+                if (currentTabContent.id === 'service-selection-and-pricing') {
+                    const understandTerms = currentTabContent.querySelector('#understandTerms');
+                    if (understandTerms && !understandTerms.checked) {
+                        isValid = false;
+                        const existingError = understandTerms.parentNode.querySelector('.error');
+                        if (!existingError) {
+                            const termsError = document.createElement('div');
+                            termsError.className = 'error text-danger mt-2';
+                            termsError.textContent = 'You must accept the terms to continue';
+                            understandTerms.parentNode.appendChild(termsError);
+                        }
+                    } else {
+                        const existingError = understandTerms.parentNode.querySelector('.error');
+                        if (existingError) {
+                            existingError.remove();
+                        }
+                    }
                 }
 
                 // If all fields are valid, proceed to the next tab (your existing code)
@@ -2734,155 +2765,6 @@
 
                 return allValid;
             }
-
-            window._wizardNextHandler = function() {
-                const currentTab = document.querySelector('#myTab .nav-link.active');
-                if (!currentTab) return;
-
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
-                let isValid = true;
-
-                // Validate all required fields in the current tab (your existing code)
-                const requiredFields = currentTabContent.querySelectorAll(
-                    'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
-
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Validate cities array (your existing code)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // Validate counties array (your existing code)
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-                if (currentTabContent.id === 'service-selection-and-pricing') {
-                    const understandTerms = currentTabContent.querySelector('#understandTerms');
-                    if (understandTerms && !understandTerms.checked) {
-                        isValid = false;
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const termsError = document.createElement('div');
-                            termsError.className = 'error text-danger mt-2';
-                            termsError.textContent = 'You must accept the terms to continue';
-                            understandTerms.parentNode.appendChild(termsError);
-                        }
-                    } else {
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // In your validation function
-
-
-
-                // If all fields are valid, proceed to the next tab (your existing code)
-                if (isValid) {
-                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                    const _curIdx = _allTabs.indexOf(currentTab);
-                    if (_curIdx < _allTabs.length - 1) {
-                        const _nextTab = _allTabs[_curIdx + 1];
-                        var _nId = _nextTab.getAttribute('data-bs-target');
-                        if (_nId) {
-                            window._manualTabSwitch(_nId);
-                            sessionStorage.setItem('landlord_create_active_tab', _nId);
-                            var _we = document.querySelector('[wire\\:id]');
-                            if (_we && window.Livewire) {
-                                var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
-                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
-                            }
-                        }
-                    }
-                }
-
-                // Update save button state after validation (your existing code)
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !isValid;
-                    saveButton.classList.toggle('disabled', !isValid);
-                }
-            };
-
-            window._wizardBackHandler = function() {
-                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                const _curTab = _allTabs.find(t => t.classList.contains('active'));
-                if (!_curTab) return;
-                const _curIdx = _allTabs.indexOf(_curTab);
-                if (_curIdx <= 0) return;
-                const _prevTab = _allTabs[_curIdx - 1];
-                var _pId = _prevTab.getAttribute('data-bs-target');
-                if (!_pId) return;
-                window._manualTabSwitch(_pId);
-                sessionStorage.setItem('landlord_create_active_tab', _pId);
-            };
 
             // Run initial validity check now (already inside DOMContentLoaded when called)
             setTimeout(function() {
@@ -3034,13 +2916,14 @@
             }
 
             function isFieldValid(field) {
-                if (field.type === 'checkbox' || field.type === 'radio') {
-                    return field.checked;
-                }
+                if (!isElementVisible(field)) return true;
+                if (field.type === 'file') return field.files && field.files.length > 0;
+                if (field.type === 'checkbox') return field.checked;
+                if (field.type === 'radio') return !!document.querySelector(`input[name="${field.name}"]:checked`);
                 if (field.type === 'select-one' || field.type === 'select-multiple') {
                     return field.value !== '' && field.value !== null;
                 }
-                return field.value.trim() !== '';
+                return field.value?.toString().trim() !== '';
             }
 
             function isFieldVisibleAndEnabled(field) {
@@ -3061,8 +2944,8 @@
                 const requiredFields = getAllRequiredFields();
                 let invalidFields = [];
 
-                requiredFields.forEach(field => {
-                    if (!isFieldVisibleAndEnabled(field)) return;
+                for (const field of requiredFields) {
+                    if (!isFieldVisibleAndEnabled(field)) continue;
                     if (!isFieldValid(field)) {
                         const tab = field.closest('.tab-pane');
                         const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
@@ -3072,7 +2955,7 @@
                             value: field.value
                         });
                     }
-                });
+                }
 
                 if (invalidFields.length > 0) {
                     invalidFields.forEach(item => {});
@@ -3200,19 +3083,18 @@
                 // DOM-based required fields (respects conditional visibility)
                 var reqFields = getAllRequiredFields();
                 reqFields.forEach(function(field) {
-                    if (isLandlordFieldHiddenWithinTab(field)) return;
+                    if (!isElementVisible(field)) return;
                     // Select2-initialised multi-selects: checked via Livewire property below
                     if (field.tagName === 'SELECT' && field.multiple &&
                         field.classList.contains('select2-hidden-accessible')) return;
-                    var isEmpty = false;
-                    if (field.type === 'checkbox' || field.type === 'radio') {
-                        isEmpty = !field.checked;
-                    } else if (field.type === 'select-one' || field.type === 'select-multiple') {
-                        isEmpty = (field.value === '' || field.value === null ||
-                                   field.value === undefined);
-                    } else {
-                        isEmpty = !field.value || field.value.trim() === '';
-                    }
+                    var isEmpty = (
+                        field.type === 'file'     ? !field.files || field.files.length === 0 :
+                        field.type === 'checkbox' ? !field.checked :
+                        field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                        field.type === 'select-one' || field.type === 'select-multiple'
+                            ? field.value === '' || field.value === null || field.value === undefined
+                            : !field.value?.toString().trim()
+                    );
                     if (isEmpty) {
                         var fKey = resolveLandlordFieldKey(field);
                         if (!seen.has(fKey)) {

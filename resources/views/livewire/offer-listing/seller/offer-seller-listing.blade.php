@@ -1751,6 +1751,54 @@
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
+        // Shared visibility helper — used across all validation functions in this file
+        function isElementVisible(element) {
+            if (!element) return false;
+            if (element.disabled) return false;
+            if (element.type === 'hidden') return false;
+
+            if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
+                if (element.offsetHeight === 0 && element.offsetWidth === 0) {
+                    return false;
+                }
+            }
+
+            if (element.offsetHeight === 0 || element.offsetWidth === 0) {
+                return false;
+            }
+
+            if (element.getAttribute('aria-hidden') === 'true') {
+                return false;
+            }
+
+            let el = element;
+            while (el && el !== document.body) {
+                if (el.classList && (
+                    el.classList.contains('d-none') ||
+                    el.classList.contains('hidden') ||
+                    el.classList.contains('collapse') && !el.classList.contains('show')
+                )) {
+                    return false;
+                }
+
+                if (el.getAttribute('aria-hidden') === 'true') {
+                    return false;
+                }
+
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                    return false;
+                }
+
+                if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
+                    return false;
+                }
+
+                el = el.parentElement;
+            }
+            return true;
+        }
+
         function initializeFullService() {
             if (!document._sellerCreateTabNavListenerAdded) {
                 document._sellerCreateTabNavListenerAdded = true;
@@ -2336,55 +2384,7 @@
 
         function initializeWizardHandlers() {
 
-            // Helper function to check if element is visible (not hidden by d-none, display:none, collapse, etc.)
-            function isElementVisible(element) {
-                if (!element) return false;
-                if (element.disabled) return false;
-                if (element.type === 'hidden') return false;
-
-                if (element.offsetParent === null && element.tagName !== 'BODY' && element.tagName !== 'HTML') {
-                    if (element.offsetHeight === 0 && element.offsetWidth === 0) {
-                        return false;
-                    }
-                }
-
-                if (element.offsetHeight === 0 || element.offsetWidth === 0) {
-                    return false;
-                }
-
-                if (element.getAttribute('aria-hidden') === 'true') {
-                    return false;
-                }
-
-                let el = element;
-                while (el && el !== document.body) {
-                    if (el.classList && (
-                        el.classList.contains('d-none') ||
-                        el.classList.contains('hidden') ||
-                        el.classList.contains('collapse') && !el.classList.contains('show')
-                    )) {
-                        return false;
-                    }
-
-                    if (el.getAttribute('aria-hidden') === 'true') {
-                        return false;
-                    }
-
-                    const style = window.getComputedStyle(el);
-                    if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
-                        return false;
-                    }
-
-                    if (parseFloat(style.height) === 0 || parseFloat(style.maxHeight) === 0) {
-                        return false;
-                    }
-
-                    el = el.parentElement;
-                }
-                return true;
-            }
-
-            // Function to check if all required fields are filled
+            // Function to check if all required fields are filled.
             function checkFormValidity() {
                 let allValid = true;
 
@@ -2394,7 +2394,13 @@
                         if (!isElementVisible(field)) {
                             return;
                         }
-                        if (!field.value) {
+                        const _fIsEmpty = (
+                            field.type === 'file'     ? !field.files || field.files.length === 0 :
+                            field.type === 'checkbox' ? !field.checked :
+                            field.type === 'radio'    ? !document.querySelector(`input[name="${field.name}"]:checked`) :
+                            !field.value?.toString().trim()
+                        );
+                        if (_fIsEmpty) {
                             allValid = false;
                         }
                     });
@@ -2474,40 +2480,47 @@
                 // Validate all required fields in the current tab
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
+                for (const input of requiredFields) {
+                    if (!isElementVisible(input)) continue;
 
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
+                    const isEmpty = (
+                        input.type === 'file'     ? !input.files || input.files.length === 0 :
+                        input.type === 'checkbox' ? !input.checked :
+                        input.type === 'radio'    ? !currentTabContent.querySelector(`input[name="${input.name}"]:checked`) :
+                        !input.value?.toString().trim()
+                    );
+
+                    if (isEmpty) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (!errorMessageContainer) {
+                                const errorMessage = document.createElement('div');
+                                errorMessage.className = 'error mt-2';
+                                errorMessage.textContent = 'This field is required.';
+                                formGroup.appendChild(errorMessage);
+                            } else {
+                                errorMessageContainer.textContent = 'This field is required.';
                             }
                         }
-                    });
+                    } else {
+                        input.classList.remove('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (errorMessageContainer) {
+                                errorMessageContainer.remove();
+                            }
+                        }
+                    }
                 }
 
                 // Validate cities array
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
+                if (citiesContainer && isElementVisible(citiesContainer)) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
                     if (!cityBadges || cityBadges.length === 0) {
                         isValid = false;
@@ -2528,7 +2541,7 @@
 
                 // Validate counties array
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
+                if (countiesContainer && isElementVisible(countiesContainer)) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         isValid = false;
@@ -2872,20 +2885,23 @@
             }
 
             function isFieldValid(field) {
-                if (field.type === 'checkbox' || field.type === 'radio') {
-                    return field.checked;
+                if (!isElementVisible(field)) return true;
+                if (field.type === 'checkbox') return field.checked;
+                if (field.type === 'radio') return !!document.querySelector(`input[name="${field.name}"]:checked`);
+                if (field.type === 'file') {
+                    return field.files && field.files.length > 0;
                 }
                 if (field.type === 'select-one' || field.type === 'select-multiple') {
                     return field.value !== '' && field.value !== null;
                 }
-                return field.value.trim() !== '';
+                return field.value?.toString().trim() !== '';
             }
 
             function validateAllTabsStrictly() {
                 const requiredFields = getAllRequiredFields();
                 let invalidFields = [];
 
-                requiredFields.forEach(field => {
+                for (const field of requiredFields) {
                     if (!isFieldValid(field)) {
                         const tab = field.closest('.tab-pane');
                         const tabIndex = [...document.querySelectorAll('.tab-pane')].indexOf(tab) + 1;
@@ -2895,7 +2911,7 @@
                             value: field.value
                         });
                     }
-                });
+                }
 
                 if (invalidFields.length > 0) {
                     invalidFields.forEach(item => {});
@@ -2970,15 +2986,15 @@
                     const requiredFields = getAllRequiredFields();
                     let invalidItems = [];
 
-                    requiredFields.forEach(function(field) {
-                        if (field.disabled || field.type === 'hidden') return;
+                    for (const field of requiredFields) {
+                        if (field.disabled || field.type === 'hidden') continue;
                         if (!isFieldValid(field)) {
                             const tab = field.closest('.tab-pane');
                             const labelEl = field.closest('.form-group') && field.closest('.form-group').querySelector('label');
                             const fieldName = labelEl ? labelEl.textContent.replace(/[*:]/g, '').trim() : (field.getAttribute('placeholder') || field.name || field.id || 'Required field');
                             invalidItems.push({ field: field, tab: tab, fieldName: fieldName });
                         }
-                    });
+                    }
 
                     if (invalidItems.length > 0) {
                         e.preventDefault();

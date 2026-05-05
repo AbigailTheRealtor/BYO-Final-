@@ -25,6 +25,11 @@ The My Referrals agent page (`/agent/my-referrals`) provides a filterable view o
 
 U.S. geography data for City/County/State auto-population uses `UsCity`, `UsState`, `UsCounty`, and `UsZipCode` models.
 
+## Legacy Code — Do Not Touch
+
+### `initializeLimitedService()` — Legacy / Frozen
+The function `initializeLimitedService()` exists in all four Create Offer Listing blade files (seller, buyer, landlord, tenant). It is **legacy code for the Limited Service flow** and must never be modified, tested, or cleaned up. Any `requiredFields.forEach`, `if (!field.value)`, duplicate `isElementVisible`, or duplicate `checkFormValidity` found **inside** `initializeLimitedService()` is intentional and must be left exactly as-is. All validation cleanup tasks apply only to Full Service scope — never inside this function.
+
 ## External Dependencies
 - **PostgreSQL**: Primary relational database.
 - **TailwindCSS**: Utility-first CSS framework.
