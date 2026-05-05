@@ -1350,7 +1350,7 @@
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                 });
 
@@ -1371,7 +1371,7 @@
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
 
@@ -1391,7 +1391,7 @@
 
             if ($('#condition_prop_buyer').length && !$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
                 $('#condition_prop_buyer').select2({
-                    placeholder: "Select property conditions",
+                    placeholder: "Select",
                     allowClear: true,
                 });
 
@@ -1424,7 +1424,7 @@
 
             if ($('#assets').length && !$('#assets').hasClass('select2-hidden-accessible')) {
                 $('#assets').select2({
-                    placeholder: "Select required assets",
+                    placeholder: "Select",
                     allowClear: true,
                 });
 
@@ -1633,7 +1633,7 @@
             // Initialize Select2 for multi-select
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
-                    placeholder: "Select Preference",
+                    placeholder: "Select",
                     allowClear: true
                 });
 
