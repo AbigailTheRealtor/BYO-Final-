@@ -1555,13 +1555,6 @@
                 if ($appliances.length) {
                     if (!$appliances.hasClass('select2-hidden-accessible')) {
                         $appliances.select2({ placeholder: "Select", allowClear: true });
-                        if (!$appliances.data('appliances-change-bound')) {
-                            $appliances.on('change', function() {
-                                var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                                @this.set('appliances', selectedValues, false);
-                            });
-                            $appliances.data('appliances-change-bound', true);
-                        }
                     }
                 }
 
@@ -2022,20 +2015,12 @@
                     placeholder: "Select included assets",
                     allowClear: true
                 });
-                $('#included_assets').on('change', function() {
-                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    @this.set('business_assets', selectedValues, false);
-                });
             }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
                     allowClear: true
-                });
-                $('#view_preference').on('change', function() {
-                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    @this.set('view_preference', selectedValues, false);
                 });
             }
 
@@ -2044,10 +2029,6 @@
                     placeholder: "Select",
                     allowClear: true
                 });
-                $('#appliances').on('change', function() {
-                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    @this.set('appliances', selectedValues, false);
-                });
             }
 
             if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
@@ -2055,28 +2036,10 @@
                     placeholder: "Select garage/parking features",
                     allowClear: true
                 });
-                $('#garage_parking_spaces_option_landlord').on('change', function() {
-                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    @this.set('garage_parking_spaces_option', selectedValues, false);
-                });
             }
 
             // Restore all "Other" wrapper visibility from native select state
             _restoreOtherSelectVisibility();
-
-            function attachReasonForSaleListener() {
-                var rsEl = document.getElementById('reason_for_sale_select');
-                var rsWrapper = document.getElementById('other_reason_for_sale_wrapper');
-                if (!rsEl || !rsWrapper) return;
-                if (!rsEl._rsaleListenerBound) {
-                    rsEl._rsaleListenerBound = true;
-                    rsEl.addEventListener('change', function() {
-                        rsWrapper.style.display = this.value === 'Other' ? '' : 'none';
-                    });
-                }
-                rsWrapper.style.display = rsEl.value === 'Other' ? '' : 'none';
-            }
-            attachReasonForSaleListener();
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -2357,7 +2320,6 @@
 
                     // Restore "Other" wrapper visibility after every Livewire re-render
                     _restoreOtherSelectVisibility();
-                    attachReasonForSaleListener();
                 });
             }
 
@@ -2839,36 +2801,35 @@
             }
         });
 
-        // Global delegated change handler for "Other" free-text wrapper visibility.
-        // Using document-level delegation means this survives Livewire DOM replacement
-        // of the underlying select elements (wire:ignore + wire:key swaps).
+        // Single delegated jQuery handler for all five "Other" free-text wrapper fields.
+        // $(document).on() receives Select2's synthetic jQuery change events, which
+        // native document.addEventListener('change') misses. Guarded so it registers
+        // only once across Livewire re-renders.
         if (!document._otherVisibilityDelegateAdded) {
             document._otherVisibilityDelegateAdded = true;
-            document.addEventListener('change', function(e) {
-                var t = e.target;
-                if (!t) return;
-                var vals, w;
-                if (t.id === 'appliances') {
-                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    w = document.getElementById('other_appliances');
-                    if (w) w.style.display = vals.includes('Other') ? '' : 'none';
-                } else if (t.id === 'view_preference') {
-                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    w = document.getElementById('other_preferences');
-                    if (w) w.style.display = vals.includes('Other') ? '' : 'none';
-                } else if (t.id === 'garage_parking_spaces_option_landlord') {
-                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    w = document.getElementById('other_garage_parking_spaces_option_landlord');
-                    if (w) w.style.display = vals.includes('Other') ? '' : 'none';
-                } else if (t.id === 'included_assets') {
-                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
-                    document.querySelectorAll('.other_assets').forEach(function(el) {
-                        el.style.display = vals.includes('Other') ? '' : 'none';
-                    });
-                } else if (t.id === 'reason_for_sale_select') {
-                    w = document.getElementById('other_reason_for_sale_wrapper');
-                    if (w) w.style.display = t.value === 'Other' ? '' : 'none';
-                }
+            $(document).on('change', '#appliances', function() {
+                var vals = $(this).val() || [];
+                $('#other_appliances').toggle(vals.includes('Other'));
+                @this.set('appliances', vals, false);
+            });
+            $(document).on('change', '#view_preference', function() {
+                var vals = $(this).val() || [];
+                $('#other_preferences').toggle(vals.includes('Other'));
+                @this.set('view_preference', vals, false);
+            });
+            $(document).on('change', '#included_assets', function() {
+                var vals = $(this).val() || [];
+                $('.other_assets').toggle(vals.includes('Other'));
+                @this.set('business_assets', vals, false);
+            });
+            $(document).on('change', '#garage_parking_spaces_option_landlord', function() {
+                var vals = $(this).val() || [];
+                $('#other_garage_parking_spaces_option_landlord').toggle(vals.includes('Other'));
+                @this.set('garage_parking_spaces_option', vals, false);
+            });
+            $(document).on('change', '#reason_for_sale_select', function() {
+                var val = $(this).val();
+                $('#other_reason_for_sale_wrapper').toggle(val === 'Other');
             });
         }
     </script>
