@@ -1,0 +1,101 @@
+TASK: Buyer Offer Listing — Select Placeholders + Oversized Input Box Cleanup
+
+SCOPE:
+Create Buyer Offer Listing only:
+- /offer-listing/buyer
+- Full Service / commission-based Buyer Offer Listing flow only
+
+LOGIN TEST:
+Abigailbaschuk@gmail.com
+12345678
+
+DO NOT TOUCH:
+- Seller Offer Listing
+- Landlord Offer Listing
+- Tenant Offer Listing
+- Hire Agent flows
+- Limited Service flows
+- Agent Profile flows
+- Routes
+- Database schema
+- Validation / Next button logic
+- Save/load logic
+
+--------------------------------------------------
+PART 1 — FIX SELECT PLACEHOLDERS
+--------------------------------------------------
+
+FIELDS:
+- Acceptable Property Conditions
+- Acceptable Special Sale Provisions
+- Offered Financing/Currency
+
+ISSUE:
+These fields need placeholder text that says exactly:
+
+Select
+
+REFERENCE:
+Use the working placeholder behavior from:
+- View Preference Needed
+
+REQUIREMENTS:
+- If normal select: first placeholder option should be:
+  <option value="">Select</option>
+- If Select2: placeholder should be:
+  placeholder: "Select"
+- Do not use field-specific placeholder text.
+- Do not change options or wire:model bindings.
+
+--------------------------------------------------
+PART 2 — FIX OVERSIZED INPUT BOXES
+--------------------------------------------------
+
+FIELDS:
+- Property Inclusions
+- Property Exclusions
+- Additional Purchase Terms / Notes
+
+ISSUE:
+These boxes are oversized and should match the regular text box height used elsewhere.
+
+REFERENCE:
+Use the same size/structure as:
+- Maximum Budget
+
+FIX:
+- Convert oversized textarea/multi-row box to regular single-line text input if needed.
+- Use the same form-control / has-icon structure used by regular Buyer text fields.
+- Keep existing wire:model bindings exactly the same.
+- Remove rows attributes if present.
+- Do not change labels.
+- Do not change placeholder meaning unless needed for consistency.
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Test:
+/offer-listing/buyer
+
+Confirm:
+- Acceptable Property Conditions placeholder says Select.
+- Acceptable Special Sale Provisions placeholder says Select.
+- Offered Financing/Currency placeholder says Select.
+- View Preference Needed still works.
+- Property Inclusions matches regular text box height.
+- Property Exclusions matches regular text box height.
+- Additional Purchase Terms / Notes matches regular text box height.
+- Maximum Budget is not changed.
+- No other flows changed.
+
+RUN:
+php -l on every edited PHP/Blade file.
+
+HARD SAFEGUARDS:
+- No migrations
+- No migrate:fresh
+- No schema changes
+- No broad refactors
+- No unrelated flow edits
+- Stop and report if unsure.
