@@ -1,0 +1,166 @@
+#482 — Offer Listing Next/Submit Fix (Full Service Only — Single Instruction)
+
+Goal:
+Fix broken Next and Submit behavior across Seller, Buyer, Landlord, and Tenant Create Offer Listing flows by ensuring ONLY VISIBLE required fields are validated.
+
+Scope:
+- Full Service / Commission-Based ONLY
+- Seller, Buyer, Landlord, Tenant Create flows
+
+DO NOT TOUCH:
+- initializeLimitedService()
+- Limited Service tabs, JS, or Blade
+- Hire Agent flows
+- Database schema
+- Routes
+- Edit flows
+
+--------------------------------------------------
+ROOT ISSUE
+--------------------------------------------------
+Next and Submit validation incorrectly checks ALL required fields, including hidden conditional fields, blocking progression.
+
+--------------------------------------------------
+IMPLEMENTATION
+--------------------------------------------------
+
+1. Create ONE shared visibility helper per file
+
+Inside initializeFullService(), ensure a SINGLE function exists:
+
+function isElementVisible(el) {
+    if (!el) return false;
+    const style = window.getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    return (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        el.offsetParent !== null &&
+        rect.width > 0 &&
+        rect.height > 0
+    );
+}
+
+If already defined inside checkFormValidity(), move it to the parent scope of initializeFullService() so it is shared.
+Do NOT duplicate this function.
+
+--------------------------------------------------
+2. Fix Seller Next (CRITICAL)
+--------------------------------------------------
+
+File:
+resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+
+Inside initializeFullService() → _wizardNextHandler:
+
+Update required field loop:
+
+for (const input of requiredFields) {
+
+    if (!isElementVisible(input)) continue;
+
+    if (!input.value || input.value.trim() === '') {
+        isValid = false;
+        input.classList.add('is-invalid');
+    } else {
+        input.classList.remove('is-invalid');
+    }
+}
+
+Apply same visibility check to:
+- cities container
+- counties container
+
+--------------------------------------------------
+3. Fix Seller Submit (CRITICAL)
+--------------------------------------------------
+
+DO NOT modify getAllRequiredFields().
+
+Update validation logic only:
+
+Where fields are validated (isFieldValid or equivalent):
+
+if (!isElementVisible(field)) return true;
+
+This ensures hidden fields do NOT block Submit.
+
+Also apply same rule in form submit event listener.
+
+--------------------------------------------------
+4. Fix Buyer Next (Full Service ONLY)
+--------------------------------------------------
+
+File:
+offer-buyer-listing.blade.php
+
+Inside initializeFullService() → _wizardNextHandler:
+
+Add:
+
+if (!isElementVisible(input)) continue;
+
+DO NOT touch initializeLimitedService().
+
+--------------------------------------------------
+5. Fix Landlord Next (Full Service ONLY)
+--------------------------------------------------
+
+File:
+offer-landlord-listing.blade.php
+
+Inside initializeFullService() → _wizardNextHandler:
+
+Add:
+
+if (!isElementVisible(input)) continue;
+
+DO NOT touch initializeLimitedService().
+
+--------------------------------------------------
+6. Fix Tenant counties validation (ONLY if needed)
+--------------------------------------------------
+
+File:
+offer-tenant-listing.blade.php
+
+Inside validateCurrentTab():
+
+const container = currentTabContent.querySelector('.counties-container');
+
+if (container && isElementVisible(container)) {
+    if (container.children.length === 0) {
+        isValid = false;
+    }
+}
+
+Do NOT change other Tenant validation logic.
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+Seller:
+- Next works on every tab
+- Submit works when visible required fields are filled
+
+Buyer:
+- Next works correctly
+
+Landlord:
+- Next works correctly
+
+Tenant:
+- Red banner only appears for visible missing fields
+
+GLOBAL RULE ENFORCED:
+Only visible fields can block Next or Submit
+
+--------------------------------------------------
+SAFETY
+--------------------------------------------------
+
+- No Limited Service changes
+- No Hire Agent changes
+- No DB or route changes
+- No duplication of visibility logic

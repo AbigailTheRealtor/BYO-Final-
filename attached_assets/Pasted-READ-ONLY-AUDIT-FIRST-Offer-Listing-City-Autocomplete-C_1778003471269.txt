@@ -1,0 +1,121 @@
+READ-ONLY AUDIT FIRST — Offer Listing City Autocomplete County/State Autofill
+
+Issue:
+City autocomplete is still not working correctly in Create Offer Listing flows.
+
+Example:
+When user types "Treasure Island" in City, the city should appear as a selectable autocomplete option. After selecting it, County and State should autopopulate.
+
+Working reference:
+Login: tenant@exp.com
+Use the existing Hire Landlord / Hire Seller's Agent flow where city autocomplete already works correctly.
+In that flow:
+- User types city
+- City suggestion appears
+- User clicks city
+- County and State autopopulate
+
+Goal:
+Copy the SAME working city autocomplete + county/state autofill behavior into Create Offer Listing flows for all 4 user types:
+- /offer-listing/seller
+- /offer-listing/buyer
+- /offer-listing/landlord
+- /offer-listing/tenant
+
+Also test with:
+Login: abigailbaschuk@gmail.com
+Password: 12345678
+
+Scope:
+Full Service / Commission-Based Create Offer Listing flows only.
+
+DO NOT TOUCH:
+- Limited Service / legacy files
+- Hire Agent working flow
+- Database schema
+- Routes unless the existing autocomplete endpoint is missing from Offer Listing usage
+- Next/Submit validation task
+- Unrelated field labels/tooltips/placeholders
+- Save logic unless county/state are not being assigned from the selected city
+
+PHASE 1 — AUDIT ONLY
+
+1. Find the working city autocomplete implementation in the Hire Agent flow:
+   - Blade file
+   - JS file/block
+   - route/API endpoint used
+   - city dataset/source
+   - exact event used when city is selected
+   - how county/state are populated
+   - required CSS/classes/data attributes
+
+2. Inspect the four Offer Listing create flows:
+   - Seller
+   - Buyer
+   - Landlord
+   - Tenant
+
+3. For each Offer Listing role, identify:
+   - City input field name / id / wire:model
+   - County field name / id / wire:model
+   - State field name / id / wire:model
+   - Whether autocomplete JS is attached
+   - Whether the autocomplete endpoint is called
+   - Whether the selected city event fires
+   - Whether county/state assignment is missing or mismatched
+   - Whether IDs/classes differ from the working Hire Agent flow
+
+4. Report exact files and line ranges before fixing.
+
+PHASE 2 — SAFE IMPLEMENTATION
+
+Implement the same working Hire Agent city autocomplete behavior in all four Create Offer Listing flows.
+
+Required behavior:
+1. User types a city name.
+2. Matching city suggestions appear.
+3. User selects the city.
+4. County field autopopulates.
+5. State field autopopulates.
+6. City remains populated with the selected city.
+7. This works for "Treasure Island" and other Florida cities.
+
+Implementation rules:
+- Reuse the existing working endpoint/data source if possible.
+- Reuse the same JS pattern from the working Hire Agent flow if possible.
+- Do not create a new city system if one already exists.
+- Do not hardcode only Treasure Island.
+- Do not break existing tenant@exp.com Hire Agent behavior.
+- Make the Offer Listing implementation match the working Hire Agent behavior as closely as possible.
+
+Apply to:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/listing-details.blade.php
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/listing-details.blade.php
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/listing-details.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/listing-details.blade.php
+
+Also update parent create blades only if the autocomplete JS is initialized there:
+- offer-seller-listing.blade.php
+- offer-buyer-listing.blade.php
+- offer-landlord-listing.blade.php
+- offer-tenant-listing.blade.php
+
+Validation:
+After implementation, test:
+- Seller Offer Listing: type Treasure Island → select → County + State fill
+- Buyer Offer Listing: type Treasure Island → select → County + State fill
+- Landlord Offer Listing: type Treasure Island → select → County + State fill
+- Tenant Offer Listing: type Treasure Island → select → County + State fill
+
+Expected:
+Treasure Island should populate:
+- County: Pinellas
+- State: Florida / FL depending on the existing system format
+
+Final safeguard:
+Confirm no changes were made to:
+- Limited Service files
+- Hire Agent files
+- Next/Submit validation logic
+- Database schema
+- Routes unless strictly required to reuse the existing city endpoint

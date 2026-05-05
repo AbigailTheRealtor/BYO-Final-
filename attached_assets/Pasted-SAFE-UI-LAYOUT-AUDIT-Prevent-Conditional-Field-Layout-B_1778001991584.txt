@@ -1,0 +1,58 @@
+SAFE UI LAYOUT AUDIT — Prevent Conditional Field Layout Breaks
+
+Scope:
+Offer Listing forms only.
+
+Goal:
+Make sure no field breaks layout when conditional Yes/No fields show or hide.
+
+Tasks:
+1. Audit every form tab for:
+   - Missing closing </div>
+   - Conditional @if blocks placed outside the correct wrapper
+   - File upload fields missing the same row/column/form-group structure
+   - Icons placed outside their input wrapper
+   - Select fields not matching the standard select layout
+   - Conditional sections that affect fields below them
+
+2. Standardize every normal field and conditional field to use the same wrapper pattern:
+   - Outer form-group / mb-3 wrapper
+   - Label row
+   - Input/select/file input inside the same expected container
+   - Conditional upload fields wrapped in their own full-width container
+
+3. For every “Yes” disclosure/document question:
+   - Selecting Yes should show only that question’s upload field
+   - Selecting No/Select should hide that upload field
+   - Showing one upload field must not move, overlap, hide, or misalign any fields below it
+
+4. Add/keep a reusable CSS class for conditional upload blocks if needed, such as:
+   .conditional-upload-block {
+       display: none;
+       width: 100%;
+       margin-top: 10px;
+       margin-bottom: 18px;
+       clear: both;
+   }
+
+5. Do not change:
+   - Database schema
+   - Routes
+   - Save logic
+   - Field names
+   - Validation rules
+   - Tab order
+   - Existing labels/tooltips/placeholders unless required for broken layout
+
+6. After changes, test every document/disclosure Yes/No field manually:
+   - Seller Disclosure Available
+   - Survey Available
+   - Inspection Report Available
+   - HOA/Condo Documents Available
+   - Flood Disclosure Available
+   - Lead-Based Paint Disclosure Required
+   - Environmental Report Available
+   - Additional Documents Available
+
+Expected result:
+All fields remain aligned and full-width. Icons, labels, dropdowns, and upload boxes do not overlap or shift when any Yes/No option is selected.

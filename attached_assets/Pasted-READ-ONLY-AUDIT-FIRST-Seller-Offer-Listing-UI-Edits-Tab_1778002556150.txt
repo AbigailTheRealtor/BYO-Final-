@@ -1,0 +1,114 @@
+READ-ONLY AUDIT FIRST — Seller Offer Listing UI Edits + Tab 1 Shared Cleanup
+
+Login example:
+abigailbaschuk@gmail.com
+Password: 12345678
+
+Listing example:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller
+
+Scope:
+Full Service / Commission-Based Offer Listing flows only.
+
+Include:
+- Create Seller Listing
+- Create Buyer Listing
+- Create Landlord Listing
+- Create Tenant Listing
+
+Do NOT touch:
+- Limited Service files
+- Legacy files
+- Hire Agent flows
+- Database schema
+- Routes
+- Save logic unless a removed field creates a harmless UI-only issue
+- Validation rules unless the removed Meeting Preference or Pet Restrictions field still blocks submission
+- Tab order
+- Unrelated labels/placeholders/tooltips
+
+PHASE 1 — AUDIT ONLY
+
+Audit the relevant Blade/Livewire files and report:
+1. Which file controls Tab 1: Listing Details for Seller, Buyer, Landlord, and Tenant.
+2. Whether “Meeting Preference” appears in all four Create Offer Listing Tab 1 forms.
+3. Whether removing “Meeting Preference” affects validation or submit behavior.
+4. In Create Seller Listing only, audit these fields:
+   - Existing Lease Type
+   - Operating Statement Available
+   - Reason for Sale
+   - Offered Financing/Currency
+   - Special Sale Provision
+   - Additional Document Available
+   - Pet Restrictions
+   - Pets Allowed
+5. Identify exact files and line ranges before making changes.
+
+Do not make changes until audit is complete.
+
+PHASE 2 — SAFE IMPLEMENTATION
+
+Apply only these changes:
+
+A) Tab 1: Listing Details — all 4 Create Offer Listing flows
+- Remove the “Meeting Preference” question from:
+  - Create Seller Listing
+  - Create Buyer Listing
+  - Create Landlord Listing
+  - Create Tenant Listing
+- Full Service / Commission-Based only.
+- Do not touch Limited Service or legacy files.
+
+B) Create Seller Listing edits only
+
+1. Existing Lease Type:
+- If user selects “Other,” show a custom input box.
+- Placeholder should be:
+  Enter Existing Lease Type (e.g., Month-to-Month)
+
+2. Operating Statement Available:
+- Add the missing icon so it matches the surrounding select/input layout.
+- Keep the field name, label, options, and logic unchanged.
+
+3. Reason for Sale:
+- If user selects “Other,” show a custom input box.
+- Placeholder should be:
+  Enter Reason for Sale (e.g., Relocation)
+
+4. Offered Financing/Currency:
+- Add missing placeholder option:
+  Select
+
+5. Special Sale Provision:
+- Add missing placeholder option:
+  Select
+
+6. Additional Document Available:
+- Add missing placeholder option:
+  Select
+
+7. Pet Restrictions:
+- Remove this field from Create Seller Listing because Pets Allowed already exists.
+- If Pet Restrictions is still referenced in frontend validation, remove only that UI validation reference so it does not block Next or Submit.
+- Do not remove database columns.
+- Do not alter Pets Allowed.
+
+Validation safeguard:
+After removing Meeting Preference and Pet Restrictions, confirm hidden/removed fields do not block Next or Submit.
+
+Layout safeguard:
+All edited fields must keep the standard wrapper pattern:
+div.form-group → label → div.input-cover → input/select
+
+Icons must stay inside input-cover.
+
+Expected result:
+- Meeting Preference no longer appears on Tab 1 for Seller, Buyer, Landlord, or Tenant Create Offer Listing flows.
+- Seller Existing Lease Type “Other” reveals a custom input.
+- Seller Reason for Sale “Other” reveals a custom input.
+- Operating Statement Available has the correct icon.
+- Offered Financing/Currency, Special Sale Provision, and Additional Document Available show “Select.”
+- Pet Restrictions is removed from Seller Create Listing.
+- Pets Allowed remains.
+- No Limited Service files are touched.
+- No Hire Agent flows are touched.
