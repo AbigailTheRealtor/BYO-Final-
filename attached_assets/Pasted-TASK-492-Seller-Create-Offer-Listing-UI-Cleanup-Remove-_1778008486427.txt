@@ -1,0 +1,133 @@
+TASK #492: Seller Create Offer Listing UI Cleanup + Remove Current Representation Status
+
+SCOPE:
+Create Offer Listing wizard only, full-service / commission-based flows:
+- Seller Offer Listing
+- Buyer Offer Listing
+- Landlord Offer Listing
+- Tenant Offer Listing
+
+PART 1 applies to all 4 Create Offer Listing flows.
+PART 2 applies to Seller Create Offer Listing only.
+
+DO NOT TOUCH:
+- Hire Agent flows
+- Limited Service / Flat Fee flows
+- Agent Profile flows
+- Routes
+- Database schema
+- Bid/counter logic
+- Accepted Bid Summary logic
+
+--------------------------------------------------
+PART 1 — REMOVE CURRENT REPRESENTATION STATUS FIELD
+--------------------------------------------------
+
+Remove the “Current Representation Status with Broker” field entirely from Tab 1 / Listing Details for all four Create Offer Listing flows:
+
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Remove all related pieces:
+1. Blade field markup
+2. Livewire required validation
+3. Any validation messages
+4. JS label map entries
+5. Any checkRepresentationStatus JS calls
+6. The #representation_notice alert div
+7. Any JS logic that only exists to support this removed field
+
+Important:
+- Do not leave hidden inputs.
+- Do not leave empty wrappers.
+- Do not leave orphan JS references that could cause console errors.
+- Do not remove unrelated brokerage relationship fields elsewhere unless they are specifically this “Current Representation Status with Broker” Tab 1 field.
+
+--------------------------------------------------
+PART 2 — SELLER-ONLY UI POLISH
+--------------------------------------------------
+
+File scope for this part:
+Seller Create Offer Listing only.
+
+A. Existing Lease Type “Other” input
+Confirm/fix so conditional “Other” input uses only Blade @if logic.
+
+Requirements:
+- Use @if condition only
+- No inline display:none
+- No wrapper id
+- No duplicate inputs
+- Input appears only when “Other” is selected
+
+B. Reason for Sale “Other” input
+Confirm/fix so conditional “Other” input uses only Blade @if logic.
+
+Requirements:
+- Use @if condition only
+- No inline display:none
+- No wrapper id
+- No duplicate inputs
+- Input appears only when “Other” is selected
+
+C. Operating Statement Available icon
+Fix icon to:
+
+fa-solid fa-file-chart-column
+
+D. Seller select placeholder text
+Ensure placeholder option text is exactly:
+
+Select
+
+For these Seller fields:
+- Offered Financing/Currency
+- Special Sale Provision
+- Additional Document Available
+
+Do NOT use:
+- Select Offered Financing/Currency
+- Select special sale provision
+- Select additional document
+- Example text
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Test all four Create Offer Listing flows:
+- /offer-listing/seller
+- /offer-listing/buyer
+- /offer-listing/landlord
+- /offer-listing/tenant
+
+Confirm:
+- “Current Representation Status with Broker” no longer appears on Tab 1 for Seller, Buyer, Landlord, or Tenant.
+- No validation error asks for Current Representation Status.
+- No console errors from removed checkRepresentationStatus logic.
+- #representation_notice is gone or no longer referenced.
+
+Seller-only confirm:
+- Existing Lease Type → selecting Other shows the custom input.
+- Existing Lease Type → removing Other hides the custom input.
+- Reason for Sale → selecting Other shows the custom input.
+- Reason for Sale → removing Other hides the custom input.
+- No duplicate Other inputs exist.
+- No inline display:none exists for these Other inputs.
+- No wrapper id exists for these Other inputs.
+- Operating Statement Available uses fa-solid fa-file-chart-column.
+- Offered Financing/Currency placeholder says Select.
+- Special Sale Provision placeholder says Select.
+- Additional Document Available placeholder says Select.
+
+RUN:
+php -l on every edited PHP file.
+
+DO NOT:
+- Run migrations
+- Run migrate:fresh
+- Change schema
+- Touch unrelated flows
+- Refactor unrelated JS
