@@ -324,6 +324,7 @@
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple
                 style="visibility:hidden;height:0;overflow:hidden">
+            <option value="">Select</option>
             @php
                 $displayMapping = [
                     'Updated/Renovated' => 'Updated / Renovated',

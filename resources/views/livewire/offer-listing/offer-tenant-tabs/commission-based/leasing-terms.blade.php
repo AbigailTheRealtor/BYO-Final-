@@ -45,6 +45,7 @@
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-pen input-icon2" multiple required>
+            <option value="">Select</option>
             @foreach ($lease_for_res as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseFor) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -72,6 +73,7 @@
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
             data-icon="fa-solid fa-file-pen input-icon2" multiple required>
+            <option value="">Select</option>
             @foreach ($lease_for_com as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseForCom) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -118,7 +120,7 @@
     <div class="input-cover">
   <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-building input-icon2" multiple required>
-
+            <option value="">Select</option>
             @foreach ($acceptable_leasing_space as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $leasing_spaces_tenant ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
@@ -278,7 +280,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="tenant_desired_lease_length" class="form-control has-icon"
-            data-icon="fa-solid fa-clock" placeholder="e.g., 12 months, 2 years">
+            data-icon="fa-solid fa-clock" placeholder="Enter desired lease length (e.g., 12 months)">
     </div>
 </div>
 
@@ -352,48 +354,6 @@
     </div>
 </div>
 
-<!-- Field 6: Pet Information -->
-<div class="form-group">
-    <label class="fw-bold">Pet Information:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe any pets the tenant has (e.g., breed, size, number).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <textarea wire:model="pet_information" class="form-control" rows="3"
-            placeholder="Describe pets (e.g., 1 small dog, 10 lbs, no aggressive breed)"></textarea>
-    </div>
-</div>
-
-<!-- Field 7: Number of Occupants -->
-<div class="form-group">
-    <label class="fw-bold">Number of Occupants:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total number of people who will occupy the unit.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <input type="number" wire:model="number_of_occupants" class="form-control has-icon"
-            data-icon="fa-solid fa-users" placeholder="e.g., 2" min="0">
-    </div>
-</div>
-
-<!-- Field 8: Parking Needed -->
-<div class="form-group">
-    <label class="fw-bold">Parking Needed:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe the tenant's parking requirements.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <input type="text" wire:model="parking_needed" class="form-control has-icon"
-            data-icon="fa-solid fa-square-parking" placeholder="e.g., 1 covered space, 2 outdoor spots">
-    </div>
-</div>
-
 <!-- Field 9: Utility Preference -->
 <div class="form-group">
     <label class="fw-bold">Utility Preference:
@@ -404,7 +364,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="utility_preference" class="form-control has-icon"
-            data-icon="fa-solid fa-bolt" placeholder="e.g., Utilities included, Tenant pays electric only">
+            data-icon="fa-solid fa-bolt" placeholder="Enter utility preference (e.g., Tenant pays electric and water)">
     </div>
 </div>
 
@@ -418,7 +378,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="maintenance_preference" class="form-control has-icon"
-            data-icon="fa-solid fa-screwdriver-wrench" placeholder="e.g., Landlord handles all repairs">
+            data-icon="fa-solid fa-screwdriver-wrench" placeholder="Enter maintenance preference (e.g., Landlord handles exterior maintenance)">
     </div>
 </div>
 
@@ -466,8 +426,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="tenant_conditions" class="form-control" rows="3"
-            placeholder="e.g., Must allow small pet, must include parking"></textarea>
+        <input type="text" wire:model="tenant_conditions" class="form-control has-icon"
+            data-icon="fa-solid fa-list-check" placeholder="Enter tenant conditions (e.g., No smoking allowed)">
     </div>
 </div>
 
@@ -480,8 +440,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="additional_tenant_lease_terms" class="form-control" rows="3"
-            placeholder="Enter any additional desired lease terms"></textarea>
+        <input type="text" wire:model="additional_tenant_lease_terms" class="form-control has-icon"
+            data-icon="fa-solid fa-file-lines" placeholder="Enter additional tenant lease terms (e.g., Early termination option after 6 months)">
     </div>
 </div>
 
@@ -520,8 +480,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="cam_nnn_preference" class="form-control" rows="2"
-            placeholder="e.g., Prefer CAM capped at 5% annual increase"></textarea>
+        <input type="text" wire:model="cam_nnn_preference" class="form-control has-icon"
+            data-icon="fa-solid fa-building-columns" placeholder="Enter CAM / NNN preference (e.g., Prefer gross lease with limited pass-throughs)">
     </div>
 </div>
 
@@ -535,7 +495,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="rent_escalation_preference" class="form-control has-icon"
-            data-icon="fa-solid fa-chart-line" placeholder="e.g., Fixed 3% annual increase">
+            data-icon="fa-solid fa-chart-line" placeholder="Enter rent escalation preference (e.g., No more than 3% annually)">
     </div>
 </div>
 
@@ -549,7 +509,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="buildout_tenant_improvement_request" class="form-control has-icon"
-            data-icon="fa-solid fa-hammer" placeholder="e.g., $20/sqft TI allowance">
+            data-icon="fa-solid fa-hammer" placeholder="Enter buildout or tenant improvement request (e.g., Paint and flooring allowance)">
     </div>
 </div>
 
@@ -563,7 +523,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="intended_business_use" class="form-control has-icon"
-            data-icon="fa-solid fa-briefcase" placeholder="e.g., Retail clothing boutique">
+            data-icon="fa-solid fa-briefcase" placeholder="Enter intended business use (e.g., Retail clothing boutique)">
     </div>
 </div>
 
@@ -577,7 +537,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="signage_request" class="form-control has-icon"
-            data-icon="fa-solid fa-sign-hanging" placeholder="e.g., Exterior storefront sign and window graphics">
+            data-icon="fa-solid fa-sign-hanging" placeholder="Enter signage request (e.g., Exterior monument sign preferred)">
     </div>
 </div>
 
@@ -591,7 +551,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="commercial_parking_access_needs" class="form-control has-icon"
-            data-icon="fa-solid fa-truck" placeholder="e.g., 10 customer spots + 1 loading dock">
+            data-icon="fa-solid fa-truck" placeholder="Enter commercial parking or access needs (e.g., Customer parking near entrance)">
     </div>
 </div>
 
@@ -623,8 +583,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="commercial_approval_conditions" class="form-control" rows="3"
-            placeholder="e.g., Zoning approval, health department permit"></textarea>
+        <input type="text" wire:model="commercial_approval_conditions" class="form-control has-icon"
+            data-icon="fa-solid fa-stamp" placeholder="Enter commercial approval conditions (e.g., Subject to zoning approval)">
     </div>
 </div>
 
