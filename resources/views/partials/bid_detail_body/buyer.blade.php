@@ -214,13 +214,22 @@
                                                                                 </div>
                                                                             @endif
                                                                             <!-- Website Link -->
-                                                                            @if (data_get($bid, 'get.website_link'))
+                                                                            @php
+                                                                                $bidWebsiteLink = data_get($bid, 'get.website_link');
+                                                                                if (is_array($bidWebsiteLink)) {
+                                                                                    $bidWebsiteLink = count($bidWebsiteLink) > 0 ? (string) $bidWebsiteLink[0] : null;
+                                                                                }
+                                                                                if (!empty($bidWebsiteLink) && !str_starts_with($bidWebsiteLink, 'http://') && !str_starts_with($bidWebsiteLink, 'https://')) {
+                                                                                    $bidWebsiteLink = 'https://' . $bidWebsiteLink;
+                                                                                }
+                                                                            @endphp
+                                                                            @if (!empty($bidWebsiteLink))
                                                                                 <div class="mb-3">
                                                                                     <div class="fw-semibold"
                                                                                         style="color: #049399;">Website
                                                                                         Link</div>
                                                                                     <div>
-                                                                                        <a href="{{ data_get($bid, 'get.website_link') }}"
+                                                                                        <a href="{{ $bidWebsiteLink }}"
                                                                                             target="_blank"
                                                                                             class="text-primary text-decoration-none">
                                                                                             <i
