@@ -1,0 +1,53 @@
+TASK #452 — Resolve Direct Hire counter route mismatch safely
+
+SCOPE:
+HireAgentDirectController Direct Hire counter redirect only.
+
+DO NOT:
+- Rename existing routes
+- Remove existing routes
+- Change normal Hire Agent counter URLs
+- Touch counter views
+- Touch database/schema
+
+ISSUE:
+Direct Hire counter still fails. Latest diagnosis says COUNTER_ROUTES may reference route names that do not exist for buyer/landlord/tenant, while earlier #428 said they resolved. We need a safe runtime-proof fix.
+
+GOAL:
+Make HireAgentDirectController redirect to the correct existing counter route for each role.
+
+STEPS:
+
+1. Run:
+php artisan route:list | grep -i "view-counter"
+
+2. In tinker, verify each route name currently used in HireAgentDirectController::COUNTER_ROUTES:
+Route::has('hire.seller.agent.auction.bid.view-counter')
+Route::has('buyer.hire.agent.auction.bid.view-counter')
+Route::has('landlord.hire.agent.auction.bid.view-counter')
+Route::has('tenant.hire.agent.auction.bid.view-counter')
+
+3. If any return false, update ONLY the COUNTER_ROUTES constant in HireAgentDirectController to use the actual registered route names.
+
+4. Add defensive check before redirect:
+if (!Route::has(self::COUNTER_ROUTES[$role])) {
+    Log::error(... include role, route, bid_id, listing_id ...)
+    return redirect()->back()->with('error', 'Unable to open counter terms. Please contact support.');
+}
+
+5. Improve catch logging only:
+Add exception class, file, line, and trace to existing Log::error.
+
+6. Do not change routes/web.php unless absolutely necessary. Prefer correcting the controller mapping to existing routes.
+
+REGRESSION CHECKS:
+- Direct Hire Buyer Request Changes opens counter page
+- Direct Hire Seller Request Changes opens counter page
+- Direct Hire Landlord Request Changes opens counter page
+- Direct Hire Tenant Request Changes opens counter page
+- Normal Hire Agent counter links still work
+- No duplicate route names introduced
+
+STOP if:
+- Multiple roles share the same named route and route() resolves to the wrong controller.
+- Fixing requires route renaming.
