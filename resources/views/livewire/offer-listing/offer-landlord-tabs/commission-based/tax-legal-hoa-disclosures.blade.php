@@ -54,8 +54,8 @@
                 </span>
             </label>
             <div class="input-cover">
-                <input type="text" wire:model="annual_property_taxes" class="form-control has-icon"
-                    data-icon="fa-solid fa-dollar-sign"
+                <span class="input-group-text-seller">$</span>
+                <input type="text" wire:model="annual_property_taxes" class="form-control"
                     placeholder="Enter annual property taxes (e.g., 4500)"
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -518,7 +518,6 @@
                     ];
                 @endphp
                 <div class="input-cover" wire:ignore>
-                    <i class="input-icon fa-solid fa-list-check input-icon2"></i>
                     <select id="association_fee_includes" class="form-control has-icon select2-multiple" multiple>
                         @foreach ($feeIncludesOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
@@ -555,7 +554,6 @@
                     ];
                 @endphp
                 <div class="input-cover" wire:ignore>
-                    <i class="input-icon fa-solid fa-star input-icon2"></i>
                     <select id="association_amenities" class="form-control has-icon select2-multiple" multiple>
                         @foreach ($amenityOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_amenities ?? []) ? 'selected' : '' }}>
@@ -1007,8 +1005,8 @@
                 ];
             @endphp
             <div class="input-cover" wire:ignore>
-                <i class="input-icon fa-solid fa-folder-open input-icon2"></i>
                 <select id="additional_documents" class="form-control has-icon select2-multiple" multiple>
+                    <option value=""></option>
                     @foreach ($additionalDocumentOptions as $option)
                         <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
                             {{ $option }}

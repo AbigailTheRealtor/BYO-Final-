@@ -1,0 +1,109 @@
+HOTFIX — Correct Task #513 Implementation (Landlord Listing)
+
+SCOPE:
+Landlord Offer Listing ONLY
+
+FILES:
+- lease-terms.blade.php
+- property-preferences.blade.php
+- tax-legal-hoa-disclosures.blade.php
+
+--------------------------------------------------
+PART 1 — FIX DUPLICATE INPUT FIELDS (CRITICAL)
+--------------------------------------------------
+
+For ALL currency fields:
+- desired_rental_amount (both instances)
+- security_deposit_required
+- total_move_in_funds_required
+- annual_property_taxes
+
+REMOVE the FIRST input line using:
+class="form-control has-icon" + data-icon="fa-dollar-sign"
+
+KEEP ONLY:
+
+<div class="input-cover">
+    <span class="input-group-text-seller">$</span>
+    <input type="text" class="form-control" ...>
+</div>
+
+There must be EXACTLY ONE input per field.
+
+--------------------------------------------------
+PART 2 — REMOVE has-icon FROM CURRENCY FIELDS
+--------------------------------------------------
+
+For same fields above:
+
+REMOVE:
+- class="has-icon"
+- data-icon="fa-solid fa-dollar-sign"
+
+Currency uses ONLY:
+✔ input-group-text-seller $
+
+--------------------------------------------------
+PART 3 — FIX data-icon VALUES (GLOBAL)
+--------------------------------------------------
+
+For ALL select fields:
+
+REMOVE:
+input-icon2 from data-icon
+
+WRONG:
+data-icon="fa-solid fa-user input-icon2"
+
+CORRECT:
+data-icon="fa-solid fa-user"
+
+--------------------------------------------------
+PART 4 — REMOVE MANUAL <i> ICONS (GLOBAL)
+--------------------------------------------------
+
+DELETE ALL:
+<i class="input-icon ..."></i>
+
+Icons must ONLY come from:
+✔ has-icon + data-icon system
+
+--------------------------------------------------
+PART 5 — FIX PLACEHOLDER FORMAT (TEXT INPUTS)
+--------------------------------------------------
+
+Convert ALL to lowercase format:
+
+Enter total number of buildings (e.g., 3)
+Enter total units on property (e.g., 24)
+Enter office or retail space sqft (e.g., 5000)
+Enter flex space sqft (e.g., 2500)
+Enter number of restrooms (e.g., 4)
+Enter number of offices (e.g., 10)
+Enter number of conference or meeting rooms (e.g., 2)
+
+NO uppercase after "Enter"
+NO commas in numbers
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Confirm:
+
+✔ No duplicate inputs exist
+✔ Currency fields show ONLY $ prefix
+✔ No dollar icon (fa-dollar-sign) anywhere
+✔ No input-icon2 anywhere
+✔ No <i class="input-icon"> anywhere
+✔ Select fields show only ONE icon
+✔ Placeholders are lowercase format
+✔ No layout shifting or overlap
+
+--------------------------------------------------
+RUN:
+php -l on all edited files
+
+STOP if:
+- Any field loses wire:model
+- Any Select2 breaks

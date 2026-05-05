@@ -884,7 +884,8 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user input-icon2" multiple>
+                data-icon="fa-solid fa-user" multiple>
+                <option value=""></option>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -921,7 +922,8 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user-tie input-icon2" multiple>
+                data-icon="fa-solid fa-user-tie" multiple>
+                <option value=""></option>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -947,7 +949,7 @@
 
         <div class="input-cover">
             <select id="terms_of_lease" wire:model="terms_of_lease"  class="terms_of_lease form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-file-signature input-icon2" multiple required>
+                data-icon="fa-solid fa-file-signature" multiple required>
                 @foreach ($lease_types as $type)
                     <option value="{{ $type['name'] }}">{{ $type['name'] }}</option>
                 @endforeach
@@ -966,8 +968,8 @@
 
     <div class="input-cover" wire:ignore>
         <select id="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-signature input-icon2" multiple>
-
+            data-icon="fa-solid fa-file-signature" multiple>
+            <option value=""></option>
             @foreach ($lease_types as $type)
             <option value="{{ $type['name'] }}">{{ $type['name'] }}</option>
 
@@ -1009,8 +1011,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar-sign"
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control"
             placeholder="Enter desired lease price (e.g., 2500)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1067,8 +1069,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="desired_rental_amount" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar-sign"
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="desired_rental_amount" class="form-control"
             placeholder="Enter desired lease price (e.g., 2500)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1116,7 +1118,8 @@
     </span>
     <div class="input-cover" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-calendar-days input-icon2" multiple required>
+            data-icon="fa-solid fa-calendar-days" multiple required>
+            <option value=""></option>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1169,8 +1172,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="security_deposit_required" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar-sign"
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="security_deposit_required" class="form-control"
             placeholder="Enter security deposit amount (e.g., 2500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1219,8 +1222,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="total_move_in_funds_required" class="form-control has-icon"
-            data-icon="fa-solid fa-dollar-sign"
+        <span class="input-group-text-seller">$</span>
+        <input type="text" wire:model="total_move_in_funds_required" class="form-control"
             placeholder="Enter total move-in funds required (e.g., 7500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1539,7 +1542,8 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
-                data-icon="fa-solid fa-home input-icon2">
+                data-icon="fa-solid fa-home">
+                <option value=""></option>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
