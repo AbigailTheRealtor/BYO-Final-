@@ -1,0 +1,73 @@
+TASK: Buyer Create Offer Listing — Fix 3 remaining missing icons + Select placeholders
+
+SCOPE:
+Buyer Create Offer Listing full_service only.
+
+FIELDS TO FIX:
+1. Acceptable Special Sale Provisions
+2. Offered Financing/Currency
+3. Acceptable Property Conditions
+
+FILES:
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/purchasing-terms.blade.php
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+
+DO NOT:
+- Do not modify Seller, Landlord, or Tenant files
+- Do not modify Livewire PHP
+- Do not change wire:model names
+- Do not change validation
+- Do not change save/draft logic
+- Do not replace Select2
+- Do not add <i class="input-icon">
+- Do not touch Buyer Services tab removal logic
+
+READ-ONLY AUDIT FIRST:
+Compare the broken fields against a working Buyer field like:
+- Acceptable Property Style
+- Target Closing Timeframe
+
+Find what is missing:
+- class="form-control has-icon"
+- data-icon
+- data-placeholder="Select"
+- first blank option
+- Select2 placeholder initialization
+
+FIX:
+For these selectors:
+- #condition_prop_buyer
+- #sale_provision
+- #offered_financing
+
+Ensure each select has:
+- class="form-control has-icon"
+- data-placeholder="Select"
+- an appropriate data-icon
+- Select2 initialization with:
+  placeholder: "Select",
+  allowClear: true,
+  width: "100%"
+
+If this Select2 version requires it, add first option:
+<option value=""></option>
+
+Do not duplicate options.
+
+ICON MAPPING:
+- Acceptable Property Conditions:
+  data-icon="fa-solid fa-screwdriver-wrench"
+
+- Acceptable Special Sale Provisions:
+  data-icon="fa-solid fa-screwdriver-wrench"
+
+- Offered Financing/Currency:
+  data-icon="fa-solid fa-money-bill"
+
+DONE WHEN:
+- Acceptable Property Conditions shows left icon + Select when empty
+- Acceptable Special Sale Provisions shows left icon + Select when empty
+- Offered Financing/Currency shows left icon + Select when empty
+- Saved draft/edit values still reload
+- No other Buyer fields are changed

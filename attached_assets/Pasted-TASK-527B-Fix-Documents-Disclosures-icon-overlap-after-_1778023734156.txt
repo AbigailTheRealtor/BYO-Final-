@@ -1,0 +1,83 @@
+TASK #527B — Fix Documents & Disclosures icon overlap after upload fields appear
+
+SCOPE:
+Seller and Landlord Create Offer Listing full_service only.
+
+FILES:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- Documents & Disclosures Blade partials only if audit proves markup needs correction
+
+DO NOT:
+- Do not modify Buyer or Tenant flows
+- Do not modify Livewire PHP
+- Do not change wire:model names
+- Do not change validation
+- Do not change save/submit logic
+- Do not remove file upload fields
+- Do not remove Select2
+- Do not add duplicate icons
+- Do not use Font Awesome Pro icons
+
+ISSUE:
+In Documents & Disclosures, fields like:
+- Flood Disclosure Available
+- Lead-Based Paint Disclosure Required
+- Environmental Report Available
+- Additional Documents Available
+
+show icons overlapping the labels. This appears after several Yes selections reveal upload fields underneath earlier disclosure selects.
+
+ROOT CAUSE TO VERIFY:
+Livewire re-renders the tab after upload fields appear. The addIconsToInputs() function likely injects icons again or injects them into the wrong wrapper because file upload markup changes nearby DOM structure.
+
+READ-ONLY AUDIT FIRST:
+Inspect addIconsToInputs() in both Seller and Landlord create files.
+
+Confirm whether it:
+1. injects icons based on previousElementSibling
+2. injects icons without checking the closest .input-cover
+3. accidentally targets hidden/upload/file inputs
+4. injects icons outside the select/input wrapper
+
+Also inspect the four affected Documents & Disclosures fields and confirm each select is wrapped like:
+
+<div class="input-cover">
+    <select class="form-control has-icon" data-icon="...">
+        <option value="">Select</option>
+        ...
+    </select>
+</div>
+
+FIX:
+Update icon injection so it is wrapper-scoped and skips file inputs.
+
+Required logic:
+- Only process elements with class .has-icon
+- Find the closest .input-cover wrapper
+- If no wrapper, skip
+- If wrapper already contains .input-icon, skip
+- If input type is file, skip
+- If field is inside/near upload helper markup but not inside .input-cover, skip
+- Inject exactly one icon into the .input-cover wrapper
+
+Use logic like:
+
+const wrapper = input.closest('.input-cover');
+if (!wrapper) return;
+if (wrapper.querySelector('.input-icon')) return;
+if (input.type === 'file') return;
+
+IMPORTANT:
+Do not use previousElementSibling as the duplicate guard.
+
+If Select2 creates a .select2-container, the icon should still belong to the original field’s .input-cover, not the upload area or label.
+
+DONE WHEN:
+- Flood Disclosure Available shows one icon inside its select field, not over label
+- Lead-Based Paint Disclosure Required shows one icon inside its select field, not over label
+- Environmental Report Available shows one icon inside its select field, not over label
+- Additional Documents Available shows one icon/placeholder correctly
+- Selecting Yes and showing upload fields does not create duplicate/overlapping icons
+- Repeated Next/Back navigation does not create duplicate icons
+- File upload inputs remain unchanged
