@@ -1,0 +1,222 @@
+================================================================================
+LANDLORD OFFER LISTING — PLAYWRIGHT QA REPORT
+Task #448 — Verifying Task #427 fixes on /offer-listing/landlord
+Route     : /offer-listing/landlord  (full-service / commission-based path)
+Auth      : abigailbaschuk@gmail.com
+Blade     : resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+Run date  : 2026-05-05
+Tester    : Playwright Chromium headless  (v9 script + v5/v6/v7 corroborating runs)
+Viewport  : 1280 x 900
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 1 — AUTHENTICATION & PAGE LOAD
+────────────────────────────────────────────────────────────────────────────────
+  Login (POST /login, selector #user_login / #upassword)     PASS
+  Page load /offer-listing/landlord (networkidle)            PASS
+  Livewire component wire:id present in DOM                  PASS
+  jQuery + Select2 present (window.$ / window.Select2)       PASS
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 2 — TEXTAREA HEIGHTS  (Task #427 fix: height ≤ 60 px)
+────────────────────────────────────────────────────────────────────────────────
+Method: getBoundingClientRect().height after temporarily un-hiding all
+display:none ancestor elements in the shadow tree.  Fields that are only
+rendered when specific Livewire state is active (renewal_option_details,
+additional_parcel_ids) were measured at 42 px in v5/v6/v7 Playwright runs.
+
+   1. renewal_option_details                PASS  42 px  (v5/v6/v7 confirmed)
+   2. additional_landlord_lease_terms       PASS  42 px  (v9 direct)
+   3. cam_nnn_additional_rent_charges       PASS  42 px  (v9 direct)
+   4. rent_escalation_terms                 PASS  42 px  (v9 direct)
+   5. tenant_improvement_buildout_terms     PASS  42 px  (v9 direct)
+   6. permitted_use_restrictions            PASS  42 px  (v9 direct)
+   7. signage_rights                        PASS  42 px  (v9 direct)
+   8. commercial_parking_terms              PASS  42 px  (v9 direct)
+   9. commercial_approval_conditions        PASS  42 px  (v9 direct)
+  10. additional_parcel_ids                 PASS  42 px  (v5/v6/v7 confirmed)
+  11. legal_description                     PASS  42 px  (v9 direct)
+
+SECTION 2 RESULT: 11 / 11  PASS
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 3 — TAB NAVIGATION  (Task #427 fix: Back/Next wizard navigation)
+────────────────────────────────────────────────────────────────────────────────
+Wizard order: Listing Details → Property Details → Leasing Terms →
+              Additional Details → Tax / Legal / HOA
+
+   1. Next blocked on empty required fields                   PASS
+   2. Back: Property Details → Listing Details                PASS
+   3. Back: Leasing Terms    → Property Details               PASS
+   4. Back: Additional Details → Leasing Terms                PASS
+   5. Back: Tax / Legal / HOA → Additional Details            PASS
+   6. No skipped tabs (clicking Next advances exactly one step PASS
+      at a time; tab indicator updates correctly)
+   7. No double-click skip (rapid Back presses do not skip    PASS
+      past the immediately preceding tab)
+
+SECTION 3 RESULT: 7 / 7  PASS
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 4 — "OTHER" REVEAL BEHAVIOR  (Task #427 fix: 20 multi-select fields)
+────────────────────────────────────────────────────────────────────────────────
+Test: select "Other" in dropdown → confirm reveal wrapper becomes visible.
+      Deselect "Other" → confirm reveal wrapper is hidden again.
+
+ROOT CAUSE OF FAILURES — confirmed via Playwright page.evaluate() diagnostics:
+
+  initializeFullService() (blade line 1509) is the function that registers
+  all jQuery change handlers for "Other" reveal.  It is called from the
+  DOMContentLoaded listener at blade line 1345.
+
+  At blade line 1637, before any reveal handlers are registered, it calls
+  toggleGarageOptions() unconditionally:
+
+      toggleGarageOptions();   // blade line 1637
+
+  toggleGarageOptions() (defined at blade lines 1613–1634) contains:
+
+      let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
+      ...
+      } else {
+          otherInputWrapper.classList.add('d-none');   // line 1632  ← CRASH
+      }
+
+  When property_type has not been set to "Residential Property" (fresh form
+  load), #other_parking_space_wrapper is absent from the DOM.  The unguarded
+  .classList access on null throws:
+
+      TypeError: Cannot read properties of null (reading 'classList')
+
+  Playwright captured this as a page-level JavaScript error.  The identical
+  crash occurs in a headed browser on a fresh form load (null DOM reference
+  is not a headless-only limitation).
+
+  This exception aborts initializeFullService() before it reaches any of the
+  field-specific init calls:
+    • initViewPreferenceSelect2()  — blade line 1723
+    • initMlsMultiSelects()        — blade line 1767
+    • initAppliancesSelect2()      — blade line 2031
+    • initLeaseMetaSelect2()       — blade line 2121 (approx.)
+    • initLeaseTermSelect2()       — blade line 2140 (approx.)
+    • initTaxLegalSelect2()        — blade line 2192 (approx.)
+
+  Consequence: zero user-defined jQuery change handlers are registered for any
+  of the 18 reveal-capable fields.  Selecting "Other" in any of those dropdowns
+  does NOT reveal the associated textarea on page load.
+
+  Confirmed via $._data(el,'events').change: only Select2's internal handler
+  (namespace: "select2") is present on #appliances after page load; the user's
+  handler from initAppliancesSelect2() is absent.
+
+  Note: window.Select2Manager.toggleOther('#appliances','#other_appliances')
+  called directly DOES toggle display to "block", confirming the reveal divs
+  themselves are structurally sound.  The sole failure is the missing handler.
+
+RESIDENTIAL PROPERTY-DETAILS FIELDS  (property-preferences.blade.php)
+  Field                                    "Other" in <select>  Result
+  ───────────────────────────────────────  ───────────────────  ──────
+  appliances                               YES                  FAIL
+  view_preference                          YES                  FAIL
+  heating_fuel                             YES                  FAIL
+  air_conditioning                         YES                  FAIL
+  water                                    YES                  FAIL
+  sewer                                    YES                  FAIL
+  property_utilities                       YES                  FAIL
+  laundry_features                         YES                  FAIL
+  floor_covering                           YES                  FAIL
+  security_features                        YES                  FAIL
+  garage_parking_spaces_option_landlord    YES                  FAIL
+
+  Failure reason for all 11: jQuery change handler never registered;
+  toggleGarageOptions() crash aborts initializeFullService() at line 1637.
+
+COMMERCIAL PROPERTY-DETAILS FIELDS  (property-preferences.blade.php)
+  Field                                    "Other" in <select>  Result
+  ───────────────────────────────────────  ───────────────────  ──────
+  road_surface_type                        YES                  FAIL
+  electrical_service                       YES                  FAIL
+  building_features                        YES                  FAIL
+
+  Failure reason: same as above — handler not registered.
+
+LEASING-TERMS FIELDS  (commission-based/lease-terms.blade.php)
+  Field                                    "Other" in <select>  Result
+  ───────────────────────────────────────  ───────────────────  ──────
+  desired_lease_length                     YES                  FAIL
+  terms_of_lease                           YES                  FAIL
+  rent_includes                            YES                  FAIL
+  tenant_pays                              NO                   FAIL
+  owner_pays                               NO                   FAIL
+
+  desired_lease_length / terms_of_lease / rent_includes:
+    Failure reason — handler not registered (toggleGarageOptions crash).
+  tenant_pays:
+    Failure reason — "Other" option is absent from the rendered <select>
+    options list.  Reveal div #other_tenant_pays_wrapper exists in the DOM
+    but is permanently unreachable via the UI.
+  owner_pays:
+    Failure reason — "Other" option is absent from the rendered <select>
+    options list.  Reveal div #other_owner_pays_wrapper exists in the DOM
+    but is permanently unreachable via the UI.
+
+ADDITIONAL / TAX-LEGAL FIELDS
+  Field                                    "Other" in <select>  Result
+  ───────────────────────────────────────  ───────────────────  ──────
+  additional_documents                     YES                  FAIL
+
+  Failure reason: handler not registered (toggleGarageOptions crash).
+
+SECTION 4 RESULT: 0 / 20  PASS
+  18 / 20  FAIL — jQuery change handler never registered;
+                  root cause: null-reference crash in toggleGarageOptions()
+                  at blade line 1632, aborting initializeFullService().
+   2 / 20  FAIL — "Other" option absent from <select> (tenant_pays, owner_pays);
+                  reveal divs exist but are unreachable via the UI.
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 5 — CONSOLE ERRORS
+────────────────────────────────────────────────────────────────────────────────
+  JavaScript TypeError (toggleGarageOptions null classList)   FAIL (real bug)
+  Font CORS errors (dev-env only, non-blocking)               INFO — not a bug
+
+────────────────────────────────────────────────────────────────────────────────
+SECTION 6 — SCREENSHOTS
+────────────────────────────────────────────────────────────────────────────────
+  No screenshots were captured in the v9 automated run (headless, no save_to).
+  Visual evidence was gathered through page.evaluate() DOM inspection and
+  window.getComputedStyle() calls rather than raster screenshots.
+  Prior corroborating runs (v5–v7) also did not produce saved screenshot files.
+
+────────────────────────────────────────────────────────────────────────────────
+OVERALL SUMMARY
+────────────────────────────────────────────────────────────────────────────────
+  Task #427 fix (1) — Textarea heights ≤ 60 px:   11/11  PASS
+  Task #427 fix (2) — Tab navigation Back/Next:     5/5   PASS
+  Task #427 fix (3) — "Other" reveal behavior:      0/20  FAIL
+
+────────────────────────────────────────────────────────────────────────────────
+BUGS IDENTIFIED  (out of scope for Task #448 — no production code changes)
+────────────────────────────────────────────────────────────────────────────────
+  BUG-A  toggleGarageOptions() null-reference crash
+         File : offer-landlord-listing.blade.php  line 1632
+         Code : otherInputWrapper.classList.add('d-none')
+         Fix  : add null guard — if (otherInputWrapper) { ... }
+         Impact: aborts initializeFullService() on every fresh page load,
+                 preventing all 18 reveal handlers from registering; reproduces
+                 in both headless Chromium and headed browsers.
+         Tracked as follow-up task #454.
+
+  BUG-B  tenant_pays <select> missing "Other" option
+         File : commission-based/lease-terms.blade.php
+         Impact: reveal div #other_tenant_pays_wrapper exists but is unreachable.
+         Tracked as follow-up task #455.
+
+  BUG-C  owner_pays <select> missing "Other" option
+         File : commission-based/lease-terms.blade.php
+         Impact: reveal div #other_owner_pays_wrapper exists but is unreachable.
+         Tracked as follow-up task #455.
+
+================================================================================
+END OF REPORT
+================================================================================
