@@ -3477,7 +3477,8 @@ $lease_types = [
 
             $sel.select2({
                 placeholder: "Select",
-                allowClear: true
+                allowClear: true,
+                width: '100%'
             });
 
             var lwValues = @this.get('lease_for') || [];
@@ -3537,6 +3538,55 @@ $lease_types = [
         });
 
         // End lease_for
+
+        // leasing_spaces_tenant
+        function initSelect2LeasingSpaces() {
+            var $sel = $('#leasing_spaces_tenant');
+            if (!$sel.length) return;
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2('destroy');
+            }
+            $sel.select2({
+                placeholder: 'Select',
+                allowClear: true,
+                width: '100%'
+            });
+            var lwValues = @this.get('leasing_spaces_tenant') || [];
+            if (typeof lwValues === 'string') {
+                try { lwValues = JSON.parse(lwValues); } catch(e) { lwValues = []; }
+            }
+            if (lwValues && lwValues.length) {
+                $sel.val(lwValues).trigger('change.select2');
+            }
+            $sel.off('change.lsSync').on('change.lsSync', function() {
+                let selected = $(this).val() || [];
+                safeLivewireSet('leasing_spaces_tenant', selected, false);
+            });
+        }
+
+        initSelect2LeasingSpaces();
+        Livewire.hook('message.processed', () => {
+            var $ls = $('#leasing_spaces_tenant');
+            if ($ls.length && $ls.hasClass('select2-hidden-accessible')) {
+                var isOpen = false;
+                try { isOpen = $ls.data('select2').isOpen(); } catch(e) {}
+                if (!isOpen) {
+                    var lwVals = @this.get('leasing_spaces_tenant') || [];
+                    if (typeof lwVals === 'string') {
+                        try { lwVals = JSON.parse(lwVals); } catch(e) { lwVals = []; }
+                    }
+                    var domVals = ($ls.val() || []).slice().sort().join(',');
+                    var lwSorted = lwVals.slice().sort().join(',');
+                    if (domVals !== lwSorted) {
+                        $ls.val(lwVals).trigger('change.select2');
+                    }
+                }
+            } else if ($ls.length && !$ls.hasClass('select2-hidden-accessible')) {
+                initSelect2LeasingSpaces();
+            }
+        });
+        // End leasing_spaces_tenant
+
         //rent_includes
 
 
@@ -4236,7 +4286,7 @@ $lease_types = [
         let $el = $(selectorId.startsWith('#') ? selectorId : '#' + selectorId);
         if (!$el.length) return;
         if ($el.hasClass('select2-hidden-accessible')) return;
-        $el.select2({ placeholder: 'Select', allowClear: true });
+        $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
         $el.on('change', function() {
             let data = $(this).val() || [];
             debouncedSet(wireModel, data);
@@ -6037,6 +6087,7 @@ $lease_types = [
         initSelect2('#offered_financing', 'offered_financing', '.other_financing_wrapper');
         if ($('#sale_provision').length) { applySellerProvisionVisibility(); applyBuyerProvisionVisibility(); }
         if ($('#offered_financing').length) { applySellerFinancingVisibility(); applyBuyerFinancingVisibility(); }
+        initSelect2LeasingSpaces();
     });
 </script>
 <script>
