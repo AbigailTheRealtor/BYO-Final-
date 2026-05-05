@@ -2864,7 +2864,9 @@
                 const iconClass = input.getAttribute('data-icon');
                 if (!iconClass) return;
                 const wrapper = input.closest('.input-cover');
-                if (!wrapper || wrapper.querySelector('.input-icon')) return;
+                if (!wrapper) return;
+                if (input.type === 'file') return;
+                if (wrapper.querySelector('.input-icon')) return;
                 const icon = document.createElement('i');
                 icon.className = `input-icon ${iconClass}`;
                 wrapper.insertBefore(icon, input);
