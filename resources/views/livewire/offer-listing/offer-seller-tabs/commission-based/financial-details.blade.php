@@ -107,7 +107,7 @@
         </span>
         <div class="input-cover">
             <select wire:model.defer="operating_statement_available" class="form-control has-icon"
-                data-icon="fa-solid fa-file-chart-column">
+                data-icon="fa-solid fa-file-invoice">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
                 <option value="No">No</option>
@@ -390,8 +390,8 @@
         <div class="form-group mt-2">
             <div class="input-cover">
                 <input type="text" wire:model.defer="other_reason_for_sale" class="form-control has-icon"
-                    data-icon="fa-solid fa-tag"
-                    placeholder="Enter reason for sale (e.g., Downsizing)">
+                    data-icon="fa-solid fa-pen"
+                    placeholder="Enter reason for sale (e.g., Relocating for work)">
             </div>
         </div>
     @endif

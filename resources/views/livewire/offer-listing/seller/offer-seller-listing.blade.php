@@ -1832,6 +1832,7 @@
                     $('#offered_financing').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                 }
                 if (!$('#offered_financing').data('of-change-bound')) {
@@ -1850,6 +1851,7 @@
                     $('#sale_provision').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                 }
                 if (!$('#sale_provision').data('sp-change-bound')) {
