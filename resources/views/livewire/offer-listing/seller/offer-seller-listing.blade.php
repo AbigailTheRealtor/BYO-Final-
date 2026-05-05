@@ -306,6 +306,15 @@
         .percentage-value-set {
             padding-left: 9px !important;
         }
+
+        /* Compact textarea — applied only to specific seller flow textareas so they
+           visually match single-line inputs. The global .form-control min-height
+           rule is intentionally left untouched. */
+        .seller-compact-textarea {
+            min-height: 50px !important;
+            height: 50px;
+            resize: vertical;
+        }
     </style>
 @endpush
 

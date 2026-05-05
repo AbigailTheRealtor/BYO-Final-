@@ -98,7 +98,7 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <textarea wire:model="additional_parcel_ids" class="form-control" rows="3"
+                <textarea wire:model="additional_parcel_ids" class="form-control seller-compact-textarea" rows="3"
                     placeholder="Enter each additional parcel ID on a new line"></textarea>
             </div>
         @endif
@@ -111,7 +111,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <textarea wire:model="legal_description" class="form-control" rows="3"
+            <textarea wire:model="legal_description" class="form-control seller-compact-textarea" rows="3"
                 placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
         </div>
 
@@ -293,7 +293,7 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <textarea wire:model="special_assessment_description" class="form-control" rows="2"
+                <textarea wire:model="special_assessment_description" class="form-control seller-compact-textarea" rows="2"
                     placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
             </div>
         @endif
@@ -644,7 +644,7 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <textarea wire:model="additional_lease_restrictions" class="form-control" rows="2"
+                    <textarea wire:model="additional_lease_restrictions" class="form-control seller-compact-textarea" rows="2"
                         placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
                 </div>
             @endif

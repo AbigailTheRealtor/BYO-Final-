@@ -1396,7 +1396,10 @@
             <span class="error mt-2" id="weight_of_pets_error"></span>
         </div>
 
-        <div class="form-group">
+        {{-- Hidden: breed_restrictions ("Pet Restrictions") is suppressed from the UI to avoid
+             label conflict with the HOA pet_restrictions field in the Tax/Legal/HOA tab.
+             The model property and save logic are intentionally preserved for data compatibility. --}}
+        <div class="form-group" style="display:none">
             <label class="fw-bold">Pet Restrictions</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                 title="Enter any pet restrictions the Seller requires. Include any HOA or insurance-related restrictions if applicable.">
