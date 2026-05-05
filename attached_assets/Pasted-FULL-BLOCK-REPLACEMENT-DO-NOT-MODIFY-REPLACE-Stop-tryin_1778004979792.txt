@@ -1,0 +1,115 @@
+FULL BLOCK REPLACEMENT — DO NOT MODIFY, REPLACE
+
+Stop trying to fix lines.
+
+We are replacing entire sections.
+
+--------------------------------------------------
+FILE:
+offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+--------------------------------------------------
+
+Find the ENTIRE Tax Year block (including label + both inputs).
+
+DELETE EVERYTHING for that field.
+
+Replace with EXACTLY:
+
+<div class="form-group">
+    <label class="fw-bold">Tax Year:</label>
+    <div class="input-cover">
+        <input type="text"
+               wire:model="tax_year"
+               class="form-control has-icon"
+               data-icon="fa-solid fa-calendar-days"
+               placeholder="Enter Tax Year (e.g., 2025)">
+    </div>
+</div>
+
+--------------------------------------------------
+
+Do the SAME for:
+
+TOTAL PARCEL COUNT
+
+Replace entire block with:
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Total Parcel Count:</label>
+    <div class="input-cover">
+        <input type="number"
+               wire:model="total_parcel_count"
+               class="form-control has-icon"
+               data-icon="fa-solid fa-hashtag"
+               placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
+    </div>
+</div>
+
+--------------------------------------------------
+
+Do the SAME for:
+
+MAX LEASES PER YEAR
+
+Replace entire block with:
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Max Leases Per Year:</label>
+    <div class="input-cover">
+        <input type="number"
+               wire:model="max_leases_per_year"
+               class="form-control has-icon"
+               data-icon="fa-solid fa-hashtag"
+               placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
+    </div>
+</div>
+
+--------------------------------------------------
+REPEAT SAME REPLACEMENTS IN:
+
+offer-landlord-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+
+--------------------------------------------------
+SELLER — REASON FOR SALE (FULL REPLACEMENT)
+--------------------------------------------------
+
+Delete EVERYTHING related to:
+
+other_reason_for_sale_wrapper
+
+Replace with ONLY:
+
+@if ($reason_for_sale === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text"
+                   wire:model.defer="other_reason_for_sale"
+                   class="form-control has-icon"
+                   data-icon="fa-solid fa-tag"
+                   placeholder="Enter Reason for Sale (e.g., Relocation)">
+        </div>
+    </div>
+@endif
+
+--------------------------------------------------
+UPLOAD BLOCK FIX
+--------------------------------------------------
+
+Replace ANY occurrence of:
+
+<div class="form-group mt-2">
+    <div class="conditional-upload-block">
+
+WITH:
+
+<div class="conditional-upload-block">
+
+--------------------------------------------------
+RULES
+--------------------------------------------------
+
+- DO NOT patch lines
+- DO NOT add new inputs
+- DO NOT keep old inputs
+
+👉 Replace ENTIRE blocks only

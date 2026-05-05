@@ -128,6 +128,13 @@
             display: none;
         }
 
+        .conditional-upload-block {
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 18px;
+            clear: both;
+        }
+
         .badge {
             /* font-size: 0.9rem;
                                                                                                             padding: 0.5em 0.75em; */

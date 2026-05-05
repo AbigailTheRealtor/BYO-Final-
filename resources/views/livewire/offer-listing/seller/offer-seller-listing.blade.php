@@ -110,6 +110,13 @@
             display: none;
         }
 
+        .conditional-upload-block {
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 18px;
+            clear: both;
+        }
+
         .badge {
             /* font-size: 0.9rem;
                                                                                                         padding: 0.5em 0.75em; */
@@ -1310,9 +1317,6 @@
                     });
                 }
             });
-            var rsEl = document.getElementById('reason_for_sale_select');
-            var rsW  = document.getElementById('other_reason_for_sale_wrapper');
-            if (rsEl && rsW) rsW.style.display = rsEl.value === 'Other' ? '' : 'none';
         }
 
         function debouncedSet(field, value, delay) {
@@ -2826,10 +2830,6 @@
                 var vals = $(this).val() || [];
                 $('#other_garage_parking_spaces_option_landlord').toggle(vals.includes('Other'));
                 @this.set('garage_parking_spaces_option', vals, false);
-            });
-            $(document).on('change', '#reason_for_sale_select', function() {
-                var val = $(this).val();
-                $('#other_reason_for_sale_wrapper').toggle(val === 'Other');
             });
         }
     </script>

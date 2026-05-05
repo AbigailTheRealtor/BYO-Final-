@@ -1,0 +1,103 @@
+HARD FIX — DELETE DUPLICATE INPUTS (NO EXCEPTIONS)
+
+This is NOT a refactor.
+This is NOT a redesign.
+This is a DELETE operation only.
+
+Replit must STOP adding inputs and START deleting duplicates.
+
+--------------------------------------------------
+STEP 1 — FIND DUPLICATES
+--------------------------------------------------
+
+Search for ANY pattern:
+
+<input ... wire:model="FIELD">
+
+FOLLOWED BY:
+
+<div class="input-cover">
+    <input ... wire:model="FIELD">
+</div>
+
+--------------------------------------------------
+STEP 2 — DELETE (MANDATORY)
+--------------------------------------------------
+
+For EVERY match:
+
+- DELETE the FIRST <input> completely
+- KEEP ONLY the input inside .input-cover
+
+FINAL RESULT MUST BE:
+
+<div class="input-cover">
+    <input ...>
+</div>
+
+--------------------------------------------------
+STRICT RULE
+--------------------------------------------------
+
+If two inputs share the same wire:model:
+
+👉 ONE MUST BE DELETED
+
+There must NEVER be:
+- duplicate inputs
+- duplicate wire:model
+
+--------------------------------------------------
+STEP 3 — FIX UPLOAD STRUCTURE
+--------------------------------------------------
+
+Find:
+
+<div class="form-group">
+    <div class="conditional-upload-block">
+
+Fix:
+
+- DELETE the outer .form-group
+- KEEP ONLY:
+
+<div class="conditional-upload-block">
+    ...
+</div>
+
+--------------------------------------------------
+STEP 4 — DO NOT ADD ANYTHING
+--------------------------------------------------
+
+Do NOT:
+- add inputs
+- add wrappers
+- restructure layout
+- modify logic
+
+ONLY DELETE incorrect code
+
+--------------------------------------------------
+MANDATORY VALIDATION
+--------------------------------------------------
+
+Search:
+
+wire:model="tax_year"
+
+Result must show:
+👉 ONLY ONE input
+
+Repeat for:
+- total_parcel_count
+- max_leases_per_year
+- ALL fields
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+- ZERO duplicate inputs
+- ZERO duplicate wire:model
+- Clean Livewire binding
+- No UI conflicts

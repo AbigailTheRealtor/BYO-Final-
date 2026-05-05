@@ -1,0 +1,113 @@
+CRITICAL FIX — FORCE REMOVE DUPLICATE INPUTS (NO ADDITIONS)
+
+This is NOT a refactor.
+This is a CLEANUP.
+
+Replit is currently ADDING new inputs but NOT removing old ones.
+
+You MUST DELETE the duplicates.
+
+--------------------------------------------------
+STEP 1 — HARD DELETE DUPLICATES (MANDATORY)
+--------------------------------------------------
+
+Search for ANY pattern like:
+
+<input ... wire:model="FIELD">
+
+FOLLOWED BY:
+
+<div class="input-cover">
+    <input ... wire:model="FIELD">
+</div>
+
+FOR EVERY MATCH:
+
+- DELETE the FIRST <input> completely
+- KEEP ONLY the one INSIDE .input-cover
+
+Final result must be:
+
+<div class="input-cover">
+    <input ...>
+</div>
+
+--------------------------------------------------
+RULE (STRICT)
+--------------------------------------------------
+
+If TWO inputs share the same wire:model:
+
+👉 ONE MUST BE DELETED
+
+There must NEVER be:
+- duplicate wire:model
+- duplicate inputs for same field
+
+--------------------------------------------------
+STEP 2 — FIX UPLOAD STRUCTURE
+--------------------------------------------------
+
+Search for:
+
+<div class="form-group">
+    <div class="conditional-upload-block">
+
+Fix:
+
+- DELETE the outer .form-group
+- KEEP ONLY:
+
+<div class="conditional-upload-block">
+    ...
+</div>
+
+--------------------------------------------------
+STEP 3 — DO NOT ADD ANYTHING NEW
+--------------------------------------------------
+
+Do NOT:
+- add new inputs
+- add wrappers
+- duplicate fields
+
+ONLY DELETE incorrect structure
+
+--------------------------------------------------
+FILES (ALL MUST BE FIXED)
+--------------------------------------------------
+
+Seller:
+- offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+- offer-seller-listing.blade.php
+- offer-seller-listing-edit.blade.php
+
+Landlord:
+- offer-landlord-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+- offer-landlord-listing.blade.php
+- offer-landlord-listing-edit.blade.php
+
+--------------------------------------------------
+FINAL CHECK (MANDATORY)
+--------------------------------------------------
+
+Search:
+
+wire:model="tax_year"
+
+You should see ONLY ONE input.
+
+Do this for:
+- tax_year
+- total_parcel_count
+- max_leases_per_year
+- ALL fields
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+- ZERO duplicate inputs
+- ZERO duplicate wire:model
+- Clean layout
+- No Livewire conflicts

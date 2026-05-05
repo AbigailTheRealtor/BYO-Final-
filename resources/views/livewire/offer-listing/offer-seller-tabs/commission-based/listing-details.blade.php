@@ -157,8 +157,6 @@ $auction_lengths_seller = [
                     <i class="fa-solid fa-circle-info"></i>
                 </span></label>
 
-            </label>
-
             <div class="btn-group w-100 shadow-sm" role="group" aria-label="Listing status">
                 <div class="input-field col-3">
                     <input type="radio" class="btn-check" wire:model="listing_status" id="status-active"

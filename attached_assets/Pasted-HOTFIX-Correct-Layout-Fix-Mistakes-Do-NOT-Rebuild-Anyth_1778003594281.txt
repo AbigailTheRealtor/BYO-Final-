@@ -1,0 +1,106 @@
+HOTFIX — Correct Layout Fix Mistakes (Do NOT Rebuild Anything)
+
+Scope:
+Only fix structural mistakes introduced in the previous layout update.
+
+Do NOT:
+- Add new features
+- Modify validation
+- Touch Next/Submit logic
+- Touch Limited Service
+- Touch Hire Agent flows
+
+--------------------------------------------------
+ISSUE 1 — Duplicate Inputs (CRITICAL)
+--------------------------------------------------
+
+In multiple files, duplicate inputs were created like this:
+
+<input ...>
+<div class="input-cover">
+    <input ...>
+</div>
+
+Fix:
+- Remove the OUTER duplicate input
+- Keep ONLY the version inside:
+
+<div class="input-cover">
+    <input ... class="form-control has-icon">
+</div>
+
+Every field must have ONE input only.
+
+--------------------------------------------------
+ISSUE 2 — Incorrect conditional-upload-block nesting
+--------------------------------------------------
+
+Current (incorrect):
+<div class="form-group">
+    <div class="conditional-upload-block">
+
+Fix:
+- Remove unnecessary outer form-group
+- Use:
+
+<div class="conditional-upload-block">
+    <label>...</label>
+    <input type="file" ...>
+</div>
+
+Do NOT double-wrap.
+
+--------------------------------------------------
+ISSUE 3 — Remove inline display styles
+--------------------------------------------------
+
+Remove:
+style="display: block;"
+
+from all conditional-upload-block elements.
+
+Visibility must be controlled by:
+- Blade @if conditions
+- OR CSS class only
+
+--------------------------------------------------
+ISSUE 4 — Keep consistent structure
+--------------------------------------------------
+
+Standard field:
+<div class="form-group">
+    <label>...</label>
+    <div class="input-cover">
+        <input ...>
+    </div>
+</div>
+
+Conditional upload:
+<div class="conditional-upload-block">
+    <label>...</label>
+    <input type="file" ...>
+</div>
+
+--------------------------------------------------
+FILES TO FIX
+--------------------------------------------------
+
+Seller:
+- offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+- offer-seller-listing.blade.php
+- offer-seller-listing-edit.blade.php
+
+Landlord:
+- offer-landlord-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+- offer-landlord-listing.blade.php
+- offer-landlord-listing-edit.blade.php
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+- No duplicate inputs
+- Clean alignment
+- Conditional uploads show correctly
+- No layout shift
+- No broken Livewire binding

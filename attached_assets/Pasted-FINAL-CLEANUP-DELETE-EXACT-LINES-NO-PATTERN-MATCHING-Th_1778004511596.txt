@@ -1,0 +1,90 @@
+FINAL CLEANUP — DELETE EXACT LINES (NO PATTERN MATCHING)
+
+This is NOT a refactor.
+This is NOT a restructuring task.
+
+This is a STRICT DELETE operation.
+
+--------------------------------------------------
+STEP 1 — DELETE EXACT INPUT LINES
+--------------------------------------------------
+
+Find and DELETE these exact lines everywhere:
+
+<input type="text" wire:model="tax_year" class="form-control">
+<input type="number" wire:model="total_parcel_count" class="form-control">
+<input type="number" wire:model="max_leases_per_year" class="form-control">
+
+DO NOT touch the inputs inside .input-cover.
+
+--------------------------------------------------
+STEP 2 — DELETE BAD WRAPPER LINE
+--------------------------------------------------
+
+Find:
+
+<div class="form-group mt-2">
+
+ONLY when it directly wraps:
+<div class="conditional-upload-block">
+
+DELETE ONLY the outer div.form-group line.
+
+--------------------------------------------------
+STEP 3 — FIX SELLER REASON FOR SALE
+--------------------------------------------------
+
+Find:
+
+id="other_reason_for_sale_wrapper"
+
+DELETE the ENTIRE block.
+
+Replace with:
+
+@if ($reason_for_sale === 'Other')
+    <div class="form-group mt-2">
+        <div class="input-cover">
+            <input type="text"
+                   wire:model.defer="other_reason_for_sale"
+                   class="form-control has-icon"
+                   data-icon="fa-solid fa-tag"
+                   placeholder="Enter Reason for Sale (e.g., Relocation)">
+        </div>
+    </div>
+@endif
+
+--------------------------------------------------
+STEP 4 — DO NOT ADD ANYTHING
+--------------------------------------------------
+
+Do NOT:
+- add inputs
+- wrap inputs
+- refactor structure
+
+ONLY DELETE and replace exactly as instructed.
+
+--------------------------------------------------
+FINAL CHECK
+--------------------------------------------------
+
+Search:
+
+wire:model="tax_year"
+
+👉 MUST show only ONE input
+
+Repeat for:
+- total_parcel_count
+- max_leases_per_year
+- other_reason_for_sale
+
+--------------------------------------------------
+EXPECTED RESULT
+--------------------------------------------------
+
+- No duplicate inputs
+- No duplicate wire:model
+- Clean layout
+- Stable Livewire behavior

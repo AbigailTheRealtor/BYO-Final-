@@ -39,7 +39,6 @@
                 </span>
             </label>
             <div class="input-cover">
-                <i class="input-icon fa-solid fa-calendar-days"></i>
                 <input type="text" wire:model="tax_year" class="form-control has-icon"
                     data-icon="fa-solid fa-calendar-days"
                     placeholder="Enter Tax Year (e.g., 2025)">
@@ -93,9 +92,8 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <i class="input-icon fa-solid fa-layer-group"></i>
                     <input type="number" wire:model="total_parcel_count" class="form-control has-icon"
-                        data-icon="fa-solid fa-layer-group"
+                        data-icon="fa-solid fa-hashtag"
                         placeholder="Enter Total Number of Parcels (e.g., 3)" min="2">
                 </div>
             </div>
@@ -342,7 +340,7 @@
                     <option value="No">No</option>
                     <option value="Unknown">Unknown</option>
                 </select>
-        </div>
+            </div>
         </div>
 
         @if ($has_hoa === 'Yes')
@@ -640,9 +638,8 @@
                                 </span>
                             </label>
                             <div class="input-cover">
-                                <i class="input-icon fa-solid fa-key"></i>
                                 <input type="number" wire:model="max_leases_per_year" class="form-control has-icon"
-                                    data-icon="fa-solid fa-key"
+                                    data-icon="fa-solid fa-hashtag"
                                     placeholder="Enter Max Leases Per Year (e.g., 2)" min="1">
                             </div>
                         </div>
@@ -740,7 +737,7 @@
             </div>
         </div>
         @if ($landlord_disclosure_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload Landlord Disclosure:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="landlord_disclosure_file" class="form-control"
@@ -779,7 +776,7 @@
             </div>
         </div>
         @if ($survey_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload Survey:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="survey_file" class="form-control"
@@ -818,7 +815,7 @@
             </div>
         </div>
         @if ($inspection_report_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload Inspection Report:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="inspection_report_file" class="form-control"
@@ -857,7 +854,7 @@
             </div>
         </div>
         @if ($hoa_condo_docs_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload HOA/Condo Documents:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="hoa_condo_docs_file" class="form-control"
@@ -896,7 +893,7 @@
             </div>
         </div>
         @if ($flood_disclosure_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload Flood Disclosure:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="flood_disclosure_file" class="form-control"
@@ -934,7 +931,7 @@
             </div>
         </div>
         @if ($lead_based_paint_disclosure === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload Lead-Based Paint Disclosure:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="lead_based_paint_file" class="form-control"
@@ -973,7 +970,7 @@
             </div>
         </div>
         @if ($environmental_report_available === 'Yes')
-            <div class="form-group mt-2">
+            <div class="conditional-upload-block">
                 <label class="fw-bold">Upload Environmental Report:</label>
                 <p class="text-muted small mb-1">Upload the document related to this disclosure.</p>
                 <input type="file" wire:model="environmental_report_file" class="form-control"
