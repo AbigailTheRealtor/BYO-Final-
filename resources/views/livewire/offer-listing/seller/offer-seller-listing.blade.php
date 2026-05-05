@@ -1810,7 +1810,7 @@
             if ($('#offered_financing').length) {
                 if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
                     $('#offered_financing').select2({
-                        placeholder: "Select offered financing",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                 }
@@ -1828,7 +1828,7 @@
             if ($('#sale_provision').length) {
                 if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
                     $('#sale_provision').select2({
-                        placeholder: "Select sale provisions",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                 }

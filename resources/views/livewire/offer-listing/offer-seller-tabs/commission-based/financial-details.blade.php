@@ -106,7 +106,6 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <i class="input-icon fa-solid fa-file-chart-column"></i>
             <select wire:model.defer="operating_statement_available" class="form-control has-icon"
                 data-icon="fa-solid fa-file-chart-column">
                 <option value="">Select</option>
@@ -392,7 +391,7 @@
             <div class="input-cover">
                 <input type="text" wire:model.defer="other_reason_for_sale" class="form-control has-icon"
                     data-icon="fa-solid fa-tag"
-                    placeholder="Enter Reason for Sale (e.g., Relocation)">
+                    placeholder="Enter reason for sale (e.g., Downsizing)">
             </div>
         </div>
     @endif
