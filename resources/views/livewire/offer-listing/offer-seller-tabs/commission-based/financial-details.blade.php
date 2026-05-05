@@ -372,7 +372,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model.defer="reason_for_sale" class="form-control has-icon"
+            <select id="reason_for_sale_select" wire:model.defer="reason_for_sale" class="form-control has-icon"
                 data-icon="fa-solid fa-tag">
                 <option value="">Select</option>
                 <option value="Retirement">Retirement</option>
@@ -386,15 +386,14 @@
         </div>
     </div>
 
-    @if ($reason_for_sale === 'Other')
-        <div class="form-group mt-2">
-            <div class="input-cover">
-                <input type="text" wire:model.defer="other_reason_for_sale" class="form-control has-icon"
-                    data-icon="fa-solid fa-tag"
-                    placeholder="Describe the reason for sale">
-            </div>
+    <div class="form-group mt-2" id="other_reason_for_sale_wrapper"
+        style="{{ $reason_for_sale === 'Other' ? '' : 'display:none;' }}">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="other_reason_for_sale" class="form-control has-icon"
+                data-icon="fa-solid fa-tag"
+                placeholder="Describe the reason for sale">
         </div>
-    @endif
+    </div>
 
     {{-- Employee Count --}}
     <div class="form-group mt-3">

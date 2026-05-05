@@ -1286,6 +1286,35 @@
         let _lastInitTime = 0;
         let _bathroomsDropdownHandler = null;
 
+        // Shared helper: reads native select.selected state and updates all
+        // "Other" free-text wrapper visibility. Called from initializeFullService(),
+        // message.processed hooks, and the delegated change handler below.
+        function _restoreOtherSelectVisibility() {
+            var _els = [
+                { selId: 'appliances',                              wrapperId: 'other_appliances',                               wrapperClass: null },
+                { selId: 'view_preference',                         wrapperId: 'other_preferences',                              wrapperClass: null },
+                { selId: 'garage_parking_spaces_option_landlord',   wrapperId: 'other_garage_parking_spaces_option_landlord',    wrapperClass: null },
+                { selId: 'included_assets',                         wrapperId: null,                                             wrapperClass: 'other_assets' },
+            ];
+            _els.forEach(function(cfg) {
+                var sel = document.getElementById(cfg.selId);
+                if (!sel) return;
+                var hasOther = Array.from(sel.options).some(function(o) { return o.selected && o.value === 'Other'; });
+                if (cfg.wrapperId) {
+                    var w = document.getElementById(cfg.wrapperId);
+                    if (w) w.style.display = hasOther ? '' : 'none';
+                }
+                if (cfg.wrapperClass) {
+                    document.querySelectorAll('.' + cfg.wrapperClass).forEach(function(w) {
+                        w.style.display = hasOther ? '' : 'none';
+                    });
+                }
+            });
+            var rsEl = document.getElementById('reason_for_sale_select');
+            var rsW  = document.getElementById('other_reason_for_sale_wrapper');
+            if (rsEl && rsW) rsW.style.display = rsEl.value === 'Other' ? '' : 'none';
+        }
+
         function debouncedSet(field, value, delay) {
             clearTimeout(_s2Timers[field]);
             _s2Timers[field] = setTimeout(function() {
@@ -1528,44 +1557,15 @@
                         $appliances.select2({ placeholder: "Select", allowClear: true });
                         if (!$appliances.data('appliances-change-bound')) {
                             $appliances.on('change', function() {
-                                var selectedValues = $(this).val() || [];
+                                var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
                                 @this.set('appliances', selectedValues, false);
-                                if (selectedValues.includes('Other')) {
-                                    $('#other_appliances').show();
-                                } else {
-                                    $('#other_appliances').hide();
-                                }
                             });
                             $appliances.data('appliances-change-bound', true);
                         }
                     }
-                    var aData = $appliances.val() || [];
-                    if (aData.includes('Other')) {
-                        $('#other_appliances').show();
-                    } else {
-                        $('#other_appliances').hide();
-                    }
                 }
 
-                var $viewPref = $('#view_preference');
-                if ($viewPref.length && $viewPref.hasClass('select2-hidden-accessible')) {
-                    var vData = $viewPref.val() || [];
-                    if (vData.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                    }
-                }
-
-                var $assets = $('#included_assets');
-                if ($assets.length && $assets.hasClass('select2-hidden-accessible')) {
-                    var assetData = $assets.val() || [];
-                    if (assetData.includes('Other')) {
-                        $('.other_assets').show();
-                    } else {
-                        $('.other_assets').hide();
-                    }
-                }
+                _restoreOtherSelectVisibility();
 
                 initializeMlsPropertyMultiSelects();
 
@@ -2023,21 +2023,9 @@
                     allowClear: true
                 });
                 $('#included_assets').on('change', function() {
-                    let selectedValues = $(this).val() || [];
+                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
                     @this.set('business_assets', selectedValues, false);
-                    if (selectedValues && selectedValues.includes('Other')) {
-                        $('.other_assets').show();
-                    } else {
-                        $('.other_assets').hide();
-                    }
                 });
-                // Apply initial state if "Other" was already selected (e.g., on load)
-                let _initAssets = $('#included_assets').val() || [];
-                if (_initAssets.includes('Other')) {
-                    $('.other_assets').show();
-                } else {
-                    $('.other_assets').hide();
-                }
             }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
@@ -2046,13 +2034,8 @@
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val() || [];
+                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
                     @this.set('view_preference', selectedValues, false);
-                    if (selectedValues.includes('Other')) {
-                        $('#other_preferences').show();
-                    } else {
-                        $('#other_preferences').hide();
-                    }
                 });
             }
 
@@ -2062,13 +2045,8 @@
                     allowClear: true
                 });
                 $('#appliances').on('change', function() {
-                    let selectedValues = $(this).val() || [];
+                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
                     @this.set('appliances', selectedValues, false);
-                    if (selectedValues && selectedValues.includes('Other')) {
-                        $('#other_appliances').closest('.form-group').show();
-                    } else {
-                        $('#other_appliances').closest('.form-group').hide();
-                    }
                 });
             }
 
@@ -2078,14 +2056,27 @@
                     allowClear: true
                 });
                 $('#garage_parking_spaces_option_landlord').on('change', function() {
-                    let selectedValues = $(this).val() || [];
+                    var selectedValues = Array.from(this.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
                     @this.set('garage_parking_spaces_option', selectedValues, false);
-                    const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
-                    if (otherDiv) {
-                        otherDiv.style.display = selectedValues.includes('Other') ? '' : 'none';
-                    }
                 });
             }
+
+            // Restore all "Other" wrapper visibility from native select state
+            _restoreOtherSelectVisibility();
+
+            function attachReasonForSaleListener() {
+                var rsEl = document.getElementById('reason_for_sale_select');
+                var rsWrapper = document.getElementById('other_reason_for_sale_wrapper');
+                if (!rsEl || !rsWrapper) return;
+                if (!rsEl._rsaleListenerBound) {
+                    rsEl._rsaleListenerBound = true;
+                    rsEl.addEventListener('change', function() {
+                        rsWrapper.style.display = this.value === 'Other' ? '' : 'none';
+                    });
+                }
+                rsWrapper.style.display = rsEl.value === 'Other' ? '' : 'none';
+            }
+            attachReasonForSaleListener();
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -2363,6 +2354,10 @@
                     attachBedroomsDropdownListener();
                     attachConditionDropdownListener();
                     attachItemConditionDropdownListener();
+
+                    // Restore "Other" wrapper visibility after every Livewire re-render
+                    _restoreOtherSelectVisibility();
+                    attachReasonForSaleListener();
                 });
             }
 
@@ -2843,6 +2838,39 @@
                 }
             }
         });
+
+        // Global delegated change handler for "Other" free-text wrapper visibility.
+        // Using document-level delegation means this survives Livewire DOM replacement
+        // of the underlying select elements (wire:ignore + wire:key swaps).
+        if (!document._otherVisibilityDelegateAdded) {
+            document._otherVisibilityDelegateAdded = true;
+            document.addEventListener('change', function(e) {
+                var t = e.target;
+                if (!t) return;
+                var vals, w;
+                if (t.id === 'appliances') {
+                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
+                    w = document.getElementById('other_appliances');
+                    if (w) w.style.display = vals.includes('Other') ? '' : 'none';
+                } else if (t.id === 'view_preference') {
+                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
+                    w = document.getElementById('other_preferences');
+                    if (w) w.style.display = vals.includes('Other') ? '' : 'none';
+                } else if (t.id === 'garage_parking_spaces_option_landlord') {
+                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
+                    w = document.getElementById('other_garage_parking_spaces_option_landlord');
+                    if (w) w.style.display = vals.includes('Other') ? '' : 'none';
+                } else if (t.id === 'included_assets') {
+                    vals = Array.from(t.options).filter(function(o) { return o.selected; }).map(function(o) { return o.value; });
+                    document.querySelectorAll('.other_assets').forEach(function(el) {
+                        el.style.display = vals.includes('Other') ? '' : 'none';
+                    });
+                } else if (t.id === 'reason_for_sale_select') {
+                    w = document.getElementById('other_reason_for_sale_wrapper');
+                    if (w) w.style.display = t.value === 'Other' ? '' : 'none';
+                }
+            });
+        }
     </script>
 
     <script>
