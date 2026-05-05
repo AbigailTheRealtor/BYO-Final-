@@ -547,7 +547,7 @@ class TenantAgentAuctionBidController extends Controller
         
         // Get tenant's counter to agent (TenantCounterTerm)
         $tenantCounter = \App\Models\TenantCounterTerm::with('meta')
-            ->where('tenant_agent_auction_id', $bid_id)
+            ->where('tenant_agent_auction_id', $bid->tenant_agent_auction_id)
             ->orderBy('created_at', 'desc')
             ->first();
         
