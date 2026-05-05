@@ -1,0 +1,112 @@
+TASK: Expand City Lookup Dataset — Missing Florida Cities Like Treasure Island
+
+SCOPE:
+Create Offer Listing city → county/state auto-population lookup only.
+
+ISSUE:
+City auto-population works for common cities like Tampa and Clearwater, but fails for smaller cities such as Treasure Island. This means the JS/listener is working, but the city lookup dataset is incomplete.
+
+DO NOT TOUCH:
+- Offer Listing form markup
+- City/county/state wire:model bindings
+- Validation
+- Routes unless lookup source requires it
+- Database schema
+- Hire Agent flows
+- Limited Service flows
+- Agent Profile flows
+
+--------------------------------------------------
+PHASE 1 — AUDIT LOOKUP SOURCE
+--------------------------------------------------
+
+Find where city → county/state mappings are stored.
+
+Search for examples that currently work:
+- Tampa
+- Clearwater
+- St. Petersburg
+- Pinellas
+- Hillsborough
+
+Identify whether mappings come from:
+- JS array/object
+- JSON file
+- PHP config
+- database seed/table
+- external API endpoint
+
+Report the file/source before editing.
+
+--------------------------------------------------
+PHASE 2 — ADD MISSING CITY
+--------------------------------------------------
+
+Add:
+
+City: Treasure Island
+County: Pinellas
+State: Florida
+State Abbreviation: FL, if the lookup uses abbreviations
+
+Match the exact format used by existing city records.
+
+Also check/add common Pinellas beach cities if this same lookup list is local/static:
+
+- St. Pete Beach → Pinellas, FL
+- Madeira Beach → Pinellas, FL
+- Redington Beach → Pinellas, FL
+- North Redington Beach → Pinellas, FL
+- Redington Shores → Pinellas, FL
+- Indian Rocks Beach → Pinellas, FL
+- Indian Shores → Pinellas, FL
+- Belleair Beach → Pinellas, FL
+- Belleair Bluffs → Pinellas, FL
+- Gulfport → Pinellas, FL
+- Seminole → Pinellas, FL
+- Largo → Pinellas, FL
+- Dunedin → Pinellas, FL
+- Safety Harbor → Pinellas, FL
+- Tarpon Springs → Pinellas, FL
+- Palm Harbor → Pinellas, FL
+
+Only add cities if the lookup source is clearly a static/manual city list.
+
+--------------------------------------------------
+PHASE 3 — MAKE MATCHING MORE FLEXIBLE
+--------------------------------------------------
+
+If matching is exact-string only, improve matching safely:
+
+- Trim whitespace
+- Case-insensitive matching
+- Normalize periods where practical:
+  St Petersburg should match St. Petersburg
+- Do not break existing matches
+
+--------------------------------------------------
+VERIFICATION
+--------------------------------------------------
+
+Test in all 4 Create Offer Listing flows:
+- /offer-listing/seller
+- /offer-listing/buyer
+- /offer-listing/landlord
+- /offer-listing/tenant/tenant
+
+Confirm these populate County + State:
+- Treasure Island → Pinellas, FL/Florida
+- St. Pete Beach → Pinellas, FL/Florida
+- Clearwater → Pinellas, FL/Florida
+- Tampa → Hillsborough, FL/Florida
+
+RUN:
+php -l on edited PHP/Blade files.
+
+HARD SAFEGUARDS:
+- No migrations
+- No migrate:fresh
+- No schema changes
+- No broad refactor
+- Do not change working city behavior
+- Stop and report if city data comes from an external provider/API
