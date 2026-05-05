@@ -1,0 +1,119 @@
+TASK #531 — Buyer Create Offer Listing: Placeholder & Services Tab Fix
+
+SCOPE:
+Buyer Create Offer Listing full_service wizard only.
+
+FILES:
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/purchasing-terms.blade.php
+
+DO NOT:
+- Do not modify Seller, Landlord, or Tenant flows
+- Do not modify Limited Service / initializeLimitedService()
+- Do not modify wire:model names
+- Do not modify validation rules
+- Do not modify save/draft persistence logic
+- Do not modify Agent services, Agent presets, or Hire Agent flows
+- Do not delete the services.blade.php file
+
+STEP 1 — READ-ONLY AUDIT FIRST:
+Before editing, identify:
+1. The current tab order and activeTab indices for Buyer full_service
+2. Where the Services tab nav is created
+3. Where the Services tab pane is rendered
+4. Any JS references to:
+   - #services
+   - validateServicesTab
+   - activeTab === 3
+   - final tab / Submit button logic
+5. The Select2 initialization for:
+   - #condition_prop_buyer
+   - #sale_provision
+   - #offered_financing
+
+Then apply only the minimal changes below.
+
+--------------------------------------------------
+
+FIX 1 — Select2 empty-state placeholders:
+These Buyer multi-selects must show “Select” when empty:
+
+1. Acceptable Property Conditions
+   selector: #condition_prop_buyer
+
+2. Acceptable Special Sale Provisions
+   selector: #sale_provision
+
+3. Offered Financing/Currency
+   selector: #offered_financing
+
+Expected:
+- Collapsed empty Select2 field displays: Select
+- Saved selected values still reload on draft/edit
+- Existing wire:model values remain unchanged
+- Existing classes and data-icon attributes remain unchanged
+
+Use the smallest reliable fix:
+- ensure data-placeholder="Select" exists where appropriate
+- ensure Select2 is initialized with placeholder: 'Select'
+- if required by this Select2 version, add a blank option only if it does not duplicate existing options
+- do not replace Select2 with a plain select
+
+--------------------------------------------------
+
+FIX 2 — Remove Buyer Services tab from full_service wizard:
+The Buyer full_service wizard should not show or render Services.
+
+Current buyer tab sequence should become:
+
+0 — Listing Details
+1 — Property Preferences
+2 — Purchasing Terms
+3 — Description
+4 — Agent Credentials & Contact Info
+5 — AI Questions
+
+Actions:
+- Remove/exclude Services from the Buyer full_service tab nav
+- Do not leave a blank/skipped tab
+- Re-index Description, Agent Credentials & Contact Info, and AI Questions for Buyer only
+- Do not affect Seller, Landlord, or Tenant tab structures
+
+--------------------------------------------------
+
+FIX 3 — Remove Buyer Services tab pane:
+In the tab content area:
+- Do not render the Services pane for Buyer full_service
+- Do not include buyer services.blade.php in Buyer Create Offer Listing
+- Re-index remaining Buyer panes to match the updated nav sequence
+
+Do not delete:
+resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/services.blade.php
+
+--------------------------------------------------
+
+FIX 4 — Update Buyer-only wizard JS/index logic:
+Update initializeFullService() only where needed for Buyer.
+
+Expected:
+- Next/Back works through the updated Buyer sequence
+- Submit appears/works on the final Buyer tab
+- Save Draft still works
+- Any validation path referencing #services or validateServicesTab skips Services when user_type === buyer
+- sessionStorage/current tab handling does not point to the removed Services tab
+
+Do not touch initializeLimitedService().
+
+--------------------------------------------------
+
+DONE WHEN:
+- Acceptable Property Conditions shows Select when empty
+- Acceptable Special Sale Provisions shows Select when empty
+- Offered Financing/Currency shows Select when empty
+- Previously saved values reload correctly
+- Buyer full_service wizard has no Services tab
+- Buyer has no hidden Services pane rendered
+- Buyer tab indices are sequential: 0,1,2,3,4,5
+- Buyer Next/Back/Save Draft/Submit all work
+- Seller, Landlord, and Tenant are unaffected

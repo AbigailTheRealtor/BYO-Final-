@@ -1,0 +1,79 @@
+Task #527 — Fix Icon Overlap in Documents & Disclosures Tabs
+
+SCOPE:
+Only edit:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/documents-disclosures.blade.php
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/documents-disclosures.blade.php
+
+DO NOT TOUCH:
+- Tab navigation
+- Tax/Legal/HOA tab
+- Buyer or Tenant flows
+- Limited Service flows
+- Routes
+- Schema
+- Validation
+- Save/load logic
+- File upload bindings
+- Conditional @if blocks
+
+ISSUE:
+In the Documents & Disclosures tab for Seller and Landlord Full Service Offer Listings, icons overlap labels on these fields:
+- Flood Disclosure Available
+- Lead-Based Paint Disclosure Required
+- Environmental Report Available
+- Additional Documents Available
+
+Likely cause:
+Some affected fields still have standalone icon markup such as:
+
+<i class="input-icon ..."></i>
+
+or duplicated/misplaced icon markup outside the .input-cover wrapper.
+
+FIX:
+In BOTH files, inspect only the four affected fields listed above.
+
+For each affected normal select field, ensure the structure is:
+
+<div class="input-cover">
+    <select class="form-control has-icon" data-icon="fa-solid fa-[ICON]" ...>
+        ...
+    </select>
+</div>
+
+Rules:
+- Remove any standalone <i class="input-icon ..."></i> tags for these four fields.
+- Each affected field must have exactly one select.
+- Each affected select must have class="form-control has-icon".
+- Each affected select must have one data-icon attribute.
+- The select must be inside one .input-cover wrapper.
+- Do not change wire:model names.
+- Do not change option values.
+- Do not change labels.
+- Do not change upload fields.
+- Do not change conditional @if blocks.
+
+Additional Documents Available:
+If this is a Select2 multi-select, wrap the select’s input-cover area with wire:ignore if not already present.
+Do not remove or rename the multi-select field.
+
+VERIFY:
+Run:
+
+php -l resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/documents-disclosures.blade.php
+php -l resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/documents-disclosures.blade.php
+
+Then manually verify:
+- /offer-listing/seller → Documents & Disclosures tab
+- /offer-listing/landlord → Documents & Disclosures tab
+
+Confirm:
+- No icon overlaps any label
+- Flood Disclosure Available renders cleanly
+- Lead-Based Paint Disclosure Required renders cleanly
+- Environmental Report Available renders cleanly
+- Additional Documents Available renders cleanly
+- Upload blocks still appear only when the related dropdown is set to “Yes”
+- Save Draft works
+- No console errors
