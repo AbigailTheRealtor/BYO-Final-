@@ -1,0 +1,143 @@
+#492 — Seller Create Offer Listing UI Cleanup + Remove Current Representation Status
+
+SCOPE:
+Create Offer Listing flows only.
+Full Service / commission-based only.
+
+DO NOT TOUCH:
+- Limited Service / legacy files
+- Hire Agent flows
+- routes
+- database schema
+- unrelated validation
+- unrelated layout/styling
+
+IMPORTANT:
+Limited Service is legacy. Do not modify Limited Service files.
+
+URL example:
+offer-listing/seller
+
+Login test:
+Abigailbaschuk@gmail.com
+12345678
+
+--------------------------------------------------
+PART 1 — REMOVE CURRENT REPRESENTATION STATUS
+--------------------------------------------------
+
+In Tab 1: Listing Details for all 4 Create Offer Listing flows:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Completely remove the field:
+
+Current Representation Status with Broker
+
+Also remove its required validation everywhere it applies to these Create Offer Listing full-service flows.
+
+Remove from:
+- Blade field/UI
+- Livewire validation rules
+- JS required-field maps / label maps
+- error span references if any
+
+Do not leave it hidden.
+Do not keep it required.
+Do not affect Hire Agent or Limited Service flows.
+
+--------------------------------------------------
+PART 2 — SELLER ONLY EDITS
+--------------------------------------------------
+
+Seller full-service Create Offer Listing only.
+
+1. Existing Lease Type
+
+If user selects Other, show ONE custom input.
+
+Placeholder:
+Enter Existing Lease Type (e.g., Month-to-Month)
+
+Rules:
+- Use Blade @if only
+- No inline display:none
+- No duplicate input
+- Keep wire:model.defer="other_lease_type"
+
+2. Operating Statement Available
+
+Add/fix the icon.
+
+Use:
+fa-solid fa-file-chart-column
+
+Do not change field name or validation.
+
+3. Reason for Sale
+
+If user selects Other, show ONE custom input.
+
+Placeholder:
+Enter Reason for Sale (e.g., Relocation)
+
+Rules:
+- Use Blade @if only
+- No id="other_reason_for_sale_wrapper"
+- No inline display:none
+- No duplicate input
+- Keep wire:model.defer="other_reason_for_sale"
+
+4. Placeholder text fixes
+
+Make sure the first placeholder option says:
+
+Select
+
+For these Seller fields:
+- Offered Financing/Currency
+- Special Sale Provision
+- Additional Document Available
+
+Do not change option values.
+Do not change Select2 behavior.
+Only fix visible placeholder text.
+
+--------------------------------------------------
+FINAL CHECK
+--------------------------------------------------
+
+Confirm:
+- Current Representation Status with Broker is gone from Seller, Buyer, Landlord, Tenant Create Offer Listing Tab 1
+- No validation still requires that field
+- No JS required-field map still blocks Next because of that field
+- Seller Existing Lease Type → Other shows one input only
+- Seller Reason for Sale → Other shows one input only
+- other_lease_type has only one input
+- other_reason_for_sale has only one input
+- no id="other_reason_for_sale_wrapper"
+- Operating Statement Available has icon
+- Offered Financing/Currency placeholder says Select
+- Special Sale Provision placeholder says Select
+- Additional Document Available placeholder says Select
+- Limited Service files unchanged
+- Hire Agent files unchanged
+
+--------------------------------------------------
+TEST
+--------------------------------------------------
+
+Login:
+Abigailbaschuk@gmail.com
+12345678
+
+Test Seller Create Offer Listing:
+- Full Service only
+- Confirm removed field no longer appears
+- Confirm Next button is not blocked by removed field
+- Existing Lease Type → Other works
+- Reason for Sale → Other works
+- Placeholder text says Select
+- No duplicate or overlapping fields

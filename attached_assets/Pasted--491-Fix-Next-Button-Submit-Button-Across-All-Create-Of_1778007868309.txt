@@ -1,0 +1,140 @@
+#491 — Fix Next Button + Submit Button Across All Create Offer Listing Flows
+
+READ-ONLY AUDIT FIRST:
+Before editing, inspect the Create Offer Listing wizard navigation logic for all 4 roles:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Commission-based Create Offer Listing flows only.
+
+SCOPE:
+Fix wizard navigation only:
+- Next button must work on every tab
+- Back button must continue working
+- Submit button must work when all required fields are completed
+- Required-field validation must not block valid progression incorrectly
+
+DO NOT TOUCH:
+- Hire Agent flows
+- Limited Service / flat-fee flows
+- Edit flows
+- routes
+- database schema
+- city autocomplete logic from #490 unless directly breaking Next
+- unrelated labels, layout, placeholders, or styling
+
+FILES TO AUDIT:
+resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php
+app/Http/Livewire/OfferListing/Buyer/BuyerOfferListing.php
+app/Http/Livewire/OfferListing/Landlord/LandlordOfferListing.php
+app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php
+
+ISSUE:
+The Next button is not consistently working:
+- Seller Create Offer Listing: Next button not working
+- Landlord Create Offer Listing: works on Tab 1 but fails on Tab 2
+- Need all tabs to advance correctly for all roles/property types
+- Submit must work once all required fields are filled
+
+AUDIT CHECKS:
+1. Inspect each role’s Next button click handler.
+2. Confirm button uses the correct Livewire method.
+3. Confirm currentTab/currentStep/current_tab naming is consistent.
+4. Confirm every tab index exists and matches the rendered tab list.
+5. Confirm validation rules match visible fields only.
+6. Confirm removed fields, especially meeting_Preference, are not still required anywhere.
+7. Confirm hidden conditional fields are not blocking Next/Submit unless visible and required.
+8. Confirm JavaScript required-field checker is not blocking valid Livewire progression.
+9. Confirm Select2/multi-select fields sync to Livewire before validation.
+10. Check browser console for JS errors that may stop the Next handler.
+
+FIX REQUIREMENTS:
+1. Make Next work on every tab for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+2. Make Submit work on the final tab when required fields are complete.
+
+3. If validation fails:
+- show the correct error message
+- do not silently block the button
+- do not get stuck without feedback
+
+4. Validation must only require fields that are:
+- part of the active role
+- part of the selected property type
+- visible/applicable to the current flow
+
+5. Remove any remaining references to deleted Meeting Preference validation or JS field labels.
+
+6. Do not bypass validation globally.
+Fix the incorrect validation blockers instead.
+
+SPECIFIC THINGS TO CHECK:
+- setupGlobalListeners()
+- required field label maps
+- validateOnlyFilledFields()
+- nextStep / nextTab / incrementStep methods
+- submit/save methods
+- tab count arrays
+- conditional required rules by property type
+- Select2 wire sync events
+
+VALIDATION TEST:
+For each role:
+1. Open Create Offer Listing
+2. Fill required fields on Tab 1
+3. Click Next
+4. Continue through every tab
+5. Confirm Next works on every tab
+6. Confirm validation messages appear only when a real required visible field is missing
+7. Fill all required fields
+8. Confirm Submit works
+
+Test roles:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Also test main property types where tabs differ:
+Seller:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Buyer:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Landlord:
+- Residential
+- Commercial
+
+Tenant:
+- Residential
+- Commercial
+
+FINAL SAFETY CHECK:
+Run git diff and confirm no changes to:
+- Hire Agent flows
+- Limited Service flows
+- routes
+- database schema
+- unrelated UI sections
+
+STOP if the fix appears to require route changes, schema changes, or broad refactoring.
