@@ -55,7 +55,7 @@
             </label>
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
-                <input type="text" wire:model="annual_property_taxes" class="form-control"
+                <input type="text" wire:model="annual_property_taxes" class="form-control" style="padding-left: 24px;"
                     placeholder="Enter Annual Property Taxes (e.g., 5,200)"
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -246,7 +246,7 @@
                 </label>
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
-                    <input type="text" wire:model="annual_cdd_fee" class="form-control"
+                    <input type="text" wire:model="annual_cdd_fee" class="form-control" style="padding-left: 24px;"
                         placeholder="Enter Annual CDD Fee (e.g., 1800)"
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -284,7 +284,7 @@
                 </label>
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
-                    <input type="text" wire:model="special_assessment_amount" class="form-control"
+                    <input type="text" wire:model="special_assessment_amount" class="form-control" style="padding-left: 24px;"
                         placeholder="Enter Special Assessment Amount (e.g., 4500)"
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -396,7 +396,7 @@
                         </label>
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
-                            <input type="text" wire:model="association_fee_amount" class="form-control"
+                            <input type="text" wire:model="association_fee_amount" class="form-control" style="padding-left: 24px;"
                                 placeholder="Enter Association Fee Amount (e.g., 350)"
                                 data-error-id="association_fee_amount_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -481,7 +481,7 @@
                     </label>
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="association_application_fee" class="form-control"
+                        <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 24px;"
                             placeholder="Enter Association Application Fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -509,8 +509,7 @@
                     ];
                 @endphp
                 <div class="input-cover" wire:ignore>
-                    <i class="input-icon fa-solid fa-list-check input-icon2"></i>
-                    <select id="association_fee_includes" class="form-control select2-multiple" multiple>
+                    <select id="association_fee_includes" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-list-check" multiple>
                         @foreach ($feeIncludesOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
@@ -546,8 +545,7 @@
                     ];
                 @endphp
                 <div class="input-cover" wire:ignore>
-                    <i class="input-icon fa-solid fa-star input-icon2"></i>
-                    <select id="association_amenities" class="form-control select2-multiple" multiple>
+                    <select id="association_amenities" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-star" multiple>
                         @foreach ($amenityOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_amenities ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
@@ -962,8 +960,7 @@
                 ];
             @endphp
             <div class="input-cover" wire:ignore>
-                <i class="input-icon fa-solid fa-folder-open input-icon2"></i>
-                <select id="additional_documents" class="form-control select2-multiple" multiple>
+                <select id="additional_documents" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-folder-open" multiple>
                     <option value="">Select</option>
                     @foreach ($additionalDocumentOptions as $option)
                         <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
