@@ -1,0 +1,63 @@
+TASK: Fix Icon/Input Overlap in Seller Offer Listing Tax/Legal/HOA/Disclosure UI
+
+SCOPE:
+Seller Offer Listing create flow only.
+
+ISSUE:
+Icons are overlapping labels/fields in the Tax, Legal, HOA & Disclosures area. This happens before the Documents & Disclosures section, so do NOT move Documents to a new tab. Fix the broken input/icon markup instead.
+
+DO NOT:
+- Move Documents to another tab
+- Change tab structure
+- Change database schema
+- Change validation
+- Touch Buyer/Landlord/Tenant flows
+- Touch Hire Agent flows
+
+FILES TO CHECK:
+- Seller Offer Listing create Blade files
+- Tax / Legal / HOA / Disclosures partial
+- Any related seller disclosure partial used by create flow
+
+FIX:
+Audit the affected fields where icons overlap labels, especially:
+- Association Application Fee
+- Lead-Based Paint Disclosure Required
+- Environmental Report Available
+- Additional Documents Available
+- Any nearby fields with the same broken pattern
+
+For each affected field:
+- Ensure the icon is inside the same input wrapper as the input/select
+- Use the same working structure as nearby fields that render correctly
+- For plain selects, use the same has-icon/data-icon pattern already used successfully elsewhere
+- Do not leave standalone <i> icons outside the input wrapper
+- Remove broken duplicate icons if present
+- Make sure labels and tooltip icons remain above the input/select and do not overlap the input icon
+
+REFERENCE:
+Use correctly rendering fields in the same form, such as:
+- Inspection Report Available
+- HOA/Condo Documents Available
+- Flood Disclosure Available
+as the visual/markup pattern.
+
+VERIFICATION:
+Go to the Seller Offer Listing create flow and confirm:
+- No icons overlap labels
+- Association Application Fee renders correctly
+- Lead-Based Paint Disclosure Required renders correctly
+- Environmental Report Available renders correctly
+- Additional Documents Available renders correctly
+- Documents section does not need to be moved
+- No other flows changed
+
+RUN:
+php -l on all edited PHP/Blade files.
+
+HARD RULES:
+- No migrations
+- No migrate:fresh
+- No schema changes
+- No broad refactor
+- Stop and report if the broken fields use a shared component that affects other flows
