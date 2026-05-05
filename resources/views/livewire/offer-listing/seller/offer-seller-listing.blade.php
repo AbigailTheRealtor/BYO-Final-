@@ -2937,7 +2937,8 @@
             updateSaveButton();
 
             // Livewire reactivity hook
-            if (typeof Livewire !== 'undefined') {
+            if (typeof Livewire !== 'undefined' && !window.__wizardHandlerHookBound) {
+                window.__wizardHandlerHookBound = true;
                 Livewire.hook('message.processed', () => {
                     setTimeout(() => {
                         // Refresh listeners and service type
