@@ -643,8 +643,20 @@ class HireAgentDirectController extends Controller
             ]);
 
             if ($intent === 'counter') {
+                $counterRoute = self::COUNTER_ROUTES[$role];
+                if (!\Route::has($counterRoute)) {
+                    Log::error('HireAgentDirect counter route missing', [
+                        'role'       => $role,
+                        'route_name' => $counterRoute,
+                        'bid_id'     => $bid->id,
+                        'listing_id' => $listing->id,
+                    ]);
+                    return redirect()
+                        ->back()
+                        ->with('error', 'Unable to open counter terms. Please contact support.');
+                }
                 return redirect()
-                    ->route(self::COUNTER_ROUTES[$role], ['bid_id' => $bid->id]);
+                    ->route($counterRoute, ['bid_id' => $bid->id]);
             }
 
             $viewRoute = self::LISTING_VIEW_ROUTES[$role];
@@ -656,10 +668,14 @@ class HireAgentDirectController extends Controller
         } catch (\Throwable $e) {
             DB::rollBack();
             Log::error('HireAgentDirect confirm failed', [
-                'error'    => $e->getMessage(),
-                'agentId'  => $agent->id,
-                'role'     => $role,
-                'clientId' => Auth::id(),
+                'error'     => $e->getMessage(),
+                'exception' => get_class($e),
+                'file'      => $e->getFile(),
+                'line'      => $e->getLine(),
+                'trace'     => $e->getTraceAsString(),
+                'agentId'   => $agent->id,
+                'role'      => $role,
+                'clientId'  => Auth::id(),
             ]);
             $errorMessage = ($intent === 'counter')
                 ? 'Unable to open counter terms. Please contact support.'
