@@ -550,7 +550,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="appliances" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-plug" multiple>
+            data-icon="fa-solid fa-utensils" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($appliances as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -735,7 +735,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="view_preference"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-eye" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
@@ -790,7 +790,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="non_negotiable_amenities"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock"
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-star" data-placeholder="Select"
             @if (!$property_type) disabled @endif multiple>
             @if ($property_type === 'Residential Property')
                 @foreach ($non_negotialble_terms_landlord as $item)
@@ -852,7 +852,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="heating_fuel" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-fire" multiple>
+                data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard', 'Central', 'Electric', 'Exhaust Fans', 'Gas', 'Heat Pump', 'Natural Gas', 'Partial', 'Propane', 'Solar', 'Space Heater', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $heating_fuel ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -877,7 +877,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="air_conditioning" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-snowflake" multiple>
+                data-icon="fa-solid fa-wind" data-placeholder="Select" multiple>
                 @foreach (['Central Air', 'Humidity Control', 'Mini-Split Unit(s)', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $air_conditioning ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -902,7 +902,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="water" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-droplet" multiple>
+                data-icon="fa-solid fa-faucet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $water ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -926,7 +926,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="sewer" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-water" multiple>
+                data-icon="fa-solid fa-toilet" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $sewer ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -951,7 +951,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="property_utilities" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-bolt" multiple>
+                data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available', 'Cable Available', 'Cable Connected', 'Emergency Power', 'Electric - Multiple Meters', 'Electrical Nearby', 'Electricity Available', 'Electricity Connected', 'Fiber Optics', 'Fire Hydrant', 'Mini Sewer', 'Natural Gas Available', 'Natural Gas Connected', 'Phone Available', 'Private', 'Propane', 'Public', 'Sewer Available', 'Sewer Connected', 'Solar', 'Sprinkler Meter', 'Sprinkler Recycled', 'Sprinkler Well', 'Street Lights', 'Underground Utilities', 'Water - Multiple Meters', 'Water Available', 'Water Connected', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $property_utilities ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -976,7 +976,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="laundry_features" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-shirt" multiple>
+                data-icon="fa-solid fa-shirt" data-placeholder="Select" multiple>
                 @foreach (['Common Area', 'Corridor Access', 'Electric Dryer Hookup', 'Gas Dryer Hookup', 'In Garage', 'In Kitchen', 'Inside', 'Laundry Chute', 'Laundry Closet', 'Laundry Room', 'Outside', 'Same Floor as Condo Unit', 'Upper Floor', 'Washer Hookup', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $laundry_features ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1001,7 +1001,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="floor_covering" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-layer-group" multiple>
+                data-icon="fa-solid fa-layer-group" data-placeholder="Select" multiple>
                 @foreach (['Bamboo', 'Brick/Stone', 'Carpet', 'Ceramic Tile', 'Concrete', 'Cork', 'Engineered Hardwood', 'Epoxy', 'Forestry Stewardship Certified', 'Granite', 'Laminate', 'Linoleum', 'Luxury Vinyl', 'Marble', 'Parquet', 'Porcelain Tile', 'Quarry Tile', 'Reclaimed Wood', 'Recycled/Composite Flooring', 'Slate', 'Terrazzo', 'Tile', 'Travertine', 'Vinyl', 'Wood', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $floor_covering ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1026,7 +1026,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="security_features" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-shield-halved" multiple>
+                data-icon="fa-solid fa-shield-halved" data-placeholder="Select" multiple>
                 @foreach (['Closed Circuit Camera(s)', 'Fire Alarm', 'Fire Sprinkler System', 'Gated Community', 'Key Card Entry', 'Medical Alarm', 'Secured Garage/Parking', 'Security Fencing/Lighting/Alarms', 'Security Gate', 'Security Lights', 'Security System', 'Security System Leased', 'Security System Owned', 'Smoke Detector(s)', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $security_features ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1164,7 +1164,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="property_utilities" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-bolt" multiple>
+                data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available', 'Cable Available', 'Cable Connected', 'Emergency Power', 'Electric - Multiple Meters', 'Electrical Nearby', 'Electricity Available', 'Electricity Connected', 'Fiber Optics', 'Fire Hydrant', 'Mini Sewer', 'Natural Gas Available', 'Natural Gas Connected', 'Phone Available', 'Private', 'Propane', 'Public', 'Sewer Available', 'Sewer Connected', 'Solar', 'Sprinkler Meter', 'Sprinkler Recycled', 'Sprinkler Well', 'Street Lights', 'Underground Utilities', 'Water - Multiple Meters', 'Water Available', 'Water Connected', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $property_utilities ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1189,7 +1189,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="water" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-droplet" multiple>
+                data-icon="fa-solid fa-faucet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $water ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1213,7 +1213,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="sewer" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-water" multiple>
+                data-icon="fa-solid fa-toilet" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $sewer ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1238,7 +1238,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="heating_fuel" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-fire" multiple>
+                data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard', 'Central', 'Electric', 'Exhaust Fans', 'Gas', 'Heat Pump', 'Natural Gas', 'Partial', 'Propane', 'Solar', 'Space Heater', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $heating_fuel ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1263,7 +1263,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="air_conditioning" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-snowflake" multiple>
+                data-icon="fa-solid fa-wind" data-placeholder="Select" multiple>
                 @foreach (['Central Air', 'Humidity Control', 'Mini-Split Unit(s)', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $air_conditioning ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach

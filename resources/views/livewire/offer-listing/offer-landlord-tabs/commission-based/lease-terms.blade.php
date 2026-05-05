@@ -1542,7 +1542,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
-                data-icon="fa-solid fa-home">
+                data-icon="fa-solid fa-receipt" data-placeholder="Select">
                 <option value=""></option>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1556,7 +1556,7 @@
         {{-- <label class="fw-bold">Please specify other included items:</label> --}}
         <div class="input-cover">
             <input type="text" wire:model="other_rent_include" class="form-control has-icon"
-                data-icon="fa-solid fa-home"
+                data-icon="fa-solid fa-receipt"
                 placeholder="Enter what rent includes (e.g., Water, Trash, Cable)">
         </div>
     </div>
