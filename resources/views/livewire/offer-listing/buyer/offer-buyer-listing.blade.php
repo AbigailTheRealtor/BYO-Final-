@@ -316,6 +316,7 @@
         .percentage-value-set {
             padding-left: 9px !important;
         }
+
     </style>
 @endpush
 
@@ -3147,8 +3148,13 @@
         function initSelect2Fields() {
             $('.select2-multiple, .select2-single').each(function () {
                 var $el = $(this);
-                if ($el.hasClass('select2-hidden-accessible')) return;
+
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+
                 var placeholder = $el.attr('data-placeholder') || 'Select';
+
                 $el.select2({
                     placeholder: placeholder,
                     allowClear: true,

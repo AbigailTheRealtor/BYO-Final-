@@ -1,0 +1,113 @@
+Task #570B — Correct Force Select2 Placeholder Patch
+
+ISSUE:
+Task #570 added forceSelect2Placeholders(), but the single-select repair injects HTML into .select2-selection__rendered:
+
+$rendered.html('<span class="select2-selection__placeholder">' + placeholder + '</span>');
+
+This is fragile because Select2 controls and re-renders that DOM. Replace it with a safer Select2-aware text/title update and force a Select2 UI refresh.
+
+SCOPE:
+Only edit these four Create Offer Listing main blade files:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+DO NOT TOUCH:
+- Partials
+- Routes
+- Controllers
+- Database/schema
+- Validation
+- Save/load logic
+- wire:model names
+- Option values
+- Tab navigation
+- Limited Service
+- Edit flows
+
+REQUIRED CHANGE:
+In each file, find forceSelect2Placeholders().
+
+Replace the current single-select section:
+
+$('.select2-single').each(function () {
+    var $el = $(this);
+    var val = $el.val();
+    if (val === null || val === '') {
+        var placeholder = $el.attr('data-placeholder') || 'Select';
+        var $rendered = $el.next('.select2-container').find('.select2-selection__rendered');
+        if ($rendered.length) {
+            $rendered.html('<span class="select2-selection__placeholder">' + placeholder + '</span>');
+        }
+    }
+});
+
+WITH:
+
+$('.select2-single').each(function () {
+    var $el = $(this);
+    var val = $el.val();
+
+    if (val === null || val === '') {
+        var placeholder = $el.attr('data-placeholder') || 'Select';
+        var select2 = $el.data('select2');
+
+        if (select2 && select2.$selection) {
+            select2.$selection.find('.select2-selection__rendered')
+                .attr('title', placeholder)
+                .text(placeholder)
+                .addClass('select2-selection__placeholder');
+        } else {
+            var $rendered = $el.next('.select2-container').find('.select2-selection__rendered');
+            if ($rendered.length) {
+                $rendered.attr('title', placeholder)
+                    .text(placeholder)
+                    .addClass('select2-selection__placeholder');
+            }
+        }
+    }
+});
+
+Then in the multi-select section, change:
+
+$field.attr('placeholder', placeholder).css('min-width', '120px');
+
+TO:
+
+$field.attr('placeholder', placeholder)
+    .css('min-width', '120px')
+    .trigger('change');
+
+At the END of forceSelect2Placeholders(), before the closing }, add:
+
+$('.select2-single, .select2-multiple').trigger('change.select2');
+
+FINAL function shape should be:
+- multi-select loop
+- single-select loop
+- trigger change.select2 line
+- close function
+
+VERIFY:
+Run php -l on all four edited files.
+
+Manual QA with hard refresh:
+- Seller: Special Sale Provision shows “Select”
+- Buyer: Acceptable Special Sale Provisions shows “Select”
+- Landlord: Appliances Included, View, Desired Lease Term show “Select”
+- Tenant: Offered Lease Term, Leasing Space show “Select”
+
+Also confirm:
+- Placeholder returns after clearing
+- Selected values still display correctly
+- No duplicate Select2 containers
+- No console errors
+- Save Draft still works
+
+STOP RULE:
+If this still fails, do not keep editing. Report one rendered DOM example for a broken field:
+1. original <select>
+2. generated .select2-container
+3. current forceSelect2Placeholders() function

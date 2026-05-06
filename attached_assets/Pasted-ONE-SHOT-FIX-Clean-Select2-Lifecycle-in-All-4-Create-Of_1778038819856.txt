@@ -1,0 +1,131 @@
+ONE-SHOT FIX — Clean Select2 Lifecycle in All 4 Create Offer Listing Files
+
+Issue:
+Select2 fields are still showing missing placeholders, misplaced icons, and layout overlap because the Select2 lifecycle is broken.
+
+Root cause:
+initSelect2Fields() was added incorrectly in all 4 files:
+- it is nested inside other functions
+- it contains this broken logic:
+  if ($el.hasClass('select2-hidden-accessible')) return;
+  if ($el.hasClass('select2-hidden-accessible')) {
+      $el.select2('destroy');
+  }
+
+The early return prevents destroy from ever running.
+
+Scope:
+ONLY these files:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+Do NOT touch:
+- Blade partials
+- CSS files
+- field markup
+- routes/controllers/database/migrations
+- validation
+- Save Draft logic
+- Livewire PHP classes
+- Hire Agent flows
+- Counter Terms
+- Agent Presets
+- initializeLimitedService()
+
+Required fix:
+
+1. Remove completely from all 4 files:
+- forceSelect2Placeholders()
+- all calls to forceSelect2Placeholders
+- placeholder CSS hacks added for force patch
+- any broken/nested initSelect2Properly()
+- any broken/nested initSelect2Fields()
+
+2. Add ONE top-level function in each file, not nested inside any other function:
+
+function initSelect2Fields() {
+    $('.select2-multiple, .select2-single').each(function () {
+        var $el = $(this);
+
+        if ($el.hasClass('select2-hidden-accessible')) {
+            $el.select2('destroy');
+        }
+
+        var placeholder = $el.attr('data-placeholder') || 'Select';
+
+        $el.select2({
+            placeholder: placeholder,
+            allowClear: true,
+            width: '100%'
+        });
+    });
+}
+
+3. Ensure existing calls run this function:
+- on document ready
+- after Livewire message.processed
+
+Use:
+
+$(document).ready(function () {
+    initSelect2Fields();
+});
+
+document.addEventListener('livewire:load', function () {
+    Livewire.hook('message.processed', function () {
+        initSelect2Fields();
+    });
+});
+
+4. Do NOT duplicate the calls if equivalent calls already exist.
+5. Do NOT add early return before destroy.
+6. Do NOT nest initSelect2Fields inside sellerAutoFillBuyNow(), landlordAutoFillLeaseNow(), syncWizardButtons(), or any other function.
+7. Keep all existing custom Select2 sync/change handlers unless they are duplicate broken initialization blocks.
+8. Preserve any existing Livewire @this.set(...) behavior.
+
+Validation:
+Run php -l on all 4 edited files.
+
+Manual QA:
+Hard refresh browser.
+
+Check these fields:
+Seller:
+- Special Sale Provision
+- Offered Financing/Currency
+- HOA fee includes
+- Additional Documents Available
+
+Landlord:
+- Appliances Included
+- View
+- Desired Lease Term
+- Rent Includes
+- Additional Documents Available
+
+Buyer:
+- Acceptable Property Conditions
+- Acceptable Property Style
+- Offered Financing/Currency
+
+Tenant:
+- Acceptable Property Conditions
+- Offered Lease Term
+- Leasing Space
+
+Confirm:
+- “Select” appears when empty
+- icons appear correctly
+- fields do not overlap labels
+- selecting/clearing restores “Select”
+- Next/Back does not create duplicate Select2 containers
+- Save Draft still works
+- no console errors
+
+Return:
+- exact functions removed
+- exact files changed
+- confirmation initSelect2Fields is top-level in all 4 files
+- validation results

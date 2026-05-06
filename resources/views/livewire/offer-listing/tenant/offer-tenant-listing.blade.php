@@ -389,6 +389,7 @@
     .set-button {
         gap: 3px;
     }
+
 </style>
 @endpush
 
@@ -2661,7 +2662,9 @@ $lease_types = [
 
         function initConditionSelect2() {
             var $sel = $('.condition_prop_buyer');
-            if ($sel.hasClass('select2-hidden-accessible')) return;
+            if ($sel.hasClass('select2-hidden-accessible')) {
+                $sel.select2('destroy');
+            }
 
             $sel.select2({
                 placeholder: "Select",
@@ -4302,9 +4305,11 @@ $lease_types = [
         // selectorId should be just the ID without '#' prefix
         let $el = $(selectorId.startsWith('#') ? selectorId : '#' + selectorId);
         if (!$el.length) return;
-        if ($el.hasClass('select2-hidden-accessible')) return;
+        if ($el.hasClass('select2-hidden-accessible')) {
+            $el.select2('destroy');
+        }
         $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
-        $el.on('change', function() {
+        $el.off('change.s2sync').on('change.s2sync', function() {
             let data = $(this).val() || [];
             debouncedSet(wireModel, data);
             if (otherWrapper) {
@@ -6115,8 +6120,13 @@ $lease_types = [
     function initSelect2Fields() {
         $('.select2-multiple, .select2-single').each(function () {
             var $el = $(this);
-            if ($el.hasClass('select2-hidden-accessible')) return;
+
+            if ($el.hasClass('select2-hidden-accessible')) {
+                $el.select2('destroy');
+            }
+
             var placeholder = $el.attr('data-placeholder') || 'Select';
+
             $el.select2({
                 placeholder: placeholder,
                 allowClear: true,

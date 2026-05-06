@@ -313,6 +313,7 @@
             color: #0ce7ef;
             font-weight: 600;
         }
+
     </style>
 @endpush
 
@@ -2208,7 +2209,10 @@
 
             function initLeaseTermSelect2() {
                 var $dlt = $('.lease_term_options');
-                if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
+                if (!$dlt.length) return;
+                if ($dlt.hasClass('select2-hidden-accessible')) {
+                    $dlt.select2('destroy');
+                }
                 $dlt.select2({
                     placeholder: "Select",
                     allowClear: true,
@@ -3481,8 +3485,13 @@
         function initSelect2Fields() {
             $('.select2-multiple, .select2-single').each(function () {
                 var $el = $(this);
-                if ($el.hasClass('select2-hidden-accessible')) return;
+
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+
                 var placeholder = $el.attr('data-placeholder') || 'Select';
+
                 $el.select2({
                     placeholder: placeholder,
                     allowClear: true,

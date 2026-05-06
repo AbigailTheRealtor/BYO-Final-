@@ -1,0 +1,137 @@
+Task #571B — Fix Broken Select2 Initialization (Syntax + Logic Conflict)
+
+ISSUE:
+initSelect2Properly() was added incorrectly and is now:
+- nested inside initSelect2Fields()
+- declaring $el twice
+- skipping destroy due to early return
+- conflicting with existing initSelect2Fields()
+
+This prevents Select2 from properly reinitializing.
+
+---
+
+STEP 1 — CLEAN ALL FILES
+
+In ALL 4 files:
+
+- seller
+- buyer
+- landlord
+- tenant
+
+REMOVE:
+
+1. Entire function:
+   initSelect2Properly()
+
+2. Any BROKEN partial versions of it
+
+3. Any duplicate lines like:
+   const $el = $(this); (when var $el already exists)
+
+---
+
+STEP 2 — FIX EXISTING INITIALIZER (DO NOT ADD NEW ONE)
+
+Find:
+
+function initSelect2Fields()
+
+REPLACE ENTIRE FUNCTION WITH:
+
+function initSelect2Fields() {
+    $('.select2-multiple, .select2-single').each(function () {
+        var $el = $(this);
+
+        // Always destroy existing instance first
+        if ($el.hasClass('select2-hidden-accessible')) {
+            $el.select2('destroy');
+        }
+
+        var placeholder = $el.attr('data-placeholder') || 'Select';
+
+        $el.select2({
+            placeholder: placeholder,
+            allowClear: true,
+            width: '100%'
+        });
+    });
+}
+
+---
+
+STEP 3 — KEEP EXISTING CALLS (DO NOT DUPLICATE)
+
+You should have ONLY:
+
+$(document).ready(function () {
+    initSelect2Fields();
+});
+
+document.addEventListener('livewire:load', function () {
+    Livewire.hook('message.processed', function () {
+        initSelect2Fields();
+    });
+});
+
+---
+
+STEP 4 — REMOVE FORCE PATCH (IMPORTANT)
+
+DELETE completely:
+
+- function forceSelect2Placeholders()
+- ALL setTimeout(forceSelect2Placeholders...)
+- ALL CSS hacks for placeholder
+
+---
+
+STEP 5 — VERIFY HTML RULE
+
+MULTI SELECT:
+- NO empty <option>
+
+SINGLE SELECT:
+- FIRST option must be:
+  <option value=""></option>
+
+---
+
+VERIFY:
+
+Hard refresh (Ctrl + Shift + R)
+
+Check:
+
+Tenant:
+- Offered Lease Term → shows "Select"
+- Leasing Space → shows "Select"
+
+Landlord:
+- Appliances Included → shows "Select"
+
+Seller:
+- Special Sale Provision → shows "Select"
+
+Buyer:
+- Acceptable Special Sale Provisions → shows "Select"
+
+---
+
+SUCCESS =
+
+- No blank Select2 fields
+- No DOM patching
+- No duplicate initializers
+- No console errors
+
+---
+
+STOP:
+
+If it STILL fails:
+The ONLY remaining cause is:
+templateSelection override
+
+At that point, paste ONE Select2 init block.

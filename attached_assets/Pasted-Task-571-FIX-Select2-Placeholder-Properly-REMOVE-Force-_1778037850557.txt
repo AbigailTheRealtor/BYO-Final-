@@ -1,0 +1,124 @@
+Task #571 — FIX Select2 Placeholder Properly (REMOVE Force Patch)
+
+ISSUE:
+Select2 placeholders are not showing because fields are initialized incorrectly or too early.
+
+Current approach (forceSelect2Placeholders) is WRONG and must be removed.
+
+---
+
+STEP 1 — REMOVE BROKEN PATCH
+
+In ALL 4 files:
+
+- seller/offer-seller-listing.blade.php
+- buyer/offer-buyer-listing.blade.php
+- landlord/offer-landlord-listing.blade.php
+- tenant/offer-tenant-listing.blade.php
+
+DELETE COMPLETELY:
+
+1. function forceSelect2Placeholders()
+2. ALL calls to:
+   setTimeout(forceSelect2Placeholders, ...)
+3. ALL CSS added for placeholder hacks:
+   .select2-selection__placeholder
+   .select2-search__field::placeholder
+   min-width hacks
+
+---
+
+STEP 2 — FIX INITIALIZATION (THE REAL FIX)
+
+Find ALL Select2 init code.
+
+REPLACE ALL of them with this SINGLE initializer:
+
+function initSelect2Properly() {
+    $('.select2-multiple, .select2-single').each(function () {
+        const $el = $(this);
+
+        // Destroy broken existing init
+        if ($el.hasClass('select2-hidden-accessible')) {
+            $el.select2('destroy');
+        }
+
+        const placeholder = $el.attr('data-placeholder') || 'Select';
+
+        $el.select2({
+            placeholder: placeholder,
+            allowClear: true,
+            width: '100%'
+        });
+    });
+}
+
+---
+
+STEP 3 — RUN IT CORRECTLY
+
+$(document).ready(function () {
+    initSelect2Properly();
+});
+
+document.addEventListener('livewire:load', function () {
+    Livewire.hook('message.processed', function () {
+        initSelect2Properly();
+    });
+});
+
+---
+
+STEP 4 — CRITICAL HTML RULE (DO NOT SKIP)
+
+For EVERY Select2 field:
+
+MULTI-SELECT:
+- MUST have: data-placeholder="Select"
+- MUST NOT have:
+  <option value="">
+  <option value="">Select
+
+SINGLE-SELECT:
+- MUST have:
+  <option value=""></option> as FIRST option
+
+---
+
+VERIFY:
+
+Hard refresh page.
+
+Check:
+
+Tenant:
+- Offered Lease Term → shows "Select"
+- Leasing Space → shows "Select"
+
+Landlord:
+- Appliances Included → shows "Select"
+
+Seller:
+- Special Sale Provision → shows "Select"
+
+Buyer:
+- Acceptable Special Sale Provisions → shows "Select"
+
+---
+
+SUCCESS =
+
+- No blank fields
+- No icon-only inputs
+- No DOM patching
+- No setTimeout hacks
+- No CSS hacks
+
+---
+
+STOP:
+
+If this still fails, then the ONLY remaining cause is:
+- custom templateSelection override
+
+At that point, report the initializer block.
