@@ -1,0 +1,123 @@
+TASK — Fix Landlord Agent Preset Counter Terms Not Populating All Compensation Fields
+
+SCOPE:
+Agent Offer Presets → Landlord only
+Counter Terms screen when user clicks:
+Agent’s Proposed Terms → Request Changes / Counter Terms
+
+This is for Agent Preset-driven counter terms, NOT BidYourOffer Offer Counter Terms.
+
+ISSUE:
+Landlord Agent Preset has many Broker Compensation fields filled out, but the Landlord counter bid form only shows some of them.
+
+Known missing/not populated from preset:
+- Landlord’s Broker Lease Fee
+- Tenant’s Broker Commission Structure
+- Tenant’s Broker Commission Fee
+- Payment Timing for Broker Fees
+- Lease Renewal / Extension Fee
+- Protection Period Timeframe
+- Early Termination Fee label/value mapping may be incomplete
+- Retainer Fee fields may still need verification
+
+DO NOT TOUCH:
+- Offer Counter Terms / BidYourOffer
+- Create Offer Listing
+- Buyer/Seller/Tenant flows unless only comparing patterns
+- Agent preset save logic unless the saved data is clearly wrong
+- Database schema
+- Routes
+
+AUDIT FIRST:
+Compare the Landlord Agent Preset fields shown on:
+/agent/presets
+
+against the Landlord counter terms screen.
+
+Report:
+1. Every Landlord preset compensation field key saved in AgentDefaultProfile / preset meta.
+2. Every Landlord counter component public property.
+3. Every field included in hydrateFromMetaMap().
+4. Every field included in prefillFromAgentBid().
+5. Every field included in saveAllMetaData().
+6. Every field rendered in the Landlord broker-compensation counter partial.
+7. Which preset fields are missing from hydration.
+8. Which hydrated fields are missing from the Blade.
+9. Which fields are rendered but hidden due to empty-value guards.
+
+FIX:
+Make Landlord counter terms a direct reflection of the Landlord Agent Preset.
+
+If the Agent filled the field in the preset:
+- Hydrate it into LandlordAgentAuctionCounterTerm
+- Render it in the broker-compensation tab
+- Allow the user to counter/edit it
+- Save it when submitted
+
+If the Agent did NOT fill the field:
+- Keep it hidden in counter mode
+
+FIELDS TO VERIFY AND SUPPORT IF FILLED:
+- landlord_broker_lease_fee_type / option
+- landlord_broker_lease_fee_amount
+- tenant_broker_commission_structure
+- tenant_broker_commission_fee_type / option
+- tenant_broker_commission_fee_amount
+- broker_fee_payment_timing
+- broker_fee_payment_timing_amount or related value
+- lease_renewal_extension_fee_type / option
+- lease_renewal_extension_fee_amount
+- property_management_interest / interested_in_property_management
+- property_management_fee_type / option
+- property_management_fee_amount
+- interested_in_selling
+- landlord_broker_purchase_fee_type / option
+- landlord_broker_purchase_fee_amount
+- interested_in_lease_option
+- lease_option_creation_fee_type / option
+- lease_option_creation_fee_amount
+- lease_option_purchase_fee_type / option
+- lease_option_purchase_fee_amount
+- protection_period_timeframe
+- early_termination_fee_option
+- early_termination_fee_amount
+- brokerage_relationship
+- agency_agreement_timeframe
+- additional_details_broker / additional_terms
+
+IMPORTANT:
+Use the actual field names found in the existing preset/model. Do not invent new keys if different keys already exist.
+
+VISIBILITY RULE:
+In counter mode:
+- Show only fields with values from the Agent preset.
+- Hide blank fields.
+- But do NOT hide a child amount field if its parent option is filled.
+  Example:
+  If “Landlord’s Broker Lease Fee” is filled in preset, show both type and amount.
+  If “Tenant’s Broker Commission Structure” is filled and fee amount exists, show both.
+
+VALIDATION:
+Using the Landlord preset shown in the screenshot, the counter form must show:
+- Landlord’s Broker Lease Fee: Percentage of Rent Due Each Rental Period / 10%
+- Tenant’s Broker Commission Structure
+- Tenant’s Broker Commission Fee: Percentage of First Month’s Rent / 100%
+- Payment Timing for Broker Fees: Deducted from Rent Collected / 5
+- Lease Renewal/Extension Fee: Percentage of Gross Lease Value / 5%
+- Property Management: Yes + fee 10%
+- Interested in Selling: Yes + purchase fee 3%
+- Lease-Option Agreement: Yes + creation 4% + purchase option 5666%
+- Protection Period: 60 days
+- Early Termination Fee: Yes + $4000
+- Brokerage Relationship
+- Agency Agreement Timeframe
+- Additional Terms
+
+Run:
+php -l on edited PHP files
+
+Return:
+- Files changed
+- Missing fields found
+- Field key mapping before/after
+- Confirmation only Landlord Agent Preset Counter Terms were changed

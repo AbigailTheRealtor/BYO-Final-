@@ -1,0 +1,65 @@
+READ-ONLY AUDIT FIRST — DO NOT CHANGE CODE YET
+
+Issue:
+Create Offer Listing Seller and Landlord still have Select2/conditional field display problems in Tax, Legal & HOA and Documents & Disclosures.
+
+Observed behavior:
+When selecting certain fields, the follow-up "Other" / conditional input appears in the wrong place or seems to override another field’s location.
+
+Examples:
+Seller / Tax, Legal & HOA:
+- Fee Frequency = Other reveals a “Select”/describe field in the wrong spot
+- Association Approval Required for Purchase = Yes causes fields/icons to appear over nearby labels
+- What Does the Association Fee Include? / Association Amenities icons appear misplaced
+
+Seller / Documents & Disclosures:
+- Lead-Based Paint Disclosure Required and Environmental Report Available show icons/fields visually overriding or stacking near labels
+- Additional Documents Available appears okay-ish but nearby conditional fields are misplaced
+
+Landlord / Tax, Legal & HOA:
+- Fee Frequency = Other / Approval Required / Association Amenities conditional fields appear mispositioned
+- Icons stack near labels or appear outside their intended input row
+
+Landlord / Documents & Disclosures:
+- Lead-Based Paint Disclosure Required and Environmental Report Available show misplaced icons/overlapping conditional behavior
+
+Goal:
+Find the exact root cause of conditional Select2/Other field placement and wrong-field override behavior.
+
+Audit requirements:
+1. Inspect only these files:
+   - resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+   - resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+   - resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/documents-disclosures.blade.php
+   - resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/documents-disclosures.blade.php
+   - Seller and Landlord root blade JS files only if needed for Select2/Other visibility logic
+
+2. For every conditional field in those files, report:
+   - label
+   - trigger field
+   - condition value
+   - conditional wrapper markup
+   - whether it is inside the same row/col as the trigger
+   - whether it has proper full-width wrapper: col-12 / form-group
+   - whether it is inside an input-cover incorrectly
+   - whether it has duplicate id/name/class with another conditional field
+   - whether JS targets the correct selector
+   - whether Select2 container is being inserted into the wrong place
+
+3. Specifically check for:
+   - duplicate IDs
+   - reused “other” field IDs
+   - conditional fields inserted inside two-column rows without col-12 wrapper
+   - input-cover wrappers missing position: relative
+   - raw icon elements or data-icon rendering outside expected wrapper
+   - Select2 dropdownParent missing when inside hidden/conditional containers
+   - Livewire re-render causing hidden conditional fields to reappear in wrong location
+   - jQuery change handlers targeting broad selectors instead of field-specific IDs
+
+4. Do NOT edit code yet.
+5. Do NOT touch Buyer, Tenant, Hire Agent, Agent Presets, Counter Terms, routes, controllers, database, migrations, or backend logic.
+
+Return only:
+- findings
+- exact root cause
+- smallest safe fix plan
