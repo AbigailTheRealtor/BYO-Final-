@@ -614,6 +614,7 @@ class SellerOfferListing extends Component
     public $environmental_report_available = '';
     public $additional_documents = [];
     public $other_document_type = '';
+    public $doc_rows = [];
 
     // Disclosure file uploads (temporary Livewire upload objects)
     public $seller_disclosure_file;
@@ -2397,6 +2398,8 @@ class SellerOfferListing extends Component
             $rawAdditionalDocs = $auction->get->additional_documents ?? [];
             $this->additional_documents = is_string($rawAdditionalDocs) ? json_decode($rawAdditionalDocs, true) ?? [] : (array)$rawAdditionalDocs;
             $this->other_document_type = $auction->get->other_document_type ?? '';
+            $rawDocRows = $auction->get->doc_rows ?? [];
+            $this->doc_rows = is_string($rawDocRows) ? json_decode($rawDocRows, true) ?? [] : (array)$rawDocRows;
 
             // Disclosure file paths (for "View current file" links when resuming a draft)
             $this->seller_disclosure_file_path    = $auction->get->seller_disclosure_file_path ?? '';
@@ -2924,6 +2927,7 @@ class SellerOfferListing extends Component
         $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
         $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
         $auction->saveMeta('other_document_type', $this->other_document_type);
+        $auction->saveMeta('doc_rows', json_encode($this->doc_rows));
 
         // Disclosure file uploads
         $disclosureUploads = [

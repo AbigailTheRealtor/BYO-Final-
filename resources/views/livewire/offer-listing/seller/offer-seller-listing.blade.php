@@ -1386,7 +1386,6 @@
                 view_preference: '#view_preference',
                 association_fee_includes: '#association_fee_includes',
                 association_amenities: '#association_amenities',
-                additional_documents: '#additional_documents',
             };
             Object.entries(regularFields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -1510,12 +1509,6 @@
             @this.set('association_amenities', selectedValues, false);
             $('#hoa-amenities-other-section').toggle(selectedValues.includes('Other'));
         });
-        $(document).on('change', '#additional_documents', function() {
-            var selectedValues = $(this).val() || [];
-            @this.set('additional_documents', selectedValues, false);
-            $('#additional-documents-other-section').toggle(selectedValues.includes('Other'));
-        });
-
         Object.entries(_mlsFieldSelectors).forEach(function([fieldId, selectors]) {
             selectors.forEach(function(selector) {
                 $(document).on('change', selector, function() {
@@ -1661,7 +1654,6 @@
                 '#included_assets': 'business_assets',
                 '#association_fee_includes': 'association_fee_includes',
                 '#association_amenities': 'association_amenities',
-                '#additional_documents': 'additional_documents',
             };
             Object.keys(regularFields).forEach(function(selector) {
                 var $el = $(selector);
@@ -1839,14 +1831,6 @@
             if ($('#association_amenities').length) {
                 var amDataInit = $('#association_amenities').val() || [];
                 $('#hoa-amenities-other-section').toggle(amDataInit.includes('Other'));
-            }
-
-            if ($('#additional_documents').length && !$('#additional_documents').hasClass('select2-hidden-accessible')) {
-                $('#additional_documents').select2({ placeholder: "Select", allowClear: true, width: '100%' });
-            }
-            if ($('#additional_documents').length) {
-                var adDataInit = $('#additional_documents').val() || [];
-                $('#additional-documents-other-section').toggle(adDataInit.includes('Other'));
             }
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {

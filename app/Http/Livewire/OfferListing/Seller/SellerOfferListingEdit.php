@@ -771,6 +771,7 @@ class SellerOfferListingEdit extends Component
     public $pet_restrictions_detail = '';
     public $additional_documents = [];
     public $other_document_type = '';
+    public $doc_rows = [];
     public $propertyPhotos = [];
     public $newPropertyPhotos = [];
     public $videoTourUrl = '';
@@ -1862,6 +1863,8 @@ class SellerOfferListingEdit extends Component
             $rawAdditionalDocs = $auction->get->additional_documents ?? [];
             $this->additional_documents = is_string($rawAdditionalDocs) ? json_decode($rawAdditionalDocs, true) ?? [] : (array)$rawAdditionalDocs;
             $this->other_document_type = $auction->get->other_document_type ?? '';
+            $rawDocRows = $auction->get->doc_rows ?? [];
+            $this->doc_rows = is_string($rawDocRows) ? json_decode($rawDocRows, true) ?? [] : (array)$rawDocRows;
 
             // Photos, Tours & Documents
             $rawPhotos = $auction->get->property_photos ?? null;
@@ -2803,6 +2806,7 @@ class SellerOfferListingEdit extends Component
         $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
         $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
         $auction->saveMeta('other_document_type', $this->other_document_type);
+        $auction->saveMeta('doc_rows', json_encode($this->doc_rows));
 
         // Disclosure file uploads
         $disclosureUploads = [

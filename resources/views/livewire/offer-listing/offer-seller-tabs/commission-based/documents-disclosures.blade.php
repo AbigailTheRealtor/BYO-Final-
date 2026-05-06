@@ -287,49 +287,77 @@
             </div>
         @endif
 
-        {{-- Additional Documents Available (Select2 multi-select) --}}
+        {{-- Additional Documents Available (Repeatable Rows) --}}
         <div class="form-group mt-3">
             <label class="fw-bold">Additional Documents Available:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                    title="Select any additional documents available for this listing. You may select multiple options or type to add a custom entry.">
+                    title="Add any additional documents available for this listing. Select a document type for each entry, or type a custom label.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
+
             @php
-                $additionalDocumentOptions = [
+                $docTypeOptions = [
                     'Appraisal Report', 'As-Built Plans / Floor Plans', 'Certificate of Occupancy',
                     'Drainage / Stormwater Report', 'Elevation Certificate', 'Energy Audit Report',
                     'Geotechnical / Soil Report', 'Hazardous Materials Report', 'Historic Designation Documents',
                     'Lease Agreements (Existing Tenants)', 'Maintenance Records', 'Permits & Permit History',
                     'Roof Certification', 'Septic Inspection Report', 'Title Insurance Commitment',
-                    'Utility Bills / History', 'Warranty Documents', 'Well Water Test Report', 'Other',
+                    'Utility Bills / History', 'Warranty Documents', 'Well Water Test Report', 'Other (custom)',
                 ];
+                $initialDocRows = !empty($doc_rows) ? $doc_rows : [];
             @endphp
-            <div class="input-cover has-select-icon" wire:ignore>
-                <select id="additional_documents" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-folder-open" data-placeholder="Select" multiple>
-                    <option value="">Select</option>
-                    @foreach ($additionalDocumentOptions as $option)
-                        <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>
-                            {{ $option }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
 
-        <div id="additional-documents-other-section" wire:ignore.self style="display: {{ in_array('Other', $additional_documents ?? []) ? 'block' : 'none' }}">
-            <div class="form-group mt-2">
-                <label class="fw-bold">Other Document Type:
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Describe the additional document type that is available for this property.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                </label>
-                <div class="input-cover">
-                    <input type="text" wire:model="other_document_type" class="form-control has-icon"
-                        data-icon="fa-solid fa-folder-open"
-                        placeholder="Enter additional document type (e.g., Roof Certification, Elevation Certificate)">
-                </div>
+            <div
+                x-data="{
+                    rows: {{ json_encode($initialDocRows) }},
+                    typeOptions: {{ json_encode($docTypeOptions) }},
+                    addRow() {
+                        this.rows.push({ type: '', label: '' });
+                        this.$nextTick(() => this.sync());
+                    },
+                    removeRow(index) {
+                        this.rows.splice(index, 1);
+                        this.sync();
+                    },
+                    sync() {
+                        @this.set('doc_rows', this.rows, false);
+                    }
+                }"
+                wire:ignore
+            >
+                <template x-for="(row, index) in rows" :key="index">
+                    <div class="d-flex align-items-start gap-2 mb-2">
+                        <div class="flex-grow-1">
+                            <select
+                                class="form-control"
+                                x-model="row.type"
+                                @change="if (row.type !== 'Other (custom)') { row.label = row.type; } else { row.label = ''; } sync();"
+                            >
+                                <option value="">— Select document type —</option>
+                                <template x-for="opt in typeOptions" :key="opt">
+                                    <option :value="opt" :selected="row.type === opt" x-text="opt"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div class="flex-grow-1" x-show="row.type === 'Other (custom)'">
+                            <input
+                                type="text"
+                                class="form-control"
+                                placeholder="Describe document type"
+                                x-model="row.label"
+                                @input="sync()"
+                            >
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" @click="removeRow(index)" title="Remove row">
+                            <i class="fa-solid fa-times"></i>
+                        </button>
+                    </div>
+                </template>
+
+                <button type="button" class="btn btn-sm btn-outline-primary mt-1" @click="addRow()">
+                    <i class="fa-solid fa-plus me-1"></i>Add Document
+                </button>
             </div>
         </div>
 
