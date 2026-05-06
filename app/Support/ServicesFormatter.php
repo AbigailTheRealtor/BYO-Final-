@@ -102,8 +102,10 @@ class ServicesFormatter
     public static function keyForLandlordAgent(string $propertyType): string
     {
         $map = [
-            'Residential' => 'landlord_agent.residential',
-            'Commercial' => 'landlord_agent.commercial',
+            'Residential'          => 'landlord_agent.residential',
+            'Residential Property' => 'landlord_agent.residential',
+            'Commercial'           => 'landlord_agent.commercial',
+            'Commercial Property'  => 'landlord_agent.commercial',
         ];
 
         return $map[$propertyType] ?? 'landlord_agent.residential';
@@ -112,8 +114,10 @@ class ServicesFormatter
     public static function keyForTenantAgent(string $propertyType): string
     {
         $map = [
-            'Residential' => 'tenant_agent.residential',
-            'Commercial' => 'tenant_agent.commercial',
+            'Residential'          => 'tenant_agent.residential',
+            'Residential Property' => 'tenant_agent.residential',
+            'Commercial'           => 'tenant_agent.commercial',
+            'Commercial Property'  => 'tenant_agent.commercial',
         ];
 
         return $map[$propertyType] ?? 'tenant_agent.residential';
