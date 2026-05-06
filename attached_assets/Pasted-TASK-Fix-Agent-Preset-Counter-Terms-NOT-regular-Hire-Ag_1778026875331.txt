@@ -1,0 +1,186 @@
+TASK — Fix Agent Preset Counter Terms (NOT regular Hire Agent flow)
+
+IMPORTANT:
+This applies ONLY to counter terms generated from:
+👉 Agent Presets (/agent/presets)
+
+This is NOT:
+- Regular Hire Agent counter logic
+- Offer Counter Terms
+
+----------------------------------------
+LIVE TEST FLOW
+----------------------------------------
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/agent/presets
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+Steps:
+1. Open Agent Presets
+2. Select a preset with services + compensation
+3. Trigger counter terms
+4. Observe what renders
+
+----------------------------------------
+GOAL
+----------------------------------------
+
+Counter form must be a DIRECT reflection of:
+👉 Agent Preset configuration
+
+----------------------------------------
+CORE RULE
+----------------------------------------
+
+IF AGENT DID NOT SELECT OR FILL IT:
+👉 DO NOT SHOW IT
+
+----------------------------------------
+PART 1 — SERVICES FIX
+----------------------------------------
+
+SOURCE OF TRUTH:
+Agent Preset selected services
+
+NOT:
+❌ master service list
+❌ static config
+
+----------------------------------------
+REQUIRED BEHAVIOR:
+----------------------------------------
+
+1. ONLY render services selected in preset
+
+2. DO NOT render:
+- Unselected services
+- Full catalog
+- Empty groups
+
+3. GROUP LOGIC:
+- Show group ONLY if it has selected services
+
+----------------------------------------
+CRITICAL BUG — Additional Services
+----------------------------------------
+
+IF preset contains:
+- "Other / Additional Services" selected
+- AND custom text exists
+
+THEN:
+
+✔ Checkbox MUST be checked by default  
+✔ Text MUST be visible on page load  
+✔ NO click required  
+✔ Must persist after Livewire updates  
+✔ Must submit correctly  
+
+IF preset does NOT include it:
+
+✔ Checkbox NOT checked  
+✔ Text hidden  
+✔ User can add their own  
+
+----------------------------------------
+PART 2 — BROKER COMPENSATION FIX
+----------------------------------------
+
+SOURCE:
+Agent Preset compensation fields
+
+----------------------------------------
+REQUIRED:
+----------------------------------------
+
+ONLY show:
+👉 Fields Agent filled out
+
+DO NOT show:
+- Blank fields
+- Empty inputs
+- Unused compensation types
+
+----------------------------------------
+LANDLORD FIX (CRITICAL)
+----------------------------------------
+
+Check BOTH:
+- Landlord Residential
+- Landlord Commercial
+
+IF preset includes any of these → MUST render:
+
+- Lease Fee
+- Commercial Lease Fee
+- Lease-Option Fee
+- Retainer Fee
+- Early Termination Fee
+- Protection Period
+- Agency Relationship
+- Additional Terms
+
+IF NOT present → DO NOT render
+
+----------------------------------------
+PART 3 — ROLE + PROPERTY TYPE SUPPORT
+----------------------------------------
+
+Apply to ALL:
+
+Buyer:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land
+
+Seller:
+- Same
+
+Landlord:
+- Residential
+- Commercial
+
+Tenant:
+- Residential
+- Commercial
+
+----------------------------------------
+PART 4 — DATA HANDLING
+----------------------------------------
+
+DO NOT:
+- Change how presets are saved
+- Modify DB schema
+- Reset database
+
+----------------------------------------
+PART 5 — VALIDATION
+----------------------------------------
+
+✔ Only preset-selected services show  
+✔ No extra services  
+✔ No full catalog  
+✔ Additional Services auto-checked when used  
+✔ Custom text visible immediately  
+✔ Custom text persists  
+✔ Only filled compensation fields show  
+✔ Landlord fields appear correctly  
+✔ Works across ALL roles + property types  
+
+----------------------------------------
+FINAL STEP
+----------------------------------------
+
+Run:
+php -l on all edited files
+
+Return:
+- Files changed
+- Why each was changed
+- Confirmation preset logic is now source of truth

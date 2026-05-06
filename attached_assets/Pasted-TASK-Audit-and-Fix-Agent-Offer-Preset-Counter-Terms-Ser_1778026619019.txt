@@ -1,0 +1,238 @@
+TASK — Audit and Fix Agent Offer Preset Counter Terms: Services + Broker Compensation Filtering
+
+IMPORTANT CONTEXT (USE THIS EXACT FLOW):
+
+Agent Presets Source:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/agent/presets
+
+Login:
+Email: abigailbaschuk@gmail.com
+Password: 12345678
+
+Navigation Path:
+1. Login as agent
+2. Go to Agent Dashboard
+3. Go to Agent Presets
+4. Review saved Agent Offer Presets (services + compensation)
+5. Use any preset in a Hire Agent flow
+6. Open:
+   Agent's Proposed Terms → Request Changes / Counter Terms
+
+THIS is the screen being audited and fixed.
+
+----------------------------------------
+SCOPE:
+----------------------------------------
+
+ONLY regular Hire Agent / BidYourAgent counter terms flow.
+
+Covers ALL:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+And ALL property types:
+- Residential
+- Income
+- Commercial
+- Business
+- Vacant Land (where applicable)
+
+----------------------------------------
+DO NOT TOUCH:
+----------------------------------------
+
+- BidYourOffer / Offer Counter Terms
+- Create Offer Listing flows
+- Offer deal terms
+- Direct Hire routing
+- Agent profile creation logic (only READ from it)
+- Database schema unless absolutely required
+
+----------------------------------------
+GOAL:
+----------------------------------------
+
+Counter Terms must ONLY show:
+👉 What the Agent actually selected or filled out in their preset
+
+Do NOT show:
+- Services the Agent did not select
+- Broker compensation fields the Agent did not fill out
+- Empty/blank optional fields
+- Full master service catalog
+- Full compensation catalog
+
+User can:
+- Unselect Agent services
+- Add Additional Services
+
+User CANNOT:
+- Select services Agent didn’t offer
+
+----------------------------------------
+PART 1 — AUDIT FIRST
+----------------------------------------
+
+Before editing, report:
+
+1. Which controller loads counter terms
+2. Which Blade/Livewire files render:
+   - Buyer
+   - Seller
+   - Landlord
+   - Tenant
+3. Whether logic is shared or split by property type
+4. Where Agent preset services are stored
+5. Where "Other / Additional Services" text is stored
+6. Where Broker Compensation is stored
+7. Whether current UI is rendering:
+   - Master catalog OR
+   - Agent-selected subset
+8. Which Landlord compensation fields are missing
+9. Why "Other / Additional Services" is not pre-checked
+10. Why custom text is hidden until checkbox is clicked
+
+STOP if unclear.
+
+----------------------------------------
+PART 2 — SERVICES FIX
+----------------------------------------
+
+Fix ALL of the following:
+
+1. Only render services selected in Agent Preset
+2. Do NOT render unselected services
+3. Do NOT render full service catalog
+4. Remove empty service groups
+5. Keep group headings ONLY if they contain selected services
+
+----------------------------------------
+ADDITIONAL SERVICES (CRITICAL BUG FIX)
+----------------------------------------
+
+Current issue:
+- Agent selects "Other / Additional Services"
+- Adds custom text
+- Checkbox is NOT checked in counter
+- Text is hidden until clicked
+
+FIX:
+
+If Agent selected Additional Services AND entered text:
+- Checkbox MUST be checked on load
+- Text MUST be visible on load
+- Text MUST persist through Livewire updates
+- Text MUST submit correctly
+
+If Agent did NOT select it:
+- Checkbox should NOT be checked
+- Text area hidden until user selects it
+- User can add their own text
+
+----------------------------------------
+PART 3 — BROKER COMPENSATION FILTERING
+----------------------------------------
+
+Apply rule across ALL roles + property types:
+
+ONLY show:
+👉 Fields Agent filled out
+
+DO NOT show:
+- Blank fields
+- Unselected compensation types
+- Empty fee fields
+- Empty toggles
+
+----------------------------------------
+FIELDS TO HANDLE (ONLY IF FILLED):
+----------------------------------------
+
+- Commission %
+- Flat Fee
+- Hourly Fee
+- Lease Fee
+- Lease-Option Fee
+- Retainer Fee
+- Early Termination Fee
+- Protection Period
+- Agency Relationship
+- Additional Terms
+
+----------------------------------------
+PART 4 — LANDLORD FIX (IMPORTANT)
+----------------------------------------
+
+Audit:
+- Landlord Residential
+- Landlord Commercial
+
+Fix missing fields so:
+
+If Agent filled ANY of these, they MUST show:
+- Lease Fee
+- Commercial Lease Fee
+- Lease-Option Fee
+- Retainer Fee
+- Early Termination Fee
+- Protection Period
+- Agency Relationship
+- Additional Terms
+
+ONLY show if Agent filled them.
+
+----------------------------------------
+PART 5 — VALIDATION MATRIX
+----------------------------------------
+
+Verify ALL combinations:
+
+Buyer (All property types)
+Seller (All property types)
+Landlord (Residential + Commercial)
+Tenant (Residential + Commercial)
+
+Each must:
+- Show ONLY selected services
+- Show ONLY filled compensation fields
+- NOT show unused fields
+
+----------------------------------------
+PART 6 — DATA SAFETY
+----------------------------------------
+
+DO NOT:
+- Run migrate:fresh
+- Reset DB
+- Rename columns
+- Delete data
+- Break existing saved presets
+
+----------------------------------------
+PART 7 — DONE LOOKS LIKE
+----------------------------------------
+
+Services:
+- Only Agent-selected services show
+- No master catalog
+- No empty groups
+- User can uncheck
+- User can add Additional Services
+- Additional Services auto-checked if Agent used it
+- Custom text visible immediately
+- No click required to reveal text
+
+Broker Compensation:
+- Only filled fields show
+- Missing Landlord fields restored
+- No empty fields
+- Clean formatting
+
+Global:
+- Offer Counter untouched
+- Create Listing untouched
+- Agent Profile intact
+- php -l passes
+- All edited files listed in report
