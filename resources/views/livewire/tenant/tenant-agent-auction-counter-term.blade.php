@@ -361,10 +361,6 @@ document.addEventListener('blur', function(e){
             return intPart + decPart;
         }
 
-        function formatWithCommas(input) {
-            input.value = formatNumberWithCommas(input.value.replace(/[^0-9.,]/g, ''));
-        }
-
         function handlePaste(event) {
             event.preventDefault();
             const input = event.target;

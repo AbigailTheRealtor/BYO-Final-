@@ -7,21 +7,15 @@
         <div class="row">
             <div class="col-md-12 mb-3">
                 <label class="fw-bold">Full Name</label>
-                <div class="input-cover">
-                    <input type="text" class="form-control has-icon" data-icon="fa-solid fa-user" wire:model="client_name" placeholder="Client's full name">
-                </div>
+                <input type="text" class="form-control" wire:model="client_name" placeholder="Client's full name">
             </div>
             <div class="col-md-6 mb-3">
                 <label class="fw-bold">Phone Number</label>
-                <div class="input-cover">
-                    <input type="text" class="form-control has-icon" data-icon="fa-solid fa-phone" wire:model="client_phone" placeholder="Client's phone number">
-                </div>
+                <input type="text" class="form-control" wire:model="client_phone" placeholder="Client's phone number">
             </div>
             <div class="col-md-6 mb-3">
                 <label class="fw-bold">Email Address</label>
-                <div class="input-cover">
-                    <input type="email" class="form-control has-icon" data-icon="fa-solid fa-envelope" wire:model="client_email" placeholder="Client's email address">
-                </div>
+                <input type="email" class="form-control" wire:model="client_email" placeholder="Client's email address">
             </div>
         </div>
     </div>

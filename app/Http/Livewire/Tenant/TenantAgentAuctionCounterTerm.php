@@ -786,7 +786,9 @@ class TenantAgentAuctionCounterTerm extends Component
             }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            return redirect()->route('counter.submitted', ['role' => 'tenant', 'auctionId' => $this->pab->tenant_agent_auction_id]);
+            return redirect()->route('tenant.agent.auction.view', $this->pab->tenant_agent_auction_id);
+            // Optional: reset form or redirect
+            // $this->resetForm();
 
         } catch (\Exception $e) {
             DB::rollBack();

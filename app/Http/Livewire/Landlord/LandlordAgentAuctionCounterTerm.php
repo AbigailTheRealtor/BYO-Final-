@@ -838,7 +838,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            return redirect()->route('counter.submitted', ['role' => 'landlord', 'auctionId' => $this->auctionId]);
+            return redirect()->route('landlord.agent.auction.view', $this->auctionId);
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Error saving counter bid: ' . $e->getMessage());
