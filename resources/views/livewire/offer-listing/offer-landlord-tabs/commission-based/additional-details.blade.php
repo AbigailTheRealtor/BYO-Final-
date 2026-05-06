@@ -13,7 +13,7 @@
                                 <div class="form-group">
                                     <label class="fw-bold">Property Description</label>
                                     <div class="input-cover">
-                                        <textarea wire:model="additional_details" class="form-control" rows="4" style="padding: 10px; font-size: 16px;"
+                                        <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
                                             placeholder="Enter property description (e.g., recently renovated kitchen, waterfront views, flexible lease terms)"></textarea>
                                     </div>
                                 </div>
