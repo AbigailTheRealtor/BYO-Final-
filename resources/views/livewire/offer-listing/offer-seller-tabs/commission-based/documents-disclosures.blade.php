@@ -291,7 +291,7 @@
         <div class="form-group mt-3">
             <label class="fw-bold">Additional Documents Available:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                    title="Add any additional documents available for this listing. Select a document type for each entry, or type a custom label.">
+                    title="Add any additional documents available for this listing. Select a document type and upload a file for each entry.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
@@ -305,42 +305,84 @@
                     'Roof Certification', 'Septic Inspection Report', 'Title Insurance Commitment',
                     'Utility Bills / History', 'Warranty Documents', 'Well Water Test Report', 'Other (custom)',
                 ];
-                $initialDocRows = !empty($doc_rows) ? $doc_rows : [];
+                $initialDocRows  = !empty($doc_rows) ? $doc_rows : [];
+                $supportsDocUpload = property_exists($this, 'docFileUpload');
             @endphp
 
             <div
                 x-data="{
                     rows: {{ json_encode($initialDocRows) }},
                     typeOptions: {{ json_encode($docTypeOptions) }},
+                    uploading: [],
+                    init() {
+                        this.uploading = this.rows.map(() => false);
+                        Livewire.on('docFileStored', (index, path) => {
+                            if (this.rows[index] !== undefined) {
+                                this.rows[index].file_path = path;
+                                this.uploading[index] = false;
+                                this.sync();
+                            }
+                        });
+                        Livewire.on('docRowFileRemoved', (index) => {
+                            if (this.rows[index] !== undefined) {
+                                this.rows[index].file_path = '';
+                                this.sync();
+                            }
+                        });
+                    },
                     addRow() {
-                        this.rows.push({ type: '', label: '' });
+                        this.rows.push({ type: '', label: '', file_path: '' });
+                        this.uploading.push(false);
                         this.$nextTick(() => this.sync());
                     },
                     removeRow(index) {
                         this.rows.splice(index, 1);
+                        this.uploading.splice(index, 1);
                         this.sync();
                     },
                     sync() {
                         @this.set('doc_rows', this.rows, false);
+                    },
+                    uploadFile(index, event) {
+                        const file = event.target.files[0];
+                        if (!file) return;
+                        this.uploading[index] = true;
+                        @this.set('docFileUploadIndex', index).then(() => {
+                            @this.upload('docFileUpload', file,
+                                () => {},
+                                () => { this.uploading[index] = false; },
+                                () => {}
+                            );
+                        });
                     }
                 }"
                 wire:ignore
             >
                 <template x-for="(row, index) in rows" :key="index">
-                    <div class="d-flex align-items-start gap-2 mb-2">
-                        <div class="flex-grow-1">
-                            <select
-                                class="form-control"
-                                x-model="row.type"
-                                @change="if (row.type !== 'Other (custom)') { row.label = row.type; } else { row.label = ''; } sync();"
-                            >
-                                <option value="">— Select document type —</option>
-                                <template x-for="opt in typeOptions" :key="opt">
-                                    <option :value="opt" :selected="row.type === opt" x-text="opt"></option>
-                                </template>
-                            </select>
+                    <div class="border rounded p-2 mb-2">
+
+                        {{-- Type selector + remove-row button --}}
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <div class="flex-grow-1">
+                                <select
+                                    class="form-control"
+                                    x-model="row.type"
+                                    @change="if (row.type !== 'Other (custom)') { row.label = row.type; } else { row.label = ''; } sync();"
+                                >
+                                    <option value="">— Select document type —</option>
+                                    <template x-for="opt in typeOptions" :key="opt">
+                                        <option :value="opt" :selected="row.type === opt" x-text="opt"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0"
+                                @click="removeRow(index)" title="Remove row">
+                                <i class="fa-solid fa-times"></i>
+                            </button>
                         </div>
-                        <div class="flex-grow-1" x-show="row.type === 'Other (custom)'">
+
+                        {{-- Custom label input (Other only) --}}
+                        <div class="mb-2" x-show="row.type === 'Other (custom)'">
                             <input
                                 type="text"
                                 class="form-control"
@@ -349,9 +391,46 @@
                                 @input="sync()"
                             >
                         </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger" @click="removeRow(index)" title="Remove row">
-                            <i class="fa-solid fa-times"></i>
-                        </button>
+
+                        @if($supportsDocUpload)
+                        {{-- File upload area (Create flow) — shown once a type is selected --}}
+                        <div x-show="row.type !== ''">
+
+                            {{-- Upload input (no file yet) --}}
+                            <div x-show="!row.file_path">
+                                <label class="small text-muted mb-1">Upload document:</label>
+                                <input
+                                    type="file"
+                                    class="form-control form-control-sm"
+                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                    @change="uploadFile(index, $event)"
+                                    :disabled="uploading[index]"
+                                >
+                                <div x-show="uploading[index]" class="text-muted small mt-1">
+                                    <i class="fa-solid fa-spinner fa-spin me-1"></i>Uploading…
+                                </div>
+                            </div>
+
+                            {{-- Existing file links (file already saved) --}}
+                            <div x-show="row.file_path" class="d-flex align-items-center gap-2 flex-wrap">
+                                <a
+                                    :href="'/storage/' + row.file_path"
+                                    target="_blank"
+                                    class="btn btn-sm btn-outline-secondary"
+                                >
+                                    <i class="fa-solid fa-file me-1"></i>View Current File
+                                </a>
+                                <button
+                                    type="button"
+                                    class="btn btn-sm btn-outline-danger"
+                                    @click="@this.call('removeDocRowFile', index)"
+                                >
+                                    <i class="fa-solid fa-trash me-1"></i>Remove File
+                                </button>
+                            </div>
+                        </div>
+                        @endif
+
                     </div>
                 </template>
 
