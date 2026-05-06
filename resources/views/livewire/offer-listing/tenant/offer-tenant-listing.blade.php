@@ -294,6 +294,10 @@
         padding: 2px 8px;
     }
 
+    .input-cover.has-select-icon .select2-container .select2-selection {
+        padding-left: 44px !important;
+    }
+
     .tooltip-inner {
         font-size: 12px;
         /* Decrease text size */
@@ -2206,7 +2210,7 @@ $lease_types = [
     let _lastInitTime = 0;
     function debouncedSet(field, value, delay) { clearTimeout(_s2Timers[field]); _s2Timers[field] = setTimeout(function() { safeLivewireSet(field, value, true); }, delay || 200); }
 
-    function syncAllSelect2BeforeSave() {
+    function syncTenantSelect2BeforeSave() {
         Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
         _s2Timers = {};
 
@@ -4188,13 +4192,16 @@ $lease_types = [
 
 
     function addIconsToInputs() {
-        document.querySelectorAll('.has-icon').forEach(input => {
+        document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
             const iconClass = input.getAttribute('data-icon');
-            if (iconClass && !input.previousElementSibling?.classList.contains('input-icon')) {
-                const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                input.parentNode.insertBefore(icon, input);
-            }
+            if (!iconClass) return;
+            const wrapper = input.closest('.input-cover');
+            if (!wrapper) return;
+            if (input.type === 'file') return;
+            if (wrapper.querySelector('.data-icon-rendered')) return;
+            const icon = document.createElement('i');
+            icon.className = `input-icon ${iconClass} data-icon-rendered`;
+            wrapper.insertBefore(icon, wrapper.firstChild);
         });
     }
 
@@ -4303,17 +4310,6 @@ $lease_types = [
     Livewire.hook('message.processed', () => {
         addIconsToInputs();
         
-        // Re-add icons to inputs that might have been replaced by Livewire
-        $('.input-cover').each(function() {
-            const $container = $(this);
-            const $input = $container.find('.has-icon');
-            if ($input.length && !$container.find('.input-icon').length) {
-                const iconClass = $input.data('icon');
-                if (iconClass) {
-                    $container.prepend(`<i class="input-icon ${iconClass}"></i>`);
-                }
-            }
-        });
 
         if (typeof window._updateNextSubmitButtons === 'function') {
             setTimeout(window._updateNextSubmitButtons, 50);
@@ -5450,7 +5446,7 @@ $lease_types = [
                     _tenantCorrectionMode = false;
                     _tenantMissingItems = [];
                 }
-                syncAllSelect2BeforeSave();
+                syncTenantSelect2BeforeSave();
                 banner.classList.add('d-none');
             }, true);
 

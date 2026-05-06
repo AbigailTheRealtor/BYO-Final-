@@ -244,7 +244,6 @@ $auction_lengths_seller = [
             title="Enter a clear title for the rental property being offered for lease. Focus on the property's key features and location.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
-            <i class="input-icon fa-solid fa-tag"></i>
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
                 placeholder="Enter listing title (e.g., Waterfront Condo Available for Lease in Tampa, FL)"
@@ -263,7 +262,6 @@ $auction_lengths_seller = [
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <i class="input-icon fa-regular fa-calendar-days"></i>
             <input type="date" wire:model="listing_date" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days" required>
         </div>
@@ -281,7 +279,6 @@ $auction_lengths_seller = [
         </span>
 
         <div class="input-cover">
-            <i class="input-icon fa-regular fa-calendar-days"></i>
             <input type="date" wire:model="expiration_date" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days" required>
         </div>
@@ -360,7 +357,6 @@ $auction_lengths_seller = [
             <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
         @else
             <div class="input-cover">
-                <i class="input-icon fa-solid fa-file-lines"></i>
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
                     data-icon="fa-solid fa-file-lines" required>
                     <option value="">Select</option>

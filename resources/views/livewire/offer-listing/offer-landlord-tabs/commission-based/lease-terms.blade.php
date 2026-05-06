@@ -882,9 +882,9 @@
             title="Select any expenses or responsibilities the Tenant is required to pay under the lease terms.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user" multiple>
+                data-icon="fa-solid fa-user" data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -920,9 +920,9 @@
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user-tie" multiple>
+                data-icon="fa-solid fa-user-tie" data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -947,7 +947,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-cover">
+        <div class="input-cover has-select-icon">
             <select id="terms_of_lease" wire:model="terms_of_lease"  class="terms_of_lease form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-file-signature" multiple required>
                 @foreach ($lease_types as $type)
@@ -966,9 +966,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-signature" multiple>
+            data-icon="fa-solid fa-file-signature" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($lease_types as $type)
             <option value="{{ $type['name'] }}">{{ $type['name'] }}</option>
@@ -1116,9 +1116,9 @@
         title="Select the lease term the Landlord prefers to offer.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-calendar-days" multiple required>
+            data-icon="fa-solid fa-calendar-days" data-placeholder="Select" multiple required>
             <option value=""></option>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
@@ -1540,7 +1540,7 @@
             <i class="fa-solid fa-circle-info"></i>
 
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
                 data-icon="fa-solid fa-receipt" data-placeholder="Select">
                 <option value=""></option>

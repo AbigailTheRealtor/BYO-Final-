@@ -223,10 +223,10 @@
 <!-- Tenant(s) Credit Score Rating -->
 <div class="form-group">
     <label class="fw-bold">Tenant(s) Credit Score Rating:</label>
-    <div class="input-cover">
+    <div class="input-cover has-select-icon">
         <!-- Dropdown for Predefined Services -->
         <select id="credit_scroe_rating" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-credit-card input-icon2" wire:model="credit_scroe_rating" multiple>
+            data-icon="fa-solid fa-credit-card" wire:model="credit_scroe_rating" multiple>
             <option value="">Select</option>
             @foreach ($credit_score as $score)
                 <option value="{{ $score['name'] }}">{{ $score['name'] }}</option>

@@ -508,8 +508,8 @@
                         'Water', 'Other',
                     ];
                 @endphp
-                <div class="input-cover" wire:ignore>
-                    <select id="association_fee_includes" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-list-check" multiple>
+                <div class="input-cover has-select-icon" wire:ignore>
+                    <select id="association_fee_includes" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-list-check" data-placeholder="Select" multiple>
                         @foreach ($feeIncludesOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
@@ -544,8 +544,8 @@
                         'Sauna / Spa', 'Tennis Court', 'Waterfront Access', 'Other',
                     ];
                 @endphp
-                <div class="input-cover" wire:ignore>
-                    <select id="association_amenities" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-star" multiple>
+                <div class="input-cover has-select-icon" wire:ignore>
+                    <select id="association_amenities" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-star" data-placeholder="Select" multiple>
                         @foreach ($amenityOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_amenities ?? []) ? 'selected' : '' }}>
                                 {{ $option }}

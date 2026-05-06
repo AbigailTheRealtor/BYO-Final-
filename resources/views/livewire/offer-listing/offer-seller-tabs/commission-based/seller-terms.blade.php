@@ -58,10 +58,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
-        <i class="input-icon fa-solid fa-screwdriver-wrench input-icon2"></i>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="sale_provision" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple required>
+            data-icon="fa-solid fa-screwdriver-wrench" data-placeholder="Select" multiple required>
             <option value="">Select</option>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}" {{ in_array($row_pt['name'], $sale_provision ?? []) ? 'selected' : '' }}>
@@ -341,9 +340,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    {{-- <div class="input-cover">
+    {{-- <div class="input-cover has-select-icon">
         <select wire:model="offered_financing" id="offered_financing" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-money-bill-wave input-icon2" multiple required>
+            data-icon="fa-solid fa-money-bill-wave" multiple required>
             @foreach (['Assumable', 'Cash', 'Conventional', 'Cryptocurrency', 'Exchange/Trade', 'FHA', 'Jumbo', 'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'No-Doc', 'Non-QM', 'Seller Financing', 'USDA', 'VA', 'Other'] as $option)
                 <option value="{{ $option }}">{{ $option }}</option>
             @endforeach
@@ -351,10 +350,9 @@
     </div>
     <span class="error mt-2" id="offered_financing_error"></span> --}}
 
-    <div class="input-cover" wire:ignore wire:key="offered-financing-cover">
-        <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
+    <div class="input-cover has-select-icon" wire:ignore wire:key="offered-financing-cover">
         <select id="offered_financing" class="form-control has-icon select2-multiple"
-            multiple>
+            data-icon="fa-solid fa-money-bill-wave" data-placeholder="Select" multiple>
             <option value="">Select</option>
             @foreach ($financing_options_seller as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}" {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
@@ -807,8 +805,8 @@
         @php
             $eiArr = is_array($exchange_item) ? $exchange_item : (is_string($exchange_item) && trim($exchange_item) !== '' ? (json_decode($exchange_item, true) ?? [$exchange_item]) : []);
         @endphp
-        <div class="input-cover" wire:ignore>
-            <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-right-left" data-selected='@json($eiArr)' multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-right-left" data-placeholder="Select" data-selected='@json($eiArr)' multiple>
                 @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $eiOpt)
                     <option value="{{ $eiOpt }}" {{ in_array($eiOpt, $eiArr) ? 'selected' : '' }}>{{ $eiOpt }}</option>
                 @endforeach

@@ -1,0 +1,143 @@
+ICON SYSTEM HARD FIX — Standardize Select2 + data-icon Rendering
+
+READ-ONLY AUDIT FIRST:
+Before editing, inspect the current icon-rendering JS/CSS and print where icons are injected from data-icon.
+
+SCOPE:
+Offer Listing views only.
+
+Primary goal:
+Fix global icon overlap caused by Select2 + data-icon + old standalone <i class="input-icon"> patterns.
+
+DO NOT TOUCH:
+- Routes
+- Controllers
+- Schema/migrations
+- Validation
+- Save/load logic
+- Livewire properties
+- wire:model names
+- Option values
+- Conditional @if logic
+- Tab navigation
+
+FILES TO AUDIT FIRST:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+- resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+- Any shared JS/CSS file or inline script that processes data-icon / has-icon / input-icon
+
+PROBLEMS TO FIX:
+1. Prevent duplicate icons from being rendered when Select2 initializes.
+2. Remove old standalone <i class="input-icon ..."></i> from Offer Listing form controls where the same field already has data-icon.
+3. Remove invalid icon class fragments inside data-icon, such as:
+   data-icon="fa-solid fa-plug input-icon2"
+4. Keep data-icon values as FontAwesome icon classes only, for example:
+   data-icon="fa-solid fa-plug"
+5. Ensure Select2 fields still show the icon once and only once.
+6. Ensure placeholder text still says “Select”.
+
+CSS FIX:
+Replace overly broad Select2 padding like:
+
+.input-cover .select2-container .select2-selection {
+    padding-left: 44px !important;
+}
+
+With a safer scoped rule that only applies when an icon is present.
+
+Preferred approach:
+Add an icon marker class to the wrapper only when needed, or use a narrowly scoped selector.
+
+Example acceptable CSS:
+
+.input-cover:has(.has-icon) .select2-container .select2-selection {
+    padding-left: 44px !important;
+}
+
+If :has() compatibility is a concern, add class="has-select-icon" to the wrapper for Select2 icon fields and use:
+
+.input-cover.has-select-icon .select2-container .select2-selection {
+    padding-left: 44px !important;
+}
+
+JS FIX:
+In the data-icon injection code, make icon insertion idempotent.
+
+Required safeguards:
+- Before adding an injected icon, remove or skip if one already exists for that wrapper.
+- Do not inject icons into Select2’s generated .select2-container.
+- Do not inject duplicate icons after Livewire updates.
+- Do not process elements that are Select2-hidden clones incorrectly.
+
+Preferred logic:
+For each .has-icon[data-icon]:
+- Find the closest .input-cover.
+- If wrapper already contains an injected icon for this element, do not add another.
+- If the element is select2-hidden-accessible, place one icon inside the input-cover wrapper, not inside the generated Select2 DOM.
+- Mark injected icons with a stable class, such as .data-icon-rendered.
+- Never create more than one .data-icon-rendered per input-cover.
+
+BLADE CLEANUP RULES:
+For Offer Listing Blade files only:
+- If a field has class="has-icon" and data-icon="...", remove any nearby standalone:
+  <i class="input-icon ..."></i>
+  inside the same input-cover.
+- Do not remove tooltip icons inside labels.
+- Do not remove file/link icons in upload blocks.
+- Do not remove lock icons in help text.
+- Clean data-icon values by removing input-icon2 or other non-FontAwesome helper classes.
+- Do not change labels, placeholders, option values, or wire:model bindings.
+
+SELECT2 PATTERN:
+Use this structure:
+
+<div class="input-cover has-select-icon" wire:ignore>
+    <select class="form-control has-icon select2-multiple"
+        data-icon="fa-solid fa-folder-open"
+        data-placeholder="Select"
+        multiple>
+        ...
+    </select>
+</div>
+
+Standard select/input pattern:
+
+<div class="input-cover">
+    <select class="form-control has-icon"
+        data-icon="fa-solid fa-water">
+        <option value="">Select</option>
+        ...
+    </select>
+</div>
+
+VERIFY:
+Run:
+
+php -l resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+php -l resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+php -l resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+php -l resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+Also run php -l on every edited Blade partial.
+
+Manual QA:
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant
+
+Confirm:
+- No label/icon overlap
+- Select2 fields show one icon only
+- Standard inputs/selects show one icon only
+- Placeholders display “Select”
+- Documents & Disclosures Seller/Landlord fields render cleanly
+- Conditional upload blocks still work
+- Save Draft works
+- No console errors
+- No duplicate icons appear after changing tabs or saving draft
+
+STOP RULE:
+If the icon-rendering JS/CSS cannot be located confidently, stop and report findings before editing multiple Blade files.

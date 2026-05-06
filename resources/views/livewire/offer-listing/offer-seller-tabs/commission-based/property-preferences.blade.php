@@ -397,16 +397,13 @@
     $business_assets = $business_assets ?? [];
 @endphp
 <style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
 
-    .input-cover .select2 .selection .select2-selection--multiple {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
         padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
 
-    .input-cover .select2 .selection .select2-selection--multiple input {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
 </style>
@@ -896,7 +893,7 @@
 
 <!-- Minimum Heated SqFt Needed -->
 {{-- @if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
-    <div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
+    <div class="form-group" wire:key="heated-square-select-{{ $property_type }}">
         <label class="fw-bold"> Heated SqFt:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -912,7 +909,7 @@
 @endif --}}
 
 @if (in_array($property_type, ['Residential', 'Business', 'Commercial']))
-    <div class="form-group" wire:ignore wire:key="heated-square-select-{{ $property_type }}">
+    <div class="form-group" wire:key="heated-square-select-{{ $property_type }}">
         <label class="fw-bold">Heated SqFt:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the total square footage of climate-controlled (heated/cooled) interior space.">
@@ -986,16 +983,16 @@
 <!-- View Preference Needed -->
 @if (in_array($property_type, ['Residential', 'Business', 'Commercial', 'Income']))
 
-    <div class="form-group" wire:ignore wire:key="appliance-select-{{ $property_type }}">
+    <div class="form-group" wire:key="appliance-select-{{ $property_type }}">
         <label class="fw-bold">Appliances Included:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the appliances included with the property. If 'Other' is selected, enter any additional appliances.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="appliances" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-plug input-icon2" multiple>
+                data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach ($applianceOptions as $row_pt)
                     <option value="{{ $row_pt['name'] }}" {{ is_array($appliances) && in_array($row_pt['name'], $appliances) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -1128,9 +1125,9 @@
     {{-- <div class="form-group" id="garage_parking_spaces_option_wrapper">
         <label class="fw-bold">Garage/Parking Features:</label>
 
-        <div class="input-cover">
+        <div class="input-cover has-select-icon">
             <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -1149,15 +1146,15 @@
         </div>
     </div> --}}
 
-    <div class="form-group" wire:ignore wire:key="parking-features-select-{{ $property_type }}">
+    <div class="form-group" wire:key="parking-features-select-{{ $property_type }}">
         <label class="fw-bold">Garage/Parking Features:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type of garage or parking features available. If “Other” is selected, enter any additional garage or parking features in the provided field.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="garage_parking_spaces_option_landlord"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}" {{ is_array($garage_parking_spaces_option) && in_array($row_pt['name'], $garage_parking_spaces_option) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -1215,7 +1212,7 @@
 @endif
 <!-- View Preference Needed -->
 
-<div class="form-group" wire:ignore wire:key="view-preference-{{ $property_type }}">
+<div class="form-group" wire:key="view-preference-{{ $property_type }}">
     <label class="fw-bold">View:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1223,9 +1220,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="view_preference"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree" data-placeholder="Select" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ is_array($view_preference) && in_array($row_pt['name'], $view_preference) ? 'selected' : '' }}>
@@ -1274,7 +1271,7 @@
 @if ($property_type != 'Vacant Land')
 
     <!-- Non-Negotiable Amenities and Property Features -->
-    <div class="form-group" wire:ignore wire:key="nna-{{ $property_type }}">
+    <div class="form-group" wire:key="nna-{{ $property_type }}">
         <label class="fw-bold">Amenities and Property Features:</label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1282,10 +1279,10 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="non_negotiable_amenities"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
-                @if (!$property_type) disabled @endif multiple>
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock"
+                data-placeholder="Select" @if (!$property_type) disabled @endif multiple>
                 <option value="">Select</option>
                 @if (in_array($property_type, ['Residential', 'Income']))
                     @foreach ($non_negotialble_terms_landlord as $item)
@@ -1434,7 +1431,7 @@
 
 <!-- Included Property or Business Assets — only for Business, Commercial, Income -->
 @if (in_array($property_type, ['Business', 'Commercial', 'Income']))
-<div class="form-group" wire:ignore wire:key="included-assets-{{ $property_type }}">
+<div class="form-group" wire:key="included-assets-{{ $property_type }}">
     <label class="fw-bold">Included Property or Business Assets:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1442,9 +1439,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="included_assets"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase" data-placeholder="Select" multiple>
             @foreach ($included_assets as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ is_array($business_assets) && in_array($row_pt['name'], $business_assets) ? 'selected' : '' }}>
@@ -1831,14 +1828,14 @@
         <span class="error mt-2" id="year_built_error"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="roof-type-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="roof-type-ri-{{ $property_type }}">
         <label class="fw-bold">Roof Type:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of roofing material on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="roof_type_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="roof_type_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house" data-placeholder="Select" multiple>
                 @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1853,14 +1850,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="exterior-construction-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="exterior-construction-ri-{{ $property_type }}">
         <label class="fw-bold">Exterior Construction:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the exterior construction material(s) of the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="exterior_construction_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="exterior_construction_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
                 @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1875,14 +1872,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="foundation-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="foundation-ri-{{ $property_type }}">
         <label class="fw-bold">Foundation:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of foundation for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="foundation_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="foundation_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group" data-placeholder="Select" multiple>
                 @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1897,14 +1894,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="heating-and-fuel-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="heating-and-fuel-ri-{{ $property_type }}">
         <label class="fw-bold">Heating and Fuel:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the heating system(s) and fuel type(s) used in the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="heating_and_fuel_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="heating_and_fuel_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard','Central','Electric','Exhaust Fans','Gas','Heat Pump','Heat Recovery Unit','Natural Gas','Oil','Partial','Propane','Radiant Ceiling','Reverse Cycle','Solar','Space Heater','Wall Furnace','Wall Units / Window Unit','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($heating_and_fuel) && in_array($_opt, $heating_and_fuel) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1919,14 +1916,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="air-conditioning-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="air-conditioning-ri-{{ $property_type }}">
         <label class="fw-bold">Air Conditioning:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of air conditioning in the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="air_conditioning_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="air_conditioning_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake" data-placeholder="Select" multiple>
                 @foreach (['Central Air','Humidity Control','Mini-Split Unit(s)','Wall/Window Unit(s)','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($air_conditioning) && in_array($_opt, $air_conditioning) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1941,14 +1938,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="water-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="water-ri-{{ $property_type }}">
         <label class="fw-bold">Water:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the water source(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="water_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="water_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1963,14 +1960,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="sewer-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="sewer-ri-{{ $property_type }}">
         <label class="fw-bold">Sewer:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the sewer type(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="sewer_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="sewer_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -1985,14 +1982,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="utilities-ri-{{ $property_type }}">
+    <div class="form-group" wire:key="utilities-ri-{{ $property_type }}">
         <label class="fw-bold">Utilities:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the utilities available or connected at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="utilities_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="utilities_residential" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available','Cable Available','Cable Connected','Electricity Available','Electricity Connected','Fiber Optics','Fire Hydrant','Mini Sewer','Natural Gas Available','Natural Gas Connected','Phone Available','Private','Propane','Public','Sewer Available','Sewer Connected','Solar','Sprinkler Meter','Sprinkler Recycled','Sprinkler Well','Street Lights','Underground Utilities','Water - Multiple Meters','Water Available','Water Connected','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2067,14 +2064,14 @@
         <span class="error mt-2" id="zoning_error_residential"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="roof-type-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="roof-type-comm-{{ $property_type }}">
         <label class="fw-bold">Roof Type:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of roofing material on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="roof_type_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="roof_type_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house" data-placeholder="Select" multiple>
                 @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2089,14 +2086,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="exterior-construction-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="exterior-construction-comm-{{ $property_type }}">
         <label class="fw-bold">Exterior Construction:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the exterior construction material(s) of the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="exterior_construction_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="exterior_construction_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
                 @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2111,14 +2108,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="foundation-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="foundation-comm-{{ $property_type }}">
         <label class="fw-bold">Foundation:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of foundation for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="foundation_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="foundation_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group" data-placeholder="Select" multiple>
                 @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2133,14 +2130,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="road-frontage-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="road-frontage-comm-{{ $property_type }}">
         <label class="fw-bold">Road Frontage:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of road frontage for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="road_frontage_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="road_frontage_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road" data-placeholder="Select" multiple>
                 @foreach (['Access Road','Alley','Business District','City Street','County Road','Divided Highway','Easement','Highway','Interchange','Interstate','Main Thoroughfare','Private Road','Rail','State Road','Turn Lanes','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_frontage) && in_array($_opt, $road_frontage) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2155,14 +2152,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="road-surface-type-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="road-surface-type-comm-{{ $property_type }}">
         <label class="fw-bold">Road Surface Type:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the road surface type(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="road_surface_type_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="road_surface_type_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road" data-placeholder="Select" multiple>
                 @foreach (['Asphalt','Brick','Chip And Seal','Concrete','Dirt','Gravel','Limerock','Paved','Unimproved','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_surface_type) && in_array($_opt, $road_surface_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2177,14 +2174,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="utilities-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="utilities-comm-{{ $property_type }}">
         <label class="fw-bold">Utilities:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the utilities available or connected at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="utilities_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="utilities_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Capable','Electrical Nearby','Electricity Available','Emergency Power','Natural Gas Available','Phone Available','Private','Public','Sewer Nearby','Solar','Telephone Nearby','Underground Utilities','Water Connected','Water Nearby','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2199,14 +2196,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="water-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="water-comm-{{ $property_type }}">
         <label class="fw-bold">Water:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the water source(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="water_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="water_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2221,14 +2218,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="sewer-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="sewer-comm-{{ $property_type }}">
         <label class="fw-bold">Sewer:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the sewer type(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="sewer_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="sewer_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2243,14 +2240,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="heating-and-fuel-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="heating-and-fuel-comm-{{ $property_type }}">
         <label class="fw-bold">Heating and Fuel:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the heating system(s) and fuel type(s) used in the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="heating_and_fuel_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="heating_and_fuel_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard','Central','Central Building','Central Individual','Electric','Exhaust Fans','Gas','Heat Pump','Heat Recovery Unit','Natural Gas','Oil','Partial','Propane','Radiant Ceiling','Reverse Cycle','Solar','Space Heater','Wall Furnace','Wall Units / Window Unit','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($heating_and_fuel) && in_array($_opt, $heating_and_fuel) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2265,14 +2262,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="air-conditioning-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="air-conditioning-comm-{{ $property_type }}">
         <label class="fw-bold">Air Conditioning:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of air conditioning in the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="air_conditioning_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="air_conditioning_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake" data-placeholder="Select" multiple>
                 @foreach (['A/C Office Only','Central Air','Humidity Control','Mini-Split Unit(s)','Wall/Window Unit(s)','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($air_conditioning) && in_array($_opt, $air_conditioning) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2287,14 +2284,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="electrical-service-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="electrical-service-comm-{{ $property_type }}">
         <label class="fw-bold">Electrical Service:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the electrical service type(s) available at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="electrical_service_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="electrical_service_commercial" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['1 Phase (3-Wire)','3 Phase','110 Volts','220 Volts','440 Volts','Separate Meter','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($electrical_service) && in_array($_opt, $electrical_service) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2326,14 +2323,14 @@
         <span class="error mt-2" id="ceiling_height_error"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="building-features-comm-{{ $property_type }}">
+    <div class="form-group" wire:key="building-features-comm-{{ $property_type }}">
         <label class="fw-bold">Building Features:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the building features available at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="building_features" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="building_features" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
                 @foreach (['Bathrooms','Clear Span','Columns','Common Lighting','Drive-Through','Dumpsters','Elevator','Elevator – None','Extra Storage','Fencing','Fiber Optic','Freight Elevator','Furnished','High Bays','Janitorial Services','Kitchen Facility','Lit Sign on Site','Loading Dock','Loft','Medical Disposal','On Site Shower','Outside Storage','Overhead Doors','Pool/Spa','Ramp','Reception','Seating','Service Stations','Solid Surface Counter','Stone Counter','Trash Removal','Truck Doors','Truck Well','Waiting Room','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($building_features) && in_array($_opt, $building_features) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2378,14 +2375,14 @@
         <span class="error mt-2" id="year_established_error"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="licenses-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="licenses-biz-{{ $property_type }}">
         <label class="fw-bold">Licenses:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any licenses held or required for the business.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="licenses" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-certificate input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="licenses" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-certificate" data-placeholder="Select" multiple>
                 @foreach (['Beer/Wine','Liquor','Off Site','On Site','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($licenses) && in_array($_opt, $licenses) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2400,14 +2397,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="sale-includes-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="sale-includes-biz-{{ $property_type }}">
         <label class="fw-bold">Sale Includes:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select what is included in the sale of the business.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="sale_includes" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-hand-holding-dollar input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="sale_includes" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-hand-holding-dollar" data-placeholder="Select" multiple>
                 @foreach (['Business','Equipment/Fixtures','Furniture','Goodwill','Inventory','Land','Lease Agreement','Liquor License','Parking Lot','Signage','Training','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sale_includes) && in_array($_opt, $sale_includes) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2448,14 +2445,14 @@
         <span class="error mt-2" id="zoning_error_business"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="roof-type-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="roof-type-biz-{{ $property_type }}">
         <label class="fw-bold">Roof Type:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of roofing material on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="roof_type_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="roof_type_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-house" data-placeholder="Select" multiple>
                 @foreach (['Built-Up','Cement','Concrete','Membrane','Metal','Roof Over','Shake','Shingle','Slate','Tile','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($roof_type) && in_array($_opt, $roof_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2470,14 +2467,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="exterior-construction-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="exterior-construction-biz-{{ $property_type }}">
         <label class="fw-bold">Exterior Construction:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the exterior construction material(s) of the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="exterior_construction_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="exterior_construction_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
                 @foreach (['Asbestos','Block','Brick','Cedar','Cement Siding','Concrete','HardiPlank Type','ICFs (Insulated Concrete Forms)','Log','Metal Frame','Metal Siding','SIP (Structurally Insulated Panel)','Stone','Stucco','Tilt up Walls','Vinyl Siding','Wood Frame','Wood Frame (FSC)','Wood Siding','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($exterior_construction) && in_array($_opt, $exterior_construction) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2492,14 +2489,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="foundation-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="foundation-biz-{{ $property_type }}">
         <label class="fw-bold">Foundation:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of foundation for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="foundation_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="foundation_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-layer-group" data-placeholder="Select" multiple>
                 @foreach (['Basement','Block','Brick/Mortar','Concrete Perimeter','Crawlspace','Pillar/Post/Pier','Slab','Stem Wall','Stilt/On Piling','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($foundation) && in_array($_opt, $foundation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2514,14 +2511,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="utilities-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="utilities-biz-{{ $property_type }}">
         <label class="fw-bold">Utilities:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the utilities available or connected at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="utilities_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="utilities_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available','Cable Available','Cable Connected','Electricity Available','Electricity Connected','Fiber Optics','Fire Hydrant','Mini Sewer','Natural Gas Available','Natural Gas Connected','Phone Available','Private','Propane','Public','Sewer Available','Sewer Connected','Solar','Sprinkler Meter','Sprinkler Recycled','Sprinkler Well','Street Lights','Underground Utilities','Water - Multiple Meters','Water Available','Water Connected','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2536,14 +2533,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="water-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="water-biz-{{ $property_type }}">
         <label class="fw-bold">Water:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the water source(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="water_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="water_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2558,14 +2555,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="sewer-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="sewer-biz-{{ $property_type }}">
         <label class="fw-bold">Sewer:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the sewer type(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="sewer_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="sewer_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2580,14 +2577,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="heating-and-fuel-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="heating-and-fuel-biz-{{ $property_type }}">
         <label class="fw-bold">Heating and Fuel:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the heating system(s) and fuel type(s) used in the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="heating_and_fuel_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="heating_and_fuel_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard','Central','Electric','Exhaust Fans','Gas','Heat Pump','Heat Recovery Unit','Natural Gas','Oil','Partial','Propane','Radiant Ceiling','Reverse Cycle','Solar','Space Heater','Wall Furnace','Wall Units / Window Unit','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($heating_and_fuel) && in_array($_opt, $heating_and_fuel) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2602,14 +2599,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="air-conditioning-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="air-conditioning-biz-{{ $property_type }}">
         <label class="fw-bold">Air Conditioning:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of air conditioning in the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="air_conditioning_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="air_conditioning_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-snowflake" data-placeholder="Select" multiple>
                 @foreach (['Central Air','Humidity Control','Mini-Split Unit(s)','Wall/Window Unit(s)','Zoned','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($air_conditioning) && in_array($_opt, $air_conditioning) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2624,14 +2621,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="electrical-service-biz-{{ $property_type }}">
+    <div class="form-group" wire:key="electrical-service-biz-{{ $property_type }}">
         <label class="fw-bold">Electrical Service:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the electrical service type(s) available at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="electrical_service_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="electrical_service_business" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['1 Phase (3-Wire)','3 Phase','110 Volts','220 Volts','440 Volts','Separate Meter','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($electrical_service) && in_array($_opt, $electrical_service) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2650,14 +2647,14 @@
 
 @if ($property_type === 'Vacant Land')
 
-    <div class="form-group" wire:ignore wire:key="current-use-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="current-use-vl-{{ $property_type }}">
         <label class="fw-bold">Current Use:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the current use(s) of the land.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="current_use" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-map input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="current_use" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-map" data-placeholder="Select" multiple>
                 @foreach (['Agricultural','Commercial','Industrial','Recreational','Residential','Timber','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($current_use) && in_array($_opt, $current_use) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2711,14 +2708,14 @@
         <span class="error mt-2" id="front_footage_error"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="road-frontage-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="road-frontage-vl-{{ $property_type }}">
         <label class="fw-bold">Road Frontage:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of road frontage for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="road_frontage_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="road_frontage_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road" data-placeholder="Select" multiple>
                 @foreach (['Access Road','Alley','Business District','City Street','County Road','Divided Highway','Easement','Highway','Interchange','Interstate','Main Thoroughfare','Private Road','Rail','State Road','Turn Lanes','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_frontage) && in_array($_opt, $road_frontage) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2733,14 +2730,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="road-surface-type-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="road-surface-type-vl-{{ $property_type }}">
         <label class="fw-bold">Road Surface Type:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the road surface type(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="road_surface_type_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="road_surface_type_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road" data-placeholder="Select" multiple>
                 @foreach (['Asphalt','Brick','Chip And Seal','Concrete','Dirt','Gravel','Limerock','Paved','Unimproved','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($road_surface_type) && in_array($_opt, $road_surface_type) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2755,14 +2752,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="utilities-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="utilities-vl-{{ $property_type }}">
         <label class="fw-bold">Utilities:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the utilities available or connected at the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="utilities_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="utilities_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-bolt" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available','BB/HS Internet Capable','Cable Available','Cable Connected','Electrical Nearby','Electricity Available','Fiber Optics','Fire Hydrant','Mini Sewer','Natural Gas Available','Phone Available','Private','Propane','Public','Sewer Available','Sewer Connected','Sewer Nearby','Sprinkler Meter','Sprinkler Recycled','Sprinkler Well','Street Lights','Telephone Nearby','Underground Utilities','Utility Pole','Water - Multiple Meters','Water Available','Water Connected','Water Nearby','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($utilities) && in_array($_opt, $utilities) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2777,14 +2774,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="water-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="water-vl-{{ $property_type }}">
         <label class="fw-bold">Water:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the water source(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="water_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="water_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-droplet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake For Irrigation','Private','Public','Well','Well Required','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($water) && in_array($_opt, $water) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2799,14 +2796,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="sewer-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="sewer-vl-{{ $property_type }}">
         <label class="fw-bold">Sewer:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the sewer type(s) for the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="sewer_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="sewer_vacant_land" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-water" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic','PEP-Holding Tank','Private Sewer','Public Sewer','Septic Needed','Septic Tank','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($sewer) && in_array($_opt, $sewer) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2847,14 +2844,14 @@
         <span class="error mt-2" id="number_of_septics_error"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="current-adjacent-use-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="current-adjacent-use-vl-{{ $property_type }}">
         <label class="fw-bold">Current Adjacent Use:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select how the adjacent properties are currently being used.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="current_adjacent_use" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-map-location input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="current_adjacent_use" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-map-location" data-placeholder="Select" multiple>
                 @foreach (['Church','Commercial','Industrial','Mobile Home Park','Multi-Family','Park','Professional Office','Residential','Retail','School','Vacant','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($current_adjacent_use) && in_array($_opt, $current_adjacent_use) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2869,14 +2866,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="fences-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="fences-vl-{{ $property_type }}">
         <label class="fw-bold">Fences:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type(s) of fencing on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="fences" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-border-all input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="fences" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-border-all" data-placeholder="Select" multiple>
                 @foreach (['Board','Chain Link','Cross Fenced','Fenced','Split Rail','Vinyl','Wire','Wood','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($fences) && in_array($_opt, $fences) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2891,14 +2888,14 @@
         </div>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="vegetation-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="vegetation-vl-{{ $property_type }}">
         <label class="fw-bold">Vegetation:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the vegetation type(s) present on the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="vegetation" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="vegetation" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree" data-placeholder="Select" multiple>
                 @foreach (['Brush','Cleared','Crop','Oak Trees','Partially Wooded','Pasture','Timber','Trees/Wooded','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($vegetation) && in_array($_opt, $vegetation) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach
@@ -2929,14 +2926,14 @@
         <span class="error mt-2" id="buildable_error"></span>
     </div>
 
-    <div class="form-group" wire:ignore wire:key="easements-vl-{{ $property_type }}">
+    <div class="form-group" wire:key="easements-vl-{{ $property_type }}">
         <label class="fw-bold">Easements:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select any easements that exist on or affect the property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
-            <select id="easements" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road input-icon2" multiple>
+        <div class="input-cover has-select-icon" wire:ignore>
+            <select id="easements" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-road" data-placeholder="Select" multiple>
                 @foreach (['Access Road','Drainage','Electric','Telephone','Utilities','Water','None','Other'] as $_opt)
                     <option value="{{ $_opt }}" {{ is_array($easements) && in_array($_opt, $easements) ? 'selected' : '' }}>{{ $_opt }}</option>
                 @endforeach

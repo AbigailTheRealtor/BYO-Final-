@@ -113,16 +113,13 @@
 @endphp
 
 <style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
 
-    .input-cover .select2 .selection .select2-selection--multiple {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
         padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
 
-    .input-cover .select2 .selection .select2-selection--multiple input {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
 </style>
@@ -329,9 +326,9 @@
 
 
     <div wire:key="property-items-{{ $property_type }}">
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="property_items" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
+                data-icon="fa-solid fa-home" data-placeholder="Select" @if (!$property_type) disabled @endif multiple
                 required>
                 @if ($property_type === 'Residential')
                     @foreach ($property_items_buyer as $item)
@@ -419,10 +416,10 @@
             </span>
         </label>
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-screwdriver-wrench input-icon2"
+                data-icon="fa-solid fa-screwdriver-wrench"
                 data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($property_condition as $row_pt)
@@ -687,10 +684,10 @@
 @if ($this->garage_parking_spaces == 'Yes')
 <div class="form-group" id="garage_parking_spaces_option_wrapper">
     <label class="fw-bold">Garage/Parking Features:</label>
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
 
         <select id="garage_parking_spaces_option"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
 
             @foreach ($garage_parking_spaces as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $garage_parking_spaces_option ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
@@ -762,9 +759,9 @@
     </label>
 
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="view_preference"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree" data-placeholder="Select" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $view_preference ?? []) ? 'selected' : '' }}>
@@ -822,9 +819,9 @@
     </label>
 
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock" data-placeholder="Select"
             @if (!$property_type) disabled @endif multiple>
             @if ($property_type === 'Residential' or $property_type === 'Income')
                 @foreach ($non_negotialble_terms as $item)
@@ -1022,9 +1019,9 @@
         </label>
 
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="assets" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-building input-icon2" multiple>
+                data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
                 <option value="Goodwill and Business Name" {{ in_array('Goodwill and Business Name', $assets ?? []) ? 'selected' : '' }}>
                     Goodwill and Business Name
                 </option>
@@ -1137,10 +1134,10 @@
         </label>
 
 
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select wire:model="number_of_unit_type"
                 class="number_of_unit_type form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-home input-icon2" multiple>
+                data-icon="fa-solid fa-home" data-placeholder="Select" multiple>
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach

@@ -305,8 +305,8 @@
                     'Utility Bills / History', 'Warranty Documents', 'Well Water Test Report', 'Other',
                 ];
             @endphp
-            <div class="input-cover" wire:ignore>
-                <select id="additional_documents" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-folder-open" multiple>
+            <div class="input-cover has-select-icon" wire:ignore>
+                <select id="additional_documents" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-folder-open" data-placeholder="Select" multiple>
                     <option value="">Select</option>
                     @foreach ($additionalDocumentOptions as $option)
                         <option value="{{ $option }}" {{ in_array($option, $additional_documents ?? []) ? 'selected' : '' }}>

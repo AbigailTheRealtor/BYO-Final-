@@ -237,7 +237,6 @@
             <i class="fa-solid fa-circle-info"></i> </span>
 
         <div class="input-cover">
-            <i class="input-icon fa-solid fa-tag"></i>
             <input type="text" wire:model="listing_title" id="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
                 placeholder="Enter listing title (e.g., Buyer Seeking 3-Bedroom Home in Pinellas County, FL)"

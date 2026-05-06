@@ -42,9 +42,9 @@
             $selectedLeaseFor = json_decode($selectedLeaseFor, true) ?? [];
         }
     @endphp
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2"
+            data-icon="fa-solid fa-file-pen"
             data-placeholder="Select"
             multiple required>
             <option value="">Select</option>
@@ -72,9 +72,9 @@
             $selectedLeaseForCom = json_decode($selectedLeaseForCom, true) ?? [];
         }
     @endphp
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2"
+            data-icon="fa-solid fa-file-pen"
             data-placeholder="Select"
             multiple required>
             <option value="">Select</option>
@@ -121,9 +121,9 @@
         title="Select the type of space the Tenant is open to leasing.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover">
+    <div class="input-cover has-select-icon">
         <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-building input-icon2"
+            data-icon="fa-solid fa-building"
             data-placeholder="Select"
             multiple required>
             <option value="">Select</option>

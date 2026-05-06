@@ -1,14 +1,11 @@
 <style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
 
-    .input-cover .select2 .selection .select2-selection--multiple {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
         padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
 
-    .input-cover .select2 .selection .select2-selection--multiple input {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
 
@@ -61,8 +58,8 @@
     </label>
 
 
-    <div class="input-cover" wire:ignore>
-        <select id="sale_provision" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-screwdriver-wrench input-icon2" data-placeholder="Select" multiple>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="sale_provision" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-screwdriver-wrench" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}" {{ in_array($row_pt['name'], $sale_provision ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}
@@ -213,8 +210,8 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" id="offered_financing_wrapper" wire:ignore>
-        <select id="offered_financing" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-money-bill-wave input-icon2" data-placeholder="Select" multiple required>
+    <div class="input-cover has-select-icon" id="offered_financing_wrapper" wire:ignore>
+        <select id="offered_financing" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-money-bill-wave" data-placeholder="Select" multiple required>
             <option value=""></option>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"

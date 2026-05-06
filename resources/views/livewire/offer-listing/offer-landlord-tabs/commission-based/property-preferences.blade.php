@@ -1,14 +1,11 @@
 <style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
 
-    .input-cover .select2 .selection .select2-selection--multiple {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
         padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
 
-    .input-cover .select2 .selection .select2-selection--multiple input {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
 </style>
@@ -548,7 +545,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="appliances" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-utensils" data-placeholder="Select" multiple>
             <option value=""></option>
@@ -665,9 +662,9 @@
             title="Select the type of garage or parking features available. If “Other” is selected, enter any additional garage or parking features in the provided field.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="garage_parking_spaces_option_landlord"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" multiple>
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -733,7 +730,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-eye" data-placeholder="Select" multiple>
             <option value=""></option>
@@ -788,7 +785,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="non_negotiable_amenities"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-star" data-placeholder="Select"
             @if (!$property_type) disabled @endif multiple>
@@ -850,7 +847,7 @@
             title="Select the heating and fuel types available at the property (e.g., Central, Natural Gas, Heat Pump).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="heating_fuel" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard', 'Central', 'Electric', 'Exhaust Fans', 'Gas', 'Heat Pump', 'Natural Gas', 'Partial', 'Propane', 'Solar', 'Space Heater', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
@@ -875,7 +872,7 @@
             title="Select the air conditioning systems available at the property (e.g., Central Air, Mini-Split Unit(s)).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="air_conditioning" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-wind" data-placeholder="Select" multiple>
                 @foreach (['Central Air', 'Humidity Control', 'Mini-Split Unit(s)', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
@@ -900,7 +897,7 @@
             title="Select the water source(s) available at the property (e.g., Public, Well, Private).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="water" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-faucet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None', 'Other'] as $opt)
@@ -924,7 +921,7 @@
             title="Select the sewer or waste disposal system(s) used at the property (e.g., Public Sewer, Septic Tank).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="sewer" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-toilet" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
@@ -949,7 +946,7 @@
             title="Select the utilities available or connected at the property (e.g., Electricity Connected, Natural Gas Available, Sewer Connected).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="property_utilities" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available', 'Cable Available', 'Cable Connected', 'Emergency Power', 'Electric - Multiple Meters', 'Electrical Nearby', 'Electricity Available', 'Electricity Connected', 'Fiber Optics', 'Fire Hydrant', 'Mini Sewer', 'Natural Gas Available', 'Natural Gas Connected', 'Phone Available', 'Private', 'Propane', 'Public', 'Sewer Available', 'Sewer Connected', 'Solar', 'Sprinkler Meter', 'Sprinkler Recycled', 'Sprinkler Well', 'Street Lights', 'Underground Utilities', 'Water - Multiple Meters', 'Water Available', 'Water Connected', 'Other'] as $opt)
@@ -974,7 +971,7 @@
             title="Select the laundry options available at the property (e.g., In-Unit Washer/Dryer, Laundry Room, Electric Dryer Hookup).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="laundry_features" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-shirt" data-placeholder="Select" multiple>
                 @foreach (['Common Area', 'Corridor Access', 'Electric Dryer Hookup', 'Gas Dryer Hookup', 'In Garage', 'In Kitchen', 'Inside', 'Laundry Chute', 'Laundry Closet', 'Laundry Room', 'Outside', 'Same Floor as Condo Unit', 'Upper Floor', 'Washer Hookup', 'None', 'Other'] as $opt)
@@ -999,7 +996,7 @@
             title="Select the floor covering type(s) present in the property (e.g., Hardwood, Carpet, Ceramic Tile).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="floor_covering" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-layer-group" data-placeholder="Select" multiple>
                 @foreach (['Bamboo', 'Brick/Stone', 'Carpet', 'Ceramic Tile', 'Concrete', 'Cork', 'Engineered Hardwood', 'Epoxy', 'Forestry Stewardship Certified', 'Granite', 'Laminate', 'Linoleum', 'Luxury Vinyl', 'Marble', 'Parquet', 'Porcelain Tile', 'Quarry Tile', 'Reclaimed Wood', 'Recycled/Composite Flooring', 'Slate', 'Terrazzo', 'Tile', 'Travertine', 'Vinyl', 'Wood', 'Other'] as $opt)
@@ -1024,7 +1021,7 @@
             title="Select the security features present at the property (e.g., Security System, Smoke Detector(s), Gated Community).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="security_features" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-shield-halved" data-placeholder="Select" multiple>
                 @foreach (['Closed Circuit Camera(s)', 'Fire Alarm', 'Fire Sprinkler System', 'Gated Community', 'Key Card Entry', 'Medical Alarm', 'Secured Garage/Parking', 'Security Fencing/Lighting/Alarms', 'Security Gate', 'Security Lights', 'Security System', 'Security System Leased', 'Security System Owned', 'Smoke Detector(s)', 'Other'] as $opt)
@@ -1137,9 +1134,9 @@
             title="Select the road surface type(s) providing access to the property (e.g., Asphalt, Concrete, Paved).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="road_surface_type" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-road" multiple>
+                data-icon="fa-solid fa-road" data-placeholder="Select" multiple>
                 @foreach (['Asphalt', 'Brick', 'Chip And Seal', 'Concrete', 'Dirt', 'Gravel', 'Limerock', 'Paved', 'Unimproved', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $road_surface_type ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1162,7 +1159,7 @@
             title="Select the utilities available or connected at the property (e.g., Electricity Connected, Natural Gas Available, Sewer Connected).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="property_utilities" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['BB/HS Internet Available', 'Cable Available', 'Cable Connected', 'Emergency Power', 'Electric - Multiple Meters', 'Electrical Nearby', 'Electricity Available', 'Electricity Connected', 'Fiber Optics', 'Fire Hydrant', 'Mini Sewer', 'Natural Gas Available', 'Natural Gas Connected', 'Phone Available', 'Private', 'Propane', 'Public', 'Sewer Available', 'Sewer Connected', 'Solar', 'Sprinkler Meter', 'Sprinkler Recycled', 'Sprinkler Well', 'Street Lights', 'Underground Utilities', 'Water - Multiple Meters', 'Water Available', 'Water Connected', 'Other'] as $opt)
@@ -1187,7 +1184,7 @@
             title="Select the water source(s) available at the property (e.g., Public, Well, Private).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="water" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-faucet" data-placeholder="Select" multiple>
                 @foreach (['Canal/Lake for Irrigation', 'Private', 'Public', 'See Remarks', 'Well', 'None', 'Other'] as $opt)
@@ -1211,7 +1208,7 @@
             title="Select the sewer or waste disposal system(s) used at the property (e.g., Public Sewer, Septic Tank).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="sewer" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-toilet" data-placeholder="Select" multiple>
                 @foreach (['Aerobic Septic', 'PEP-Holding Tank', 'Private Sewer', 'Public Sewer', 'Septic Tank', 'None', 'Other'] as $opt)
@@ -1236,7 +1233,7 @@
             title="Select the heating and fuel types available at the property (e.g., Central, Natural Gas, Heat Pump).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="heating_fuel" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-fire" data-placeholder="Select" multiple>
                 @foreach (['Baseboard', 'Central', 'Electric', 'Exhaust Fans', 'Gas', 'Heat Pump', 'Natural Gas', 'Partial', 'Propane', 'Solar', 'Space Heater', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
@@ -1261,7 +1258,7 @@
             title="Select the air conditioning systems available at the property (e.g., Central Air, Mini-Split Unit(s)).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="air_conditioning" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-wind" data-placeholder="Select" multiple>
                 @foreach (['Central Air', 'Humidity Control', 'Mini-Split Unit(s)', 'Wall/Window Unit(s)', 'Zoned', 'None', 'Other'] as $opt)
@@ -1286,9 +1283,9 @@
             title="Select the electrical service configuration(s) available at the property (e.g., 200+ Amp Service, 3 Phase, Generator).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="electrical_service" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-plug" multiple>
+                data-icon="fa-solid fa-plug" data-placeholder="Select" multiple>
                 @foreach (['100 Amp Service', '150 Amp Service', '200+ Amp Service', '3 Phase', '110 Volts', '220 Volts', '440 Volts', 'Generator', 'Generator Hook-Up', 'Separate Meters', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $electrical_service ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1329,9 +1326,9 @@
             title="Select the features and amenities included in the building (e.g., Elevator, Loading Dock, Overhead Doors).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="building_features" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-building" multiple>
+                data-icon="fa-solid fa-building" data-placeholder="Select" multiple>
                 @foreach (['Bathrooms', 'Clear Span', 'Columns', 'Common Lighting', 'Drive-Through', 'Dumpsters', 'Elevator', 'Elevator - None', 'Extra Storage', 'Fencing', 'Fiber Optic', 'Freight Elevator', 'Furnished', 'High Bays', 'Janitorial Services', 'Kitchen Facility', 'Lit Sign on Site', 'Loading Dock', 'Loft', 'Medical Disposal', 'On Site Shower', 'Outside Storage', 'Overhead Doors', 'Pool/Spa', 'Ramp', 'Reception', 'Seating', 'Service Stations', 'Solid Surface Counter', 'Stone Counter', 'Trash Removal', 'Truck Doors', 'Truck Well', 'Waiting Room', 'Other'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $building_features ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1396,9 +1393,9 @@
             title="Select the condition or availability status of the space (e.g., New, Gray Shell, Sub Let).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="space_type" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-warehouse" multiple>
+                data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
                 @foreach (['Gray Shell', 'New', 'Re Let', 'Sub Let', 'Vanilla Shell'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $space_type ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach
@@ -1414,9 +1411,9 @@
             title="Select the quality classification of the commercial space (A = premium, D = lower-grade).">
             <i class="fa-solid fa-circle-info"></i>
         </span>
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="space_classification" class="form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-star" multiple>
+                data-icon="fa-solid fa-star" data-placeholder="Select" multiple>
                 @foreach (['A', 'B', 'C', 'D'] as $opt)
                     <option value="{{ $opt }}" {{ in_array($opt, $space_classification ?? []) ? 'selected' : '' }}>{{ $opt }}</option>
                 @endforeach

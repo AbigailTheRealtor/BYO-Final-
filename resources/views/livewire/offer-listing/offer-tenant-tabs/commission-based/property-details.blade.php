@@ -1,14 +1,11 @@
 <style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
 
-    .input-cover .select2 .selection .select2-selection--multiple {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
         padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
 
-    .input-cover .select2 .selection .select2-selection--multiple input {
+    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
 </style>
@@ -262,7 +259,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         @php
             $selectedPropertyItems = $this->property_items ?? [];
             if (is_string($selectedPropertyItems)) {
@@ -271,7 +268,7 @@
         @endphp
 
         <select id="property_items" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-home input-icon2" multiple
+            data-icon="fa-solid fa-home" data-placeholder="Select" multiple
             data-property-type="{{ $property_type }}"
             data-selected="{{ json_encode($selectedPropertyItems) }}">
             @if ($property_type === 'Residential Property')
@@ -319,10 +316,10 @@
         </span>
     </label>
 
-    <div class="input-cover" wire:key="condition-prop-buyer-wrapper" wire:ignore>
+    <div class="input-cover has-select-icon" wire:key="condition-prop-buyer-wrapper" wire:ignore>
         <select id="condition_prop_buyer"
             class="condition_prop_buyer form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-screwdriver-wrench input-icon2"
+            data-icon="fa-solid fa-screwdriver-wrench"
             data-placeholder="Select"
             multiple
             style="visibility:hidden;height:0;overflow:hidden">
@@ -521,9 +518,9 @@
 <!-- View Preference Needed -->
 {{-- <div class="form-group">
     <label class="fw-bold">Appliances:</label>
-    <div class="input-cover">
+    <div class="input-cover has-select-icon">
         <select wire:model="appliances" id="appliances" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-plug input-icon2" multiple>
+            data-icon="fa-solid fa-plug" multiple>
             @foreach ($appliances as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
             @endforeach
@@ -658,7 +655,7 @@
 <div class="form-group {{ ($this->garage_parking_spaces ?? '') === 'Yes' ? '' : 'd-none' }}" id="garage_parking_spaces_option_wrapper" wire:ignore>
     <label class="fw-bold">Garage/Parking Features:</label>
 
-    <div class="input-cover">
+    <div class="input-cover has-select-icon">
 
         @php
             $selectedGarageOptions = $this->garage_parking_spaces_option ?? [];
@@ -667,7 +664,7 @@
             }
         @endphp
         <select id="garage_parking_spaces_option"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
 
             @foreach ($garage_parking_spaces as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedGarageOptions) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
@@ -735,9 +732,9 @@
     </label>
 
 
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="view_preference" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-tree input-icon2" multiple>
+            data-icon="fa-solid fa-tree" data-placeholder="Select" multiple>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $view_preference ?? []) ? 'selected' : '' }}>
@@ -800,9 +797,9 @@
                 $selectedAmenities = json_decode($selectedAmenities, true) ?? [];
             }
         @endphp
-        <div class="input-cover" wire:ignore>
+        <div class="input-cover has-select-icon" wire:ignore>
             <select id="non_negotiable_amenities"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock" data-placeholder="Select"
                 @if (!$property_type) disabled @endif multiple>
                 @if (in_array($property_type, ['Residential Property']))
                     @foreach ($non_negotialble_terms as $item)

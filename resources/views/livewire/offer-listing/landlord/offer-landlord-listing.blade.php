@@ -292,6 +292,10 @@
             padding: 2px 8px;
         }
 
+        .input-cover.has-select-icon .select2-container .select2-selection {
+            padding-left: 44px !important;
+        }
+
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -2860,16 +2864,16 @@
         }
 
         function addIconsToInputs() {
-            document.querySelectorAll('.has-icon').forEach(input => {
+            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
                 if (!iconClass) return;
                 const wrapper = input.closest('.input-cover');
                 if (!wrapper) return;
                 if (input.type === 'file') return;
-                if (wrapper.querySelector('.input-icon')) return;
+                if (wrapper.querySelector('.data-icon-rendered')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                wrapper.insertBefore(icon, input);
+                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
 
