@@ -1,0 +1,171 @@
+TASK: Fix Create Offer Listing Seller create/edit/draft parity issues
+
+LOGIN FOR QA:
+abigailbaschuk@gmail.com
+12345678
+
+TEST URL:
+ /offer-listing/seller
+
+GOAL:
+Create Offer Listing Seller must work the same in Create, Edit Draft, and Resume Draft. Every field, icon, placeholder, upload, conditional section, and saved value must match between the fresh create form and draft/edit form.
+
+CRITICAL SAFEGUARDS:
+- Seller Create Offer Listing only.
+- Do NOT touch Hire Agent flows.
+- Do NOT touch Buyer, Tenant, or Landlord unless shared code absolutely requires it.
+- Do NOT rename database columns.
+- Do NOT delete migrations, fields, metadata keys, or existing saved data.
+- Do NOT rewrite the wizard architecture.
+- Make surgical Blade/Livewire fixes only.
+- Preserve all existing save/draft/resume logic unless fixing missing persistence.
+- Run php -l on every edited PHP/Blade-related file.
+- Stop and report if the issue is caused by missing storage disk config or server upload limits.
+
+FILES TO AUDIT FIRST:
+- Seller Create Offer Listing Livewire component
+- Seller offer listing Blade file
+- Seller tab partials, especially:
+  - Listing Details
+  - Property Details
+  - Sale Terms / Purchasing Terms
+  - Photos, Tours & Documents
+  - Tax, Legal, HOA & Disclosures
+- Any Seller draft/edit/resume Blade or Livewire files
+- Any shared Seller document/photo upload handlers
+
+FIXES REQUIRED:
+
+1. Select placeholder text
+In Create Offer Listing Seller:
+- “Special Sale Provision” select placeholder is missing the word “Select”
+- “Offered Financing/Currency” select placeholder is missing the word “Select”
+
+Expected:
+Both fields must display placeholder text exactly:
+Select
+
+Do not use blank placeholder, “Choose,” or old text.
+
+2. Annual Property Taxes example formatting
+Field: Annual Property Taxes
+
+Update placeholder/example text:
+- Remove comma from the example text.
+- Example should not show comma inside the placeholder.
+
+But when the user types a number:
+- The displayed value should auto-format with commas in the correct place.
+- Example: user enters 2500 → displays 2,500
+- user enters 1000000 → displays 1,000,000
+- Save logic must store clean numeric value or existing expected format without breaking current persistence.
+- Draft/edit resume must reload correctly.
+
+3. Tax, Legal, & HOA tab formatting issue
+Section:
+HOA / Association
+Field:
+Association Approval Required for Purchase
+
+Issue:
+When clicking/selecting this field, the formatting/layout breaks.
+
+Audit and fix the entire HOA / Association section so:
+- Labels do not overlap inputs.
+- Icons do not overlap text.
+- Select2/select placeholder displays correctly.
+- Conditional fields align correctly.
+- Upload fields, if any, do not push into or override other fields.
+- The section matches the clean Seller create-listing UI pattern used elsewhere.
+- No visual formatting issue appears after clicking/selecting Yes/No/Other options.
+
+4. Property Photos upload issue
+Issue:
+Property Photos are not uploading correctly in Seller Create Offer Listing.
+
+Audit the photo upload flow:
+- Frontend file input
+- Livewire property
+- Validation rules
+- temporary upload handling
+- storage path
+- save/draft persistence
+- edit/draft reload display
+- delete/remove existing photo behavior if present
+
+Expected:
+- User can upload property photos.
+- Uploaded photos save with draft/listing.
+- Uploaded photos appear again when editing/resuming draft.
+- Existing photos are not erased when adding new photos.
+- Upload errors are visible and user-friendly.
+- Storage disk/path is valid.
+
+5. Edit/Draft must match Create exactly
+Issue:
+Edit/Draft does not have the latest UI updates. Several fields still show old formatting and missing icons.
+
+Audit Seller Edit/Draft/Resume view against Seller Create view and make them identical.
+
+Fields specifically reported missing updated icon/new format in Edit/Draft:
+- Roof Type
+- Exterior
+- Foundation
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Any related Property Details selects in that same section
+
+Expected:
+- Same icons as Create.
+- Same placeholders as Create.
+- Same input wrapper structure as Create.
+- Same Select2 behavior as Create.
+- Same conditional logic as Create.
+- Same values reload when editing/resuming draft.
+
+6. Additional Documents upload
+Issue:
+In Edit/Draft, user cannot upload a document after selecting Additional Documents.
+
+Expected:
+- If user selects Additional Documents / document type, they can upload a file.
+- Repeatable document uploader must work in Create and Edit/Draft.
+- Existing uploaded documents show when resuming draft.
+- User can add more document rows.
+- “Other” document type allows custom label text.
+- Document rows save and reload without overwriting unrelated fields.
+
+7. Full create/edit/draft parity requirement
+After fixes, verify:
+- Create Seller listing fresh
+- Fill out fields across all tabs
+- Upload property photos
+- Add at least one document
+- Save Draft
+- Resume/Edit Draft
+- Confirm every selected field, typed field, photo, document, icon, placeholder, and conditional section matches what was entered
+- Continue editing and save again
+- No old-format fields remain in draft/edit
+
+DONE LOOKS LIKE:
+- Special Sale Provision placeholder = Select
+- Offered Financing/Currency placeholder = Select
+- Annual Property Taxes placeholder example has no comma, but typed values display commas correctly
+- HOA / Association section has no formatting issues when clicking/selecting fields
+- Property Photos upload, save, and reload correctly
+- Seller Edit/Draft UI is visually identical to Seller Create UI
+- Roof Type, Exterior, Foundation, Heating and Fuel, Air Conditioning, Water, Sewer, Utilities all have correct icons and formatting in Edit/Draft
+- Additional Documents upload works in Create and Edit/Draft
+- Saved draft reloads all fields, selections, photos, and documents correctly
+- php -l passes on all edited files
+
+QA NOTES:
+Please provide a concise report listing:
+1. Files changed
+2. Root cause for each issue
+3. Confirmation that Seller Create and Seller Edit/Draft now use the same updated UI/logic
+4. Any storage/upload config issue found
+5. Manual QA steps completed
