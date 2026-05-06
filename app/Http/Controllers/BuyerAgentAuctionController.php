@@ -431,6 +431,9 @@ class BuyerAgentAuctionController extends Controller
     {
 
         $auction = BuyerAgentAuction::with('meta', 'bids.meta', 'bids.user', 'user')->find($id);
+        if (!$auction) {
+            abort(404);
+        }
         // Auto-transition Bidding Period listing to Pending when timer ends
         $this->autoTransitionBpToPending($auction);
 

@@ -793,6 +793,10 @@ class SellerAgentAuctionController extends Controller
                 ]);
             }
 
+            if ($summaryId) {
+                return redirect()->route('accepted-bid-summary.view', $summaryId)
+                    ->with('success', 'Bid accepted successfully! Your Accepted Bid Summary is ready to review and sign.');
+            }
             return redirect()->back()->with('success', 'Bid accepted successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
