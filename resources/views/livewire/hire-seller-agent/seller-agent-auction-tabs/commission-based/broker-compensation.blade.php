@@ -595,6 +595,7 @@ $safeKey = function(...$parts) {
     </div>
 @endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($protection_period))
 <!-- Protection Period Timeframe -->
 <div class="form-group mb-4 mt-3">
     <label class="fw-bold d-flex align-items-center">
@@ -618,7 +619,9 @@ $safeKey = function(...$parts) {
             data-icon="fa-solid fa-shield-halved" placeholder="Enter protection period in days (e.g., 90)">
     </div>
 </div>
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($early_termination_fee_option))
 <!-- Early Termination Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -659,7 +662,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($retainer_fee_option))
 <!-- Retainer Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -716,6 +721,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($retained_deposits))
 <div class="form-group mb-4">
 
     <label class="fw-bold d-flex align-items-center">
@@ -735,6 +743,9 @@ $safeKey = function(...$parts) {
     </div>
 
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($agency_agreement_timeframe))
 <!-- Tenant Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -765,6 +776,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($brokerage_relationship))
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Acceptable Brokerage Relationship:
@@ -828,6 +842,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($additional_details_broker))
 <!-- Additional Terms -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -840,4 +857,5 @@ $safeKey = function(...$parts) {
     <textarea wire:model="additional_details_broker" class="form-control mt-2" rows="3"
         placeholder="Enter any additional terms"></textarea>
 </div>
+@endif
 

@@ -65,7 +65,7 @@
 
                     <div class="tab-content mt-3">
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-counter-tabs.broker-compensation')
+                            @include('livewire.seller-agent-auction-counter-tabs.broker-compensation', ['isCounterMode' => true])
                         </div>
 
                         @if ($isListingCreatedByAgent)

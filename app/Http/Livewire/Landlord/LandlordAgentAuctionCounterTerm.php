@@ -128,6 +128,9 @@ class LandlordAgentAuctionCounterTerm extends Component
     public $protection_period = '';                  // #
     public $early_termination_fee_option = '';       // yes | no
     public $early_termination_fee_amount = '';       // $
+    public $retainer_fee_option = '';                // yes | no
+    public $retainer_fee_amount = '';                // $
+    public $retainer_fee_application = '';           // applied | additional
 
     // Agency Agreement
     public $agency_agreement_timeframe = '';         // 3/6/9/12 Months | Other
@@ -472,7 +475,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             if (isset($agentMeta['services'])) {
                 $raw = $agentMeta['services'];
                 $rawProposed = is_string($raw) ? (json_decode($raw, true) ?? []) : (is_array($raw) ? $raw : []);
-                $this->proposedServices = array_values(array_filter((array) $rawProposed));
+                $this->proposedServices = $this->filterServicesToCurrentCatalog(array_values(array_filter((array) $rawProposed)));
             }
         }
 
@@ -525,6 +528,27 @@ class LandlordAgentAuctionCounterTerm extends Component
         }
         $m = $bid->meta->pluck('meta_value', 'meta_key')->toArray();
         $this->hydrateFromMetaMap($m);
+    }
+
+    private function filterServicesToCurrentCatalog(array $services): array
+    {
+        $normalize = fn(string $s): string => mb_strtolower(trim(str_replace(
+            ["\u{2019}", "\u{2018}", "\u{201C}", "\u{201D}"],
+            ["'",        "'",        '"',        '"'],
+            $s
+        )));
+
+        $catalog = \App\Helpers\LandlordBidMatchScoreHelper::getCatalog($this->property_type ?: 'Residential Property');
+        $catalogSet = array_flip($catalog); // catalog entries are already normalized
+
+        $filtered = [];
+        foreach ($services as $svc) {
+            $norm = $normalize((string) $svc);
+            if (isset($catalogSet[$norm])) {
+                $filtered[] = $svc;
+            }
+        }
+        return $filtered;
     }
 
     private function hydrateFromMetaMap(array $m): void
@@ -608,6 +632,9 @@ class LandlordAgentAuctionCounterTerm extends Component
             'protection_period',
             'early_termination_fee_option',
             'early_termination_fee_amount',
+            'retainer_fee_option',
+            'retainer_fee_amount',
+            'retainer_fee_application',
 
             // === Agency Agreement ===
             'agency_agreement_timeframe',
@@ -672,6 +699,11 @@ class LandlordAgentAuctionCounterTerm extends Component
         if (isset($m['other_services_enabled'])) {
             $this->other_services_enabled = filter_var($m['other_services_enabled'], FILTER_VALIDATE_BOOLEAN)
                 || $m['other_services_enabled'] === '1';
+        }
+
+        // Source-of-truth: if other_services has non-empty text, force other_services_enabled on
+        if (!$this->other_services_enabled && !empty(array_filter($this->other_services, fn($s) => trim((string) $s) !== ''))) {
+            $this->other_services_enabled = true;
         }
 
         // Restore nested visibility flags from loaded data
@@ -886,6 +918,9 @@ class LandlordAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('protection_period', $this->protection_period);
         $counterTerm->saveMeta('early_termination_fee_option', $this->early_termination_fee_option);
         $counterTerm->saveMeta('early_termination_fee_amount', $this->early_termination_fee_amount);
+        $counterTerm->saveMeta('retainer_fee_option', $this->retainer_fee_option);
+        $counterTerm->saveMeta('retainer_fee_amount', str_replace(',', '', $this->retainer_fee_amount ?? ''));
+        $counterTerm->saveMeta('retainer_fee_application', $this->retainer_fee_application);
         $counterTerm->saveMeta('agency_agreement_timeframe', $this->agency_agreement_timeframe);
         $counterTerm->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
 

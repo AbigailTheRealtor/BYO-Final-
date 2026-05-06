@@ -87,7 +87,7 @@
 
           <div class="tab-content mt-3">
             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}">
-             @include('livewire.landlord-agent-auction-bid-tabs.commission-based.broker-compensation')
+             @include('livewire.landlord-agent-auction-bid-tabs.commission-based.broker-compensation', ['isCounterMode' => true])
 
             </div>
 

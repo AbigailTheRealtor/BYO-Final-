@@ -390,6 +390,11 @@ public $isListingCreatedByAgent = false;
                 || $m['other_services_enabled'] === '1';
         }
 
+        // Source-of-truth: if other_services has non-empty text, force other_services_enabled on
+        if (!$this->other_services_enabled && !empty(array_filter($this->other_services, fn($s) => trim((string) $s) !== ''))) {
+            $this->other_services_enabled = true;
+        }
+
         // Counter-specific client contact fields
         if (array_key_exists('counter_client_name', $m)) {
             $this->client_name = $m['counter_client_name'];

@@ -1003,6 +1003,7 @@
     </div>
 
 @endif
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($protection_period))
 @if ($property_type === 'Residential Property')
     <!-- Protection Period Timeframe -->
     <div class="form-group mb-4 mt-3">
@@ -1036,6 +1037,9 @@
         </div>
     </div>
 @endif
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($early_termination_fee_option))
 <!-- Early Termination Fee -->
 <div class="form-group mb-4">
     @if ($property_type === 'Residential Property')
@@ -1090,7 +1094,64 @@ this agreement ends.">
             <span class="error mt-2" id="early_termination_fee_amount_error"></span>
         </div>
     @endif
-</div><!-- 10.        Landlord  Agency Agreement Timeframe -->
+</div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($retainer_fee_option))
+<!-- Retainer Fee -->
+<div class="form-group mb-4">
+    <label class="fw-bold d-flex align-items-center">
+        Retainer Fee:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Landlord agrees to pay a non-refundable retainer fee to initiate Broker services. If Yes is selected, enter the amount. This fee is separate from any commission owed unless otherwise specified.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover mt-2">
+        <select wire:model.lazy="retainer_fee_option" class="form-control has-icon"
+            data-icon="fa-solid fa-file-invoice-dollar">
+            <option value="">Select</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+        </select>
+    </div>
+    @if ($retainer_fee_option === 'yes')
+        <div class="mt-3">
+            <div class="input-group">
+                <span class="input-group-text">$</span>
+                <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
+                    placeholder="Enter retainer fee amount (e.g., 500)"
+                    data-error-id="retainer_fee_amount_error"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                <span class="error mt-2" id="retainer_fee_amount_error"></span>
+            </div>
+            <div class="mt-3">
+                <label class="fw-bold d-flex align-items-center">
+                    Retainer Fee Application:
+                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                        title="Select whether the retainer fee will be credited toward the final commission or charged in addition to it.">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </span>
+                </label>
+                <div class="input-cover mt-2">
+                    <select wire:model.lazy="retainer_fee_application" class="form-control has-icon"
+                        data-icon="fa-solid fa-triangle-exclamation">
+                        <option value="">Select</option>
+                        <option value="applied">Applied toward final compensation</option>
+                        <option value="additional">Charged in addition to final compensation</option>
+                    </select>
+                </div>
+                @error('retainer_fee_application')
+                    <span class="text-danger small">{{ $message }}</span>
+                @enderror
+            </div>
+        </div>
+    @endif
+</div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($agency_agreement_timeframe))
+<!-- 10.        Landlord  Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Landlord Agency Agreement Timeframe:
@@ -1122,6 +1183,9 @@ this agreement ends.">
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($brokerage_relationship))
 <!-- Acceptable Brokerage Relationship -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -1190,7 +1254,11 @@ this agreement ends.">
             </div>
         </div>
     @endif
-</div><!-- Additional Terms -->
+</div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($additional_details_broker))
+<!-- Additional Terms -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Additional Terms:
@@ -1202,4 +1270,5 @@ this agreement ends.">
     <textarea wire:model.lazy="additional_details_broker" class="form-control mt-2" rows="3"
         placeholder="Enter any additional terms"></textarea>
 </div>
+@endif
 

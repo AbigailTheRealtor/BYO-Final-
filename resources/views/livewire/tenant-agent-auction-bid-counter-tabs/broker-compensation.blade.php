@@ -424,6 +424,7 @@
     </div>
 @endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($protection_period))
 <!-- Protection Period Timeframe -->
 <div class="form-group mb-4 mt-3">
     <label class="fw-bold">
@@ -441,7 +442,9 @@
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div>
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($early_termination_fee_option))
 <!-- Early Termination Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold ">
@@ -473,6 +476,9 @@
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($retainer_fee_option))
 <!-- Retainer Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -537,7 +543,9 @@
         </div>
     @endif
 </div>
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($agency_agreement_timeframe))
 <!-- Tenant Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -570,6 +578,9 @@
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($brokerage_relationship))
 <!-- Acceptable Brokerage Relationship -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -637,6 +648,9 @@
         </div>
     @endif
 </div>
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($additional_details_broker))
 <!-- Additional Terms -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -649,4 +663,5 @@
     <textarea wire:model="additional_details_broker" class="form-control mt-2" rows="3"
         placeholder="Enter any additional terms"></textarea>
 </div>
+@endif
 
