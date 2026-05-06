@@ -885,7 +885,6 @@
         <div class="input-cover has-select-icon" wire:ignore>
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-user" data-placeholder="Select" multiple>
-                <option value=""></option>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -923,7 +922,6 @@
         <div class="input-cover has-select-icon" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-user-tie" data-placeholder="Select" multiple>
-                <option value=""></option>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
@@ -1119,7 +1117,6 @@
     <div class="input-cover has-select-icon" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
             data-icon="fa-solid fa-calendar-days" data-placeholder="Select" multiple required>
-            <option value=""></option>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -1543,7 +1540,6 @@
         <div class="input-cover has-select-icon" wire:ignore>
             <select id="rent_includes" class="form-control has-icon select2-multiple rent_includes" multiple
                 data-icon="fa-solid fa-receipt" data-placeholder="Select">
-                <option value=""></option>
                 @foreach ($rent_includes as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach

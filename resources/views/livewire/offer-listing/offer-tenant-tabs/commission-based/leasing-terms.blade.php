@@ -47,7 +47,6 @@
             data-icon="fa-solid fa-file-pen"
             data-placeholder="Select"
             multiple required>
-            <option value="">Select</option>
             @foreach ($lease_for_res as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseFor) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -77,7 +76,6 @@
             data-icon="fa-solid fa-file-pen"
             data-placeholder="Select"
             multiple required>
-            <option value="">Select</option>
             @foreach ($lease_for_com as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseForCom) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -126,7 +124,6 @@
             data-icon="fa-solid fa-building"
             data-placeholder="Select"
             multiple required>
-            <option value="">Select</option>
             @foreach ($acceptable_leasing_space as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $leasing_spaces_tenant ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>

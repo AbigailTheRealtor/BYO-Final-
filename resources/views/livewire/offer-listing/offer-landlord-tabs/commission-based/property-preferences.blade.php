@@ -548,7 +548,6 @@
     <div class="input-cover has-select-icon" wire:ignore>
         <select id="appliances" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-utensils" data-placeholder="Select" multiple>
-            <option value=""></option>
             @foreach ($appliances as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
             @endforeach
@@ -733,7 +732,6 @@
     <div class="input-cover has-select-icon" wire:ignore>
         <select id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-eye" data-placeholder="Select" multiple>
-            <option value=""></option>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $view_preference ?? []) ? 'selected' : '' }}>

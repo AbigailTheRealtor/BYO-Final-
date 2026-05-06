@@ -1,0 +1,98 @@
+Task #565B — Fix Select2 Placeholder Issue After Failed Commit
+
+IMPORTANT:
+Task #565 was already committed, but the issue is NOT fixed. Do not revert yet. First identify why the placeholder is still missing in the live UI.
+
+SCOPE:
+Offer Listing flows only.
+
+DO NOT TOUCH:
+- Routes
+- Controllers
+- Schema/migrations
+- Validation
+- Save/load logic
+- wire:model names
+- Option values
+- Tab navigation
+- Hire Agent flows
+- Counter Terms flows
+- Agent Presets
+
+READ-ONLY AUDIT FIRST:
+Open the actual page and field where “Select” is still missing.
+
+Inspect the rendered DOM for the broken field and report:
+1. Original select id/class
+2. Whether the select has data-placeholder="Select"
+3. Whether the select is single or multiple
+4. Whether a single-select has first option exactly:
+   <option value=""></option>
+5. Whether a multi-select incorrectly has:
+   <option value="">Select</option>
+6. Whether Select2 generated a .select2-container
+7. Whether .select2-selection__placeholder exists
+8. Whether .select2-selection__rendered is empty, hidden, or contains text
+9. Whether duplicate .select2-container elements exist
+10. Which JS initializer is handling that field
+
+DO NOT EDIT until the actual DOM cause is identified.
+
+LIKELY REAL CAUSES:
+- Multi-select has an empty “Select” option that blocks placeholder display
+- JS initializer is not passing placeholder
+- Wrong selector is being initialized
+- Field initializes before data-placeholder exists
+- Livewire re-render removes Select2 placeholder
+- Double initialization wipes placeholder
+- Placeholder exists but is hidden by CSS
+
+FIX RULES:
+
+For MULTI-select Select2:
+- Must have:
+  data-placeholder="Select"
+- Must NOT have:
+  <option value="">Select</option>
+- Init must include:
+  placeholder: $el.data('placeholder') || 'Select',
+  allowClear: true,
+  width: '100%'
+
+For SINGLE-select Select2:
+- Must have:
+  data-placeholder="Select"
+- First child option must be exactly:
+  <option value=""></option>
+- Init must include:
+  placeholder: $el.data('placeholder') || 'Select',
+  allowClear: true,
+  width: '100%'
+
+Double-init guard:
+Before initializing any Select2 field:
+
+if ($el.hasClass('select2-hidden-accessible')) {
+    return;
+}
+
+Livewire re-init:
+After Livewire message.processed, reinitialize ONLY uninitialized Select2 fields.
+
+DO NOT broadly rewrite all Select2 code.
+Fix only the broken field pattern proven by DOM inspection.
+
+VERIFY:
+After fixing, inspect the same broken field again and confirm:
+- “Select” visibly appears when empty
+- placeholder returns after clearing
+- no duplicate .select2-container exists
+- dropdown opens normally
+- selected values still save/reload
+- Save Draft works
+- no console errors
+
+Run php -l on every edited Blade file.
+
+STOP RULE:
+If the placeholder still does not show, stop and report the exact rendered DOM for the broken field instead of making more broad edits.
