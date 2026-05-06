@@ -1,0 +1,115 @@
+READ-ONLY ROOT-CAUSE AUDIT ONLY — DO NOT CHANGE CODE YET
+
+Issue:
+Create Offer Listing dropdown/icon/select placeholders are still inconsistent across all 4 role flows after the recent Select2/icon standardization.
+
+Affected URLs:
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant
+
+Observed Tenant broken examples:
+Property Preferences tab:
+- Acceptable Property Styles: Select visible, icon missing
+- Acceptable Property Conditions: missing icon + missing Select
+- View Preference Needed: Select visible, icon missing
+- Non-Negotiable Amenities and Property Features: Select visible, icon missing
+
+Leasing Terms tab:
+- Offered Lease Term: missing icon + missing Select
+- Leasing Space: missing icon + missing Select
+
+Also observed similar issues:
+Seller:
+- Appliances Included, View, Amenities, Roof Type, Foundation, Heating/Fuel, Air Conditioning, Water, Sewer, Utilities
+- Special Sale Provision
+- Offered Financing/Currency
+
+Buyer:
+- Acceptable Property Style
+- Acceptable Property Conditions
+- View Preference Needed
+- Non-Negotiable Amenities and Property Features
+- Acceptable Special Sale Provisions
+- Offered Financing/Currency
+
+Landlord:
+- Appliances Included
+- View
+- Amenities and Property Features
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Laundry Features
+- Floor Covering
+- Security Features
+- Desired Lease Term
+- Rent Includes
+
+Goal:
+Find the SINGLE root cause pattern and produce the smallest safe fix that applies to all affected Create Offer Listing Select2 fields.
+
+Audit requirements:
+1. Inspect all four wizard root Blade files:
+   - resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+   - resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+   - resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+   - resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+2. Inspect all Create Offer Listing tab partials that contain:
+   - select2-multiple
+   - multiple selects
+   - data-placeholder
+   - data-icon
+   - has-select-icon
+   - wire:ignore
+
+3. Build a table of every Select2/multi-select field by role with:
+   - role
+   - tab
+   - field label
+   - file path
+   - line number
+   - selector/id
+   - wrapper class list
+   - select class list
+   - data-icon value
+   - data-placeholder value
+   - whether has-icon exists
+   - whether has-select-icon exists
+   - whether the selector is initialized by JS
+   - whether “Select” is expected from JS config or HTML data-placeholder
+   - current issue: missing icon, missing Select, both, or okay
+
+4. Specifically compare:
+   - Select2 fields that show Select but no icon
+   - Select2 fields that show neither Select nor icon
+   - Select2 fields that work correctly
+   - native selects that work correctly
+
+5. Check whether the real issue is:
+   - JS icon injector skips hidden Select2 original selects
+   - icon is injected into wrong wrapper
+   - has-select-icon is added but no icon element gets rendered
+   - Select2 initialization is missing for certain selectors
+   - Select2 config lacks width/placeholder for certain selectors
+   - CSS targets .select2-selection but not .select2-selection--multiple
+   - the placeholder text exists but is hidden by padding/positioning
+   - data-icon is present but FontAwesome class is invalid
+   - wire:ignore prevents Livewire from rendering expected markup
+
+6. Do NOT edit code during audit.
+7. Do NOT touch Hire Agent flows, Agent Profiles, Agent Presets, Direct Hire, routes, controllers, database, migrations, bid/counter logic, or backend logic.
+8. Return only:
+   - complete findings
+   - exact shared root cause
+   - smallest safe fix plan
+   - exact files that must be edited
+
+Important:
+Do not fix this by adding raw <i class="input-icon"> tags back field-by-field.
+Do not patch only Tenant, Buyer, Seller, or Landlord individually.
+We need the shared Select2 rendering standard fixed once for all Create Offer Listing flows.
