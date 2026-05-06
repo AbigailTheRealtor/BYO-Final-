@@ -433,17 +433,15 @@
                 </div>
             </div>
 
-            @if ($association_fee_frequency === 'Other')
-                <div class="col-12">
-                    <div class="form-group mt-2 mb-3">
-                        <div class="input-cover">
-                            <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
-                                data-icon="fa-regular fa-calendar-days"
-                                placeholder="Describe the fee frequency">
-                        </div>
+            <div class="col-12" id="association_fee_frequency_other_wrapper" style="display: {{ $association_fee_frequency === 'Other' ? 'block' : 'none' }}">
+                <div class="form-group mt-2 mb-3">
+                    <div class="input-cover">
+                        <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
+                            data-icon="fa-regular fa-calendar-days"
+                            placeholder="Describe the fee frequency">
                     </div>
                 </div>
-            @endif
+            </div>
 
             {{-- Approval Required --}}
             <div class="form-group mt-3">
@@ -473,8 +471,11 @@
                                 <i class="fa-solid fa-circle-info"></i>
                             </span>
                         </label>
-                        <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
-                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
+                        <div class="input-cover">
+                            <textarea wire:model="association_approval_process" class="form-control" rows="2"
+                                style="padding: 10px; font-size: 16px;"
+                                placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
+                        </div>
                     </div>
 
                     <div class="form-group mt-2 mb-3">
@@ -515,7 +516,7 @@
                     ];
                 @endphp
                 <div class="input-cover has-select-icon" wire:ignore>
-                    <select id="association_fee_includes" class="form-control select2-multiple has-icon" data-icon="fa-solid fa-list-check" data-placeholder="Select" multiple>
+                    <select id="association_fee_includes" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-list-check" data-placeholder="Select" multiple>
                         @foreach ($feeIncludesOptions as $option)
                             <option value="{{ $option }}" {{ in_array($option, $association_fee_includes ?? []) ? 'selected' : '' }}>
                                 {{ $option }}
