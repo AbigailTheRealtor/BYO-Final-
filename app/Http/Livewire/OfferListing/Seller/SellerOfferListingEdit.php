@@ -772,6 +772,11 @@ class SellerOfferListingEdit extends Component
     public $additional_documents = [];
     public $other_document_type = '';
     public $doc_rows = [];
+
+    // Per-row additional document uploads
+    public $docFileUpload;
+    public $docFileUploadIndex = null;
+
     public $propertyPhotos = [];
     public $newPropertyPhotos = [];
     public $videoTourUrl = '';
@@ -2178,6 +2183,46 @@ class SellerOfferListingEdit extends Component
     public function updatedEnvironmentalReportFile()
     {
         $this->validate(['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedDocFileUpload()
+    {
+        $this->validate(['docFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+
+        if ($this->docFileUploadIndex === null || !$this->docFileUpload) {
+            return;
+        }
+
+        $index    = (int) $this->docFileUploadIndex;
+        $ext      = $this->docFileUpload->getClientOriginalExtension();
+        $uuid     = (string) Str::uuid();
+        $fileName = $uuid . '.' . $ext;
+        $dir      = 'seller-doc-uploads/' . ($this->listingId ?? 'draft');
+
+        Storage::disk('public')->makeDirectory($dir);
+        $this->docFileUpload->storeAs($dir, $fileName, 'public');
+        $storedPath = $dir . '/' . $fileName;
+
+        $rows = $this->doc_rows;
+        if (isset($rows[$index])) {
+            $rows[$index]['file_path'] = $storedPath;
+        }
+        $this->doc_rows           = $rows;
+        $this->docFileUpload      = null;
+        $this->docFileUploadIndex = null;
+
+        $this->emit('docFileStored', $index, $storedPath);
+    }
+
+    public function removeDocRowFile($index)
+    {
+        $index = (int) $index;
+        $rows  = $this->doc_rows;
+        if (isset($rows[$index])) {
+            $rows[$index]['file_path'] = '';
+        }
+        $this->doc_rows = $rows;
+        $this->emit('docRowFileRemoved', $index);
     }
 
     protected function saveAllMetadata($auction)

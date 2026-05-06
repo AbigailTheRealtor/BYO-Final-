@@ -1150,6 +1150,11 @@
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 exchange_item: '#exchange_item',
                 business_assets: '#included_assets',
+                sale_provision: '#sale_provision',
+                offered_financing: '#offered_financing',
+                view_preference: '#view_preference',
+                association_fee_includes: '#association_fee_includes',
+                association_amenities: '#association_amenities',
             };
             Object.entries(regularFields).forEach(function([field, selector]) {
                 var el = $(selector);
@@ -1182,6 +1187,63 @@
                     }
                 });
             });
+        });
+
+        function applyFinancingVisibility() {
+            var data = ($('#offered_financing').val() || []);
+            var financingMap = {
+                'Assumable': '#seller-financing-assumable-section',
+                'Cryptocurrency': '#seller-financing-crypto-section',
+                'Exchange/Trade': '#seller-financing-exchange-section',
+                'Lease Option': '#seller-financing-leaseoption-section',
+                'Lease Purchase': '#seller-financing-leasepurchase-section',
+                'Non-Fungible Token (NFT)': '#seller-financing-nft-section',
+                'Seller Financing': '#seller-financing-sellerfinancing-section',
+                'Other': '#seller-financing-other-section',
+            };
+            Object.keys(financingMap).forEach(function(option) {
+                if (data.includes(option)) {
+                    $(financingMap[option]).show();
+                } else {
+                    $(financingMap[option]).hide();
+                }
+            });
+        }
+
+        function applyProvisionVisibility() {
+            var data = ($('#sale_provision').val() || []);
+            var provisionMap = {
+                'Assignment Contract': '#seller-provision-assignment-section',
+                'Other': '#seller-provision-other-section',
+            };
+            Object.keys(provisionMap).forEach(function(option) {
+                if (data.includes(option)) {
+                    $(provisionMap[option]).show();
+                } else {
+                    $(provisionMap[option]).hide();
+                }
+            });
+        }
+
+        $(document).on('change', '#sale_provision', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('sale_provision', selectedValues, false);
+            applyProvisionVisibility();
+        });
+        $(document).on('change', '#offered_financing', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('offered_financing', selectedValues, false);
+            applyFinancingVisibility();
+        });
+        $(document).on('change', '#association_fee_includes', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('association_fee_includes', selectedValues, false);
+            $('#hoa-fee-includes-other-section').toggle(selectedValues.includes('Other'));
+        });
+        $(document).on('change', '#association_amenities', function() {
+            var selectedValues = $(this).val() || [];
+            @this.set('association_amenities', selectedValues, false);
+            $('#hoa-amenities-other-section').toggle(selectedValues.includes('Other'));
         });
 
         function initializeMlsPropertyMultiSelects() {
@@ -1239,7 +1301,25 @@
             }
 
             addIconsToInputs();
+            setTimeout(function() { addIconsToInputs(); }, 0);
             checkRepresentationStatus();
+
+            // Polling safety net: re-apply provision/financing section visibility
+            // within 100ms of any Select2 change, mirroring the Create blade behaviour.
+            var _lastProvVal = '';
+            var _lastFinVal = '';
+            setInterval(function() {
+                var $sp = $('#sale_provision');
+                var $of = $('#offered_financing');
+                if ($sp.length) {
+                    var pv = JSON.stringify($sp.val() || []);
+                    if (pv !== _lastProvVal) { _lastProvVal = pv; applyProvisionVisibility(); }
+                }
+                if ($of.length) {
+                    var fv = JSON.stringify($of.val() || []);
+                    if (fv !== _lastFinVal) { _lastFinVal = fv; applyFinancingVisibility(); }
+                }
+            }, 100);
         });
 
         function selectService(serviceType) {
@@ -1351,6 +1431,36 @@
             }
 
             initializeMlsPropertyMultiSelects();
+
+            if ($('#offered_financing').length) {
+                if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
+                    $('#offered_financing').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                }
+                applyFinancingVisibility();
+            }
+
+            if ($('#sale_provision').length) {
+                if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
+                    $('#sale_provision').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                }
+                applyProvisionVisibility();
+            }
+
+            if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
+                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true, width: '100%' });
+            }
+            if ($('#association_fee_includes').length) {
+                var _fiInit = $('#association_fee_includes').val() || [];
+                $('#hoa-fee-includes-other-section').toggle(_fiInit.includes('Other'));
+            }
+
+            if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
+                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true, width: '100%' });
+            }
+            if ($('#association_amenities').length) {
+                var _amInit = $('#association_amenities').val() || [];
+                $('#hoa-amenities-other-section').toggle(_amInit.includes('Other'));
+            }
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -2184,14 +2294,16 @@
         }
 
         function addIconsToInputs() {
-            document.querySelectorAll('.has-icon').forEach(input => {
+            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                const parent = input.parentNode;
-                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
-                if (parent.querySelector(':scope > .input-icon')) return;
+                if (!iconClass) return;
+                const wrapper = input.closest('.input-cover');
+                if (!wrapper) return;
+                if (input.type === 'file') return;
+                if (wrapper.querySelector('.data-icon-rendered')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                parent.insertBefore(icon, input);
+                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
 
