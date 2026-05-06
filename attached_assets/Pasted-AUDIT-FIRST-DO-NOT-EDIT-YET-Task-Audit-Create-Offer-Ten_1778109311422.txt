@@ -1,0 +1,80 @@
+AUDIT FIRST — DO NOT EDIT YET
+
+Task: Audit Create Offer Tenant Listing issues only.
+
+Test URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/tenant/tenant
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+Scope:
+Create Offer Listing → Tenant only.
+
+DO NOT touch:
+- Buyer offer listing
+- Seller offer listing
+- Landlord offer listing
+- Hire Agent flows
+- Agent bid/counter/acceptance flows
+- database migrations unless audit proves required
+
+Audit these issues:
+
+1. Remove tabs from Tenant Create Offer Listing:
+- Broker Compensation & Agency Agreement
+- Services
+Confirm whether these tabs are only UI tabs or whether their fields are required by validation/save/submit logic.
+
+2. Placeholder text fixes:
+- Tenant Conditions placeholder is wrong.
+  It should NOT say “No smoking allowed” or anything landlord-facing.
+  This is a Tenant request field.
+- Commercial Approval Conditions placeholder is wrong.
+  It should be written from the Tenant/listing creator perspective.
+
+3. Renewal Option Requested:
+- When user selects Yes, the conditional text box should render as normal full-size textarea/input, matching the Maintenance Preferences box styling.
+- It should not be tiny/compressed.
+
+4. Save Draft is not saving:
+- Inspect Tenant Livewire component saveDraft/saveAllMetadata methods.
+- Check browser console, Laravel logs, validation errors, Livewire payload errors, and database persistence.
+- Identify exact cause before fixing.
+
+5. Submit button is not working:
+- Inspect submit method, validation rules, required hidden fields, removed-tab dependency risk, route redirects, and Livewire errors.
+- Confirm whether submit fails because Services/Broker Compensation fields are required.
+- Identify exact cause before fixing.
+
+6. Submit button placement:
+- Submit button should appear only on the final tab:
+  “Agent Credentials & Contact Info”
+- It should not appear on earlier tabs.
+
+Audit output required before edits:
+- List exact files involved.
+- List exact root causes.
+- Confirm whether removing Services/Broker Compensation tabs requires removing validation rules or defaults.
+- Provide a surgical fix plan.
+- Do not apply code changes until audit is complete.
+
+After audit, apply minimal fix only if root cause is confirmed.
+
+Implementation safeguards:
+- Tenant Offer Listing only.
+- Preserve existing Tenant fields unless specifically listed above.
+- Do not rename database columns.
+- Do not delete stored data.
+- Do not run migrate:fresh.
+- Do not alter shared components unless absolutely necessary and explain why.
+- Run php -l on edited PHP/Blade files.
+- Manually test:
+  1. Tenant create page loads.
+  2. Removed tabs no longer show.
+  3. Placeholder text is corrected.
+  4. Renewal Option Requested = Yes shows normal-size field.
+  5. Save Draft persists and resumes.
+  6. Submit works.
+  7. Submit button appears on Agent Credentials & Contact Info only.
