@@ -1,0 +1,75 @@
+Replit Task: Fix Landlord Create Offer Listing formatting collapse
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+Page:
+ /offer-listing/landlord
+
+Issue:
+The Landlord Create Offer Listing form has a major formatting/layout collapse. Labels, icons, Select2 fields, text inputs, multi-selects, and spacing are compressed and inconsistent across the Property Details tab.
+
+Important safeguards:
+- Audit first before editing.
+- Do not touch database schema, migrations, seeders, routes, authentication, dashboards, or Hire Agent flows.
+- Do not modify Buyer, Seller, or Tenant Create Offer Listing flows.
+- Do not change Livewire save logic, draft loading, submit logic, validation, or metadata storage.
+- Do not change Select2 initialization unless the audit proves it is directly causing the layout issue.
+- Do not remove icons or placeholders.
+- Do not use global CSS that affects all forms.
+- Use landlord-scoped CSS only.
+
+Likely file:
+resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+
+Also inspect only if needed:
+resources/views/livewire/offer-listing/landlord/tabs/*.blade.php
+
+Audit:
+1. Find landlord-specific CSS affecting:
+   - .form-control
+   - .form-select
+   - textarea
+   - .select2-container
+   - .select2-selection
+   - .select2-selection--single
+   - .select2-selection--multiple
+   - .input-group
+   - .input-group-text
+   - labels / field wrappers
+2. Look for rules forcing small heights, such as height: 24px, height: 30px, height: 32px, height: 42px on textareas or Select2 containers.
+3. Look for margin-bottom: 0, line-height compression, display:flex alignment issues, or absolute icon positioning conflicts.
+4. Confirm whether the issue is isolated to the Landlord Create Offer Listing page.
+
+Fix requirements:
+1. Add landlord-only scoped CSS wrapper fixes.
+2. Restore normal vertical spacing between fields.
+3. Normalize regular input/select height to about 42px.
+4. Textareas should not be forced to 42px.
+5. Select2 single fields should have proper height, padding, and centered text.
+6. Select2 multi-select fields should auto-expand and wrap selected chips cleanly.
+7. Icons should be vertically centered and not overlap labels or inputs.
+8. Labels and help icons should have readable spacing.
+
+Done looks like:
+- Property Details tab looks clean and readable.
+- No fields are vertically compressed.
+- Icons align correctly.
+- Select placeholders still show “Select.”
+- Multi-selects like Appliances Included, Amenities, Utilities, Sewer, Water, Laundry Features, Pets Allowed render correctly.
+- Save Draft, Next, and Submit still work.
+- No console errors.
+- php -l passes on edited files.
+
+Testing:
+1. Log in as abigailbaschuk@gmail.com / 12345678.
+2. Open /offer-listing/landlord.
+3. Go to Property Details.
+4. Test Residential Property fields.
+5. Select values in single-select and multi-select fields.
+6. Confirm the form spacing remains clean after Livewire updates.
+7. Save draft and reload to confirm formatting stays fixed.
+
+Stop rule:
+If fixing this requires changing shared/global CSS or files used by Buyer/Seller/Tenant flows, stop and report what file/rule is causing the issue before editing.

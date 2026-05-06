@@ -379,7 +379,7 @@ public $isListingCreatedByAgent = false;
 
             session()->flash('success', 'Counter bid has been submitted successfully!');
 
-            return redirect()->route('buyer.view-auction', $this->pab->id);
+            return redirect()->route('counter.submitted', ['role' => 'buyer', 'auctionId' => $this->pab->id]);
 
         } catch (\Exception $e) {
             DB::rollBack();

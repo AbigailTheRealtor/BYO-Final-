@@ -505,9 +505,7 @@ public $isListingCreatedByAgent = false;
             }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            return redirect()->route('buyer.view-auction', $this->auctionId);
-            // Optional: reset form or redirect
-            // $this->resetForm();
+            return redirect()->route('counter.submitted', ['role' => 'buyer', 'auctionId' => $this->auctionId]);
 
         } catch (\Exception $e) {
             DB::rollBack();

@@ -638,7 +638,7 @@ class LandlordAgentAuctionBidCounter extends Component
 
             DB::commit();
             session()->flash('success', 'Counter bid has been submitted successfully!');
-            return redirect()->route('landlord.agent.auction.view', $this->pab->id);
+            return redirect()->route('counter.submitted', ['role' => 'landlord', 'auctionId' => $this->pab->id]);
         } catch (\Exception $e) {
             DB::rollBack();
             session()->flash('error', 'Error saving counter bid: ' . $e->getMessage());
