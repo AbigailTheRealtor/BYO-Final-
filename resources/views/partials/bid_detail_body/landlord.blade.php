@@ -735,12 +735,16 @@
 
                                                     <!-- G) Referral Fee -->
                                                     @if ($auction->isCreatedByAgent() && data_get($bid, 'get.referral_fee_percent'))
+                                                    @php
+                                                        $_refFeeRaw = data_get($bid, 'get.referral_fee_percent');
+                                                        $_refFeeDisplay = (strpos((string)$_refFeeRaw, '%') !== false) ? $_refFeeRaw : ($_refFeeRaw . '%');
+                                                    @endphp
                                                     <div class="mb-4">
                                                         <h6 class="mb-2" style="color: #049399; font-weight: 600;">G) Referral Fee</h6>
                                                         <ul class="list-unstyled ps-3 mb-0">
                                                             <li class="mb-1" style="{{ isset($brokerMismatches['referral_fee_percent']) ? $mismatchStyle : '' }}">
                                                                 <span class="fw-semibold">Referral Fee (%):</span>
-                                                                {{ data_get($bid, 'get.referral_fee_percent') }}%{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
+                                                                {{ $_refFeeDisplay }}{!! isset($brokerMismatches['referral_fee_percent']) ? $mismatchBadge : '' !!}
                                                             </li>
                                                         </ul>
                                                     </div>

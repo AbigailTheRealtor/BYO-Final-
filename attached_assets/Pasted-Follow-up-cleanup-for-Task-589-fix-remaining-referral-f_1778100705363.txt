@@ -1,0 +1,65 @@
+Follow-up cleanup for Task #589 — fix remaining referral fee formatting + verify meta accessor safety
+
+Two final issues were identified during review of the implementation.
+
+Issue 1 — Double % bug still exists in seller/landlord bid detail partials
+
+Files:
+- resources/views/partials/bid_detail_body/seller.blade.php
+- resources/views/partials/bid_detail_body/landlord.blade.php
+
+Current problem:
+The code now creates a safe formatted value:
+
+$_refFeeDisplay
+
+but the template still outputs:
+
+{{ data_get($bid, 'get.referral_fee_percent') }}%
+
+This can produce:
+3%%
+
+when the stored value already contains a percent sign.
+
+Fix:
+- Replace the raw output + manual % append with the already-created safe display variable:
+  {{ $_refFeeDisplay }}
+- Do not append another %.
+- Keep mismatch badge logic intact.
+- Do not change surrounding referral fee visibility conditions.
+
+Done:
+- 3 displays as 3%
+- 3% displays as 3%
+- No double percent signs anywhere in seller/landlord bid detail views
+
+Issue 2 — Verify normalizeHireListing() accessor safety
+
+File:
+app/Http/Controllers/AgentController.php
+
+Current code:
+$auction->get->referral_percentage
+
+Concern:
+Previous Hire Agent audit found multiple broken legacy ->get-> patterns elsewhere in the codebase causing silent null failures.
+
+Task:
+- Verify whether $auction->get is an intentional/reliable accessor on this model.
+- If it is confirmed safe and actively used on this model architecture, leave it unchanged and document that verification in the report.
+- If it is NOT reliable, replace only this referral_percentage read with the correct established meta accessor pattern already used elsewhere in this flow (getMeta(), info(), etc.).
+- Do not refactor unrelated ->get usage in this task.
+- Do not rewrite normalizeHireListing().
+
+Done:
+- referral_percentage retrieval in normalizeHireListing() is confirmed safe OR safely corrected
+- no silent null fallback risk remains for referral fee display
+
+Run:
+php -l on edited files only
+
+Report back:
+- exact lines changed
+- whether ->get was verified safe or replaced
+- confirmation that double %% output is eliminated

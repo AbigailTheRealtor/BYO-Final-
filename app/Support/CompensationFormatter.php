@@ -93,6 +93,10 @@ class CompensationFormatter
 
                 $addRow('Brokerage Relationship', $g('brokerage_relationship'));
                 $addRow('Additional Terms', $g('additional_details_broker') ?: $g('additional_details'));
+                $refFeeRaw = $g('referral_fee_percent');
+                if (!$isBlank($refFeeRaw)) {
+                    $addRow('Referral Fee (%)', (strpos($refFeeRaw, '%') !== false) ? $refFeeRaw : ($refFeeRaw . '%'));
+                }
                 break;
 
             // ──────────────────────────────────────────────────────────────
@@ -132,6 +136,10 @@ class CompensationFormatter
 
                 $addRow('Brokerage Relationship', $g('brokerage_relationship'));
                 $addRow('Additional Terms', $g('additional_details_broker'));
+                $refFeeRaw = $g('referral_fee_percent');
+                if (!$isBlank($refFeeRaw)) {
+                    $addRow('Referral Fee (%)', (strpos($refFeeRaw, '%') !== false) ? $refFeeRaw : ($refFeeRaw . '%'));
+                }
                 break;
 
             // ──────────────────────────────────────────────────────────────
@@ -190,6 +198,10 @@ class CompensationFormatter
 
                 $addRow('Brokerage Relationship', $g('brokerage_relationship'));
                 $addRow('Additional Terms', $g('additional_details_broker'));
+                $refFeeRaw = $g('referral_fee_percent');
+                if (!$isBlank($refFeeRaw)) {
+                    $addRow('Referral Fee (%)', (strpos($refFeeRaw, '%') !== false) ? $refFeeRaw : ($refFeeRaw . '%'));
+                }
                 break;
 
             // ──────────────────────────────────────────────────────────────
@@ -228,6 +240,10 @@ class CompensationFormatter
 
                 $addRow('Brokerage Relationship', $g('brokerage_relationship'));
                 $addRow('Additional Terms', $g('additional_details_broker'));
+                $refFeeRaw = $g('referral_fee_percent');
+                if (!$isBlank($refFeeRaw)) {
+                    $addRow('Referral Fee (%)', (strpos($refFeeRaw, '%') !== false) ? $refFeeRaw : ($refFeeRaw . '%'));
+                }
                 break;
         }
 

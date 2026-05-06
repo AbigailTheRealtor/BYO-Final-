@@ -1540,7 +1540,18 @@ class AgentController extends Controller
             'edit_route'   => $editRoute,
             'draft_route'   => $draftRoute,
             'create_route'  => $createRoute,
-            'referral_pct'  => $auction->get->referral_percentage ?? null,
+            'referral_pct'  => (function () use ($auction): ?string {
+                $v = trim((string) ($auction->get->referral_percentage ?? ''));
+                if ($v !== '') {
+                    return $v;
+                }
+                $firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+                if (!$firstBid) {
+                    return null;
+                }
+                $fallback = trim((string) ($firstBid->get->referral_fee_percent ?? ''));
+                return $fallback !== '' ? $fallback : null;
+            })(),
             'workflow_type' => $auction->get->workflow_type ?? 'hire_agent',
             '_draft'        => $isDraft,
             '_approved'    => $isApproved,

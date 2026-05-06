@@ -2287,6 +2287,13 @@
 
                         @php
                             $referralPct = trim((string)($auction->get->referral_percentage ?? ''));
+                            if ($referralPct === '') {
+                                $_firstBid = $auction->bids()->orderBy('id', 'asc')->first();
+                                if ($_firstBid) {
+                                    $referralPct = trim((string)($_firstBid->get->referral_fee_percent ?? ''));
+                                }
+                                unset($_firstBid);
+                            }
                             $referralPctDisplay = $referralPct !== '' ? (str_ends_with($referralPct, '%') ? $referralPct : $referralPct . '%') : '';
                         @endphp
                         @if ($referralPctDisplay !== '')

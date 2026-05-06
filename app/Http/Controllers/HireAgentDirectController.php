@@ -632,6 +632,10 @@ class HireAgentDirectController extends Controller
 
             DB::commit();
 
+            // Idempotency enforced inside persistListingReferral() via wasRecentlyCreated
+            // and existing referring_agent_id checks — safe to call after every commit.
+            \App\Services\ReferralLinkService::persistListingReferral($listing);
+
             Log::info('HireAgentDirect: listing + bid created', [
                 'listing_id'   => $listing->id,
                 'bid_id'       => $bid->id,

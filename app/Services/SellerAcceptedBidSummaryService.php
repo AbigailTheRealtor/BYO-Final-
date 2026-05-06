@@ -562,24 +562,40 @@ class SellerAcceptedBidSummaryService
         $compensationHtml = $this->buildCompensationHtml($sourceData);
         $html = str_replace('{{broker_compensation_and_agency_terms_block}}', $compensationHtml, $html);
 
-        $referralFeeVal = trim((string) ($sourceData['referral_fee_percent'] ?? ''));
-        $hasReferralFee = $referralFeeVal !== '';
+        $isAgentCreated   = $listing->isCreatedByAgent();
+        $referralFeeVal   = trim((string) ($sourceData['referral_fee_percent'] ?? ''));
+        if ($referralFeeVal === '') {
+            $referralFeeVal = trim((string) (data_get($listing->get, 'referral_percentage', '')));
+        }
+        $hasReferralFee   = $referralFeeVal !== '';
+        $cooperationTerms = trim((string) ($sourceData['additional_details_broker'] ?? ''));
+        $hasReferralSection = $isAgentCreated && ($hasReferralFee || $cooperationTerms !== '');
         $referralFeeSectionHtml = '';
-        if ($hasReferralFee) {
-            $displayVal = (strpos($referralFeeVal, '%') !== false) ? $referralFeeVal : ($referralFeeVal . '%');
+        if ($hasReferralSection) {
+            $rows = '';
+            if ($hasReferralFee) {
+                $displayVal = (strpos($referralFeeVal, '%') !== false) ? $referralFeeVal : ($referralFeeVal . '%');
+                $rows .= '<tr>'
+                    . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Referral Fee (%)</td>'
+                    . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayVal) . '</td>'
+                    . '</tr>';
+            }
+            if ($cooperationTerms !== '') {
+                $rows .= '<tr>'
+                    . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Cooperation Terms</td>'
+                    . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($cooperationTerms) . '</td>'
+                    . '</tr>';
+            }
             $referralFeeSectionHtml = '<div style="background: #fff; padding: 20px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 20px;">'
-                . '<h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">5. Referral Fee &amp; Cooperation Terms</h2>'
-                . '<table style="width: 100%; border-collapse: collapse;"><tr>'
-                . '<td style="padding: 8px; border-bottom: 1px solid #eee; font-weight: bold; width: 40%;">Referral Fee (%)</td>'
-                . '<td style="padding: 8px; border-bottom: 1px solid #eee;">' . e($displayVal) . '</td>'
-                . '</tr></table>'
+                . '<h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">5. Referral &amp; Cooperation Terms</h2>'
+                . '<table style="width: 100%; border-collapse: collapse;">' . $rows . '</table>'
                 . '</div>';
         }
         $html = str_replace('{{referral_fee_section}}', $referralFeeSectionHtml, $html);
-        $sAdd     = $hasReferralFee ? 6 : 5;
-        $sNotice  = $hasReferralFee ? 7 : 6;
-        $sRefDisc = $hasReferralFee ? 8 : 7;
-        $sSig     = $hasReferralFee ? 9 : 8;
+        $sAdd     = $hasReferralSection ? 6 : 5;
+        $sNotice  = $hasReferralSection ? 7 : 6;
+        $sRefDisc = $hasReferralSection ? 8 : 7;
+        $sSig     = $hasReferralSection ? 9 : 8;
         $html = str_replace(['{{s_add}}', '{{s_notice}}', '{{s_ref_disc}}', '{{s_sig}}'], [$sAdd, $sNotice, $sRefDisc, $sSig], $html);
 
         $additionalDetailsHtml = $this->buildAdditionalDetailsHtml($sourceData, $listingData);
