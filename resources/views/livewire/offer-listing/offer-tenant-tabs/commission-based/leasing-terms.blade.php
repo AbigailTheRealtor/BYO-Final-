@@ -121,7 +121,7 @@
         title="Select the type of space the Tenant is open to leasing.">
         <i class="fa-solid fa-circle-info"></i>
     </span>
-    <div class="input-cover has-select-icon">
+    <div class="input-cover has-select-icon" wire:ignore>
         <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-building"
             data-placeholder="Select"

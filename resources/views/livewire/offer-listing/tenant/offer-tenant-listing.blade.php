@@ -82,6 +82,7 @@
         font-size: 25px;
         color: #11b7cf;
         pointer-events: none;
+        z-index: 10;
         top: 50%;
         transform: translateY(-50%);
         /* Center the icon vertically */

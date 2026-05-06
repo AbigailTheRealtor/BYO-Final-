@@ -83,6 +83,7 @@
             font-size: 25px;
             color: #11b7cf;
             pointer-events: none;
+            z-index: 10;
             top: 50%;
             transform: translateY(-50%);
             /* Center the icon vertically */
@@ -1572,51 +1573,6 @@
         // Re-initialize tooltips after Livewire updates
         document.addEventListener('livewire:load', function() {
             initializeTooltips();
-
-            Livewire.hook('message.processed', (message, component) => {
-                initializeTooltips();
-
-                if ($('#offered_financing').length) { applyFinancingVisibility(); }
-                if ($('#sale_provision').length) { applyProvisionVisibility(); }
-
-                var $appliances = $('#appliances');
-                if ($appliances.length) {
-                    if (!$appliances.hasClass('select2-hidden-accessible')) {
-                        $appliances.select2({ placeholder: "Select", allowClear: true });
-                    }
-                }
-
-                _restoreOtherSelectVisibility();
-
-                initializeMlsPropertyMultiSelects();
-
-                var $feeIncludes = $('#association_fee_includes');
-                if ($feeIncludes.length) {
-                    if (!$feeIncludes.hasClass('select2-hidden-accessible')) {
-                        $feeIncludes.select2({ placeholder: "Select what the fee includes", allowClear: true });
-                    }
-                    var fiData = $feeIncludes.val() || [];
-                    $('#hoa-fee-includes-other-section').toggle(fiData.includes('Other'));
-                }
-
-                var $amenities = $('#association_amenities');
-                if ($amenities.length) {
-                    if (!$amenities.hasClass('select2-hidden-accessible')) {
-                        $amenities.select2({ placeholder: "Select amenities", allowClear: true });
-                    }
-                    var amData = $amenities.val() || [];
-                    $('#hoa-amenities-other-section').toggle(amData.includes('Other'));
-                }
-
-                var $addDocs = $('#additional_documents');
-                if ($addDocs.length) {
-                    if (!$addDocs.hasClass('select2-hidden-accessible')) {
-                        $addDocs.select2({ placeholder: "Select", allowClear: true, width: '100%' });
-                    }
-                    var adData = $addDocs.val() || [];
-                    $('#additional-documents-other-section').toggle(adData.includes('Other'));
-                }
-            });
         });
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1941,6 +1897,13 @@
             }
 
             initializeMlsPropertyMultiSelects();
+
+            var $appliances = $('#appliances');
+            if ($appliances.length && !$appliances.hasClass('select2-hidden-accessible')) {
+                $appliances.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            }
+
+            _restoreOtherSelectVisibility();
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
