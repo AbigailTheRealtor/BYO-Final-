@@ -1211,7 +1211,7 @@
                 selectors.forEach(function(selector) {
                     var $el = $(selector);
                     if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: field.placeholder, allowClear: true });
+                        $el.select2({ placeholder: field.placeholder, allowClear: true, width: '100%' });
                     }
                     if ($el.length) {
                         var current = $el.val() || [];
@@ -1286,6 +1286,7 @@
                 $('#property_items').select2({
                     placeholder: "Select property style",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1297,6 +1298,7 @@
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1308,6 +1310,7 @@
                 $('#exchange_item').select2({
                     placeholder: "Select acceptable exchange items",
                     allowClear: true,
+                    width: '100%',
                 });
                 var savedExchangeItems = @this.get('exchange_item') || [];
                 if (savedExchangeItems.length > 0) {
@@ -1329,6 +1332,7 @@
                 $('#included_assets').select2({
                     placeholder: "Select included assets",
                     allowClear: true,
+                    width: '100%',
                 });
                 var savedBusinessAssets = @this.get('business_assets') || [];
                 if (savedBusinessAssets.length > 0) {
@@ -1513,7 +1517,8 @@
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();

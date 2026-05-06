@@ -1381,6 +1381,7 @@
                 $('#property_items').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#property_items').off('change.piSync').on('change.piSync', function(e) {
@@ -1402,6 +1403,7 @@
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
@@ -1422,6 +1424,7 @@
                 $('#condition_prop_buyer').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -1439,6 +1442,7 @@
                     $el.select2({
                         placeholder: "Select unit types",
                         allowClear: true,
+                        width: '100%',
                     });
 
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
@@ -1624,7 +1628,8 @@
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
 
                 $('#view_preference').on('change', function() {
@@ -1655,6 +1660,7 @@
                 $('#sale_provision').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 }).on('change', function() {
                     let selectedValues = $(this).val() || [];
                     debouncedSet('sale_provision', selectedValues);
@@ -1669,6 +1675,7 @@
                 $('#offered_financing').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 }).on('change', function() {
                     // Skip Livewire sync if we're loading draft data (prevents updatedOfferedFinancing reset)
                     if (window.financingSyncInProgress) {

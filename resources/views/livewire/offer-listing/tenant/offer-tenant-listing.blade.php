@@ -2157,7 +2157,7 @@ $lease_types = [
             $exEl.data('exchange-change-bound', false);
         }
         if (!$exEl.hasClass('select2-hidden-accessible')) {
-            $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true });
+            $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true, width: '100%' });
         }
         var saved = [];
         try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -3616,7 +3616,7 @@ $lease_types = [
             $('.rent_includes').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true });
+                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                     $el.off('change.rentIncludesSync').on('change.rentIncludesSync', function() {
                         let selectedValues = $el.val() || [];
                         if (selectedValues.includes('Other')) {

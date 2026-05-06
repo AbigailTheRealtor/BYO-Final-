@@ -2112,7 +2112,7 @@
                 $exEl.data('exchange-change-bound', false);
             }
             if (!$exEl.hasClass('select2-hidden-accessible')) {
-                $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true });
+                $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true, width: '100%' });
             }
             var saved = [];
             try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -2487,6 +2487,7 @@
                 $('#sale_provision').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 }).on('change', function() {
                     debouncedSet('sale_provision', $(this).val());
 
@@ -2511,6 +2512,7 @@
                 $('#offered_financing').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 }).on('change', function() {
                     debouncedSet('offered_financing', $(this).val());
 
@@ -2558,7 +2560,8 @@
 
                 $sel.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
 
                 $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -2588,6 +2591,7 @@
                 selectEl.select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 selectEl.on('change', function() {
@@ -2613,6 +2617,7 @@
                     $el.select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
 
                     $el.on('change', function(e) {
@@ -2666,6 +2671,7 @@
                 $pi.select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 var lwVals = @this.get('property_items') || [];
                 if (lwVals.length) {
@@ -2876,6 +2882,7 @@
                 $select.select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $select.on('change', () => {
@@ -2893,7 +2900,7 @@
                 if ($sellerAssetsSelect.hasClass('select2-hidden-accessible')) {
                     $sellerAssetsSelect.select2('destroy');
                 }
-                $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true });
+                $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                 const _sellerSavedAssets = @json(is_array($business_assets) ? $business_assets : []);
                 if (Array.isArray(_sellerSavedAssets) && _sellerSavedAssets.length > 0) {
                     $sellerAssetsSelect.val(_sellerSavedAssets).trigger('change.select2');
@@ -2928,6 +2935,7 @@
                 $('#credit_scroe_rating').select2({
                     placeholder: "Select credit score rating(s)",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#credit_scroe_rating').on('change', function(e) {
@@ -2950,7 +2958,8 @@
                 }
                 $nn.select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     })
                     .on('select2:select select2:unselect', function(e) {
                         const vals = $(this).val() || [];
@@ -3178,7 +3187,8 @@
                 if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                     $('#view_preference').select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
 
                     $('#view_preference').on('change', function() {
@@ -3250,7 +3260,8 @@
                 if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
                     $('#appliances').select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
 
                     $('#appliances').on('change', function() {
@@ -3280,7 +3291,8 @@
             if ($('#leasing_spaces_tenant').length && !$('#leasing_spaces_tenant').hasClass('select2-hidden-accessible')) {
                 $('#leasing_spaces_tenant').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
 
                 $('#leasing_spaces_tenant').on('change', function(e) {
@@ -3304,7 +3316,8 @@
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];
@@ -3333,7 +3346,8 @@
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
                     var savedLtVals = @json($desired_lease_length ?? []);
                     if (savedLtVals && savedLtVals.length > 0) {
@@ -3404,7 +3418,8 @@
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];
@@ -3443,7 +3458,8 @@
 
                 $sel.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
 
                 var lwValues = @this.get('lease_for') || [];
@@ -3528,7 +3544,8 @@
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];

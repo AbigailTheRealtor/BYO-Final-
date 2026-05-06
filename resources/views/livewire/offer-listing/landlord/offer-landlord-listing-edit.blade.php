@@ -1387,6 +1387,7 @@ $tenantPays = [
                 $('#property_items').select2({
                     placeholder: "Select property style",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1398,6 +1399,7 @@ $tenantPays = [
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select credit score rating(s)",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1543,7 +1545,8 @@ $tenantPays = [
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select Preference",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();
@@ -1750,6 +1753,7 @@ $tenantPays = [
                 $('#rent_includes').select2({
                     placeholder: "Select rent",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#rent_includes').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1761,6 +1765,7 @@ $tenantPays = [
                 $('#terms_of_lease').select2({
                     placeholder: "Select terms of lease",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#terms_of_lease').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1772,6 +1777,7 @@ $tenantPays = [
                 $('#tenant_pays').select2({
                     placeholder: "Select tenant pays",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#tenant_pays').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1783,6 +1789,7 @@ $tenantPays = [
                 $('#owner_pays').select2({
                     placeholder: "Select owner pays",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#owner_pays').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1798,6 +1805,7 @@ $tenantPays = [
                     $dlt.select2({
                         placeholder: "Select desired lease term",
                         allowClear: true,
+                        width: '100%',
                     });
                 }
                 var savedValues = @json($desired_lease_length ?? []);

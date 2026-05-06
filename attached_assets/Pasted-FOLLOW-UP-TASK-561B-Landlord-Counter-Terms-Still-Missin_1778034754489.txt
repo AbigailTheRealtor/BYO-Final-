@@ -1,0 +1,90 @@
+FOLLOW-UP TASK #561B — Landlord Counter Terms Still Missing Preset Fields
+
+SCOPE:
+Landlord Agent Preset → Request Changes / Counter Terms only
+
+ISSUE:
+After #561, the Landlord counter terms screen still does NOT show all fields filled in the Agent Preset.
+
+Screenshot still missing:
+- Landlord’s Broker Lease Fee
+- Tenant’s Broker Commission Structure
+- Tenant’s Broker Commission Fee
+- Payment Timing for Broker Fees
+- Lease Renewal / Extension Fee
+- Protection Period Timeframe
+- Early Termination Fee label/option mapping
+- Retainer Fee section, if filled
+
+DO NOT TOUCH:
+- Offer Counter Terms
+- Create Offer Listing
+- Buyer/Seller/Tenant flows
+- Agent preset save UI
+- Database schema
+
+AUDIT FIRST — DO NOT EDIT UNTIL VERIFIED:
+
+1. Dump/log the actual landlord bid meta keys for this counter URL:
+   /landlord/counter-terms/7
+
+2. Compare actual saved meta keys against:
+   - LandlordAgentAuctionCounterTerm public properties
+   - hydrateFromMetaMap() keys
+   - broker-compensation.blade.php wire:model names
+   - visibility guard field names
+
+3. For each missing visible field, report:
+   - Is value present in bid meta? yes/no
+   - Exact meta key name
+   - Exact Livewire property name
+   - Exact Blade wire:model
+   - Is it being hidden by isCounterMode guard? yes/no
+
+LIKELY ROOT ISSUE:
+The fields are probably saved under different key names than the counter component expects, OR the visibility guards are checking the wrong parent fields.
+
+FIX RULE:
+For every filled Landlord preset/bid field:
+- Hydrate it
+- Render it
+- Do not hide it in counter mode
+- Save it back on submit
+
+VISIBILITY GUARD RULE:
+A grouped field must show if ANY related field in the group has data.
+
+Example:
+Landlord Broker Lease Fee group should show if ANY of these are filled:
+- lease_fee_type
+- lease_fee
+- lease_fee_flat
+- lease_fee_percentage
+- lease_fee_option
+- landlord_broker_lease_fee_type
+- landlord_broker_lease_fee_amount
+
+Do NOT rely on only one guessed field name.
+
+For each group, guard should check all actual fields used by that group.
+
+VALIDATION:
+Using counter URL /landlord/counter-terms/7, this screen must show all fields that were filled in the preset, including:
+- Landlord Broker Lease Fee: 10%
+- Tenant Broker Commission Structure + 100%
+- Payment Timing + 5
+- Lease Renewal/Extension Fee: 5%
+- Property Management: Yes + 10%
+- Selling: Yes + 3%
+- Lease Option: Yes + 4% and 5666%
+- Protection Period: 60 days
+- Early Termination Fee: Yes + $4000
+- Brokerage Relationship
+- Agency Agreement Timeframe
+- Additional Terms
+
+FINAL OUTPUT:
+Return a field-mapping table:
+Preset Label | Bid Meta Key | Livewire Property | Blade wire:model | Guard Condition | Status
+
+Run php -l on all edited PHP files.
