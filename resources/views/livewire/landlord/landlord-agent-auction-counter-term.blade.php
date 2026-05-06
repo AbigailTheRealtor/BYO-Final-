@@ -47,11 +47,12 @@
 
         <form wire:submit.prevent="submit">
           @php
-            $tabs = ['Counter Terms'];
+            $tabs = ['Services', 'Broker Compensation & Agency Agreement', 'Additional Terms'];
             if ($isListingCreatedByAgent) {
                 $tabs[] = 'Referral Fee & Cooperation Terms';
             }
-            $referralTabIndex = $isListingCreatedByAgent ? 1 : null;
+            $tabs[] = 'Counter Terms';
+            $counterTermsTabIndex = $isListingCreatedByAgent ? 4 : 3;
           @endphp
 
           <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -75,14 +76,22 @@
 
           <div class="tab-content mt-3">
             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}">
-              @include('livewire.landlord-agent-auction-bid-counter-tabs.counter-terms')
+              @include('livewire.landlord-agent-auction-bid-counter-tabs.services', ['isCounterMode' => true])
             </div>
-
-            @if ($isListingCreatedByAgent)
             <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
+              @include('livewire.landlord-agent-auction-bid-tabs.commission-based.broker-compensation', ['isCounterMode' => true])
+            </div>
+            <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}">
+              @include('livewire.landlord-agent-auction-bid-counter-tabs.additional-details')
+            </div>
+            @if ($isListingCreatedByAgent)
+            <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}">
               @include('livewire.landlord-agent-auction-bid-tabs.commission-based.referral-fee')
             </div>
             @endif
+            <div class="tab-pane fade {{ $activeTab === $counterTermsTabIndex ? 'show active' : '' }}">
+              @include('livewire.landlord-agent-auction-bid-counter-tabs.counter-terms')
+            </div>
           </div>
 
           <div class="d-flex justify-content-between form-group mt-4">
@@ -208,6 +217,19 @@ function updateSaveButton(){
   }
 }
 
+// =============== Tab Button Visibility ===============
+function updateTabButtons() {
+  const links = [...document.querySelectorAll('.nav-link')];
+  const current = document.querySelector('.nav-link.active');
+  if (!current) return;
+  const isLastTab = links.indexOf(current) === links.length - 1;
+  const saveBtn = document.getElementById('save-button');
+  const nextBtn = document.querySelector('.wizard-step-next');
+  if (saveBtn) saveBtn.style.display = isLastTab ? '' : 'none';
+  if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
+  if (isLastTab) updateSaveButton();
+}
+
 // =============== Phone Formatter stub ===============
 function initPhoneFormatter(){ /* your phone init here (kept as stub) */ }
 
@@ -217,6 +239,7 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addIconsToInputs();
   initPhoneFormatter();
   updateSaveButton();
+  updateTabButtons();
 });
 
 // Re-run UI initializers after Livewire updates DOM
@@ -225,6 +248,7 @@ document.addEventListener('livewire:load', function () {
   window.addIconsToInputs();
   initPhoneFormatter();
   updateSaveButton();
+  updateTabButtons();
 });
 if (typeof Livewire !== 'undefined') {
   Livewire.hook('message.processed', () => {
@@ -233,6 +257,7 @@ if (typeof Livewire !== 'undefined') {
       window.addIconsToInputs();
       initPhoneFormatter();
       updateSaveButton();
+      updateTabButtons();
     }, 10);
   });
 }
@@ -248,7 +273,7 @@ document.addEventListener('click', function(e){
       const current = document.querySelector('.nav-link.active');
       const idx = links.indexOf(current);
       const next = links[idx+1];
-      if(next) next.click();
+      if(next) { next.click(); setTimeout(updateTabButtons, 50); }
       document.querySelector('.tab-content')?.scrollIntoView({behavior:'smooth'});
     }
   }
@@ -260,7 +285,7 @@ document.addEventListener('click', function(e){
     const current = document.querySelector('.nav-link.active');
     const idx = links.indexOf(current);
     const prev = links[idx-1];
-    if(prev) prev.click();
+    if(prev) { prev.click(); setTimeout(updateTabButtons, 50); }
     document.querySelector('.tab-content')?.scrollIntoView({behavior:'smooth'});
   }
 });

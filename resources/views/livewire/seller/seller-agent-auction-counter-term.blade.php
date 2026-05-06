@@ -36,11 +36,12 @@
 
                 <form wire:submit.prevent="submit">
                     @php
-                        $tabs = ['Counter Terms'];
+                        $tabs = ['Services', 'Broker Compensation & Agency Agreement', 'Additional Terms'];
                         if ($isListingCreatedByAgent) {
                             $tabs[] = 'Referral Fee & Cooperation Terms';
                         }
-                        $referralTabIndex = $isListingCreatedByAgent ? 1 : null;
+                        $tabs[] = 'Counter Terms';
+                        $counterTermsTabIndex = $isListingCreatedByAgent ? 4 : 3;
                     @endphp
 
                     <ul class="nav nav-tabs" id="sellerCounterTab" role="tablist">
@@ -59,14 +60,22 @@
 
                     <div class="tab-content mt-3">
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-counter-tabs.counter-terms')
+                            @include('livewire.seller-agent-auction-counter-tabs.services', ['isCounterMode' => true])
                         </div>
-
-                        @if ($isListingCreatedByAgent)
                         <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
+                            @include('livewire.seller-agent-auction-counter-tabs.broker-compensation', ['isCounterMode' => true])
+                        </div>
+                        <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}">
+                            @include('livewire.seller-agent-auction-counter-tabs.additional-details')
+                        </div>
+                        @if ($isListingCreatedByAgent)
+                        <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}">
                             @include('livewire.seller-agent-auction-counter-tabs.referral-fee')
                         </div>
                         @endif
+                        <div class="tab-pane fade {{ $activeTab === $counterTermsTabIndex ? 'show active' : '' }}">
+                            @include('livewire.seller-agent-auction-counter-tabs.counter-terms')
+                        </div>
                     </div>
 
                     {{-- Navigation footer — mirrors Tenant / Buyer / Landlord wizard pattern exactly --}}
@@ -164,20 +173,36 @@ function updateSaveButton() {
     }
 }
 
+// =============== Tab Button Visibility ===============
+function updateTabButtons() {
+    const links = [...document.querySelectorAll('.nav-link')];
+    const current = document.querySelector('.nav-link.active');
+    if (!current) return;
+    const isLastTab = links.indexOf(current) === links.length - 1;
+    const saveBtn = document.getElementById('save-button');
+    const nextBtn = document.querySelector('.wizard-step-next');
+    if (saveBtn) saveBtn.style.display = isLastTab ? '' : 'none';
+    if (nextBtn) nextBtn.style.display = isLastTab ? 'none' : '';
+    if (isLastTab) updateSaveButton();
+}
+
 // =============== Init ===============
 document.addEventListener('DOMContentLoaded', function () {
     window.addIconsToInputs();
     updateSaveButton();
+    updateTabButtons();
 });
 document.addEventListener('livewire:load', function () {
     window.addIconsToInputs();
     updateSaveButton();
+    updateTabButtons();
 });
 if (typeof Livewire !== 'undefined') {
     Livewire.hook('message.processed', function () {
         setTimeout(function () {
             window.addIconsToInputs();
             updateSaveButton();
+            updateTabButtons();
         }, 10);
     });
 }
@@ -193,7 +218,7 @@ document.addEventListener('click', function (e) {
             var current = document.querySelector('.nav-link.active');
             var idx = links.indexOf(current);
             var next = links[idx + 1];
-            if (next) next.click();
+            if (next) { next.click(); setTimeout(updateTabButtons, 50); }
             var tc = document.querySelector('.tab-content');
             if (tc) tc.scrollIntoView({ behavior: 'smooth' });
         }
@@ -207,7 +232,7 @@ document.addEventListener('click', function (e) {
         var current = document.querySelector('.nav-link.active');
         var idx = links.indexOf(current);
         var prev = links[idx - 1];
-        if (prev) prev.click();
+        if (prev) { prev.click(); setTimeout(updateTabButtons, 50); }
         var tc = document.querySelector('.tab-content');
         if (tc) tc.scrollIntoView({ behavior: 'smooth' });
         return;
