@@ -1706,7 +1706,7 @@ $lease_types = [
                     ? 'Sale Terms'
                     : 'Leasing Terms');
                     if ($user_type === 'tenant') {
-                    $restTabs = [$firstRest, 'Pre-Screening', 'Description'];
+                    $restTabs = [$firstRest, 'Pre-Screening', 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     } else {
                     $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
@@ -1878,7 +1878,6 @@ $lease_types = [
 
                                 <!-- Services Tab - Adjust index based on user_type -->
 
-                                @if ($user_type !== 'tenant')
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
 
@@ -1888,13 +1887,14 @@ $lease_types = [
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
+                                    @elseif($user_type === 'tenant')
+                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
                                     @endif
                                 </div>
-                                @endif
 
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller', 'tenant']) ? 4 : 5) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1910,7 +1910,6 @@ $lease_types = [
 
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
-                                @if ($user_type !== 'tenant')
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
@@ -1920,9 +1919,10 @@ $lease_types = [
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'tenant')
+                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
                                     @endif
                                 </div>
-                                @endif
 
                                 <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant offer listings -->
                                 @if ($isAgentUser && $user_type !== 'tenant')
@@ -1957,7 +1957,7 @@ $lease_types = [
                                         default => 'tenant-information'
                                     };
                                     $infoTabIndex = $user_type === 'tenant'
-                                        ? 5
+                                        ? 7
                                         : (in_array($user_type, ['landlord', 'buyer', 'seller'])
                                             ? ($isAgentUser ? 7 : 6)
                                             : ($isAgentUser ? 8 : 7));

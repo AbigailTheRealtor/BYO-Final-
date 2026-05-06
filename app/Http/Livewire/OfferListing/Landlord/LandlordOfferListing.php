@@ -1565,9 +1565,9 @@ class LandlordOfferListing extends Component
             $auction = new HirelandLordAgentAuction();
 
             $auction->user_id = Auth::id();
-            $auction->title = $this->listing_title;
             $auction->is_draft = true;
             $auction->save();
+            $auction->saveMeta('title', $this->listing_title);
 
             // Phase 6 — persist referral attribution on brand-new listing rows.
             \App\Services\ReferralLinkService::persistListingReferral($auction);
@@ -1599,7 +1599,9 @@ class LandlordOfferListing extends Component
             $this->isLoadingDraft = true;
 
             // Load all metadata fields
-            $this->listing_title = $auction->title;
+            // title is EAV-stored; $auction->get->title is the canonical meta accessor
+            // (same pattern used in LandlordOfferListingEdit::loadDraft)
+            $this->listing_title = $auction->get->title ?? '';
             $this->service_type = $auction->get->service_type ?? null;
             $this->user_type = $auction->get->user_type ?? null;
             $this->listing_status = $auction->get->listing_status ?? null;
@@ -3174,9 +3176,9 @@ class LandlordOfferListing extends Component
                 : new HirelandLordAgentAuction();
 
             $auction->user_id = Auth::id();
-            $auction->title = $this->listing_title;
             $auction->is_draft = 0;
             $auction->save();
+            $auction->saveMeta('title', $this->listing_title);
 
             // Phase 6 — persist referral attribution on brand-new listing rows.
             \App\Services\ReferralLinkService::persistListingReferral($auction);

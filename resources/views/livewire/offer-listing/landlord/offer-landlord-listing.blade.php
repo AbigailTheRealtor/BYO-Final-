@@ -1091,7 +1091,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Description'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Services', 'Description'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -1105,57 +1105,68 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(4)"
-                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#tax-legal-hoa-disclosures"
-                                        type="button" role="tab"
-                                        aria-controls="tax-legal-hoa-disclosures"
-                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Tax, Legal &amp; HOA
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
-                                        id="documents-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#documents-disclosures"
+                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation-agency-agreement-terms"
                                         type="button" role="tab"
-                                        aria-controls="documents-disclosures"
+                                        aria-controls="broker-compensation-agency-agreement-terms"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Documents &amp; Disclosures
+                                        Broker Compensation &amp; Agency Agreement Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         wire:click="setActiveTab(6)"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
+                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#tax-legal-hoa-disclosures"
                                         type="button" role="tab"
-                                        aria-controls="photos-tours-documents"
+                                        aria-controls="tax-legal-hoa-disclosures"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Photos &amp; Tours
+                                        Tax, Legal &amp; HOA
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
                                         wire:click="setActiveTab(7)"
-                                        id="landlord-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#landlord-information"
+                                        id="documents-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#documents-disclosures"
                                         type="button" role="tab"
-                                        aria-controls="landlord-information"
+                                        aria-controls="documents-disclosures"
                                         aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
+                                        Documents &amp; Disclosures
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
                                         wire:click="setActiveTab(8)"
+                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                        data-bs-target="#photos-tours-documents"
+                                        type="button" role="tab"
+                                        aria-controls="photos-tours-documents"
+                                        aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
+                                        Photos &amp; Tours
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 9 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(9)"
+                                        id="landlord-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#landlord-information"
+                                        type="button" role="tab"
+                                        aria-controls="landlord-information"
+                                        aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
+                                        Agent Credentials & Contact Info
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 10 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(10)"
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 10 ? 'true' : 'false' }}">
                                         AI Questions
                                     </button>
                                 </li>
@@ -1261,8 +1272,22 @@
                                     @endif
                                 </div>
 
-                                <!-- Additional Details Tab -->
+                                <!-- Services Tab (full_service: index 3) -->
                                 <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
+                                    id="services" role="tabpanel" aria-labelledby="services-tab">
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
+                                    @endif
+                                </div>
+
+                                <!-- Additional Details Tab (full_service: index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
@@ -1276,26 +1301,40 @@
 
                                 </div>
 
-                                <!-- Tax, Legal, HOA & Disclosures Tab (full_service: index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (full_service: index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'seller')
+                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'buyer')
+                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
+                                    @elseif($user_type === 'landlord')
+                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
+                                    @endif
+                                </div>
+
+                                <!-- Tax, Legal, HOA & Disclosures Tab (full_service: index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="tax-legal-hoa-disclosures" role="tabpanel" aria-labelledby="tax-legal-hoa-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.tax-legal-hoa-disclosures')
                                 </div>
 
-                                <!-- Documents & Disclosures Tab (full_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <!-- Documents & Disclosures Tab (full_service: index 7) -->
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
                                     id="documents-disclosures" role="tabpanel" aria-labelledby="documents-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.documents-disclosures')
                                 </div>
 
-                                <!-- Photos, Tours & Documents Tab (full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Photos, Tours & Documents Tab (full_service: index 8) -->
+                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}"
                                     id="photos-tours-documents" role="tabpanel" aria-labelledby="photos-tours-documents-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- Landlord Info Tab (full_service: index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
+                                <!-- Landlord Info Tab (full_service: index 9) -->
+                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1310,8 +1349,8 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 8) -->
-                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Questions Tab (full_service: index 10) -->
+                                <div class="tab-pane fade {{ $activeTab === 10 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
