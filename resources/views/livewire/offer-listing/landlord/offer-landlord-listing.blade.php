@@ -1597,6 +1597,7 @@
                 $('#property_items').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1608,6 +1609,7 @@
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1777,7 +1779,8 @@
                 if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                     $('#view_preference').select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
                     });
                     $('#view_preference').on('change', function() {
                         let selectedValues = $(this).val() || [];
@@ -1821,7 +1824,7 @@
                 mlsMultiSelects.forEach(function(cfg) {
                     var $el = $('#' + cfg.id);
                     if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: cfg.placeholder, allowClear: true });
+                        $el.select2({ placeholder: cfg.placeholder, allowClear: true, width: '100%' });
                         $el.on('change', function() {
                             var vals = $(this).val() || [];
                             @this.set(cfg.field, vals);
@@ -2091,6 +2094,7 @@
                     $('#appliances').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                     $('#appliances').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
@@ -2113,6 +2117,7 @@
                     $('#rent_includes').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                     $('#rent_includes').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
@@ -2132,6 +2137,7 @@
                     $('#terms_of_lease').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                     $('#terms_of_lease').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
@@ -2162,6 +2168,7 @@
                     $('#tenant_pays').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                     $('#tenant_pays').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
@@ -2181,6 +2188,7 @@
                     $('#owner_pays').select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: '100%',
                     });
                     $('#owner_pays').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
@@ -2204,6 +2212,7 @@
                 $dlt.select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 $dlt.off('change.ltsSync').on('change.ltsSync', function() {
                     var selectedValues = $(this).val() || [];

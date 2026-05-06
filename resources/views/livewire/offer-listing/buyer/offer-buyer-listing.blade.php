@@ -1367,6 +1367,7 @@
                 $('#property_items').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#property_items').off('change.piSync').on('change.piSync', function(e) {
@@ -1388,6 +1389,7 @@
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
@@ -1423,6 +1425,7 @@
                 $('#garage_parking_spaces_option').select2({
                     placeholder: "Select parking features",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
@@ -1442,6 +1445,7 @@
                 $('#assets').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
 
                 $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
@@ -1458,6 +1462,7 @@
                     $el.select2({
                         placeholder: "Select unit types",
                         allowClear: true,
+                        width: '100%',
                     });
 
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
@@ -1586,6 +1591,7 @@
                     $('#garage_parking_spaces_option').select2({
                         placeholder: "Select parking features",
                         allowClear: true,
+                        width: '100%',
                     });
                     $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
                         let selectedValues = $(this).val() || [];
@@ -1650,7 +1656,8 @@
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
 
                 $('#view_preference').on('change', function() {

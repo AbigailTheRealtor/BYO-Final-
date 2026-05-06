@@ -2564,6 +2564,7 @@ $lease_types = [
             $('#sale_provision').select2({
                 placeholder: "Select",
                 allowClear: true,
+                width: '100%',
             }).on('change', function() {
                 debouncedSet('sale_provision', $(this).val());
 
@@ -2591,6 +2592,7 @@ $lease_types = [
             $('#offered_financing').select2({
                 placeholder: "Select",
                 allowClear: true,
+                width: '100%',
             }).on('change', function() {
                 debouncedSet('offered_financing', $(this).val());
 
@@ -2612,7 +2614,8 @@ $lease_types = [
             if (!$ia.hasClass('select2-hidden-accessible')) {
                 $ia.select2({
                     placeholder: "Select included assets",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
                 $ia.off('change.includedAssets').on('change.includedAssets', function() {
                     let selectedValues = $(this).val() || [];
@@ -2662,7 +2665,8 @@ $lease_types = [
 
             $sel.select2({
                 placeholder: "Select",
-                allowClear: true
+                allowClear: true,
+                width: '100%',
             });
 
             $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -2688,7 +2692,7 @@ $lease_types = [
             if ($sel.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $sel.select2({ placeholder: "Select", allowClear: true });
+            $sel.select2({ placeholder: "Select", allowClear: true, width: '100%' });
             $sel.off('change.garageLandlordSync').on('change.garageLandlordSync', function() {
                 let selectedValues = $sel.val() || [];
                 debouncedSet('garage_parking_spaces_option', selectedValues);
@@ -2709,7 +2713,7 @@ $lease_types = [
                 if ($el.hasClass('select2-hidden-accessible')) {
                     $el.select2('destroy');
                 }
-                $el.select2({ placeholder: "Select", allowClear: true });
+                $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                 $el.off('change.unitTypeBuyer').on('change.unitTypeBuyer', function() {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
@@ -2760,6 +2764,7 @@ $lease_types = [
             $pi.select2({
                 placeholder: "Select",
                 allowClear: true,
+                width: '100%',
             });
             var lwVals = @this.get('property_items') || [];
             if (lwVals.length) {
@@ -2945,7 +2950,7 @@ $lease_types = [
             if ($assetSel.hasClass('select2-hidden-accessible')) {
                 $assetSel.select2('destroy');
             }
-            $assetSel.select2({ placeholder: "Select", allowClear: true });
+            $assetSel.select2({ placeholder: "Select", allowClear: true, width: '100%' });
             $assetSel.off('change.assetsBuyer').on('change.assetsBuyer', function() {
                 const vals = $assetSel.val() || [];
                 debouncedSet('assets', vals);
@@ -2987,6 +2992,7 @@ $lease_types = [
             $('#credit_scroe_rating').select2({
                 placeholder: "Select credit score rating(s)",
                 allowClear: true,
+                width: '100%',
             });
 
             // Update Livewire property on change
@@ -3011,7 +3017,8 @@ $lease_types = [
             }
             $nn.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 })
                 .on('select2:select select2:unselect', function(e) {
                     const vals = $(this).val() || [];
@@ -3224,7 +3231,8 @@ $lease_types = [
             }
             $vp.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 })
                 .on('select2:select select2:unselect', function(e) {
                     const vals = $(this).val() || [];
@@ -3290,7 +3298,7 @@ $lease_types = [
             if ($app.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $app.select2({ placeholder: "Select", allowClear: true });
+            $app.select2({ placeholder: "Select", allowClear: true, width: '100%' });
             $app.off('change.appliancesSync').on('change.appliancesSync', function() {
                 let selectedValuesAppliances = $app.val() || [];
                 if (selectedValuesAppliances.includes('Other')) {
@@ -3316,7 +3324,8 @@ $lease_types = [
         if ($('#leasing_spaces_tenant').length && !$('#leasing_spaces_tenant').hasClass('select2-hidden-accessible')) {
             $('#leasing_spaces_tenant').select2({
                 placeholder: "Select",
-                allowClear: true
+                allowClear: true,
+                width: '100%',
             });
 
             $('#leasing_spaces_tenant').on('change', function(e) {
@@ -3340,7 +3349,7 @@ $lease_types = [
             $('.tenant_pays').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true });
+                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                     $el.off('change.tenantPaysSync').on('change.tenantPaysSync', function() {
                         let selectedValues = $el.val() || [];
                         toggleOtherTenantField(selectedValues);
@@ -3359,7 +3368,7 @@ $lease_types = [
                 if ($el.hasClass('select2-hidden-accessible')) {
                     return;
                 }
-                $el.select2({ placeholder: "Select", allowClear: true });
+                $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                 $el.off('change.leaseTermSync').on('change.leaseTermSync', function() {
                     let selectedValues = $el.val() || [];
                     if (selectedValues.includes('Other')) {
@@ -3443,7 +3452,7 @@ $lease_types = [
             $('.owner_pays').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true });
+                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                     $el.off('change.ownerPaysSync').on('change.ownerPaysSync', function() {
                         let selectedValues = $el.val() || [];
                         if (selectedValues.includes('Other')) {

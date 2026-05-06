@@ -1556,7 +1556,7 @@
                 selectors.forEach(function(selector) {
                     var $el = $(selector);
                     if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: field.placeholder, allowClear: true });
+                        $el.select2({ placeholder: field.placeholder, allowClear: true, width: '100%' });
                     }
                     if ($el.length) {
                         var current = $el.val() || [];
@@ -1826,7 +1826,7 @@
             }
 
             if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
-                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true });
+                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true, width: '100%' });
             }
             if ($('#association_fee_includes').length) {
                 var fiDataInit = $('#association_fee_includes').val() || [];
@@ -1834,7 +1834,7 @@
             }
 
             if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
-                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true });
+                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true, width: '100%' });
             }
             if ($('#association_amenities').length) {
                 var amDataInit = $('#association_amenities').val() || [];
@@ -1853,6 +1853,7 @@
                 $('#property_items').select2({
                     placeholder: "Select property style",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1864,6 +1865,7 @@
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1877,6 +1879,7 @@
                     $exEl.select2({
                         placeholder: "Select acceptable exchange items",
                         allowClear: true,
+                        width: '100%',
                     });
                 }
                 var savedExchangeItems = [];
@@ -2054,28 +2057,24 @@
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
                 $('#included_assets').select2({
                     placeholder: "Select included assets",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
             }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
-                });
-            }
-
-            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                $('#appliances').select2({
-                    placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
             }
 
             if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
                 $('#garage_parking_spaces_option_landlord').select2({
                     placeholder: "Select garage/parking features",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 });
             }
 
@@ -2334,6 +2333,7 @@
                             $exEl.select2({
                                 placeholder: "Select acceptable exchange items",
                                 allowClear: true,
+                                width: '100%',
                             });
                         }
                         var saved = [];
