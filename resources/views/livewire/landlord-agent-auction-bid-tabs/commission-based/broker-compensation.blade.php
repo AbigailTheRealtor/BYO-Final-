@@ -358,7 +358,7 @@
 @endif
 @endif
 
-@if (!isset($isCounterMode) || !$isCounterMode || !empty($broker_fee_timing) || !empty($broker_fee_days_from_rent) || !empty($broker_fee_days_after_lease) || !empty($broker_fee_days_after_rent) || !empty($broker_fee_timing_other))
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($broker_fee_timing) || !empty($broker_fee_days_from_rent) || !empty($broker_fee_days_after_lease) || !empty($broker_fee_days_after_rent) || !empty($broker_fee_timing_other) || !empty($split_payment_due) || !empty($split_payment_due_other) || !empty($broker_fee_days_after_due_event))
 @if ($property_type === 'Residential Property')
 
     <!-- Payment Timing for Broker Fees -->
@@ -1117,7 +1117,7 @@ this agreement ends.">
 </div>
 @endif
 
-@if (!isset($isCounterMode) || !$isCounterMode || !empty($retainer_fee_option))
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($retainer_fee_option) || !empty($retainer_fee_amount) || !empty($retainer_fee_application))
 <!-- Retainer Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -1135,7 +1135,7 @@ this agreement ends.">
             <option value="no">No</option>
         </select>
     </div>
-    @if ($retainer_fee_option === 'yes')
+    @if ($retainer_fee_option === 'yes' || (isset($isCounterMode) && $isCounterMode && (!empty($retainer_fee_amount) || !empty($retainer_fee_application))))
         <div class="mt-3">
             <div class="input-group">
                 <span class="input-group-text">$</span>

@@ -161,6 +161,7 @@ class AgentBidMapperService
             // Landlord: split payment due
             'split_payment_due'                   => $profileData['split_payment_due']                   ?? '',
             'split_payment_due_other'             => $profileData['split_payment_due_other']             ?? '',
+            'broker_fee_days_after_due_event'     => $profileData['broker_fee_days_after_due_event']     ?? '',
 
             // Landlord: lease renewal/extension fee
             'renewal_fee_type'                    => $profileData['renewal_fee_type']                    ?? '',
