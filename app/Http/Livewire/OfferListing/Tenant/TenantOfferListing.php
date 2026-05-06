@@ -26,12 +26,16 @@ class TenantOfferListing extends Component
 {
     use WithFileUploads;
 
+    // TODO: set to false before production launch
+    const SAVE_AS_NEW_DRAFT = true;
+
     // Livewire properties for form fields
     public $hasDrafts = false;
     public $auctionId; // To store the auction ID for editing
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     protected $isLoadingData = false; // Guard flag to prevent updated* hooks from resetting fields during draft load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
@@ -2600,6 +2604,19 @@ class TenantOfferListing extends Component
                 throw new \Exception("Invalid user_type: {$this->user_type}");
             }
 
+            // When guard is disabled, overwrite the resumed draft record in place
+            if (!self::SAVE_AS_NEW_DRAFT && $this->isResumingDraft && $this->listingId) {
+                $auction = $auctionClass::find($this->listingId) ?? new $auctionClass();
+                $auction->user_id = Auth::id();
+                $auction->title = $this->listing_title;
+                $auction->is_draft = true;
+                $auction->save();
+                $this->listingId = $auction->id;
+                $this->saveAllMetadata($auction);
+                session()->flash('success', 'Draft updated successfully.');
+                return redirect()->route('offer.listing.tenant.edit', ['auctionId' => $this->listingId, 'user_type' => $this->user_type]);
+            }
+
             $newPayloadHash = $this->buildDraftPayloadHash();
 
             $previousDraft = $this->listingId
@@ -3418,6 +3435,10 @@ class TenantOfferListing extends Component
                 $this->showEnhancements = true;
                 $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
             }
+
+            // Track resumed state for SAVE_AS_NEW_DRAFT guard
+            $this->listingId = $auction->id;
+            $this->isResumingDraft = true;
 
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('draftLoaded');

@@ -15,6 +15,9 @@ class LandlordOfferListing extends Component
 {
     use WithFileUploads;
 
+    // TODO: set to false before production launch
+    const SAVE_AS_NEW_DRAFT = true;
+
     protected $listeners = ['setActiveTab' => 'setActiveTab'];
 
 
@@ -24,6 +27,7 @@ class LandlordOfferListing extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $isLoadingDraft = false; // Prevents updated* hooks from resetting dependent fields during draft load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
@@ -1562,7 +1566,11 @@ class LandlordOfferListing extends Component
 
             $this->isDraft = true;
 
-            $auction = new HirelandLordAgentAuction();
+            if (!self::SAVE_AS_NEW_DRAFT && $this->isResumingDraft && $this->listingId) {
+                $auction = HirelandLordAgentAuction::find($this->listingId) ?? new HirelandLordAgentAuction();
+            } else {
+                $auction = new HirelandLordAgentAuction();
+            }
 
             $auction->user_id = Auth::id();
             $auction->is_draft = true;
@@ -2278,6 +2286,10 @@ class LandlordOfferListing extends Component
                 'space_type' => $this->ensureArray($this->space_type),
                 'space_classification' => $this->ensureArray($this->space_classification),
             ]);
+
+            // Track resumed state for SAVE_AS_NEW_DRAFT guard
+            $this->listingId = $auction->id;
+            $this->isResumingDraft = true;
         }
     }
 

@@ -1,0 +1,70 @@
+Fix Seller Create Offer Listing icons not auto-populating on first load from Agent Dashboard
+
+Issue:
+When logged in as agent abigailbaschuk@gmail.com and opening:
+ /offer-listing/seller
+
+The Seller Create Offer Listing first tab loads, but input/select icons are not injected/rendered automatically. The icons only appear after tab switching or later UI refreshes.
+
+Important:
+This issue is specifically on Seller Create Offer Listing reached from the Agent Dashboard / agent login context.
+Do NOT modify Buyer, Tenant, Landlord, Hire Agent, Agent Profile, bid/counter, database, routes, or controller logic.
+
+Files to inspect first:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- any Seller listing JS section that defines addIconsToInputs(), initSelect2(), Livewire hooks, tab shown handlers, or DOMContentLoaded logic
+
+Goal:
+Icons must appear immediately on initial page load for all visible Seller Create Offer Listing fields, including Listing Details tab fields, without requiring the user to switch tabs.
+
+Likely cause:
+The icon initialization is firing before Livewire/Bootstrap tab content is fully hydrated and visible. The synchronous addIconsToInputs() call is not enough when the page is opened directly from the Agent Dashboard.
+
+Required fix:
+Add a safe deferred/retry initialization pattern for Seller only.
+
+Implementation requirements:
+1. Keep the existing addIconsToInputs() function.
+2. Do not duplicate icons.
+3. Before adding an icon, confirm the field does not already have the icon wrapper/icon.
+4. Run icon initialization:
+   - on DOMContentLoaded
+   - after Livewire load/hydration
+   - after Livewire message.processed
+   - after Bootstrap tab shown
+   - with short deferred retries after initial load
+
+Suggested pattern:
+After the existing Seller DOMContentLoaded icon call, add Seller-only deferred passes:
+
+setTimeout(addIconsToInputs, 0);
+setTimeout(addIconsToInputs, 150);
+setTimeout(addIconsToInputs, 400);
+setTimeout(addIconsToInputs, 800);
+
+Also ensure Livewire hook calls addIconsToInputs after updates:
+Livewire.hook('message.processed', () => {
+    setTimeout(addIconsToInputs, 0);
+});
+
+And Bootstrap tab shown handler:
+document.addEventListener('shown.bs.tab', function () {
+    setTimeout(addIconsToInputs, 0);
+});
+
+Safeguards:
+- Do not change icon classes globally.
+- Do not change Select2 placeholder logic unless required for this exact Seller icon issue.
+- Do not remove existing Save Draft, Next, Submit, or tab logic.
+- Do not change any Livewire properties.
+- Do not touch database/migrations.
+- Do not edit other role listing files.
+
+Done looks like:
+- Login as abigailbaschuk@gmail.com / 12345678
+- Open Seller Create Offer Listing from Agent Dashboard
+- On first load, Listing Details tab shows icons immediately next to visible fields.
+- Switching tabs and returning does not duplicate icons.
+- Save Draft and Next still work.
+- Browser console has no JS errors.
+- php -l passes on edited Blade/PHP files.

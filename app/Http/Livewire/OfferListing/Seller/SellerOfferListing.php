@@ -15,6 +15,9 @@ class SellerOfferListing extends Component
 {
     use WithFileUploads;
 
+    // TODO: set to false before production launch
+    const SAVE_AS_NEW_DRAFT = true;
+
     protected $listeners = [
         'updatePreference' => 'handleUpdatePreference',
         'setActiveTab'     => 'setActiveTab',
@@ -26,6 +29,7 @@ class SellerOfferListing extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
@@ -1819,7 +1823,11 @@ class SellerOfferListing extends Component
 
             $this->isDraft = true;
 
-            $auction = new SellerAgentAuctionModel();
+            if (!self::SAVE_AS_NEW_DRAFT && $this->isResumingDraft && $this->listingId) {
+                $auction = SellerAgentAuctionModel::find($this->listingId) ?? new SellerAgentAuctionModel();
+            } else {
+                $auction = new SellerAgentAuctionModel();
+            }
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
@@ -2420,6 +2428,10 @@ class SellerOfferListing extends Component
             //     }
             // }
             
+            // Track resumed state for SAVE_AS_NEW_DRAFT guard
+            $this->listingId = $auction->id;
+            $this->isResumingDraft = true;
+
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('draftLoaded');
         }

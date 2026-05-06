@@ -18,6 +18,9 @@ class BuyerOfferListing extends Component
 {
     use WithFileUploads;
 
+    // TODO: set to false before production launch
+    const SAVE_AS_NEW_DRAFT = true;
+
     protected $listeners = ['setActiveTab' => 'setActiveTab'];
 
     // Livewire properties for form fields
@@ -26,6 +29,7 @@ class BuyerOfferListing extends Component
 
     public $listingId = null; // To track existing listings
     public $isDraft = false; // To track draft status
+    public $isResumingDraft = false; // True when a draft has been loaded via loadDraft()
     public $isLoadingData = false; // Flag to prevent reset during draft/edit load
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
@@ -1258,7 +1262,11 @@ class BuyerOfferListing extends Component
 
             $this->isDraft = true;
 
-            $auction = new HireBuyerAgentAuction();
+            if (!self::SAVE_AS_NEW_DRAFT && $this->isResumingDraft && $this->listingId) {
+                $auction = HireBuyerAgentAuction::find($this->listingId) ?? new HireBuyerAgentAuction();
+            } else {
+                $auction = new HireBuyerAgentAuction();
+            }
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
@@ -1704,6 +1712,10 @@ class BuyerOfferListing extends Component
                 'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
             ]);
             
+            // Track resumed state for SAVE_AS_NEW_DRAFT guard
+            $this->listingId = $auction->id;
+            $this->isResumingDraft = true;
+
             // Clear the loading flag after all data is loaded
             // This ensures updated* hooks will function normally after initial load
             $this->isLoadingData = false;
