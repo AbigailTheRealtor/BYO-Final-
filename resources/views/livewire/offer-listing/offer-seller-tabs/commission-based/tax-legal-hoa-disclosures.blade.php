@@ -360,11 +360,13 @@
             </div>
 
             @if ($association_type === 'Other')
-                <div class="form-group mt-2">
-                    <div class="input-cover">
-                        <input type="text" wire:model="association_type_other" class="form-control has-icon"
-                            data-icon="fa-solid fa-sitemap"
-                            placeholder="Describe the association type">
+                <div class="col-12">
+                    <div class="form-group mt-2 mb-3">
+                        <div class="input-cover">
+                            <input type="text" wire:model="association_type_other" class="form-control has-icon"
+                                data-icon="fa-solid fa-sitemap"
+                                placeholder="Describe the association type">
+                        </div>
                     </div>
                 </div>
             @endif
@@ -432,11 +434,13 @@
             </div>
 
             @if ($association_fee_frequency === 'Other')
-                <div class="form-group mt-2">
-                    <div class="input-cover">
-                        <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
-                            data-icon="fa-regular fa-calendar-days"
-                            placeholder="Describe the fee frequency">
+                <div class="col-12">
+                    <div class="form-group mt-2 mb-3">
+                        <div class="input-cover">
+                            <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
+                                data-icon="fa-regular fa-calendar-days"
+                                placeholder="Describe the fee frequency">
+                        </div>
                     </div>
                 </div>
             @endif
@@ -461,32 +465,34 @@
             </div>
 
             @if ($association_approval_required === 'Yes')
-                <div class="form-group mt-3">
-                    <label class="fw-bold">Approval Process Details:
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Describe the association's approval process, including required documents, interview requirements, and typical timeline.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-                    </label>
-                    <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
-                        placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
-                </div>
-
-                <div class="form-group mt-3">
-                    <label class="fw-bold">Association Application Fee:
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Enter the association application fee amount if applicable. This is typically paid by the Buyer.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-                    </label>
-                    <div class="input-cover">
-                        <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 24px;"
-                            placeholder="Enter Association Application Fee (e.g., 150)"
-                            data-error-id="association_application_fee_error"
-                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                <div class="col-12">
+                    <div class="form-group mt-2 mb-3">
+                        <label class="fw-bold">Approval Process Details:
+                            <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                                title="Describe the association's approval process, including required documents, interview requirements, and typical timeline.">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </span>
+                        </label>
+                        <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
+                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
-                    <span class="error mt-1" id="association_application_fee_error"></span>
+
+                    <div class="form-group mt-2 mb-3">
+                        <label class="fw-bold">Association Application Fee:
+                            <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                                title="Enter the association application fee amount if applicable. This is typically paid by the Buyer.">
+                                <i class="fa-solid fa-circle-info"></i>
+                            </span>
+                        </label>
+                        <div class="input-cover">
+                            <span class="input-group-text-seller">$</span>
+                            <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 24px;"
+                                placeholder="Enter Association Application Fee (e.g., 150)"
+                                data-error-id="association_application_fee_error"
+                                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                        </div>
+                        <span class="error mt-1" id="association_application_fee_error"></span>
+                    </div>
                 </div>
             @endif
 
