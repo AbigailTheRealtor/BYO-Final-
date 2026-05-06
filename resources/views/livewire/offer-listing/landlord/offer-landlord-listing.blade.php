@@ -3477,4 +3477,28 @@
             });
         });
     </script>
+    <script>
+        function initSelect2Fields() {
+            $('.select2-multiple, .select2-single').each(function () {
+                var $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) return;
+                var placeholder = $el.attr('data-placeholder') || 'Select';
+                $el.select2({
+                    placeholder: placeholder,
+                    allowClear: true,
+                    width: '100%'
+                });
+            });
+        }
+
+        $(document).ready(function () {
+            initSelect2Fields();
+        });
+
+        document.addEventListener('livewire:load', function () {
+            Livewire.hook('message.processed', function () {
+                initSelect2Fields();
+            });
+        });
+    </script>
 @endpush
