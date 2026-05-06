@@ -213,6 +213,10 @@ class BuyerOfferListing extends Component
     public $prior_felony_explanation = '';
     public $monthly_income = '';
     public $number_occupant = '';
+    public $service_animal = '';
+    public $emotional_support_animal = '';
+    public $target_closing_date = '';
+    public $occupant_types = '';
     public $services = [];
     public $other_services_enabled = false;
     public $other_services = '';
@@ -1503,6 +1507,10 @@ class BuyerOfferListing extends Component
             $this->prior_felony_explanation = $auction->get->prior_felony_explanation ?? '';
             $this->monthly_income = $auction->get->monthly_income ?? '';
             $this->number_occupant = $auction->get->number_occupant ?? '';
+            $this->service_animal = $auction->get->service_animal ?? '';
+            $this->emotional_support_animal = $auction->get->emotional_support_animal ?? '';
+            $this->target_closing_date = $auction->get->target_closing_date ?? '';
+            $this->occupant_types = $auction->get->occupant_types ?? '';
 
             // Services
             $servicesRaw = $auction->get->services ?? null;
@@ -1981,6 +1989,10 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('prior_felony_explanation', $this->prior_felony_explanation);
         $auction->saveMeta('monthly_income', $this->stripCommas($this->monthly_income));
         $auction->saveMeta('number_occupant', $this->number_occupant);
+        $auction->saveMeta('service_animal', $this->service_animal);
+        $auction->saveMeta('emotional_support_animal', $this->emotional_support_animal);
+        $auction->saveMeta('target_closing_date', $this->target_closing_date);
+        $auction->saveMeta('occupant_types', $this->occupant_types);
 
         // Services
         $auction->saveMeta('services', json_encode($this->services));
