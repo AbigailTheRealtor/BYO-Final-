@@ -675,6 +675,11 @@ class LandlordOfferListing extends Component
     public $additional_documents = [];
     public $other_document_type = '';
 
+    // Repeatable document rows (replaces additional_documents Select2)
+    public $landlord_doc_rows = [];
+    public $landlordDocFileUpload;
+    public $landlordDocFileIndex = null;
+
     // Disclosure file uploads (temporary Livewire upload objects)
     public $landlord_disclosure_file;
     public $survey_file;
@@ -2215,6 +2220,15 @@ class LandlordOfferListing extends Component
             $this->additional_documents = is_string($rawAdditionalDocs) ? json_decode($rawAdditionalDocs, true) ?? [] : (array)$rawAdditionalDocs;
             $this->other_document_type = $auction->get->other_document_type ?? '';
 
+            // Repeatable document rows
+            $rawLandlordDocRows = $auction->get->landlord_doc_rows ?? null;
+            if (is_string($rawLandlordDocRows)) {
+                $decoded = json_decode($rawLandlordDocRows, true);
+                $this->landlord_doc_rows = is_array($decoded) ? $decoded : [];
+            } elseif (is_array($rawLandlordDocRows)) {
+                $this->landlord_doc_rows = $rawLandlordDocRows;
+            }
+
             // Disclosure file paths (for "View current file" links when resuming a draft)
             $this->landlord_disclosure_file_path  = $auction->get->landlord_disclosure_file_path ?? '';
             $this->survey_file_path               = $auction->get->survey_file_path ?? '';
@@ -2842,6 +2856,7 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('environmental_report_available', $this->environmental_report_available);
         $auction->saveMeta('additional_documents', json_encode($this->additional_documents));
         $auction->saveMeta('other_document_type', $this->other_document_type);
+        $auction->saveMeta('landlord_doc_rows', json_encode($this->landlord_doc_rows));
 
         // Disclosure file uploads
         $disclosureUploads = [
@@ -3014,6 +3029,49 @@ class LandlordOfferListing extends Component
     public function updatedEnvironmentalReportFile()
     {
         $this->validate(['environmental_report_file' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+    }
+
+    public function updatedLandlordDocFileUpload()
+    {
+        $this->validate(['landlordDocFileUpload' => 'nullable|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240']);
+
+        if ($this->landlordDocFileIndex === null || !$this->landlordDocFileUpload) {
+            return;
+        }
+
+        $index        = (int) $this->landlordDocFileIndex;
+        $originalName = $this->landlordDocFileUpload->getClientOriginalName();
+        $ext          = $this->landlordDocFileUpload->getClientOriginalExtension();
+        $uuid         = (string) Str::uuid();
+        $fileName     = $uuid . '.' . $ext;
+        $dir          = 'landlord-disclosures/' . ($this->listingId ?? 'draft');
+
+        Storage::disk('public')->makeDirectory($dir);
+        $this->landlordDocFileUpload->storeAs($dir, $fileName, 'public');
+        $storedPath = $dir . '/' . $fileName;
+
+        $rows = $this->landlord_doc_rows;
+        if (isset($rows[$index])) {
+            $rows[$index]['stored_path']   = $storedPath;
+            $rows[$index]['original_name'] = $originalName;
+        }
+        $this->landlord_doc_rows     = $rows;
+        $this->landlordDocFileUpload = null;
+        $this->landlordDocFileIndex  = null;
+
+        $this->emit('landlordDocFileStored', $index, $storedPath, $originalName);
+    }
+
+    public function removeLandlordDocRowFile($index)
+    {
+        $index = (int) $index;
+        $rows  = $this->landlord_doc_rows;
+        if (isset($rows[$index])) {
+            $rows[$index]['stored_path']   = '';
+            $rows[$index]['original_name'] = '';
+        }
+        $this->landlord_doc_rows = $rows;
+        $this->emit('landlordDocRowFileRemoved', $index);
     }
 
     public function deletePropertyPhoto($index)

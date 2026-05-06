@@ -2292,21 +2292,6 @@
                     });
                 }
 
-                if ($('#additional_documents').length && !$('#additional_documents').hasClass('select2-hidden-accessible')) {
-                    $('#additional_documents').select2({
-                        placeholder: 'Select',
-                        allowClear: true,
-                        width: '100%',
-                    });
-                    $('#additional_documents').on('change', function() {
-                        var vals = $(this).val() || [];
-                        @this.set('additional_documents', vals);
-                        var otherSection = document.getElementById('additional-documents-other-section');
-                        if (otherSection) {
-                            otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
-                        }
-                    });
-                }
             }
 
             initTaxLegalSelect2();
@@ -2343,7 +2328,6 @@
                     'space_classification': '#space_classification',
                     'association_fee_includes': '#association_fee_includes',
                     'association_amenities': '#association_amenities',
-                    'additional_documents': '#additional_documents',
                 };
                 Object.entries(selects2Map).forEach(function([field, selector]) {
                     var $el = $(selector);
