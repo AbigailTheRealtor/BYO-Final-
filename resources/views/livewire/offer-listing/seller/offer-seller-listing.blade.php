@@ -1587,6 +1587,7 @@
             }
 
             addIconsToInputs();
+            setTimeout(function() { addIconsToInputs(); }, 0);
 
             // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
             // regardless of whether jQuery event binding caught the change event.
