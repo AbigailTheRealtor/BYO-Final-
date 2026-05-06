@@ -118,6 +118,11 @@ class SellerAgentAuctionCounterTerm extends Component
     public $custom_enhancement = '';
     public $openHouseCount = '';
 
+    // Counter-specific deal negotiation fields
+    public $desired_sale_price = '';
+    public $timeline_to_sell = '';
+    public $motivation_level = '';
+
     protected function rules(): array
     {
         return [
@@ -417,6 +422,15 @@ class SellerAgentAuctionCounterTerm extends Component
         if (array_key_exists('counter_property_zip', $m)) {
             $this->client_property_zip = $m['counter_property_zip'];
         }
+        if (array_key_exists('counter_desired_sale_price', $m)) {
+            $this->desired_sale_price = $m['counter_desired_sale_price'];
+        }
+        if (array_key_exists('counter_timeline_to_sell', $m)) {
+            $this->timeline_to_sell = $m['counter_timeline_to_sell'];
+        }
+        if (array_key_exists('counter_motivation_level', $m)) {
+            $this->motivation_level = $m['counter_motivation_level'];
+        }
     }
 
     public function render()
@@ -590,5 +604,9 @@ class SellerAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
         $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
         $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
+        // Counter-specific deal negotiation fields
+        $counterTerm->saveMeta('counter_desired_sale_price', $this->desired_sale_price);
+        $counterTerm->saveMeta('counter_timeline_to_sell', $this->timeline_to_sell);
+        $counterTerm->saveMeta('counter_motivation_level', $this->motivation_level);
     }
 }

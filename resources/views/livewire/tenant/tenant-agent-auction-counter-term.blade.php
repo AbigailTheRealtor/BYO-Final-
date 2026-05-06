@@ -46,23 +46,11 @@
 
         <form wire:submit.prevent="submit">
           @php
-            $tabs = ['Broker Compensation and Agency Agreement'];
+            $tabs = ['Counter Terms'];
             if ($isListingCreatedByAgent) {
                 $tabs[] = 'Referral Fee & Cooperation Terms';
             }
-            $tabs[] = 'Additional Details';
-            $user_type = "tenant";
-            $tabs[] = match (strtolower($user_type)) {
-                'tenant' => 'Offered Services',
-                'landlord' => 'Services the Landlord Requests from Their Agent',
-                'seller' => 'Services the Seller Requests from Their Agent',
-                'buyer' => 'Services the Buyer Requests from Their Agent',
-                default => 'Services',
-            };
-            $tabs[] = 'Client Contact Information';
-            $additionalDetailsTabIndex = $isListingCreatedByAgent ? 2 : 1;
-            $servicesTabIndex          = $isListingCreatedByAgent ? 3 : 2;
-            $clientContactTabIndex     = $isListingCreatedByAgent ? 4 : 3;
+            $referralTabIndex = $isListingCreatedByAgent ? 1 : null;
           @endphp
 
           <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -86,32 +74,14 @@
 
           <div class="tab-content mt-3">
             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}">
-
-                @include('livewire.tenant-agent-auction-bid-counter-tabs.broker-compensation', ['isCounterMode' => true])
-
+              @include('livewire.tenant-agent-auction-counter-term-tabs.counter-terms')
             </div>
-
-            <input  type="hidden"  wire:mode="parent_counter_id"  value={{$parent_counter_id}} />
-            <input  type="hidden"  wire:mode="bidId"  value={{$bidId}} />
-            <input  type="hidden" wire:mode="auctionId" value={{$pab->id}} />
 
             @if ($isListingCreatedByAgent)
             <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}">
               @include('livewire.tenant-agent-auction-bid-counter-tabs.referral-fee')
             </div>
             @endif
-
-            <div class="tab-pane fade {{ $activeTab === $additionalDetailsTabIndex ? 'show active' : '' }}">
-              @include('livewire.tenant-agent-auction-counter-term-tabs.additional-details')
-            </div>
-
-            <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}" id="services">
-              @include('livewire.tenant-agent-auction-bid-counter-tabs.services')
-            </div>
-
-            <div class="tab-pane fade {{ $activeTab === $clientContactTabIndex ? 'show active' : '' }}">
-              @include('livewire.tenant-agent-auction-counter-term-tabs.client-contact-information')
-            </div>
           </div>
 
           <div class="d-flex justify-content-between form-group mt-4">

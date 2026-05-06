@@ -36,17 +36,11 @@
 
                 <form wire:submit.prevent="submit">
                     @php
-                        $tabs = ['Broker Compensation & Agency Agreement'];
+                        $tabs = ['Counter Terms'];
                         if ($isListingCreatedByAgent) {
                             $tabs[] = 'Referral Fee & Cooperation Terms';
                         }
-                        $tabs[] = 'Additional Details';
-                        $tabs[] = 'Offered Services';
-                        $tabs[] = 'Client Contact Information';
-                        $referralTabIndex             = $isListingCreatedByAgent ? 1 : null;
-                        $additionalDetailsTabIndex    = $isListingCreatedByAgent ? 2 : 1;
-                        $servicesTabIndex             = $isListingCreatedByAgent ? 3 : 2;
-                        $clientContactTabIndex        = $isListingCreatedByAgent ? 4 : 3;
+                        $referralTabIndex = $isListingCreatedByAgent ? 1 : null;
                     @endphp
 
                     <ul class="nav nav-tabs" id="sellerCounterTab" role="tablist">
@@ -65,7 +59,7 @@
 
                     <div class="tab-content mt-3">
                         <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-counter-tabs.broker-compensation', ['isCounterMode' => true])
+                            @include('livewire.seller-agent-auction-counter-tabs.counter-terms')
                         </div>
 
                         @if ($isListingCreatedByAgent)
@@ -73,18 +67,6 @@
                             @include('livewire.seller-agent-auction-counter-tabs.referral-fee')
                         </div>
                         @endif
-
-                        <div class="tab-pane fade {{ $activeTab === $additionalDetailsTabIndex ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-counter-tabs.additional-details')
-                        </div>
-
-                        <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-counter-tabs.services')
-                        </div>
-
-                        <div class="tab-pane fade {{ $activeTab === $clientContactTabIndex ? 'show active' : '' }}">
-                            @include('livewire.seller-agent-auction-counter-tabs.client-contact-information')
-                        </div>
                     </div>
 
                     {{-- Navigation footer — mirrors Tenant / Buyer / Landlord wizard pattern exactly --}}

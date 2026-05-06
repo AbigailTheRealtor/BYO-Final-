@@ -129,6 +129,14 @@ public $isListingCreatedByAgent = false;
       public $seller_financing_type = '$';
     public $seller_financing_amount = '';
 
+    // Counter-specific deal negotiation fields
+    public $areas_of_interest = '';
+    public $target_purchase_price = '';
+    public $timeline_to_purchase = '';
+    public $pre_approval_status = '';
+    public $cash_buyer = '';
+    public $estimated_down_payment = '';
+
     protected function rules(): array
     {
         return [
@@ -417,6 +425,24 @@ public $isListingCreatedByAgent = false;
         if (array_key_exists('counter_property_zip', $m)) {
             $this->client_property_zip = $m['counter_property_zip'];
         }
+        if (array_key_exists('counter_areas_of_interest', $m)) {
+            $this->areas_of_interest = $m['counter_areas_of_interest'];
+        }
+        if (array_key_exists('counter_target_purchase_price', $m)) {
+            $this->target_purchase_price = $m['counter_target_purchase_price'];
+        }
+        if (array_key_exists('counter_timeline_to_purchase', $m)) {
+            $this->timeline_to_purchase = $m['counter_timeline_to_purchase'];
+        }
+        if (array_key_exists('counter_pre_approval_status', $m)) {
+            $this->pre_approval_status = $m['counter_pre_approval_status'];
+        }
+        if (array_key_exists('counter_cash_buyer', $m)) {
+            $this->cash_buyer = $m['counter_cash_buyer'];
+        }
+        if (array_key_exists('counter_estimated_down_payment', $m)) {
+            $this->estimated_down_payment = $m['counter_estimated_down_payment'];
+        }
     }
     public function submit()
     {
@@ -562,5 +588,12 @@ public $isListingCreatedByAgent = false;
         $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
         $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
         $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
+        // Counter-specific deal negotiation fields
+        $counterTerm->saveMeta('counter_areas_of_interest', $this->areas_of_interest);
+        $counterTerm->saveMeta('counter_target_purchase_price', $this->target_purchase_price);
+        $counterTerm->saveMeta('counter_timeline_to_purchase', $this->timeline_to_purchase);
+        $counterTerm->saveMeta('counter_pre_approval_status', $this->pre_approval_status);
+        $counterTerm->saveMeta('counter_cash_buyer', $this->cash_buyer);
+        $counterTerm->saveMeta('counter_estimated_down_payment', $this->estimated_down_payment);
     }
 }

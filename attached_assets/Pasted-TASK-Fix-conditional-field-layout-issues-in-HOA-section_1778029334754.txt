@@ -1,0 +1,158 @@
+TASK — Fix conditional field layout issues in HOA section (Seller + Landlord)
+
+SCOPE:
+Create Offer Listing only
+
+Roles:
+- Seller
+- Landlord
+
+Tab:
+Tax, Legal & HOA
+
+Section:
+HOA / Association
+
+----------------------------------------
+ISSUE
+----------------------------------------
+
+Conditional fields break layout/format when triggered:
+
+Seller:
+- Association Type = Other
+- Fee Frequency = Other
+- Association Approval Required for Purchase = Yes
+
+Landlord:
+- Fee Frequency = Other
+- Association Approval Required for Tenancy = Yes
+
+Symptoms:
+- Fields overlap
+- Labels/icons misaligned
+- Inputs render too close together
+- Sections below shift incorrectly
+
+----------------------------------------
+ROOT CAUSE
+----------------------------------------
+
+Conditional inputs are:
+- Injected inside existing wrappers
+OR
+- Missing proper grid/spacing containers
+
+----------------------------------------
+AUDIT FIRST
+----------------------------------------
+
+Identify:
+
+1. Seller HOA Blade partial
+2. Landlord HOA Blade partial
+
+For each:
+- Locate conditional @if blocks
+- Identify missing:
+  - form-group / input-cover wrappers
+  - col-12 or grid structure
+  - margin spacing (mb-3, mt-2, etc.)
+
+----------------------------------------
+FIX (APPLY TO BOTH ROLES)
+----------------------------------------
+
+FOR EVERY CONDITIONAL FIELD:
+
+❌ DO NOT:
+- Nest inside select input wrapper
+- Place inside same input-cover
+- Use absolute positioning
+
+✅ DO:
+Wrap each conditional field like this:
+
+<div class="col-12">
+    <div class="input-cover mt-2 mb-3">
+        <!-- conditional input -->
+    </div>
+</div>
+
+----------------------------------------
+FIELDS TO FIX
+----------------------------------------
+
+Seller:
+- Association Type → "Describe association type"
+- Fee Frequency → "Describe fee frequency"
+- Approval Required → approval details field
+
+Landlord:
+- Fee Frequency → "Describe fee frequency"
+- Approval Required for Tenancy → approval details field
+
+----------------------------------------
+STYLE RULES
+----------------------------------------
+
+- Match existing UI style
+- Keep icon alignment consistent
+- Use has-icon / data-icon if used in this tab
+- Maintain "Select" placeholder styling
+- Keep spacing consistent across all fields
+
+----------------------------------------
+BEHAVIOR RULES
+----------------------------------------
+
+When condition = TRUE:
+- Field appears below with proper spacing
+- No overlap
+
+When condition = FALSE:
+- Field hides cleanly
+- Layout does NOT shift incorrectly
+
+----------------------------------------
+VALIDATION
+----------------------------------------
+
+TEST ALL:
+
+Seller:
+✔ Association Type = Other
+✔ Fee Frequency = Other
+✔ Approval Required = Yes
+
+Landlord:
+✔ Fee Frequency = Other
+✔ Approval Required for Tenancy = Yes
+
+For each:
+- No overlap
+- Proper spacing
+- Clean alignment
+
+----------------------------------------
+IMPORTANT
+----------------------------------------
+
+DO NOT TOUCH:
+- Buyer flows
+- Tenant flows
+- Hire Agent flows
+- Counter terms
+- Database
+
+----------------------------------------
+FINAL STEP
+----------------------------------------
+
+Run:
+php -l on edited PHP files
+
+Return:
+- Files updated
+- What layout structure was fixed
+- Confirmation both Seller and Landlord now behave consistently

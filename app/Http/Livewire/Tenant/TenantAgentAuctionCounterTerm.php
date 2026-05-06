@@ -115,6 +115,14 @@ class TenantAgentAuctionCounterTerm extends Component
         ];
     }
 
+    // Counter-specific deal negotiation fields
+    public $areas_of_interest = '';
+    public $max_monthly_lease_price = '';
+    public $desired_lease_length = '';
+    public $move_in_date = '';
+    public $number_of_occupants = '';
+    public $household_monthly_income = '';
+
     protected $messages = [
         'referral_fee_percent.numeric' => 'Referral fee must be a number.',
         'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
@@ -674,6 +682,24 @@ class TenantAgentAuctionCounterTerm extends Component
         if (array_key_exists('counter_property_zip', $m)) {
             $this->client_property_zip = $m['counter_property_zip'];
         }
+        if (array_key_exists('counter_areas_of_interest', $m)) {
+            $this->areas_of_interest = $m['counter_areas_of_interest'];
+        }
+        if (array_key_exists('counter_max_monthly_lease_price', $m)) {
+            $this->max_monthly_lease_price = $m['counter_max_monthly_lease_price'];
+        }
+        if (array_key_exists('counter_desired_lease_length', $m)) {
+            $this->desired_lease_length = $m['counter_desired_lease_length'];
+        }
+        if (array_key_exists('counter_move_in_date', $m)) {
+            $this->move_in_date = $m['counter_move_in_date'];
+        }
+        if (array_key_exists('counter_number_of_occupants', $m)) {
+            $this->number_of_occupants = $m['counter_number_of_occupants'];
+        }
+        if (array_key_exists('counter_household_monthly_income', $m)) {
+            $this->household_monthly_income = $m['counter_household_monthly_income'];
+        }
     }
     public function submit()
     {
@@ -848,5 +874,12 @@ class TenantAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
         $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
         $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
+        // Counter-specific deal negotiation fields
+        $counterTerm->saveMeta('counter_areas_of_interest', $this->areas_of_interest);
+        $counterTerm->saveMeta('counter_max_monthly_lease_price', $this->max_monthly_lease_price);
+        $counterTerm->saveMeta('counter_desired_lease_length', $this->desired_lease_length);
+        $counterTerm->saveMeta('counter_move_in_date', $this->move_in_date);
+        $counterTerm->saveMeta('counter_number_of_occupants', $this->number_of_occupants);
+        $counterTerm->saveMeta('counter_household_monthly_income', $this->household_monthly_income);
     }
 }

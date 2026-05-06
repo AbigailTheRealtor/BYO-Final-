@@ -157,6 +157,11 @@ class LandlordAgentAuctionCounterTerm extends Component
     public $photo_enhancements = [];
     public $custom_enhancement = '';
 
+    // Counter-specific deal negotiation fields
+    public $desired_monthly_rent = '';
+    public $availability_date = '';
+    public $occupancy_status = '';
+    public $flexibility = '';
 
     protected function rules(): array
     {
@@ -733,6 +738,18 @@ class LandlordAgentAuctionCounterTerm extends Component
         if (array_key_exists('counter_property_zip', $m)) {
             $this->client_property_zip = $m['counter_property_zip'];
         }
+        if (array_key_exists('counter_desired_monthly_rent', $m)) {
+            $this->desired_monthly_rent = $m['counter_desired_monthly_rent'];
+        }
+        if (array_key_exists('counter_availability_date', $m)) {
+            $this->availability_date = $m['counter_availability_date'];
+        }
+        if (array_key_exists('counter_occupancy_status', $m)) {
+            $this->occupancy_status = $m['counter_occupancy_status'];
+        }
+        if (array_key_exists('counter_flexibility', $m)) {
+            $this->flexibility = $m['counter_flexibility'];
+        }
     }
 
     public function render()
@@ -947,5 +964,10 @@ class LandlordAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
         $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
         $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
+        // Counter-specific deal negotiation fields
+        $counterTerm->saveMeta('counter_desired_monthly_rent', $this->desired_monthly_rent);
+        $counterTerm->saveMeta('counter_availability_date', $this->availability_date);
+        $counterTerm->saveMeta('counter_occupancy_status', $this->occupancy_status);
+        $counterTerm->saveMeta('counter_flexibility', $this->flexibility);
     }
 }

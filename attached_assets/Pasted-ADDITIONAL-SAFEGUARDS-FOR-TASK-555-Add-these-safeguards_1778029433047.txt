@@ -1,0 +1,80 @@
+ADDITIONAL SAFEGUARDS FOR TASK #555
+
+Add these safeguards before starting the fix.
+
+1. Do NOT break standard input icons.
+
+The .input-cover CSS change must not break:
+- Regular input fields
+- Regular select fields
+- Non-Select2 fields
+
+After adding position: relative and z-index:
+- Verify icons still align correctly on normal inputs
+- Verify icons do not overlap typed text
+- Verify vertical alignment remains consistent
+
+If a regression appears, adjust only Select2-specific wrappers/classes and do not globally disrupt standard field styling.
+
+2. Ensure Select2 width is always set.
+
+For every Select2 initialization touched in this task, confirm the config includes:
+
+width: '100%'
+
+This prevents placeholder collapse and helps keep the Select placeholder visible.
+
+3. Prevent double Select2 initialization.
+
+After consolidating seller message.processed hooks, ensure initializeFullService() only initializes Select2 fields when they are not already initialized.
+
+Use existing guard pattern:
+
+if (!$(element).hasClass('select2-hidden-accessible')) {
+    $(element).select2({
+        placeholder: 'Select',
+        width: '100%'
+    });
+}
+
+Do not double-initialize Select2.
+
+4. Preserve Livewire state.
+
+After tab switches, draft saves, and Livewire updates, verify:
+- Icon remains visible
+- Placeholder remains visible
+- Selected values remain selected
+- No duplicate Select2 containers are created
+
+5. Icon click safety.
+
+If icons appear but interfere with clicking the Select2 field, add:
+
+pointer-events: none;
+
+to the icon rule.
+
+If icons still appear behind Select2, increase icon z-index only as needed, preferably:
+
+z-index: 10;
+
+Do not use absolute-position hacks outside the input wrapper.
+
+6. Final validation required.
+
+Test all four Create Offer Listing flows:
+- Seller
+- Landlord
+- Buyer
+- Tenant
+
+Confirm:
+- All Select2 multi-selects show icons
+- All Select2 placeholders say Select
+- Placeholder text is indented away from the icon
+- Values can be selected and removed
+- Values survive tab switches
+- Values survive Save Draft and reload
+- No console errors
+- initializeLimitedService() and anything inside it remains untouched
