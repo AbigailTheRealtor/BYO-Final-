@@ -1,0 +1,116 @@
+HOTFIX — Restore Correct Tab Structure for Agent Preset Counter Offers
+
+Issue:
+Task #550 incorrectly replaced the Agent Preset Counter Offer flow with a single "Counter Terms" tab.
+
+This breaks the core UX. When a user is countering an Agent’s preset offer, they must be able to review and modify the Agent’s proposed terms (services + compensation) BEFORE submitting their counter.
+
+Correct Behavior (Required):
+
+For ALL Agent Preset / Agent Bid Counter pages:
+- /buyer/counter-terms/{id}
+- /seller/counter-terms/{id}
+- /landlord/counter-terms/{id}
+- /tenant/counter-terms/{id}
+
+The page MUST use a multi-tab structure in this exact order:
+
+TAB ORDER:
+
+1. Services
+   - Show ONLY services the Agent included in their preset/bid
+   - Allow user to:
+     - keep selected
+     - unselect
+     - add (if applicable per existing logic)
+   - Do NOT show empty/unselected services
+
+2. Broker Compensation & Agency Agreement Terms
+   - Show ONLY fields the Agent filled out
+   - Allow user to counter/edit those fields
+   - Do NOT show blank/unfilled compensation fields
+
+3. Additional Terms
+   - Freeform or structured fields (existing logic)
+   - Used for deal-specific terms outside services/compensation
+
+4. Referral Fee & Cooperation Terms (CONDITIONAL)
+   - ONLY show if `$isListingCreatedByAgent === true`
+   - Must appear BEFORE the final tab
+   - Do NOT show for non-agent-created listings
+
+5. Counter Terms (FINAL TAB)
+   This is the form currently being shown incorrectly as the only tab.
+   Move it here as the LAST step.
+
+   This tab includes:
+   - Client Contact Information
+   - Location / Target (if applicable to role)
+   - Deal Terms (price, rent, timeline, etc.)
+   - Qualification Signals (income, occupants, etc.)
+   - Additional Notes
+
+   This tab represents:
+   → the user’s final counter submission details
+
+   The Submit button must ONLY appear on this tab.
+
+---
+
+Critical Rules:
+
+- DO NOT collapse tabs into one page
+- DO NOT remove Services or Compensation tabs
+- DO NOT reorder beyond what is specified
+- DO NOT change business logic, validation, or database
+- DO NOT touch:
+  - Create Offer Listing flows
+  - Agent Preset setup pages
+  - Hire Agent flows
+  - Direct hire flows
+  - Accepted bid summary
+  - routes/controllers/migrations
+
+- KEEP all #550 new fields (contact info, deal terms, etc.)
+  → ONLY move them to the final tab
+
+---
+
+UI / Behavior Requirements:
+
+- Tabs must follow consistent styling with existing platform
+- Next / Previous navigation must work across tabs
+- No data loss when switching tabs
+- Livewire state must persist:
+  - selected services
+  - compensation inputs
+  - typed inputs
+
+- No duplicate Select2 instances
+- No console errors
+
+---
+
+Validation Checklist:
+
+For each role (Buyer, Seller, Landlord, Tenant):
+
+- Services tab appears first
+- Compensation tab appears second
+- Additional Terms tab appears third
+- Referral Fee tab appears ONLY when applicable
+- Counter Terms tab appears LAST
+- Submit button only appears on final tab
+- Agent-selected services display correctly
+- Agent compensation fields display correctly
+- Empty fields are NOT shown
+- Counter values persist after navigation
+
+---
+
+Goal:
+Restore correct negotiation flow:
+User reviews → modifies → THEN submits counter.
+
+NOT:
+User fills everything first without seeing what they are countering.
