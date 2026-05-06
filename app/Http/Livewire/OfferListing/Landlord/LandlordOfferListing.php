@@ -1562,9 +1562,7 @@ class LandlordOfferListing extends Component
 
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? HirelandLordAgentAuction::find($this->listingId)
-                : new HirelandLordAgentAuction();
+            $auction = new HirelandLordAgentAuction();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;

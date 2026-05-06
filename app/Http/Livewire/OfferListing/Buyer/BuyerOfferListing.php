@@ -1258,9 +1258,7 @@ class BuyerOfferListing extends Component
 
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+            $auction = new HireBuyerAgentAuction();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;

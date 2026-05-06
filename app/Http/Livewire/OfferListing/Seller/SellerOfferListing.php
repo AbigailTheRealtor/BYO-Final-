@@ -1819,9 +1819,7 @@ class SellerOfferListing extends Component
 
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? SellerAgentAuctionModel::find($this->listingId)
-                : new SellerAgentAuctionModel();
+            $auction = new SellerAgentAuctionModel();
 
             $auction->user_id = Auth::id();
             $auction->title = $this->listing_title;
