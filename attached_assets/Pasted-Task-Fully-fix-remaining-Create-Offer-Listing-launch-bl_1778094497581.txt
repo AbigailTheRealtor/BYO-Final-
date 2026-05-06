@@ -1,0 +1,124 @@
+Task: Fully fix remaining Create Offer Listing launch blockers from QA audit
+
+Environment:
+Create Offer Listing flows only, from Agent Dashboard:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+Scope:
+- Create Offer Listing only
+- Buyer, Seller, Landlord, Tenant offer listing flows
+- Do not touch Hire Agent flows
+- Do not touch Agent Profile flows
+- Do not rebuild shared architecture
+- Make minimal surgical fixes only
+
+Fix 1 — Landlord title Save Draft blocker:
+Landlord Save Draft currently fails because landlord_agent_auctions does not have a title column, but code attempts to save:
+
+$auction->title = $this->listing_title;
+
+Fix this without changing schema unless absolutely necessary.
+
+Preferred fix:
+- Do not write listing_title into a missing title column
+- Store/load listing_title through existing Landlord metadata pattern instead
+- Guard with Schema::hasColumn if shared save logic touches title
+
+Done:
+- Landlord Save Draft works
+- Landlord Resume Draft reloads listing title
+- No SQLSTATE column "title" error
+
+Fix 2 — Wire missing Services tab:
+The Services partial files already exist but are not wired into the Create Offer Listing wizard correctly.
+
+For each role:
+- Seller
+- Landlord
+- Buyer
+- Tenant
+
+Add Services to:
+- wizard nav/tab list
+- tab pane content
+- Next/Back tab sequencing
+- Save Draft/Resume behavior if needed
+
+Use existing role-specific partials.
+Do not rewrite services content.
+
+Done:
+- Services tab appears in all four Create Offer Listing flows
+- Existing service checkboxes render
+- Selected services save and reload
+- No empty Services tab
+
+Fix 3 — Wire missing Broker Compensation tab:
+The Broker Compensation partial files already exist but are not wired into the Create Offer Listing wizard correctly.
+
+For each role:
+- Seller
+- Landlord
+- Buyer
+- Tenant
+
+Add Broker Compensation to:
+- wizard nav/tab list
+- tab pane content
+- Next/Back tab sequencing
+- Save Draft/Resume behavior if needed
+
+Use existing role-specific partials.
+Do not rewrite compensation content.
+
+Done:
+- Broker Compensation tab appears in all four Create Offer Listing flows
+- Existing compensation fields render
+- Save Draft works
+- Resume Draft reloads values
+- Submit can complete without missing tab errors
+
+Fix 4 — Tenant restTabs branch:
+Tenant currently only includes:
+- Leasing Terms
+- Pre-Screening
+- Description
+
+Update Tenant Create Offer Listing tab list so Tenant also includes:
+- Services
+- Broker Compensation
+
+Done:
+- Tenant flow includes Services and Broker Compensation like the other role flows
+- Navigation order works correctly
+
+Final QA required:
+After fixes, manually test with:
+abigailbaschuk@gmail.com / 12345678
+
+Test:
+1. Login
+2. Go to Agent Dashboard
+3. Create Offer Listing
+4. Test Buyer, Seller, Landlord, Tenant
+5. Confirm each flow:
+   - loads
+   - tabs display correctly
+   - Save Draft works
+   - Resume Draft works
+   - Next/Back works
+   - Submit does not hit backend errors
+
+Run:
+php -l on every edited PHP/Blade file
+
+Report back with:
+- files changed
+- what was fixed
+- whether Buyer, Seller, Landlord, Tenant Save Draft passed
+- whether Buyer, Seller, Landlord, Tenant Submit passed
+- any remaining errors

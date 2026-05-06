@@ -1,0 +1,63 @@
+Fix Buyer Offer Listing current_status legacy backend bug.
+
+Environment:
+Create Offer Listing flow only:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/buyer
+
+Login example:
+Email: abigailbaschuk@gmail.com
+Password: 12345678
+
+Access flow:
+Login → Agent Dashboard → Create Offer Listing → Buyer
+
+Issue:
+"Buyer’s Current Status" was previously removed from the Buyer Create Offer Listing front-end, but legacy backend references still exist. Selecting related fields or submitting the form triggers Livewire errors because current_status is still referenced internally.
+
+IMPORTANT:
+Do NOT re-add the Current Status field to the UI.
+This field should no longer exist in the Buyer Create Offer Listing system.
+
+Scope:
+- Buyer Create Offer Listing flow only
+- BuyerOfferListing component
+- Buyer offer Blade files
+- Buyer draft save/load
+- Buyer validation/submission logic
+- Buyer listing summary/detail rendering
+- Buyer accepted summary rendering if applicable
+
+DO NOT:
+- Touch Seller, Landlord, or Tenant flows
+- Change database schema
+- Add new migrations
+- Re-add the field visually
+- Modify unrelated shared logic
+
+Task:
+1. Search Buyer Create Offer Listing codebase for:
+   - current_status
+   - buyer_current_status
+   - "Buyer’s Current Status"
+   - "Buyer's Current Status"
+   - "Current Status"
+
+2. Remove any remaining Buyer Create Offer Listing references that:
+   - bind wire:model to current_status
+   - validate current_status
+   - require current_status before submit
+   - save/load current_status metadata
+   - display current_status on detail/preview/resume pages
+   - reference current_status during Save Draft or Submit
+
+3. If shared logic references current_status, guard it so Buyer Create Offer Listings no longer depend on it.
+
+Done looks like:
+- Buyer Create Offer Listing loads without errors
+- No Livewire PublicPropertyNotFoundException appears
+- Save Draft works
+- Submit works
+- No validation requires current_status
+- No Current Status field appears anywhere in Buyer Create Offer Listing
+- No Buyer detail/summary page shows Current Status
+- php -l passes on edited files only
