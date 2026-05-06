@@ -1,0 +1,186 @@
+READ-ONLY AUDIT ONLY — Landlord Agent Preset Counter Terms Not Showing All Fields
+
+DO NOT EDIT ANY FILES.
+DO NOT APPLY FIXES.
+DO NOT COMMIT.
+DO NOT RUN MIGRATIONS.
+DO NOT RESET DATABASE.
+
+ISSUE:
+I have asked multiple times to fix Landlord Agent Preset → Counter Terms, but the page still does not show all preset-filled broker compensation fields.
+
+Test URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/landlord/counter-terms/7
+
+This is for:
+Agent Preset-driven Landlord Counter Terms
+NOT BidYourOffer Offer Counter Terms
+NOT Create Offer Listing
+NOT Buyer/Seller/Tenant
+
+GOAL OF THIS AUDIT:
+Prove exactly which files, route, component, partial, data source, and guards are being used before any more changes.
+
+----------------------------------------
+PART 1 — ROUTE / CONTROLLER / COMPONENT AUDIT
+----------------------------------------
+
+Report:
+
+1. Exact route definition for:
+   /landlord/counter-terms/{id}
+
+2. Route name
+
+3. Controller method or Livewire mount entry point
+
+4. Exact Livewire component class used
+
+5. Exact root Blade view rendered
+
+6. Exact tab partials included from the root Blade
+
+7. Exact broker-compensation partial actually included on this page
+
+IMPORTANT:
+Do not assume the partial. Confirm from the include path in the rendered Blade.
+
+----------------------------------------
+PART 2 — FILE CHANGE AUDIT
+----------------------------------------
+
+Report whether these previous edits affected the actual rendered files:
+
+1. Was this file actually used by /landlord/counter-terms/7?
+resources/views/livewire/landlord-agent-auction-bid-tabs/commission-based/broker-compensation.blade.php
+
+2. If not, what broker-compensation file is actually used?
+
+3. List every Landlord counter-related file currently involved:
+- PHP component
+- root Blade
+- tab Blade
+- partial Blade
+- mapper/service
+- model/meta model
+
+----------------------------------------
+PART 3 — DATA SOURCE AUDIT
+----------------------------------------
+
+For counter term ID 7, report:
+
+1. What record type ID 7 represents:
+- landlord agent bid?
+- landlord counter term?
+- another model?
+
+2. Which Agent Bid record is linked to it
+
+3. Which Agent Default Profile / Preset created the bid, if available
+
+4. Dump the actual meta keys and values for the related landlord agent bid meta
+
+5. Dump the actual meta keys and values for the related landlord counter term meta, if any already exists
+
+Do not include passwords or sensitive user info.
+
+----------------------------------------
+PART 4 — FIELD MAPPING TABLE
+----------------------------------------
+
+Create this table for each missing field:
+
+Columns:
+Preset Label
+Preset/Profile Key
+Bid Meta Key
+Counter Meta Key
+Livewire Public Property
+hydrateFromMetaMap Reads Key?
+saveAllMetaData Writes Key?
+Blade wire:model
+Blade Outer Guard
+Current Render-Time Value
+Why Not Showing
+
+Fields to audit:
+
+- Landlord’s Broker Lease Fee type
+- Landlord’s Broker Lease Fee amount
+- Tenant’s Broker Commission Structure
+- Tenant’s Broker Commission Fee type
+- Tenant’s Broker Commission Fee amount
+- Payment Timing for Broker Fees
+- Broker Fee Days After Due Event / day count
+- Split Payment Due
+- Split Payment Due Other
+- Lease Renewal / Extension Fee type
+- Lease Renewal / Extension Fee amount
+- Protection Period Timeframe
+- Early Termination Fee option
+- Early Termination Fee amount
+- Retainer Fee option
+- Retainer Fee amount
+- Retainer Fee application
+- Brokerage Relationship
+- Agency Agreement Timeframe
+- Additional Terms
+
+----------------------------------------
+PART 5 — RENDER / GUARD AUDIT
+----------------------------------------
+
+In the actual broker-compensation partial used by /landlord/counter-terms/7:
+
+For each missing section, report:
+
+1. Does the section exist in the Blade?
+2. What is the exact outer @if condition?
+3. Which variables does it check?
+4. What are those variable values at render time?
+5. Is the section hidden because:
+   - value missing from bid meta
+   - hydration key mismatch
+   - wrong Livewire property
+   - wrong Blade wire:model
+   - guard checks wrong field
+   - wrong partial is being edited
+   - field belongs to a different property type branch
+   - JavaScript/visibility issue after render
+
+----------------------------------------
+PART 6 — PROPERTY TYPE / BRANCH AUDIT
+----------------------------------------
+
+Determine which property type branch the page is rendering:
+
+- Residential Landlord
+- Commercial Landlord
+- Other
+
+Report:
+1. Property type value on the bid/listing/counter
+2. Which Blade conditional branch is active
+3. Whether the missing fields are inside a branch that is not active
+
+This is critical because the fields may exist but be inside Residential/Commercial blocks that are not rendering.
+
+----------------------------------------
+PART 7 — OUTPUT ONLY
+----------------------------------------
+
+Return ONLY the audit report.
+
+Do NOT fix anything yet.
+
+Required output:
+1. Exact route/controller/component/Blade chain
+2. Actual broker-compensation partial path
+3. Actual bid meta dump summary
+4. Actual counter meta dump summary
+5. Full field mapping table
+6. Explanation of why the top fields are not showing
+7. Recommended fix plan with exact files to edit later
+
+STOP after audit.

@@ -1,0 +1,69 @@
+Task #574 — Normalize Create Offer Listing Description Textarea Height
+
+SCOPE:
+Create Offer Listing flows only.
+
+Edit only:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/additional-details.blade.php
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/additional-details.blade.php
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/additional-details.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/additional-details.blade.php
+
+DO NOT TOUCH:
+- Hire Agent flows
+- Agent Profile flows
+- Edit listing forms
+- Validation
+- Labels
+- Tooltips
+- Placeholders
+- Save/load logic
+- Other textareas such as AI Questions, Notes, Counter Terms, etc.
+- Global CSS outside the Create Offer Listing files
+
+ISSUE:
+The Landlord Property Description textarea is visually compressed because landlord/offer-landlord-listing.blade.php has a CSS rule:
+
+textarea.form-control {
+    min-height: 42px;
+    height: 42px;
+}
+
+Normalize only the description/criteria textarea in each role’s additional-details partial.
+
+FIELDS TO FIX:
+Seller:
+- Property Description
+
+Landlord:
+- Property Description
+
+Buyer:
+- Criteria & Preferences
+
+Tenant:
+- Criteria & Preferences
+
+FIX:
+For each of the four target textareas, set the inline style exactly to include:
+
+min-height: 140px; padding: 10px; font-size: 16px;
+
+If the textarea already has a style attribute, merge these values without changing wire:model, id, class, label, placeholder, tooltip, or validation.
+
+Do not add this style to any other textarea.
+
+VERIFY:
+Run php -l on all edited Blade files.
+
+Manual QA:
+- /offer-listing/seller
+- /offer-listing/landlord
+- /offer-listing/buyer
+- /offer-listing/tenant
+
+Confirm:
+- The four description/criteria textareas are the same comfortable height
+- Landlord Property Description is no longer compressed
+- Other textareas are not affected
+- Save Draft, Next, and Submit still work

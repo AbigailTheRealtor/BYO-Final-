@@ -1,0 +1,64 @@
+TASK: Normalize Property Description textarea height across ALL Create Offer Listing flows
+
+SCOPE:
+Only Create Offer Listing blade files:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+- resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+
+DO NOT:
+- Touch Hire Agent flows
+- Touch Agent Profile flows
+- Change validation
+- Change labels/tooltips/placeholders
+- Add global textarea CSS affecting unrelated pages
+
+ISSUE:
+The Property Description / Criteria & Preferences textarea in the Landlord Create Offer Listing flow is noticeably shorter than the other Create Offer Listing flows.
+Seller, Buyer, and Tenant have taller, more visually balanced textareas.
+
+GOAL:
+All Create Offer Listing description textareas should have the SAME consistent height and styling.
+
+REQUIREMENTS:
+1. Audit all four description tab textarea implementations first.
+2. Find the textarea used for:
+   - Seller → Property Description
+   - Landlord → Property Description
+   - Buyer → Criteria & Preferences
+   - Tenant → Criteria & Preferences
+3. Normalize them so all four render identically.
+
+TARGET STYLE:
+- Large comfortable textarea
+- Approximately same height as Seller currently has
+- Consistent padding
+- Consistent border radius
+- Consistent resize behavior
+- Full width
+- No collapsed/min-height behavior
+
+IMPLEMENTATION:
+Preferred:
+- Add a shared utility class if one already exists in these files.
+OR
+- Apply identical inline class/style attributes to all four textareas.
+
+SAFE TARGET:
+min-height: 140px;
+
+IMPORTANT:
+Do NOT accidentally affect:
+- AI Questions textareas
+- Notes fields
+- Counter terms textareas
+- Any textarea outside the main Description tab
+
+DONE WHEN:
+- Seller, Landlord, Buyer, and Tenant Create Offer Listing description boxes are visually identical height.
+- Landlord no longer appears compressed.
+- No layout shifting occurs.
+- Save Draft / Next / Submit still work.
+- No console errors.
+- php -l passes for any edited PHP files.

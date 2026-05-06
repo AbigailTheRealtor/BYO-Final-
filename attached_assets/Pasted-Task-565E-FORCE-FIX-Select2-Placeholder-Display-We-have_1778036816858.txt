@@ -1,0 +1,96 @@
+Task #565E — FORCE FIX Select2 Placeholder Display
+
+We have tried Blade options, width, and init guards. The issue still remains.
+
+ROOT CAUSE:
+Some Select2 fields are already initialized by older/broken custom initializers, so the new initSelect2Fields() skips them. The rendered Select2 DOM never receives visible placeholder text.
+
+DO NOT AUDIT AGAIN. APPLY THIS PATCH.
+
+SCOPE:
+Create Offer Listing main blade files only:
+- seller/offer-seller-listing.blade.php
+- buyer/offer-buyer-listing.blade.php
+- landlord/offer-landlord-listing.blade.php
+- tenant/offer-tenant-listing.blade.php
+
+DO NOT TOUCH:
+- Partials
+- Routes
+- Controllers
+- Schema
+- Validation
+- Save/load logic
+- wire:model names
+- Option values
+
+ADD THIS FUNCTION TO EACH MAIN CREATE BLADE FILE AFTER EXISTING SELECT2 INIT CODE:
+
+function forceSelect2Placeholders() {
+    $('.select2-multiple, .select2-single').each(function () {
+        var $el = $(this);
+        var placeholder = $el.attr('data-placeholder') || 'Select';
+        var $container = $el.next('.select2-container');
+
+        if (!$container.length) {
+            return;
+        }
+
+        // Multi-select placeholder repair
+        var $searchField = $container.find('.select2-search__field');
+        if ($searchField.length && (!$el.val() || $el.val().length === 0)) {
+            $searchField.attr('placeholder', placeholder);
+            $searchField.css({
+                'width': '100%',
+                'min-width': '120px'
+            });
+        }
+
+        // Single-select placeholder repair
+        var $rendered = $container.find('.select2-selection__rendered');
+        if ($rendered.length && (!$el.val() || $el.val() === '')) {
+            $rendered.text(placeholder);
+            $rendered.addClass('select2-selection__placeholder');
+        }
+    });
+}
+
+RUN IT AFTER ALL EXISTING INIT CODE:
+
+$(document).ready(function () {
+    setTimeout(forceSelect2Placeholders, 300);
+});
+
+document.addEventListener('livewire:load', function () {
+    Livewire.hook('message.processed', () => {
+        setTimeout(forceSelect2Placeholders, 300);
+    });
+});
+
+ALSO ADD THIS CSS TO EACH MAIN CREATE BLADE FILE:
+
+.select2-container .select2-search__field::placeholder {
+    color: #6c757d !important;
+    opacity: 1 !important;
+}
+
+.select2-container .select2-search__field {
+    min-width: 120px !important;
+}
+
+.select2-selection__placeholder {
+    color: #6c757d !important;
+}
+
+VERIFY:
+Refresh the page hard.
+Check:
+- Seller Special Sale Provision
+- Buyer Acceptable Special Sale Provisions
+- Landlord Appliances Included, View, Desired Lease Term
+- Tenant Offered Lease Term, Leasing Space
+
+They must show “Select”.
+
+STOP:
+Do not keep changing Blade partials. This is a rendered Select2 DOM repair.

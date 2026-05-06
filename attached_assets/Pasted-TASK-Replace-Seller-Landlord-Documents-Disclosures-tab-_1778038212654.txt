@@ -1,0 +1,141 @@
+TASK: Replace Seller/Landlord Documents & Disclosures tab with simple multi-document uploader
+
+SCOPE:
+Only these Create Offer Listing files:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- Related Seller/Landlord Livewire component properties/methods only if needed to save uploads
+
+DO NOT:
+- Touch Buyer or Tenant files
+- Touch Hire Agent flows
+- Touch Agent Profile flows
+- Change database schema unless absolutely required
+- Keep the old per-disclosure dropdown/upload layout
+- Use Select2 for this section
+- Add global JS that affects other selects
+
+ISSUE:
+The current Documents & Disclosures tab has multiple conditional select fields and file upload fields stacked together. File upload controls are visually overriding later select fields/labels. Prior CSS/Select2 placeholder fixes did not solve the root layout issue.
+
+GOAL:
+Replace the complicated disclosure checklist layout for Seller and Landlord with a simple repeatable document upload section modeled after MLS Matrix:
+User chooses:
+1. Attachment/Document Type
+2. File Upload
+3. Optional Description
+4. Privacy/Visibility if existing system already supports it
+5. Add More Documents button
+
+DOCUMENT TYPE OPTIONS:
+Use this dropdown list:
+- Addendum
+- Brochure
+- Brokerage Relationship Disclosure
+- Community Information
+- Condo-Hotel Notice
+- Feature Sheet
+- Flood Disclosure
+- Floor Plan
+- Foreign Investment Disclosure
+- Green Certification/Energy Efficiency Document
+- HOA Disclosure
+- Home Inspection
+- Homeowner Association Disclosure
+- Housing For Older Persons Addendum/Rider
+- Inspection Report
+- Lead-Paint Disclosure
+- Milestone Inspection
+- PACE Loan Disclosure
+- Property Disclosure
+- Seller Disclosure
+- Sellers Mold Addendum to Property Disclosure
+- Sinkhole Disclosure
+- Structural Integrity Reserve Study
+- Survey
+- Turnover Inspection
+- Other
+
+OTHER LOGIC:
+If Document Type = Other:
+- Show text input directly below the dropdown
+- Label: Custom Document Type:
+- Placeholder: Enter custom document type (e.g., Insurance Quote, Roof Permit, Mold Report)
+- Save this custom value with that uploaded document
+
+REPEATABLE UPLOAD UI:
+Replace the old disclosure availability fields with a repeatable document row/card.
+
+Each row should include:
+- Document Type dropdown
+- If Other selected, Custom Document Type input
+- File input
+- Optional Description input
+- Remove button for rows after the first one
+
+Buttons:
+- Add Another Document
+- Existing Save Draft / Next / Submit buttons must continue working
+
+DEFAULT:
+Show one blank document upload row by default.
+
+VALIDATION:
+- Do not require documents to submit listing.
+- If a user selects a Document Type but does not upload a file, show a clear inline error or allow save as draft without blocking final submit only if current behavior allows optional docs.
+- If Other is selected, require Custom Document Type only when a file is uploaded or when final submit validates that document row.
+- Accept common document/image file types only if current file validation already exists.
+- Preserve existing upload storage behavior if possible.
+
+IMPORTANT:
+Remove or bypass the old fields in Seller and Landlord Documents & Disclosures tab:
+- Landlord Disclosure Available
+- Seller Disclosure Available
+- Survey Available
+- Inspection Report Available
+- HOA/Condo Documents Available
+- Flood Disclosure Available
+- Lead-Based Paint Disclosure Required
+- Environmental Report Available
+- Additional Documents Available
+and their individual conditional upload blocks.
+
+The new system should not create one dropdown per disclosure type. It should use one document type dropdown per upload row.
+
+TECHNICAL REQUIREMENTS:
+1. Audit current Seller/Landlord component properties and save logic for document uploads before editing.
+2. Reuse existing storage/path mechanism if present.
+3. If current implementation only supports fixed fields, create a single array property such as:
+   $documents = [
+     [
+       'type' => '',
+       'custom_type' => '',
+       'description' => '',
+       'file' => null,
+       'visibility' => 'private'
+     ]
+   ];
+4. Add methods if needed:
+   addDocumentRow()
+   removeDocumentRow($index)
+5. Ensure Livewire wire:model names are indexed correctly:
+   documents.0.type
+   documents.0.custom_type
+   documents.0.description
+   documents.0.file
+6. Avoid Select2 in this section. Use plain native select styled with existing input-cover/icon layout.
+7. Make sure file input does not overlap or cover any later field.
+8. Keep layout responsive and consistent with the rest of the wizard.
+
+DONE WHEN:
+- Seller Documents & Disclosures tab shows simple repeatable document upload rows.
+- Landlord Documents & Disclosures tab shows simple repeatable document upload rows.
+- Selecting Other reveals Custom Document Type input.
+- User can click Add Another Document repeatedly.
+- User can remove extra rows.
+- File inputs no longer overlap labels, icons, or dropdowns.
+- Save Draft, Next, and Submit still work.
+- No Buyer/Tenant files changed.
+- No Select2 placeholder JS is added for this section.
+- php -l passes for any edited PHP files.
+- Blade renders without console errors.
