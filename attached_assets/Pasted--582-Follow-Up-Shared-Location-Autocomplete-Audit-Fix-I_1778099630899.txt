@@ -1,0 +1,155 @@
+#582 Follow-Up — Shared Location Autocomplete Audit & Fix
+
+IMPORTANT:
+This is a targeted audit-and-fix task only.
+DO NOT rerun the seeder unless absolutely necessary.
+DO NOT run migrate:fresh.
+DO NOT wipe or reseed the database.
+DO NOT rewrite the listing systems.
+DO NOT refactor Livewire components.
+DO NOT touch bidding, services, compensation, Agent Profiles, or unrelated flows.
+Make the smallest possible fix only after confirming the root cause.
+Stop after verification and report results.
+
+Current status already confirmed:
+- FlCitiesPatchSeeder successfully ran.
+- Florida city count increased from 64 → 111.
+- Treasure Island and all Pinellas cities now exist in us_cities.
+- county_id=368 confirmed for Pinellas County.
+- No files were changed during the seeder task.
+
+Problem:
+The actual UI still does NOT show:
+- Treasure Island
+- Madeira Beach
+- St. Pete Beach
+- Seminole
+- Palm Harbor
+- Dunedin
+- Safety Harbor
+
+Additionally:
+- Typing “Pinellas” in County fields also does NOT show Pinellas County.
+
+This affects BOTH:
+- Create Offer Listing flows
+- Hire Agent listing flows
+
+So this is likely a shared/global location autocomplete issue affecting both city and county lookups.
+
+Affected systems:
+- Seller Create Offer Listing
+- Buyer Create Offer Listing
+- Landlord Create Offer Listing
+- Tenant Create Offer Listing
+- Buyer Hire Agent
+- Seller Hire Agent
+- Landlord Hire Agent
+- Tenant Hire Agent
+
+Step 1 — Audit the shared location lookup system
+Search globally for:
+- UsCity
+- UsCounty
+- us_cities
+- us_counties
+- citySuggestions
+- countySuggestions
+- searchCities
+- searchCounties
+- autocomplete
+- Select2
+- LocationService
+- updatedCity
+- updatedCounty
+- getCitySuggestions
+- getCountySuggestions
+
+Find the actual shared methods/endpoints used by BOTH Create Offer Listing and Hire Agent flows.
+
+Step 2 — Verify DB mismatch is NOT occurring
+Confirm the browser/web requests use the SAME database Artisan seeded.
+
+Compare:
+- .env DB settings
+- config/database.php
+- DB connection used during web requests
+- DB connection used during Artisan seeding
+- actual query results during browser requests
+
+Confirm the running web app can see Treasure Island in us_cities and Pinellas County in us_counties.
+
+Step 3 — Test the exact lookup methods used by the UI
+Do NOT only query the tables directly.
+
+Run the exact methods/queries used by autocomplete for:
+Cities:
+- Treasure
+- Treasure I
+- Treasure Island
+- Madeira
+- St. Pete
+- Palm Harbor
+
+Counties:
+- Pinellas
+- Pin
+- Hillsborough
+
+Confirm whether the actual autocomplete methods return results.
+
+Step 4 — Audit common shared failure points
+Check whether the shared autocomplete logic:
+- uses cached/static lists
+- uses another table instead of us_cities/us_counties
+- filters too aggressively
+- requires exact match
+- requires state selection first
+- filters by ZIP incorrectly
+- limits results before matching
+- searches wrong columns
+- returns wrong JSON structure for Select2
+- uses stale frontend state
+- fails to reinitialize after Livewire updates
+- uses different DB connections between web and Artisan
+
+Step 5 — Fix ONLY the confirmed root cause
+Examples:
+- Fix shared DB connection mismatch
+- Point autocomplete to correct tables
+- Fix stale cache
+- Fix restrictive query filters
+- Fix Select2 response structure
+- Fix Select2 initialization/reinitialization
+- Fix shared LocationService if broken
+
+Do NOT rebuild the location system.
+
+Step 6 — Required UI proof
+After the fix, verify in the ACTUAL browser UI:
+
+City fields:
+- Typing “Treasure” shows Treasure Island, FL
+- Typing “Madeira” shows Madeira Beach, FL
+- Typing “St. Pete” shows St. Pete Beach, FL
+- Typing “Palm” shows Palm Harbor, FL
+
+County fields:
+- Typing “Pinellas” shows Pinellas County
+- Typing “Hills” shows Hillsborough County
+
+Also confirm:
+- Selecting Treasure Island auto-fills County = Pinellas County and State = FL/Florida
+- Selecting Pinellas County auto-fills State correctly
+
+Verify this works in BOTH:
+- Create Offer Listing flows
+- Hire Agent flows
+
+Report back with:
+- confirmed root cause
+- exact shared file/method responsible
+- files changed
+- browser/UI proof
+- confirmation no unrelated flows were touched
+- confirmation task stopped after verification
