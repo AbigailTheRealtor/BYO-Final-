@@ -1,29 +1,4 @@
-<h4>Your Counter Terms</h4>
-
-@php
-    $agentBidData  = $pab?->get ?? null;
-    $agentServices = [];
-    if ($agentBidData && !empty($agentBidData->services)) {
-        $svcRaw        = $agentBidData->services;
-        $agentServices = is_string($svcRaw) ? (json_decode($svcRaw, true) ?? []) : (array) $svcRaw;
-        $agentServices = array_values(array_filter($agentServices));
-    }
-@endphp
-
-@if ($agentBidData)
-<div class="mb-4 p-3 rounded" style="background:#f0f9fa;border-left:4px solid #049399;">
-    <p class="fw-bold mb-1" style="color:#049399;">Agent Representation Terms (Reference Only)</p>
-    <p class="text-muted small mb-2">Agent representation terms were agreed upon separately and are shown here for reference only.</p>
-    @if (!empty($agentBidData->commission_structure))
-        <p class="mb-1 small"><strong>Commission Structure:</strong> {{ $agentBidData->commission_structure }}</p>
-    @endif
-    @if (!empty($agentServices))
-        <p class="mb-0 small"><strong>Services Included:</strong>
-            {{ implode(', ', array_slice($agentServices, 0, 5)) }}{{ count($agentServices) > 5 ? ' (+' . (count($agentServices) - 5) . ' more)' : '' }}
-        </p>
-    @endif
-</div>
-@endif
+<h4>Client Details</h4>
 
 {{-- Client Contact Info --}}
 <div class="card mb-4">
@@ -116,15 +91,3 @@
     </div>
 </div>
 
-{{-- Additional Terms or Notes --}}
-<div class="card mb-4">
-    <div class="card-header"><h5 class="mb-0">Additional Terms or Notes <span class="text-muted fw-normal small">(Non-Binding Context)</span></h5></div>
-    <div class="card-body">
-        <div class="alert alert-info bg-light-info border-info mb-3">
-            <strong>📋 Share any special instructions, preferences, or context to help the Agent understand your counter offer.</strong>
-        </div>
-        <textarea wire:model="additional_details" class="form-control" rows="4"
-            placeholder="Enter any additional terms, conditions, or notes..."
-            style="padding:10px;font-size:16px;"></textarea>
-    </div>
-</div>

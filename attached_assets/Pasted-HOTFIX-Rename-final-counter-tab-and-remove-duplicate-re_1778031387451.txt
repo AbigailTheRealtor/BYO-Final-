@@ -1,0 +1,65 @@
+HOTFIX — Rename final counter tab and remove duplicate reference/note sections
+
+Issue:
+On Agent Preset Counter Offer pages, the final tab is currently labeled "Counter Terms" and includes duplicate/unnecessary sections.
+
+Correct behavior:
+The final tab should collect base client/listing details for the Agent to understand the user’s situation. It is not really “counter terms.”
+
+Rename final tab:
+From:
+Counter Terms
+
+To:
+Client Details
+
+Remove entirely from final tab:
+1. Agent Representation Terms (Reference Only) block
+2. The text:
+   "Agent representation terms were agreed upon separately and are shown here for reference only."
+3. Commission Structure / Services Included reference summary
+4. Additional Terms or Notes (Non-Binding Context) section
+
+Reason:
+Services and Broker Compensation are already handled in their own tabs.
+Additional Terms are already handled in the Additional Terms tab.
+Do not duplicate them on the final Client Details tab.
+
+Keep on final Client Details tab:
+- Client Contact Information
+- Location / Target
+- Deal Terms
+- Qualification Signals
+
+Autopopulate rule:
+Where possible, prefill these fields from the existing listing/user/counter meta data.
+Do not force blank re-entry if data already exists.
+Allow the user to edit the values before submitting.
+
+Scope:
+Only Agent Preset / Agent Bid Counter pages:
+- /buyer/counter-terms/{id}
+- /seller/counter-terms/{id}
+- /landlord/counter-terms/{id}
+- /tenant/counter-terms/{id}
+
+Do NOT touch:
+- Create Offer Listing pages
+- Agent Preset setup pages
+- Agent Profile
+- Hire Agent flows
+- Direct Hire
+- database/migrations/routes
+- accepted bid summary
+
+Validation:
+- Final tab label says Client Details
+- Services tab still first
+- Broker Compensation tab still second
+- Additional Terms tab still third
+- Referral Fee tab appears only when applicable before Client Details
+- Client Details tab is last
+- Submit appears only on Client Details tab
+- Removed Agent Representation reference block
+- Removed duplicate Additional Terms or Notes section
+- Client/detail fields remain and save properly

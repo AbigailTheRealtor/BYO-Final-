@@ -40,7 +40,7 @@
                         if ($isListingCreatedByAgent) {
                             $tabs[] = 'Referral Fee & Cooperation Terms';
                         }
-                        $tabs[] = 'Counter Terms';
+                        $tabs[] = 'Client Details';
                         $counterTermsTabIndex = $isListingCreatedByAgent ? 4 : 3;
                     @endphp
 

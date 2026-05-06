@@ -1,0 +1,114 @@
+READ-ONLY FULL AUDIT — DO NOT CHANGE CODE
+
+Issue:
+Select2 / multi-select fields across Create Offer Listing flows are missing the visible "Select" placeholder text.
+
+This issue exists across ALL 4 roles:
+- Seller
+- Landlord
+- Buyer
+- Tenant
+
+Symptoms:
+1. Some fields show icon but NO "Select"
+2. Some fields show neither icon nor "Select"
+3. Some fields work correctly
+
+Goal:
+Identify EVERY field across all Create Offer Listing flows where the visible placeholder "Select" is missing.
+
+---
+
+Known examples (NOT exhaustive — use only as reference):
+
+Tenant:
+- Acceptable Property Conditions
+- Offered Lease Term
+- Leasing Space
+
+Buyer:
+- Acceptable Property Conditions
+- Acceptable Property Style
+- Offered Financing/Currency
+
+Landlord:
+- Appliances Included
+- View
+- Rent Includes
+
+Seller:
+- Appliances Included
+- View
+- Offered Financing/Currency
+
+IMPORTANT:
+These are just examples. You must find ALL affected fields across all roles.
+
+---
+
+Audit Requirements:
+
+1. Scan ALL Create Offer Listing files:
+   - Seller
+   - Landlord
+   - Buyer
+   - Tenant
+
+2. Inspect all:
+   - select2-multiple
+   - multiple selects
+   - Select2 initializations
+   - data-placeholder attributes
+   - placeholder: 'Select'
+   - width: '100%'
+   - wire:ignore wrappers
+   - has-select-icon / has-icon usage
+
+3. Build a FULL list grouped by role:
+
+For EACH broken field, return:
+- Role (Seller / Landlord / Buyer / Tenant)
+- Tab name
+- Field label
+- File path
+- Line number
+- Selector (id/class)
+- Field type (Select2 / native select)
+- Has data-placeholder="Select" (yes/no)
+- Has placeholder: 'Select' in JS (yes/no)
+- Has width: '100%' (yes/no)
+- Is Select2 initialized (yes/no)
+- Has wire:ignore (yes/no)
+- Current issue:
+  - Missing Select
+  - Missing icon
+  - Both missing
+  - Hidden due to CSS
+
+---
+
+Root Cause Analysis:
+
+Determine which of these applies:
+- Select2 not initialized
+- Missing placeholder config
+- Missing width: '100%'
+- Livewire re-render wiping Select2
+- Placeholder hidden behind padding/icon
+- Field not included in init function
+- CSS overlap issue
+
+---
+
+DO NOT:
+- Modify code
+- Add icons manually
+- Change field structure
+- Touch other flows (Hire Agent, Counter Terms, Agent Presets, etc.)
+
+---
+
+Return ONLY:
+1. Full field list by role
+2. Root cause(s)
+3. Minimal unified fix plan
