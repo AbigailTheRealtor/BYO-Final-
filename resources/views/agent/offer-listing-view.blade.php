@@ -1102,7 +1102,7 @@
                         @php $ofv::row('Brokerage', $fmt($d['agent_brokerage'])); @endphp
                         @php $ofv::row('License #', $fmt($d['agent_license_number'])); @endphp
                         @php $ofv::row('NAR Member ID', $fmt($d['agent_nar_member_id'])); @endphp
-                        @php $ofv::row('Current Status', $fmt($d['current_status'])); @endphp
+                        @if(!$isBuyer) @php $ofv::row('Current Status', $fmt($d['current_status'])); @endphp @endif
                         @if($d['video_link'])
                         <div class="col-md-4">
                             <div class="text-muted small mb-1">Agent Video Link</div>

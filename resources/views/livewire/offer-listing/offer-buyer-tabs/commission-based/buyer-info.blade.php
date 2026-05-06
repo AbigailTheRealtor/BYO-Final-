@@ -44,28 +44,6 @@
     </div>
 </div>
 
-<!-- Buyer’s Current Status -->
-<div class="form-group mt-3">
-    <label class="fw-bold">Buyer’s Current Status:</label>
-
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Indicate the Buyer’s current situation to help Agents tailor their support.">
-        <i class="fa-solid fa-circle-info"></i>
-
-    </span>
-    <div class="input-cover">
-        <select wire:model="current_status" class="form-control has-icon" data-icon="fa-solid fa-chart-pie">
-            <option value="">Select status</option>
-            <option value="Currently Renting">Currently Renting</option>
-            <option value="First-Time Buyer">First-Time Buyer</option>
-            <option value="Homeowner – Selling to Buy">Homeowner – Selling to Buy</option>
-            <option value="Homeowner – Keeping Current Property">Homeowner – Keeping Current Property</option>
-            <option value="Relocating from Out of Area">Relocating from Out of Area</option>
-            <option value="Investor">Investor</option>
-        </select>
-    </div>
-    <span class="error mt-2" id="buyer_status_error"></span>
-</div>
 
 @if ($service_type === 'full_service')
 
