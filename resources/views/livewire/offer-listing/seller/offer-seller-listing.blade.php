@@ -1666,6 +1666,9 @@
 
             addIconsToInputs();
             setTimeout(function() { addIconsToInputs(); }, 0);
+            setTimeout(function() { addIconsToInputs(); }, 150);
+            setTimeout(function() { addIconsToInputs(); }, 400);
+            setTimeout(function() { addIconsToInputs(); }, 800);
 
             // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
             // regardless of whether jQuery event binding caught the change event.
@@ -2845,7 +2848,7 @@
 
 
         Livewire.hook('message.processed', () => {
-            addIconsToInputs();
+            setTimeout(function() { addIconsToInputs(); }, 0);
 
             // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;
@@ -2884,6 +2887,10 @@
                     window._manualTabSwitch(_savedTabId);
                 }
             }
+        });
+
+        document.addEventListener('shown.bs.tab', function() {
+            setTimeout(function() { addIconsToInputs(); }, 0);
         });
 
         // Single delegated jQuery handler for all five "Other" free-text wrapper fields.
