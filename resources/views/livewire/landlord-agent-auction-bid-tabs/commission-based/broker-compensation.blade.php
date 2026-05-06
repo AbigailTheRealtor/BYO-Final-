@@ -9,6 +9,7 @@
     </div>
 </div>
 <!-- Info Alert -->
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($purchase_fee_type) || !empty($purchase_fee_flat) || !empty($purchase_fee_rental_period) || !empty($purchase_fee_percentage_combo) || !empty($purchase_fee_flat_combo) || !empty($purchase_fee_other) || !empty($purchase_fee_net_aggregate) || !empty($purchase_fee_gross_rent) || !empty($sales_tax_option_gross) || !empty($purchase_fee_monthly_percentage) || !empty($purchase_fee_months) || !empty($sales_tax_option_monthly) || !empty($purchase_fee_flat_commercial) || !empty($sales_tax_option_flat) || !empty($purchase_fee_other_commercial))
 @if ($property_type === 'Residential Property')
 
     <div class="form-group mb-4">
@@ -245,7 +246,9 @@
         </div>
     </div>
 @endif
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($tenant_broker_commission_structure) || !empty($tenant_broker_fee_structure) || !empty($tenant_broker_percentage) || !empty($tenant_broker_gross_lease) || !empty($tenant_broker_first_month_rent) || !empty($tenant_broker_flat_fee) || !empty($tenant_broker_other))
 @if ($property_type === 'Residential Property')
 
     <!-- Tenant's Broker Commission Structure -->
@@ -353,6 +356,9 @@
     </div>
 
 @endif
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($broker_fee_timing) || !empty($broker_fee_days_from_rent) || !empty($broker_fee_days_after_lease) || !empty($broker_fee_days_after_rent) || !empty($broker_fee_timing_other))
 @if ($property_type === 'Residential Property')
 
     <!-- Payment Timing for Broker Fees -->
@@ -450,6 +456,9 @@
 
     </div>
 @endif
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($renewal_fee_type) || !empty($renewal_fee_percentage) || !empty($renewal_fee_lease_value) || !empty($renewal_fee_first_month) || !empty($renewal_fee_flat_free) || !empty($renewal_fee_custom) || !empty($renewal_fee_sales_tax_lease_value) || !empty($renewal_fee_no_of_months) || !empty($renewal_fee_sales_tax_first_month) || !empty($renewal_fee_sales_tax_flat_fee))
 <!--. Lease Renewal/Extension Fee -->
 @if ($property_type === 'Residential Property')
 
@@ -656,7 +665,9 @@
 
     </div>
 @endif
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($expansion_commission_percentage))
 @if ($property_type === 'Commercial Property')
     <!-- Expansion Commission for Lease Amendment (Commercial only) -->
     <div class="form-group mb-4">
@@ -681,7 +692,9 @@
         </div>
     </div>
 @endif
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($interested_in_property_management) || !empty($interested_in_property_management_fee) || !empty($interested_in_property_management_fee_gross_lease) || !empty($interested_in_property_management_fee_rental_periord) || !empty($interested_in_property_management_fee_flate_free) || !empty($interested_in_property_management_fee_other))
 <!-- Interested in Property Management -->
 <div class="form-group">
     <label class="fw-bold d-flex align-items-center">
@@ -779,7 +792,9 @@
         Availability and terms may vary by Agent/Broker and are subject to brokerage policies and state law.
     </div>
 </div>
+@endif
 
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($interested_lease_option_agreement) || !empty($lease_value) || !empty($purchase_value))
 <div class="form-group mb-2">
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease-Option Agreement:
@@ -882,6 +897,9 @@
         <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
     </div>
 @endif
+@endif
+
+@if (!isset($isCounterMode) || !$isCounterMode || !empty($interested_in_selling) || !empty($interested_in_selling_type) || !empty($landlord_broker_purchase_price) || !empty($landlord_broker_percentage_price) || !empty($landlord_broker_dollar_price) || !empty($landlord_broker_flate_fee) || !empty($landlord_broker_other))
 <div class="form-group mb-4 mt-3">
     <label class="fw-bold">Interested in Selling:</label>
 
@@ -1003,6 +1021,8 @@
     </div>
 
 @endif
+@endif
+
 @if (!isset($isCounterMode) || !$isCounterMode || !empty($protection_period))
 @if ($property_type === 'Residential Property')
     <!-- Protection Period Timeframe -->

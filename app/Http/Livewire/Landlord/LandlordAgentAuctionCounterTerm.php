@@ -624,6 +624,9 @@ class LandlordAgentAuctionCounterTerm extends Component
             // === Expansion Commission (Commercial Only) ===
             'expansion_commission_percentage',
 
+            // === Lease Fee Flat (Interested-in-Selling flat-fee toggle) ===
+            'lease_fee_flat',
+
             // === Tenant Broker Fee ===
             'tenant_broker_commission_structure',
             'tenant_broker_fee_structure',
