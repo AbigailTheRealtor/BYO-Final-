@@ -2079,39 +2079,46 @@ $tenantPays = [
 
                 const requiredFields = currentTabContent.querySelectorAll(
                     'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
+                for (const input of requiredFields) {
+                    if (!isElementVisible(input)) continue;
 
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
+                    const isEmpty = (
+                        input.type === 'file'     ? !input.files || input.files.length === 0 :
+                        input.type === 'checkbox' ? !input.checked :
+                        input.type === 'radio'    ? !currentTabContent.querySelector(`input[name="${input.name}"]:checked`) :
+                        !input.value?.toString().trim()
+                    );
+
+                    if (isEmpty) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (!errorMessageContainer) {
+                                const errorMessage = document.createElement('div');
+                                errorMessage.className = 'error mt-2';
+                                errorMessage.textContent = 'This field is required.';
+                                formGroup.appendChild(errorMessage);
+                            } else {
+                                errorMessageContainer.textContent = 'This field is required.';
                             }
                         }
-                    });
+                    } else {
+                        input.classList.remove('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (errorMessageContainer) {
+                                errorMessageContainer.remove();
+                            }
+                        }
+                    }
                 }
 
                 const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
+                if (citiesContainer && isElementVisible(citiesContainer)) {
                     const cityBadges = citiesContainer.querySelectorAll('.badge');
                     if (!cityBadges || cityBadges.length === 0) {
                         isValid = false;
@@ -2132,7 +2139,7 @@ $tenantPays = [
                 }
 
                 const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
+                if (countiesContainer && isElementVisible(countiesContainer)) {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         isValid = false;
@@ -2157,11 +2164,15 @@ $tenantPays = [
                 }
 
                 if (isValid) {
-                    const nextTabEl = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
-                    if (nextTabEl) {
-                        new bootstrap.Tab(nextTabEl).show();
-                        nextTabEl.click();
+                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                    const _curIdx = _allTabs.indexOf(currentTab);
+                    if (_curIdx < _allTabs.length - 1) {
+                        const _nextTab = _allTabs[_curIdx + 1];
+                        var _nId = _nextTab.getAttribute('data-bs-target');
+                        if (_nId) {
+                            window._manualTabSwitch(_nId);
+                            sessionStorage.setItem('landlord_edit_active_tab', _nId);
+                        }
                     }
                 }
 
@@ -2434,6 +2445,26 @@ $tenantPays = [
 
 
 
+        // Direct DOM tab switch — bypasses Bootstrap Tab API entirely
+        if (!window._manualTabSwitch) {
+            window._manualTabSwitch = function(targetId) {
+                var _links = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                _links.forEach(function(link) {
+                    var _lt = link.getAttribute('data-bs-target');
+                    var _hit = (_lt === targetId);
+                    link.classList.toggle('active', _hit);
+                    link.setAttribute('aria-selected', _hit ? 'true' : 'false');
+                    if (_lt) {
+                        var _pane = document.querySelector(_lt);
+                        if (_pane) {
+                            _pane.classList.toggle('show', _hit);
+                            _pane.classList.toggle('active', _hit);
+                        }
+                    }
+                });
+            };
+        }
+
         // Delegated wizard nav — bound once, survives Livewire DOM morphing
         if (!window.__wizardNavBound) {
             window.__wizardNavBound = true;
@@ -2498,11 +2529,10 @@ $tenantPays = [
             if (!__tabRestoreGuard) {
                 __tabRestoreGuard = true;
                 var savedTabId = sessionStorage.getItem('landlord_edit_active_tab');
-                if (savedTabId) {
-                    var tabEl = document.getElementById(savedTabId);
-                    if (tabEl && !tabEl.classList.contains('active')) {
-                        var bsTab = new bootstrap.Tab(tabEl);
-                        bsTab.show();
+                if (savedTabId && typeof window._manualTabSwitch === 'function') {
+                    var _activePane = document.querySelector(savedTabId);
+                    if (_activePane && !_activePane.classList.contains('active')) {
+                        window._manualTabSwitch(savedTabId);
                     }
                 }
                 setTimeout(function() { __tabRestoreGuard = false; }, 200);
