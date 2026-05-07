@@ -54,7 +54,7 @@
         }
 
         .form-control {
-            min-height: 50px;
+            min-height: 42px;
         }
 
         .input-cover .form-control {
@@ -2448,14 +2448,16 @@ $tenantPays = [
         }
 
         function addIconsToInputs() {
-            document.querySelectorAll('.has-icon').forEach(input => {
+            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                const parent = input.parentNode;
-                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
-                if (parent.querySelector(':scope > .input-icon')) return;
+                if (!iconClass) return;
+                const wrapper = input.closest('.input-cover');
+                if (!wrapper) return;
+                if (input.type === 'file') return;
+                if (wrapper.querySelector('.data-icon-rendered')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                parent.insertBefore(icon, input);
+                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
 
