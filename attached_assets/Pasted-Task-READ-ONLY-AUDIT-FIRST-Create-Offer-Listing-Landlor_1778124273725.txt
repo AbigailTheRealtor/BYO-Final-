@@ -1,0 +1,134 @@
+Task: READ-ONLY AUDIT FIRST — Create Offer Listing (Landlord) full UI/form audit with safeguards
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/landlord
+
+Login:
+Abigailbaschuk@gmail.com
+12345678
+
+Scope:
+Create Offer Listing → Landlord only.
+
+DO NOT FIX YET.
+First perform a read-only audit and report root causes, exact files, and recommended smallest fixes.
+
+Very Important Safeguards:
+- Landlord Create Offer Listing only
+- Do NOT touch Buyer, Seller, or Tenant flows
+- Do NOT touch Hire Agent flows except only to compare styling/formatting
+- Do NOT change database schema
+- Do NOT rename Livewire properties
+- Do NOT change routes/controllers unless audit proves absolutely necessary
+- Do NOT modify save/load draft backend logic during audit
+- Do NOT globally change Select2, icons, currency formatting, tabs, or upload behavior
+- No broad refactors
+- No redesigns
+- No destructive edits
+
+Audit Items:
+
+1. Property Details Tab
+- “Acceptable Counties” appears in Property Details and should not be there.
+- View, Water, Amenities and Property Features, and related icons do not match Hire Agent and Create Offer Listing Seller.
+- Commercial Property Details tab scrolls to top when typing into fields.
+- On Edit/Draft, icons disappear from Property Details tab and later tabs.
+
+2. Required Field Red Notifications
+- Remove or suppress the red tab-level required-field notifications that flash at the top of tabs.
+- Confirm whether validation still works normally without these visual tab alerts.
+
+3. Textarea/Box Size Fixes
+These fields need regular textarea box sizing like “Landlord Approval Conditions”:
+- Additional Landlord Lease Terms & Renewal Option Details
+- Legal Description
+- Additional Parcel IDs
+- Special Assessment Description
+- CAM / NNN / Additional Rent Charges
+- Rent Escalation Terms
+- Tenant Improvement / Buildout Terms
+- Permitted Use / Use Restrictions
+- Signage Rights
+- Commercial Parking Terms
+- Commercial Approval Conditions
+
+4. Currency Formatting
+These fields need $ formatting to match Hire a Seller’s Agent:
+- Security Deposit Required
+- Desired Lease Price
+- Total Move-In Funds Required
+- Annual Property Taxes
+- Annual CDD Fee
+- Special Assessment Amount
+- Association Fee Amount
+
+5. Placeholder Text
+- Property Description placeholder should change based on property type:
+  - Residential = residential-focused example
+  - Commercial = commercial-focused example
+- Minimum Lease Period “Other” placeholder should be: Enter title (e.g., example)
+- Association Fee Amount “Other” placeholder should be: Enter title (e.g., example)
+
+6. Remove Question
+- Delete “Pet Restrictions” question from Create Offer Listing → Landlord only.
+
+7. Association Fee Include Formatting
+- “What does the Association Fee include?” has formatting/layout issues. Audit and identify exact cause.
+
+8. Documents Page
+Audit the entire documents page.
+Current issues:
+- Format is unstable.
+- “Other document” repeats multiple times.
+- Other document appears under wrong default document sections such as Lead-Based Paint Disclosure, Environmental Report Available, etc.
+- Determine whether the cleaner fix is to replace the current default-document layout with an add-row document uploader:
+  - User selects document type
+  - Uploads one document
+  - Can click “Add Another Document”
+  - Each row is independent
+  - Other document has its own custom title field
+Do not implement yet. Recommend safest path.
+
+9. Description Tab
+- Next button is not working on Description tab.
+- Identify exact JS/Livewire/validation issue.
+
+10. Photos Upload
+- Photos are not uploading consistently.
+- Upload takes too long or only uploads once.
+- Adding more photos after first upload does not work reliably.
+- Audit upload component, Livewire upload handling, validation, progress state, and file array reset behavior.
+
+11. Remove Services Tab
+- Remove Services tab from Create Offer Listing → Landlord only.
+- Audit tab index/navigation impact before changing anything.
+
+12. Broker Compensation & Agency Agreement Tab
+Do not delete the whole tab.
+Reduce it so it only keeps these fields:
+- Landlord’s Broker Lease Fee:
+- Tenant's Broker Commission Structure:
+- Payment Timing for Broker Fees:
+- Interested in Offering a Lease-Option Agreement:
+- Interested in Selling:
+
+Audit what fields/components must be safely removed/hidden without breaking save, draft, edit, submit, or tab navigation.
+
+13. Edit/Draft Consistency
+Edit/Draft must look identical to Create mode:
+- Same fields
+- Same formatting
+- Same icons
+- Same placeholders
+- Same conditional logic
+- Same uploaded/saved values
+- User should not be able to visually tell the difference between Create, Edit, and Draft except populated data.
+
+Deliver audit report with:
+- Root cause per issue
+- Exact file(s) involved
+- Whether each fix is Blade-only, CSS-only, JS-only, Livewire-only, or mixed
+- Risk level for each fix
+- Recommended order of implementation
+- Which issues should be grouped together and which should be separate tasks
+- Confirmation no files were changed
