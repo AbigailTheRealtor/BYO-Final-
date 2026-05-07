@@ -335,6 +335,14 @@
             font-weight: 600;
         }
 
+        /* Fix invisible draft link text in Load Saved Draft modal.
+           Tailwind preflight's "a { color: inherit }" interacts with Bootstrap's
+           CSS custom property chain differently on this page, causing .btn-link
+           text to resolve to white. Scope the fix tightly to #draftModal only. */
+        #draftModal .btn-link {
+            color: #0d6efd !important;
+        }
+
     </style>
 @endpush
 
