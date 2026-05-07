@@ -1653,17 +1653,17 @@ $lease_types = [
                 </div>
                 @endif
 
-                {{-- @if (session()->has('success'))
+                @if (session()->has('success'))
                     <div class="alert alert-success">
                         {{ session('success') }}
-            </div>
-            @endif
+                    </div>
+                @endif
 
-            @if (session()->has('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-            @endif --}}
+                @if (session()->has('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
             <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
 
@@ -1706,7 +1706,7 @@ $lease_types = [
                     ? 'Sale Terms'
                     : 'Leasing Terms');
                     if ($user_type === 'tenant') {
-                    $restTabs = [$firstRest, 'Pre-Screening', 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
+                    $restTabs = [$firstRest, 'Pre-Screening', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     } else {
                     $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
@@ -1725,10 +1725,17 @@ $lease_types = [
                     ];
                     $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
 
+                    if ($user_type === 'tenant') {
                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                    $infoTabs[$user_type] ?? null,
-                    'AI Questions',
+                        'AI Questions',
+                        $infoTabs[$user_type] ?? null,
                     ]);
+                    } else {
+                    $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
+                        $infoTabs[$user_type] ?? null,
+                        'AI Questions',
+                    ]);
+                    }
                     @endphp
 
                     <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -1878,6 +1885,7 @@ $lease_types = [
 
                                 <!-- Services Tab - Adjust index based on user_type -->
 
+                                @if ($user_type !== 'tenant')
                                 <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
                                     id="services" role="tabpanel" aria-labelledby="services-tab">
 
@@ -1887,14 +1895,13 @@ $lease_types = [
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
-                                    @elseif($user_type === 'tenant')
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
                                     @endif
                                 </div>
+                                @endif
 
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 4 : 5) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1908,9 +1915,9 @@ $lease_types = [
                                     @endif
                                 </div>
 
-                                <!-- Broker Compensation Tab - Adjust index based on user_type -->
+                                <!-- Broker Compensation Tab -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
                                     @if ($user_type === 'seller')
@@ -1961,7 +1968,17 @@ $lease_types = [
                                         : (in_array($user_type, ['landlord', 'buyer', 'seller'])
                                             ? ($isAgentUser ? 7 : 6)
                                             : ($isAgentUser ? 8 : 7));
+                                    $aiQuestionsTabIndex = $user_type === 'tenant'
+                                        ? ($infoTabIndex - 1)
+                                        : ($infoTabIndex + 1);
                                 @endphp
+
+                                <!-- AI Questions Tab (full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
+
                                 <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                                     id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
 
@@ -1976,13 +1993,6 @@ $lease_types = [
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.landlord-info')
                                     @endif
-                                </div>
-
-                                <!-- AI Questions Tab (full_service) -->
-                                @php $aiQuestionsTabIndex = $infoTabIndex + 1; @endphp
-                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                                 @elseif($service_type === 'limited_service')
                                 <div class="tab-pane fade {{ $activeTab === 1 ? 'show active' : '' }}"

@@ -437,6 +437,7 @@ $safeKey = function(...$parts) {
     </div>
 @endif
 
+@if($user_type !== 'tenant') {{-- hidden: Protection Period Timeframe --}}
 <!-- Protection Period Timeframe -->
 <div class="form-group mb-4 mt-3">
     <label class="fw-bold">
@@ -454,7 +455,10 @@ $safeKey = function(...$parts) {
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div>
+@endif
 
+
+@if($user_type !== 'tenant') {{-- hidden: Early Termination Fee --}}
 <!-- Early Termination Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold ">
@@ -486,6 +490,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
+
+@if($user_type !== 'tenant') {{-- hidden: Retainer Fee --}}
 <!-- Retainer Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -541,7 +548,10 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
 
+
+@if($user_type !== 'tenant') {{-- hidden: Tenant Agency Agreement Timeframe --}}
 <!-- Tenant Agency Agreement Timeframe -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -573,6 +583,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
+
+@if($user_type !== 'tenant') {{-- hidden: Acceptable Brokerage Relationship --}}
 <!-- Acceptable Brokerage Relationship -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -637,6 +650,9 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+@endif
+
+@if($user_type !== 'tenant') {{-- hidden: Additional Terms --}}
 <!-- Additional Terms -->
 <div class="form-group mb-4">
     <label class="fw-bold">
@@ -649,6 +665,8 @@ $safeKey = function(...$parts) {
     <textarea wire:model="additional_details_broker" class="form-control mt-2" rows="3"
         placeholder="Enter any additional terms"></textarea>
 </div>
+@endif
+
 
 <script>
 function formatWithCommas(input) {

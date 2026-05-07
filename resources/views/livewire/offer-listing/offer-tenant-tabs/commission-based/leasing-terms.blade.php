@@ -413,7 +413,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
+    <div>
         <textarea wire:model="renewal_option_details" class="form-control" rows="3"
             placeholder="e.g., Option to renew for 1 additional year at the same rate"></textarea>
     </div>
@@ -428,9 +428,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
-        <input type="text" wire:model="tenant_conditions" class="form-control has-icon"
-            data-icon="fa-solid fa-list-check" placeholder="Enter tenant conditions (e.g., No smoking allowed)">
+    <div>
+        <textarea wire:model="tenant_conditions" class="form-control" rows="3"
+            placeholder="Enter any preferred lease or occupancy conditions requested by the Tenant."></textarea>
     </div>
 </div>
 
@@ -585,9 +585,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
-        <input type="text" wire:model="commercial_approval_conditions" class="form-control has-icon"
-            data-icon="fa-solid fa-stamp" placeholder="Enter commercial approval conditions (e.g., Subject to zoning approval)">
+    <div>
+        <textarea wire:model="commercial_approval_conditions" class="form-control" rows="3"
+            placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space."></textarea>
     </div>
 </div>
 
