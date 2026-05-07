@@ -77,6 +77,6 @@ class AgentCounteredTermsController extends Controller
             'status' => ($request->status != '' ? $request->status : $counter->status),
         ]);
 
-        return redirect('/landlord/auctions')->with('success', 'Countered Terms Has Been Updated Successfuly!');
+        return redirect()->back()->with('success', 'Countered Terms Has Been Updated Successfuly!');
     }
 }

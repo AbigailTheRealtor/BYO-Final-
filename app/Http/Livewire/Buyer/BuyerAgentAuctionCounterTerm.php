@@ -505,7 +505,7 @@ public $isListingCreatedByAgent = false;
             }
 
             session()->flash('success', $this->counterTermId ? 'Counter terms updated!' : 'Counter terms submitted!');
-            return redirect()->route('buyer.view-auction', $this->auctionId);
+            return redirect()->route('buyer.hire.agent.auction.bid.view-counter', $this->bidId);
             // Optional: reset form or redirect
             // $this->resetForm();
 

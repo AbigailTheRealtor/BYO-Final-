@@ -53,6 +53,9 @@
                 'buyer' => 'Services the Buyer Requests from Their Agent',
                 default => 'Services',
             };
+            if ($isListingCreatedByAgent) {
+                $tabs[] = 'Referral & Cooperation Terms';
+            }
           @endphp
 
           <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -94,6 +97,11 @@
             <div class="tab-pane fade {{ $activeTab === 2 ? 'show active' : '' }}" id="services">
               @include('livewire.buyer-agent-auction-bid-counter-tabs.services')
             </div>
+            @if ($isListingCreatedByAgent)
+            <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}">
+              @include('livewire.buyer-agent-auction-bid-counter-tabs.referral-fee')
+            </div>
+            @endif
           </div>
 
           <div class="d-flex justify-content-between form-group mt-4">

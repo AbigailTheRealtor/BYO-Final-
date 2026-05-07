@@ -14,6 +14,7 @@ use App\Models\PropertyType;
 use Illuminate\Http\Request;
 use App\Models\BuyerAgentAuction;
 use App\Models\BuyerAgentAuctionBid;
+use App\Models\BuyerCounterTerm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -42,8 +43,8 @@ class BuyerCounteredTermsController extends Controller
 
     public function store(Request $request)
     {
-        $counter = new TenantCounterTerm();
-        $counter->tenant_auction_id = $request->tanantId;
+        $counter = new BuyerCounterTerm();
+        $counter->buyer_agent_auction_id = $request->buyerId;
         $counter->timeframe = $request->timeframe;
         $counter->propFeeOpt = $request->propFeeOpt;
         $counter->propFee = $request->propFee;
@@ -53,7 +54,7 @@ class BuyerCounteredTermsController extends Controller
         $counter->additionalDetails = $request->additionalDetails;
         $counter->status = 1;
         $counter->save();
-        return redirect('tenant/hire/agent/auctions/list')->with('success', 'Countered Terms Added Successfully!');
+        return redirect()->back()->with('success', 'Countered Terms Added Successfully!');
     }
     // public function edit(Request $request, $id)
     // {
@@ -63,7 +64,7 @@ class BuyerCounteredTermsController extends Controller
     // }
     public function update(Request $request, $id)
     {
-        $counter = TenantCounterTerm::findOrFail($id);
+        $counter = BuyerCounterTerm::findOrFail($id);
         // Update the attributes
         $propFeeOpt = '';
         $propFeeOther = '';
@@ -92,6 +93,6 @@ class BuyerCounteredTermsController extends Controller
         // Optionally, you can save the updated instance
         $counter->save();
 
-        return redirect('tenant/hire/agent/auctions/list')->with('success', 'Countered Terms Has Been Updated Successfuly!');
+        return redirect()->back()->with('success', 'Countered Terms Has Been Updated Successfuly!');
     }
 }

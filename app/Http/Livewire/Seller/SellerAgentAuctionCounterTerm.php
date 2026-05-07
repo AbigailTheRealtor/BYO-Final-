@@ -512,7 +512,7 @@ class SellerAgentAuctionCounterTerm extends Component
 
             $msg = $isEditing ? 'Counter terms updated!' : 'Counter terms submitted!';
             session()->flash('success', $msg);
-            return redirect()->route('seller.agent.auction.detail', ['id' => $this->auctionId]);
+            return redirect()->route('hire.seller.agent.auction.bid.view-counter', $this->pab->id);
 
         } catch (\Exception $e) {
             DB::rollBack();

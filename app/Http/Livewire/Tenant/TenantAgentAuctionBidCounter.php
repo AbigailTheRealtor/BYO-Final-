@@ -799,7 +799,7 @@ class TenantAgentAuctionBidCounter extends Component
             
             session()->flash('success', 'Counter bid has been submitted successfully!');
 
-            return redirect()->route('tenant.agent.auction.view', $this->pab->id);
+            return redirect()->route('tenant.hire.agent.auction.bid.view-counter', $this->bidId);
             // Optional: reset form or redirect
             // $this->resetForm();
 
