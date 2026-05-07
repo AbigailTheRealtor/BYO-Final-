@@ -1,0 +1,62 @@
+#611 Follow-Up — Still Not Fixed After wire:model.live Changes
+
+Issue:
+After the #611 changes, I still do NOT see Treasure Island, Seminole, Madeira Beach, Palm Harbor, etc. in the actual browser UI.
+
+Do NOT keep guessing. We need proof from the exact page/field I am testing.
+
+IMPORTANT:
+- Do NOT rerun the seeder.
+- Do NOT run migrate:fresh.
+- Do NOT make broad edits.
+- Do NOT edit more files until the exact active field/component is proven.
+- Do NOT rely on tinker only.
+
+Audit the actual rendered browser field:
+1. Open the same page I am testing.
+2. Inspect the City input element in the browser.
+3. Confirm the exact rendered attributes:
+   - wire:model / wire:model.live value
+   - component name/id
+   - input name/id/classes
+   - whether it is inside the edited Blade partial or a different partial
+4. Confirm whether typing “Treasure” triggers a Livewire network request.
+5. Inspect the Livewire response payload:
+   - Does it contain Treasure Island?
+   - Does citySuggestions update?
+6. Inspect DOM after typing:
+   - Does the dropdown HTML exist?
+   - Is it hidden by CSS?
+   - Is it empty?
+   - Is it behind another element?
+7. Confirm whether the visible field is actually a Select2/static select, not the Livewire autocomplete input that was edited.
+
+Key question to answer:
+Are we editing the exact Blade file/component used by the page I am testing?
+
+Possible root causes to prove or rule out:
+- The page uses a different Blade partial than the edited one.
+- The field shown in UI is not bound to newCity/newCounty.
+- The autocomplete dropdown is hidden or not rendered.
+- Livewire request fires but response does not include suggestions.
+- Livewire request does not fire at all.
+- Suggestions are generated but immediately cleared by wire:blur="selectCitySuggestion()".
+- The query is limited/ordered so older cities display first and Treasure Island is not in visible results.
+- There is a state/county filter requiring another field first.
+- Browser is serving cached compiled Blade/assets.
+- Route/page being tested is not the same deployment Replit changed.
+
+Required proof before any fix:
+- Screenshot/console copy of the inspected City input attributes.
+- Network proof showing whether Livewire fires on typing “Treasure”.
+- Livewire payload proof showing whether Treasure Island is or is not present.
+- DOM proof showing whether dropdown HTML exists after typing.
+- Exact Blade file and Livewire component used by that field.
+
+Only after proving the exact failure point, make the smallest fix.
+
+Report:
+- exact root cause
+- exact active file/component
+- exact fix
+- actual browser proof showing Treasure Island and Seminole visible

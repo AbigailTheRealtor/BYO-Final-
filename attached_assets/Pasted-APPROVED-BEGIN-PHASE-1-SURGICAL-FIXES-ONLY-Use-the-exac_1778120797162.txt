@@ -1,0 +1,160 @@
+APPROVED — BEGIN PHASE 1 SURGICAL FIXES ONLY.
+
+Use the exact audit findings from Task #624.
+
+Scope:
+ONLY Tenant Create Offer Listing + Tenant Edit/Resume Listing parity.
+Do NOT touch Buyer, Seller, Landlord, Hire Agent, marketplace bid flows, referral tracking architecture, Accepted Bid Summary logic, or DB schema.
+
+CRITICAL GOAL:
+Saved draft/edit resume MUST be visually and functionally identical to Create Offer Tenant Listing.
+
+Implement ONLY these approved fixes:
+
+====================================================
+PHASE 1 — APPROVED FIXES
+====================================================
+
+FIX 1 — Repair tenant edit tab structure/parity
+File:
+resources/views/livewire/offer-listing/tenant/offer-tenant-listing-edit.blade.php
+
+Requirements:
+1. Tenant edit flow must match create flow tab order exactly.
+2. Remove tenant Services tab from edit flow.
+3. Remove tenant Referral & Cooperation Terms behavior from edit flow.
+4. AI Questions must appear BEFORE Agent Credentials & Contact Info.
+5. Agent Credentials & Contact Info must be LAST.
+6. Remove Broker Compensation ghost tab behavior.
+7. Fix all tenant pane index mismatches.
+8. Use dynamic index calculation instead of hardcoded tenant tab indices.
+
+Resulting tenant tab order must be EXACTLY:
+
+0 Listing Details
+1 Property Preferences
+2 Leasing Terms
+3 Pre-Screening
+4 Description
+5 Broker Compensation & Agency Agreement Terms
+6 AI Questions
+7 Agent Credentials & Contact Info
+
+IMPORTANT:
+Nav buttons and tab panes MUST use matching indices.
+No hidden ghost tabs.
+No blank panes.
+No broken navigation.
+
+====================================================
+
+FIX 2 — Draft title bug
+File:
+app/Http/Livewire/OfferListing/Tenant/TenantOfferListingEdit.php
+
+Unify title handling with Create flow.
+
+Requirements:
+1. Read listing title from native title column first.
+2. Fall back to meta only for backwards compatibility.
+3. Save title back to native title column.
+4. Remove any tenant edit dependence on saveMeta('title', ...).
+
+Goal:
+- Draft title never displays "false"
+- Draft title auto-populates correctly
+- Create/Edit/Resume all use the same source of truth
+
+====================================================
+
+FIX 3 — Currency formatting consistency
+File:
+resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+Apply same numeric handling used by:
+budget field
+
+To BOTH:
+- security_deposit_budget
+- move_in_funds_available
+
+Requirements:
+1. Add validateInput(this)
+2. Preserve reformatNumber(this)
+3. Preserve paste handling
+4. Auto comma formatting must work identically to other currency fields
+5. Do NOT break Livewire saving/loading
+
+====================================================
+
+FIX 4 — Textarea sizing normalization
+File:
+resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+Apply regular large textarea sizing (matching Maintenance Preferences style) to:
+- renewal_option_details
+- tenant_conditions
+- commercial_approval_conditions
+
+Requirements:
+- Consistent min-height
+- Consistent padding
+- Consistent visual sizing
+- No textarea collapse
+
+====================================================
+
+FIX 5 — Remove duplicate Desired Lease Length field
+File:
+resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+Remove ONLY:
+tenant_desired_lease_length
+
+Keep:
+lease_for (Offered Lease Term)
+
+Do NOT remove or rename lease_for.
+
+====================================================
+
+FIX 6 — Property-type-aware Description placeholder
+Files:
+Tenant create + tenant edit Description tab partials/components
+
+Requirements:
+1. Commercial selection must show commercial example placeholder.
+2. Residential selection must show residential example placeholder.
+3. No residential example text when Commercial is selected.
+4. Keep existing placeholder formatting style.
+
+====================================================
+
+DO NOT:
+- Rewrite wizard system
+- Refactor unrelated logic
+- Modify limited-service initialization
+- Touch seller/buyer/landlord flows
+- Run migrate:fresh
+- Delete tables
+- Rename routes
+- Change Save Draft architecture
+- Modify working create behavior outside approved fixes
+
+AFTER COMPLETION:
+1. Run php -l on every edited PHP/Blade file.
+2. Test:
+   - Fresh Create Tenant Listing
+   - Save Draft
+   - Resume Draft/Edit
+   - Tab navigation
+   - Next buttons
+   - Submit location
+   - Icons rendering
+   - Currency formatting
+   - AI Questions ordering
+3. Verify create vs edit parity visually and functionally.
+4. Provide ONLY:
+   - files changed
+   - exact fixes completed
+   - anything intentionally not changed

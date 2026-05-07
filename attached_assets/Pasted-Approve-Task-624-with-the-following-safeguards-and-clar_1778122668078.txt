@@ -1,0 +1,79 @@
+Approve Task #624 with the following safeguards and clarifications.
+
+Scope:
+Tenant Create Offer Listing and Tenant Edit/Resume Offer Listing only.
+
+Do NOT touch:
+- Buyer flows
+- Seller flows
+- Landlord flows
+- Hire Agent flows
+- BidYourAgent flows
+- Agent Profile flows
+- Limited service flow
+- Routes
+- DB schema
+- Save Draft architecture
+
+Goal:
+Make Tenant Create, Save Draft, Resume/Edit visually and functionally identical.
+
+Tenant tab order must be exactly:
+0. Listing Details
+1. Property Preferences
+2. Leasing Terms
+3. Pre-Screening
+4. Description
+5. Broker Compensation & Agency Agreement Terms
+6. AI Questions
+7. Agent Credentials & Contact Info
+
+Tenant Services tab must stay removed.
+Referral & Cooperation Terms must not appear in Tenant flow.
+
+Important safeguards:
+- Use dynamic tab index calculations with array_search() where possible.
+- Search the entire tenant edit blade for any remaining hardcoded tenant-specific activeTab indexes after refactor.
+- Do not rely on magic numbers outside finalized dynamic calculations.
+- Do not globally remove conditional wrappers.
+- Only adjust the Broker Compensation pane condition so Tenant renders correctly.
+- Non-tenant behavior must remain untouched.
+- Existing drafts must continue loading without errors.
+- Save Draft, Resume Draft/Edit, Next, and Submit must continue working.
+
+Broker Compensation tab:
+Keep the tab, but keep it lightweight for Tenant.
+Do not re-add Services.
+
+Listing title fix:
+Use the native auction title column as the primary source.
+Load from:
+$auction->title ?? $auction->info('title') ?? ''
+
+Save listing_title to the native title column.
+Avoid duplicate save() calls if the model is already saved later in the same execution path.
+
+Currency formatting:
+security_deposit_budget and move_in_funds_available must format with commas on input like the budget field.
+
+Textarea sizing:
+renewal_option_details, tenant_conditions, and commercial_approval_conditions should have consistent large textarea height and must not collapse.
+
+Remove:
+tenant_desired_lease_length free-text field only.
+Do not remove lease_for / Offered Lease Term multi-select.
+
+Description placeholder:
+Tenant Description placeholder must change based on selected property type:
+- Residential Property = residential criteria/preferences example
+- Commercial Property = commercial criteria/preferences example
+
+Verification required:
+- php -l on every modified file
+- Tenant fresh create tab order is correct
+- Tenant save draft works
+- Tenant resume/edit tab order matches create
+- No ghost tabs
+- No blank panes
+- Next button works through every tab
+- Submit button remains on Agent Credentials & Contact Info
