@@ -188,6 +188,7 @@
 @endif
 
 <!-- Acceptable Counties -->
+@if ($countyFieldVisible)
 <div class="form-group mb-3">
     <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -238,6 +239,7 @@
     </div>
     <span class="error mt-2" id="counties_error"></span>
 </div>
+@endif
 
 <!-- Acceptable State -->
 @if ($stateFieldVisible)
