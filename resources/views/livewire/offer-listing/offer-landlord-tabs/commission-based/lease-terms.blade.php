@@ -1283,9 +1283,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="parking_terms" class="form-control has-icon"
+        <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
             data-icon="fa-solid fa-car"
-            placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)">
+            placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
     </div>
 </div>
 
@@ -1297,9 +1297,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="utility_responsibility" class="form-control has-icon"
+        <textarea wire:model="utility_responsibility" class="form-control has-icon landlord-compact-textarea" rows="2"
             data-icon="fa-solid fa-bolt"
-            placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)">
+            placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)"></textarea>
     </div>
 </div>
 
@@ -1311,9 +1311,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="ll_maintenance_responsibility" class="form-control has-icon"
+        <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon landlord-compact-textarea" rows="2"
             data-icon="fa-solid fa-screwdriver-wrench"
-            placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)">
+            placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)"></textarea>
     </div>
 </div>
 
@@ -1359,9 +1359,9 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <input type="text" wire:model="landlord_approval_conditions" class="form-control has-icon"
+        <textarea wire:model="landlord_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="2"
             data-icon="fa-solid fa-clipboard-check"
-            placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)">
+            placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)"></textarea>
     </div>
 </div>
 
