@@ -54,13 +54,13 @@
         }
 
         .form-control {
-            min-height: 50px;
+            min-height: 42px;
         }
 
         textarea.form-control,
         .landlord-compact-textarea {
-            min-height: 42px;
-            height: 42px;
+            min-height: 80px;
+            height: auto;
             resize: vertical;
         }
 
@@ -286,11 +286,32 @@
             /* Tighter line spacing */
         }
 
+        /* Select2 single-select normalization */
+        .select2-container--default .select2-selection--single {
+            height: 42px;
+            padding: 6px 12px;
+            line-height: 28px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 28px;
+            padding-left: 0;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 40px;
+        }
+
         /* Style for the dropdown container */
         .select2-container--default .select2-selection--multiple {
-            min-height: 38px;
-            /* Standard form control height */
+            min-height: 42px;
+            height: auto;
             padding: 2px 8px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .input-cover.has-select-icon .select2-container .select2-selection {
