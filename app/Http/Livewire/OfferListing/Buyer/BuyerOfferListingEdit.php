@@ -1004,8 +1004,9 @@ class BuyerOfferListingEdit extends Component
     // Updated keyboard navigation methods
     public function incrementHighlight($type)
     {
+        $type = ucfirst($type);
         $property = "highlighted{$type}Index";
-        $suggestions = "{$type}Suggestions";
+        $suggestions = lcfirst("{$type}Suggestions");
 
         if (count($this->$suggestions)) {
             $this->$property = min($this->$property + 1, count($this->$suggestions) - 1);
@@ -1014,6 +1015,7 @@ class BuyerOfferListingEdit extends Component
 
     public function decrementHighlight($type)
     {
+        $type = ucfirst($type);
         $property = "highlighted{$type}Index";
         $this->$property = max($this->$property - 1, -1);
     }

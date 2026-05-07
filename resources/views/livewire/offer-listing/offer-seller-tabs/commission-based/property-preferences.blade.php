@@ -541,7 +541,7 @@
         </span>
 
         <div class="input-cover position-relative">
-            <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
+            <input type="text" wire:model.live.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
                 wire:keydown.arrow-up.prevent="decrementHighlight('City')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('City')"
                 class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"

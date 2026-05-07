@@ -143,7 +143,7 @@
         </span>
 
         <div class="input-cover position-relative">
-            <input type="text" wire:model.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
+            <input type="text" wire:model.live.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
                 wire:keydown.arrow-up.prevent="decrementHighlight('City')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('City')"
                 class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
@@ -187,6 +187,57 @@
     </div>
 @endif
 
+<!-- Acceptable Counties -->
+<div class="form-group mb-3">
+    <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the counties where the rental property is located. Required for search and filtering accuracy.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover position-relative">
+        <input type="text" wire:model.live.debounce.300ms="newCounty" wire:keydown.enter.prevent="selectCountySuggestion()"
+            wire:keydown.arrow-up.prevent="decrementHighlight('County')"
+            wire:keydown.arrow-down.prevent="incrementHighlight('County')"
+            class="form-control has-icon @error('newCounty') is-invalid @enderror" data-icon="fa-solid fa-map"
+            autocomplete="off" placeholder="Enter county or counties">
+
+        <!-- County Suggestions Dropdown -->
+        @if (count($countySuggestions) > 0)
+            <div class="autocomplete-dropdown-counties shadow-sm">
+                <ul class="list-group">
+                    @foreach ($countySuggestions as $index => $suggestion)
+                        <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
+                            wire:click="selectCountySuggestion('{{ $suggestion }}')"
+                            wire:key="county-suggestion-{{ $index }}">
+                            <i class="fa-solid fa-map me-2 text-muted"></i>
+                            {{ $suggestion }}
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        @error('newCounty')
+            <div class="error-message">{{ $message }}</div>
+        @enderror
+    </div>
+
+    <!-- Display added counties -->
+    <div class="mt-1 counties-container">
+        @if (count($counties) > 0)
+            @foreach ($counties as $index => $county)
+                <span class="badge bg-primary rounded-pill d-inline-flex align-items-center" wire:key="county-badge-{{ $index }}">
+                    <i class="fa-solid fa-map me-2"></i>
+                    {{ $county }}
+                    <button type="button" class="byo-pill-remove ms-2"
+                        wire:click="removeCounty({{ $index }})" aria-label="Remove">&times;</button>
+                </span>
+            @endforeach
+        @endif
+    </div>
+    <span class="error mt-2" id="counties_error"></span>
+</div>
 
 <!-- Acceptable State -->
 @if ($stateFieldVisible)
