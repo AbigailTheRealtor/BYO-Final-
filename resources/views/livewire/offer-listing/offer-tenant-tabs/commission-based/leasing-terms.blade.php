@@ -273,20 +273,6 @@
 
 <!-- ===== New Tenant Leasing Terms Fields ===== -->
 
-<!-- Field 1: Desired Lease Length -->
-<div class="form-group">
-    <label class="fw-bold">Desired Lease Length:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the tenant's preferred lease duration (e.g., 12 months, 2 years).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <input type="text" wire:model="tenant_desired_lease_length" class="form-control has-icon"
-            data-icon="fa-solid fa-clock" placeholder="Enter desired lease length (e.g., 12 months)">
-    </div>
-</div>
-
 <!-- Field 2: Security Deposit Budget -->
 <div class="form-group">
     <label class="fw-bold">Security Deposit Budget:
@@ -299,7 +285,7 @@
         <span class="input-group-text-seller">$</span>
         <input type="text" wire:model="security_deposit_budget" class="form-control"
             placeholder="Enter amount (e.g., 3000)"
-            onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
 
@@ -315,7 +301,7 @@
         <span class="input-group-text-seller">$</span>
         <input type="text" wire:model="move_in_funds_available" class="form-control"
             placeholder="Enter amount (e.g., 5000)"
-            onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
 </div>
 
@@ -415,6 +401,7 @@
     </label>
     <div>
         <textarea wire:model="renewal_option_details" class="form-control" rows="3"
+            style="min-height: 100px; padding: 10px;"
             placeholder="e.g., Option to renew for 1 additional year at the same rate"></textarea>
     </div>
 </div>
@@ -430,6 +417,7 @@
     </label>
     <div>
         <textarea wire:model="tenant_conditions" class="form-control" rows="3"
+            style="min-height: 100px; padding: 10px;"
             placeholder="Enter any preferred lease or occupancy conditions requested by the Tenant."></textarea>
     </div>
 </div>
@@ -587,6 +575,7 @@
     </label>
     <div>
         <textarea wire:model="commercial_approval_conditions" class="form-control" rows="3"
+            style="min-height: 100px; padding: 10px;"
             placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space."></textarea>
     </div>
 </div>

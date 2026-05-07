@@ -1648,19 +1648,23 @@
 
                                 $propertyId = $safeSlug($propertyTab);
 
-                                // Define rest tabs excluding 'Pre-Screening' for landlord
+                                // Define rest tabs — tenant has its own dedicated branch
                                 $firstRest =
                                     $user_type === 'buyer'
                                         ? 'Purchasing Terms'
                                         : ($user_type === 'seller'
                                             ? 'Sale Terms'
                                             : 'Leasing Terms');
-                                $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
-                                if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
-                                    array_splice($restTabs, 1, 0, 'Pre-Screening');
-                                }
-                                if ($isAgentUser) {
-                                    $restTabs[] = 'Referral & Cooperation Terms';
+                                if ($user_type === 'tenant') {
+                                    $restTabs = [$firstRest, 'Pre-Screening', 'Description', 'Broker Compensation & Agency Agreement Terms'];
+                                } else {
+                                    $restTabs = [$firstRest, 'Services', 'Description', 'Broker Compensation & Agency Agreement Terms'];
+                                    if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
+                                        array_splice($restTabs, 1, 0, 'Pre-Screening');
+                                    }
+                                    if ($isAgentUser) {
+                                        $restTabs[] = 'Referral & Cooperation Terms';
+                                    }
                                 }
 
                                 $infoTabs = [
@@ -1671,10 +1675,25 @@
                                 ];
                                 $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
 
-                                $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                                    $infoTabs[$user_type] ?? null,
-                                    'AI Questions',
-                                ]);
+                                if ($user_type === 'tenant') {
+                                    $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
+                                        'AI Questions',
+                                        $infoTabs[$user_type] ?? null,
+                                    ]);
+                                } else {
+                                    $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
+                                        $infoTabs[$user_type] ?? null,
+                                        'AI Questions',
+                                    ]);
+                                }
+
+                                $infoTabIndex         = array_search($infoTabs[$user_type] ?? null, $allTabs);
+                                $aiQuestionsTabIndex  = array_search('AI Questions', $allTabs);
+                                $brokerCompTabIndex   = array_search('Broker Compensation & Agency Agreement Terms', $allTabs);
+                                $descriptionTabIndex  = array_search('Description', $allTabs);
+                                $servicesTabIndex     = array_search('Services', $allTabs);
+                                $referralTabIndex     = array_search('Referral & Cooperation Terms', $allTabs);
+                                $preScreeningTabIndex = array_search('Pre-Screening', $allTabs);
                             @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -1815,7 +1834,7 @@
 
                         <!-- Conditional Pre-Screening Tab -->
                         @if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller')
-                            <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="pre-screening"
+                            <div class="tab-pane fade {{ $activeTab === $preScreeningTabIndex ? 'show active' : '' }}" id="pre-screening"
                                 role="tabpanel" aria-labelledby="pre-screening-tab">
                                 @if ($user_type === 'tenant')
                                     @include('livewire.offer-listing.offer-tenant-tabs.commission-based.pre-screening')
@@ -1825,10 +1844,10 @@
                             </div>
                         @endif
 
-                        <!-- Services Tab - Adjust index based on user_type (excluded for tenant) -->
+                        <!-- Services Tab - Not shown for tenant -->
 
                         @if ($user_type !== 'tenant')
-                        <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 3 : 4) ? 'show active' : '' }}"
+                        <div class="tab-pane fade {{ $activeTab === $servicesTabIndex ? 'show active' : '' }}"
                             id="services" role="tabpanel" aria-labelledby="services-tab">
 
                             @if ($user_type === 'seller')
@@ -1841,9 +1860,9 @@
                         </div>
                         @endif
 
-                        <!-- Additional Details Tab - Adjust index based on user_type -->
+                        <!-- Additional Details Tab -->
 
-                        <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller', 'tenant']) ? 4 : 5) ? 'show active' : '' }}"
+                        <div class="tab-pane fade {{ $activeTab === $descriptionTabIndex ? 'show active' : '' }}"
                             id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                             @if ($user_type === 'tenant')
@@ -1857,13 +1876,14 @@
                             @endif
                         </div>
 
-                        <!-- Broker Compensation Tab - Adjust index based on user_type (excluded for tenant) -->
+                        <!-- Broker Compensation Tab -->
 
-                        @if ($user_type !== 'tenant')
-                        <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
+                        <div class="tab-pane fade {{ $activeTab === $brokerCompTabIndex ? 'show active' : '' }}"
                             id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
-                            @if ($user_type === 'seller')
+                            @if ($user_type === 'tenant')
+                                @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                            @elseif ($user_type === 'seller')
                                 @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
                             @elseif($user_type === 'buyer')
                                 @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
@@ -1871,11 +1891,10 @@
                                 @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
                             @endif
                         </div>
-                        @endif
 
                         <!-- Referral & Cooperation Terms Tab - Agent only, not shown for tenant -->
                         @if ($isAgentUser && $user_type !== 'tenant')
-                        <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
+                        <div class="tab-pane fade {{ $activeTab === $referralTabIndex ? 'show active' : '' }}"
                             id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
                             <div class="p-3">
                                 <h5 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h5>
@@ -1896,7 +1915,7 @@
                         </div>
                         @endif
 
-                        <!-- Info Tab - Adjust index based on user_type -->
+                        <!-- Info Tab -->
                         @php
                             $infoTabId = match($user_type) {
                                 'tenant' => 'tenant-information',
@@ -1905,11 +1924,6 @@
                                 'landlord' => 'landlord-information',
                                 default => 'tenant-information'
                             };
-                            $infoTabIndex = $user_type === 'tenant'
-                                ? 5
-                                : (in_array($user_type, ['landlord', 'buyer', 'seller'])
-                                    ? ($isAgentUser ? 7 : 6)
-                                    : ($isAgentUser ? 8 : 7));
                         @endphp
                         <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                             id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
@@ -1928,7 +1942,6 @@
                         </div>
 
                         <!-- AI Questions Tab (full_service) -->
-                        @php $aiQuestionsTabIndex = $infoTabIndex + 1; @endphp
                         <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
                             role="tabpanel" aria-labelledby="ai-questions-tab">
                             @include('livewire.offer-listing.shared.ai-questions-input')
@@ -5229,20 +5242,5 @@
 
         errorEl && (errorEl.innerText = "");
     }
-</script>
-<script>
-    (function () {
-        function syncWizardButtons() {
-            var aiPane = document.getElementById('ai-questions');
-            var nextBtn = document.querySelector('.wizard-step-next');
-            var finishBtn = document.querySelector('.wizard-step-finish');
-            if (!nextBtn || !finishBtn) return;
-            var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
-            nextBtn.style.display = onAI ? 'none' : '';
-            finishBtn.style.display = onAI ? '' : 'none';
-        }
-        document.addEventListener('shown.bs.tab', syncWizardButtons);
-        document.addEventListener('DOMContentLoaded', syncWizardButtons);
-    })();
 </script>
 @endpush
