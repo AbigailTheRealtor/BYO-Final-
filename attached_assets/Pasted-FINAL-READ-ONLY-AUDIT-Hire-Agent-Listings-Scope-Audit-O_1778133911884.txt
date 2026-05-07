@@ -1,0 +1,63 @@
+FINAL READ-ONLY AUDIT — Hire Agent Listings
+
+Scope:
+Audit ONLY Hire Agent Listing creation/edit/draft flows from:
+
+1. User Dashboard
+Login:
+tenant@exp.com
+password: 12345678
+
+2. Agent Dashboard
+Login:
+AbigailBaschuk@gmail.com
+password: 12345678
+
+Roles to audit:
+- Hire Seller’s Agent
+- Hire Buyer’s Agent
+- Hire Landlord’s Agent
+- Hire Tenant’s Agent
+
+Critical safeguards:
+- READ-ONLY AUDIT ONLY.
+- Do NOT change code yet.
+- Do NOT delete or overwrite saved drafts.
+- Do NOT run migrations, seeders, migrate:fresh, or any database-resetting tests.
+- Do NOT touch Create Offer Listing flows.
+- Do NOT touch BidYourOffer offer submission flows.
+- Do NOT touch agent profile pages, direct hire routes, marketplace bid/counter flows, accepted bid summaries, referral logic, or Brainlee/AI Messenger code.
+
+Audit requirements:
+- Every select/multi-select shows “Select.”
+- Every text box uses “Enter [Field Title] (e.g., [correct example]).”
+- “Other” selections show only one clean input box with correct placeholder.
+- All text boxes and textareas have consistent size.
+- Tooltips have correct grammar, capitalization, role wording, and property-type examples.
+- Seller, Buyer, Landlord, Tenant, Agent, Broker, and Owner capitalization is consistent.
+- Icons show on first load, tab changes, draft load, and edit/resume.
+- No invisible/white text or old formatting.
+- All Next/Back buttons work.
+- Save Draft works.
+- Edit/Resume draft reloads the exact saved listing values.
+- Submit works.
+- Required-field validation does not incorrectly block completed fields.
+- Agent-created and user-created listing behavior are both tested.
+
+Deliverable:
+Provide a report only. Do not fix anything yet.
+
+Report format:
+For each dashboard and role, list:
+- PASS items
+- FAIL items
+- Exact tab/field affected
+- Likely file/component responsible
+- Risk level: Low / Medium / High
+- Recommended fix approach
+
+End with:
+1. Safe to proceed with fixes: Yes/No
+2. Recommended fix order
+3. Files that should be touched
+4. Files that should NOT be touched

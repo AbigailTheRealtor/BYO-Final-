@@ -1,0 +1,312 @@
+FINAL READ-ONLY AUDIT — Hire Agent Listings All Roles
+
+Scope:
+Audit ONLY Hire Agent Listing creation, edit, draft, and submit flows.
+
+Audit both entry points:
+
+1. User Dashboard
+Login:
+Email: tenant@exp.com
+Password: 12345678
+
+2. Agent Dashboard
+Login:
+Email: AbigailBaschuk@gmail.com
+Password: 12345678
+
+Roles to audit from BOTH dashboards:
+- Hire Seller’s Agent
+- Hire Buyer’s Agent
+- Hire Landlord’s Agent
+- Hire Tenant’s Agent
+
+Critical safeguards:
+- READ-ONLY AUDIT ONLY.
+- Do NOT change code yet.
+- Do NOT delete, overwrite, or clean up saved drafts.
+- Do NOT run migrations, seeders, migrate:fresh, database reset commands, or tests that reset the database.
+- Do NOT modify Create Offer Listing flows.
+- Do NOT modify BidYourOffer offer submission flows.
+- Do NOT modify Agent Profile pages.
+- Do NOT modify Direct Hire public profile routes.
+- Do NOT modify marketplace bid/counter flows.
+- Do NOT modify accepted bid summaries.
+- Do NOT modify referral tracking, referral fee logic, or referral dashboards.
+- Do NOT modify Brainlee / AI Messenger code.
+- Do NOT touch unrelated routes, controllers, models, migrations, services, dashboards, or shared global layout files unless the audit proves they are directly responsible.
+- This audit is only for Hire Agent Listing flows launched from User Dashboard and Agent Dashboard.
+
+Audit all Hire Agent role flows:
+1. Hire Seller’s Agent
+2. Hire Buyer’s Agent
+3. Hire Landlord’s Agent
+4. Hire Tenant’s Agent
+
+Audit each role in both:
+- Fresh create flow
+- Save Draft flow
+- Edit/Resume Draft flow
+- Final Submit flow
+
+Audit requirements:
+
+1. Dropdowns / select fields
+- Every select or multi-select field must show “Select” as the placeholder.
+- No blank placeholder.
+- No outdated placeholder.
+- No placeholder that says the wrong role or wrong property type.
+- Select2 fields must display icons correctly:
+  - on first page load
+  - after tab changes
+  - after Livewire updates
+  - after Save Draft
+  - after Edit/Resume Draft
+- Select fields must not have odd padding, invisible icons, white text, old formatting, or collapsed height.
+- Multi-select fields must display selected values correctly after saving and resuming a draft.
+- City, county, state, property type, services, compensation, relationship, and property-feature selects must all be checked.
+
+2. Text inputs and textareas
+- Placeholder format must be consistent:
+  “Enter [Field Title] (e.g., [correct example])”
+- Do not use generic “Enter title” unless the actual field label is “Title.”
+- Examples must match the correct role and property type.
+  Examples:
+  - Tenant examples must be tenant-facing, not landlord-facing.
+  - Landlord examples must be landlord-facing, not tenant-facing.
+  - Buyer examples must be buyer-facing, not seller-facing.
+  - Seller examples must be seller-facing, not buyer-facing.
+  - Commercial examples must not use residential-only wording.
+  - Residential examples must not use commercial-only wording.
+  - Vacant land examples must not use home/building-only wording.
+  - Business opportunity examples must not use residential property wording.
+- All regular text boxes must have consistent sizing.
+- Larger explanation fields must use the same standard textarea sizing across all Hire Agent roles.
+- No white or invisible text.
+- No old collapsed format.
+- No inconsistent left padding caused by icon classes.
+- Currency and percentage inputs must have correct placeholder examples and correct formatting behavior.
+- Date fields must show correct calendar behavior and not save blank/invalid values when filled.
+
+3. “Other” option behavior
+- Whenever a user selects “Other,” only one clean input box should appear.
+- The “Other” input placeholder must follow:
+  “Enter [Field Title] (e.g., [correct example])”
+- No duplicate Other fields.
+- No hidden stale values.
+- No mismatched role examples.
+- No oversized or undersized Other input boxes.
+- Other values must save into drafts correctly.
+- Other values must repopulate correctly when editing/resuming drafts.
+- Other values must submit correctly.
+- If “Other” is unselected, stale Other input values should not incorrectly remain visible.
+
+4. Tooltips
+- Audit every tooltip in every Hire Agent tab.
+- Confirm grammar is correct.
+- Confirm capitalization is consistent:
+  Seller, Buyer, Landlord, Tenant, Agent, Broker, Owner, Client, Consumer.
+- Confirm tooltip examples match the correct role and property type.
+- Confirm Tenant tooltips do not use Landlord, Seller, or Buyer examples.
+- Confirm Landlord tooltips do not use Tenant examples.
+- Confirm Buyer tooltips do not use Seller examples.
+- Confirm Seller tooltips do not use Buyer examples.
+- Confirm commercial tooltips use commercial-appropriate wording.
+- Confirm residential tooltips use residential-appropriate wording.
+- Confirm vacant land tooltips use land-appropriate wording.
+- Confirm business opportunity tooltips use business-appropriate wording.
+- Confirm tooltips are neutral enough to work when either the client or an Agent is filling out the form.
+- Confirm tooltip formatting is consistent across Seller, Buyer, Landlord, and Tenant.
+- Confirm legal/disclaimer tooltips are not accidentally removed or weakened.
+
+5. Role and capitalization consistency
+- Confirm all role labels are consistent:
+  Seller, Buyer, Landlord, Tenant, Agent, Broker, Owner.
+- Confirm the correct role appears in each flow.
+- Tenant flow should not say Buyer unless it is referring to a separate purchase/lease-option context.
+- Landlord flow should not say Seller unless it is referring to sale/lease-option logic.
+- Buyer flow should not say Tenant unless it is referring to lease-option logic.
+- Seller flow should not say Landlord unless it is referring to lease/lease-option logic.
+- Confirm tab names, section headers, labels, helper text, placeholders, and tooltips use the correct role wording.
+
+6. Tab navigation and buttons
+- Every Next button must work.
+- Every Back button must work.
+- Tabs must move in the correct order.
+- Required validation must not block valid completed fields.
+- Red validation alerts must not remain or flash incorrectly after fields are completed.
+- Submit button must appear on the correct final tab.
+- Submit button must work for all four roles from both dashboards.
+- Save Draft button must work for all four roles from both dashboards.
+- Cancel/return buttons must not route users to the wrong dashboard.
+- Agent-created listings should return to Agent Dashboard.
+- User-created listings should return to User Dashboard.
+- No blank screen, route error, validation loop, or stuck loading state.
+
+7. Draft / edit / resume behavior
+- Save a draft for each role from the User Dashboard.
+- Save a draft for each role from the Agent Dashboard.
+- Resume/edit each draft.
+- Confirm the draft reopens with the exact same saved values.
+- Confirm all fields repopulate correctly, including:
+  - select fields
+  - multi-select fields
+  - text inputs
+  - textareas
+  - checkboxes
+  - radio buttons
+  - pricing fields
+  - date fields
+  - conditional fields
+  - Other fields
+  - service selections
+  - broker compensation fields
+  - agency agreement terms
+  - uploaded documents/photos where supported
+- Confirm icons still show correctly after draft load.
+- Confirm formatting remains consistent after draft load.
+- Confirm no old layout returns on draft/edit.
+- Confirm draft values are not overwritten by defaults.
+- Confirm draft values are not lost when navigating between tabs.
+- Do NOT delete existing saved drafts.
+
+8. Submit behavior
+- Complete and submit one test listing for each Hire Agent role from the User Dashboard if safe.
+- Complete and submit one test listing for each Hire Agent role from the Agent Dashboard if safe.
+- Confirm no crash, validation loop, blank screen, or broken route.
+- Confirm submitted listing data is preserved correctly.
+- Confirm submitted listing appears in the correct dashboard/listing area.
+- Confirm submitted listing does not incorrectly appear under Create Offer Listing.
+- Confirm submitted listing is categorized under the correct role and property type.
+- Do not delete submitted listings unless specifically instructed.
+
+9. Services requested / services offered
+- Confirm service checklist sections render correctly for each role and property type.
+- Confirm service labels, descriptions, and examples match the correct role.
+- Confirm service categories use consistent formatting.
+- Confirm “Additional Services” works correctly.
+- Confirm custom services save, repopulate, and submit correctly.
+- Confirm services selected by the user/client are preserved after draft/edit.
+- Confirm services entered by an Agent on behalf of a client are preserved after draft/edit.
+- Confirm flat fee, hourly, commission-based, and full-service wording is not mixed incorrectly.
+- Confirm non-agency services do not accidentally include negotiation or representation language.
+- Confirm commission-based/full-service services can include representation and negotiation where appropriate.
+
+10. Broker Compensation & Agency Agreement Terms
+- Confirm compensation labels match the correct role:
+  - Seller’s Broker
+  - Buyer’s Broker
+  - Landlord’s Broker
+  - Tenant’s Broker
+- Confirm compensation placeholders use correct examples.
+- Confirm percentage fields show percentage formatting correctly.
+- Confirm currency fields show currency formatting correctly.
+- Confirm retainers, flat fees, hourly fees, commission amounts, lease fees, lease-option fees, protection periods, early termination fees, and retained deposits are formatted consistently.
+- Confirm selected compensation terms save to draft.
+- Confirm compensation terms repopulate correctly on edit/resume.
+- Confirm compensation terms submit correctly.
+- Confirm agency relationship options display correctly.
+- Confirm legal notices remain visible and accurate.
+- Confirm state-specific or role-specific legal notes are not accidentally removed.
+
+11. Files/photos/documents
+- Confirm upload fields render correctly where supported.
+- Confirm uploaded files/photos/documents save correctly where supported.
+- Confirm uploaded file links or previews show correctly after draft/edit where supported.
+- Confirm upload fields do not break draft saving or submission.
+- Confirm file upload UI is not using old formatting.
+- Confirm no uploaded files are deleted during the audit.
+
+12. Icons and formatting
+- Confirm icons show on first page load for every role and both dashboards.
+- Confirm icons show after switching tabs.
+- Confirm icons show after Save Draft and Edit/Resume Draft.
+- Compare Seller, Buyer, Landlord, and Tenant icon behavior.
+- Compare User Dashboard and Agent Dashboard entry behavior.
+- No white text, invisible text, missing icons, incorrect icon spacing, old field formatting, or collapsed layout.
+- No mismatched icons between equivalent fields across roles unless intentionally different.
+- Confirm icon behavior matches the newer working Create Offer Listing and Hire Agent patterns.
+
+13. Dashboard-specific behavior
+User Dashboard:
+- Confirm Hire Agent listing creation starts from the correct user dashboard links.
+- Confirm saved drafts appear in the correct user dashboard area.
+- Confirm submitted listings appear in the correct user dashboard area.
+- Confirm routes do not redirect to Agent Dashboard.
+
+Agent Dashboard:
+- Confirm Hire Agent listing creation starts from the correct agent dashboard links.
+- Confirm Agent can create listings on behalf of a client where supported.
+- Confirm saved drafts appear in the correct agent dashboard area.
+- Confirm submitted listings appear in the correct agent dashboard area.
+- Confirm routes do not redirect to User Dashboard unless intentionally designed.
+
+14. Cross-flow protection checks
+- Confirm Create Offer Listing routes and files are not involved unless only being used as a visual comparison.
+- Confirm Direct Hire / Agent Profile hire buttons are not changed or tested as part of this audit unless they are only being used to confirm they remain untouched.
+- Confirm marketplace bid/counter components are not modified.
+- Confirm accepted bid summary logic is not modified.
+- Confirm referral fee logic is not modified.
+- Confirm Brainlee / AI Messenger files are not modified.
+
+Suggested files/components to inspect only if relevant:
+- Hire Agent Livewire components for Seller, Buyer, Landlord, Tenant listings
+- Hire Agent Blade tab partials for each role
+- Shared service checklist partials
+- Shared tooltip/config files if used
+- Shared Select2/icon initialization scripts used by Hire Agent listing forms
+- Dashboard route/link files that launch Hire Agent listing creation
+- Draft/edit load methods for Hire Agent listings
+- Submit/save methods for Hire Agent listings
+
+Do NOT inspect or touch unless proven necessary:
+- Offer submission/bidding room files
+- Agent profile public hire routes
+- Direct Hire counter controllers
+- Marketplace bid/counter Livewire components
+- AcceptedBidSummaryService
+- Referral tracking migrations/services/controllers
+- Brainlee / AI Messenger files
+- Database migrations or seeders
+
+Deliverable:
+Provide a clear audit report only. Do not fix anything yet.
+
+Report format:
+For each dashboard, then each role, list:
+
+Dashboard:
+- User Dashboard or Agent Dashboard
+
+Role:
+- Hire Seller’s Agent / Hire Buyer’s Agent / Hire Landlord’s Agent / Hire Tenant’s Agent
+
+Tested:
+- Fresh create: Pass/Fail
+- Save Draft: Pass/Fail
+- Edit/Resume Draft: Pass/Fail
+- Submit: Pass/Fail
+
+PASS items:
+- List confirmed working items.
+
+FAIL items:
+For each issue, include:
+- Exact tab
+- Exact field/section
+- What is wrong
+- Expected behavior
+- Actual behavior
+- Likely file/component responsible
+- Screenshot or route evidence if available
+- Risk level: Low / Medium / High
+- Recommended fix approach
+
+End with:
+1. “Safe to proceed with fixes: Yes/No”
+2. “Recommended fix order”
+3. “Files that should be touched”
+4. “Files that should NOT be touched”
+5. “Any issues that appear shared/global”
+6. “Any issues that appear role-specific”
+7. “Any issues that appear dashboard-specific”

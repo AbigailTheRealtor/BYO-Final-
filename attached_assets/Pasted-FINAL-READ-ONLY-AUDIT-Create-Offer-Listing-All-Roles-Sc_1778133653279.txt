@@ -1,0 +1,132 @@
+FINAL READ-ONLY AUDIT — Create Offer Listing All Roles
+
+Scope:
+Audit ONLY Create Offer Listing flows from the Agent Dashboard for:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Login for testing:
+Email: AbigailBaschuk@gmail.com
+Password: 12345678
+
+Critical safeguards:
+- READ-ONLY AUDIT ONLY.
+- Do NOT change code yet.
+- Do NOT delete or overwrite saved drafts.
+- Do NOT run migrations, seeders, migrate:fresh, tests that reset the database, or any command that can erase data.
+- Do NOT modify Hire Agent flows, agent profile flows, marketplace bid flows, accepted bid summaries, referral logic, or Brainlee/AI Messenger code.
+- Do NOT touch unrelated routes, controllers, models, migrations, services, or dashboards.
+- This audit is only for Create Offer Listing flows launched from the Agent Dashboard.
+
+Audit all four Create Offer Listing role flows:
+1. Create Seller Offer Listing
+2. Create Buyer Offer Listing
+3. Create Landlord Offer Listing
+4. Create Tenant Offer Listing
+
+Audit requirements:
+
+1. Dropdowns / select fields
+- Every select or multi-select field must show “Select” as the placeholder.
+- No blank placeholder.
+- No outdated placeholder.
+- Select2 fields must display icons correctly on first load, after tab changes, after draft load, and after edit/resume draft.
+- Select fields must not have odd padding, invisible icons, white text, or old formatting.
+
+2. Text inputs and textareas
+- Placeholder format must be consistent:
+  “Enter [Field Title] (e.g., [correct example])”
+- Do not use generic “Enter title” unless that is actually the field title.
+- Examples must match the role and property type.
+  Examples:
+  - Tenant examples must be tenant-facing, not landlord-facing.
+  - Buyer examples must be buyer-facing, not seller-facing.
+  - Commercial examples must not show residential-only wording.
+  - Residential examples must not show commercial-only wording.
+- All regular text boxes must have consistent sizing.
+- Larger explanation fields must use the same standard textarea sizing across all roles.
+- No white/invisible text.
+- No old collapsed format.
+- No inconsistent left padding from icon classes.
+
+3. “Other” option behavior
+- Whenever a user selects “Other,” only a clean input box should appear.
+- The “Other” input placeholder must follow:
+  “Enter [Field Title] (e.g., [correct example])”
+- No duplicate Other fields.
+- No hidden stale values.
+- No mismatched role examples.
+- No oversized or undersized Other input boxes.
+
+4. Tooltips
+- Audit every tooltip in all Create Offer Listing tabs.
+- Confirm grammar is correct.
+- Confirm capitalization is consistent:
+  Seller, Buyer, Landlord, Tenant, Agent, Broker, Owner.
+- Confirm tooltip examples match the correct user role and property type.
+- Confirm Tenant tooltips do not use Landlord/Seller examples.
+- Confirm Buyer tooltips do not use Seller examples.
+- Confirm commercial tooltips use commercial-appropriate wording.
+- Confirm residential tooltips use residential-appropriate wording.
+- Confirm formatting is consistent across Seller, Buyer, Landlord, and Tenant.
+
+5. Tab navigation and buttons
+- Every Next button must work.
+- Every Back button must work.
+- Tabs must move in the correct order.
+- Required validation must not block valid completed fields.
+- Red validation alerts must not remain or flash incorrectly after fields are completed.
+- Submit button must appear on the correct final tab.
+- Submit button must work for all four roles.
+- Save Draft must work for all four roles.
+
+6. Draft / edit / resume behavior
+- Save a draft for each role.
+- Resume/edit each draft.
+- Confirm the draft reopens with the exact same saved values.
+- Confirm all select, multi-select, text, textarea, checkbox, radio, file/document, pricing, and conditional fields repopulate correctly.
+- Confirm icons still show correctly after draft load.
+- Confirm formatting remains consistent after draft load.
+- Confirm no old layout returns on draft/edit.
+- Do NOT delete existing saved drafts.
+
+7. Submit behavior
+- Complete and submit one test listing for each role if safe.
+- Confirm no crash, validation loop, blank screen, or broken route.
+- Confirm submitted listing data is preserved correctly.
+- Do not delete submitted listings unless specifically instructed.
+
+8. Files/photos/documents
+- Confirm upload fields render correctly.
+- Confirm uploaded files/photos/documents save correctly where supported.
+- Confirm uploaded file links or previews show correctly after draft/edit where supported.
+- Confirm upload fields do not break draft saving or submission.
+
+9. Icons and formatting
+- Confirm icons show on first page load for every role.
+- Confirm icons show after switching tabs.
+- Confirm icons show after Save Draft and Edit/Resume Draft.
+- Compare Seller, Buyer, Landlord, and Tenant icon behavior.
+- Seller icons must not disappear on first load.
+- No white text, invisible text, missing icons, incorrect icon spacing, or old field formatting.
+
+Deliverable:
+Provide a clear audit report only. Do not fix anything yet.
+
+Report format:
+For each role, list:
+- PASS items
+- FAIL items
+- File/component likely responsible
+- Exact tab/field affected
+- Screenshot or route evidence if available
+- Risk level: Low / Medium / High
+- Recommended fix approach
+
+End with:
+1. “Safe to proceed with fixes: Yes/No”
+2. “Recommended fix order”
+3. “Files that should be touched”
+4. “Files that should NOT be touched”
