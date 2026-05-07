@@ -1,0 +1,88 @@
+TASK — Surgical Fixes From Create Offer Listing Final Audit
+
+Scope:
+Fix ONLY the confirmed high-priority findings from the read-only Create Offer Listing audit.
+
+Critical safeguards:
+- Do NOT run migrations, seeders, migrate:fresh, or any database-resetting command.
+- Do NOT delete or overwrite saved drafts.
+- Do NOT refactor architecture.
+- Do NOT rename Livewire properties.
+- Do NOT split large Blade files.
+- Do NOT remove commented-out/dead code.
+- Do NOT touch Hire Agent flows.
+- Do NOT touch Agent Profile, Direct Hire, marketplace bid/counter flows, accepted bid summaries, referral logic, or Brainlee/AI Messenger.
+- Do NOT change unrelated files.
+- Preserve all existing wire:model bindings, routes, submit logic, draft logic, and database fields.
+
+Fix ONLY these items:
+
+1. Personal Video Link tooltip role wording
+Update tooltip text in:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-info.blade.php
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/buyer-info.blade.php
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/landlord-info.blade.php
+
+Current wrong wording says:
+“what the Tenant is looking for in an Agent.”
+
+Change only the role word:
+- Seller file: “what the Seller is looking for in an Agent.”
+- Buyer file: “what the Buyer is looking for in an Agent.”
+- Landlord file: “what the Landlord is looking for in an Agent.”
+
+Do not change the Tenant file.
+
+2. Landlord Residential Services wrong section header
+File:
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/services.blade.php
+
+In the Residential Property path, find the section where the comment/items are for Lease Preparation & Execution but the visible heading incorrectly says:
+“📃 Listing Presentation & Preparation”
+
+Change only that visible heading to:
+“📃 Lease Preparation & Execution”
+
+Do not change the Commercial Property heading.
+
+3. Tenant Leasing Terms invalid heading tag
+File:
+- resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+Fix:
+<h3>Leasing Terms </h4>
+
+To:
+<h3>Leasing Terms</h3>
+
+Do not change surrounding content.
+
+4. County suggestion dropdown click race
+Update county suggestion dropdowns that use wire:click where the matching city suggestion pattern uses @mousedown.prevent.
+
+Files:
+- resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/property-preferences.blade.php
+- resources/views/livewire/offer-listing/offer-tenant-tabs/flat-fee/location-and-meeting-details.blade.php
+
+Change county suggestion item handlers from wire:click to @mousedown.prevent using the same method call and value already present.
+
+Do not change city suggestion handlers.
+Do not change Livewire method names.
+Do not change autocomplete logic.
+Do not touch unrelated county/city code.
+
+Post-fix verification:
+- Confirm only the files above changed.
+- Confirm no Livewire property names were renamed.
+- Confirm no migrations or database commands were run.
+- Confirm Seller, Buyer, Landlord, Tenant Create Offer Listing pages still load.
+- Confirm Buyer county dropdown suggestions can be clicked.
+- Confirm Tenant flat-fee county dropdown suggestions can be clicked.
+- Confirm no saved drafts were deleted or modified.
+
+Deliverable:
+Provide a concise change report:
+- Files changed
+- Exact fixes made
+- Confirmation safeguards were followed
+- Anything not fixed and why

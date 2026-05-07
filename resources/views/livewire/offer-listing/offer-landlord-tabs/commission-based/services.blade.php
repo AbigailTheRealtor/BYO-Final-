@@ -128,7 +128,7 @@
 
     <!-- 📃 Lease Preparation & Execution -->
     <div class="service-section mb-4">
-        <h5 class="section-header bg-info text-white p-2 mb-3">📃 Listing Presentation & Preparation</h5>
+        <h5 class="section-header bg-info text-white p-2 mb-3">📃 Lease Preparation & Execution</h5>
         <div class="service-options">
             @foreach (['Review lease offers submitted by prospective Tenants and summarize key terms', 'Coordinate lease negotiation with the Tenant or Tenant’s Agent', 'Prepare a state-specific lease agreement using approved forms or templates', 'Assist with completing required lease disclosures and reviewing key lease terms', 'Assist with in-person or electronic lease signing, including e-signature setup and secure delivery of executed lease documents, addenda, and disclosures to all parties', 'Confirm receipt of required move-in funds and assist the Landlord in verifying amounts due, payment deadlines, and accepted payment methods'] as $service)
                 <div class="form-check service-item">

@@ -220,7 +220,7 @@
                 <ul class="list-group">
                     @foreach ($countySuggestions as $index => $suggestion)
                         <li class="list-group-item {{ $highlightedCountyIndex === $index ? 'bg-light' : '' }}"
-                            wire:click="selectCountySuggestion('{{ $suggestion }}')"
+                            @mousedown.prevent="$wire.selectCountySuggestion('{{ $suggestion }}')"
                             wire:key="county-suggestion-{{ $index }}">
                             <i class="fa-solid fa-map me-2 text-muted"></i>
                             {{ $suggestion }}

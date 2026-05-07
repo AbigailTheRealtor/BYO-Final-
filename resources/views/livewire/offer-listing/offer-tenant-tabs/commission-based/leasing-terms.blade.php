@@ -1,4 +1,4 @@
-<h3>Leasing Terms </h4>
+<h3>Leasing Terms</h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
