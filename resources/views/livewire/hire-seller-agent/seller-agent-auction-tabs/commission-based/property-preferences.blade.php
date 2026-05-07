@@ -456,7 +456,6 @@
             wire:keydown.enter.prevent="selectPropertyCitySuggestion()"
             wire:keydown.arrow-up.prevent="decrementPropertyCityHighlight()"
             wire:keydown.arrow-down.prevent="incrementPropertyCityHighlight()"
-            wire:blur="selectPropertyCitySuggestion()"
             class="form-control has-icon @error('property_city') is-invalid @enderror" 
             data-icon="fa-solid fa-city"
             autocomplete="off" 
@@ -468,7 +467,7 @@
                 <ul class="list-group">
                     @foreach ($propertyCitySuggestions as $index => $suggestion)
                         <li class="list-group-item {{ ($highlightedPropertyCityIndex ?? -1) === $index ? 'bg-light' : '' }}"
-                            wire:click="selectPropertyCitySuggestion('{{ $suggestion }}')"
+                            @mousedown.prevent="$wire.selectPropertyCitySuggestion('{{ $suggestion }}')"
                             wire:key="property-city-suggestion-{{ $index }}">
                             <i class="fa-solid fa-city me-2 text-muted"></i>
                             {{ $suggestion }}
@@ -556,7 +555,6 @@
             <input type="text" wire:model.live.debounce.300ms="newCity" wire:keydown.enter.prevent="selectCitySuggestion()"
                 wire:keydown.arrow-up.prevent="decrementHighlight('City')"
                 wire:keydown.arrow-down.prevent="incrementHighlight('City')"
-                wire:blur="selectCitySuggestion()"
                 class="form-control has-icon @error('newCity') is-invalid @enderror" data-icon="fa-solid fa-city"
                 autocomplete="off" placeholder="Enter city or cities">
 
@@ -566,7 +564,7 @@
                     <ul class="list-group">
                         @foreach ($citySuggestions as $index => $suggestion)
                             <li class="list-group-item {{ $highlightedCityIndex === $index ? 'bg-light' : '' }}"
-                                wire:click="selectCitySuggestion('{{ $suggestion }}')"
+                                @mousedown.prevent="$wire.selectCitySuggestion('{{ $suggestion }}')"
                                 wire:key="city-suggestion-{{ $index }}">
                                 <i class="fa-solid fa-city me-2 text-muted"></i>
                                 {{ $suggestion }}
