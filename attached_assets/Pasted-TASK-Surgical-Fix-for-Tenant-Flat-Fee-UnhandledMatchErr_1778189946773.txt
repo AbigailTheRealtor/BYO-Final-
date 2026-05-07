@@ -1,0 +1,69 @@
+TASK — Surgical Fix for Tenant Flat-Fee UnhandledMatchError
+
+Issue:
+The route:
+/offer-listing/tenant/flat-fee
+
+throws:
+
+UnhandledMatchError
+Unhandled match case 'flat-fee'
+
+File:
+resources/views/livewire/offer-listing/tenant/offer-tenant-listing.blade.php
+around line ~1694
+
+Root cause:
+A PHP match() expression only handles:
+- 'tenant'
+- 'buyer'
+- 'seller'
+- 'landlord'
+
+but the route passes:
+- 'flat-fee'
+
+This is a pre-existing issue discovered during smoke testing and is unrelated to the previous tooltip/dropdown fixes.
+
+Critical safeguards:
+- Surgical fix only.
+- Do NOT refactor architecture.
+- Do NOT rename Livewire properties.
+- Do NOT modify routing structure.
+- Do NOT touch commission-based Tenant flow.
+- Do NOT touch Create Offer Listing Seller/Buyer/Landlord flows.
+- Do NOT touch Hire Agent flows.
+- Do NOT touch draft/save logic.
+- Do NOT touch marketplace bids, direct hire, accepted bid summaries, referral logic, or Brainlee.
+- Do NOT run migrations, seeders, migrate:fresh, or tests that reset the database.
+- Preserve all existing bindings and functionality.
+
+Goal:
+Safely allow the Tenant flat-fee route to render without changing existing commission-based behavior.
+
+Fix approach:
+- Read the existing match() expression carefully.
+- Add ONLY the minimum handling needed for the 'flat-fee' case.
+- Preserve all existing current cases exactly as-is.
+- Do not rewrite the whole match block unless absolutely necessary.
+- If the flat-fee route should behave the same as tenant in this context, map it safely to the same output used for tenant.
+- If a default case is safer and appropriate, explain why before implementing.
+
+After fix:
+Run a smoke test ONLY for:
+- /offer-listing/tenant/flat-fee
+
+Verify:
+1. Page loads successfully.
+2. No PHP error.
+3. County dropdown still works.
+4. Existing Tenant commission-based flow still loads normally.
+5. No unrelated flows changed.
+
+Deliverable:
+Provide:
+- exact file changed
+- exact logic added
+- why this was the safest fix
+- confirmation no unrelated files changed
+- smoke test result

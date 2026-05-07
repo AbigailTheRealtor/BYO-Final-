@@ -1629,6 +1629,13 @@ class TenantOfferListing extends Component
         // Set user_type from route parameter, or default to 'tenant'
         $this->user_type = ($user_type !== null) ? $user_type : 'tenant';
 
+        // The flat-fee route passes user_type='flat-fee'; map it to limited_service
+        // so the blade skips the full_service block (which has no 'flat-fee' match arm)
+        // and renders the correct flat-fee tab set and partials instead.
+        if ($this->user_type === 'flat-fee') {
+            $this->service_type = 'limited_service';
+        }
+
         $this->initializeFeeStructure();
         $this->addService();
 
