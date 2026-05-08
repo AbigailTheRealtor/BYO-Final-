@@ -83,6 +83,7 @@
             font-size: 25px;
             color: #11b7cf;
             pointer-events: none;
+            z-index: 10;
             top: 50%;
             transform: translateY(-50%);
             /* Center the icon vertically */
@@ -295,6 +296,10 @@
             padding: 2px 8px;
         }
 
+        .input-cover.has-select-icon .select2-container .select2-selection {
+            padding-left: 44px !important;
+        }
+
         .tooltip-inner {
             font-size: 12px;
             /* Decrease text size */
@@ -326,6 +331,13 @@
             .status-icon {
                 margin-right: 0.3rem;
                 font-size: 1rem;
+            }
+
+        }
+
+        @media (max-width: 320px) {
+            .commission-based-agent {
+                margin-left: -43px !important;
             }
         }
 
@@ -371,6 +383,10 @@
         .user-selected {
             color: #0ce7ef;
             font-weight: 600;
+        }
+
+        .set-button {
+            gap: 3px;
         }
     </style>
 @endpush
