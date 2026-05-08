@@ -2359,6 +2359,7 @@ $lease_types = [
             if (typeof window.updateSaveButton === 'function') {
                 window.updateSaveButton();
             }
+            addIconsToInputs();
         }, 200);
     });
 
@@ -4221,6 +4222,7 @@ $lease_types = [
             const wrapper = input.closest('.input-cover');
             if (!wrapper) return;
             if (input.type === 'file') return;
+            wrapper.querySelectorAll('.input-icon:not(.data-icon-rendered)').forEach(el => el.remove());
             if (wrapper.querySelector('.data-icon-rendered')) return;
             const icon = document.createElement('i');
             icon.className = `input-icon ${iconClass} data-icon-rendered`;

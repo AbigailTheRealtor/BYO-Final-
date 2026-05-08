@@ -2162,6 +2162,7 @@
                             toggleLease($('.lease_for').val() || []);
                         }
                     }, 200);
+                    setTimeout(addIconsToInputs, 300);
                     setTimeout(function() {
                         if (typeof window._updateNextSubmitButtons === 'function') window._updateNextSubmitButtons();
                     }, 50);
@@ -4127,14 +4128,17 @@
         }
         
         function addIconsToInputs() {
-            document.querySelectorAll('.has-icon').forEach(input => {
+            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                const parent = input.parentNode;
-                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
-                if (parent.querySelector(':scope > .input-icon')) return;
+                if (!iconClass) return;
+                const wrapper = input.closest('.input-cover');
+                if (!wrapper) return;
+                if (input.type === 'file') return;
+                wrapper.querySelectorAll('.input-icon:not(.data-icon-rendered)').forEach(el => el.remove());
+                if (wrapper.querySelector('.data-icon-rendered')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                parent.insertBefore(icon, input);
+                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
 
@@ -4188,6 +4192,8 @@
                 } else if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
                 }
+
+                setTimeout(addIconsToInputs, 300);
             }
         });
     </script>
