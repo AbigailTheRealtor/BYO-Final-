@@ -25,7 +25,7 @@ class SellerAgentAuctionEdit extends Component
     public $service_type = 'full_service'; // 'full_service' or 'limited_service'
     public $listing_status = 'Active'; // 'Active', 'Pending', or 'Hired Agent'
 
-    public $user_type = 'buyer'; // Default to tenant or whatever makes sense
+    public $user_type = 'seller'; // Default to seller
     public $auction_type = '';
     public $listing_title = '';
     public $working_with_agent = '';
@@ -1780,8 +1780,11 @@ class SellerAgentAuctionEdit extends Component
 
             session()->flash('success', 'Listing updated successfully!');
 
-            // Optionally redirect to a success page
-            // return redirect()->route('listings.success');
+            $url = route('seller.agent.auction.detail', ['id' => $auction->id]);
+
+            $this->dispatchBrowserEvent('force-redirect', ['url' => $url]);
+
+            return redirect()->to($url);
 
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving listing: ' . $e->getMessage());
