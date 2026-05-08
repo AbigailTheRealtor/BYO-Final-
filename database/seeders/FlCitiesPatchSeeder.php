@@ -149,7 +149,8 @@ class FlCitiesPatchSeeder extends Seeder
             ['zip_code' => '33549', 'city' => 'Lutz',                'state_abbrev' => 'FL', 'state_name' => 'Florida', 'county' => 'Hillsborough'],
         ];
 
-        $zipAdded = 0;
+        $zipAdded   = 0;
+        $aliasAdded = 0;
         $now = now();
         foreach ($zips as $zip) {
             // us_zip_codes.zip_code has a unique constraint — one row per zip.
@@ -157,16 +158,37 @@ class FlCitiesPatchSeeder extends Seeder
             // and Largo), the first entry in the array wins. City-to-county
             // auto-population relies on us_cities (not us_zip_codes), so both
             // cities resolve correctly regardless of which zip row exists.
-            $exists = DB::table('us_zip_codes')->where('zip_code', $zip['zip_code'])->exists();
-            if (!$exists) {
+            // Alternate municipality names are also written to us_zip_code_cities
+            // so that getZipCodesForCity() can find them via the alias table.
+            $primaryCity = DB::table('us_zip_codes')->where('zip_code', $zip['zip_code'])->value('city');
+
+            if (!$primaryCity) {
                 DB::table('us_zip_codes')->insertOrIgnore(array_merge($zip, [
                     'created_at' => $now,
                     'updated_at' => $now,
                 ]));
                 $zipAdded++;
+            } elseif (strtolower($primaryCity) !== strtolower($zip['city'])) {
+                // ZIP exists but maps to a different primary city — write as alias
+                $aliasExists = DB::table('us_zip_code_cities')
+                    ->where('zip_code', $zip['zip_code'])
+                    ->whereRaw('LOWER(city) = ?', [strtolower($zip['city'])])
+                    ->exists();
+
+                if (!$aliasExists) {
+                    DB::table('us_zip_code_cities')->insertOrIgnore([
+                        'zip_code'     => $zip['zip_code'],
+                        'city'         => $zip['city'],
+                        'state_abbrev' => $zip['state_abbrev'],
+                        'county'       => $zip['county'] ?? null,
+                        'created_at'   => $now,
+                        'updated_at'   => $now,
+                    ]);
+                    $aliasAdded++;
+                }
             }
         }
 
-        $this->command->info("Zip code patch complete — added {$zipAdded} missing zip entries.");
+        $this->command->info("Zip code patch complete — added {$zipAdded} missing zip entries, {$aliasAdded} alias entries.");
     }
 }
