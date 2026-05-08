@@ -1,0 +1,74 @@
+TASK: Create Offer Tenant Listing — Fix Oversized Textarea Height
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/tenant/tenant
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+IMPORTANT SAFEGUARDS:
+- Audit first before editing.
+- Do NOT touch Buyer, Seller, or Landlord flows.
+- Do NOT touch Hire Agent flows.
+- Do NOT change validation logic.
+- Do NOT change controllers, models, migrations, database schema, or save/load logic.
+- Do NOT delete or alter saved drafts.
+- Blade/CSS-only fix preferred.
+- Surgical change only.
+
+ISSUE:
+On Create Offer Tenant Listing, these textareas are still too tall:
+- Renewal Option Details
+- Tenant Conditions
+- Commercial Approval Conditions
+
+They need to match the normal regular-size textarea used by Maintenance Preferences.
+
+AUDIT FIRST:
+1. Find the Maintenance Preferences textarea in the same Tenant flow.
+2. Identify its exact:
+   - rows value
+   - class list
+   - wrapper div class
+   - inline style, if any
+   - CSS class affecting height
+
+3. Compare it to:
+   - renewal_option_details
+   - tenant_conditions
+   - commercial_approval_conditions
+
+FIX:
+Make those 3 textareas match Maintenance Preferences exactly.
+
+Important:
+- If Maintenance Preferences uses rows="2", use rows="2".
+- If Maintenance Preferences uses a compact class, use the same class.
+- If Maintenance Preferences has no inline style, remove inline styles from these 3.
+- Do NOT use min-height:140px.
+- Do NOT rely only on rows="3" if CSS is still making them too tall.
+- Check for global textarea CSS that may be overriding rows.
+- Keep wire:model, placeholder, label, tooltip, and saved values unchanged.
+
+LIKELY FILE:
+resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+POST-FIX TESTING:
+1. Hard refresh the Create Tenant Listing page.
+2. Navigate to Leasing Terms.
+3. Select Renewal Option Requested = Yes so Renewal Option Details appears.
+4. Confirm all 3 fields visually match Maintenance Preferences:
+   - Renewal Option Details
+   - Tenant Conditions
+   - Commercial Approval Conditions
+5. Confirm no other textareas became too small or too tall.
+6. Save draft and reload draft.
+7. Confirm field values still save/load correctly.
+
+FINAL REPORT:
+- Exact Maintenance Preferences textarea pattern found
+- Exact changes made to the 3 fields
+- Files changed
+- Confirmation no validation/controller/model/database changes
+- Confirmation no other flows touched
