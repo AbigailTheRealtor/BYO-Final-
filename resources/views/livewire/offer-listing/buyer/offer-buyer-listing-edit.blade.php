@@ -83,6 +83,7 @@
             font-size: 25px;
             color: #11b7cf;
             pointer-events: none;
+            z-index: 10;
             top: 50%;
             transform: translateY(-50%);
             /* Center the icon vertically */
@@ -265,6 +266,10 @@
             min-height: 38px;
             /* Standard form control height */
             padding: 2px 8px;
+        }
+
+        .input-cover.has-select-icon .select2-container .select2-selection {
+            padding-left: 44px !important;
         }
 
         @media (max-width: 768px) {
@@ -1262,6 +1267,13 @@
 
             addIconsToInputs();
             checkRepresentationStatus();
+
+            // Re-inject icons whenever a wizard tab becomes active (Select2 needs time to settle)
+            document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', function() {
+                    setTimeout(addIconsToInputs, 300);
+                });
+            });
         });
 
         function selectService(serviceType) {
@@ -2312,14 +2324,17 @@
 
 
         function addIconsToInputs() {
-            document.querySelectorAll('.has-icon').forEach(input => {
+            document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
-                const parent = input.parentNode;
-                if (!iconClass || !parent || !parent.classList || !parent.classList.contains('input-cover')) return;
-                if (parent.querySelector(':scope > .input-icon')) return;
+                if (!iconClass) return;
+                const wrapper = input.closest('.input-cover');
+                if (!wrapper) return;
+                if (input.type === 'file') return;
+                wrapper.querySelectorAll('.input-icon:not(.data-icon-rendered)').forEach(el => el.remove());
+                if (wrapper.querySelector('.data-icon-rendered')) return;
                 const icon = document.createElement('i');
-                icon.className = `input-icon ${iconClass}`;
-                parent.insertBefore(icon, input);
+                icon.className = `input-icon ${iconClass} data-icon-rendered`;
+                wrapper.insertBefore(icon, wrapper.firstChild);
             });
         }
 
@@ -2339,6 +2354,11 @@
 
         document.addEventListener('livewire:load', function() {
             addIconsToInputs();
+        });
+
+        // Re-inject icons after draft data loads (browser event dispatched by saveDraft/loadDraft)
+        window.addEventListener('draftLoaded', function() {
+            setTimeout(addIconsToInputs, 300);
         });
 
         Livewire.hook('message.processed', () => {

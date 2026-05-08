@@ -1,0 +1,138 @@
+SAFE IMPLEMENTATION — LIVE U.S. CITY IMPORT
+(Treasure Island + Nationwide City Coverage Fix)
+
+Goal:
+Safely populate the active us_* location tables with the complete U.S. Census city dataset using the already-existing import system discovered during audit.
+
+Confirmed from audit:
+- Treasure Island is missing from us_cities.
+- Multiple Florida cities are missing.
+- Lookup logic is correct.
+- Active Offer Listing + Hire Agent flows already use us_* tables.
+- Import command already exists and was specifically built for this fix.
+
+STRICT SAFEGUARDS:
+- DO NOT modify any code.
+- DO NOT edit Livewire components.
+- DO NOT change Select2.
+- DO NOT rewrite lookup logic.
+- DO NOT alter drafts/listings/users.
+- DO NOT truncate tables.
+- DO NOT run migrate:fresh.
+- DO NOT reseed unrelated tables.
+- DO NOT delete existing rows.
+- DO NOT touch legacy cleanup yet.
+- ONLY run the existing import utilities already discovered during audit.
+
+Phase 1 — Pre-Import Snapshot
+Before running import:
+
+1. Output current counts:
+- us_states
+- us_counties
+- us_cities
+- us_zip_codes
+
+2. Confirm these are currently missing:
+- Treasure Island
+- Dunedin
+- Madeira Beach
+- Indian Rocks Beach
+- Safety Harbor
+
+3. Confirm:
+- Florida exists
+- Pinellas County exists
+
+4. Save/export console output.
+
+STOP if anything unexpected appears.
+
+Phase 2 — Run LIVE Import
+Run ONLY the existing command:
+
+php artisan cities:import-census
+
+Do NOT modify the command.
+Do NOT add custom scripts.
+Do NOT manually insert cities.
+
+Allow the existing command to perform:
+- FlCitiesPatchSeeder
+- UsCitiesExpandedSeeder
+- FixCityCountyMappings
+
+Capture full console output.
+
+Phase 3 — Post-Import Verification
+After import completes:
+
+1. Output new counts:
+- us_states
+- us_counties
+- us_cities
+- us_zip_codes
+
+2. Verify these cities now exist:
+- Treasure Island
+- Dunedin
+- Madeira Beach
+- Indian Rocks Beach
+- Safety Harbor
+
+3. Verify Treasure Island links correctly to:
+- Pinellas County
+- Florida
+
+4. Verify auto-population relationships:
+City → County → State
+
+5. Verify whether Treasure Island zip mappings now exist correctly in us_zip_codes.
+
+Phase 4 — Functional UI Testing
+Test ALL active flows:
+
+Offer Listing:
+- Seller Create
+- Seller Edit
+- Seller Resume Draft
+- Buyer Create
+- Landlord Create
+- Tenant Create
+
+Hire Agent:
+- Hire Seller Agent Create
+- Hire Buyer Agent Create
+- Hire Landlord Agent Create
+- Hire Tenant Agent Create
+- Tenant Agent Edit
+
+Use:
+- Treasure Island
+- Dunedin
+- Madeira Beach
+
+Verify:
+- City appears in autocomplete
+- County auto-populates
+- State auto-populates
+- Drafts still load correctly
+- Edit still loads correctly
+- No JS errors
+- No Select2 breakage
+
+IMPORTANT:
+Do NOT test unrelated features.
+
+Phase 5 — Final Report
+Return:
+A. Before/after counts
+B. Cities successfully added
+C. Whether Treasure Island now works platform-wide
+D. Whether county/state auto-population works
+E. Whether any flows still fail
+F. Whether zip mappings still need a secondary patch
+G. Any warnings/errors during import
+
+STOP after report.
+Do not perform legacy cleanup yet.
