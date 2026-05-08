@@ -307,7 +307,7 @@
         <div class="input-cover">
             <input type="text" wire:model="listing_title" class="form-control has-icon"
                 data-icon="fa-solid fa-tag"
-                placeholder="Enter listing title (e.g., Tenant Seeking Residential or Commercial Space)"
+                placeholder="Enter listing title (e.g., Tenant Seeking Rental in Tampa, FL)"
                 required>
         </div>
         <span class="error mt-2" id="listing_title_error"></span>
