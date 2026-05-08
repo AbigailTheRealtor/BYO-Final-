@@ -580,59 +580,6 @@
         ['name' => 'Other'],
     ];
 
-    // Define the updated services array
-    $services = [
-        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
-        [
-            'name' =>
-                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
-        ],
-        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
-        [
-            'name' =>
-                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
-        ],
-        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
-        [
-            'name' =>
-                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
-        ],
-        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
-        [
-            'name' =>
-                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
-        ],
-        [
-            'name' =>
-                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
-        ],
-        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
-        ['name' => 'Other – Specify additional services as needed.'],
-    ];
 
     $property_items = [
         // Residential (alphabetical order)
@@ -1120,7 +1067,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Services', 'Description'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Description'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -1134,68 +1081,68 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
                                         id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
                                         data-bs-target="#broker-compensation-agency-agreement-terms"
                                         type="button" role="tab"
                                         aria-controls="broker-compensation-agency-agreement-terms"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         Broker Compensation &amp; Agency Agreement Terms
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(5)"
+                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#tax-legal-hoa-disclosures"
+                                        type="button" role="tab"
+                                        aria-controls="tax-legal-hoa-disclosures"
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        Tax, Legal &amp; HOA
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         wire:click="setActiveTab(6)"
-                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#tax-legal-hoa-disclosures"
+                                        id="documents-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#documents-disclosures"
                                         type="button" role="tab"
-                                        aria-controls="tax-legal-hoa-disclosures"
+                                        aria-controls="documents-disclosures"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Tax, Legal &amp; HOA
+                                        Documents &amp; Disclosures
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
                                         wire:click="setActiveTab(7)"
-                                        id="documents-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#documents-disclosures"
+                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                        data-bs-target="#photos-tours-documents"
                                         type="button" role="tab"
-                                        aria-controls="documents-disclosures"
+                                        aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
-                                        Documents &amp; Disclosures
+                                        Photos &amp; Tours
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
                                         wire:click="setActiveTab(8)"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
+                                        id="landlord-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#landlord-information"
                                         type="button" role="tab"
-                                        aria-controls="photos-tours-documents"
+                                        aria-controls="landlord-information"
                                         aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
-                                        Photos &amp; Tours
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 9 ? 'active' : '' }}"
                                         wire:click="setActiveTab(9)"
-                                        id="landlord-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#landlord-information"
-                                        type="button" role="tab"
-                                        aria-controls="landlord-information"
-                                        aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 10 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(10)"
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
                                         aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 10 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
                                         AI Questions
                                     </button>
                                 </li>
@@ -1301,22 +1248,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Services Tab (full_service: index 3) -->
+                                <!-- Additional Details Tab (full_service: index 3) -->
                                 <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
-                                    id="services" role="tabpanel" aria-labelledby="services-tab">
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
-                                    @endif
-                                </div>
-
-                                <!-- Additional Details Tab (full_service: index 4) -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
@@ -1330,8 +1263,8 @@
 
                                 </div>
 
-                                <!-- Broker Compensation & Agency Agreement Terms Tab (full_service: index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (full_service: index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
@@ -1344,26 +1277,26 @@
                                     @endif
                                 </div>
 
-                                <!-- Tax, Legal, HOA & Disclosures Tab (full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Tax, Legal, HOA & Disclosures Tab (full_service: index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="tax-legal-hoa-disclosures" role="tabpanel" aria-labelledby="tax-legal-hoa-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.tax-legal-hoa-disclosures')
                                 </div>
 
-                                <!-- Documents & Disclosures Tab (full_service: index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
+                                <!-- Documents & Disclosures Tab (full_service: index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="documents-disclosures" role="tabpanel" aria-labelledby="documents-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.documents-disclosures')
                                 </div>
 
-                                <!-- Photos, Tours & Documents Tab (full_service: index 8) -->
-                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}"
+                                <!-- Photos, Tours & Documents Tab (full_service: index 7) -->
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
                                     id="photos-tours-documents" role="tabpanel" aria-labelledby="photos-tours-documents-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- Landlord Info Tab (full_service: index 9) -->
-                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}"
+                                <!-- Landlord Info Tab (full_service: index 8) -->
+                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1378,8 +1311,8 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 10) -->
-                                <div class="tab-pane fade {{ $activeTab === 10 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Questions Tab (full_service: index 9) -->
+                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
@@ -1503,7 +1436,6 @@
                     'non_negotiable_amenities': data.non_negotiable_amenities || [],
                     'lease_for': data.lease_for || [],
                     'credit_scroe_rating': data.credit_scroe_rating || [],
-                    'services': data.services || [],
                     'pool_type': data.pool_type || [],
                     'photo_enhancements': data.photo_enhancements || [],
                     'property_items': data.property_items || [],
@@ -2555,49 +2487,6 @@
             }
 
             } catch (_setupErr) { console.warn('[landlord offer-listing] initializeFullService setup error:', _setupErr); }
-            // Add this function to validate services tab
-            function validateServicesTab(tabContent) {
-                if (!tabContent || tabContent.id !== 'services') return true;
-
-                let isValid = true;
-
-                // Check at least one service is selected (excluding "Other" checkbox)
-                const hasServices = tabContent.querySelectorAll(
-                    'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
-                ).length > 0;
-
-                // Check "Other Services" if enabled
-                const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
-                const otherTextarea = tabContent.querySelector('#other-services-input');
-                const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
-
-                // Clear previous errors
-                const existingErrors = tabContent.querySelectorAll('.service-error');
-                if (existingErrors) {
-                    existingErrors.forEach(el => el.remove());
-                }
-                if (otherTextarea) otherTextarea.classList.remove('is-invalid');
-
-                // Services validation removed - selecting services is now optional
-                // No validation error will be shown if no services are selected
-
-                if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
-                    isValid = false;
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'service-error error mt-2';
-                    errorDiv.textContent = 'Please describe the additional services you require.';
-
-                    if (otherTextarea) {
-                        otherTextarea.classList.add('is-invalid');
-                        const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
-                        if (container) {
-                            container.appendChild(errorDiv);
-                        }
-                    }
-                }
-
-                return isValid;
-            }
             window._wizardNextHandler = function() {
                 const currentTab = document.querySelector('#myTab .nav-link.active');
                 if (!currentTab) return;
@@ -2672,33 +2561,6 @@
                             existingError.remove();
                         }
                     }
-                }
-
-                // Validate counties array (your existing code)
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer && isElementVisible(countiesContainer)) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
                 if (currentTabContent.id === 'service-selection-and-pricing') {
@@ -2945,6 +2807,8 @@
 
 
         Livewire.hook('message.processed', () => {
+            var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
             addIconsToInputs();
 
             const fullServiceChecked = document.getElementById('fullService')?.checked;
@@ -2978,6 +2842,8 @@
                     window._manualTabSwitch(_savedTabId);
                 }
             }
+
+            requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
         });
     </script>
 
@@ -2995,15 +2861,20 @@
                     '#listing-details',
                     '#property-details',
                     '#leasing-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
-                    '#landlord-information'
+                    '#broker-compensation-agency-agreement-terms',
+                    '#tax-legal-hoa-disclosures',
+                    '#documents-disclosures',
+                    '#photos-tours-documents',
+                    '#landlord-information',
+                    '#ai-questions'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#landlord-information'
+                    '#photos-tours-documents-ls',
+                    '#information',
+                    '#ai-questions'
                 ];
 
                 tabSelector.forEach(selector => {
@@ -3305,7 +3176,7 @@
                     );
                     if (_submitTrigger) {
                         new bootstrap.Tab(_submitTrigger).show();
-                        try { @this.call('setActiveTab', 6); } catch(exExit) {}
+                        try { @this.call('setActiveTab', 8); } catch(exExit) {}
                     }
                     return;
                 }

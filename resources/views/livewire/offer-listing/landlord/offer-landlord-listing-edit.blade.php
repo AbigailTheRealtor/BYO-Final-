@@ -558,59 +558,6 @@
         ['name' => 'Other'],
     ];
 
-    // Define the updated services array
-    $services = [
-        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
-        [
-            'name' =>
-                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
-        ],
-        [
-            'name' =>
-                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
-        ],
-        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
-        [
-            'name' =>
-                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
-        ],
-        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
-        [
-            'name' =>
-                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
-        ],
-        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
-        [
-            'name' =>
-                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
-        ],
-        [
-            'name' =>
-                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
-        ],
-        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
-        ['name' => 'Other – Specify additional services as needed.'],
-    ];
 
     $property_items = [
         // Residential (alphabetical order)
@@ -1062,56 +1009,67 @@ $tenantPays = [
                                 @endforeach
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
-                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#tax-legal-hoa-disclosures"
+                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation-agency-agreement-terms"
                                         type="button" role="tab"
                                         wire:click="setActiveTab(4)"
-                                        aria-controls="tax-legal-hoa-disclosures"
+                                        aria-controls="broker-compensation-agency-agreement-terms"
                                         aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
-                                        Tax, Legal &amp; HOA
+                                        Broker Compensation &amp; Agency Agreement Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        id="documents-disclosures-tab" data-bs-toggle="tab"
-                                        data-bs-target="#documents-disclosures"
+                                        id="tax-legal-hoa-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#tax-legal-hoa-disclosures"
                                         type="button" role="tab"
                                         wire:click="setActiveTab(5)"
-                                        aria-controls="documents-disclosures"
+                                        aria-controls="tax-legal-hoa-disclosures"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Documents &amp; Disclosures
+                                        Tax, Legal &amp; HOA
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
-                                        data-bs-target="#photos-tours-documents"
+                                        id="documents-disclosures-tab" data-bs-toggle="tab"
+                                        data-bs-target="#documents-disclosures"
                                         type="button" role="tab"
                                         wire:click="setActiveTab(6)"
-                                        aria-controls="photos-tours-documents"
+                                        aria-controls="documents-disclosures"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        Photos &amp; Tours
+                                        Documents &amp; Disclosures
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
-                                        id="landlord-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#landlord-information"
+                                        id="photos-tours-documents-tab" data-bs-toggle="tab"
+                                        data-bs-target="#photos-tours-documents"
                                         type="button" role="tab"
                                         wire:click="setActiveTab(7)"
-                                        aria-controls="landlord-information"
+                                        aria-controls="photos-tours-documents"
                                         aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
+                                        Photos &amp; Tours
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
+                                        id="landlord-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#landlord-information"
+                                        type="button" role="tab"
+                                        wire:click="setActiveTab(8)"
+                                        aria-controls="landlord-information"
+                                        aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
+                                        Agent Credentials &amp; Contact Info
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 9 ? 'active' : '' }}"
                                         id="ai-questions-tab" data-bs-toggle="tab"
                                         data-bs-target="#ai-questions"
                                         type="button" role="tab"
-                                        wire:click="setActiveTab(8)"
+                                        wire:click="setActiveTab(9)"
                                         aria-controls="ai-questions"
-                                        aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
                                         AI Questions
                                     </button>
                                 </li>
@@ -1203,29 +1161,36 @@ $tenantPays = [
 
                                 </div>
 
-                                <!-- Tax, Legal, HOA & Disclosures Tab (index 4) -->
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 4) -->
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
+                                </div>
+
+                                <!-- Tax, Legal, HOA & Disclosures Tab (index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
                                     id="tax-legal-hoa-disclosures" role="tabpanel"
                                     aria-labelledby="tax-legal-hoa-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.tax-legal-hoa-disclosures')
                                 </div>
 
-                                <!-- Documents & Disclosures Tab (index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <!-- Documents & Disclosures Tab (index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="documents-disclosures" role="tabpanel"
                                     aria-labelledby="documents-disclosures-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.documents-disclosures')
                                 </div>
 
-                                <!-- Photos & Tours Tab (index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Photos & Tours Tab (index 7) -->
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
                                     id="photos-tours-documents" role="tabpanel"
                                     aria-labelledby="photos-tours-documents-tab">
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- Landlord Info Tab (index 7) -->
-                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
+                                <!-- Landlord Info Tab (index 8) -->
+                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1234,8 +1199,8 @@ $tenantPays = [
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 8) -->
-                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
+                                <!-- AI Questions Tab (full_service: index 9) -->
+                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
@@ -2051,49 +2016,6 @@ $tenantPays = [
                 return allValid;
             }
 
-            // Add this function to validate services tab
-            function validateServicesTab(tabContent) {
-                if (!tabContent || tabContent.id !== 'services') return true;
-
-                let isValid = true;
-
-                // Check at least one service is selected (excluding "Other" checkbox)
-                const hasServices = tabContent.querySelectorAll(
-                    'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
-                ).length > 0;
-
-                // Check "Other Services" if enabled
-                const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
-                const otherTextarea = tabContent.querySelector('#other-services-input');
-                const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
-
-                // Clear previous errors
-                const existingErrors = tabContent.querySelectorAll('.service-error');
-                if (existingErrors) {
-                    existingErrors.forEach(el => el.remove());
-                }
-                if (otherTextarea) otherTextarea.classList.remove('is-invalid');
-
-                // Services validation removed - selecting services is now optional
-                // No validation error will be shown if no services are selected
-
-                if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
-                    isValid = false;
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'service-error error mt-2';
-                    errorDiv.textContent = 'Please describe the additional services you require.';
-
-                    if (otherTextarea) {
-                        otherTextarea.classList.add('is-invalid');
-                        const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
-                        if (container) {
-                            container.appendChild(errorDiv);
-                        }
-                    }
-                }
-
-                return isValid;
-            }
             window._wizardNextHandler = function() {
                 if (__tabNavLock) return;
                 __tabNavLock = true;
@@ -2166,31 +2088,6 @@ $tenantPays = [
                             existingError.remove();
                         }
                     }
-                }
-
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer && isElementVisible(countiesContainer)) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
                 if (isValid) {
@@ -2388,26 +2285,6 @@ $tenantPays = [
                     }
                 }
 
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
                 if (currentTabContent.id === 'service-selection-and-pricing') {
                     const understandTerms = currentTabContent.querySelector('#understandTerms');
                     if (understandTerms && !understandTerms.checked) {
@@ -2541,6 +2418,8 @@ $tenantPays = [
         });
 
         Livewire.hook('message.processed', () => {
+            var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
             var now = Date.now();
             if (now - _lastInitTime > 400) {
                 _lastInitTime = now;
@@ -2566,6 +2445,8 @@ $tenantPays = [
                 }
                 setTimeout(function() { __tabRestoreGuard = false; }, 200);
             }
+
+            requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
         });
     </script>
 
@@ -2581,17 +2462,22 @@ $tenantPays = [
 
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
-                    '#property-preferences',
+                    '#property-details',
                     '#leasing-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
-                    '#tenant-info'
+                    '#broker-compensation-agency-agreement-terms',
+                    '#tax-legal-hoa-disclosures',
+                    '#documents-disclosures',
+                    '#photos-tours-documents',
+                    '#landlord-information',
+                    '#ai-questions'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#photos-tours-documents-ls',
+                    '#information',
+                    '#ai-questions'
                 ];
 
                 tabSelector.forEach(selector => {

@@ -665,8 +665,6 @@ class LandlordOfferListing extends Component
     public $min_lease_period_other = '';
     public $max_leases_per_year = '';
     public $additional_lease_restrictions = '';
-    public $pet_restrictions = '';
-    public $pet_restrictions_detail = '';
 
     // Group 5 — Documents & Disclosures
     public $landlord_disclosure_available = '';
@@ -1635,7 +1633,7 @@ class LandlordOfferListing extends Component
             $this->property_zip = $auction->get->property_zip ?? null;
 
             $this->cityFieldVisible = !empty($this->cities);
-            $this->countyFieldVisible = !empty($this->counties);
+            $this->countyFieldVisible = false; // Acceptable Counties field removed from Landlord UI
             $this->stateFieldVisible = !empty($this->state);
             $this->zipCodeFieldVisible = !empty($this->zipCodes);
             // Property details
@@ -2215,8 +2213,6 @@ class LandlordOfferListing extends Component
             $this->min_lease_period_other = $auction->get->min_lease_period_other ?? '';
             $this->max_leases_per_year = $auction->get->max_leases_per_year ?? '';
             $this->additional_lease_restrictions = $auction->get->additional_lease_restrictions ?? '';
-            $this->pet_restrictions = $auction->get->pet_restrictions ?? '';
-            $this->pet_restrictions_detail = $auction->get->pet_restrictions_detail ?? '';
 
             // Documents & Disclosures
             $this->landlord_disclosure_available = $auction->get->landlord_disclosure_available ?? '';
@@ -2857,8 +2853,6 @@ class LandlordOfferListing extends Component
         $auction->saveMeta('min_lease_period_other', $this->min_lease_period_other);
         $auction->saveMeta('max_leases_per_year', $this->max_leases_per_year);
         $auction->saveMeta('additional_lease_restrictions', $this->additional_lease_restrictions);
-        $auction->saveMeta('pet_restrictions', $this->pet_restrictions);
-        $auction->saveMeta('pet_restrictions_detail', $this->pet_restrictions_detail);
 
         // Documents & Disclosures
         $auction->saveMeta('landlord_disclosure_available', $this->landlord_disclosure_available);

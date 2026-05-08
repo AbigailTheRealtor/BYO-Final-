@@ -1010,7 +1010,7 @@
     </span>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control"
+        <input type="text" wire:model="desired_rental_amount" id="landlord_desired_lease_price" class="form-control" style="padding-left: 12px;"
             placeholder="Enter desired lease price (e.g., 2500)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1026,7 +1026,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="starting_rent" class="form-control"
+        <input type="text" wire:model="starting_rent" class="form-control" style="padding-left: 12px;"
             placeholder="Enter opening offer amount (e.g., 4000)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1040,7 +1040,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="reserve_rent" class="form-control"
+        <input type="text" wire:model="reserve_rent" class="form-control" style="padding-left: 12px;"
             placeholder="Enter reserve rent (e.g., 4500) — optional"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1054,7 +1054,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="lease_now_price" id="landlord_lease_now_price" class="form-control"
+        <input type="text" wire:model="lease_now_price" id="landlord_lease_now_price" class="form-control" style="padding-left: 12px;"
             placeholder="Enter lease now price (e.g., 5000)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1068,7 +1068,7 @@
     </span>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="desired_rental_amount" class="form-control"
+        <input type="text" wire:model="desired_rental_amount" class="form-control" style="padding-left: 12px;"
             placeholder="Enter desired lease price (e.g., 2500)" required
             data-error-id="desired_rental_amount_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -1170,7 +1170,7 @@
     </span>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="security_deposit_required" class="form-control"
+        <input type="text" wire:model="security_deposit_required" class="form-control" style="padding-left: 12px;"
             placeholder="Enter security deposit amount (e.g., 2500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1220,7 +1220,7 @@
     </span>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="total_move_in_funds_required" class="form-control"
+        <input type="text" wire:model="total_move_in_funds_required" class="form-control" style="padding-left: 12px;"
             placeholder="Enter total move-in funds required (e.g., 7500)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>

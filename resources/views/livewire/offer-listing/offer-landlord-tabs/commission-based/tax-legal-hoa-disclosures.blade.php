@@ -55,7 +55,7 @@
             </label>
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
-                <input type="text" wire:model="annual_property_taxes" class="form-control"
+                <input type="text" wire:model="annual_property_taxes" class="form-control" style="padding-left: 12px;"
                     placeholder="Enter annual property taxes (e.g., 4500)"
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -107,7 +107,6 @@
                 <div class="input-cover">
                     <textarea wire:model="additional_parcel_ids" class="form-control has-icon landlord-compact-textarea" rows="2"
                         data-icon="fa-solid fa-hashtag"
-                        style="padding: 10px; font-size: 16px;"
                         placeholder="Enter each additional parcel ID on a new line"></textarea>
                 </div>
             </div>
@@ -124,7 +123,6 @@
             <div class="input-cover">
                 <textarea wire:model="legal_description" class="form-control has-icon landlord-compact-textarea" rows="2"
                     data-icon="fa-solid fa-landmark"
-                    style="padding: 10px; font-size: 16px;"
                     placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
             </div>
         </div>
@@ -310,7 +308,6 @@
                 <div class="input-cover">
                     <textarea wire:model="special_assessment_description" class="form-control has-icon landlord-compact-textarea" rows="2"
                         data-icon="fa-solid fa-file-invoice"
-                        style="padding: 10px; font-size: 16px;"
                         placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
                 </div>
             </div>
@@ -449,7 +446,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
                             data-icon="fa-regular fa-calendar-days"
-                            placeholder="Describe the fee frequency">
+                            placeholder="Enter fee frequency (e.g., Quarterly)">
                     </div>
                 </div>
             </div>
@@ -485,7 +482,6 @@
                         <div class="input-cover">
                             <textarea wire:model="association_approval_process" class="form-control has-icon landlord-compact-textarea" rows="2"
                                 data-icon="fa-solid fa-clipboard-check"
-                                style="padding: 10px; font-size: 16px;"
                                 placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                         </div>
                     </div>
@@ -499,7 +495,7 @@
                         </label>
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
-                            <input type="text" wire:model="association_application_fee" class="form-control"
+                            <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 12px;"
                                 placeholder="Enter Association Application Fee (e.g., 150)"
                                 data-error-id="association_application_fee_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -657,7 +653,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
                             data-icon="fa-regular fa-clock"
-                            placeholder="Specify minimum lease period">
+                            placeholder="Enter minimum lease period (e.g., 30 Days)">
                     </div>
                 </div>
 
@@ -671,45 +667,7 @@
                     <div class="input-cover">
                         <textarea wire:model="additional_lease_restrictions" class="form-control has-icon landlord-compact-textarea" rows="2"
                             data-icon="fa-solid fa-ban"
-                            style="padding: 10px; font-size: 16px;"
                             placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
-                    </div>
-                </div>
-            @endif
-
-            {{-- Pet Restrictions --}}
-            <div class="form-group mt-3">
-                <label class="fw-bold">Pet Restrictions:
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Indicate whether the association imposes any pet restrictions, such as size limits, breed restrictions, or number of pets allowed.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                </label>
-                <div class="input-cover">
-                    <select wire:model="pet_restrictions" class="form-control has-icon"
-                        data-icon="fa-solid fa-paw">
-                        <option value="">Select</option>
-                        <option value="Yes">Yes — Pet restrictions apply</option>
-                        <option value="No">No — No pet restrictions</option>
-                        <option value="Not Applicable">Not Applicable</option>
-                        <option value="Unknown">Unknown</option>
-                    </select>
-                </div>
-            </div>
-
-            @if ($pet_restrictions === 'Yes')
-                <div class="form-group mt-2">
-                    <label class="fw-bold">Pet Restriction Details:
-                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                            title="Describe the pet restrictions imposed by the association, such as size limits, breed restrictions, or the maximum number of pets allowed.">
-                            <i class="fa-solid fa-circle-info"></i>
-                        </span>
-                    </label>
-                    <div class="input-cover">
-                        <textarea wire:model="pet_restrictions_detail" class="form-control has-icon landlord-compact-textarea" rows="2"
-                            data-icon="fa-solid fa-paw"
-                            style="padding: 10px; font-size: 16px;"
-                            placeholder="Describe pet restrictions (e.g., Max 2 pets, no dogs over 25 lbs, no aggressive breeds)"></textarea>
                     </div>
                 </div>
             @endif
