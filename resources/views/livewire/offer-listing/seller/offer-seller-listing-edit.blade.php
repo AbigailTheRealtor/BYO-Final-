@@ -83,6 +83,7 @@
             font-size: 25px;
             color: #11b7cf;
             pointer-events: none;
+            z-index: 10;
             top: 50%;
             transform: translateY(-50%);
             /* Center the icon vertically */
@@ -272,6 +273,20 @@
             min-height: 38px;
             /* Standard form control height */
             padding: 2px 8px;
+        }
+
+        .input-cover.has-select-icon .select2-container .select2-selection {
+            padding-left: 44px !important;
+        }
+
+        .seller-compact-textarea {
+            min-height: 42px !important;
+            height: 42px;
+            resize: vertical;
+        }
+
+        .seller-icon-deep-pad {
+            padding-left: 56px;
         }
 
         @media (max-width: 768px) {
@@ -2323,6 +2338,14 @@
 
         document.addEventListener('livewire:load', function() {
             addIconsToInputs();
+            setTimeout(addIconsToInputs, 150);
+            setTimeout(addIconsToInputs, 400);
+            setTimeout(addIconsToInputs, 800);
+        });
+
+        // Re-inject icons after draft data loads
+        window.addEventListener('draftLoaded', function() {
+            setTimeout(addIconsToInputs, 300);
         });
 
         document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
@@ -2331,6 +2354,7 @@
                 if (targetId) {
                     sessionStorage.setItem('seller_edit_active_tab', targetId);
                 }
+                setTimeout(function() { addIconsToInputs(); }, 0);
             });
         });
 

@@ -1,0 +1,101 @@
+Let me read both files in parallel before touching anything.
+
+
+3 actions
+Abigail Sweeney started: Run live U.S. city import to fix missing cities (Treasure Island, Dunedin, etc.)
+
+Planning blade integration strategy
+Let me read the exact addIconsToInputs implementation in both blades plus the CSS block in the Edit blade in parallel.
+
+
+7 actions
+Let me check the Tenant Edit blade's shown.bs.tab pattern (the reference from Task #643) before writing anything.
+
+
+3 actions
+Let me read the exact Tenant Edit patterns for all three areas in parallel.
+
+
+6 actions
+I need to read one more section — the existing DOMContentLoaded block at line 1246 in the Buyer Edit blade to see where to add the shown.bs.tab hook there.
+
+
+2 actions
+I have everything I need. Four targeted changes, all independent — I'll apply them all at once.
+
+
+5 actions
+Now I need to add the draftLoaded handler. Let me find the exact current line numbers for the livewire:load block after the edits.
+
+
+6 actions
+All 5 changes applied. Now let me run the smoke test.
+
+
+4 actions
+All checks passed. Let me write the commit message and wrap up.
+
+
+3 actions
+Done. Here's the full report for Task #656.
+
+Task #656 — Change Report: Buyer Edit/Draft Icon & Select2 Parity Fix
+One file changed: resources/views/livewire/offer-listing/buyer/offer-buyer-listing-edit.blade.php
+
+No other files touched. No migrations. No schema changes. No Seller/Tenant/Landlord flows altered.
+
+Change 1 — Replace addIconsToInputs() with the sentinel-based implementation
+Root cause of icon duplication: The old function used parentNode (one level up only), a :scope > .input-icon dedup guard, no sentinel class, no file-input skip, and no orphan cleanup. On every Livewire message.processed re-render it injected a fresh icon because the guard was checking DOM ancestry rather than a stable sentinel class — making duplicates inevitable as the DOM was morphed repeatedly.
+
+New implementation (identical to Buyer Create and the already-fixed Tenant Edit):
+
+Feature	Old	New
+Selector	.has-icon	.has-icon[data-icon] (both required)
+Traversal	input.parentNode	input.closest('.input-cover') (depth-independent)
+File skip	none	if (input.type === 'file') return
+Orphan cleanup	none	removes any .input-icon:not(.data-icon-rendered) before the check
+Dedup guard	:scope > .input-icon present	.data-icon-rendered sentinel class present
+Sentinel class on injected icon	none	data-icon-rendered added
+Insert position	before input	wrapper.firstChild
+Calling addIconsToInputs() any number of times is now fully idempotent.
+
+Change 2 — CSS: z-index: 10 on .input-cover .input-icon
+Added z-index: 10 to the existing rule. Without it, icons can render behind Select2 overlay elements in some browsers. This property was present in Buyer Create and Tenant Edit but missing from the Edit blade.
+
+Change 3 — CSS: Select2 icon-padding rule
+Added:
+
+.input-cover.has-select-icon .select2-container .select2-selection {
+    padding-left: 44px !important;
+}
+
+Without this, Select2 multi-select fields that have an icon render their text flush-left, directly overlapping the icon. Present in Buyer Create (line 271) and Tenant Edit (line 299) but entirely absent from Edit.
+
+Change 4 — shown.bs.tab icon reinjection
+Added inside the existing DOMContentLoaded block, after the initial addIconsToInputs() call:
+
+document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+    tab.addEventListener('shown.bs.tab', function() {
+        setTimeout(addIconsToInputs, 300);
+    });
+});
+
+The 300 ms delay lets Select2 reinitialise on the newly-visible tab before icons are stamped.
+
+Change 5 — draftLoaded event listener
+Added after the livewire:load handler:
+
+window.addEventListener('draftLoaded', function() {
+    setTimeout(addIconsToInputs, 300);
+});
+
+Re-stamps icons after draft data is synced into the DOM via the draftLoaded browser event, matching the pattern in Buyer Create (line 1181).
+
+Smoke test results
+Check	Result
+Page loads, no PHP/fatal error	✅
+Icons visible on inputs after initial load	✅
+No duplicate icons after Save Draft + Livewire re-render	✅
+Icons still present after tab switch to Property Preferences	✅
+No duplicate icons after loading a saved draft	✅
+No JS console errors related to icon logic	✅
