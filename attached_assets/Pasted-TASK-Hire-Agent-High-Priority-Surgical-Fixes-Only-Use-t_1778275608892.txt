@@ -1,0 +1,77 @@
+TASK — Hire Agent High-Priority Surgical Fixes Only
+
+Use the audit report:
+.local/tasks/hire-agent-flows-audit-report.md
+
+Scope:
+Fix ONLY HIGH items FAIL-01, FAIL-02, and FAIL-03.
+
+Critical safeguards:
+- Do NOT run migrations, seeders, migrate:fresh, or database-resetting tests.
+- Do NOT rename database fields.
+- Do NOT refactor architecture.
+- Do NOT touch Create Offer Listing.
+- Do NOT touch Agent Profile, Direct Hire, marketplace bid/counter flows, accepted bid summaries, referral logic, or Brainlee.
+- Do NOT fix medium/low items yet.
+- Preserve existing draft/save/submit behavior.
+
+Fixes:
+
+1. FAIL-01 — SellerAgentAuctionEdit.php wrong default
+File:
+app/Http/Livewire/SellerAgentAuctionEdit.php
+
+Change:
+public $user_type = 'buyer';
+
+To:
+public $user_type = 'seller';
+
+Do not change other properties.
+
+2. FAIL-02 — Missing redirects after update
+Files:
+app/Http/Livewire/SellerAgentAuctionEdit.php
+app/Http/Livewire/BuyerAgentAuctionEdit.php
+
+Find successful edit/update submission logic.
+LandLordAgentAuctionEdit and TenantAgentAuctionEdit already redirect correctly. Copy the same safe redirect pattern used there.
+
+Goal:
+After successful edit/update, Seller and Buyer should redirect correctly instead of staying on the form.
+
+Do not change save draft logic.
+Do not change validation.
+Do not change route names unless matching the existing working Landlord/Tenant pattern.
+
+3. FAIL-03 — Landlord corrupted $preferences array
+File:
+resources/views/livewire/agent-dashboard/hire-landlord-agent.blade.php
+
+Fix the Landlord property preferences list so it matches the correct residential location/view preference style used by the other flows.
+
+Remove these incorrect business-sale items from Landlord preferences:
+- Furniture, Fixtures, and Equipment
+- Advertising Materials
+- Contract Rights
+- Leases
+- Licenses
+- Rights under any Agreement for Interests
+
+Keep correct preference/location/view options only.
+
+Post-fix verification:
+- Confirm only expected files changed.
+- Confirm Seller edit default is seller.
+- Confirm Seller edit redirects after successful update.
+- Confirm Buyer edit redirects after successful update.
+- Confirm Landlord hire form no longer shows business-sale preference items.
+- Confirm Landlord preferences still render normally.
+- Confirm no migrations/database reset commands were run.
+
+Deliverable:
+Provide a concise change report:
+- Files changed
+- Exact changes made
+- Verification results
+- Any items intentionally left for later
