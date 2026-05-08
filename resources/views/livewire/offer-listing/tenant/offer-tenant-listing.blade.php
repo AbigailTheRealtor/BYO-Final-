@@ -1727,8 +1727,8 @@ $lease_types = [
 
                     if ($user_type === 'tenant') {
                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
-                        'AI Questions',
                         $infoTabs[$user_type] ?? null,
+                        'AI Questions',
                     ]);
                     } else {
                     $allTabs = array_merge($baseTabs, [$propertyTab], $restTabs, [
@@ -1902,7 +1902,7 @@ $lease_types = [
                                 <!-- Additional Details Tab - Adjust index based on user_type -->
 
                                 <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+                                    id="description" role="tabpanel" aria-labelledby="description-tab">
 
                                     @if ($user_type === 'tenant')
                                     @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
@@ -1957,20 +1957,18 @@ $lease_types = [
                                 <!-- Info Tab - Adjust index based on user_type -->
                                 @php
                                     $infoTabId = match($user_type) {
-                                        'tenant' => 'tenant-information',
+                                        'tenant' => 'agent-credentials-contact-info',
                                         'seller' => 'seller-information',
                                         'buyer' => 'buyer-information',
                                         'landlord' => 'landlord-information',
-                                        default => 'tenant-information'
+                                        default => 'agent-credentials-contact-info'
                                     };
                                     $infoTabIndex = $user_type === 'tenant'
-                                        ? 7
+                                        ? 6
                                         : (in_array($user_type, ['landlord', 'buyer', 'seller'])
                                             ? ($isAgentUser ? 7 : 6)
                                             : ($isAgentUser ? 8 : 7));
-                                    $aiQuestionsTabIndex = $user_type === 'tenant'
-                                        ? ($infoTabIndex - 1)
-                                        : ($infoTabIndex + 1);
+                                    $aiQuestionsTabIndex = $infoTabIndex + 1;
                                 @endphp
 
                                 <!-- AI Questions Tab (full_service) -->
@@ -4412,7 +4410,7 @@ $lease_types = [
             const requiredFields = [];
             const serviceType = formContainer.getAttribute('data-service-type');
             const userType = (typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : 'tenant').toLowerCase();
-            const infoTabId = '#' + userType + '-information';
+            const infoTabId = userType === 'tenant' ? '#agent-credentials-contact-info' : '#' + userType + '-information';
 
             const tabSelector = serviceType === 'full_service' ? [
                 '#listing-details',
@@ -4424,7 +4422,7 @@ $lease_types = [
                 '#pre-screening',
 
                 '#services',
-                '#additional-details',
+                '#description',
                 '#broker-compensation-agency-agreement-terms',
                 infoTabId
             ] : [
@@ -5131,7 +5129,7 @@ $lease_types = [
                     var _infoSlug = _infoRole === 'landlord' ? '#landlord-information'
                         : _infoRole === 'seller'   ? '#seller-information'
                         : _infoRole === 'buyer'    ? '#buyer-information'
-                        : _infoRole === 'tenant'   ? '#tenant-information'
+                        : _infoRole === 'tenant'   ? '#agent-credentials-contact-info'
                         : '#information';
                     var _submitTabTrigger = document.querySelector('[data-bs-target="' + _infoSlug + '"]')
                         || document.querySelector('[data-bs-target="#information"]');

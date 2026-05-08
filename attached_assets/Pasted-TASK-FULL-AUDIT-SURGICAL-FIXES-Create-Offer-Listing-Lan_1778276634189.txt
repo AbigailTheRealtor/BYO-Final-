@@ -1,0 +1,484 @@
+TASK: FULL AUDIT + SURGICAL FIXES — Create Offer Listing (Landlord)
+GOAL: Audit FIRST, then apply minimal/safe fixes to the Landlord Create Offer Listing flow ONLY.
+DO NOT touch Hire Agent flows.
+DO NOT touch Seller/Buyer/Tenant Offer flows unless explicitly referenced as the visual source-of-truth.
+DO NOT refactor unrelated systems.
+DO NOT change database schema unless absolutely required.
+DO NOT remove existing saved drafts/listing data.
+
+ENVIRONMENT
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/landlord
+
+LOGIN:
+abigailbaschuk@gmail.com
+12345678
+
+====================================================
+PHASE 1 — READ-ONLY AUDIT (NO CHANGES YET)
+====================================================
+
+FIRST:
+Create a temporary markdown audit file:
+storage/app/private/audits/landlord-offer-listing-audit.md
+
+Audit ALL of the following BEFORE editing anything:
+
+1. Livewire component
+2. Blade parent view
+3. ALL landlord tab partials
+4. Shared icon injection JS
+5. Shared tab validation JS
+6. Shared Select2 init logic
+7. Upload/document logic
+8. Draft/edit hydration logic
+9. Photo uploader logic
+10. Currency formatter logic
+
+COMPARE AGAINST:
+- Seller Create Offer Listing
+- Hire Agent Seller flow
+- Working Tenant/Buyer icon rendering
+
+IDENTIFY:
+- shared reusable logic
+- landlord-only overrides
+- duplicate JS initializers
+- tab validation flashing
+- icon rendering mismatches
+- upload race conditions
+- textarea size overrides
+- edit/draft hydration differences
+
+DO NOT EDIT YET.
+
+====================================================
+PHASE 2 — PROPERTY DETAILS FIXES
+====================================================
+
+A.
+REMOVE:
+“Acceptable Counties”
+
+FROM:
+Property Details tab
+
+Landlord Offer Listing should NOT show this field.
+
+VERIFY:
+- no validation references remain
+- no hidden errors remain
+- no stale JS references remain
+
+----------------------------------------------------
+
+B.
+ICON CONSISTENCY AUDIT + FIX
+
+The following icons/styles MUST visually match:
+- Hire Agent flow
+- Seller Create Offer Listing
+
+INCLUDING:
+- View
+- Water
+- Amenities and Property Features
+- all Property Details icons
+
+Audit:
+- icon classes
+- wrapper structure
+- .input-icon usage
+- data-icon attributes
+- icon injection timing
+- edit hydration timing
+
+FIX:
+Landlord Create/Edit/Draft must use SAME icon rendering pattern as working flows.
+
+CRITICAL:
+Edit/Draft views currently lose icons after Property Details tab.
+This MUST be fixed.
+
+FINAL RESULT:
+Create, Edit, Draft, Resume Draft should appear IDENTICAL.
+No missing icons.
+No layout shifts.
+No duplicate icons.
+
+====================================================
+PHASE 3 — TAB VALIDATION / RED ERROR FLASH
+====================================================
+
+Audit ALL:
+- validateCurrentTab()
+- validateTab()
+- tab badge logic
+- tab header error rendering
+- next button handlers
+- browser events
+
+ISSUE:
+Red “required” warnings flash incorrectly even after fields are completed.
+
+FIX:
+- remove flashing behavior
+- only show errors after true validation failure
+- no global tab panic states
+- no aggressive revalidation loops
+
+DO NOT break:
+- actual validation
+- required field enforcement
+- submit validation
+
+====================================================
+PHASE 4 — TEXTAREA SIZE FIXES
+====================================================
+
+The following MUST use NORMAL textarea sizing
+matching:
+“Landlord Approval Conditions”
+
+FIELDS:
+
+- Additional Landlord Lease Terms & Renewal Option Details
+- Legal Description
+- Additional Parcel IDs
+- Special Assessment Description
+- CAM / NNN / Additional Rent Charges
+- Rent Escalation Terms
+- Tenant Improvement / Buildout Terms
+- Permitted Use / Use Restrictions
+- Signage Rights
+- Commercial Parking Terms
+- Commercial Approval Conditions
+
+Audit:
+- textarea classes
+- compact overrides
+- landlord-specific CSS
+- height utilities
+
+FIX:
+Use consistent normal textarea height.
+
+DO NOT affect:
+small textarea fields intentionally compact elsewhere.
+
+====================================================
+PHASE 5 — CURRENCY FORMAT CONSISTENCY
+====================================================
+
+Currency formatting MUST match:
+Hire a Seller’s Agent flow
+
+FIELDS:
+- Security Deposit Required
+- Desired Lease Price
+- Total Move-In Funds Required
+- Annual Property Taxes
+- Annual CDD Fee
+- Special Assessment Amount
+- Association Fee Amount
+
+REQUIREMENTS:
+- live comma formatting
+- consistent left padding
+- same currency icon alignment
+- no cursor jump issues
+- edit/draft hydration preserved
+
+Audit:
+- JS money formatter duplication
+- Alpine masking
+- Livewire debounce conflicts
+
+====================================================
+PHASE 6 — PROPERTY DESCRIPTION PLACEHOLDER LOGIC
+====================================================
+
+Property Description placeholder MUST dynamically change based on property type.
+
+Residential example:
+residential-oriented placeholder
+
+Commercial example:
+commercial-oriented placeholder
+
+Audit:
+- property type watchers
+- Livewire re-render timing
+- placeholder hydration
+- edit mode behavior
+
+====================================================
+PHASE 7 — REMOVE PET RESTRICTIONS QUESTION
+====================================================
+
+DELETE:
+Pet Restrictions question
+
+VERIFY:
+- validation removed
+- hidden conditionals removed
+- no orphan JS
+- no save/draft issues
+
+====================================================
+PHASE 8 — ASSOCIATION FEE FORMAT FIX
+====================================================
+
+FIX formatting issues for:
+“What does the Association Fee include”
+
+Audit:
+- wrapper nesting
+- flex/grid classes
+- textarea widths
+- conditional rendering
+
+ALSO:
+If user selects “Other” for:
+
+- Minimum Lease Period
+- Association Fee Amount
+
+placeholder MUST be:
+
+Enter title (e.g., example)
+
+====================================================
+PHASE 9 — DOCUMENT PAGE FULL AUDIT
+====================================================
+
+THIS PAGE NEEDS A FULL STRUCTURAL AUDIT.
+
+CURRENT ISSUES:
+- “Other Document” duplicates repeatedly
+- uploads appear under wrong sections
+- duplicated rendering under:
+  - Lead Based Paint Disclosure
+  - Environmental Report Available
+  - etc.
+
+FIRST:
+Audit the entire document architecture.
+
+IDENTIFY:
+- nested loops
+- duplicated keys
+- reused Livewire arrays
+- unstable indexes
+- conditional rendering conflicts
+
+THEN:
+Recommend safest approach.
+
+IF current architecture is unstable:
+SIMPLIFY.
+
+Preferred simplified structure:
+
+User selects:
+[Document Type Dropdown]
++
+[Upload File]
++
+[Add Another Document]
+
+One document row at a time.
+
+NO giant conditional document matrix.
+
+IMPORTANT:
+DO NOT implement a massive rewrite blindly.
+
+FIRST determine:
+Can current structure be stabilized safely?
+OR
+Would simplified uploader reduce bugs significantly?
+
+Document findings in audit file FIRST.
+
+====================================================
+PHASE 10 — DESCRIPTION TAB NEXT BUTTON
+====================================================
+
+FIX:
+Next button not working on Description tab.
+
+Audit:
+- tab index mapping
+- hidden tab offsets
+- removed Services tab offsets
+- landlord-only conditional tabs
+- nextTab() logic
+
+DO NOT hardcode indices blindly.
+
+====================================================
+PHASE 11 — PHOTO UPLOAD STABILITY
+====================================================
+
+ISSUES:
+- uploads too slow
+- upload succeeds once then fails
+- adding more photos fails
+
+Audit:
+- temporary uploads
+- Livewire upload concurrency
+- image preview loops
+- multiple upload append logic
+- wire:model conflicts
+- validation size limits
+- Alpine upload listeners
+
+FIX:
+- stable multiple upload support
+- append additional photos properly
+- prevent upload lock state
+- preserve existing uploaded photos
+
+DO NOT:
+remove already uploaded images during append.
+
+====================================================
+PHASE 12 — REMOVE SERVICES TAB
+====================================================
+
+REMOVE ENTIRELY:
+Services Tab
+
+Audit:
+- nav tabs
+- tab indexes
+- validation references
+- next/previous navigation
+- completion logic
+
+DO NOT leave orphan references.
+
+====================================================
+PHASE 13 — BROKER COMPENSATION TAB REDUCTION
+====================================================
+
+KEEP ONLY:
+
+- Landlord’s Broker Lease Fee
+- Tenant's Broker Commission Structure
+- Payment Timing for Broker Fees
+- Interested in Offering a Lease-Option Agreement
+- Interested in Selling
+
+REMOVE:
+all other fields from this tab.
+
+Audit:
+- validation
+- save logic
+- draft hydration
+- summary rendering
+
+DO NOT break:
+existing saved listings.
+
+Prefer hiding/removing from UI only unless backend cleanup is trivial/safe.
+
+====================================================
+PHASE 14 — COMMERCIAL PROPERTY SCROLL BUG
+====================================================
+
+ISSUE:
+Typing in Commercial Property Details fields scrolls page to top.
+
+Audit:
+- Livewire re-renders
+- autofocus logic
+- Alpine watchers
+- scrollIntoView calls
+- tab validation events
+- browser events
+
+FIX:
+prevent scroll jumping during typing.
+
+====================================================
+PHASE 15 — EDIT/DRAFT HYDRATION PARITY
+====================================================
+
+CRITICAL FINAL AUDIT.
+
+Create Offer Listing,
+Edit Listing,
+Draft Resume
+
+MUST ALL MATCH IDENTICALLY.
+
+VERIFY:
+- icons
+- placeholders
+- formatting
+- textarea sizes
+- uploads
+- Select2 hydration
+- currency formatting
+- conditional fields
+- dynamic placeholders
+- tab visibility
+- validation states
+
+A USER SHOULD NOT BE ABLE TO TELL
+whether they are:
+- creating
+- editing
+- resuming draft
+
+====================================================
+PHASE 16 — TESTING (MANDATORY)
+====================================================
+
+TEST ALL:
+
+1. Residential Create
+2. Commercial Create
+3. Residential Draft Resume
+4. Commercial Draft Resume
+5. Edit Existing Residential
+6. Edit Existing Commercial
+
+VERIFY:
+- icons render immediately
+- no disappearing icons
+- no duplicated icons
+- uploads work repeatedly
+- no scroll jumps
+- next buttons work
+- placeholders correct
+- no flashing tab errors
+- document uploads stable
+
+====================================================
+FINAL RULES
+====================================================
+
+DO NOT:
+- perform large rewrites without audit confirmation
+- touch unrelated flows
+- break saved drafts
+- alter DB schema unnecessarily
+- duplicate JS initializers
+- introduce hardcoded tab indexes blindly
+
+PREFER:
+- shared reusable logic
+- seller flow parity
+- additive safe fixes
+- stabilization over refactor
+
+DELIVERABLES:
+1. Completed audit markdown file
+2. Summary of root causes
+3. List of files changed
+4. Confirmation of all tested flows
