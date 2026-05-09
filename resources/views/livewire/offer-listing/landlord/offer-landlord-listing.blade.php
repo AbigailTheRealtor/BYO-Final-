@@ -887,7 +887,7 @@
         ['name' => 'Trash Collection'],
         ['name' => 'Water'],
         ['name' => 'None '],
-        // ['name' => 'Other', 'target' => '.otherTenantPays'],
+        ['name' => 'Other'],
     ];
 
     $ownerPays = [
@@ -910,7 +910,7 @@
         ['name' => 'Trash Collection'],
         ['name' => 'Water'],
         ['name' => 'None'],
-        // ['name' => 'Other', 'target' => '.otherOwnerPays'],
+        ['name' => 'Other'],
     ];
 
     $non_negotialble_terms_landlord = [

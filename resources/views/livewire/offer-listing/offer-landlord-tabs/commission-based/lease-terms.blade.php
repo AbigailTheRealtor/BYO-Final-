@@ -988,14 +988,6 @@
 </div>
 @endif
 
-<div class="form-group mt-2 owner_pays_other_wrapper" style="display: none;">
-    <label class="fw-bold">Please specify other expense paid by Owner:</label>
-    <div class="input-cover">
-        <input type="text" wire:model="owner_pays_other" class="form-control has-icon"
-            data-icon="fa-solid fa-pencil" placeholder="Enter expense paid by Owner (e.g., elevator maintenance)">
-    </div>
-</div>
-
 @if ($auction_type === 'Bidding Period')
 <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
     <h5 class="fw-bold text-primary mb-0">

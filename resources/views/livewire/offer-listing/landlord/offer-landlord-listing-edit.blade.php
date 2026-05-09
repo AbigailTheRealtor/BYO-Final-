@@ -863,7 +863,7 @@ $tenantPays = [
                                         ['name' => 'Trash Collection'],
                                         ['name' => 'Water'],
                                         ['name' => 'None '],
-                                        // ['name' => 'Other', 'target' => '.otherTenantPays'],
+                                        ['name' => 'Other'],
                                     ];
 
 
@@ -887,7 +887,7 @@ $tenantPays = [
                                         ['name' => 'Trash Collection'],
                                         ['name' => 'Water'],
                                         ['name' => 'None'],
-                                        // ['name' => 'Other', 'target' => '.otherOwnerPays'],
+                                        ['name' => 'Other'],
                                     ];
 
     $non_negotialble_terms_landlord = [
@@ -1798,9 +1798,17 @@ $tenantPays = [
                     width: '100%',
                 });
                 $('#tenant_pays').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('tenant_pays', selectedValues);
+                    @this.call('updateTenantPays', selectedValues);
+                    var $w = $('#other_tenant_pays_wrapper');
+                    if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
+            }
+            if ($('#tenant_pays').length) {
+                var _tpVals = $('#tenant_pays').val() || [];
+                var $tpW = $('#other_tenant_pays_wrapper');
+                if ($tpW.length) $tpW.css('display', _tpVals.includes('Other') ? 'block' : 'none');
             }
 
             if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
@@ -1810,9 +1818,17 @@ $tenantPays = [
                     width: '100%',
                 });
                 $('#owner_pays').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('owner_pays', selectedValues);
+                    @this.call('updateOwnerPays', selectedValues);
+                    var $w = $('#other_owner_pays_wrapper');
+                    if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
+            }
+            if ($('#owner_pays').length) {
+                var _opVals = $('#owner_pays').val() || [];
+                var $opW = $('#other_owner_pays_wrapper');
+                if ($opW.length) $opW.css('display', _opVals.includes('Other') ? 'block' : 'none');
             }
 
             // Initialize Desired Lease Term Select2 for edit mode

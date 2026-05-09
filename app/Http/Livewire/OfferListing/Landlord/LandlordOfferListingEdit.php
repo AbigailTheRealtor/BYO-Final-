@@ -2994,4 +2994,26 @@ class LandlordOfferListingEdit extends Component
             $auction->saveMeta('property_photos', $this->propertyPhotos);
         }
     }
+
+    public function updateTenantPays($selectedValues)
+    {
+        $selectedValues = is_array($selectedValues) ? $selectedValues : (array) $selectedValues;
+        if (in_array('Other', $selectedValues)) {
+            $this->is_other_tenant_pay_visible = true;
+        } else {
+            $this->is_other_tenant_pay_visible = false;
+            $this->other_tenant_pays = '';
+        }
+    }
+
+    public function updateOwnerPays($selectedValues)
+    {
+        $selectedValues = is_array($selectedValues) ? $selectedValues : (array) $selectedValues;
+        if (in_array('Other', $selectedValues)) {
+            $this->is_other_owner_pays_visible = true;
+        } else {
+            $this->is_other_owner_pays_visible = false;
+            $this->other_owner_pays = '';
+        }
+    }
 }
