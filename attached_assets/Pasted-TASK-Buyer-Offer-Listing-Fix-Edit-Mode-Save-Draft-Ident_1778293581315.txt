@@ -1,0 +1,86 @@
+TASK: Buyer Offer Listing — Fix Edit Mode Save Draft Identity Bug
+
+IMPORTANT CONTEXT:
+- Limited Service is legacy.
+- Do NOT work on Limited Service files, Limited Service flows, or initializeLimitedService().
+- All files involved in this task are Full Service / Commission-Based Buyer Offer Listing files only.
+
+URL:
+Create Buyer Offer Listing:
+/offer-listing/buyer
+
+Edit Buyer Offer Listing:
+/offer-listing/buyer/edit/{auctionId}
+
+Login example:
+abigailbaschuk@gmail.com
+12345678
+
+SAFEGUARDS:
+- Audit first before editing.
+- Buyer Offer Listing only.
+- Do NOT touch Seller, Landlord, Tenant, Hire Agent, Agent Profile, referral, accepted bid summary, migrations, database schema, routes, or models unless absolutely necessary.
+- Do NOT delete existing drafts.
+- Do NOT change Create flow draft versioning.
+- Do NOT change Offered Financing logic.
+- Do NOT change tab order.
+- Do NOT reintroduce Services tab.
+- Do NOT touch Limited Service legacy logic/files.
+- Full Service / Commission-Based files only.
+
+ISSUE:
+The Buyer Offer Listing Edit flow has a blocking bug.
+
+In `BuyerOfferListingEdit.php`, `saveDraft()` always creates a new `HireBuyerAgentAuction` row, assigns `$this->auctionId` to that new row, and then saves metadata to the new row.
+
+That behavior is correct for CREATE mode, but wrong for EDIT mode.
+
+When a user opens:
+`/offer-listing/buyer/edit/{auctionId}`
+
+Then clicks “Save Draft”:
+
+1. A new draft row is created.
+2. `$this->auctionId` is overwritten with the new draft ID.
+3. The original listing ID is lost from component state.
+4. If the user then clicks “Update Listing,” the submit flow updates the new draft row instead of the original listing.
+5. The original listing is not updated.
+
+REQUIRED FIX:
+In `BuyerOfferListingEdit.php` only:
+
+- Update `saveDraft()` so EDIT mode does NOT create a new auction row.
+- In edit mode, `saveDraft()` must save against the current existing `$this->auctionId`.
+- Preserve the original listing identity during the entire edit session.
+- Do not overwrite `$this->auctionId` with a newly-created draft ID.
+- Do not delete old drafts.
+- Do not change the CREATE component’s draft versioning behavior.
+
+IMPLEMENTATION GUIDANCE:
+- Add a guard inside `BuyerOfferListingEdit.php::saveDraft()`.
+- If `$this->auctionId` exists, find that existing `HireBuyerAgentAuction`.
+- Update that existing row with the current form fields.
+- Keep/save metadata using `saveAllMetadata($auction)` against the existing auction.
+- Do NOT call `new HireBuyerAgentAuction()` inside edit-mode saveDraft unless there is no valid existing auction.
+- Do NOT set `$this->auctionId` to any newly-created draft ID in edit mode.
+- If needed, preserve a separate variable like `$originalAuctionId` before saving and confirm it remains unchanged.
+
+VERIFY:
+1. Open an existing Buyer Offer Listing edit page.
+2. Note the original auction/listing ID.
+3. Click Save Draft.
+4. Confirm no new draft row steals the active component identity.
+5. Confirm `$this->auctionId` still equals the original listing ID.
+6. Click Update Listing.
+7. Confirm the original listing is updated, not a newly-created draft.
+8. Confirm existing drafts are not deleted.
+9. Confirm Create Buyer Offer Listing still creates separate draft versions as before.
+10. Confirm Offered Financing selections and sub-questions still hydrate correctly.
+11. Confirm Services tab is still removed.
+12. Confirm no Seller, Landlord, Tenant, Hire Agent, or Limited Service files were changed.
+
+EXPECTED RESULT:
+- Create Buyer Offer Listing still supports draft versioning.
+- Edit Buyer Offer Listing no longer loses the original listing ID after Save Draft.
+- Update Listing updates the correct original listing.
+- Limited Service legacy code is untouched.

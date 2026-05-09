@@ -1,0 +1,62 @@
+FIX REQUIRED — Buyer Offer Listing Broker Compensation Regression
+
+IMPORTANT:
+- Limited Service is legacy.
+- Do NOT touch Limited Service files or initializeLimitedService().
+- Full Service / Commission-Based Buyer Offer Listing files only.
+
+AUDIT RESULT:
+The Edit Draft identity fix is GOOD and approved.
+
+However, during the Buyer Offer Listing cleanup, hidden Broker Compensation UI fields were accidentally reintroduced into the visible interface.
+
+This is a regression and must be corrected before approval.
+
+FILE:
+resources/views/livewire/offer-listing/offer-buyer-tabs/commission-based/broker-compensation.blade.php
+
+PROBLEM:
+The Buyer Offer Listing UI is now showing fields that were intentionally hidden during the simplified Buyer Offer Listing redesign, including:
+- Protection Period
+- Early Termination Fee
+- Retainer Fee
+- Retainer Fee Application
+- Buyer Agency Agreement Timeframe
+- Brokerage Relationship
+- Additional Terms
+etc.
+
+These fields should NOT be visible in the Buyer Offer Listing interface.
+
+APPROVED VISIBLE FIELDS ONLY:
+The Buyer Offer Listing Broker Compensation section should ONLY visibly show:
+
+1. Buyer’s Broker Commission Structure
+2. Buyer’s Broker Purchase Fee
+3. Interested in a Lease Agreement
+4. Interested in a Lease-Option Agreement
+
+Everything else must remain hidden/commented.
+
+SAFEGUARDS:
+- Do NOT delete metadata persistence.
+- Do NOT delete saveMeta calls.
+- Do NOT delete properties.
+- Do NOT remove legacy hydration support.
+- Do NOT remove edit/draft compatibility.
+- Do NOT change database structure.
+- Do NOT touch Seller, Landlord, Tenant, Hire Agent, or Limited Service flows.
+- Do NOT break old listings that already contain saved metadata.
+
+REQUIRED FIX:
+Re-hide the unintended Buyer Broker Compensation UI fields while preserving:
+- metadata loading
+- metadata saving
+- EAV compatibility
+- edit/draft hydration
+- backward compatibility
+
+This should be a UI-only correction.
+
+EXPECTED RESULT:
+Buyer Offer Listing Broker Compensation visually returns to the approved simplified version with ONLY the 4 approved visible fields while all legacy metadata continues functioning in the background.

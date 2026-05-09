@@ -830,7 +830,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Description'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Description'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -843,6 +843,17 @@
                                         </button>
                                     </li>
                                 @endforeach
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
+                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation-agency-agreement-terms"
+                                        type="button" role="tab"
+                                        aria-controls="broker-compensation-agency-agreement-terms"
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
+                                        Broker Compensation &amp; Agency Agreement Terms
+                                    </button>
+                                </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
@@ -933,17 +944,19 @@
 
 
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
-                                </div>
-                                <!-- Additional Details Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                <!-- Additional Details Tab (index 3) -->
+                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
 
+                                </div>
+
+                                <!-- Broker Compensation & Agency Agreement Terms Tab (index 4) -->
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
                                 </div>
 
                                 <!-- Buyer Info Tab (index 5) -->
@@ -1065,11 +1078,6 @@
                     }
                 });
 
-                // Validate services tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTabGlobal(currentTabContent);
-                }
-
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
                     if (nextTab) {
@@ -1158,15 +1166,6 @@
                 console.warn('[WIZARD] Invalid fields:', invalidFields);
             }
 
-            // Validate services tab if on it
-            if (currentTabContent.id === 'services') {
-                const servicesValid = validateServicesTabGlobal(currentTabContent);
-                console.log('[WIZARD] validateServicesTabGlobal result:', servicesValid);
-                if (!servicesValid) {
-                    isValid = false;
-                }
-            }
-
             if (!isValid) {
                 console.warn('[WIZARD] Validation failed, not advancing');
                 return;
@@ -1237,17 +1236,6 @@
             return true;
         }
 
-        // Global services tab validation
-        // Services are optional - this validation only checks if "Other" is enabled but empty
-        function validateServicesTabGlobal(tabContent) {
-            if (!tabContent || tabContent.id !== 'services') return true;
-
-            // Services validation is now optional - always return true
-            // User can proceed without selecting any services
-            // The "Other Services" field is also optional
-            return true;
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             // Attach delegated handlers ONCE (survives all re-renders)
             attachWizardDelegatedHandlers();
@@ -1274,6 +1262,26 @@
                     setTimeout(addIconsToInputs, 300);
                 });
             });
+        });
+
+        // When auction data is loaded into the edit form, dispatch financing visibility events
+        // so Alpine sub-sections in purchasing-terms reflect the saved values.
+        // Uses window.addEventListener because the component calls dispatchBrowserEvent (not emit).
+        window.addEventListener('buyer-agent-select2-sync', function() {
+            setTimeout(function() {
+                var ofVal = @this.get('offered_financing') || [];
+                var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+                var allFinancingTypes = [
+                    'Assumable', 'Cash', 'Cryptocurrency', 'Exchange/Trade',
+                    'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing', 'Other'
+                ];
+                var hasTraditional = ofVal.some(function(v) { return traditionalTypes.includes(v); });
+                window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Traditional', visible: hasTraditional } }));
+                allFinancingTypes.forEach(function(type) {
+                    window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: type, visible: ofVal.includes(type) } }));
+                });
+                console.log('[EditFinancing] Dispatched visibility events for:', ofVal);
+            }, 150);
         });
 
         function selectService(serviceType) {
@@ -2414,15 +2422,14 @@
                     '#listing-details',
                     '#property-preferences',
                     '#purchasing-terms',
-                    '#services',
                     '#additional-details',
-                    '#broker-compensation',
-                    '#tenant-info'
+                    '#broker-compensation-agency-agreement-terms',
+                    '#buyer-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
                     '#service-selection-and-pricing',
-                    '#tenant-info'
+                    '#buyer-information'
                 ];
 
                 tabSelector.forEach(selector => {

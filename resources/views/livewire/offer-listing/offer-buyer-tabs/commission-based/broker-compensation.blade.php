@@ -17,7 +17,7 @@ $safeKey = function(...$parts) {
     </div>
 </div>
 
-<!-- Tenant's Broker Commission Structure -->
+<!-- Buyer's Broker Commission Structure -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Buyer’s Broker Commission Structure:
@@ -39,7 +39,7 @@ $safeKey = function(...$parts) {
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div>
-<!-- Tenant's Broker Purchase Fee -->
+<!-- Buyer's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Buyer’s Broker Purchase Fee:
@@ -124,7 +124,7 @@ $safeKey = function(...$parts) {
     </div>
 </div>
 @if ($interested_lease_option === 'Yes')
-    <!-- Tenant's Broker Lease Fee -->
+    <!-- Buyer's Broker Lease Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Buyer’s Broker Lease Fee:
@@ -282,64 +282,6 @@ $safeKey = function(...$parts) {
 </div>
 
 @if ($interested_lease_option_agreement === 'Yes')
-    {{-- <div id="tab1" class="tab-content">
-
-        <h5 class="compensation_tab">Compensation for Creating the Lease-Option Agreement:</h5>
-        <span class="ms-2 " data-bs-toggle="tooltip" data-bs-html="true"
-            title="Specify how the Broker will be compensated at the time the lease-option agreement is created. This may include a flat fee or a percentage of the option consideration paid by the Buyer. This compensation is typically paid upfront and is separate from any commission owed if the purchase option is later exercised.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="form-group">
-            <label class="fw-bold">Flat Fee for Lease-Option Arrangement</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="number" wire:model="lease_option_fee_flat" class="form-control"
-                    placeholder="Enter flat fee for lease-option arrangement (e.g., 1500)">
-            </div>
-
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Percentage of Option Consideration</label>
-            <div class="input-group">
-                <input type="number" wire:model="lease_option_consideration" class="form-control"
-                    placeholder="Enter percentage of option consideration (e.g., 5)">
-                <span class="input-group-text">%</span>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Tab 2 -->
-    <div id="tab2" class="tab-content">
-        <h5 class="compensation_tab">Compensation if the Purchase Option is Exercised:</h5>
-
-        <span class="ms-2 " data-bs-toggle="tooltip" data-bs-html="true"
-            title="If the Buyer chooses to exercise the option and purchase the property, the Broker may be entitled to additional compensation. Enter how the Broker will be compensated at that time—such as a flat fee or a percentage of the total purchase price. Any compensation already received under the lease-option agreement may be credited against the final amount due, depending on the terms of the agreement.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-
-        <div class="form-group">
-            <label class="fw-bold">Flat Fee if the Purchase Option is Exercised</label>
-            <div class="input-group">
-                <span class="input-group-text">$</span>
-                <input type="number" wire:model="purchase_fee_flat_exercised" class="form-control"
-                    placeholder="Enter flat fee (e.g., 5000)">
-            </div>
-
-        </div>
-
-        <div class="form-group">
-            <label class="fw-bold">Percentage of the Total Purchase Price if Exercised</label>
-            <div class="input-group">
-                <input type="number" wire:model="purchase_pice_commercial" class="form-control"
-                    placeholder="Enter percentage of the total purchase price (e.g., 6)">
-                <span class="input-group-text">%</span>
-            </div>
-
-        </div>
-    </div> --}}
-
     <div id="tab1" class="tab-content mt-3" wire:key="{{ $safeKey('lease-option-section', $interested_lease_option_agreement) }}">
         <div class="form-group">
             <label class="fw-bold">
@@ -417,12 +359,15 @@ $safeKey = function(...$parts) {
     </div>
 @endif
 
+{{-- Fields below are intentionally hidden from the Buyer offer listing UI. Data persists via EAV meta. --}}
+
+{{--
 <!-- Protection Period Timeframe -->
 <div class="form-group mb-4 mt-3">
-    <label class="fw-bold d-flex align-items-center">
+    <label class="fw-bold">
         Protection Period Timeframe (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the number of days after the agreement ends during which the Buyer’s Broker remains entitled to compensation if the Buyer purchases, leases or otherwise acquires a property introduced during the agreement period.">
+            title="Enter the number of days after the agreement ends during which the Buyer's Broker remains entitled to compensation if the Buyer purchases or otherwise acquires a property introduced during the agreement period.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -434,13 +379,15 @@ $safeKey = function(...$parts) {
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div>
+--}}
 
+{{--
 <!-- Early Termination Fee -->
 <div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
+    <label class="fw-bold">
         Early Termination Fee:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Buyer agrees to pay a cancellation fee if the agreement is ended early. If “Yes” is selected, you’ll be prompted to enter the fee amount. This fee may be credited toward a future transaction during the protection period, depending on the Broker’s policy.">
+            title="Select whether the Buyer agrees to pay a cancellation fee if the agreement is ended early. If "Yes" is selected, you'll be prompted to enter the fee amount. This fee may be credited toward a future transaction during the protection period, depending on the Broker's policy.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -448,18 +395,17 @@ $safeKey = function(...$parts) {
         <select wire:model="early_termination_fee_option" class="form-control has-icon"
             data-icon="fa-solid fa-triangle-exclamation">
             <option value="">Select</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
         </select>
     </div>
-
-    @if ($early_termination_fee_option === 'yes')
-        <div class="mt-3">
-            <div class="input-group" x-data="moneyInput()">
+    @if ($early_termination_fee_option === 'Yes')
+        <div class="mt-3" wire:key="{{ $safeKey('early-termination-amount', $early_termination_fee_option) }}">
+            <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
                     placeholder="Enter early termination fee amount (e.g., 1,000)"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
@@ -467,13 +413,15 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+--}}
 
+{{--
 <!-- Retainer Fee -->
 <div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
+    <label class="fw-bold">
         Retainer Fee:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Buyer agrees to pay a non-refundable retainer fee to initiate Broker services. If “Yes,” enter the amount. This fee is separate from any commission owed unless otherwise specified.">
+            title="Select whether the Buyer agrees to pay a non-refundable retainer fee to initiate Broker services. If "Yes," enter the amount. This fee is separate from any commission owed unless otherwise specified.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -481,53 +429,53 @@ $safeKey = function(...$parts) {
         <select wire:model="retainer_fee_option" class="form-control has-icon"
             data-icon="fa-solid fa-file-invoice-dollar">
             <option value="">Select</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
         </select>
     </div>
-
-    @if ($retainer_fee_option === 'yes')
-        <div class="mt-3">
-            <div class="input-group" x-data="moneyInput()">
+    @if ($retainer_fee_option === 'Yes')
+        <div class="mt-3" wire:key="{{ $safeKey('retainer-fee-details', $retainer_fee_option) }}">
+            <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="retainer_fee_amount" class="form-control"
                     placeholder="Enter retainer fee amount (e.g., 500)"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('retainer_fee_amount')
                 <span class="text-danger small">{{ $message }}</span>
             @enderror
-
             <div class="mt-3">
-                <label class="fw-bold d-flex align-items-center">
+                <label class="fw-bold">
                     Retainer Fee Application:
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
                         title="Select whether the retainer fee will be applied toward the final commission or charged in addition to it.">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-
                 <div class="input-cover mt-2">
-
                     <select wire:model="retainer_fee_application" class="form-control has-icon"
-                        data-icon="fa-solid fa-ruler">
+                        data-icon="fa-solid fa-triangle-exclamation">
                         <option value="">Select</option>
-                        <option value="Applied toward final compensation">Applied toward final compensation</option>
-                        <option value="Charged in addition to final compensation">Charged in addition to final
-                            compensation</option>
+                        <option value="applied">Applied toward final compensation</option>
+                        <option value="additional">Charged in addition to final compensation</option>
                     </select>
                 </div>
+                @error('retainer_fee_application')
+                    <span class="text-danger small">{{ $message }}</span>
+                @enderror
             </div>
         </div>
     @endif
 </div>
+--}}
 
-<!-- Tenant Agency Agreement Timeframe -->
+{{--
+<!-- Buyer Agency Agreement Timeframe -->
 <div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
+    <label class="fw-bold">
         Buyer Agency Agreement Timeframe:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long the agreement between the Buyer and the Broker will remain in effect. Choose from preset durations or select “Other” to enter a custom timeframe.">
+            title="Select how long the agreement between the Buyer and the Broker will remain in effect. Choose from preset durations or select "Other" to enter a custom timeframe.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -539,12 +487,11 @@ $safeKey = function(...$parts) {
             <option value="6 Months">6 Months</option>
             <option value="9 Months">9 Months</option>
             <option value="12 Months">12 Months</option>
-            <option value="custom">Other</option>
+            <option value="Other">Other</option>
         </select>
     </div>
-
-    @if ($agency_agreement_timeframe === 'custom')
-        <div class="mt-3">
+    @if ($agency_agreement_timeframe === 'Other')
+        <div class="mt-3" wire:key="{{ $safeKey('agency-agreement-custom', $agency_agreement_timeframe) }}">
             <input type="text" wire:model="agency_agreement_custom" class="form-control"
                 placeholder="Enter Buyer agency agreement timeframe (e.g., 8 Months)">
             @error('agency_agreement_custom')
@@ -553,9 +500,12 @@ $safeKey = function(...$parts) {
         </div>
     @endif
 </div>
+--}}
+
+{{--
 <!-- Acceptable Brokerage Relationship -->
 <div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
+    <label class="fw-bold">
         Acceptable Brokerage Relationship:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the type of legal relationship the Buyer wishes to establish with the Broker. This determines the level of representation the Broker will provide. Real estate laws vary by state, and Brokers may offer different types of agency relationships. Both the Broker and Buyer must comply with all applicable local, state, and federal laws.">
@@ -574,11 +524,8 @@ $safeKey = function(...$parts) {
     @error('brokerage_relationship')
         <span class="text-danger small">{{ $message }}</span>
     @enderror
-
-    <!-- Dynamic Description Based on Selection -->
     @if ($brokerage_relationship)
         <div class="mt-3 p-3 bg-light rounded">
-
             @if ($brokerage_relationship === 'Transaction Broker Representation')
                 <h6 class="fw-bold">• Transaction Broker Representation:</h6>
                 <ul class="mb-2 ps-3" style="list-style-type: disc;">
@@ -591,18 +538,17 @@ $safeKey = function(...$parts) {
                 <h6 class="fw-bold">• Single Agent Representation:</h6>
                 <ul class="mb-2 ps-3" style="list-style-type: disc;">
                     <li>The Broker acts as a fiduciary, providing the highest level of loyalty, confidentiality, obedience, and full disclosure.</li>
-                    <li>The Broker must always act in the Buyer’s best interest.</li>
+                    <li>The Broker must always act in the Buyer's best interest.</li>
                     <li>Requires written consent from both parties.</li>
                     <li>If required by state law, a Single Agent Notice will be provided by the Broker and signed by the appropriate party.</li>
                 </ul>
             @elseif($brokerage_relationship === 'Dual Agency Representation')
                 <h6 class="fw-bold">• Dual Agency Representation:</h6>
                 <ul class="mb-2 ps-3" style="list-style-type: disc;">
-                    <li>The Broker represents both the Buyer and Seller in the same transaction.</li>
+                    <li>The Broker represents both the Buyer and the Seller in the same transaction.</li>
                     <li>The Broker must remain neutral and may not disclose confidential information from either party.</li>
                     <li>Requires written consent from both parties.</li>
-                    <li>This brokerage relationship may not be permitted in certain states, including Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and
-                        Wyoming.</li>
+                    <li>This brokerage relationship may not be permitted in certain states, including Alaska, Colorado, Florida, Kansas, Maryland, Oklahoma, Texas, Vermont, and Wyoming.</li>
                 </ul>
             @elseif($brokerage_relationship === 'No Brokerage Relationship')
                 <h6 class="fw-bold">• No Brokerage Relationship:</h6>
@@ -612,17 +558,18 @@ $safeKey = function(...$parts) {
                     <li>The Buyer is responsible for their own due diligence and negotiations.</li>
                 </ul>
             @endif
-
             <div class="alert alert-warning mt-3 p-2 small">
                 <strong>⚠️ Legal Notice:</strong> Certain brokerage relationships are not permitted in all states. If your selection is not allowed, the Broker will establish a permitted legal alternative. Real estate laws change frequently. Both the Broker and Buyer are responsible for complying with all current local, state, and federal laws.
             </div>
         </div>
     @endif
 </div>
+--}}
 
+{{--
 <!-- Additional Terms -->
 <div class="form-group mb-4">
-    <label class="fw-bold d-flex align-items-center">
+    <label class="fw-bold">
         Additional Terms:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Include any additional or custom compensation terms, conditions, or agreements not covered above.">
@@ -632,3 +579,4 @@ $safeKey = function(...$parts) {
     <textarea wire:model="additional_details_broker" class="form-control mt-2" rows="3"
         placeholder="Enter any additional terms"></textarea>
 </div>
+--}}

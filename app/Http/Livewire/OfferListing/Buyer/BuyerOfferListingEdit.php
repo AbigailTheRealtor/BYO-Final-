@@ -1108,19 +1108,34 @@ class BuyerOfferListingEdit extends Component
 
         try {
 
-
             $this->isDraft = true;
 
-            $auction = $this->listingId
-                ? HireBuyerAgentAuction::find($this->listingId)
-                : new HireBuyerAgentAuction();
+            if ($this->auctionId) {
+                // EDIT MODE: update the existing listing — do not create a new row
+                $auction = HireBuyerAgentAuction::where('id', $this->auctionId)
+                    ->where('user_id', Auth::id())
+                    ->firstOrFail();
 
-            $auction->user_id = Auth::id();
-            $auction->title = $this->listing_title;
-            $auction->is_draft = true;
-            $auction->save();
+                $auction->title = $this->listing_title;
+                $auction->save();
 
-            $this->listingId = $auction->id;
+                // $this->auctionId and $this->listingId intentionally not changed
+            } else {
+                // No existing auction — create a new draft row (fallback only)
+                $auction = new HireBuyerAgentAuction();
+                $auction->user_id = Auth::id();
+                $auction->title = $this->listing_title;
+                $auction->is_draft = true;
+                $auction->save();
+
+                $this->listingId = $auction->id;
+                $this->auctionId = $auction->id;
+            }
+
+            // Preserve auction_type on the row (locked from editing in saveAllMetadata)
+            if (!empty($this->auction_type)) {
+                $auction->saveMeta('auction_type', $this->auction_type);
+            }
 
             $this->saveAllMetadata($auction);
 

@@ -878,9 +878,9 @@
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
-                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Description'];
-                                    $agentCredentialsIndex = 6;
-                                    $aiQuestionsIndex = 7;
+                                    $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Description'];
+                                    $agentCredentialsIndex = 5;
+                                    $aiQuestionsIndex = 6;
                                 @endphp
                                 @foreach ($fullServiceTabs as $index => $tab)
                                     <li class="nav-item" role="presentation">
@@ -896,13 +896,13 @@
                                     </li>
                                 @endforeach
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(5)"
+                                    <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(4)"
                                         id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
                                         data-bs-target="#broker-compensation-agency-agreement-terms"
                                         type="button" role="tab"
                                         aria-controls="broker-compensation-agency-agreement-terms"
-                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 4 ? 'true' : 'false' }}">
                                         Broker Compensation &amp; Agency Agreement Terms
                                     </button>
                                 </li>
@@ -1016,22 +1016,8 @@
                                     @endif
                                 </div>
 
-                                <!-- Services Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}" id="services"
-                                    role="tabpanel" aria-labelledby="services-tab">
-
-                                    @if ($user_type === 'tenant')
-                                        @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
-                                    @elseif($user_type === 'buyer')
-                                        @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
-                                    @elseif($user_type === 'landlord')
-                                        @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
-                                    @endif
-                                </div>
                                 <!-- Additional Details Tab -->
-                                @php $additionalDetailsIndex = 4; @endphp
+                                @php $additionalDetailsIndex = 3; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIndex ? 'show active' : '' }}"
                                     id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
 
@@ -1047,7 +1033,7 @@
                                 </div>
 
                                 <!-- Broker Compensation & Agency Agreement Terms Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 4 ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
@@ -1061,7 +1047,7 @@
                                 </div>
 
                                 <!-- Buyer Info Tab -->
-                                @php $buyerInfoIndex = 6; @endphp
+                                @php $buyerInfoIndex = 5; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $buyerInfoIndex ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
@@ -1077,8 +1063,8 @@
                                     @endif
                                 </div>
 
-                                <!-- AI Questions Tab (full_service: index 7) -->
-                                @php $aiQuestionsTabIndex = 7; @endphp
+                                <!-- AI Questions Tab (full_service: index 6) -->
+                                @php $aiQuestionsTabIndex = 6; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
                                     role="tabpanel" aria-labelledby="ai-questions-tab">
                                     @include('livewire.offer-listing.shared.ai-questions-input')
@@ -1203,6 +1189,21 @@
                         }
                     }
                 });
+                // Phase 5 — Dispatch financing visibility events so Alpine sub-sections show correctly
+                var ofVal = @this.get('offered_financing') || [];
+                var allFinancingTypes = [
+                    'Assumable', 'Cash', 'Conventional', 'FHA', 'Jumbo', 'VA',
+                    'No-Doc', 'Non-QM', 'USDA', 'Cryptocurrency', 'Exchange/Trade',
+                    'Lease Option', 'Lease Purchase', 'Non-Fungible Token (NFT)', 'Seller Financing', 'Other'
+                ];
+                // Traditional loans group uses type='Traditional'
+                var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
+                var hasTraditional = ofVal.some(function(v) { return traditionalTypes.includes(v); });
+                window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: 'Traditional', visible: hasTraditional } }));
+                allFinancingTypes.filter(function(t) { return !traditionalTypes.includes(t); }).forEach(function(type) {
+                    window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: type, visible: ofVal.includes(type) } }));
+                });
+
                 jsonRestoreSelect2();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
@@ -2659,8 +2660,8 @@
                     '#listing-details',
                     '#property-preferences',
                     '#purchasing-terms',
-                    '#services',
                     '#additional-details',
+                    '#broker-compensation-agency-agreement-terms',
                     '#buyer-information'
                 ] : [
                     '#listing-details',

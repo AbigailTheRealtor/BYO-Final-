@@ -1797,6 +1797,7 @@
     <div class="input-cover">
         <textarea wire:model="seller_contribution_details" class="form-control has-icon"
             data-icon="fa-solid fa-hand-holding-dollar" rows="3"
+            style="min-height: 100px; padding: 10px; font-size: 16px;"
             placeholder="Enter seller contribution details (e.g., $5,000 toward closing costs, credit for roof repair)"></textarea>
     </div>
 </div>
