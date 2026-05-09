@@ -15,24 +15,44 @@
     </div>
     <div class="card-body">
 
-        {{-- Additional Documents (Repeatable Rows) --}}
+        {{-- Property Documents & Disclosures (Repeatable Rows) --}}
         <div class="form-group">
-            <label class="fw-bold">Additional Documents:
+            <label class="fw-bold">Property Documents &amp; Disclosures:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                    title="Add any additional documents available for this listing. At least one row is shown by default; add more as needed. Documents are optional.">
+                    title="Add any property documents and disclosures available for this listing. At least one row is shown by default; add more as needed. Documents are optional.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
 
             @php
                 $landlordDocTypeOptions = [
-                    'Appraisal Report', 'As-Built Plans / Floor Plans', 'Certificate of Occupancy',
-                    'Drainage / Stormwater Report', 'Elevation Certificate', 'Energy Audit Report',
-                    'Geotechnical / Soil Report', 'Hazardous Materials Report', 'Historic Designation Documents',
-                    'Landlord Disclosure', 'Lease Agreements (Existing Tenants)', 'Maintenance Records',
-                    'Permits & Permit History', 'Roof Certification', 'Septic Inspection Report',
-                    'Survey', 'Title Insurance Commitment', 'Utility Bills / History',
-                    'Warranty Documents', 'Well Water Test Report', 'Other',
+                    'Appraisal Report',
+                    'As-Built Plans / Floor Plans',
+                    'Certificate of Occupancy',
+                    'Drainage / Stormwater Report',
+                    'Elevation Certificate',
+                    'Energy Audit Report',
+                    'Environmental Report',
+                    'Flood Disclosure',
+                    'Geotechnical / Soil Report',
+                    'Hazardous Materials Report',
+                    'Historic Designation Documents',
+                    'HOA/Condo Documents',
+                    'Inspection Report',
+                    'Landlord Disclosure',
+                    'Lead-Based Paint Disclosure',
+                    'Lease Agreements (Existing Tenants)',
+                    'Maintenance Records',
+                    'Permits & Permit History',
+                    'Roof Certification',
+                    'Seller Disclosure',
+                    'Septic Inspection Report',
+                    'Survey',
+                    'Title Insurance Commitment',
+                    'Utility Bills / History',
+                    'Warranty Documents',
+                    'Well Water Test Report',
+                    'Other',
                 ];
                 $blankLandlordDocRow    = ['type' => '', 'custom_type' => '', 'description' => '', 'stored_path' => '', 'original_name' => ''];
                 $initialLandlordDocRows = !empty($landlord_doc_rows) ? $landlord_doc_rows : [$blankLandlordDocRow];
