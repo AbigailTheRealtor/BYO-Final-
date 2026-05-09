@@ -1,0 +1,270 @@
+TASK: Create Buyer Offer Listing — Audit First + Surgical Fixes With Safeguards
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/buyer
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+GOAL:
+Audit first, then fix Create Buyer Offer Listing, Edit, and Draft Resume so they are visually and functionally identical.
+
+DO NOT touch:
+- Seller Offer Listing
+- Landlord Offer Listing
+- Tenant Offer Listing
+- Hire Agent flows
+- unrelated shared systems unless buyer flow requires it
+
+DO NOT:
+- change database schema unless absolutely unavoidable
+- delete existing draft records
+- rewrite the wizard architecture
+- hardcode tab indexes blindly
+- remove saved metadata values from old drafts/listings
+
+====================================================
+PHASE 1 — READ-ONLY AUDIT FIRST
+====================================================
+
+Before editing anything, create an audit file:
+
+storage/app/private/audits/buyer-offer-listing-audit.md
+
+Audit these files/areas:
+
+- Buyer create Livewire component
+- Buyer edit Livewire component
+- Buyer create blade
+- Buyer edit blade
+- all buyer tab partials
+- tab navigation/index logic
+- draft save/load logic
+- edit save/load logic
+- Offered Financing/Currency conditional logic
+- Broker Compensation tab
+- Services tab references
+- Description placeholder logic
+- currency/textarea formatting
+- validation/required field logic
+
+Compare against the current Create Buyer Listing flow as the source of truth.
+
+Document findings before applying fixes.
+
+====================================================
+PHASE 2 — FIX SELLER CONTRIBUTION BOX SIZE
+====================================================
+
+Field:
+Seller Contribution Amount / Details
+
+Issue:
+Box is too large.
+
+Fix:
+Make it the same size/style as:
+- Property Inclusions
+- Home Warranty Amount / Details
+
+Check:
+- create view
+- edit view
+- draft resume view
+
+Do not affect unrelated textarea fields.
+
+====================================================
+PHASE 3 — DELETE SERVICES TAB
+====================================================
+
+Remove the Services tab from Buyer Offer Listing.
+
+Clean up:
+- tab nav
+- tab pane
+- includes
+- validation references
+- next/previous tab logic
+- hardcoded activeTab indexes
+- required field arrays
+- draft/edit tab mappings
+- submit redirect logic
+
+Search entire buyer flow for:
+services
+#services
+activeTab ===
+setActiveTab(
+nextTab
+previousTab
+
+Confirm no orphan references remain.
+
+====================================================
+PHASE 4 — DYNAMIC DESCRIPTION PLACEHOLDER
+====================================================
+
+Property Description placeholder must change based on selected property type.
+
+Examples:
+- Residential should show residential-style example text
+- Commercial should show commercial-style example text
+- Income should show income-property-style example text
+- Business Opportunity should show business-style example text
+- Vacant Land should show land-style example text
+
+Must work on:
+- create
+- edit
+- draft resume
+- after Livewire re-render
+- after changing property type
+
+====================================================
+PHASE 5 — OFFERED FINANCING / CURRENCY EDIT-DRAFT FIX
+====================================================
+
+Issue:
+On Edit/Draft, even when all financing/currency options were selected, only:
+- Assumable
+- Other
+
+show their sub-questions.
+
+Fix:
+All selected financing/currency options must hydrate and show their related sub-questions correctly.
+
+Audit:
+- array names
+- saved meta keys
+- selected values
+- checkbox/select values
+- conditional @if checks
+- edit loadDraft/loadListing methods
+- syncSelectValues()
+- Select2 hydration if used
+- Livewire array casting
+
+Verify all selected options show their subfields on:
+- create
+- draft resume
+- edit listing
+
+Do not rename saved keys unless mapping old keys safely.
+
+====================================================
+PHASE 6 — BROKER COMPENSATION TAB REDUCTION
+====================================================
+
+In Buyer Broker Compensation & Agency Agreement Terms, keep ONLY these fields:
+
+- Buyer’s Broker Commission Structure:
+- Buyer’s Broker Purchase Fee:
+- Interested in a Lease Agreement:
+- Interested in a Lease-Option Agreement:
+
+Remove/hide all other fields from the UI.
+
+Apply to:
+- create
+- edit
+- draft resume
+
+Preserve old saved metadata values in backend if present.
+Do not delete existing saved meta unless required.
+
+Clean up validation so removed fields are not required.
+
+====================================================
+PHASE 7 — EDIT / DRAFT TAB PARITY
+====================================================
+
+Issue:
+Edit/Draft currently has different tabs from Create.
+
+Fix:
+Create, Edit, and Draft Resume must have the same:
+- tabs
+- tab order
+- field labels
+- visible fields
+- hidden conditional fields
+- formatting
+- icons
+- placeholders
+- Broker Compensation fields
+- Offered Financing/Currency behavior
+- Description behavior
+- next/previous behavior
+- submit/save draft behavior
+
+A user should not be able to tell whether they are:
+- creating a listing
+- editing a listing
+- resuming a draft
+
+unless the page title/action button says so.
+
+====================================================
+PHASE 8 — DRAFT VERSIONING FIX
+====================================================
+
+Issue:
+Drafts are only saving one record. When editing/saving again, the draft should save as a new draft each time.
+
+Required behavior:
+Each time the user saves a draft after editing, create a new draft/version instead of overwriting the same one.
+
+Safeguards:
+- do not delete old drafts
+- do not break resume draft
+- do not break edit listing
+- preserve original draft history
+- clearly identify latest draft in dashboard/list if existing UI supports it
+- if dashboard only displays one draft, preserve old drafts in DB and show latest safely
+
+Audit first:
+- current draft save method
+- draft ID handling
+- whether saveDraft updates existing row
+- whether draft status/listing status is reused
+- dashboard draft query logic
+
+Implement the smallest safe change.
+
+====================================================
+PHASE 9 — FINAL TESTING
+====================================================
+
+Test all scenarios:
+
+1. Create Residential Buyer Listing
+2. Create Commercial Buyer Listing
+3. Create Income Buyer Listing
+4. Create Business Opportunity Buyer Listing
+5. Create Vacant Land Buyer Listing
+6. Save Draft
+7. Resume Draft
+8. Save edited draft again and confirm a NEW draft/version is created
+9. Edit existing Buyer Listing
+10. Offered Financing/Currency with ALL options selected
+11. Broker Compensation only shows the 4 approved fields
+12. Services tab is fully removed
+13. Description placeholder changes by property type
+14. Seller Contribution Amount / Details box size matches the examples
+
+====================================================
+FINAL DELIVERABLE
+====================================================
+
+Return:
+1. Audit summary
+2. Files changed
+3. Root causes found
+4. Confirmation Create/Edit/Draft are identical
+5. Confirmation draft versioning works
+6. Confirmation all tests passed
+
+STOP and ask before making any large architectural rewrite.

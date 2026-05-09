@@ -1,0 +1,69 @@
+Correct — do not use #664 because that number is already tied to another task.
+
+Create a NEW task:
+
+#665 — Re-run Location Data Imports in Current DB
+
+Goal:
+Recover the location reference data in the current heliumdb environment. Audit confirmed:
+- us_cities is only 971 rows
+- Treasure Island and other FL beach cities are missing
+- us_zip_code_cities exists but has 0 rows
+- ZIP aliases/normalization data did not populate
+- UI smoke testing is not valid until imports are rerun
+
+STRICT SAFEGUARDS:
+- Data-only task.
+- Do NOT modify Livewire.
+- Do NOT modify Blade files.
+- Do NOT modify Select2/autocomplete JS.
+- Do NOT touch users, listings, bids, drafts, messages, or accepted bid summaries.
+- Do NOT run migrate:fresh.
+- Do NOT truncate tables.
+- Do NOT delete existing rows.
+- Do NOT perform legacy cleanup.
+- Preserve existing IDs.
+- Stop and report if any command errors.
+
+Run in this exact order:
+
+1. Re-run city import:
+php artisan cities:import-census
+
+Verify:
+- us_cities increases from 971 to around 32,145
+- Treasure Island, Dunedin, Madeira Beach, Indian Rocks Beach, and Safety Harbor exist
+- built-in city acceptance check passes
+
+2. Re-run county import/mapping:
+php artisan counties:import-census
+
+Verify:
+- us_counties count
+- city county_id mappings increase
+- 12-city acceptance check passes
+
+3. Re-run ZIP alias import:
+First dry-run:
+php artisan zips:import-nationwide --dry-run
+
+If clean, run live:
+php artisan zips:import-nationwide
+
+Verify:
+- us_zip_code_cities has alias rows
+- 33706 includes Treasure Island alias
+- St. Petersburg / Saint Petersburg lookup works
+- Ft. Worth / Fort Worth lookup works
+- Mt. Vernon / Mount Vernon lookup works
+
+Final report:
+A. Before/after counts for us_states, us_counties, us_cities, us_zip_codes, us_zip_code_cities
+B. City import results
+C. County mapping results
+D. ZIP alias import results
+E. Treasure Island end-to-end result
+F. St./Saint, Ft./Fort, Mt./Mount lookup results
+G. Confirmation no user/listing/draft/UI files were touched
+
+STOP after report.
