@@ -511,55 +511,55 @@
 
     // Define the updated services array
     $services = [
-        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
+        ['name' => 'List the Landlord’s available rental property on BidYourOffer.com.'],
         [
             'name' =>
-                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Market the Landlord’s lease listing across various real estate groups, pages, and affiliates directing interested parties to the Landlord’s rental offering on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Promote the Landlord’s rental offering on social media platforms directing interested parties to the Landlord’s lease listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Launch an online marketing campaign to drive traffic to the Landlord’s lease listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Conduct email marketing campaigns targeting agents and potential tenants, linking to the Landlord’s lease listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Implement neighborhood marketing efforts to attract qualified tenants to the Landlord’s available rental property.',
         ],
         [
             'name' =>
-                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
+                'Send prompt notifications to interested parties as soon as the Landlord’s property becomes available, ensuring maximum market exposure.',
         ],
-        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
+        ['name' => 'Schedule and coordinate property viewings and showings for prospective tenants.'],
+        ['name' => 'Arrange video tours of the Landlord’s available rental property.'],
         [
             'name' =>
-                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
+                'Conduct a thorough Rental Market Analysis (RMA) to assess comparable rental pricing and inform the Landlord’s listing strategy.',
         ],
-        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
+        ['name' => 'Assist the Landlord with tenant screening, including background and credit checks.'],
+        ['name' => 'Help the Landlord understand lease terms and ensure the lease agreement protects the Landlord’s interests.'],
         [
             'name' =>
-                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
+                'Negotiate lease terms on behalf of the Landlord, including rental price, lease duration, and additional clauses or provisions.',
         ],
-        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
+        ['name' => 'Coordinate with prospective tenants and their agents to expedite application and approval processing.'],
+        ['name' => 'Coordinate and oversee the move-in process, including property inspections and key handovers.'],
+        ['name' => 'Advocate for the Landlord’s interests and ensure fair lease terms.'],
         [
             'name' =>
-                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
+                'Provide resources for property management referrals, maintenance coordination, and landlord insurance guidance.',
         ],
         [
             'name' =>
-                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
+                'Help the Landlord understand landlord-tenant legal obligations and best practices for rental property management.',
         ],
-        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
+        ['name' => 'Provide guidance on lease renewal options and strategies for retaining quality tenants or re-listing the property.'],
         ['name' => 'Other – Specify additional services as needed.'],
     ];
 

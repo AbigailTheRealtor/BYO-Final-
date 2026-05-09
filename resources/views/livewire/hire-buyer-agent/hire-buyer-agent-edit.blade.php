@@ -528,55 +528,55 @@
 
     // Define the updated services array
     $services = [
-        ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
+        ['name' => 'List the Buyer’s purchase criteria on BidYourOffer.com.'],
         [
             'name' =>
-                'Market the Tenant’s rental criteria across various real estate groups, pages, and affiliates directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Market the Buyer’s purchase criteria across various real estate groups, pages, and affiliates directing interested parties to the Buyer’s criteria listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Promote the Tenant’s rental criteria on social media platforms directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Promote the Buyer’s purchase criteria on social media platforms directing interested parties to the Buyer’s criteria listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Launch an online marketing campaign to drive traffic to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Launch an online marketing campaign to drive traffic to the Buyer’s criteria listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Conduct email marketing campaigns targeting agents and potential Landlords, linking to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Conduct email marketing campaigns targeting agents and potential Sellers, linking to the Buyer’s criteria listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Implement neighborhood marketing efforts in the Tenant’s desired area directing interested parties to the Tenant’s criteria listing on BidYourOffer.com.',
+                'Implement neighborhood marketing efforts in the Buyer’s desired area directing interested parties to the Buyer’s criteria listing on BidYourOffer.com.',
         ],
         [
             'name' =>
-                'Send prompt email notifications with properties that match the Tenant’s criteria as soon as they are listed, ensuring access to the most up-to-date options.',
+                'Send prompt email notifications with properties that match the Buyer’s purchase criteria as soon as they are listed, ensuring access to the most up-to-date options.',
         ],
-        ['name' => 'Schedule and accompany the Tenant on property viewings and showings.'],
-        ['name' => 'Arrange video tours of the Tenant’s preferred properties.'],
+        ['name' => 'Schedule and accompany the Buyer on property viewings and showings.'],
+        ['name' => 'Arrange video tours of the Buyer’s preferred properties.'],
         [
             'name' =>
-                'Conduct a thorough Rental Market Analysis (RMA) to assess property values and rental pricing strategies.',
+                'Conduct a thorough Comparative Market Analysis (CMA) to assess property values and purchase pricing strategies.',
         ],
-        ['name' => 'Assist with the Tenant’s rental application process, providing guidance and support.'],
-        ['name' => 'Help the Tenant understand lease terms and potential penalties before signing.'],
+        ['name' => 'Assist with the Buyer’s purchase offer process, providing guidance and support.'],
+        ['name' => 'Help the Buyer understand purchase contract terms and potential contingencies before signing.'],
         [
             'name' =>
-                'Negotiate lease terms on behalf of the Tenant, including rental price, lease duration, and additional clauses or provisions.',
+                'Negotiate purchase terms on behalf of the Buyer, including purchase price, closing date, and additional clauses or provisions.',
         ],
-        ['name' => 'Coordinate with property managers, Landlords, and Agents to expedite application processing.'],
-        ['name' => 'Coordinate and oversee the move-in process, including inspections and key handovers.'],
-        ['name' => 'Advocate for security deposit refunds and ensure fair lease terms.'],
+        ['name' => 'Coordinate with listing agents, Sellers, and Agents to expedite the transaction process.'],
+        ['name' => 'Coordinate and oversee the closing process, including inspections and final walkthroughs.'],
+        ['name' => 'Advocate for Buyer protections and ensure fair purchase contract terms.'],
         [
             'name' =>
-                'Provide moving assistance resources, including utility setup, moving companies, and renter’s insurance.',
+                'Provide moving assistance resources, including utility setup, moving companies, and homeowner’s insurance.',
         ],
         [
             'name' =>
-                'Help the Tenant establish a rental history report through recognized services (e.g., Experian RentBureau, RentReporters, or similar platforms) to support future leasing or homeownership goals.',
+                'Help the Buyer understand financing options and connect with mortgage professionals to support their homeownership goals.',
         ],
-        ['name' => 'Provide guidance on lease renewal options and negotiate rent adjustments if necessary.'],
+        ['name' => 'Provide guidance on post-closing matters and homeownership responsibilities.'],
         ['name' => 'Other – Specify additional services as needed.'],
     ];
 

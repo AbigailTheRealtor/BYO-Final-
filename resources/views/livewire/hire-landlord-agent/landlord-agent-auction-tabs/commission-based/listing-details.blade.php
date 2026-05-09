@@ -477,62 +477,6 @@ $auction_lengths_seller = [
         <span class="error mt-2" id="expiration_date_error"></span>
     </div>
 
-    {{-- <div class="form-group">
-        <label class="fw-bold">Listing Type:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how Agents submit bids for this listing. This choice controls timing, bid visibility, and how Agent bids are reviewed.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                data-icon="fa-solid fa-file-lines" required>
-                <option value="">Select</option>
-                <option value="Auction">Auction</option>
-                <option value="Traditional">Traditional</option>
-            </select>
-        </div>
-        <span class="error mt-2" id="auction_type_error"></span>
-    </div>
-
-    <!-- Auction Length (Only for Auction) -->
-    <div class="form-group mt-3" @if ($auction_type !== 'Auction') style="display: none;" @endif>
-        <label class="fw-bold">Auction Length: <span class="text-danger">*</span>
-
-        </label>
-
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Agents can submit bids until the countdown ends. Each bid will display the Agent's Offered Services and Broker Compensation &amp; Agency Agreement Terms. Once the timer expires, you may select the Agent who best meets your needs—you are not required to choose the highest or lowest bid.">
-            <i class="fa-solid fa-circle-info"></i> </span>
-        <div class="input-cover">
-            <select wire:model="auction_time" id="auction_time" class="form-control has-icon"
-                data-icon="fa-regular fa-clock" @if ($auction_type === 'Auction') required @endif>
-                <option value="">Select</option>
-                @foreach ($auction_lengths_seller as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
-                @endforeach
-            </select>
-        </div>
-        <span class="error mt-2" id="auction_time_error"></span>
-    </div>
-
-    <!-- Agent Bid Visibility (Only for Traditional) -->
-    <div class="form-group mt-3" @if ($auction_type !== 'Traditional') style="display: none;" @endif>
-        <label class="fw-bold">Agent Bid Visibility Preference:<span class="text-danger">*</span></label>
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Choose whether Agent bids will be public or private. Public bids encourage competition; private bids are only visible to the listing creator.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-        <div class="input-cover">
-            <select wire:model="agent_bid_visibility" id="agent_bid_visibility" class="form-control has-icon"
-                data-icon="fa-solid fa-eye" @if ($auction_type === 'Traditional') required @endif>
-                <option value="">Select</option>
-                <option value="public">Agent bids will be visible to other Agents</option>
-                <option value="private">Agent bids will remain private</option>
-            </select>
-        </div>
-        <span class="error mt-2" id="agent_bid_visibility_error"></span>
-    </div> --}}
-
 <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

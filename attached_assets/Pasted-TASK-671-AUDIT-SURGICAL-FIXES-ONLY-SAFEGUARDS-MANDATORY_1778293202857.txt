@@ -1,0 +1,171 @@
+TASK #671 — AUDIT + SURGICAL FIXES ONLY
+
+## SAFEGUARDS (MANDATORY)
+
+* AUDIT FIRST before editing anything.
+* DO NOT touch:
+
+  * database
+  * migrations
+  * controllers
+  * routes
+  * Livewire classes
+  * validation
+  * save/load logic
+  * draft logic
+  * bid logic
+  * unrelated tooltips
+* ONLY touch these files if necessary:
+
+  * resources/views/livewire/hire-buyer-agent/hire-buyer-agent.blade.php
+  * resources/views/livewire/hire-buyer-agent/hire-buyer-agent-edit.blade.php
+  * resources/views/livewire/hire-landlord-agent/hire-landlord-agent.blade.php
+  * resources/views/livewire/hire-landlord-agent/hire-landlord-agent-edit.blade.php
+  * resources/views/livewire/hire-landlord-agent/landlord-agent-auction-tabs/commission-based/listing-details.blade.php
+* Preserve ALL existing services.
+* Preserve exact service ordering.
+* Preserve all checkbox values and wire:model bindings.
+* NO refactors.
+* NO global formatting cleanup.
+* Surgical fixes only.
+
+---
+
+# PHASE 1 — READ-ONLY AUDIT
+
+Audit all 5 files and verify:
+
+## Buyer/Landlord service arrays
+
+Check for:
+
+* duplicate `'name' =>` keys
+* malformed arrays
+* overwritten values
+* missing commas
+* missing brackets
+* service count mismatches
+* accidental removal of services
+
+IMPORTANT:
+Each service item must contain ONLY ONE:
+
+```php
+['name' => '...']
+```
+
+I am seeing invalid duplicate-key patterns like:
+
+```php
+[
+    'name' => 'Old wording...',
+    'name' => 'New wording...',
+]
+```
+
+This can overwrite values in PHP and must be corrected safely.
+
+Generate audit report first before editing.
+
+---
+
+# PHASE 2 — FIX SERVICE ARRAY STRUCTURE
+
+Fix ONLY malformed array structure.
+
+Keep:
+
+* updated Buyer wording
+* updated Landlord wording
+* all wording improvements already added
+
+But restore proper PHP syntax so every service item contains exactly ONE:
+
+```php
+['name' => '...']
+```
+
+DO NOT:
+
+* remove services
+* reorder services
+* alter checkbox logic
+* change bindings
+
+After fixing:
+
+* Buyer create/edit arrays must match exactly
+* Landlord create/edit arrays must match exactly
+
+---
+
+# PHASE 3 — LANDLORD LISTING DETAILS QA
+
+Audit:
+resources/views/livewire/hire-landlord-agent/landlord-agent-auction-tabs/commission-based/listing-details.blade.php
+
+Verify:
+
+* only ONE Listing Type section exists
+* only ONE Auction Length section exists
+* only ONE Agent Bid Visibility section exists
+* no duplicated tooltips
+* no orphaned Blade comments
+* no broken @if/@endif blocks
+* no mismatched div closures
+* no removed Livewire bindings
+* no duplicate commented legacy sections left behind
+
+If obsolete commented duplicate blocks still exist:
+
+* safely remove ONLY obsolete duplicate commented code
+* preserve active logic exactly
+
+Do NOT redesign the section.
+
+---
+
+# PHASE 4 — QA TESTING
+
+Test:
+
+* Hire Buyer Agent create
+* Hire Buyer Agent edit
+* Hire Landlord Agent create
+* Hire Landlord Agent edit
+
+Verify:
+
+* services render correctly
+* no missing checkboxes
+* no duplicated services
+* no Blade errors
+* no console errors
+* no Livewire snapshot errors
+
+Then test:
+
+* Landlord Listing Details tab
+* Listing Type toggle
+* Auction Length visibility
+* Agent Bid Visibility visibility
+
+Confirm:
+
+* no duplicate sections render
+* no layout collapse
+* no duplicate tooltips
+
+---
+
+# FINAL REPORT REQUIRED
+
+Return:
+
+1. files changed
+2. exact service counts before/after
+3. confirmation no duplicate `name` keys remain
+4. confirmation Buyer create/edit arrays match exactly
+5. confirmation Landlord create/edit arrays match exactly
+6. confirmation landlord listing-details has no duplicate sections
+7. QA results/screenshots if available
