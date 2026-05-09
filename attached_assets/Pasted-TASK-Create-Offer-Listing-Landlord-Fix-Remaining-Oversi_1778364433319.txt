@@ -1,0 +1,115 @@
+TASK: Create Offer Listing Landlord — Fix Remaining Oversized Textareas
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/landlord
+
+Login:
+Abigailbaschuk@gmail.com
+12345678
+
+ISSUE:
+These Landlord Create Offer Listing fields are still too tall:
+
+- Parking Terms
+- Utility Responsibility
+- Maintenance Responsibility
+- Landlord Approval Conditions
+
+They should visually match the compact regular input height used by:
+- Year Built
+- Total SqFt
+- Number of Occupants Allowed
+- Additional Landlord Lease Terms after Task #706 fix
+
+SAFEGUARDS:
+- Audit first before editing.
+- Full Service Landlord Create Offer Listing only.
+- Do NOT touch Limited Service. Limited Service is legacy/frozen.
+- Do NOT touch Buyer, Seller, Tenant, Hire Agent, routes, migrations, database schema, models, controllers, validation, save/load, draft logic, or submit logic.
+- Do NOT globally change all textareas.
+- Do NOT redesign, restyle, rebuild, or create new UI styling.
+- Keep existing icons.
+- Keep existing placeholders.
+- Keep existing labels.
+- Keep existing wire:model bindings.
+- Keep existing conditional logic.
+- Keep resize behavior unless it already differs.
+- Surgical height fix only.
+
+AUDIT FIRST:
+Using browser DevTools, inspect the correct reference fields:
+- Year Built
+- Total SqFt
+- Additional Landlord Lease Terms
+
+Then inspect the four broken fields:
+- Parking Terms
+- Utility Responsibility
+- Maintenance Responsibility
+- Landlord Approval Conditions
+
+For each, record:
+- computed height
+- computed min-height
+- padding-top
+- padding-bottom
+- line-height
+- rows attribute
+- classes
+- resize value
+- winning CSS rule
+
+CONFIRM ROOT CAUSE:
+These four fields may still be rows="2", so they are excluded from the current compact CSS selector:
+textarea.form-control.landlord-compact-textarea[rows="1"]
+
+Do not guess. Confirm in DevTools and in the Blade file.
+
+LIKELY FILE:
+resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/lease-terms.blade.php
+
+LIKELY FIX:
+For ONLY these four fields:
+- parking_terms
+- utility_responsibility
+- ll_maintenance_responsibility
+- landlord_approval_conditions
+
+Change:
+rows="2"
+
+To:
+rows="1"
+
+Do not change anything else on those textarea elements.
+
+The existing Task #706 CSS selector should then apply:
+textarea.form-control.landlord-compact-textarea[rows="1"]
+
+DO NOT TOUCH:
+- Property Description
+- association_approval_process
+- additional_lease_restrictions
+- other_services
+- broker additional terms
+- any unrelated textarea
+- any Limited Service file
+- Buyer/Seller/Tenant/Hire Agent files
+
+DONE LOOKS LIKE:
+- Parking Terms matches Year Built / Total SqFt / Additional Landlord Lease Terms height.
+- Utility Responsibility matches Year Built / Total SqFt / Additional Landlord Lease Terms height.
+- Maintenance Responsibility matches Year Built / Total SqFt / Additional Landlord Lease Terms height.
+- Landlord Approval Conditions matches Year Built / Total SqFt / Additional Landlord Lease Terms height.
+- Icons remain visible and aligned.
+- Placeholder text remains aligned.
+- Users can still type normally.
+- Intentionally large textareas remain large.
+- No unrelated files or logic changed.
+
+REPORT BACK:
+- Files changed.
+- Exact fields updated.
+- Confirmation rows changed from 2 to 1 only on the four listed fields.
+- Computed height before and after from DevTools.
+- Confirmation no other roles, Limited Service, validation, database, routes, controllers, models, save/load, or draft logic were touched.
