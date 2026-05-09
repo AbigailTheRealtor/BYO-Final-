@@ -1,0 +1,79 @@
+TASK: Create Offer Tenant Listing — Fix 3 Oversized Textareas
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/tenant/tenant
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+SAFEGUARDS:
+- Audit first before editing.
+- Do NOT touch Buyer, Seller, Landlord, or Hire Agent flows.
+- Do NOT change validation, controllers, models, migrations, database, save/load, or draft logic.
+- Do NOT globally change all textareas.
+- Surgical Tenant Create Listing UI fix only.
+
+ISSUE:
+These 3 fields are still too tall:
+- Renewal Option Details
+- Tenant Conditions
+- Commercial Approval Conditions
+
+They should NOT look like large description boxes.
+
+CORRECT SIZE REFERENCE:
+Make them visually match the compact regular field size/style used by:
+- CAM / NNN Preference
+- Maintenance Preferences
+
+AUDIT:
+Use browser DevTools/computed styles to compare:
+- CAM / NNN Preference
+- Maintenance Preferences
+against:
+- renewal_option_details
+- tenant_conditions
+- commercial_approval_conditions
+
+Check:
+- height
+- min-height
+- padding
+- line-height
+- rows
+- class names
+- wrapper classes
+- CSS rules overriding textarea height
+
+FIX:
+Make only these 3 fields match CAM / NNN Preference / Maintenance Preferences.
+
+Likely fix:
+- Remove any textarea-only oversized styling.
+- Add/reuse a compact class only on these 3 fields if needed.
+- Keep wire:model, labels, placeholders, tooltips, and saved values unchanged.
+
+Do NOT:
+- Change all textarea.form-control globally.
+- Change unrelated fields.
+- Change any save/validation logic.
+
+POST-FIX TEST:
+1. Hard refresh.
+2. Go to Create Tenant Listing → Leasing Terms.
+3. Select Renewal Option Requested = Yes.
+4. Confirm these 3 fields visually match CAM / NNN Preference:
+   - Renewal Option Details
+   - Tenant Conditions
+   - Commercial Approval Conditions
+5. Confirm typing works.
+6. Confirm Save Draft and reload still work.
+7. Confirm only Tenant Create Listing UI files changed.
+
+FINAL REPORT:
+- Root cause found
+- Files changed
+- Exact CSS/class/style fix
+- Confirmation no DB/controller/validation changes
+- Confirmation no other flows touched

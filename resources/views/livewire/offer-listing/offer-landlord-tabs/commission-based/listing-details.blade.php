@@ -350,7 +350,7 @@ $auction_lengths_seller = [
         </label>
         @if (!empty($isEditMode))
             <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Listing Type cannot be edited once the listing is created.">
-                <i class="input-icon fa-solid fa-lock"></i>
+                <i class="input-icon fa-solid fa-lock data-icon-rendered"></i>
                 <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
                 <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
             </div>
