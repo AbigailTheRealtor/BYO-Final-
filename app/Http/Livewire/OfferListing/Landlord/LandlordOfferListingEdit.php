@@ -2891,4 +2891,107 @@ class LandlordOfferListingEdit extends Component
         $this->landlord_doc_rows = $rows;
         $this->emit('landlordDocRowFileRemoved', $index);
     }
+
+    private function processPendingPhotoUploads(): void
+    {
+        if (empty($this->newPropertyPhotos)) {
+            return;
+        }
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        foreach ($this->newPropertyPhotos as $photo) {
+            if (in_array($photo->getMimeType(), $allowedMimes)) {
+                $ext      = $photo->getClientOriginalExtension();
+                $uuid     = (string) Str::uuid();
+                $fileName = $uuid . '.' . $ext;
+                $photo->storeAs('auction/images', $fileName, 'public');
+                $this->propertyPhotos[] = $fileName;
+            }
+        }
+        $this->newPropertyPhotos = [];
+    }
+
+    public function updatedNewPropertyPhotos()
+    {
+        try {
+            $this->validate(['newPropertyPhotos.*' => 'nullable|file|mimes:jpg,jpeg,png,webp|max:10240']);
+            $incoming = is_array($this->newPropertyPhotos) ? count($this->newPropertyPhotos) : 0;
+            if (count($this->propertyPhotos) + $incoming > 50) {
+                $this->addError('newPropertyPhotos', 'You may upload up to 50 property photos. You currently have ' . count($this->propertyPhotos) . ' photo(s) uploaded. Please select fewer files.');
+                $this->newPropertyPhotos = [];
+                return;
+            }
+            $this->processPendingPhotoUploads();
+            if ($this->listingId) {
+                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+                $auction->saveMeta('property_photos', $this->propertyPhotos);
+            }
+        } catch (\Throwable $e) {
+            $this->newPropertyPhotos = [];
+            $this->addError('newPropertyPhotos', 'Photo upload failed. Please try again.');
+        }
+    }
+
+    public function deletePropertyPhoto($index)
+    {
+        if (isset($this->propertyPhotos[$index])) {
+            $filename = $this->propertyPhotos[$index];
+            Storage::disk('public')->delete('auction/images/' . $filename);
+            array_splice($this->propertyPhotos, $index, 1);
+            if ($this->listingId) {
+                $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+                if (empty($this->propertyPhotos)) {
+                    $auction->deleteMeta('property_photos');
+                } else {
+                    $auction->saveMeta('property_photos', $this->propertyPhotos);
+                }
+            }
+        }
+    }
+
+    public function reorderPhotos(array $orderedFilenames): void
+    {
+        $current  = $this->propertyPhotos;
+        $newOrder = [];
+        foreach ($orderedFilenames as $fname) {
+            if (in_array($fname, $current, true)) {
+                $newOrder[] = $fname;
+            }
+        }
+        foreach ($current as $fname) {
+            if (!in_array($fname, $newOrder, true)) {
+                $newOrder[] = $fname;
+            }
+        }
+        $this->propertyPhotos = $newOrder;
+        if ($this->listingId) {
+            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function movePhotoUp(int $index): void
+    {
+        if ($index <= 0 || !isset($this->propertyPhotos[$index])) {
+            return;
+        }
+        [$this->propertyPhotos[$index - 1], $this->propertyPhotos[$index]] =
+            [$this->propertyPhotos[$index], $this->propertyPhotos[$index - 1]];
+        if ($this->listingId) {
+            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
+
+    public function movePhotoDown(int $index): void
+    {
+        if (!isset($this->propertyPhotos[$index + 1])) {
+            return;
+        }
+        [$this->propertyPhotos[$index], $this->propertyPhotos[$index + 1]] =
+            [$this->propertyPhotos[$index + 1], $this->propertyPhotos[$index]];
+        if ($this->listingId) {
+            $auction = HirelandLordAgentAuction::findOrFail($this->listingId);
+            $auction->saveMeta('property_photos', $this->propertyPhotos);
+        }
+    }
 }
