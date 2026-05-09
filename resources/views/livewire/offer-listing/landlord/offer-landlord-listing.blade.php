@@ -57,10 +57,15 @@
             min-height: 42px;
         }
 
-        textarea.form-control,
-        .landlord-compact-textarea {
+        textarea.form-control {
             min-height: 80px;
             height: auto;
+            resize: vertical;
+        }
+
+        .landlord-compact-textarea {
+            height: calc(1.5em + 0.75rem + 2px);
+            min-height: unset;
             resize: vertical;
         }
 

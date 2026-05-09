@@ -1336,7 +1336,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="renewal_option_details" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="renewal_option_details" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-file-signature"
                 placeholder="Describe renewal option terms (e.g., 1-year renewal at market rate, 60-day notice required)"></textarea>
         </div>
@@ -1365,7 +1365,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
+        <textarea wire:model="additional_landlord_lease_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional lease terms or special conditions"></textarea>
     </div>
@@ -1409,7 +1409,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-receipt"
                 placeholder="Describe CAM/NNN charges (e.g., estimated $3/sqft annually for taxes, insurance, and maintenance)"></textarea>
         </div>
@@ -1423,7 +1423,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="rent_escalation_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="rent_escalation_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-arrow-trend-up"
                 placeholder="Describe rent escalation (e.g., 3% annual increase beginning year 2)"></textarea>
         </div>
@@ -1437,7 +1437,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-hammer"
                 placeholder="Describe TI/buildout terms (e.g., $20/sqft TI allowance, delivered in shell condition)"></textarea>
         </div>
@@ -1451,7 +1451,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="permitted_use_restrictions" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-building-columns"
                 placeholder="Describe permitted uses and restrictions (e.g., General office use only, no retail or food service)"></textarea>
         </div>
@@ -1465,7 +1465,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="signage_rights" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="signage_rights" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-sign-hanging"
                 placeholder="Describe signage rights (e.g., Tenant may install one suite sign and one directory listing)"></textarea>
         </div>
@@ -1479,7 +1479,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="commercial_parking_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="commercial_parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-square-parking"
                 placeholder="Describe commercial parking terms (e.g., 4 spaces per 1,000 sqft, 2 reserved spaces included)"></textarea>
         </div>
@@ -1511,7 +1511,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="2"
+            <textarea wire:model="commercial_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-clipboard-check"
                 placeholder="Enter commercial approval conditions (e.g., 2 years of financial statements, business plan, references)"></textarea>
         </div>
