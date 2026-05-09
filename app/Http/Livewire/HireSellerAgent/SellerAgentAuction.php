@@ -1466,27 +1466,33 @@ class SellerAgentAuction extends Component
                 $results[] = $countyName . ', ' . $stateAbbrev;
             }
         } else {
-            $normalizedInput = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $input)));
+            $variants = \App\Services\CityNameNormalizer::searchVariants($input);
             $citiesStartWith = \App\Models\UsCity::with('state')
-                ->where(function ($q) use ($input, $normalizedInput) {
-                    $q->where('name', 'ILIKE', $input . '%')
-                      ->orWhere('name', 'ILIKE', $normalizedInput . '%')
-                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedInput . '%']);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', $v . '%')
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped . '%']);
+                    }
                 })
                 ->orderBy('name')
                 ->limit(10)
                 ->get();
             
             $citiesContain = \App\Models\UsCity::with('state')
-                ->where(function ($q) use ($input, $normalizedInput) {
-                    $q->where('name', 'ILIKE', '%' . $input . '%')
-                      ->orWhere('name', 'ILIKE', '%' . $normalizedInput . '%')
-                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $normalizedInput . '%']);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', '%' . $v . '%')
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $stripped . '%']);
+                    }
                 })
-                ->where(function ($q) use ($input, $normalizedInput) {
-                    $q->where('name', 'NOT ILIKE', $input . '%')
-                      ->where('name', 'NOT ILIKE', $normalizedInput . '%')
-                      ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$normalizedInput . '%']);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->where('name', 'NOT ILIKE', $v . '%')
+                          ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$stripped . '%']);
+                    }
                 })
                 ->orderBy('name')
                 ->limit(max(0, 10 - $citiesStartWith->count()))

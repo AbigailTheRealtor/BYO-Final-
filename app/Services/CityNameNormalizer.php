@@ -9,7 +9,8 @@ namespace App\Services;
  *  1. Import deduplication — so "St. Petersburg" and "Saint Petersburg" hash
  *     to the same key and are never stored as separate alias rows.
  *  2. Search expansion — so a user typing "St. Pete Beach" finds records
- *     stored as "Saint Pete Beach".
+ *     stored as "Saint Pete Beach", and a user typing "Saint Petersburg"
+ *     finds records stored as "St. Petersburg".
  */
 class CityNameNormalizer
 {
@@ -32,6 +33,22 @@ class CityNameNormalizer
         ['/\bS\.(?=\s|$)/i',   'South'],   // "S."   → South
         ['/\bE\.(?=\s|$)/i',   'East'],    // "E."   → East
         ['/\bW\.(?=\s|$)/i',   'West'],    // "W."   → West
+    ];
+
+    /**
+     * Reverse contractions — full word back to abbreviated form with period.
+     * Used in searchVariants so that typing "Saint Petersburg" also generates
+     * "St. Petersburg" as a search candidate, matching DB records stored in
+     * abbreviated form.
+     */
+    private const CONTRACTIONS = [
+        ['/\bSaint\b/i', 'St.'],
+        ['/\bFort\b/i',  'Ft.'],
+        ['/\bMount\b/i', 'Mt.'],
+        ['/\bNorth\b/i', 'N.'],
+        ['/\bSouth\b/i', 'S.'],
+        ['/\bEast\b/i',  'E.'],
+        ['/\bWest\b/i',  'W.'],
     ];
 
     /**
@@ -58,8 +75,14 @@ class CityNameNormalizer
 
     /**
      * Return all distinct city name variants worth querying.
-     * The list always contains the trimmed original; the normalized form is
-     * appended only when it differs from the original (case-insensitively).
+     *
+     * Always includes the trimmed original. Also adds:
+     *  - The abbreviated→full expansion (e.g. "St. Pete" → "Saint Pete")
+     *  - The full→abbreviated contraction (e.g. "Saint Petersburg" → "St. Petersburg")
+     *  - The fully normalized (lowercase) form for case-insensitive fallback
+     *
+     * This ensures that typing either "Saint Petersburg" or "St. Petersburg"
+     * finds records regardless of which form is stored in the DB.
      *
      * @return string[]  Non-empty, distinct, de-duplicated strings.
      */
@@ -74,16 +97,22 @@ class CityNameNormalizer
 
         $variants = [$city];
 
-        // Expand abbreviations into the full-word form and add as additional variant
+        // Abbreviated → full expansion (e.g. "St." → "Saint", "Ft." → "Fort")
         $expanded = self::applyExpansions($city);
         if (strtolower($expanded) !== strtolower($city)) {
             $variants[] = $expanded;
         }
 
-        // Add the fully normalized (lowercase) form if distinct — useful when the
-        // incoming string is already full-word ("saint petersburg") but the DB stores
-        // mixed case ("Saint Petersburg"): ILIKE covers that, but having the variant
-        // ensures no variant is missed.
+        // Full → abbreviated contraction (e.g. "Saint" → "St.", "Fort" → "Ft.")
+        // Covers the case where the DB stores the abbreviated form and the user
+        // types the full word (e.g. "Saint Petersburg" finding "St. Petersburg").
+        $contracted = self::applyContractions($city);
+        if (strtolower($contracted) !== strtolower($city) &&
+            !in_array(strtolower($contracted), array_map('strtolower', $variants))) {
+            $variants[] = $contracted;
+        }
+
+        // Fully normalized (lowercase, no periods) as a final fallback
         if (!in_array(strtolower($normalized), array_map('strtolower', $variants))) {
             $variants[] = $normalized;
         }
@@ -101,6 +130,19 @@ class CityNameNormalizer
             $city = preg_replace($pattern, $replacement, $city);
         }
         $city = str_replace('.', '', $city);
+        return self::collapseSpaces(trim($city));
+    }
+
+    /**
+     * Apply reverse contractions — full words back to abbreviated form with period.
+     * Used to generate the abbreviated variant when the user types the full word,
+     * so that "Saint Petersburg" also searches for "St. Petersburg".
+     */
+    public static function applyContractions(string $city): string
+    {
+        foreach (self::CONTRACTIONS as [$pattern, $replacement]) {
+            $city = preg_replace($pattern, $replacement, $city);
+        }
         return self::collapseSpaces(trim($city));
     }
 
