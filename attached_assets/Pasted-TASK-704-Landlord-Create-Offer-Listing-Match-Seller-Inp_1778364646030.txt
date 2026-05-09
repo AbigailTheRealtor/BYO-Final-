@@ -1,0 +1,89 @@
+TASK #704 - Landlord Create Offer Listing: Match Seller $ Input Group Width/Structure
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/landlord
+
+Login:
+abigailbaschuk@gmail.com
+12345678
+
+ISSUE:
+Task #703 removed the inline padding, but the Landlord $ fields still do NOT match Seller currency input formatting.
+
+From the screenshot, Landlord still has:
+- a very narrow/squished $ prepend
+- input text starts too far right
+- input group does not visually match Seller fields
+
+Seller reference shows:
+- $ prepend is a normal Bootstrap input-group-text block
+- prepend has consistent width/padding
+- input begins immediately after the prepend
+- height and alignment are consistent
+
+FIELDS TO FIX:
+Full Service Landlord Create Offer Listing only:
+1. Desired Lease Price
+2. Security Deposit Required
+3. Total Move-In Funds Required
+4. Annual Property Taxes
+5. Annual CDD Fee
+6. Special Assessment Amount
+7. Association Fee Amount
+
+SAFEGUARDS:
+- Audit first.
+- Full Service Landlord Create Offer Listing only.
+- Limited Service is legacy/frozen — do not touch.
+- Do not touch Seller, Buyer, Tenant, Hire Agent, Edit, Draft, Counter, or backend files.
+- Do not change validation, Livewire PHP, models, controllers, routes, migrations, database, save/load, or handlers.
+- Do not change wire:model, placeholder, label, tooltip, oninput/onblur/onpaste, data-error-id, or conditional logic.
+- Blade/UI markup/class fix only.
+
+AUDIT:
+Compare the exact HTML/Blade structure for Seller currency fields against Landlord currency fields.
+
+Seller reference files:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/seller-terms.blade.php
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/financial-details.blade.php
+
+Landlord target files:
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/lease-terms.blade.php
+- resources/views/livewire/offer-listing/offer-landlord-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+
+FIX:
+For the 7 listed Landlord fields, make the input-group markup/classes match the Seller pattern exactly.
+
+Specifically check whether Landlord is missing or incorrectly using:
+- input-group wrapper
+- input-group-prepend
+- input-group-text
+- width/padding classes
+- rounded/border classes
+- form-control placement immediately after the $ prepend
+
+Do NOT solve this with global CSS unless absolutely unavoidable.
+The preferred fix is to copy the Seller currency input-group structure/classes into the matching Landlord fields while preserving each Landlord field’s existing binding and handlers.
+
+DONE LOOKS LIKE:
+After hard refresh, Landlord fields visually match Seller fields:
+- $ prepend has same width as Seller
+- $ prepend is not squished
+- input starts in the same position as Seller
+- same input height
+- same border radius
+- same spacing/alignment
+
+VERIFY:
+1. Run git diff before testing.
+2. Confirm only the two Full Service Landlord Blade files changed.
+3. Hard refresh browser.
+4. Open Landlord Create Offer Listing.
+5. Compare the 7 fields against Seller Create Offer Listing.
+6. Confirm no other roles/flows/files changed.
+
+REPORT BACK WITH:
+- Files changed
+- Exact fields updated
+- What markup/class difference caused the mismatch
+- Confirmation that Limited Service and all non-Landlord flows were untouched
