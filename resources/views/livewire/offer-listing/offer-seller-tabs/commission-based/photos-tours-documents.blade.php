@@ -23,6 +23,7 @@
         accept=".jpg,.jpeg,.png,.webp" multiple
         style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none;"
         tabindex="-1"
+        wire:loading.attr="disabled" wire:target="newPropertyPhotos"
         @if(count($propertyPhotos ?? []) >= 50) disabled title="Photo limit reached (50/50)" @endif>
 
     {{-- Dropzone Upload Card --}}
@@ -200,28 +201,41 @@
         var fileInput = document.getElementById('property-photos-input-seller');
         if (!dropzone || !fileInput) return;
 
-        dropzone.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.style.background = '#d4f2f4';
-            dropzone.style.borderColor = '#027a7f';
-        });
-        dropzone.addEventListener('dragleave', function (e) {
-            dropzone.style.background = '#f8fffe';
-            dropzone.style.borderColor = '#049399';
-        });
-        dropzone.addEventListener('drop', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            dropzone.style.background = '#f8fffe';
-            dropzone.style.borderColor = '#049399';
-            var files = e.dataTransfer.files;
-            if (!files || files.length === 0) return;
-            var dt = new DataTransfer();
-            Array.from(files).forEach(function (f) { dt.items.add(f); });
-            fileInput.files = dt.files;
-            fileInput.dispatchEvent(new Event('change'));
-        });
+        if (dropzone._dropHandlers) {
+            dropzone.removeEventListener('dragover', dropzone._dropHandlers.dragover);
+            dropzone.removeEventListener('dragleave', dropzone._dropHandlers.dragleave);
+            dropzone.removeEventListener('drop', dropzone._dropHandlers.drop);
+        }
+
+        var handlers = {
+            dragover: function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.style.background = '#d4f2f4';
+                dropzone.style.borderColor = '#027a7f';
+            },
+            dragleave: function (e) {
+                dropzone.style.background = '#f8fffe';
+                dropzone.style.borderColor = '#049399';
+            },
+            drop: function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.style.background = '#f8fffe';
+                dropzone.style.borderColor = '#049399';
+                var files = e.dataTransfer.files;
+                if (!files || files.length === 0) return;
+                var dt = new DataTransfer();
+                Array.from(files).forEach(function (f) { dt.items.add(f); });
+                fileInput.files = dt.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        };
+
+        dropzone._dropHandlers = handlers;
+        dropzone.addEventListener('dragover', handlers.dragover);
+        dropzone.addEventListener('dragleave', handlers.dragleave);
+        dropzone.addEventListener('drop', handlers.drop);
     }
 
     document.addEventListener('livewire:load', function () {
