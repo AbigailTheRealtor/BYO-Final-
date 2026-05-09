@@ -60,7 +60,7 @@
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
-            <span class="error mt-1" id="annual_property_taxes_error"></span>
+            <span class="error mt-2" id="annual_property_taxes_error"></span>
         </div>
 
         {{-- Additional Parcels --}}
@@ -255,7 +255,7 @@
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
-                <span class="error mt-1" id="annual_cdd_fee_error"></span>
+                <span class="error mt-2" id="annual_cdd_fee_error"></span>
             </div>
         @endif
 
@@ -293,7 +293,7 @@
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
-                <span class="error mt-1" id="special_assessment_amount_error"></span>
+                <span class="error mt-2" id="special_assessment_amount_error"></span>
             </div>
 
             <div class="form-group mt-3">
@@ -408,7 +408,7 @@
                                 data-error-id="association_fee_amount_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
-                        <span class="error mt-1" id="association_fee_amount_error"></span>
+                        <span class="error mt-2" id="association_fee_amount_error"></span>
                     </div>
                 </div>
 

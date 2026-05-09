@@ -1018,7 +1018,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="starting_rent" class="form-control" style="padding-left: 12px;"
+        <input type="text" wire:model="starting_rent" class="form-control"
             placeholder="Enter opening offer amount (e.g., 4000)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1032,7 +1032,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="reserve_rent" class="form-control" style="padding-left: 12px;"
+        <input type="text" wire:model="reserve_rent" class="form-control"
             placeholder="Enter reserve rent (e.g., 4500) — optional"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
@@ -1046,7 +1046,7 @@
     </label>
     <div class="input-cover">
         <span class="input-group-text-seller">$</span>
-        <input type="text" wire:model="lease_now_price" id="landlord_lease_now_price" class="form-control" style="padding-left: 12px;"
+        <input type="text" wire:model="lease_now_price" id="landlord_lease_now_price" class="form-control"
             placeholder="Enter lease now price (e.g., 5000)"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
     </div>
