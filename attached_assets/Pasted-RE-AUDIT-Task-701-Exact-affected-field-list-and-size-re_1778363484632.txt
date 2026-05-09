@@ -1,0 +1,70 @@
+RE-AUDIT Task #701 — Exact affected field list and size references
+
+Affected fields that must be compact regular height:
+
+- Additional Landlord Lease Terms
+- Renewal Option Details
+- Legal Description
+- Additional Parcel IDs
+- Special Assessment Description
+- CAM / NNN / Additional Rent Charges
+- Rent Escalation Terms
+- Tenant Improvement / Buildout Terms
+- Permitted Use / Use Restrictions
+- Signage Rights
+- Commercial Parking Terms
+- Commercial Approval Conditions
+
+SIZE REFERENCE FIELDS (correct height):
+- Landlord Approval Conditions
+- Year Built
+
+AUDIT FIRST USING DEVTOOLS:
+Inspect BOTH reference fields and record:
+- computed height
+- computed min-height
+- padding-top
+- padding-bottom
+- line-height
+- rows attribute
+- resize value
+- winning CSS rule
+
+Then inspect ALL affected fields and identify:
+- which CSS rule is forcing the oversized height
+- whether textarea.form-control is overriding landlord-compact-textarea
+- whether min-height is still inherited
+- whether rows="1" is being ignored because of CSS
+
+IMPORTANT:
+Do not guess the height.
+Do not use arbitrary Bootstrap assumptions.
+The affected fields must visually match Landlord Approval Conditions / Year Built exactly.
+
+FIX ONLY:
+- The listed affected fields.
+- The compact textarea CSS override required to make them match the reference fields.
+
+DO NOT TOUCH:
+- intentionally large textareas
+- Property Description
+- other_services
+- broker additional terms
+- association approval process
+- additional lease restrictions
+- Limited Service
+- Buyer/Seller/Tenant/Hire Agent flows
+- validation, save/load, routes, controllers, models, migrations, or database logic
+
+VERIFY AFTER FIX:
+- All affected fields match the exact visual height of Landlord Approval Conditions / Year Built.
+- Icons remain aligned properly.
+- Placeholder text remains vertically aligned.
+- Excluded textareas remain large.
+
+REPORT BACK:
+- Exact computed height of reference fields.
+- Exact computed height before fix.
+- Exact computed height after fix.
+- Exact CSS rule that was overriding the compact fields.
+- Files changed.
