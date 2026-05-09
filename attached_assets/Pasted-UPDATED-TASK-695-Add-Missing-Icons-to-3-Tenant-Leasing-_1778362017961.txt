@@ -1,0 +1,107 @@
+UPDATED TASK: #695 — Add Missing Icons to 3 Tenant Leasing Terms Textareas (Create + Edit/Draft Parity)
+
+URLS:
+Create:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/tenant/tenant
+
+Login:
+abigailbaschuk@gmail.com
+Password:
+12345678
+
+SAFEGUARDS:
+- Audit first before editing.
+- Full Service Tenant flows only.
+- Limited Service is legacy/frozen — do NOT touch it.
+- Do NOT touch Buyer, Seller, Landlord, or Hire Agent flows.
+- Do NOT touch controllers, models, migrations, routes, validation, save/load logic, or database structure.
+- Do NOT globally change icon logic, textarea styling, padding, wrappers, or CSS.
+- Do NOT rename wire:model fields.
+- Preserve all placeholders, rows, inline styles, conditionals, validation messages, and layout exactly.
+- Use the existing icon system already implemented in the project.
+
+ISSUE:
+These 3 textarea fields are missing icons in Tenant flows:
+
+1. Renewal Option Details
+2. Tenant Conditions
+3. Commercial Approval Conditions
+
+Create, Edit, and Draft/Resume states must all match visually and function identically.
+
+AUDIT FINDINGS (CONFIRMED):
+- addIconsToInputs() already supports textarea.has-icon[data-icon].
+- Existing .input-cover wrappers already exist around these fields.
+- .has-icon padding already works correctly for textareas.
+- No JS/CSS changes are needed.
+- The correct implementation is ONLY adding:
+  - class="has-icon"
+  - data-icon="fa-solid fa-..."
+
+IMPLEMENTATION:
+Add `has-icon` + `data-icon` to the existing textarea elements only.
+
+Icons:
+- Renewal Option Details:
+  data-icon="fa-solid fa-rotate-right"
+
+- Tenant Conditions:
+  data-icon="fa-solid fa-clipboard-list"
+
+- Commercial Approval Conditions:
+  data-icon="fa-solid fa-clipboard-check"
+
+FILES TO UPDATE (ONLY IF BOTH EXIST):
+1.
+resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+2.
+Tenant Edit/Draft equivalent leasing terms Blade partial for Full Service Tenant listings
+(Locate the matching edit/draft leasing-terms partial before editing.)
+
+IMPORTANT:
+- Maintain Create/Edit/Draft parity.
+- If Edit/Draft uses the same shared partial, only update the shared partial once.
+- If Edit/Draft has a separate duplicated file, apply the exact same textarea changes there too.
+- No additional wrappers.
+- No CSS edits.
+- No JS edits.
+- No icon injection logic changes.
+
+DO NOT:
+- Touch Limited Service files.
+- Touch Buyer/Seller/Landlord files.
+- Touch unrelated textareas.
+- Change textarea height/rows.
+- Change placeholders.
+- Change conditional logic.
+- Add duplicate icon containers.
+
+VERIFY:
+1. Create Tenant Listing:
+   - Leasing Terms tab shows all 3 icons immediately on first load.
+   - Icons persist after tab switching.
+   - Icons persist after Livewire updates.
+
+2. Edit Tenant Listing:
+   - Same 3 icons appear correctly.
+
+3. Draft/Resume:
+   - Same 3 icons appear correctly after loading a saved draft.
+
+4. Confirm:
+   - No duplicate icons.
+   - No text overlap.
+   - Maintenance Preferences and CAM / NNN Preference remain unchanged.
+   - No console errors.
+
+FINAL QA:
+- Run git diff and confirm ONLY the intended Tenant Full Service leasing-term Blade file(s) changed.
+- Confirm no controllers/models/routes/migrations/validation files changed.
+- Confirm no Limited Service files changed.
+
+REPORT BACK:
+- Exact file(s) changed.
+- Whether Create/Edit/Draft share the same partial or required separate updates.
+- Confirm no JS/CSS changes were needed.
+- Confirm no other roles or flows were touched.

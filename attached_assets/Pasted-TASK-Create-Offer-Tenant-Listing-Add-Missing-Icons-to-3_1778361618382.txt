@@ -1,0 +1,85 @@
+TASK: Create Offer Tenant Listing — Add Missing Icons to 3 Leasing Terms Fields
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/tenant/tenant
+
+Login:
+abigailbaschuk@gmail.com
+Password:
+12345678
+
+SAFEGUARDS:
+- Audit first before editing.
+- Full Service Create Tenant Listing only.
+- Limited Service is legacy/frozen — do NOT touch Limited Service files.
+- Do NOT touch Buyer, Seller, Landlord, Hire Agent, Edit Listing, Draft logic, controllers, models, migrations, routes, validation, database, or save/load logic.
+- Do NOT globally change all textareas or all icons.
+- Do NOT rename wire:model fields.
+- Do NOT remove or alter existing placeholder text, field labels, conditional logic, Select2 logic, or tab navigation.
+- Make the smallest surgical Blade/CSS/JS change needed.
+
+ISSUE:
+On Create Offer Tenant Listing → Leasing Terms tab, these 3 fields are missing field icons:
+
+1. Tenant Conditions
+2. Renewal Option Details
+3. Commercial Approval Conditions
+
+They should display icons consistently like the other fields on the page, such as Maintenance Preferences.
+
+AUDIT FIRST:
+1. Open the Tenant Create Offer Listing page.
+2. Go to the Leasing Terms tab.
+3. Inspect the existing icon pattern used by nearby fields, especially:
+   - Maintenance Preferences
+   - CAM / NNN Preference
+   - Any other compact Leasing Terms fields with icons
+4. Identify the exact wrapper/class/data-icon structure currently used.
+5. Confirm which Blade file renders these fields before editing. Likely target:
+   resources/views/livewire/offer-listing/offer-tenant-tabs/commission-based/leasing-terms.blade.php
+
+IMPLEMENTATION:
+For each of these 3 fields, add the same icon wrapper/data-icon structure used by the working fields:
+
+- Tenant Conditions:
+  Use a representative icon such as clipboard-list, file-text, list-check, or similar.
+
+- Renewal Option Details:
+  Use a representative icon such as refresh-cw, rotate-ccw, calendar-clock, or similar.
+
+- Commercial Approval Conditions:
+  Use a representative icon such as check-circle, shield-check, clipboard-check, or similar.
+
+Important:
+- Use the same icon system already used in this Blade file/project.
+- If the working fields use `<i class="...">`, match that exact style.
+- If the working fields use `.has-icon[data-icon="..."]`, match that exact style.
+- Preserve the existing `wire:model`, field label, placeholder, rows, height styling, conditional display logic, and validation/error display exactly.
+
+DONE LOOKS LIKE:
+- Tenant Conditions shows an icon.
+- Renewal Option Details shows an icon.
+- Commercial Approval Conditions shows an icon.
+- Icons align visually with Maintenance Preferences and other Leasing Terms fields.
+- Text does not overlap the icons.
+- Field height/spacing remains unchanged.
+- No other role or listing flow is changed.
+- Saved drafts are not affected.
+- No database, controller, model, route, or validation changes.
+
+VERIFY:
+1. Load Create Offer Tenant Listing.
+2. Navigate to Leasing Terms.
+3. Confirm the 3 fields show icons immediately on first page load.
+4. Switch tabs away and back; icons still show.
+5. Trigger any Livewire update on the page; icons do not duplicate.
+6. Confirm Maintenance Preferences and CAM / NNN Preference still look unchanged.
+7. Confirm no console errors.
+8. Run syntax/checks if available.
+
+REPORT BACK:
+- Exact file changed.
+- Exact icons used for each field.
+- Confirm no Limited Service files were touched.
+- Confirm no Buyer/Seller/Landlord/Hire Agent/Edit/Draft files were touched.
+- Confirm no controllers/models/migrations/routes/validation were touched.
