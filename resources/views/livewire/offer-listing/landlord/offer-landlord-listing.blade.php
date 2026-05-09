@@ -1067,7 +1067,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms', 'Description'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Details', 'Leasing Terms'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -1080,6 +1080,17 @@
                                         </button>
                                     </li>
                                 @endforeach
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 3 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(3)"
+                                        id="additional-details-tab" data-bs-toggle="tab"
+                                        data-bs-target="#additional-details"
+                                        type="button" role="tab"
+                                        aria-controls="additional-details"
+                                        aria-selected="{{ $activeTab === 3 ? 'true' : 'false' }}">
+                                        Description
+                                    </button>
+                                </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 4 ? 'active' : '' }}"
                                         wire:click="setActiveTab(4)"
@@ -1589,7 +1600,19 @@
                 document._landlordCreateTabNavListenerAdded = true;
                 document.addEventListener('shown.bs.tab', function(e) {
                     var _tgt = e.target.getAttribute('data-bs-target');
-                    if (_tgt && e.target.closest('#myTab')) sessionStorage.setItem('landlord_create_active_tab', _tgt);
+                    if (_tgt && e.target.closest('#myTab')) {
+                        sessionStorage.setItem('landlord_create_active_tab', _tgt);
+                        addIconsToInputs();
+                        var _pane = document.querySelector(_tgt);
+                        if (_pane) {
+                            _pane.querySelectorAll('.is-invalid').forEach(function(el) {
+                                el.classList.remove('is-invalid');
+                            });
+                            _pane.querySelectorAll('.error:not([id])').forEach(function(el) {
+                                el.remove();
+                            });
+                        }
+                    }
                 });
             }
 
@@ -2584,6 +2607,12 @@
 
                 // If all fields are valid, proceed to the next tab (your existing code)
                 if (isValid) {
+                    currentTabContent.querySelectorAll('.is-invalid').forEach(function(el) {
+                        el.classList.remove('is-invalid');
+                    });
+                    currentTabContent.querySelectorAll('.error:not([id])').forEach(function(el) {
+                        el.remove();
+                    });
                     const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
                     const _curIdx = _allTabs.indexOf(currentTab);
                     if (_curIdx < _allTabs.length - 1) {

@@ -506,7 +506,7 @@
             @endif
 
             {{-- What does the fee include (Select2 multi-select) --}}
-            <div class="form-group mt-3">
+            <div class="form-group mt-3" wire:key="hoa-fee-includes-group">
                 <label class="fw-bold">What Does the Association Fee Include?
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="Select all services and amenities covered by the association fee.">
