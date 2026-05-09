@@ -63,7 +63,7 @@
             resize: vertical;
         }
 
-        .landlord-compact-textarea {
+        textarea.form-control.landlord-compact-textarea[rows="1"] {
             height: calc(1.5em + 0.75rem + 2px);
             min-height: unset;
             resize: vertical;
