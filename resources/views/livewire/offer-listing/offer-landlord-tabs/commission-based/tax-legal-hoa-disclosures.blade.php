@@ -468,37 +468,35 @@
             </div>
 
             @if ($association_approval_required === 'Yes')
-                <div class="col-12">
-                    <div class="form-group mt-2 mb-3">
-                        <label class="fw-bold">Approval Process Details:
-                            <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                                title="Describe the association's approval process, including required documents, interview requirements, and typical timeline.">
-                                <i class="fa-solid fa-circle-info"></i>
-                            </span>
-                        </label>
-                        <div class="input-cover">
-                            <textarea wire:model="association_approval_process" class="form-control has-icon landlord-compact-textarea" rows="2"
-                                data-icon="fa-solid fa-clipboard-check"
-                                placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
-                        </div>
+                <div class="form-group mt-2 mb-3">
+                    <label class="fw-bold">Approval Process Details:
+                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Describe the association's approval process, including required documents, interview requirements, and typical timeline.">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </span>
+                    </label>
+                    <div class="input-cover">
+                        <textarea wire:model="association_approval_process" class="form-control has-icon landlord-compact-textarea" rows="2"
+                            data-icon="fa-solid fa-clipboard-check"
+                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
+                </div>
 
-                    <div class="form-group mt-2 mb-3">
-                        <label class="fw-bold">Association Application Fee:
-                            <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                                title="Enter the association application fee amount if applicable. This is typically paid by the Tenant.">
-                                <i class="fa-solid fa-circle-info"></i>
-                            </span>
-                        </label>
-                        <div class="input-cover">
-                            <span class="input-group-text-seller">$</span>
-                            <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 12px;"
-                                placeholder="Enter Association Application Fee (e.g., 150)"
-                                data-error-id="association_application_fee_error"
-                                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-                        </div>
-                        <span class="error mt-1" id="association_application_fee_error"></span>
+                <div class="form-group mt-2 mb-3">
+                    <label class="fw-bold">Association Application Fee:
+                        <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
+                            title="Enter the association application fee amount if applicable. This is typically paid by the Tenant.">
+                            <i class="fa-solid fa-circle-info"></i>
+                        </span>
+                    </label>
+                    <div class="input-cover">
+                        <span class="input-group-text-seller">$</span>
+                        <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 24px;"
+                            placeholder="Enter Association Application Fee (e.g., 150)"
+                            data-error-id="association_application_fee_error"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
+                    <span class="error mt-1" id="association_application_fee_error"></span>
                 </div>
             @endif
 
