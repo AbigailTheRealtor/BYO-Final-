@@ -1275,7 +1275,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="2"
+        <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-car"
             placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
     </div>
@@ -1289,7 +1289,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="utility_responsibility" class="form-control has-icon landlord-compact-textarea" rows="2"
+        <textarea wire:model="utility_responsibility" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-bolt"
             placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)"></textarea>
     </div>
@@ -1303,7 +1303,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon landlord-compact-textarea" rows="2"
+        <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-screwdriver-wrench"
             placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)"></textarea>
     </div>
@@ -1351,7 +1351,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <textarea wire:model="landlord_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="2"
+        <textarea wire:model="landlord_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-clipboard-check"
             placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)"></textarea>
     </div>
