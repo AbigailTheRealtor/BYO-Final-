@@ -400,7 +400,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="renewal_option_details" class="form-control" rows="1"
+        <textarea wire:model="renewal_option_details" class="form-control has-icon" rows="1"
+            data-icon="fa-solid fa-rotate-right"
             style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
             placeholder="e.g., Option to renew for 1 additional year at the same rate"></textarea>
     </div>
@@ -416,7 +417,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="tenant_conditions" class="form-control" rows="1"
+        <textarea wire:model="tenant_conditions" class="form-control has-icon" rows="1"
+            data-icon="fa-solid fa-clipboard-list"
             style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
             placeholder="Enter any preferred lease or occupancy conditions requested by the Tenant."></textarea>
     </div>
@@ -574,7 +576,8 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="commercial_approval_conditions" class="form-control" rows="1"
+        <textarea wire:model="commercial_approval_conditions" class="form-control has-icon" rows="1"
+            data-icon="fa-solid fa-clipboard-check"
             style="height: calc(1.5em + 0.75rem + 2px); min-height: unset; resize: vertical;"
             placeholder="Enter any approval conditions, business-use requirements, or documentation the Tenant may need before leasing the space."></textarea>
     </div>
