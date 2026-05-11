@@ -1,0 +1,217 @@
+IMPLEMENTATION TASK — Final Pre-Launch Hire Agent Compensation Fixes
+
+Context:
+The read-only Hire Agent Broker Compensation & Agency Agreement audit is complete. We are now fixing only the confirmed pre-launch issues from Task #752.
+
+Scope:
+Full Service Hire Agent listings only.
+
+Do NOT touch:
+- Offer Listings
+- Limited Service
+- AI Offer Comparison
+- Match Score logic
+- dashboards
+- routes
+- migrations unless absolutely required
+- persisted DB field names with known typos
+
+Hard Safeguards:
+- Make surgical fixes only.
+- Do NOT refactor the Hire Agent architecture.
+- Do NOT rename existing persisted DB keys/columns.
+- Do NOT remove existing fields.
+- Do NOT change unrelated validation.
+- Do NOT alter bid, counter, accepted-summary, signature, PDF, or dashboard logic.
+- Preserve Create/Edit/Draft behavior.
+- If a field appears intentionally disabled, document before enabling.
+- Before editing, identify exact files and lines affected.
+- After editing, provide file-by-file summary and smoke-test results.
+
+Fixes Required:
+
+1. Buyer Tooltip Terminology Fix — CRITICAL
+
+Problem:
+Buyer blade lines ~133 and ~140 show user-visible tooltips saying “Tenant’s Broker” instead of “Buyer’s Broker.”
+
+Required:
+- Replace “Tenant’s Broker” with “Buyer’s Broker” in Buyer-facing tooltips only.
+- Confirm no other Buyer tooltip uses Tenant terminology.
+- Do not change field names, wire models, or logic.
+
+Acceptance:
+- Buyer users only see Buyer-specific terminology.
+
+2. Seller Commercial/Business Leasing Fee “Other” Option — CRITICAL
+
+Problem:
+Seller Commercial/Business leasing fee “Other” option is commented out around line ~299, leaving no escape hatch for non-standard commercial leasing structures.
+
+Required:
+- Restore or add the “Other” option only where appropriate.
+- If “Other” is selected, show the existing or matching single-line follow-up input.
+- Placeholder must follow platform style:
+  Enter [field title] (e.g., Example)
+- Do not add oversized textareas.
+- Do not affect residential-only options.
+
+Acceptance:
+- Seller Commercial/Business users can select Other for non-standard leasing fee structures.
+
+3. Landlord Retainer Fee — INVESTIGATE BEFORE FIXING
+
+Problem:
+Landlord Retainer Fee is fully commented out in retainer_fee_commented.blade.php and appears never included.
+
+Required:
+- First determine whether it was intentionally disabled.
+- If there is no clear reason it was disabled, restore retainer fee support in the same format used by other Full Service Hire Agent roles.
+- If restoring is risky, document the reason and leave disabled for a separate task.
+- Do not invent new compensation logic.
+- Match existing UI, tooltip, placeholder, and conditional style.
+
+Acceptance:
+- Either Landlord Retainer Fee is restored safely, or the audit documents why it remains disabled.
+
+4. Buyer Agency Agreement Timeframe Stored Value Consistency — HIGH
+
+Problem:
+Buyer stores custom timeframe as “custom,” while other roles store “Other.”
+
+Required:
+- Standardize Buyer custom timeframe behavior to match the other roles if safe.
+- Check Livewire properties, preset loading, draft loading, edit loading, and summary display before changing.
+- Avoid breaking existing saved Buyer records.
+- If backward compatibility is needed, support both “custom” and “Other” when loading existing data, but save new values consistently.
+
+Acceptance:
+- Buyer timeframe works consistently with Seller, Landlord, and Tenant.
+- Existing Buyer saved data still loads correctly.
+
+5. Retainer Fee Application Stored Value Consistency — HIGH
+
+Problem:
+Retainer fee application values differ across roles using title-case, lowercase, and slug formats.
+
+Required:
+- Review Seller, Buyer, and Tenant retainer fee application fields.
+- Standardize display labels while preserving backward compatibility for existing stored values.
+- Do NOT rename DB fields.
+- If changing stored values is risky, document and defer to a separate migration-safe cleanup task.
+- Ensure accepted summaries/PDFs still display human-readable values.
+
+Acceptance:
+- UI labels are consistent.
+- Existing records still load.
+- New records save in the preferred role-consistent format, if safe.
+
+6. Tenant Early Termination Yes/No Casing — HIGH IF SAFE
+
+Problem:
+Tenant early_termination_fee_option stores “Yes”/“No” while other roles store “yes”/“no.”
+
+Required:
+- Review Tenant early termination field loading/saving.
+- If safe, make it compatible with lowercase yes/no while preserving existing title-case data.
+- Do not break existing saved Tenant records.
+- If not safe, document as post-launch cleanup.
+
+Acceptance:
+- Tenant early termination works consistently and existing saved data remains compatible.
+
+7. Commercial Landlord Tenant Broker Co-op Compensation — STRONGLY RECOMMENDED
+
+Problem:
+Landlord Tenant’s Broker Commission Structure appears Residential-only, with no Commercial co-op compensation option.
+
+Required:
+- Add or expose Commercial Tenant’s Broker co-op compensation only if it can be done safely using existing patterns.
+- Must apply only to Commercial Landlord leasing flows.
+- Do not disturb Residential behavior.
+- Labels should be role-correct:
+  Tenant’s Broker Commission Structure:
+  Tenant’s Broker Commission Fee:
+- Placeholder/select behavior must match existing platform standards.
+- If this requires deeper schema/workflow changes, document as a separate task instead of forcing it.
+
+Acceptance:
+- Commercial Landlord users have a clear way to offer compensation to a Tenant’s Broker, or the gap is documented as a separate implementation task.
+
+8. Commercial Landlord Early Termination Fee — INVESTIGATE
+
+Problem:
+Early Termination Fee is commented out for Commercial Landlord but available for Residential.
+
+Required:
+- Determine if commercial exclusion was intentional.
+- If not intentional and safe, restore using the same UI pattern.
+- If uncertain or risky, document as separate task.
+- Do not change Residential behavior.
+
+Acceptance:
+- Commercial early termination fee is either restored safely or clearly documented as intentionally deferred.
+
+9. Stale HTML Comments — LOW RISK CLEANUP ONLY
+
+Problem:
+Audit found stale HTML comments in Seller/Buyer blades referencing “Tenant’s Broker.”
+
+Required:
+- Update/remove stale comments only if editing the same nearby files anyway.
+- Do not perform broad dead-code cleanup.
+- Do not touch unrelated partials.
+
+Acceptance:
+- No visible user-facing terminology issues remain.
+- Internal comments are cleaned only where safe.
+
+Do NOT Fix Before Launch:
+- Do NOT rename persisted typo fields:
+  landlord_broker_flate_fee
+  renewal_fee_flat_free
+  interested_in_property_management_fee_flate_free
+  _fee_rental_periord
+- Do NOT delete dead partial files.
+- Do NOT refactor duplicated landlord partial logic.
+- Do NOT perform large stored-value migrations.
+- Do NOT change commercial payment timing formats unless needed for a confirmed visible bug.
+
+UI / Tooltip / Placeholder Requirements:
+- Select placeholders must be exactly: Select
+- Text placeholders must follow: Enter [field title] (e.g., Example)
+- Do not capitalize every word after “e.g.,” unless it is a proper noun, title, acronym, zoning code, or phrase that naturally requires capitalization.
+- “Other” follow-up inputs must be single-line inputs unless a true details/notes field is needed.
+- Tooltips must be role-specific and transaction-specific.
+- Do not use Offer Listing terminology.
+- Do not use Limited Service terminology.
+- Do not use AI terminology.
+- Match existing Hire Agent tab spacing, field widths, icon placement, and input heights.
+
+Testing Required:
+Test affected flows only:
+- Buyer Full Service Hire Agent create/edit/draft
+- Seller Full Service Hire Agent create/edit/draft
+- Landlord Full Service Hire Agent create/edit/draft
+- Tenant Full Service Hire Agent create/edit/draft, if Tenant casing/retainer changes are touched
+
+For each affected role:
+- Fresh create form loads
+- Save Draft works
+- Resume Draft works
+- Edit existing listing works
+- Next/Back navigation works
+- No duplicate fields
+- No broken conditional fields
+- No console errors
+- Accepted summary/PDF terminology not broken, if affected
+- Limited Service untouched
+- Offer Listings untouched
+
+Deliverable:
+Provide a final report with:
+- files changed
+- exact issues fixed
+- issues intentionally deferred
+- smoke-test results
+- confirmation no Limited Service or Offer Listing files were touched
