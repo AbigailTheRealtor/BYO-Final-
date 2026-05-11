@@ -2328,6 +2328,55 @@ class TenantAgentAuction extends Component
         $this->state = $suggestion;
         $this->stateSuggestions = [];
         $this->highlightedStateIndex = -1;
+
+        // FIX-06: Auto-populate county from selected state, mirroring the city-selection pattern.
+        // getStateSuggestionsFromDb() returns state names (e.g. "Florida"), not "Name, ABBR".
+        // Resolve the UsState record by name first, then fall back to abbreviation lookup.
+        if ($suggestion) {
+            $stateRecord = UsState::where('name', 'ILIKE', trim($suggestion))->first();
+            if (!$stateRecord) {
+                // Fallback: try treating the suggestion as an abbreviation (e.g. "FL").
+                $stateRecord = UsState::where('abbreviation', strtoupper(trim($suggestion)))->first();
+            }
+            if (!$stateRecord) {
+                // Final fallback: extract abbreviation from "Name, ABBR" format if present.
+                $stateAbbr = $this->extractStateFromLocationString($suggestion);
+                if ($stateAbbr) {
+                    $stateRecord = UsState::where('abbreviation', strtoupper($stateAbbr))->first();
+                }
+            }
+
+            if ($stateRecord) {
+                $stateAbbr = $stateRecord->abbreviation;
+
+                if ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
+                    // Buyer/Tenant: counties is an array; add the first county for this state when empty.
+                    if (empty($this->counties)) {
+                        $firstCounty = UsCounty::where('state_id', $stateRecord->id)->orderBy('name')->first();
+                        if ($firstCounty) {
+                            $countyString = $firstCounty->name . ', ' . $stateAbbr;
+                            if (!$this->countyExistsIgnoreCase($countyString)) {
+                                $this->counties[] = $countyString;
+                                $this->newCounty = $countyString;
+                                $this->countyFieldVisible = true;
+                            }
+                        }
+                    }
+                } elseif ($this->user_type === 'landlord' || $this->user_type === 'seller') {
+                    // FIX-06: Always sync property_state to the selected state so that changing
+                    // state updates the field (not just when empty).
+                    $this->property_state = $stateRecord->name;
+                    // Attempt a default county lookup only when property_county is currently empty
+                    // to avoid overwriting deliberate user input.
+                    if (empty($this->property_county)) {
+                        $firstCounty = UsCounty::where('state_id', $stateRecord->id)->orderBy('name')->first();
+                        if ($firstCounty) {
+                            $this->property_county = $firstCounty->name . ', ' . $stateAbbr;
+                        }
+                    }
+                }
+            }
+        }
     }
 
 
@@ -2777,16 +2826,25 @@ class TenantAgentAuction extends Component
         }
 
         if ($auction) {
+            // FIX-01: Capture the route-derived user_type before any EAV reads so we can
+            // restore it if the EAV value is missing or invalid.
+            $validUserTypes = ['tenant', 'landlord', 'buyer', 'seller'];
+            $originalUserType = (in_array($this->user_type, $validUserTypes)) ? $this->user_type : null;
+
             // Update user_type if found in a different table
             if ($foundUserType && $foundUserType !== $this->user_type) {
                 $this->user_type = $foundUserType;
+                $originalUserType = $foundUserType; // fallback path also sets a valid type
             }
 
             // Load all metadata fields
             $this->listing_title = $auction->title;
             $this->workflow_type = $auction->get->workflow_type ?? 'hire_agent';
             $this->service_type = $auction->get->service_type;
-            $this->user_type = $auction->get->user_type;
+            $eavUserType = $auction->get->user_type;
+            // FIX-01: Only accept the EAV user_type if it is one of the four valid values;
+            // otherwise keep the route-derived value so user_type is never null.
+            $this->user_type = (in_array($eavUserType, $validUserTypes)) ? $eavUserType : ($originalUserType ?? $this->user_type);
             $this->listing_status = $auction->get->listing_status;
             $this->auction_type = $auction->get->auction_type;
             $this->referral_percentage = $auction->get->referral_percentage ?? '';
@@ -2836,15 +2894,16 @@ class TenantAgentAuction extends Component
 
             // $this->property_items = is_string($auction->get->property_items) ? json_decode($auction->get->property_items, true) ?? [] : (array)$auction->get->property_items;
 
-            // Check if the user type is 'seller'
-
-
+            // FIX-02: Cast property_items only after FIX-01 guarantees a valid user_type.
+            // Landlord/Seller use a string value; Buyer/Tenant use a JSON array.
+            // Explicit fallback: if user_type is somehow still invalid, use array form (safest no-crash path).
             if ($this->user_type === 'seller' || $this->user_type === 'landlord') {
-                // If user type is seller, keep $this->property_items as a string
                 $this->property_items = is_string($auction->get->property_items) ? $auction->get->property_items : '';
-            } else {
-                // Otherwise, treat $this->property_items as JSON and decode it
+            } elseif ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
                 $this->property_items = is_string($auction->get->property_items) ? json_decode($auction->get->property_items, true) ?? [] : (array)$auction->get->property_items;
+            } else {
+                // Fallback to array form — safest no-crash path for any unexpected state
+                $this->property_items = [];
             }
             $this->other_property_items = $auction->get->other_property_items ?? '';
             $rawConditionPropBuyerVal = $auction->get->condition_prop_buyer ?? null;
@@ -3765,6 +3824,13 @@ class TenantAgentAuction extends Component
                     $filledRules[$field] = $rule;
                 }
             }
+            // FIX-05: A partially-typed date string (e.g. "2026-05") is non-empty yet still
+            // fails the `date` rule. To prevent any date field from blocking a draft save,
+            // remove all date-specific rules entirely from the draft validation pass.
+            // The user can correct dates before final submit, which still uses required|date.
+            unset($filledRules['listing_date'], $filledRules['expiration_date']);
+            // Also remove role-specific date fields that can appear partially typed during a draft.
+            unset($filledRules['desired_agent_hire_date'], $filledRules['lease_date'], $filledRules['occupant_tenant']);
             $this->validate($filledRules);
         } else {
             $this->validate($rules);

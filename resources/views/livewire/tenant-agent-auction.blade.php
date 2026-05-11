@@ -4314,36 +4314,17 @@ $lease_types = [
         // Get all required fields from only active tabs depending on service type
         function getAllRequiredFields() {
             const requiredFields = [];
-            const serviceType = formContainer.getAttribute('data-service-type');
-            const userType = (typeof CURRENT_USER_TYPE !== 'undefined' ? CURRENT_USER_TYPE : 'tenant').toLowerCase();
-            const infoTabId = '#' + userType + '-information';
 
-            const tabSelector = serviceType === 'full_service' ? [
-                '#listing-details',
-                '#property-preferences',
-                '#property-details',
-                '#purchasing-terms',
-                '#sale-terms',
-                '#leasing-terms',
-                '#pre-screening',
+            // FIX-04: Derive tab IDs dynamically from the DOM instead of using a hardcoded list.
+            // This ensures every role's actual rendered tabs are scanned regardless of what ID
+            // the Blade template assigns them.
+            const wizardContainer = document.getElementById('wizard-form-container') || formContainer;
+            const allTabPanes = wizardContainer ? wizardContainer.querySelectorAll('.tab-pane') : [];
 
-                '#services',
-                '#additional-details',
-                '#broker-compensation-agency-agreement-terms',
-                infoTabId
-            ] : [
-                '#listing-details',
-                '#location-and-meeting-details',
-                '#service-selection-and-pricing',
-                infoTabId
-            ];
-
-            tabSelector.forEach(selector => {
-                const tab = document.querySelector(selector);
-                if (!tab) return;
+            allTabPanes.forEach(tab => {
                 const fields = tab.querySelectorAll('[required]');
                 fields.forEach(field => requiredFields.push(field));
-                
+
                 // Also include special Livewire-validated fields (e.g., counties)
                 const livewireFields = tab.querySelectorAll('[data-livewire-counties]');
                 livewireFields.forEach(field => requiredFields.push(field));
@@ -4727,6 +4708,11 @@ $lease_types = [
                 var reqFields = getAllRequiredFields();
                 reqFields.forEach(function(field) {
                     if (isTenantFieldHiddenWithinTab(field)) return;
+                    // FIX-03: Skip disabled fields — consistent with isFieldVisible() used elsewhere.
+                    // A disabled field is not fillable by the user and must not block guided correction.
+                    if (field.disabled) return;
+                    // FIX-03: Skip Select2 mirror elements — they are managed by Select2 and
+                    // validated separately via the Livewire state checks below.
                     if (field.tagName === 'SELECT' && field.multiple &&
                         field.classList.contains('select2-hidden-accessible')) return;
                     var isEmpty = false;
@@ -5080,6 +5066,11 @@ $lease_types = [
                         // Tenant/Landlord/Seller/Buyer flow: check required fields across ALL tabs.
                         // Only skip fields that are hidden by conditional rendering within the tab.
                         if (isTenantFieldHiddenWithinTab(field)) return;
+
+                        // FIX-03: Skip disabled fields — a disabled field (e.g. Property Style
+                        // when no property type is selected yet) must not block guided correction
+                        // or submit validation. Consistent with isFieldVisible() and tenantGetInvalidItems().
+                        if (field.disabled) return;
 
                         // Skip Select2-managed multi-selects — handled separately via Livewire check.
                         if (field.tagName === 'SELECT' && field.multiple &&
