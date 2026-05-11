@@ -19,7 +19,7 @@ $safeKey = function(...$parts) {
 </div>
 <!-- Info Alert -->
 
-<!-- Tenant's Broker Commission Structure -->
+<!-- Seller's Broker Commission Structure -->
 {{-- <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Seller's Broker Commission Structure:
@@ -42,7 +42,7 @@ $safeKey = function(...$parts) {
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div> --}}
-<!-- Tenant's Broker Purchase Fee -->
+<!-- Seller's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Seller's Broker Purchase Fee:
@@ -163,7 +163,7 @@ $safeKey = function(...$parts) {
 @if (
     $commission_structure == 'Seller\'s Broker to Compensate Buyer\'s Broker from Seller\'s Broker Commission' ||
         $commission_structure == 'Seller to Pay Buyer\'s Broker Separately')
-    <!-- Tenant's Broker Purchase Fee -->
+    <!-- Buyer's Broker Commission Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Buyer's Broker Commission Fee:
@@ -232,7 +232,7 @@ $safeKey = function(...$parts) {
     </div>
 @endif
 
-<!-- Tenant's Broker Purchase Fee -->
+<!-- Seller's Broker Lease Agreement -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease Agreement:
@@ -254,7 +254,7 @@ $safeKey = function(...$parts) {
 
 @if ($interested_purchase_fee_type === 'Yes')
 
-    <!-- Tenant's Broker Purchase Fee -->
+    <!-- Seller's Broker Leasing Fee -->
     <div class="form-group mb-4">
         <label class="fw-bold d-flex align-items-center">
             Seller's Broker Leasing Fee:
@@ -295,8 +295,8 @@ $safeKey = function(...$parts) {
                     <option value="Flat Fee">Flat Fee
                     </option>
                     {{-- <option value="Flat Fee + Percentage of the Net Aggregate Rent">Flat Fee + Percentage of the Net Aggregate Rent</option> --}}
+                    <option value="other">Other</option>
                 @endif
-                {{-- <option value="other">Other</option> --}}
             </select>
         </div>
 
@@ -709,9 +709,9 @@ $safeKey = function(...$parts) {
                     </span>
                 </label>
                 <select wire:model="retainer_fee_application" class="form-control mt-2">
-                    <option value="">Select application method</option>
-                    <option value="Applied Toward Final Compensation">Applied Toward Final Compensation</option>
-                    <option value="Charged in Addition to Final Compensation">Charged in Addition to Final Compensation
+                    <option value="">Select</option>
+                    <option value="Applied Toward Final Compensation">Applied toward final compensation</option>
+                    <option value="Charged in Addition to Final Compensation">Charged in addition to final compensation
                     </option>
                 </select>
                 @error('retainer_fee_application')

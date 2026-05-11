@@ -472,7 +472,7 @@ $safeKey = function(...$parts) {
             <option value="No">No</option>
         </select>
     </div>
-    @if ($early_termination_fee_option === 'Yes')
+    @if (strtolower((string)$early_termination_fee_option) === 'yes')
         <div class="mt-3" wire:key="{{ $safeKey('early-termination-amount', $early_termination_fee_option) }}">
             <div class="input-group">
                 <span class="input-group-text">$</span>
