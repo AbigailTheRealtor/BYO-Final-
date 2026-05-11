@@ -1,0 +1,352 @@
+IMPLEMENTATION TASK — Final Pre-Launch Offer Listing Fixes from Audit
+
+Context:
+The read-only Offer Listing audit is complete. We are now fixing only the confirmed final launch blockers.
+
+Scope:
+Full Service Offer Listings only.
+
+Do NOT touch:
+- Hire Agent listings
+- Limited Service
+- AI Offer Comparison
+- Match Score logic except where noted for field compatibility review only
+- routes
+- unrelated dashboards
+- unrelated components
+
+Hard Safeguards:
+- Make surgical, additive fixes only.
+- Do NOT refactor the Offer Listing architecture.
+- Do NOT rename existing fields unless absolutely necessary.
+- Do NOT remove existing fields.
+- Do NOT change unrelated validation.
+- Do NOT break Save Draft, Resume Draft, Edit, Submit, Bid, Counter, Accepted Summary, or PDF behavior.
+- Keep Create/Edit/Draft parity.
+- Preserve Tenant behavior unless specifically fixing a shared bug that affects Landlord/Tenant.
+- If a DB change is needed, use non-destructive migrations only.
+- Before editing, identify exact files and fields affected.
+- After editing, provide a file-by-file change summary and smoke-test results.
+
+UI/Formatting Requirements for All New Fields:
+All new fields must match the existing Offer Listing UI standards.
+
+Required formatting:
+- Select/dropdown placeholders must be exactly: Select
+- Text input placeholders must follow: Enter [field title] (e.g., example)
+- “Other” follow-up inputs must be single-line text inputs, not oversized textareas.
+- “Other” placeholders must follow: Enter [field title] (e.g., example)
+- Textareas should only be used for true details/notes fields.
+- Textareas must not be oversized and should match existing form height conventions.
+- All fields must use the same wrapper classes, spacing, label styling, icon styling, and input sizing as nearby fields.
+- Do not create larger boxes than existing comparable fields.
+- Do not introduce inconsistent Bootstrap/Tailwind/custom classes.
+- Follow the same structure used by existing Offer Listing fields in that tab/partial.
+
+Placeholder formatting requirements:
+- All placeholder examples must match the existing Offer Listing formatting style already used throughout the platform.
+- The first word after “e.g.,” should be capitalized when appropriate to match existing platform formatting.
+- Do not capitalize every word unnecessarily.
+- Use normal sentence-style capitalization unless the example contains:
+  - proper nouns
+  - addresses
+  - acronyms
+  - zoning codes
+  - branded/platform names
+  - titles that naturally require capitalization
+- Match the capitalization style already used throughout existing Offer Listing placeholders.
+- Keep formatting visually consistent with the current financing/crypto/exchange sections already in the platform.
+
+Tooltip requirements:
+- Every new field needs a tooltip.
+- Tooltip wording must match the tone/style of existing Offer Listing tooltips.
+- Tooltips must be role/property-type specific.
+- Tooltips must explain what the field means, when to use it, and how it affects the listing/offer.
+- Do not use Hire Agent terminology.
+- Do not use AI Offer Comparison terminology.
+- Do not use Limited Service terminology.
+
+Visual consistency:
+Before completing, compare all new fields visually against existing fields on the same tab and confirm:
+- same width
+- same spacing
+- same label style
+- same tooltip placement
+- same input height
+- same conditional reveal behavior
+- no oversized boxes
+- no layout wrapping issues
+- no duplicate labels
+
+Fixes Required:
+
+1. Seller Offer Listing — Add/Verify Zoning for Vacant Land, Commercial, and Business Opportunity
+
+Problem:
+Audit found Seller listings are missing Zoning for Vacant Land and Commercial, making these listings incomplete.
+
+Required:
+- Add or expose a Zoning field where applicable for:
+  - Vacant Land
+  - Commercial
+  - Business Opportunity, if not already present
+- If Zoning already exists in another tab/partial, do not duplicate it; document where it is and ensure it displays correctly for those property types.
+- Field label: Zoning:
+- Placeholder:
+  Enter zoning classification (e.g., C-2, R-4, AG, Industrial)
+
+Tooltip:
+Explain the current zoning designation and permitted property use classification.
+
+Must save/load in:
+- Create
+- Edit
+- Draft resume
+
+Must not show unnecessarily for property types where it is not relevant.
+
+2. Seller Offer Listing — Add/Verify Utilities Available to Site for Vacant Land
+
+Problem:
+Audit found vacant land is missing utilities-to-site data.
+
+Required:
+For Seller Vacant Land listings, add or verify fields for:
+- Water Available to Site:
+- Sewer Available to Site:
+- Electric Available to Site:
+- Gas Available to Site: optional if consistent with existing utility structure
+- Internet/Telecom Available to Site: optional if consistent with existing utility structure
+
+Preferred input type:
+Dropdown/select with:
+- Select
+- Yes
+- No
+- Unknown
+- Nearby / Available but not connected
+- Other
+
+If “Other” selected, show single-line text input.
+
+Example placeholders:
+- Water Availability Details:
+  Enter water availability details (e.g., Well required, utility nearby, extension needed)
+
+- Sewer Availability Details:
+  Enter sewer availability details (e.g., Septic required, city sewer nearby)
+
+Tooltip:
+Explain whether utilities are currently connected, nearby, available for hookup, or require installation/extension.
+
+Must save/load in:
+- Create
+- Edit
+- Draft resume
+
+3. Seller Offer Listing — Add Business Opportunity Underlying Lease Terms
+
+Problem:
+Business Opportunity listings need the terms for the physical location lease so buyers can evaluate total occupancy cost.
+
+Required:
+For Seller Business Opportunity listings, add a conditional section titled:
+Underlying Lease Terms
+
+Fields:
+- Is the business location leased?
+  Options:
+  - Select
+  - Yes
+  - No
+  - Not Applicable
+
+Tooltip:
+Explain whether the business operates from a leased commercial space or owned property.
+
+If Yes, show:
+
+- Current Monthly Rent:
+  Placeholder:
+  Enter current monthly rent (e.g., $4,500/month)
+
+Tooltip:
+Explain the current monthly occupancy cost for the business location.
+
+- Lease Expiration Date:
+  Calendar/date input
+
+Tooltip:
+Explain when the current lease term expires.
+
+- Renewal Options Available:
+  Options:
+  - Select
+  - Yes
+  - No
+  - Unknown
+
+Tooltip:
+Explain whether lease renewal options are available to the future buyer/tenant.
+
+- Is the Lease Assignable to Buyer?
+  Options:
+  - Select
+  - Yes
+  - No
+  - Subject to Landlord Approval
+  - Unknown
+
+Tooltip:
+Explain whether the lease can transfer to the buyer or requires landlord approval.
+
+- Additional Lease Terms:
+  Placeholder:
+  Enter additional lease terms (e.g., Renewal options, assignment requirements, landlord approval details)
+
+Tooltip:
+Explain any important lease restrictions, assignment conditions, landlord approvals, or renewal terms.
+
+Conditional behavior:
+- Show lease detail fields only if “Is the business location leased?” = Yes.
+- Do not show for non-Business Opportunity property types.
+
+Must save/load in:
+- Create
+- Edit
+- Draft resume
+
+4. Seller/Income Property — Verify Number of Units
+
+Problem:
+Audit could not confirm whether Number of Units exists due to a very large property-preferences file.
+
+Required:
+- Verify whether “Number of Units” exists for Income property.
+- If it exists, document exact file/field name and confirm Create/Edit/Draft behavior.
+- If missing, add:
+
+Field label:
+- Number of Units:
+
+Placeholder:
+- Enter total number of units (e.g., 4)
+
+Input type:
+- Number
+
+Tooltip:
+Explain the total number of rentable or livable units included in the property.
+
+Only show for:
+- Income property
+- Multi-unit property types where appropriate
+
+Must save/load in:
+- Create
+- Edit
+- Draft resume
+
+5. Buyer Offer Listing — Add Home Sale Contingency Field
+
+Problem:
+Seller side has sale_of_buyer_property_contingency preference, but Buyer cannot declare their own offer is contingent on selling their current home.
+
+Required:
+Add Buyer-side field:
+
+- Is this offer contingent on the Buyer selling another property?
+
+Options:
+- Select
+- Yes
+- No
+
+Tooltip:
+Explain whether the Buyer’s purchase depends on selling another property first.
+
+If Yes, show:
+
+- Buyer Property Address or Description:
+  Placeholder:
+  Enter property address or brief description (e.g., 123 Main St. or current home under contract)
+
+Tooltip:
+Explain the property the Buyer must sell before completing this purchase.
+
+- Expected Sale/Closing Date:
+  Calendar/date input
+
+Tooltip:
+Explain the anticipated closing or sale timeline for the Buyer’s current property.
+
+- Is the property currently under contract?
+  Options:
+  - Select
+  - Yes
+  - No
+
+Tooltip:
+Explain whether the Buyer’s current property is already under contract.
+
+- Additional Home Sale Contingency Details:
+  Placeholder:
+  Enter contingency details (e.g., Closing timeline, contingency deadline, current sale status)
+
+Tooltip:
+Explain any deadlines, conditions, or important details related to the home sale contingency.
+
+Must save/load in:
+- Buyer Create
+- Buyer Edit
+- Buyer Draft resume
+
+Important:
+- Do not alter Seller field yet unless needed for comparison consistency.
+- Do not touch AI Offer Comparison.
+- Do not change Match Score logic unless there is a simple existing mapping that must be updated to avoid errors. If Match Score needs logic changes, document separately.
+
+6. Landlord Offer Listing — Fix Pet Deposit/Fee/Rent Field Rendering Bug
+
+Problem:
+Audit found pet deposit/fee/rent fields are unreachable because the pet_policy select they depend on is wrapped in display:none or suppressed, causing the condition to always evaluate false.
+
+Required:
+- Fix the conditional logic so pet deposit/fee/rent fields render when pets are allowed or conditionally allowed.
+- Do not duplicate visible pet policy fields.
+- Do not reintroduce duplicate pet policy UI.
+- Use the currently active visible pet policy/source field for the condition.
+- Confirm fields save/load in:
+  - Landlord Create
+  - Landlord Edit
+  - Draft resume
+- Confirm Tenant-side pet matching/scoring is not broken by the change.
+- If TenantBidMatchScoreHelper references the old hidden pet_policy field, document whether mapping needs a separate task.
+
+Testing Required:
+For each fix, test:
+- Fresh Create form
+- Save Draft
+- Resume Draft
+- Edit existing listing
+- Submit/Next navigation still works
+- No console errors
+- No duplicate fields
+- No broken conditional sections
+- No oversized inputs or textareas
+- No layout wrapping issues
+- No Limited Service files changed
+- No Hire Agent files changed
+
+Acceptance Criteria:
+- Zoning is present for Seller Vacant Land / Commercial / Business Opportunity where applicable.
+- Vacant Land utilities-to-site fields are present and persist.
+- Business Opportunity underlying lease terms are present and persist.
+- Income Number of Units is verified or added and persists.
+- Buyer Home Sale Contingency field is present and persists.
+- Landlord Pet Deposit/Fee/Rent fields render correctly and persist.
+- All new fields match existing Offer Listing UI standards.
+- All new fields include proper tooltips and placeholders.
+- Create/Edit/Draft parity confirmed.
+- No unrelated flows changed.
+- Final report includes exact files modified and smoke-test evidence.
