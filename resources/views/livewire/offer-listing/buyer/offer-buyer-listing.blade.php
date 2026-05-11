@@ -805,7 +805,7 @@
         <div class="row">
             <div class="col-12 p-4">
 
-                @if ($hasDrafts && !$listingId)
+                @if ($hasDrafts)
                     <div class="modal fade" id="draftModal" tabindex="-1" aria-labelledby="draftModalLabel"
                         aria-hidden="true" wire:ignore.self>
                         <div class="modal-dialog">
@@ -819,13 +819,22 @@
                                     <p>You have saved drafts. Would you like to load one?</p>
                                     <div class="list-group">
                                         @foreach ($this->getDrafts() as $draft)
-                                            @php $draftVersion = $draft->info('draft_version') ?? null; @endphp
+                                            @php
+                                                $draftVersion = $draft->info('draft_version') ?? null;
+                                                $isCurrentDraft = ($listingId && $draft->id == $listingId);
+                                            @endphp
                                             <div
                                                 class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                                @if ($isCurrentDraft)
+                                                    <span class="btn btn-link text-start flex-grow-1 text-muted pe-none">
+                                                        {{ $draft->title }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif <span class="badge bg-success">Current</span> ({{ $draft->updated_at->format('m/d/Y H:i') }})
+                                                    </span>
+                                                @else
                                                 <a class="btn btn-link text-start flex-grow-1"
                                                     href="{{ route('offer.listing.buyer.edit', ['auctionId' => $draft->id]) }}">
                                                     {{ $draft->title }}@if($draftVersion) <span class="badge bg-secondary">v{{ $draftVersion }}</span>@endif ({{ $draft->updated_at->format('m/d/Y H:i') }})
                                                 </a>
+                                                @endif
                                                 <button type="button" class="btn btn-sm btn-outline-danger" style="border-color: #dc3545; color: #dc3545;"
                                                     data-bs-dismiss="modal"
                                                     wire:click="deleteDraft('{{ $draft->id }}')" wire:ignore.self

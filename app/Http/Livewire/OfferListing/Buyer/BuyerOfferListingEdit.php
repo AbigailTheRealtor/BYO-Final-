@@ -1143,52 +1143,394 @@ class BuyerOfferListingEdit extends Component
 
         return view('livewire.offer-listing.buyer.offer-buyer-listing-edit')->extends('layouts.main')->section('content'); // Define the section
     }
+    private function decodeJsonArray($value): array
+    {
+        if (is_array($value)) return $value;
+        if (!is_string($value) || trim($value) === '') return [];
+        $decoded = json_decode($value, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    protected function buildDraftPayload(): array
+    {
+        $isAgent = auth()->user() && auth()->user()->user_type === 'agent';
+
+        $fromJsonCpb = $this->decodeJsonArray($this->condition_prop_buyer_json);
+        $condPropBuyer = !empty($fromJsonCpb) ? $fromJsonCpb : (is_array($this->condition_prop_buyer) ? $this->condition_prop_buyer : []);
+
+        $fromJsonPi = $this->decodeJsonArray($this->property_items_json);
+        $propertyItems = !empty($fromJsonPi) ? $fromJsonPi : (is_array($this->property_items) ? $this->property_items : []);
+
+        $fromJsonNut = $this->decodeJsonArray($this->number_of_unit_type_json);
+        $numberOfUnitType = !empty($fromJsonNut) ? $fromJsonNut : (is_array($this->number_of_unit_type) ? $this->number_of_unit_type : []);
+
+        $data = [
+            'listing_title'                   => $this->listing_title,
+            'service_type'                    => $this->service_type,
+            'user_type'                       => $this->user_type,
+            'listing_status'                  => $this->listing_status,
+            'auction_type'                    => $this->auction_type,
+            'working_with_agent'              => $this->working_with_agent,
+            'listing_date'                    => $this->listing_date,
+            'desired_agent_hire_date'         => $this->desired_agent_hire_date,
+            'expiration_date'                 => $this->expiration_date,
+            'auction_time'                    => $this->auction_type === 'Bidding Period' ? $this->auction_time : '',
+            'cities'                          => json_encode($this->cities),
+            'counties'                        => json_encode($this->counties),
+            'state'                           => $this->state,
+            'property_type'                   => $this->property_type,
+            'property_items'                  => json_encode($propertyItems),
+            'condition_prop_buyer'            => json_encode($condPropBuyer),
+            'leasing_space'                   => $this->leasing_space,
+            'other_property_items'            => $this->other_property_items,
+            'condition_prop'                  => $this->condition_prop,
+            'other_property_condition'        => $this->other_property_condition,
+            'bathrooms'                       => $this->bathrooms,
+            'other_bathrooms'                 => $this->other_bathrooms,
+            'bedrooms'                        => $this->bedrooms,
+            'other_bedrooms'                  => $this->other_bedrooms,
+            'minimum_heated_square'           => $this->stripCommas($this->minimum_heated_square),
+            'minimum_leaseable'               => $this->stripCommas($this->minimum_leaseable),
+            'min_acreage'                     => $this->stripCommas($this->min_acreage),
+            'total_acreage'                   => $this->total_acreage,
+            'minimum_cap_rate'                => $this->stripCommas($this->minimum_cap_rate),
+            'assets'                          => $this->assets,
+            'assets_other'                    => $this->assets_other,
+            'property_criteria'               => $this->property_criteria,
+            'unit_size'                       => $this->unit_size,
+            'unit_size_other'                 => $this->unit_size_other,
+            'preferance_details'              => $this->preferance_details,
+            'sale_provision'                  => json_encode($this->sale_provision ?? []),
+            'sale_provision_other'            => $this->sale_provision_other,
+            'sale_provision_assignment'       => $this->sale_provision_assignment,
+            'assignment_fee_type'             => $this->assignment_fee_type,
+            'assignment_fee_amount'           => $this->stripCommas($this->assignment_fee_amount),
+            'buyer_sell_contract'             => $this->buyer_sell_contract,
+            'maximum_budget'                  => $this->stripCommas($this->maximum_budget),
+            'offered_financing'               => json_encode($this->offered_financing),
+            'other_financing'                 => $this->other_financing,
+            'cash_budget'                     => $this->stripCommas($this->cash_budget),
+            'pre_approved'                    => $this->pre_approved,
+            'pre_approval_amount'             => $this->stripCommas($this->pre_approval_amount),
+            'purchase_price'                  => $this->stripCommas($this->purchase_price),
+            'down_payment_type'               => $this->down_payment_type,
+            'down_payment_amount'             => $this->stripCommas($this->down_payment_amount),
+            'seller_financing_type'           => $this->seller_financing_type,
+            'seller_financing_amount'         => $this->stripCommas($this->seller_financing_amount),
+            'interest_rate'                   => $this->stripCommas($this->interest_rate),
+            'loan_duration'                   => $this->loan_duration,
+            'prepayment_penalty'              => $this->prepayment_penalty,
+            'prepayment_penalty_amount'       => $this->stripCommas($this->prepayment_penalty_amount),
+            'balloon_payment'                 => $this->balloon_payment,
+            'balloon_payment_amount'          => $this->stripCommas($this->balloon_payment_amount),
+            'balloon_payment_date'            => $this->balloon_payment_date,
+            'assumable_terms'                 => $this->assumable_terms,
+            'max_assumable_rate'              => $this->stripCommas($this->max_assumable_rate),
+            'max_monthly_payment'             => $this->stripCommas($this->max_monthly_payment),
+            'assumable_loan_type'             => $this->assumable_loan_type,
+            'gap_payment_type'                => $this->gap_payment_type,
+            'gap_payment_amount'              => $this->stripCommas($this->gap_payment_amount),
+            'seller_amortization_type'        => $this->seller_amortization_type,
+            'seller_amortization_other'       => $this->seller_amortization_other,
+            'seller_payment_frequency'        => $this->seller_payment_frequency,
+            'seller_payment_frequency_other'  => $this->seller_payment_frequency_other,
+            'seller_late_fee_amount'          => $this->stripCommas($this->seller_late_fee_amount),
+            'exchange_item'                   => $this->exchange_item,
+            'other_exchange_item'             => $this->other_exchange_item,
+            'exchange_item_value'             => $this->stripCommas($this->exchange_item_value),
+            'exchange_item_condition'         => $this->exchange_item_condition,
+            'additional_cash'                 => $this->stripCommas($this->additional_cash),
+            'value_determination'             => $this->value_determination,
+            'exchange_transfer_method'        => $this->exchange_transfer_method,
+            'exchange_liens'                  => $this->exchange_liens,
+            'exchange_liens_details'          => $this->exchange_liens_details,
+            'exchange_inspection_rights'      => $this->exchange_inspection_rights,
+            'interested_lease_option'         => $this->interested_lease_option,
+            'interested_lease_option_agreement' => $this->interested_lease_option_agreement,
+            'lease_option_price'              => $this->stripCommas($this->lease_option_price),
+            'lease_option_terms'              => $this->lease_option_terms,
+            'lease_option_duration'           => $this->lease_option_duration,
+            'lease_option_payment'            => $this->stripCommas($this->lease_option_payment),
+            'lease_option_conditions'         => $this->lease_option_conditions,
+            'has_option_fee'                  => $this->has_option_fee,
+            'option_fee_amount'               => $this->stripCommas($this->option_fee_amount),
+            'lease_option_fee_credit'         => $this->lease_option_fee_credit,
+            'lease_option_fee_credit_percentage' => $this->stripCommas($this->lease_option_fee_credit_percentage),
+            'lease_option_maintenance'        => $this->lease_option_maintenance,
+            'lease_option_extension_terms'    => $this->lease_option_extension_terms,
+            'lease_purchase_price'            => $this->stripCommas($this->lease_purchase_price),
+            'lease_purchase_terms'            => $this->lease_purchase_terms,
+            'lease_purchase_duration'         => $this->lease_purchase_duration,
+            'lease_purchase_payment'          => $this->stripCommas($this->lease_purchase_payment),
+            'lease_purchase_conditions'       => $this->lease_purchase_conditions,
+            'lease_purchase_option_fee'       => $this->lease_purchase_option_fee,
+            'lease_purchase_option_fee_amount' => $this->stripCommas($this->lease_purchase_option_fee_amount),
+            'lease_purchase_maintenance'      => $this->lease_purchase_maintenance,
+            'lease_purchase_extension_terms'  => $this->lease_purchase_extension_terms,
+            'lease_purchase_rent_credit'      => $this->lease_purchase_rent_credit,
+            'lease_purchase_rent_credit_amount' => $this->stripCommas($this->lease_purchase_rent_credit_amount),
+            'lease_purchase_deposit'          => $this->stripCommas($this->lease_purchase_deposit),
+            'cryptocurrency_type'             => $this->cryptocurrency_type,
+            'crypto_percentage'               => $this->stripCommas($this->crypto_percentage),
+            'cash_percentage_crypto'          => $this->stripCommas($this->cash_percentage_crypto),
+            'crypto_transfer_timing'          => $this->crypto_transfer_timing,
+            'crypto_transfer_timing_other'    => $this->crypto_transfer_timing_other,
+            'crypto_exchange_method'          => $this->crypto_exchange_method,
+            'crypto_custodian_wallet'         => $this->crypto_custodian_wallet,
+            'crypto_transaction_fees'         => $this->crypto_transaction_fees,
+            'nft_description'                 => $this->nft_description,
+            'nft_percentage'                  => $this->stripCommas($this->nft_percentage),
+            'cash_percentage_nft'             => $this->stripCommas($this->cash_percentage_nft),
+            'nft_valuation_method'            => $this->nft_valuation_method,
+            'nft_transfer_method'             => $this->nft_transfer_method,
+            'nft_gas_fees'                    => $this->nft_gas_fees,
+            'tenant_require'                  => json_encode($this->tenant_require),
+            'carport_needed'                  => $this->carport_needed,
+            'other_carport_needed'            => $this->other_carport_needed,
+            'garage_needed'                   => $this->garage_needed,
+            'other_garage_needed'             => $this->other_garage_needed,
+            'garage_parking_spaces'           => $this->garage_parking_spaces,
+            'garage_parking_spaces_option'    => $this->garage_parking_spaces_option,
+            'other_parking_space_wrapper'     => $this->other_parking_space_wrapper,
+            'pool_needed'                     => $this->pool_needed,
+            'pool_type'                       => json_encode($this->pool_type),
+            'view_preference'                 => json_encode($this->view_preference),
+            'other_preferences'               => $this->other_preferences,
+            'real_estate_purchase'            => $this->real_estate_purchase,
+            'number_of_unit'                  => $this->number_of_unit,
+            'number_of_unit_other'            => $this->number_of_unit_other,
+            'number_of_unit_type'             => json_encode($numberOfUnitType),
+            'number_of_unit_type_other'       => $this->number_of_unit_type_other,
+            'minimum_annual_net_income'       => $this->stripCommas($this->minimum_annual_net_income),
+            'leasing_55_plus'                 => $this->leasing_55_plus,
+            'non_negotiable_amenities'        => json_encode($this->non_negotiable_amenities),
+            'other_non_negotiable_amenities'  => $this->other_non_negotiable_amenities,
+            'budget'                          => $this->budget,
+            'lease_for'                       => json_encode($this->lease_for),
+            'other_lease_for'                 => $this->other_lease_for,
+            'lease_by'                        => $this->lease_by,
+            'lease_date'                      => $this->lease_date,
+            'pets'                            => $this->pets,
+            'number_of_pets'                  => $this->number_of_pets,
+            'breed_of_pets'                   => $this->breed_of_pets,
+            'type_of_pets'                    => $this->type_of_pets,
+            'weight_of_pets'                  => $this->weight_of_pets,
+            'credit_scroe_rating'             => json_encode($this->credit_scroe_rating),
+            'prior_eviction'                  => $this->prior_eviction,
+            'eviction_explanation'            => $this->eviction_explanation,
+            'prior_felony'                    => $this->prior_felony,
+            'prior_felony_explanation'        => $this->prior_felony_explanation,
+            'monthly_income'                  => $this->stripCommas($this->monthly_income),
+            'number_occupant'                 => $this->number_occupant,
+            'service_animal'                  => $this->service_animal,
+            'emotional_support_animal'        => $this->emotional_support_animal,
+            'target_closing_date'             => $this->target_closing_date,
+            'occupant_types'                  => $this->occupant_types,
+            'services'                        => json_encode($this->services),
+            'other_services'                  => $this->other_services,
+            'flat_fee_services'               => json_encode($this->flat_fee_services),
+            'additional_details'              => $this->additional_details,
+            'commission_structure'            => $this->commission_structure,
+            'lease_type'                      => $this->lease_type,
+            'lease_type_other'                => $this->lease_type_other,
+            'lease_value'                     => $this->lease_value,
+            'lease_fee_type'                  => $this->lease_fee_type,
+            'lease_fee_flat'                  => $this->stripCommas($this->lease_fee_flat),
+            'lease_fee_percentage'            => $this->stripCommas($this->lease_fee_percentage),
+            'lease_fee_months'                => $this->lease_fee_months,
+            'lease_fee_percentage_monthly_rent' => $this->stripCommas($this->lease_fee_percentage_monthly_rent),
+            'lease_fee_flat_combo'            => $this->stripCommas($this->lease_fee_flat_combo),
+            'lease_fee_percentage_combo'      => $this->stripCommas($this->lease_fee_percentage_combo),
+            'lease_fee_other'                 => $this->lease_fee_other,
+            'lease_fee_flat_combo_net'        => $this->stripCommas($this->lease_fee_flat_combo_net),
+            'lease_fee_percentage_combo_net'  => $this->stripCommas($this->lease_fee_percentage_combo_net),
+            'lease_fee_percentage_monthly_number' => $this->stripCommas($this->lease_fee_percentage_monthly_number),
+            'lease_fee_percentage_net'        => $this->stripCommas($this->lease_fee_percentage_net),
+            'lease_option_consideration'      => $this->stripCommas($this->lease_option_consideration),
+            'additional_details_broker'       => $this->additional_details_broker,
+            'purchase_type'                   => $this->purchase_type,
+            'purchase_value'                  => $this->purchase_value,
+            'purchase_pice_commercial'        => $this->stripCommas($this->purchase_pice_commercial),
+            'purchase_fee_flat_exercised'     => $this->stripCommas($this->purchase_fee_flat_exercised),
+            'purchase_fee_type'               => $this->purchase_fee_type,
+            'purchase_fee_percentage'         => $this->stripCommas($this->purchase_fee_percentage),
+            'purchase_fee_flat'               => $this->stripCommas($this->purchase_fee_flat),
+            'purchase_fee_percentage_combo'   => $this->stripCommas($this->purchase_fee_percentage_combo),
+            'purchase_fee_flat_combo'         => $this->stripCommas($this->purchase_fee_flat_combo),
+            'purchase_fee_other'              => $this->purchase_fee_other,
+            'lease_option_fee_type'           => $this->lease_option_fee_type,
+            'lease_option_fee_flat'           => $this->stripCommas($this->lease_option_fee_flat),
+            'lease_option_fee_percentage'     => $this->stripCommas($this->lease_option_fee_percentage),
+            'lease_option_fee_other'          => $this->lease_option_fee_other,
+            'lease_option_fee_flat_combo'     => $this->stripCommas($this->lease_option_fee_flat_combo),
+            'lease_option_fee_percentage_combo' => $this->stripCommas($this->lease_option_fee_percentage_combo),
+            'protection_period'               => $this->protection_period,
+            'early_termination_fee_option'    => $this->early_termination_fee_option,
+            'early_termination_fee_amount'    => $this->stripCommas($this->early_termination_fee_amount),
+            'retainer_fee_option'             => $this->retainer_fee_option,
+            'retainer_fee_amount'             => $this->stripCommas($this->retainer_fee_amount),
+            'retainer_fee_application'        => $this->retainer_fee_application,
+            'agency_agreement_timeframe'      => $this->agency_agreement_timeframe,
+            'agency_agreement_custom'         => $this->agency_agreement_custom,
+            'brokerage_relationship'          => $this->brokerage_relationship,
+            'person_meeting'                  => $this->person_meeting,
+            'meeting_details_first_name'      => $this->meeting_details_first_name,
+            'meeting_details_last_name'       => $this->meeting_details_last_name,
+            'meeting_details_phone'           => $this->meeting_details_phone,
+            'meeting_details_email'           => $this->meeting_details_email,
+            'address'                         => $this->address,
+            'meeting_details_meeting_time'    => $this->meeting_details_meeting_time,
+            'meeting_details_meeting_date'    => $this->meeting_details_meeting_date,
+            'meeting_details_time_zone'       => $this->meeting_details_time_zone,
+            'meeting_details_instructions'    => $this->meeting_details_instructions,
+            'service_completion_date'         => $this->service_completion_date,
+            'service_completion_time'         => $this->service_completion_time,
+            'service_time_zone'               => $this->service_time_zone,
+            'meeting_details_additional_details' => $this->meeting_details_additional_details,
+            'list_criteria'                   => $this->list_criteria,
+            'list_criteria_fee'               => $this->stripCommas($this->list_criteria_fee),
+            'market_groups'                   => $this->market_groups,
+            'market_groups_fee'               => $this->stripCommas($this->market_groups_fee),
+            'promote_social'                  => $this->promote_social,
+            'promote_social_fee'              => $this->stripCommas($this->promote_social_fee),
+            'launch_ads'                      => $this->launch_ads,
+            'launch_ads_fee'                  => $this->stripCommas($this->launch_ads_fee),
+            'include_marketing_fee'           => $this->include_marketing_fee,
+            'marketing_materials_fee'         => $this->stripCommas($this->marketing_materials_fee),
+            'email_notifications_fee'         => $this->stripCommas($this->email_notifications_fee),
+            'off_market_search_fee'           => $this->stripCommas($this->off_market_search_fee),
+            'mls_filter_fee'                  => $this->stripCommas($this->mls_filter_fee),
+            'email_marketing_fee'             => $this->stripCommas($this->email_marketing_fee),
+            'schedule_showings'               => $this->schedule_showings,
+            'number_of_showings_to_schedule'  => $this->number_of_showings_to_schedule,
+            'schedule_showings_fee'           => $this->stripCommas($this->schedule_showings_fee),
+            'attend_showings'                 => $this->attend_showings,
+            'number_of_showings_to_attend'    => $this->number_of_showings_to_attend,
+            'attend_showings_fee'             => $this->stripCommas($this->attend_showings_fee),
+            'provide_virtual_tours'           => $this->provide_virtual_tours,
+            'number_of_virtual_tours'         => $this->number_of_virtual_tours,
+            'virtual_tours_fee'               => $this->stripCommas($this->virtual_tours_fee),
+            'assist_application'              => $this->assist_application,
+            'assist_application_fee'          => $this->stripCommas($this->assist_application_fee),
+            'collect_documents'               => $this->collect_documents,
+            'collect_documents_fee'           => $this->stripCommas($this->collect_documents_fee),
+            'submit_application'              => $this->submit_application,
+            'submit_application_fee'          => $this->stripCommas($this->submit_application_fee),
+            'review_lease'                    => $this->review_lease,
+            'review_lease_fee'                => $this->stripCommas($this->review_lease_fee),
+            'provide_lease_form'              => $this->provide_lease_form,
+            'provide_lease_form_fee'          => $this->stripCommas($this->provide_lease_form_fee),
+            'coordinate_signing'              => $this->coordinate_signing,
+            'coordinate_signing_fee'          => $this->stripCommas($this->coordinate_signing_fee),
+            'prepare_application_fee'         => $this->stripCommas($this->prepare_application_fee),
+            'move_in_inspection_fee'          => $this->stripCommas($this->move_in_inspection_fee),
+            'moving_resources_fee'            => $this->stripCommas($this->moving_resources_fee),
+            'short_term_housing_fee'          => $this->stripCommas($this->short_term_housing_fee),
+            'rental_rights_fee'               => $this->stripCommas($this->rental_rights_fee),
+            'lease_advice_fee'                => $this->stripCommas($this->lease_advice_fee),
+            'neighborhood_insights_fee'       => $this->stripCommas($this->neighborhood_insights_fee),
+            'neighborhood_marketing_fee'      => $this->stripCommas($this->neighborhood_marketing_fee),
+            'neighborhood_materials_fee'      => $this->stripCommas($this->neighborhood_materials_fee),
+            'custom_services'                 => json_encode($this->custom_services),
+            'total_marketing_fee'             => $this->stripCommas($this->total_marketing_fee),
+            'total_flat_fee'                  => $this->stripCommas($this->total_flat_fee),
+            'fees'                            => json_encode($this->fees),
+            'enable'                          => json_encode($this->enable),
+            'showings_count'                  => $this->showings_count,
+            'attend_showings_count'           => $this->attend_showings_count,
+            'virtual_tours_count'             => $this->virtual_tours_count,
+            'understand_terms'                => $this->understand_terms,
+            'staging_duration'                => $this->staging_duration,
+            'open_house_count'                => $this->open_house_count,
+            'virtual_showings_count'          => $this->virtual_showings_count,
+            'earnest_money_amount'            => $this->earnest_money_amount,
+            'earnest_money_timing'            => $this->earnest_money_timing,
+            'inspection_period_days'          => $this->inspection_period_days,
+            'inspection_contingency_buyer'    => $this->inspection_contingency_buyer,
+            'appraisal_contingency_buyer'     => $this->appraisal_contingency_buyer,
+            'financing_contingency_buyer'     => $this->financing_contingency_buyer,
+            'financing_contingency_days_buyer' => $this->financing_contingency_days_buyer,
+            'seller_contribution'             => $this->seller_contribution,
+            'seller_contribution_details'     => $this->seller_contribution_details,
+            'possession_preference'           => $this->possession_preference,
+            'possession_details'              => $this->possession_details,
+            'home_warranty_requested'         => $this->home_warranty_requested,
+            'home_warranty_details'           => $this->home_warranty_details,
+            'as_is_purchase'                  => $this->as_is_purchase,
+            'property_inclusions'             => $this->property_inclusions,
+            'property_exclusions'             => $this->property_exclusions,
+            'closing_cost_responsibility'     => $this->closing_cost_responsibility,
+            'additional_purchase_terms'       => $this->additional_purchase_terms,
+            'home_sale_contingency'           => $this->home_sale_contingency,
+            'home_sale_contingency_address'       => $this->home_sale_contingency_address,
+            'home_sale_contingency_date'          => $this->home_sale_contingency_date,
+            'home_sale_contingency_under_contract' => $this->home_sale_contingency_under_contract,
+            'home_sale_contingency_details'       => $this->home_sale_contingency_details,
+            'first_name'                      => $this->first_name,
+            'last_name'                       => $this->last_name,
+            'phone_number'                    => preg_replace('/\D/', '', $this->phone_number),
+            'email'                           => $this->email,
+            'video_link'                      => $this->video_link,
+            'listing_ai_faq'                  => json_encode($this->listing_ai_faq ?: []),
+            'photo'                           => is_string($this->photo) ? $this->photo : '',
+        ];
+
+        if ($isAgent) {
+            $data['agent_brokerage']      = $this->agent_brokerage;
+            $data['agent_license_number'] = $this->agent_license_number;
+            $data['agent_nar_member_id']  = $this->agent_nar_member_id;
+        }
+
+        return $data;
+    }
+
+    protected function buildDraftPayloadHash(): string
+    {
+        $data = $this->buildDraftPayload();
+        ksort($data);
+        return hash('sha256', json_encode($data));
+    }
+
     public function saveDraft()
     {
-
         try {
-
             $this->isDraft = true;
 
-            if ($this->auctionId) {
-                // EDIT MODE: update the existing listing — do not create a new row
-                $auction = HireBuyerAgentAuction::where('id', $this->auctionId)
-                    ->where('user_id', Auth::id())
-                    ->firstOrFail();
+            $newPayloadHash = $this->buildDraftPayloadHash();
 
-                $auction->title = $this->listing_title;
-                $auction->save();
+            $previousDraft = $this->listingId
+                ? HireBuyerAgentAuction::find($this->listingId)
+                : null;
 
-                // $this->auctionId and $this->listingId intentionally not changed
-            } else {
-                // No existing auction — create a new draft row (fallback only)
-                $auction = new HireBuyerAgentAuction();
-                $auction->user_id = Auth::id();
-                $auction->title = $this->listing_title;
-                $auction->is_draft = true;
-                $auction->save();
-
-                $this->listingId = $auction->id;
-                $this->auctionId = $auction->id;
+            $previousVersion = 0;
+            $parentDraftId   = null;
+            if ($previousDraft && $previousDraft->is_draft) {
+                $oldHash = $previousDraft->info('draft_payload_hash') ?? '';
+                if ($oldHash === $newPayloadHash) {
+                    session()->flash('success', 'No changes detected — draft is already up to date.');
+                    return redirect()->route('offer.listing.buyer.edit', ['auctionId' => $this->listingId]);
+                }
+                $previousVersion = (int) ($previousDraft->info('draft_version') ?? 1);
+                $parentDraftId   = $previousDraft->id;
             }
 
-            // Preserve auction_type on the row (locked from editing in saveAllMetadata)
-            if (!empty($this->auction_type)) {
-                $auction->saveMeta('auction_type', $this->auction_type);
-            }
+            $auction = new HireBuyerAgentAuction();
+            $auction->user_id  = Auth::id();
+            $auction->title    = $this->listing_title;
+            $auction->is_draft = true;
+            $auction->save();
+
+            $this->listingId = $auction->id;
+            $this->auctionId = $auction->id;
 
             $this->saveAllMetadata($auction);
 
-            \Log::info('[BUYER EDIT DRAFT SAVED]', [
-                'record_id' => $auction->id,
-                'listing_id' => $auction->listing_id ?? 'N/A',
-                'user_id' => $auction->user_id,
-                'is_draft' => $auction->is_draft,
-                'is_approved' => $auction->is_approved,
-            ]);
+            $auction->saveMeta('draft_version',      $previousVersion + 1);
+            $auction->saveMeta('parent_draft_id',    $parentDraftId);
+            $auction->saveMeta('draft_payload_hash', $newPayloadHash);
 
-            $displayId = $auction->listing_id ?? $auction->id;
-            session()->flash('success', "Draft saved (Listing ID: {$displayId}). You can return later to complete your listing.");
+            session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
+            return redirect()->route('offer.listing.buyer.edit', ['auctionId' => $this->listingId]);
         } catch (\Exception $e) {
             session()->flash('error', 'Error saving draft: ' . $e->getMessage());
         }
