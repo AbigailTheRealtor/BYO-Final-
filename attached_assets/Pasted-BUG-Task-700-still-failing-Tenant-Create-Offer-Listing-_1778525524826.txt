@@ -1,0 +1,71 @@
+BUG: Task #700 still failing — Tenant Create Offer Listing draft save replaces/deletes previous drafts
+
+URL:
+https://.../offer-listing/tenant/tenant
+
+Issue:
+On Create Offer Listing → Tenant, when a user opens a saved draft, edits it, and clicks Save Draft, the latest edited version saves, but the previous draft version disappears from the Load Saved Draft modal.
+
+This is still incorrect.
+
+Correct behavior:
+Saving an edited resumed Tenant draft must be append-only:
+- Keep the original draft.
+- Create a new separate draft/version.
+- Show both drafts in the Load Saved Draft modal.
+- Do not delete, overwrite, archive, hide, or replace previous Tenant drafts.
+
+Scope:
+- Full Service Tenant Create Offer Listing only.
+- Active URL: /offer-listing/tenant/tenant
+- Likely component: app/Http/Livewire/OfferListing/Tenant/TenantOfferListing.php
+
+Safeguards:
+- Do NOT touch Buyer, Seller, Landlord, Hire Agent, Limited Service, migrations, routes, validation, database schema, final submit, or listing edit flow.
+- Do NOT delete or mutate existing draft rows.
+- Do NOT change UI layout, labels, wire:model bindings, tabs, icons, or placeholders.
+
+Audit first:
+1. Find the Tenant Save Draft method used by /offer-listing/tenant/tenant.
+2. Search for any logic that deletes, removes, hides, archives, or marks previous drafts inactive after saving a new draft.
+3. Search for use of:
+   - delete()
+   - forceDelete()
+   - updateOrCreate()
+   - firstOrCreate()
+   - existing draft id assignment
+   - same group/version cleanup
+   - “latest only” filtering in the Load Saved Draft modal query
+   - replacing draft by user_id + user_type + listing_type instead of creating a new row
+4. Confirm whether the new save is creating a row but the modal only displays latest draft, OR whether the old row is actually deleted/overwritten.
+
+Required fix:
+- Save Draft from a resumed Tenant draft must always create a fresh draft row when meaningful changes exist.
+- The original draft row must remain unchanged.
+- The Load Saved Draft modal must display all active Tenant drafts for that user, not only the latest one.
+- If there are no changes, show a clear no-changes message and do not create a duplicate.
+
+Implementation guidance:
+- Do not reuse the loaded draft primary key when saving the edited version.
+- Do not call delete/archive/cleanup on older Tenant drafts.
+- Do not filter the modal list down to only the newest draft.
+- If there is code that intentionally keeps only one draft per user/listing type, bypass/remove it for Tenant Create Offer Listing only.
+
+Verification:
+1. Count Tenant draft rows before test.
+2. Create Tenant draft A.
+3. Resume draft A.
+4. Edit Listing Title to “Version B test”.
+5. Click Save Draft.
+6. Confirm draft row count increases by exactly 1.
+7. Confirm draft A still exists in DB and modal.
+8. Confirm draft B exists in DB and modal.
+9. Open draft A and confirm original title remains.
+10. Open draft B and confirm edited title exists.
+11. Click Save Draft again without changes and confirm:
+    - no third row created
+    - clear no-changes message appears
+12. Confirm final Submit still works.
+
+DONE LOOKS LIKE:
+Tenant Create Offer Listing draft saving is append-only. Edited resumed drafts create new records and all previous drafts remain visible and unchanged.
