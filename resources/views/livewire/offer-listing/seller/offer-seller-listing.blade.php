@@ -1654,21 +1654,26 @@
             // Detect which service is preselected on load
             if (document.getElementById('fullService')?.checked) {
                 currentServiceType = 'full_service';
-                initializeFullService();
+                try { initializeFullService(); } catch(e) { console.warn('[Seller] initializeFullService DOMContentLoaded error:', e); }
             } else if (document.getElementById('limitedService')?.checked) {
                 currentServiceType = 'limited_service';
                 initializeLimitedService();
             } else {
                 // Default to full service if no service type radio buttons found (limited service removed)
                 currentServiceType = 'full_service';
-                initializeFullService();
+                try { initializeFullService(); } catch(e) { console.warn('[Seller] initializeFullService DOMContentLoaded error:', e); }
             }
 
+            // Multi-pass icon injection AFTER initializeFullService()/Select2 have run.
+            // Inline calls ensure icons fire even if runSellerInitialIconPasses is not yet
+            // in scope at this point in the script execution order.
             addIconsToInputs();
-            setTimeout(function() { addIconsToInputs(); }, 0);
-            setTimeout(function() { addIconsToInputs(); }, 150);
-            setTimeout(function() { addIconsToInputs(); }, 400);
-            setTimeout(function() { addIconsToInputs(); }, 800);
+            requestAnimationFrame(function() { addIconsToInputs(); });
+            setTimeout(function() { addIconsToInputs(); }, 100);
+            setTimeout(function() { addIconsToInputs(); }, 300);
+            setTimeout(function() { addIconsToInputs(); }, 700);
+            setTimeout(function() { addIconsToInputs(); }, 1500);
+            setTimeout(function() { addIconsToInputs(); }, 2500);
 
             // Polling safety net: ensures sections show/hide within 100ms of any Select2 change,
             // regardless of whether jQuery event binding caught the change event.
@@ -2851,6 +2856,19 @@
             });
         }
 
+        // Seller-only: multi-pass icon injection called AFTER initializeFullService()
+        // so Select2 has already wrapped selects before icons are injected.
+        // Long tail (1500ms, 2500ms) covers slow Livewire hydration on no-draft fresh loads.
+        function runSellerInitialIconPasses() {
+            addIconsToInputs();
+            requestAnimationFrame(addIconsToInputs);
+            setTimeout(addIconsToInputs, 100);
+            setTimeout(addIconsToInputs, 300);
+            setTimeout(addIconsToInputs, 700);
+            setTimeout(addIconsToInputs, 1500);
+            setTimeout(addIconsToInputs, 2500);
+        }
+
 
         Livewire.hook('message.processed', () => {
             addIconsToInputs(); // synchronous — runs immediately after morphdom, like Buyer
@@ -2884,6 +2902,13 @@
                 } else if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
                 }
+                // Re-run icon passes AFTER initializeFullService() so Select2 wrapping
+                // has already happened before icons are injected into .input-cover wrappers
+                runSellerInitialIconPasses();
+            } else {
+                // initializeFullService throttled — still re-run icon passes so any
+                // Livewire morphdom patch that wiped icons is recovered
+                runSellerInitialIconPasses();
             }
 
             var _savedTabId = sessionStorage.getItem('seller_create_active_tab');

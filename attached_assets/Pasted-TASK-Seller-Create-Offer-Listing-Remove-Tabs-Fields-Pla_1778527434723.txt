@@ -1,0 +1,158 @@
+TASK: Seller Create Offer Listing — Remove Tabs/Fields + Placeholder Standardization
+
+URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller
+
+Login:
+Abigailbaschuk@gmail.com
+Password: 12345678
+
+IMPORTANT SAFEGUARDS:
+- AUDIT FIRST before editing.
+- Full Service Seller flow ONLY.
+- Limited Service is legacy/frozen — DO NOT touch it.
+- Do NOT modify Buyer, Tenant, or Landlord flows.
+- Do NOT modify database schema, migrations, models, controllers, routes, validation, save logic, draft logic, or bidding logic unless absolutely required for the UI removal.
+- Do NOT change unrelated placeholders globally.
+- Preserve all existing conditional logic and Livewire bindings unless explicitly removing fields/tabs requested below.
+- Surgical Blade/UI update only.
+- Maintain Create/Edit/Draft parity where applicable.
+- Do NOT remove backend properties unless confirmed unused after Blade removal audit.
+
+==================================================
+TASK 1 — Broker Compensation & Agency Agreement Terms
+==================================================
+
+GOAL:
+On Seller Create Offer Listing → Broker Compensation & Agency Agreement Terms tab:
+
+DELETE ALL fields except:
+
+1. Buyer's Broker Commission Structure:
+2. Buyer's Broker Commission Fee:
+
+REQUIREMENTS:
+- Keep the existing field styling/UI structure.
+- Keep existing wire:model bindings for the two remaining fields.
+- Remove ALL other visible inputs, selects, textareas, helper copy, and sections from this tab.
+- Remove empty spacing/gaps left behind after removal.
+- Ensure tab still renders correctly with proper spacing/alignment.
+
+WORDING:
+Use exactly:
+
+- Buyer's Broker Commission Structure:
+- Buyer's Broker Commission Fee:
+
+AUDIT:
+- Verify no orphaned validation/UI errors appear after field removal.
+- Verify draft loading still works.
+- Verify Create/Edit/Draft states still render correctly.
+
+==================================================
+TASK 2 — Delete Services Tab
+==================================================
+
+GOAL:
+Remove the entire "Services" tab from Seller Create Offer Listing.
+
+REQUIREMENTS:
+- Remove the tab button/navigation item.
+- Remove the tab pane/content.
+- Remove any references to the tab in step logic/navigation.
+- Ensure Next/Back buttons still work correctly after removal.
+- Ensure tab numbering/order remains correct.
+- Ensure validation/navigation does not attempt to access removed tab.
+- Ensure draft loading and edit flow still function.
+
+IMPORTANT:
+- Seller flow ONLY.
+- Do NOT affect Buyer/Tenant/Landlord tabs.
+- Do NOT touch Limited Service.
+
+AUDIT:
+- Test full tab navigation from first tab through submit.
+- Confirm no JS console errors.
+- Confirm no broken Bootstrap tab targeting.
+
+==================================================
+TASK 3 — Special Sale Provision & Offered Financing/Currency
+==================================================
+
+GOAL:
+All dropdown placeholders in:
+- Special Sale Provision
+- Offered Financing/Currency
+
+must use the standardized placeholder:
+
+"Select"
+
+REQUIREMENTS:
+- Match the placeholder behavior/style used by Appliances Included.
+- Placeholder must visually render correctly in Select2 if Select2 is used.
+- No blank default option text.
+- No "Choose Option", "Select Option", or auto-selected first values.
+
+REFERENCE:
+Use Appliances Included as the exact visual/behavior reference.
+
+AUDIT:
+- Verify placeholder appears on first load.
+- Verify placeholder persists correctly after Livewire refreshes.
+- Verify placeholder works in Create/Edit/Draft states.
+
+==================================================
+TASK 4 — Property Description Placeholder Logic
+==================================================
+
+GOAL:
+On Description tab → Property Description textarea:
+
+Placeholder text should dynamically match the selected property type.
+
+EXAMPLES:
+If Residential:
+"Enter a detailed description of the residential property (e.g., updated kitchen, open floor plan, fenced backyard, community amenities)."
+
+If Commercial:
+"Enter a detailed description of the commercial property (e.g., office layout, warehouse space, storefront visibility, zoning benefits)."
+
+If Vacant Land:
+"Enter a detailed description of the vacant land (e.g., acreage, utilities available, zoning, road access, development potential)."
+
+REQUIREMENTS:
+- Placeholder must update dynamically when property type changes.
+- Preserve existing wire:model and textarea behavior.
+- Do NOT change validation or save logic.
+- Keep styling/height unchanged.
+- Use existing property type conditional logic if available.
+
+AUDIT:
+- Verify placeholder changes immediately when property type changes.
+- Verify correct placeholder appears on draft load/edit state.
+- Verify no JS console errors.
+
+==================================================
+FINAL QA REQUIRED
+==================================================
+
+Before completing:
+
+1. Verify ONLY Seller Full Service files changed.
+2. Verify Limited Service untouched.
+3. Verify tab navigation works start-to-finish.
+4. Verify Services tab fully removed.
+5. Verify Broker Compensation tab only contains:
+   - Buyer's Broker Commission Structure
+   - Buyer's Broker Commission Fee
+6. Verify all Special Sale Provision and Financing dropdowns show:
+   - "Select"
+7. Verify Property Description placeholder changes by property type.
+8. Verify no broken spacing/layout.
+9. Verify no PHP/Livewire errors.
+10. Provide:
+   - Exact files changed
+   - Summary of each change
+   - Any backend adjustments required
+   - QA results
