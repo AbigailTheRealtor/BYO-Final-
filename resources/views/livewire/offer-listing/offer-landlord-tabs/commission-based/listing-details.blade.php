@@ -258,7 +258,7 @@ $auction_lengths_seller = [
 
         </label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select today’s date to make your request live and visible to Agents on the platform.">
+            title="This date establishes when the listing becomes active.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -274,7 +274,7 @@ $auction_lengths_seller = [
 
         </label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="The date your Agent request will expire. To keep it active, extend the expiration before this date.">
+            title="This date determines when the listing expires or stops accepting offers. Extend the expiration before this date to keep the listing active.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -288,7 +288,7 @@ $auction_lengths_seller = [
     {{-- <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span></label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how Agents submit bids for this listing. This choice controls timing, bid visibility, and how Agent bids are reviewed.">
+            title="Select how offers are submitted for this listing. This choice controls timing, offer visibility, and how offers are reviewed.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -344,7 +344,7 @@ $auction_lengths_seller = [
 <div class="form-group">
         <label class="fw-bold">Listing Type:<span class="text-danger">*</span>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Select how Agents submit bids for this listing. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Bidding Period:&lt;/strong&gt; Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time. &lt;br&gt;&lt;br&gt;&lt;strong&gt;Traditional:&lt;/strong&gt; Agents may submit bids at any time while the listing remains active. There is no structured bidding countdown, and bids may be reviewed and acted on as they are received.">
+                title="Select how offers are submitted for this listing. Choose Bidding Period for a structured window where offers may be submitted until a deadline. Choose Traditional to allow offers to be submitted at any time while the listing remains active.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
