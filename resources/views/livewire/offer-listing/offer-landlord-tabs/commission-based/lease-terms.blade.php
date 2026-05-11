@@ -1238,8 +1238,8 @@
 </div>
 </div>
 
-{{-- Pet Deposit / Fee / Rent (hidden when No Pets Allowed) --}}
-@if ($pet_policy !== 'No Pets Allowed' && $pet_policy !== '')
+{{-- Pet Deposit / Fee / Rent (shown when Pets = Yes) --}}
+@if ($pets === 'Yes')
     <div class="form-group">
         <label class="fw-bold">Pet Deposit / Pet Fee / Pet Rent:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

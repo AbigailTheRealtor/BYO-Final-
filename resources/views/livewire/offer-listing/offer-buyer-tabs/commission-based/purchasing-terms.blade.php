@@ -1949,7 +1949,86 @@
     </div>
 </div>
 
-<!-- 18. Additional Purchase Terms / Notes -->
+<!-- 18. Home Sale Contingency -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Home Sale Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer's offer is contingent on the sale of their current home.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="home_sale_contingency" class="form-control has-icon"
+            data-icon="fa-solid fa-house-circle-exclamation">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+@if ($home_sale_contingency === 'Yes')
+<div class="form-group mt-3">
+    <label class="fw-bold">Buyer Property Address or Description:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the address or a brief description of the property that must sell before the Buyer can close on this purchase.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="home_sale_contingency_address" class="form-control has-icon"
+            data-icon="fa-solid fa-location-dot"
+            placeholder="Enter address or description (e.g., 123 Main St, Orlando, FL 32801)">
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Expected Sale / Closing Date:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the date by which the Buyer expects their current property to sell or close.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="date" wire:model="home_sale_contingency_date" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days">
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Is the property currently under contract?
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the Buyer's current home already has an accepted offer or is under contract.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="home_sale_contingency_under_contract" class="form-control has-icon"
+            data-icon="fa-solid fa-file-contract">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Additional Home Sale Contingency Details:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any other relevant details about the home sale contingency (e.g., asking price, days on market, anticipated closing timeline).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="home_sale_contingency_details" class="form-control has-icon"
+            data-icon="fa-solid fa-note-sticky" rows="1"
+            style="min-height: 44px; padding: 10px; font-size: 16px; resize: none;"
+            placeholder="Enter additional details (e.g., listed at $350K, accepted offer pending inspection, expected to close within 30 days)"></textarea>
+    </div>
+</div>
+@endif
+
+<!-- 19. Additional Purchase Terms / Notes -->
 <div class="form-group mt-3">
     <label class="fw-bold">Additional Purchase Terms / Notes:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

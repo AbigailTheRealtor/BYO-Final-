@@ -287,6 +287,12 @@ class SellerOfferListing extends Component
     public $financial_statements_available = '';
     public $tax_returns_available = '';
     public $nda_required = '';
+    public $business_location_leased = '';
+    public $business_lease_monthly_rent = '';
+    public $business_lease_expiration = '';
+    public $business_lease_renewal_options = '';
+    public $business_lease_assignable = '';
+    public $business_lease_additional_terms = '';
 
     public $assets = '';
     public $assets_other = '';
@@ -359,6 +365,16 @@ class SellerOfferListing extends Component
     public $other_fences = '';
     public $other_vegetation = '';
     public $other_easements = '';
+    public $water_available = '';
+    public $water_available_other = '';
+    public $sewer_available = '';
+    public $sewer_available_other = '';
+    public $electric_available = '';
+    public $electric_available_other = '';
+    public $gas_available = '';
+    public $gas_available_other = '';
+    public $telecom_available = '';
+    public $telecom_available_other = '';
 
     // Meeting preference
     public $meeting_Preference = '';
@@ -1896,6 +1912,12 @@ class SellerOfferListing extends Component
             'financial_statements_available'  => $this->financial_statements_available,
             'tax_returns_available'           => $this->tax_returns_available,
             'nda_required'                    => $this->nda_required,
+            'business_location_leased'        => $this->business_location_leased,
+            'business_lease_monthly_rent'     => $this->stripCommas($this->business_lease_monthly_rent),
+            'business_lease_expiration'       => $this->business_lease_expiration,
+            'business_lease_renewal_options'  => $this->business_lease_renewal_options,
+            'business_lease_assignable'       => $this->business_lease_assignable,
+            'business_lease_additional_terms' => $this->business_lease_additional_terms,
             'assets'                          => $assetsToSave,
             'assets_other'                    => $this->assets_other,
             'property_criteria'               => $this->property_criteria,
@@ -1953,6 +1975,16 @@ class SellerOfferListing extends Component
             'buildable'                       => $this->buildable,
             'easements'                       => json_encode($this->easements),
             'other_easements'                 => $this->other_easements,
+            'water_available'                 => $this->water_available,
+            'water_available_other'           => $this->water_available_other,
+            'sewer_available'                 => $this->sewer_available,
+            'sewer_available_other'           => $this->sewer_available_other,
+            'electric_available'              => $this->electric_available,
+            'electric_available_other'        => $this->electric_available_other,
+            'gas_available'                   => $this->gas_available,
+            'gas_available_other'             => $this->gas_available_other,
+            'telecom_available'               => $this->telecom_available,
+            'telecom_available_other'         => $this->telecom_available_other,
             'sale_provision'                  => $this->sale_provision,
             'sale_provision_other'            => $this->sale_provision_other,
             'sale_provision_assignment'       => $this->sale_provision_assignment,
@@ -2427,6 +2459,12 @@ class SellerOfferListing extends Component
             $this->financial_statements_available = $auction->get->financial_statements_available ?? '';
             $this->tax_returns_available = $auction->get->tax_returns_available ?? '';
             $this->nda_required = $auction->get->nda_required ?? '';
+            $this->business_location_leased = $auction->get->business_location_leased ?? '';
+            $this->business_lease_monthly_rent = $auction->get->business_lease_monthly_rent ?? '';
+            $this->business_lease_expiration = $auction->get->business_lease_expiration ?? '';
+            $this->business_lease_renewal_options = $auction->get->business_lease_renewal_options ?? '';
+            $this->business_lease_assignable = $auction->get->business_lease_assignable ?? '';
+            $this->business_lease_additional_terms = $auction->get->business_lease_additional_terms ?? '';
 
             $this->unit_number = $auction->get->unit_number ?? '';
             $this->unit_buildings = $auction->get->unit_buildings ?? '';
@@ -2498,6 +2536,16 @@ class SellerOfferListing extends Component
             $this->buildable = $auction->get->buildable ?? '';
             $this->easements = is_string($auction->get->easements) ? json_decode($auction->get->easements, true) ?? [] : (array)($auction->get->easements ?? []);
             $this->other_easements = $auction->get->other_easements ?? '';
+            $this->water_available = $auction->get->water_available ?? '';
+            $this->water_available_other = $auction->get->water_available_other ?? '';
+            $this->sewer_available = $auction->get->sewer_available ?? '';
+            $this->sewer_available_other = $auction->get->sewer_available_other ?? '';
+            $this->electric_available = $auction->get->electric_available ?? '';
+            $this->electric_available_other = $auction->get->electric_available_other ?? '';
+            $this->gas_available = $auction->get->gas_available ?? '';
+            $this->gas_available_other = $auction->get->gas_available_other ?? '';
+            $this->telecom_available = $auction->get->telecom_available ?? '';
+            $this->telecom_available_other = $auction->get->telecom_available_other ?? '';
 
             // Sale Provision
             $this->sale_provision = is_string($auction->get->sale_provision) ? json_decode($auction->get->sale_provision, true) ?? [] : (array)($auction->get->sale_provision ?? []);
@@ -3004,6 +3052,12 @@ class SellerOfferListing extends Component
         $auction->saveMeta('financial_statements_available', $this->financial_statements_available);
         $auction->saveMeta('tax_returns_available', $this->tax_returns_available);
         $auction->saveMeta('nda_required', $this->nda_required);
+        $auction->saveMeta('business_location_leased', $this->business_location_leased);
+        $auction->saveMeta('business_lease_monthly_rent', $this->stripCommas($this->business_lease_monthly_rent));
+        $auction->saveMeta('business_lease_expiration', $this->business_lease_expiration);
+        $auction->saveMeta('business_lease_renewal_options', $this->business_lease_renewal_options);
+        $auction->saveMeta('business_lease_assignable', $this->business_lease_assignable);
+        $auction->saveMeta('business_lease_additional_terms', $this->business_lease_additional_terms);
 
         $assetsToSave = (!empty($this->business_assets) && is_array($this->business_assets))
             ? json_encode($this->business_assets)
@@ -3068,6 +3122,16 @@ class SellerOfferListing extends Component
         $auction->saveMeta('buildable', $this->buildable);
         $auction->saveMeta('easements', json_encode($this->easements));
         $auction->saveMeta('other_easements', $this->other_easements);
+        $auction->saveMeta('water_available', $this->water_available);
+        $auction->saveMeta('water_available_other', $this->water_available_other);
+        $auction->saveMeta('sewer_available', $this->sewer_available);
+        $auction->saveMeta('sewer_available_other', $this->sewer_available_other);
+        $auction->saveMeta('electric_available', $this->electric_available);
+        $auction->saveMeta('electric_available_other', $this->electric_available_other);
+        $auction->saveMeta('gas_available', $this->gas_available);
+        $auction->saveMeta('gas_available_other', $this->gas_available_other);
+        $auction->saveMeta('telecom_available', $this->telecom_available);
+        $auction->saveMeta('telecom_available_other', $this->telecom_available_other);
 
         // Sale Provisions
         $auction->saveMeta('sale_provision', $this->sale_provision);

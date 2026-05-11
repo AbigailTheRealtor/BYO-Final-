@@ -2682,6 +2682,136 @@
     </div>
 
     <div class="form-group">
+        <label class="fw-bold">Water Available to Site:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether water service is available to the site.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="water_available" class="form-control has-icon" data-icon="fa-solid fa-droplet">
+                <option value="">Select</option>
+                <option value="Yes" @selected($water_available === 'Yes')>Yes</option>
+                <option value="No" @selected($water_available === 'No')>No</option>
+                <option value="Unknown" @selected($water_available === 'Unknown')>Unknown</option>
+                <option value="Nearby – Available but not connected" @selected($water_available === 'Nearby – Available but not connected')>Nearby – Available but not connected</option>
+                <option value="Other" @selected($water_available === 'Other')>Other</option>
+            </select>
+        </div>
+    </div>
+    @if ($water_available === 'Other')
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="water_available_other" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Describe water availability (e.g., well required, utility nearby, extension needed)">
+        </div>
+    </div>
+    @endif
+
+    <div class="form-group">
+        <label class="fw-bold">Sewer Available to Site:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether sewer service is available to the site.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="sewer_available" class="form-control has-icon" data-icon="fa-solid fa-pipe-valve">
+                <option value="">Select</option>
+                <option value="Yes" @selected($sewer_available === 'Yes')>Yes</option>
+                <option value="No" @selected($sewer_available === 'No')>No</option>
+                <option value="Unknown" @selected($sewer_available === 'Unknown')>Unknown</option>
+                <option value="Nearby – Available but not connected" @selected($sewer_available === 'Nearby – Available but not connected')>Nearby – Available but not connected</option>
+                <option value="Other" @selected($sewer_available === 'Other')>Other</option>
+            </select>
+        </div>
+    </div>
+    @if ($sewer_available === 'Other')
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="sewer_available_other" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Describe sewer availability (e.g., septic required, city sewer nearby)">
+        </div>
+    </div>
+    @endif
+
+    <div class="form-group">
+        <label class="fw-bold">Electric Available to Site:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether electric service is available to the site.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="electric_available" class="form-control has-icon" data-icon="fa-solid fa-bolt">
+                <option value="">Select</option>
+                <option value="Yes" @selected($electric_available === 'Yes')>Yes</option>
+                <option value="No" @selected($electric_available === 'No')>No</option>
+                <option value="Unknown" @selected($electric_available === 'Unknown')>Unknown</option>
+                <option value="Nearby – Available but not connected" @selected($electric_available === 'Nearby – Available but not connected')>Nearby – Available but not connected</option>
+                <option value="Other" @selected($electric_available === 'Other')>Other</option>
+            </select>
+        </div>
+    </div>
+    @if ($electric_available === 'Other')
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="electric_available_other" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Describe electric availability (e.g., solar only, generator required)">
+        </div>
+    </div>
+    @endif
+
+    <div class="form-group">
+        <label class="fw-bold">Gas Available to Site:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether natural gas service is available to the site.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="gas_available" class="form-control has-icon" data-icon="fa-solid fa-fire-flame-simple">
+                <option value="">Select</option>
+                <option value="Yes" @selected($gas_available === 'Yes')>Yes</option>
+                <option value="No" @selected($gas_available === 'No')>No</option>
+                <option value="Unknown" @selected($gas_available === 'Unknown')>Unknown</option>
+                <option value="Nearby – Available but not connected" @selected($gas_available === 'Nearby – Available but not connected')>Nearby – Available but not connected</option>
+                <option value="Other" @selected($gas_available === 'Other')>Other</option>
+            </select>
+        </div>
+    </div>
+    @if ($gas_available === 'Other')
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="gas_available_other" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Describe gas availability (e.g., propane only, not available)">
+        </div>
+    </div>
+    @endif
+
+    <div class="form-group">
+        <label class="fw-bold">Telecom / Internet Available to Site:</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether telephone or internet service is available to the site.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="telecom_available" class="form-control has-icon" data-icon="fa-solid fa-tower-broadcast">
+                <option value="">Select</option>
+                <option value="Yes" @selected($telecom_available === 'Yes')>Yes</option>
+                <option value="No" @selected($telecom_available === 'No')>No</option>
+                <option value="Unknown" @selected($telecom_available === 'Unknown')>Unknown</option>
+                <option value="Nearby – Available but not connected" @selected($telecom_available === 'Nearby – Available but not connected')>Nearby – Available but not connected</option>
+                <option value="Other" @selected($telecom_available === 'Other')>Other</option>
+            </select>
+        </div>
+    </div>
+    @if ($telecom_available === 'Other')
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="telecom_available_other" class="form-control has-icon"
+                data-icon="fa-solid fa-pen" placeholder="Describe telecom availability (e.g., satellite only, fiber nearby)">
+        </div>
+    </div>
+    @endif
+
+    <div class="form-group">
         <label class="fw-bold">Lot Dimensions:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the lot dimensions (e.g., 100x200, 150x300).">

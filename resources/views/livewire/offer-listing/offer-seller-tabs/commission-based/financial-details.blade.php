@@ -460,4 +460,99 @@
             </select>
         </div>
     </div>
+
+    {{-- Underlying Lease Terms --}}
+    <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
+        <h5 class="fw-bold text-primary mb-0">
+            <i class="fa-solid fa-file-contract me-2"></i>Underlying Lease Terms
+        </h5>
+    </div>
+    <div class="form-group mt-3">
+        <label class="fw-bold">Is the Business Location Leased?</label>
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the business operates from a leased location.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+        <div class="input-cover">
+            <select wire:model="business_location_leased" class="form-control has-icon"
+                data-icon="fa-solid fa-building">
+                <option value="">Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+                <option value="Not Applicable">Not Applicable</option>
+            </select>
+        </div>
+    </div>
+    @if ($business_location_leased === 'Yes')
+        <div class="form-group mt-3">
+            <label class="fw-bold">Current Monthly Rent:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the current monthly base rent the business pays for its leased location.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <div class="input-cover">
+                <span class="input-group-text-seller">$</span>
+                <input type="text" wire:model.defer="business_lease_monthly_rent" class="form-control"
+                    placeholder="Enter monthly rent (e.g., 3500)"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            </div>
+        </div>
+        <div class="form-group mt-3">
+            <label class="fw-bold">Lease Expiration Date:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter the date the current lease expires. A near-term expiration may affect the business's value or continuity.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <div class="input-cover">
+                <input type="date" wire:model.defer="business_lease_expiration" class="form-control has-icon"
+                    data-icon="fa-regular fa-calendar">
+            </div>
+        </div>
+        <div class="form-group mt-3">
+            <label class="fw-bold">Renewal Options Available:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Indicate whether the lease includes renewal options that a buyer could exercise after the current term.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <div class="input-cover">
+                <select wire:model.defer="business_lease_renewal_options" class="form-control has-icon"
+                    data-icon="fa-solid fa-rotate-right">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group mt-3">
+            <label class="fw-bold">Is the Lease Assignable to Buyer?</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Indicate whether the current lease can be transferred to a buyer as part of the business sale.">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <div class="input-cover">
+                <select wire:model.defer="business_lease_assignable" class="form-control has-icon"
+                    data-icon="fa-solid fa-right-left">
+                    <option value="">Select</option>
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                    <option value="Subject to Landlord Approval">Subject to Landlord Approval</option>
+                    <option value="Unknown">Unknown</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group mt-3">
+            <label class="fw-bold">Additional Lease Terms:</label>
+            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+                title="Enter any other relevant lease details a buyer should know (e.g., renewal options, assignment requirements, landlord approval details).">
+                <i class="fa-solid fa-circle-info"></i>
+            </span>
+            <div class="input-cover">
+                <textarea wire:model.defer="business_lease_additional_terms" class="form-control has-icon"
+                    data-icon="fa-solid fa-note-sticky" rows="1"
+                    style="min-height: 44px; padding: 10px; font-size: 16px; resize: none;"
+                    placeholder="Enter additional lease terms (e.g., renewal options, assignment requirements, landlord approval details)"></textarea>
+            </div>
+        </div>
+    @endif
 @endif

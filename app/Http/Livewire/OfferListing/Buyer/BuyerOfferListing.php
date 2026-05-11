@@ -366,6 +366,11 @@ class BuyerOfferListing extends Component
     public $property_exclusions = '';
     public $closing_cost_responsibility = '';
     public $additional_purchase_terms = '';
+    public $home_sale_contingency = '';
+    public $home_sale_contingency_address = '';
+    public $home_sale_contingency_date = '';
+    public $home_sale_contingency_under_contract = '';
+    public $home_sale_contingency_details = '';
 
     // Property Showings
     public $schedule_showings = false;
@@ -1574,6 +1579,11 @@ class BuyerOfferListing extends Component
             'property_exclusions'             => $this->property_exclusions,
             'closing_cost_responsibility'     => $this->closing_cost_responsibility,
             'additional_purchase_terms'       => $this->additional_purchase_terms,
+            'home_sale_contingency'           => $this->home_sale_contingency,
+            'home_sale_contingency_address'       => $this->home_sale_contingency_address,
+            'home_sale_contingency_date'          => $this->home_sale_contingency_date,
+            'home_sale_contingency_under_contract' => $this->home_sale_contingency_under_contract,
+            'home_sale_contingency_details'       => $this->home_sale_contingency_details,
             'first_name'                      => $this->first_name,
             'last_name'                       => $this->last_name,
             'phone_number'                    => preg_replace('/\D/', '', $this->phone_number),
@@ -2058,6 +2068,11 @@ class BuyerOfferListing extends Component
             $this->property_exclusions = $auction->get->property_exclusions ?? '';
             $this->closing_cost_responsibility = $auction->get->closing_cost_responsibility ?? '';
             $this->additional_purchase_terms = $auction->get->additional_purchase_terms ?? '';
+            $this->home_sale_contingency = $auction->get->home_sale_contingency ?? '';
+            $this->home_sale_contingency_address = $auction->get->home_sale_contingency_address ?? '';
+            $this->home_sale_contingency_date = $auction->get->home_sale_contingency_date ?? '';
+            $this->home_sale_contingency_under_contract = $auction->get->home_sale_contingency_under_contract ?? '';
+            $this->home_sale_contingency_details = $auction->get->home_sale_contingency_details ?? '';
 
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
@@ -2556,6 +2571,11 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('property_exclusions', $this->property_exclusions);
         $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
         $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
+        $auction->saveMeta('home_sale_contingency', $this->home_sale_contingency);
+        $auction->saveMeta('home_sale_contingency_address', $this->home_sale_contingency_address);
+        $auction->saveMeta('home_sale_contingency_date', $this->home_sale_contingency_date);
+        $auction->saveMeta('home_sale_contingency_under_contract', $this->home_sale_contingency_under_contract);
+        $auction->saveMeta('home_sale_contingency_details', $this->home_sale_contingency_details);
 
         // Contact Information
         $auction->saveMeta('first_name', $this->first_name);
