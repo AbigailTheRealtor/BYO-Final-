@@ -1865,19 +1865,39 @@ class TenantOfferListingEdit extends Component
 
     protected function getCitySuggestionsFromDb($input)
     {
+        $variants = \App\Services\CityNameNormalizer::searchVariants($input);
+
         $citiesStartWith = UsCity::with('state')
-            ->where('name', 'ILIKE', $input . '%')
+            ->where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->orWhere('name', 'ILIKE', $v . '%')
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped . '%']);
+                }
+            })
             ->orderBy('name')
             ->limit(10)
             ->get();
-        
+
         $citiesContain = UsCity::with('state')
-            ->where('name', 'ILIKE', '%' . $input . '%')
-            ->where('name', 'NOT ILIKE', $input . '%')
+            ->where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->orWhere('name', 'ILIKE', '%' . $v . '%')
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $stripped . '%']);
+                }
+            })
+            ->where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->where('name', 'NOT ILIKE', $v . '%')
+                      ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$stripped . '%']);
+                }
+            })
             ->orderBy('name')
-            ->limit(10 - $citiesStartWith->count())
+            ->limit(max(0, 10 - $citiesStartWith->count()))
             ->get();
-        
+
         $cities = $citiesStartWith->merge($citiesContain);
 
         return $cities->map(function ($city) {
@@ -1948,8 +1968,15 @@ class TenantOfferListingEdit extends Component
         
         $cityName = $this->extractNameFromLocationString($cityString);
         if ($cityName && $stateAbbr) {
+            $variants = \App\Services\CityNameNormalizer::searchVariants((string) $cityName);
             $cities = UsCity::with(['state', 'county.state'])
-                ->where('name', $cityName)
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', $v)
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                    }
+                })
                 ->whereHas('state', function($q) use ($stateAbbr) {
                     $q->where('abbreviation', strtoupper($stateAbbr));
                 })
@@ -2044,7 +2071,14 @@ class TenantOfferListingEdit extends Component
         if (!empty($cityName) && !empty($stateAbbrev)) {
             $state = \App\Models\UsState::where('abbreviation', 'ILIKE', $stateAbbrev)->first();
             if ($state) {
-                $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+                $variants = \App\Services\CityNameNormalizer::searchVariants($cityName);
+                $city = \App\Models\UsCity::where(function ($q) use ($variants) {
+                        foreach ($variants as $v) {
+                            $stripped = str_replace('.', '', $v);
+                            $q->orWhere('name', 'ILIKE', $v)
+                              ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                        }
+                    })
                     ->where('state_id', $state->id)
                     ->first();
 

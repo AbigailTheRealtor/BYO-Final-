@@ -1504,13 +1504,14 @@ class SellerOfferListing extends Component
             }
         }
         
-        // Normalize city name to handle punctuation variations (e.g. "St." → "St")
-        $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $cityName)));
+        $variants = \App\Services\CityNameNormalizer::searchVariants($cityName);
 
-        $city = \App\Models\UsCity::where(function ($q) use ($cityName, $normalizedCityName) {
-                $q->where('name', 'ILIKE', $cityName)
-                  ->orWhere('name', 'ILIKE', $normalizedCityName)
-                  ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedCityName]);
+        $city = \App\Models\UsCity::where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->orWhere('name', 'ILIKE', $v)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                }
             })
             ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
                 return $query->whereHas('state', function ($q) use ($stateAbbrev) {
@@ -1560,27 +1561,33 @@ class SellerOfferListing extends Component
                 $results[] = $countyName . ', ' . $stateAbbrev;
             }
         } else {
-            $normalizedInput = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', $input)));
+            $variants = \App\Services\CityNameNormalizer::searchVariants($input);
             $citiesStartWith = \App\Models\UsCity::with('state')
-                ->where(function ($q) use ($input, $normalizedInput) {
-                    $q->where('name', 'ILIKE', $input . '%')
-                      ->orWhere('name', 'ILIKE', $normalizedInput . '%')
-                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedInput . '%']);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', $v . '%')
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped . '%']);
+                    }
                 })
                 ->orderBy('name')
                 ->limit(10)
                 ->get();
             
             $citiesContain = \App\Models\UsCity::with('state')
-                ->where(function ($q) use ($input, $normalizedInput) {
-                    $q->where('name', 'ILIKE', '%' . $input . '%')
-                      ->orWhere('name', 'ILIKE', '%' . $normalizedInput . '%')
-                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $normalizedInput . '%']);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', '%' . $v . '%')
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $stripped . '%']);
+                    }
                 })
-                ->where(function ($q) use ($input, $normalizedInput) {
-                    $q->where('name', 'NOT ILIKE', $input . '%')
-                      ->where('name', 'NOT ILIKE', $normalizedInput . '%')
-                      ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$normalizedInput . '%']);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->where('name', 'NOT ILIKE', $v . '%')
+                          ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$stripped . '%']);
+                    }
                 })
                 ->orderBy('name')
                 ->limit(max(0, 10 - $citiesStartWith->count()))
@@ -1647,13 +1654,15 @@ class SellerOfferListing extends Component
         }
 
         $cityName = $this->extractNameFromLocationString($cityString);
-        $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', (string) $cityName)));
         if ($cityName && $stateAbbr) {
+            $variants = \App\Services\CityNameNormalizer::searchVariants((string) $cityName);
             $cities = \App\Models\UsCity::with(['state', 'county.state'])
-                ->where(function ($q) use ($cityName, $normalizedCityName) {
-                    $q->where('name', 'ILIKE', $cityName)
-                      ->orWhere('name', 'ILIKE', $normalizedCityName)
-                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedCityName]);
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', $v)
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                    }
                 })
                 ->whereHas('state', function ($q) use ($stateAbbr) {
                     $q->where('abbreviation', strtoupper($stateAbbr));

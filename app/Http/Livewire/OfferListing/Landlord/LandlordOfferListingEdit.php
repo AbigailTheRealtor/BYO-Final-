@@ -1224,7 +1224,14 @@ class LandlordOfferListingEdit extends Component
             }
         }
 
-        $city = \App\Models\UsCity::where('name', 'ILIKE', $cityName)
+        $variants = \App\Services\CityNameNormalizer::searchVariants($cityName);
+        $city = \App\Models\UsCity::where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->orWhere('name', 'ILIKE', $v)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                }
+            })
             ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
                 return $query->whereHas('state', function ($q) use ($stateAbbrev) {
                     $q->where('abbreviation', strtoupper($stateAbbrev));
@@ -1271,50 +1278,85 @@ class LandlordOfferListingEdit extends Component
 
     protected function getPlaceSuggestions($input, $type = null)
     {
-        $client = new \GuzzleHttp\Client();
+        $results = [];
 
-        $query = [
-            'input' => $input,
-            'components' => 'country:us',
-            'key' => env('GOOGLE_PLACES_API_KEY')
-        ];
-        // Set types based on what we're searching for
         if ($type === 'state') {
-            $query['types'] = 'administrative_area_level_1';
-        } elseif ($type === 'county') {
-            $query['types'] = 'administrative_area_level_2'; // best for counties
-
-        } elseif ($type === 'address') {
-            $query['types'] = 'address';
-        } else {
-            $query['types'] = '(cities)';
-        }
-
-
-        $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-            'query' => $query
-        ]);
-
-        $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
-
-        return array_map(function ($prediction) use ($type) {
-            $description = $prediction['description'];
-
-            // Format differently based on type
-            if ($type === 'state') {
-                // Extract just the state name (remove ", USA")
-                return preg_replace('/,\s*USA$/', '', $description);
-            } elseif ($type === 'county') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } elseif ($type === 'address') {
-                // For counties, we might want to keep county name and state
-                return $description;
-            } else {
-                // For cities, return city and state
-                return $description;
+            $states = \App\Models\UsState::where('name', 'ILIKE', $input . '%')
+                ->orWhere('abbreviation', 'ILIKE', $input . '%')
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+            foreach ($states as $state) {
+                $results[] = $state->name;
             }
-        }, $predictions);
+            return $results;
+        } elseif ($type === 'county') {
+            $counties = \App\Models\UsCounty::where('name', 'ILIKE', $input . '%')
+                ->with('state')
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+            foreach ($counties as $county) {
+                $stateAbbrev = $county->state ? $county->state->abbreviation : '';
+                $countyName = $county->name;
+                if (!str_contains(strtolower($countyName), 'county')) {
+                    $countyName .= ' County';
+                }
+                $results[] = $countyName . ', ' . $stateAbbrev;
+            }
+            return $results;
+        } elseif ($type === 'address') {
+            $client = new \GuzzleHttp\Client();
+            $response = $client->get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+                'query' => [
+                    'input' => $input,
+                    'components' => 'country:us',
+                    'types' => 'address',
+                    'key' => env('GOOGLE_PLACES_API_KEY'),
+                ]
+            ]);
+            $predictions = json_decode($response->getBody(), true)['predictions'] ?? [];
+            return array_map(fn($p) => $p['description'], $predictions);
+        } else {
+            $variants = \App\Services\CityNameNormalizer::searchVariants($input);
+            $citiesStartWith = \App\Models\UsCity::with('state')
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', $v . '%')
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped . '%']);
+                    }
+                })
+                ->orderBy('name')
+                ->limit(10)
+                ->get();
+
+            $citiesContain = \App\Models\UsCity::with('state')
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->orWhere('name', 'ILIKE', '%' . $v . '%')
+                          ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", ['%' . $stripped . '%']);
+                    }
+                })
+                ->where(function ($q) use ($variants) {
+                    foreach ($variants as $v) {
+                        $stripped = str_replace('.', '', $v);
+                        $q->where('name', 'NOT ILIKE', $v . '%')
+                          ->whereRaw("REPLACE(name, '.', '') NOT ILIKE ?", [$stripped . '%']);
+                    }
+                })
+                ->orderBy('name')
+                ->limit(max(0, 10 - $citiesStartWith->count()))
+                ->get();
+
+            $cities = $citiesStartWith->merge($citiesContain);
+            foreach ($cities as $city) {
+                $stateAbbrev = $city->state ? $city->state->abbreviation : '';
+                $results[] = $city->name . ', ' . $stateAbbrev;
+            }
+            return $results;
+        }
     }
 
     public function selectCitySuggestion($suggestion = null)

@@ -45,6 +45,7 @@ class FlCitiesPatchSeeder extends Seeder
             ['name' => 'Palm Harbor',           'county' => 'Pinellas County'],
             ['name' => 'Clearwater Beach',      'county' => 'Pinellas County'],
             ['name' => 'St. Pete Beach',        'county' => 'Pinellas County'],
+            ['name' => 'Tierra Verde',          'county' => 'Pinellas County'],
             ['name' => 'Gulfport',              'county' => 'Pinellas County'],
             ['name' => 'Kenneth City',          'county' => 'Pinellas County'],
             ['name' => 'New Port Richey',       'county' => 'Pasco County'],
