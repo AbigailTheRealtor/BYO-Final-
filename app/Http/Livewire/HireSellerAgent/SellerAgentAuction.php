@@ -1520,6 +1520,7 @@ class SellerAgentAuction extends Component
 
         $this->citySuggestions = [];
         $this->highlightedCityIndex = -1;
+        $this->cityFieldVisible = !empty($this->cities);
         
         $this->autoPopulateZipCodesFromCity($suggestion);
         $this->autoPopulateFromCity($suggestion);
@@ -1806,6 +1807,8 @@ class SellerAgentAuction extends Component
             $this->property_county = $auction->get->property_county ?? '';
             $this->property_state = $auction->get->property_state ?? '';
             $this->property_zip = $auction->get->property_zip ?? '';
+
+            $this->cityFieldVisible = !empty($this->cities);
 
             // Property details
 

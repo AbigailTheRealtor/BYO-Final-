@@ -1187,6 +1187,105 @@ class SellerOfferListingEdit extends Component
             $this->stateSuggestions = [];
         }
     }
+
+    public function updatedPropertyCity($value)
+    {
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+
+    public function searchPropertyCity($value)
+    {
+        $this->property_city = $value;
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+
+    public function selectPropertyCitySuggestion($suggestion = null)
+    {
+        $suggestion = $suggestion ?? ($this->highlightedPropertyCityIndex >= 0 ? ($this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? null) : null) ?? ($this->propertyCitySuggestions[0] ?? null) ?? $this->property_city;
+        $this->property_city = $suggestion;
+        $this->propertyCitySuggestions = [];
+        $this->highlightedPropertyCityIndex = -1;
+
+        $this->autoPopulateFromPropertyCity($suggestion);
+    }
+
+    public function incrementPropertyCityHighlight()
+    {
+        if (count($this->propertyCitySuggestions) > 0) {
+            $this->highlightedPropertyCityIndex = min($this->highlightedPropertyCityIndex + 1, count($this->propertyCitySuggestions) - 1);
+        }
+    }
+
+    public function decrementPropertyCityHighlight()
+    {
+        if ($this->highlightedPropertyCityIndex > 0) {
+            $this->highlightedPropertyCityIndex--;
+        }
+    }
+
+    protected function autoPopulateFromPropertyCity($cityWithState)
+    {
+        $cityName = $this->extractNameFromLocationString($cityWithState);
+        $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
+
+        if (empty($cityName)) return;
+
+        if ($stateAbbrev) {
+            $state = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbrev))->first();
+            if ($state) {
+                $this->property_state = $state->name;
+            }
+        }
+
+        $variants = \App\Services\CityNameNormalizer::searchVariants($cityName);
+
+        $city = \App\Models\UsCity::where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->orWhere('name', 'ILIKE', $v)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                }
+            })
+            ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                return $query->whereHas('state', function ($q) use ($stateAbbrev) {
+                    $q->where('abbreviation', strtoupper($stateAbbrev));
+                });
+            })
+            ->with(['county', 'state'])
+            ->first();
+
+        if ($city && $city->county) {
+            $countyName = $city->county->name;
+            if (!str_contains(strtolower($countyName), 'county')) {
+                $countyName .= ' County';
+            }
+            $stateAbbr = $city->state ? $city->state->abbreviation : '';
+            $this->property_county = $countyName . ', ' . $stateAbbr;
+        }
+    }
+
+    protected function extractStateFromLocationString($locationString)
+    {
+        if (preg_match('/,\s*([A-Z]{2})(?:\s|$|,)/', $locationString, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    protected function extractNameFromLocationString($locationString)
+    {
+        $parts = explode(',', $locationString);
+        return trim($parts[0]);
+    }
+
     public function updatedAddress($value)
     {
         if (strlen($value) > 1) {
@@ -1280,7 +1379,7 @@ class SellerOfferListingEdit extends Component
 
     public function selectCitySuggestion($suggestion = null)
     {
-        $suggestion = $suggestion ?? $this->citySuggestions[$this->highlightedCityIndex] ?? $this->newCity;
+        $suggestion = $suggestion ?? ($this->highlightedCityIndex >= 0 ? ($this->citySuggestions[$this->highlightedCityIndex] ?? null) : null) ?? ($this->citySuggestions[0] ?? null) ?? $this->newCity;
         $this->newCity = $suggestion;
 
         if (!in_array(trim($suggestion), $this->cities)) {
@@ -1289,6 +1388,7 @@ class SellerOfferListingEdit extends Component
 
         $this->citySuggestions = [];
         $this->highlightedCityIndex = -1;
+        $this->cityFieldVisible = !empty($this->cities);
     }
 
     public function selectCountySuggestion($suggestion = null)
@@ -1905,6 +2005,8 @@ class SellerOfferListingEdit extends Component
             $this->cities = is_string($auction->get->cities) ? json_decode($auction->get->cities, true) ?? [] : (array)$auction->get->cities;
 
             $this->counties = is_string($auction->get->counties) ? json_decode($auction->get->counties, true) ?? [] : (array)$auction->get->counties;
+
+            $this->cityFieldVisible = !empty($this->cities);
             // Property details
 
             $this->property_items = is_string($auction->get->property_items) ? json_decode($auction->get->property_items, true) ?? [] : (array)$auction->get->property_items;
