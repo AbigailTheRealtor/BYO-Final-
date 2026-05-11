@@ -1,0 +1,233 @@
+READ-ONLY AUDIT — Offer Listing Public Listing Display Coverage
+
+Context:
+We have completed the Full Service Offer Listing field audits and implementation fixes (#756). The create/edit/draft forms are now substantially complete across:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+The next audit is to verify:
+WHAT ACTUALLY DISPLAYS ON THE FINAL SUBMITTED/PUBLIC LISTING VIEW.
+
+Current concern:
+The Offer Listing public/detail pages may still only display the older Hire Agent-style/shared fields and may NOT display many of the newer Offer Listing-specific fields, negotiated terms, property-type fields, financial fields, lease terms, contingencies, utilities, zoning, business terms, etc.
+
+This is a READ-ONLY audit only.
+
+Do NOT modify code yet.
+Do NOT implement fixes yet.
+Document gaps only.
+
+Scope:
+Full Service Offer Listings only.
+
+Do NOT touch:
+- Hire Agent listings
+- Limited Service
+- AI Offer Comparison
+- Match Score logic
+- bidding logic
+- dashboards
+- routes
+- PDFs
+- bid/counter flows
+- search/index pages unless directly tied to listing detail rendering
+
+Goal:
+Audit the public/final submitted listing display pages and determine:
+
+1. Which submitted fields actually render on the final listing view
+2. Which fields are missing from display
+3. Which sections are incomplete by property type
+4. Which fields are incorrectly hidden
+5. Which fields are duplicated
+6. Which Offer Listing-specific fields never made it to the display layer
+7. Which property-type conditional sections are missing from display
+
+Audit all Offer Listing roles:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Audit all property types:
+- Residential
+- Income Property
+- Commercial
+- Business Opportunity
+- Vacant Land
+
+Audit all major transaction types:
+- Sale
+- Lease
+- Lease-Option
+- Lease-Purchase
+- Seller Financing
+- Exchange/Trade
+- Cryptocurrency/NFT
+- Commercial leasing structures
+
+Important:
+This audit is NOT about:
+- whether fields save
+- whether fields exist in forms
+- whether fields exist in DB/meta
+- whether drafts work
+
+This audit is ONLY about:
+WHAT THE USER SEES ON THE FINAL LISTING PAGE AFTER SUBMIT.
+
+Audit Questions:
+For every role/property type, determine:
+
+A. Which form fields are successfully displayed on the public/final listing page?
+B. Which saved fields are NOT displayed anywhere?
+C. Which sections appear incomplete compared to the create form?
+D. Which property-specific sections are missing?
+E. Which financial/negotiated terms are missing?
+F. Which commercial/business/income/vacant-land sections are missing?
+G. Which newly-added #756 fields are missing from display?
+H. Which sections still appear to be inherited from older Hire Agent/shared display architecture?
+I. Which labels/tooltips/section headers use incorrect terminology?
+J. Which sections should likely be grouped differently for user readability?
+K. Which fields are duplicated or displayed twice?
+L. Which fields are displaying raw stored values instead of user-friendly labels?
+M. Which conditional sections fail to appear even though data exists?
+
+Specifically Audit Newly Added #756 Fields:
+Confirm whether these display on final listing pages:
+- Vacant Land utility availability fields
+- Utility “Other” details
+- Business Opportunity underlying lease terms
+- Business lease expiration
+- Business lease assignability
+- Buyer home sale contingency
+- Buyer contingency details
+- Landlord pet deposit/fee/rent
+- Zoning
+- Number of Units
+
+Audit by Property Type:
+Residential:
+- financing
+- escrow
+- contingencies
+- inspections
+- occupancy
+- HOA/disclosures
+- concessions
+- included/excluded property
+
+Commercial:
+- zoning
+- business use
+- lease economics
+- commercial financial terms
+- commercial compensation structures
+
+Business Opportunity:
+- business financials
+- underlying lease terms
+- assignability
+- renewal options
+- included assets/business terms
+
+Income Property:
+- number of units
+- rents
+- income/expense fields
+- occupancy info
+- lease structures
+
+Vacant Land:
+- zoning
+- utilities
+- development/buildability details
+- land-use related fields
+
+Landlord/Tenant Leasing:
+- deposits
+- pets
+- rent structure
+- lease terms
+- renewal options
+- utilities responsibility
+- move-in terms
+
+Display Architecture Audit:
+Determine:
+- which blade/view files render final listing pages
+- whether Offer Listings are improperly reusing Hire Agent display partials
+- whether sections are hardcoded to older field sets
+- whether EAV/meta fields are loaded but never rendered
+- whether property-type conditional rendering is incomplete
+- whether shared components are missing newer Offer Listing fields
+
+Deliverable:
+Create a written audit report only.
+
+Do NOT implement fixes yet.
+
+Report Format:
+
+1. Executive Summary
+- Overall display completeness by role/property type
+- Biggest display gaps
+- Most incomplete listing types
+- Launch risk assessment for public listing display
+
+2. Display Coverage Matrix
+Table:
+- Role
+- Property Type
+- Sections Successfully Displayed
+- Missing Display Sections
+- Missing Critical Fields
+- Duplicate/Incorrect Sections
+- Priority: Critical / High / Medium / Low
+
+3. Missing Display Fields
+Group by:
+- Residential
+- Commercial
+- Business Opportunity
+- Income Property
+- Vacant Land
+- Lease/Lease-Option
+- Buyer-specific
+- Seller-specific
+- Landlord-specific
+- Tenant-specific
+
+4. Newly Added #756 Fields Audit
+Explicitly list whether each newly added field:
+- displays correctly
+- partially displays
+- never displays
+- displays incorrectly
+- displays raw values
+- fails conditional rendering
+
+5. Display Architecture Findings
+Identify:
+- display blade files
+- shared partials
+- reused Hire Agent structures
+- outdated rendering architecture
+- missing EAV/meta rendering
+- conditional rendering gaps
+
+6. Recommended Fix Strategy
+Separate:
+- Critical before launch
+- Strongly recommended before launch
+- Safe post-launch enhancements
+
+Done Looks Like:
+- No code changes made.
+- Full Offer Listing display architecture audited.
+- Missing display fields documented by role/property type.
+- Newly added #756 fields explicitly audited.
+- Clear understanding of what users actually see after submit.
+- Clear implementation roadmap for final display-layer completion.
