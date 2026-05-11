@@ -317,7 +317,7 @@ $auction_lengths_seller = [
         </label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select how long Agents have to submit bids. The timer defines the active bidding window but does not restrict when you can review or respond to bids.">
+            title="Select how long offers may be submitted during the active bidding period. You may review, accept, counter, or reject offers at any time during or after the bidding period.">
             <i class="fa-solid fa-circle-info"></i> </span>
         <div class="input-cover">
             <select wire:model="auction_time" id="auction_time1" class="form-control has-icon"
@@ -334,7 +334,7 @@ $auction_lengths_seller = [
     {{-- Bidding Period Advisory Notice (shown only when Bidding Period is selected) --}}
     <div class="alert alert-info small py-2 mt-2 mb-3" @if ($auction_type !== 'Bidding Period') style="display: none;" @endif wire:key="bp-notice-seller">
         <i class="fa-solid fa-circle-info me-1"></i>
-        <strong>Bidding Period:</strong> The timer creates a structured window for Agents to submit competitive bids. You may review, accept, counter, or reject bids at any time during or after the bidding period.
+        <strong>Bidding Period:</strong> The timer creates a structured window for offers to be submitted. You may review, accept, counter, or reject offers at any time during or after the bidding period.
     </div>
 
 
