@@ -867,15 +867,29 @@
                             @php
                                 $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent';
                                 $hasFinancialTab = $user_type === 'seller' && in_array($property_type, ['Income', 'Commercial', 'Business']);
-                                $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
-                                $servicesIdx         = $hasFinancialTab ? 4 : 3;
-                                $additionalDetailsIdx = $hasFinancialTab ? 5 : 4;
-                                $brokerCompIdx       = $hasFinancialTab ? 6 : 5;
-                                $taxLegalIdx         = $hasFinancialTab ? 7 : 6;
-                                $docsIdx             = $hasFinancialTab ? 8 : 7;
-                                $photosIdx           = $hasFinancialTab ? 9 : 8;
-                                $sellerInfoIdx       = $hasFinancialTab ? 10 : 9;
-                                $aiIdx               = $hasFinancialTab ? 11 : 10;
+                                if ($user_type === 'seller') {
+                                    // Seller flow: no Services tab
+                                    $servicesIdx         = -1;
+                                    $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
+                                    $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
+                                    $brokerCompIdx       = $hasFinancialTab ? 5 : 4;
+                                    $taxLegalIdx         = $hasFinancialTab ? 6 : 5;
+                                    $docsIdx             = $hasFinancialTab ? 7 : 6;
+                                    $photosIdx           = $hasFinancialTab ? 8 : 7;
+                                    $sellerInfoIdx       = $hasFinancialTab ? 9 : 8;
+                                    $aiIdx               = $hasFinancialTab ? 10 : 9;
+                                } else {
+                                    // Non-seller flows retain the Services tab
+                                    $saleTermsIdx        = 2;
+                                    $servicesIdx         = 3;
+                                    $additionalDetailsIdx = 4;
+                                    $brokerCompIdx       = 5;
+                                    $taxLegalIdx         = 6;
+                                    $docsIdx             = 7;
+                                    $photosIdx           = 8;
+                                    $sellerInfoIdx       = 9;
+                                    $aiIdx               = 10;
+                                }
                             @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -920,19 +934,6 @@
                                             aria-controls="sale-terms"
                                             aria-selected="{{ $activeTab === $saleTermsIdx ? 'true' : 'false' }}">
                                             Sale Terms
-                                        </button>
-                                    </li>
-
-                                    {{-- Services --}}
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === $servicesIdx ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $servicesIdx }})"
-                                            id="services-tab" data-bs-toggle="tab"
-                                            data-bs-target="#services"
-                                            type="button" role="tab"
-                                            aria-controls="services"
-                                            aria-selected="{{ $activeTab === $servicesIdx ? 'true' : 'false' }}">
-                                            Services
                                         </button>
                                     </li>
 
@@ -1227,19 +1228,19 @@
                                     @endif
                                 </div>
 
+                                @if ($user_type !== 'seller')
                                 <!-- Services Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $servicesIdx ? 'show active' : '' }}" id="services"
                                     role="tabpanel" aria-labelledby="services-tab">
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.services')
-                                    @elseif($user_type === 'seller')
-                                        @include('livewire.offer-listing.offer-seller-tabs.commission-based.services')
                                     @elseif($user_type === 'buyer')
                                         @include('livewire.offer-listing.offer-buyer-tabs.commission-based.services')
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.services')
                                     @endif
                                 </div>
+                                @endif
 
                                 <!-- Additional Details Tab -->
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIdx ? 'show active' : '' }}"
@@ -1954,7 +1955,7 @@
                 var $exEl = $('#exchange_item');
                 if (!$exEl.hasClass('select2-hidden-accessible')) {
                     $exEl.select2({
-                        placeholder: "Select acceptable exchange items",
+                        placeholder: "Select",
                         allowClear: true,
                         width: '100%',
                     });
@@ -2408,7 +2409,7 @@
                         var $exEl = $('#exchange_item');
                         if (!$exEl.hasClass('select2-hidden-accessible')) {
                             $exEl.select2({
-                                placeholder: "Select acceptable exchange items",
+                                placeholder: "Select",
                                 allowClear: true,
                                 width: '100%',
                             });

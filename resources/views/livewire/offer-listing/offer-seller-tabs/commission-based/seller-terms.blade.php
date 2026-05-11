@@ -807,6 +807,7 @@
         @endphp
         <div class="input-cover has-select-icon" wire:ignore>
             <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-right-left" data-placeholder="Select" data-selected='@json($eiArr)' multiple>
+                <option value="">Select</option>
                 @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $eiOpt)
                     <option value="{{ $eiOpt }}" {{ in_array($eiOpt, $eiArr) ? 'selected' : '' }}>{{ $eiOpt }}</option>
                 @endforeach

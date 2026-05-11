@@ -7,6 +7,7 @@ $safeKey = function(...$parts) {
 };
 @endphp
 <h3>Broker Compensation & Agency Agreement Terms</h3>
+@if ($user_type !== 'seller')
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">
         <div>
@@ -17,6 +18,7 @@ $safeKey = function(...$parts) {
         </div>
     </div>
 </div>
+@endif
 <!-- Info Alert -->
 
 <!-- Tenant's Broker Commission Structure -->
@@ -42,6 +44,7 @@ $safeKey = function(...$parts) {
         <span class="text-danger small">{{ $message }}</span>
     @enderror
 </div> --}}
+@if ($user_type !== 'seller')
 <!-- Tenant's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -145,6 +148,7 @@ $safeKey = function(...$parts) {
         <span class="error mt-2" id="nominal_error"></span>
     </div>
 @endif
+@endif
 
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -240,6 +244,7 @@ $safeKey = function(...$parts) {
     </div>
 @endif
 
+@if ($user_type !== 'seller')
 <!-- Tenant's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
@@ -504,7 +509,9 @@ $safeKey = function(...$parts) {
         @endif
     </div>
 @endif
+@endif
 
+@if ($user_type !== 'seller')
 <div class="form-group mb-2">
     <label class="fw-bold d-flex align-items-center">
         Interested in Offering a Lease-Option Agreement:
@@ -599,7 +606,9 @@ $safeKey = function(...$parts) {
         </div>
     </div>
 @endif
+@endif
 
+@if ($user_type !== 'seller')
 <!-- Protection Period Timeframe -->
 <div class="form-group mb-4 mt-3">
     <label class="fw-bold d-flex align-items-center">
@@ -841,3 +850,4 @@ $safeKey = function(...$parts) {
         placeholder="Enter any additional terms"></textarea>
 </div>
 
+@endif

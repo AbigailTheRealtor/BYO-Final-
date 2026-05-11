@@ -817,11 +817,12 @@
                                 $hasFinancialTab = in_array($property_type ?? '', ['Income', 'Commercial', 'Business']);
                                 $saleTermsIdx        = $hasFinancialTab ? 3 : 2;
                                 $additionalDetailsIdx = $hasFinancialTab ? 4 : 3;
-                                $taxLegalIdx         = $hasFinancialTab ? 5 : 4;
-                                $docsIdx             = $hasFinancialTab ? 6 : 5;
-                                $photosIdx           = $hasFinancialTab ? 7 : 6;
-                                $sellerInfoIdx       = $hasFinancialTab ? 8 : 7;
-                                $aiIdx               = $hasFinancialTab ? 9 : 8;
+                                $brokerCompIdx       = $hasFinancialTab ? 5 : 4;
+                                $taxLegalIdx         = $hasFinancialTab ? 6 : 5;
+                                $docsIdx             = $hasFinancialTab ? 7 : 6;
+                                $photosIdx           = $hasFinancialTab ? 8 : 7;
+                                $sellerInfoIdx       = $hasFinancialTab ? 9 : 8;
+                                $aiIdx               = $hasFinancialTab ? 10 : 9;
                             @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -880,6 +881,17 @@
                                         aria-controls="additional-details"
                                         aria-selected="{{ $activeTab === $additionalDetailsIdx ? 'true' : 'false' }}">
                                         Description
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === $brokerCompIdx ? 'active' : '' }}"
+                                        id="broker-compensation-agency-agreement-terms-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation-agency-agreement-terms"
+                                        type="button" role="tab"
+                                        wire:click="setActiveTab({{ $brokerCompIdx }})"
+                                        aria-controls="broker-compensation-agency-agreement-terms"
+                                        aria-selected="{{ $activeTab === $brokerCompIdx ? 'true' : 'false' }}">
+                                        Broker Compensation &amp; Agency Agreement Terms
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
@@ -1030,6 +1042,13 @@
 
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.additional-details')
 
+                                </div>
+
+                                <!-- Broker Compensation & Agency Agreement Terms Tab -->
+                                <div class="tab-pane fade {{ $activeTab === $brokerCompIdx ? 'show active' : '' }}"
+                                    id="broker-compensation-agency-agreement-terms" role="tabpanel"
+                                    aria-labelledby="broker-compensation-agency-agreement-terms-tab">
+                                    @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
                                 </div>
 
                                 <!-- Tax, Legal, HOA & Disclosures Tab -->
@@ -1403,7 +1422,7 @@
 
             if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
                 $('#exchange_item').select2({
-                    placeholder: "Select acceptable exchange items",
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
@@ -1947,49 +1966,6 @@
                 return allValid;
             }
 
-            // Add this function to validate services tab
-            function validateServicesTab(tabContent) {
-                if (!tabContent || tabContent.id !== 'services') return true;
-
-                let isValid = true;
-
-                // Check at least one service is selected (excluding "Other" checkbox)
-                const hasServices = tabContent.querySelectorAll(
-                    'input[type="checkbox"][wire\\:model="services"]:checked:not(#other-services-checkbox)'
-                ).length > 0;
-
-                // Check "Other Services" if enabled
-                const otherCheckbox = tabContent.querySelector('#other-services-checkbox');
-                const otherTextarea = tabContent.querySelector('#other-services-input');
-                const hasOtherDescription = otherTextarea && otherTextarea.value.trim() !== '';
-
-                // Clear previous errors
-                const existingErrors = tabContent.querySelectorAll('.service-error');
-                if (existingErrors) {
-                    existingErrors.forEach(el => el.remove());
-                }
-                if (otherTextarea) otherTextarea.classList.remove('is-invalid');
-
-                // Services validation removed - selecting services is now optional
-                // No validation error will be shown if no services are selected
-
-                if (otherCheckbox && otherCheckbox.checked && (!otherTextarea || !hasOtherDescription)) {
-                    isValid = false;
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'service-error error mt-2';
-                    errorDiv.textContent = 'Please describe the additional services you require.';
-
-                    if (otherTextarea) {
-                        otherTextarea.classList.add('is-invalid');
-                        const container = otherTextarea.closest('.mb-3') || otherTextarea.parentNode;
-                        if (container) {
-                            container.appendChild(errorDiv);
-                        }
-                    }
-                }
-
-                return isValid;
-            }
             window._wizardNextHandler = function() {
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 if (!currentTab) return;
@@ -2075,11 +2051,6 @@
                             existingError.remove();
                         }
                     }
-                }
-
-                // ADD THIS: Validate services tab if it's the current tab
-                if (currentTabContent.id === 'services') {
-                    isValid = isValid && validateServicesTab(currentTabContent);
                 }
 
                 if (isValid) {
