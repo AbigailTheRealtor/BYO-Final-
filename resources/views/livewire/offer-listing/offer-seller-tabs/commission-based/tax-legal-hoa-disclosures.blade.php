@@ -462,7 +462,7 @@
             </div>
 
             @if ($association_approval_required === 'Yes')
-                <div class="form-group mt-2 mb-3">
+                <div wire:key="seller-hoa-approval-process-field" class="form-group mt-2 mb-3">
                     <label class="fw-bold">Approval Process Details:
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="Describe the association's approval process, including required documents, interview requirements, and typical timeline.">
@@ -470,12 +470,13 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
+                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="2"
+                            data-icon="fa-solid fa-clipboard-check"
                             placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
                 </div>
 
-                <div class="form-group mt-2 mb-3">
+                <div wire:key="seller-hoa-application-fee-field" class="form-group mt-2 mb-3">
                     <label class="fw-bold">Association Application Fee:
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="Enter the association application fee amount if applicable. This is typically paid by the Buyer.">

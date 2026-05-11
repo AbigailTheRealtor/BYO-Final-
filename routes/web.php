@@ -902,6 +902,7 @@ if (app()->environment('local', 'development')) {
         Auth::loginUsingId($id);
         return redirect('/dashboard');
     })->name('dev.login');
+
 }
 
 // ===========================================================================

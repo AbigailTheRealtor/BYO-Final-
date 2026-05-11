@@ -468,7 +468,7 @@
             </div>
 
             @if ($association_approval_required === 'Yes')
-                <div class="form-group mt-2 mb-3">
+                <div wire:key="landlord-hoa-approval-process-field" class="form-group mt-2 mb-3">
                     <label class="fw-bold">Approval Process Details:
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="Describe the association's approval process, including required documents, interview requirements, and typical timeline.">
@@ -482,7 +482,7 @@
                     </div>
                 </div>
 
-                <div class="form-group mt-2 mb-3">
+                <div wire:key="landlord-hoa-application-fee-field" class="form-group mt-2 mb-3">
                     <label class="fw-bold">Association Application Fee:
                         <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                             title="Enter the association application fee amount if applicable. This is typically paid by the Tenant.">
