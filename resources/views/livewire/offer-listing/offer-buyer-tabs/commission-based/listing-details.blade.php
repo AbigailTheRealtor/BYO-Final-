@@ -144,7 +144,7 @@
         <div class="form-group mb-4">
             <label class="fw-bold mb-3 d-block">Listing Status:
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="Choose the current stage of this listing: Active means the listing is open to Agent bids and inquiries; Pending indicates the client is reviewing options and a decision is pending; Hired Agent confirms that an Agent has been selected.">
+                    title="Choose the current stage of this listing: Active means the listing is open and accepting offers; Pending indicates the listing is under review or in progress; Sold means the listing has reached a completed sale transaction.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span></label>
 
@@ -156,7 +156,7 @@
                         value="Active" autocomplete="off" checked>
                     <label class="btn btn-status btn-outline-success px-3 px-md-4 position-relative"
                         for="status-active" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="The listing is open to Agent bids and inquiries.">
+                        title="This listing is currently active and accepting offers.">
                         <span class="status-icon"><i class="fa-solid fa-circle-check me-2"></i></span>
                         <span class="status-text">Active</span>
 
@@ -172,7 +172,7 @@
                         value="Pending" autocomplete="off">
                     <label class="btn btn-status btn-outline-warning px-3 px-md-4 position-relative"
                         for="status-pending" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="The client is reviewing bids or negotiating with Agents. New bids cannot be submitted.">
+                        title="This listing is currently under review or in progress.">
                         <span class="status-icon"><i class="fa-solid fa-clock me-2"></i></span>
                         <span class="status-text">Pending</span>
                         <span
@@ -187,9 +187,9 @@
                         value="Hired Agent" autocomplete="off">
                     <label class="btn btn-status btn-outline-primary px-3 px-md-4 position-relative"
                         for="status-hired" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="An Agent has been selected and the listing is closed to new bids.">
+                        title="This listing has reached a completed sale transaction and is no longer accepting offers.">
                         <span class="status-icon"><i class="fa-solid fa-user-tie me-2"></i></span>
-                        <span class="status-text">Hired Agent</span>
+                        <span class="status-text">Sold</span>
                         <span
                             class="status-badge position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary">
                             <i class="fa-solid fa-handshake"></i>
@@ -210,8 +210,7 @@
                         </span>
                     </label>
                     <span class="expired_tooltip">
-                        The listing has ended without a hired Agent. You cannot select this status — it is
-                        applied automatically when the listing expires.
+                        This listing is no longer active because the expiration date has passed. You cannot select this status — it is applied automatically when the listing expires.
 
                     </span>
                 </div>
