@@ -431,7 +431,7 @@
                 </div>
             </div>
 
-            <div id="association_fee_frequency_other_wrapper" style="display: {{ $association_fee_frequency === 'Other' ? 'block' : 'none' }}">
+            @if ($association_fee_frequency === 'Other')
                 <div class="form-group mt-2 mb-3">
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
@@ -439,19 +439,20 @@
                             placeholder="Describe the fee frequency">
                     </div>
                 </div>
-            </div>
+            @endif
 
             {{-- Approval Required --}}
-            <div class="form-group mt-3">
+            <div id="association-approval-required-group" class="form-group mt-3">
                 <label class="fw-bold">Association Approval Required for Purchase:
                     <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
                         title="Indicate whether the association must approve the Buyer before the sale can close. Some associations require buyers to submit an application, pay an application fee, and receive formal approval prior to or as a condition of closing.">
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="input-cover">
+                <div class="input-cover" style="display: flex; min-height: 38px;">
                     <select wire:model="association_approval_required" class="form-control has-icon"
-                        data-icon="fa-solid fa-stamp">
+                        data-icon="fa-solid fa-stamp"
+                        style="display: block; width: 100%;">
                         <option value="">Select</option>
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
