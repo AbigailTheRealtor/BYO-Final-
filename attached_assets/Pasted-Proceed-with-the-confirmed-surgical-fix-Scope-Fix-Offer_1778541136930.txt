@@ -1,0 +1,69 @@
+Proceed with the confirmed surgical fix.
+
+Scope:
+Fix Offer Listing draft versioning for Edit components only, plus create modal visibility.
+
+Update ONLY:
+- SellerOfferListingEdit.php
+- BuyerOfferListingEdit.php
+- LandlordOfferListingEdit.php
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/buyer/offer-buyer-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+
+Do NOT touch:
+- Tenant files
+- Hire Agent files
+- Limited Service files
+- routes
+- migrations
+- models
+- validation
+- unrelated controllers
+
+Fix 1 — Edit Component Draft Versioning:
+In SellerOfferListingEdit.php, BuyerOfferListingEdit.php, and LandlordOfferListingEdit.php:
+
+Replace the current overwrite-in-place saveDraft() behavior with append-only versioning matching the corresponding Create component.
+
+Required behavior:
+- Save Draft from edit route creates a NEW draft row.
+- Previous draft row remains unchanged.
+- New row receives draft_version.
+- New row receives parent_draft_id.
+- New row receives draft_payload_hash.
+- If payload hash has not changed, do not create a duplicate version.
+- After creating the new draft row, redirect to the edit route for the new draft ID.
+- Submit behavior must remain unchanged.
+
+Fix 2 — Create Draft Modal Visibility:
+In Seller, Buyer, and Landlord create blades:
+
+Change:
+@if ($hasDrafts && !$listingId)
+
+To:
+@if ($hasDrafts)
+
+Then mirror Tenant behavior:
+- current loaded draft shows green "Current" badge
+- current loaded draft is non-clickable
+- other drafts remain clickable/selectable
+- delete buttons still work
+
+Verification required:
+1. Run git diff --name-only.
+2. Confirm only the six scoped files changed.
+3. Confirm Tenant unchanged.
+4. Confirm Hire Agent unchanged.
+5. Confirm Limited Service untouched.
+6. Test Seller, Buyer, Landlord:
+   - Save draft v1.
+   - Load/edit v1.
+   - Save draft v2.
+   - Load/edit v2.
+   - Save draft v3.
+   - Confirm v1, v2, v3 all remain visible.
+   - Confirm loading each version shows that version’s values.
+   - Save again without changes and confirm no duplicate v4 is created.
+7. Confirm Submit still works after multiple draft versions exist.
