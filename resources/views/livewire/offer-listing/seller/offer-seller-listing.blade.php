@@ -1719,11 +1719,16 @@
             console.log('[DraftLoaded] Event received - syncing select values');
             setTimeout(function() {
                 syncSelectValues();
+                addIconsToInputs(); // Re-add icons after draft data loads
                 rehydrateSelect2MultiFields();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
             }, 100);
+            // Additional delayed call to ensure FontAwesome has fully loaded
+            setTimeout(function() {
+                addIconsToInputs();
+            }, 500);
         });
 
         function rehydrateSelect2MultiFields() {
@@ -2848,7 +2853,8 @@
 
 
         Livewire.hook('message.processed', () => {
-            setTimeout(function() { addIconsToInputs(); }, 0);
+            addIconsToInputs(); // synchronous — runs immediately after morphdom, like Buyer
+            setTimeout(function() { addIconsToInputs(); }, 0); // deferred safety net
 
             // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;
