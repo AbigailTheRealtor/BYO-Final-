@@ -1,5 +1,22 @@
 @php
-    $viewPropertyPhoto    = @$auction->get->property_photos   ?? null;
+    // property_photos is stored as a JSON-encoded array of filenames.
+    // The EAV accessor may return a string (raw JSON) or an already-decoded array.
+    // Normalize to a plain PHP array in every case.
+    $rawPropertyPhotos = @$auction->get->property_photos ?? null;
+    if (is_string($rawPropertyPhotos) && !empty($rawPropertyPhotos)) {
+        $decoded = json_decode($rawPropertyPhotos, true);
+        $viewPropertyPhotos = is_array($decoded) ? $decoded : [$rawPropertyPhotos];
+    } elseif (is_array($rawPropertyPhotos)) {
+        $viewPropertyPhotos = $rawPropertyPhotos;
+    } else {
+        $viewPropertyPhotos = [];
+    }
+    // Remove any blank entries
+    $viewPropertyPhotos = array_values(array_filter($viewPropertyPhotos, fn($p) => !empty(trim((string) $p))));
+
+    // Keep singular alias for legacy $viewPropertyPhoto references (unused in this file now)
+    $viewPropertyPhoto   = !empty($viewPropertyPhotos) ? $viewPropertyPhotos[0] : null;
+
     $viewVideoTourUrl     = @$auction->get->video_tour_url    ?? null;
     $viewVirtualTourUrl   = @$auction->get->virtual_tour_url  ?? null;
     $viewListingDocument  = @$auction->get->listing_documents ?? null;
@@ -19,7 +36,7 @@
     $viewVideoTourUrl   = $safeUrl($viewVideoTourUrl);
     $viewVirtualTourUrl = $safeUrl($viewVirtualTourUrl);
 
-    $hasPhotosToursDocs = !empty($viewPropertyPhoto)
+    $hasPhotosToursDocs = !empty($viewPropertyPhotos)
         || !empty($viewVideoTourUrl)
         || !empty($viewVirtualTourUrl)
         || !empty($viewListingDocument);
@@ -51,14 +68,21 @@
 
 <div class="row py-2 px-2">
 
-    {{-- Property Photo --}}
-    @if (!empty($viewPropertyPhoto))
+    {{-- Property Photos (stored as JSON array of filenames) --}}
+    @if (!empty($viewPropertyPhotos))
     <div class="col-12 mb-3">
-        <p class="fw-bold mb-1"><i class="fa-solid fa-images me-1 text-secondary"></i> Property Photo</p>
-        <img src="{{ asset('storage/auction/images/' . $viewPropertyPhoto) }}"
-             alt="Property Photo"
-             class="img-fluid rounded"
-             style="max-height: 360px; object-fit: cover;" />
+        <p class="fw-bold mb-1">
+            <i class="fa-solid fa-images me-1 text-secondary"></i>
+            Property Photo{{ count($viewPropertyPhotos) > 1 ? 's (' . count($viewPropertyPhotos) . ')' : '' }}
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach ($viewPropertyPhotos as $photoFilename)
+                <img src="{{ asset('storage/auction/images/' . $photoFilename) }}"
+                     alt="Property Photo"
+                     class="img-fluid rounded"
+                     style="max-height: 260px; max-width: 100%; object-fit: cover;" />
+            @endforeach
+        </div>
     </div>
     @endif
 
