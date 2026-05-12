@@ -226,7 +226,7 @@
     <div class="input-cover">
         <!-- Dropdown for Predefined Services -->
         <select id="credit_scroe_rating" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-credit-card input-icon2" wire:model="credit_scroe_rating" multiple>
+            data-icon="fa-solid fa-credit-card input-icon2" data-placeholder="Select" wire:model="credit_scroe_rating" multiple>
             <option value=""></option>
             @foreach ($credit_score as $score)
                 <option value="{{ $score['name'] }}">{{ $score['name'] }}</option>

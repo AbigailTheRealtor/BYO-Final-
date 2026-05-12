@@ -603,7 +603,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="appliances" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-plug input-icon2" multiple>
+            data-icon="fa-solid fa-plug input-icon2" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($appliances as $row_pt)
                 <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -720,7 +720,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="garage_parking_spaces_option_landlord"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -789,7 +789,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="view_preference"
-            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
+            class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
@@ -845,7 +845,7 @@
     <div class="input-cover" wire:ignore>
         <select id="non_negotiable_amenities"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
-            @if (!$property_type) disabled @endif multiple>
+            data-placeholder="Select" @if (!$property_type) disabled @endif multiple>
             <option value=""></option>
             @if ($property_type === 'Residential Property')
                 @foreach ($non_negotialble_terms_landlord as $item)

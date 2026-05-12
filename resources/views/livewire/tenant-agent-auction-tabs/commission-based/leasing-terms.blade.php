@@ -44,7 +44,7 @@
     @endphp
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2" multiple required>
+            data-icon="fa-solid fa-file-pen input-icon2" data-placeholder="Select" multiple required>
             <option value=""></option>
             @foreach ($lease_for_res as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseFor) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
@@ -72,7 +72,7 @@
     @endphp
     <div class="input-cover" wire:ignore>
         <select class="lease_for form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-pen input-icon2" multiple required>
+            data-icon="fa-solid fa-file-pen input-icon2" data-placeholder="Select" multiple required>
             <option value=""></option>
             @foreach ($lease_for_com as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedLeaseForCom) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
@@ -119,7 +119,7 @@
     </span>
     <div class="input-cover">
   <select id="leasing_spaces_tenant" class="form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-building input-icon2" multiple required>
+            data-icon="fa-solid fa-building input-icon2" data-placeholder="Select" multiple required>
             <option value=""></option>
             @foreach ($acceptable_leasing_space as $row_pt)
                 <option value="{{ $row_pt['name'] }}"

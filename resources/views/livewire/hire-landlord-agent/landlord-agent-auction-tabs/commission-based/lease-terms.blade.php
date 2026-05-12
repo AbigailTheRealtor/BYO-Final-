@@ -883,7 +883,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="tenant_pays" class="tenant_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user input-icon2" multiple>
+                data-icon="fa-solid fa-user input-icon2" data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($tenantPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -921,7 +921,7 @@
         </span>
         <div class="input-cover" wire:ignore>
             <select id="owner_pays" class="owner_pays form-control has-icon select2-multiple"
-                data-icon="fa-solid fa-user-tie input-icon2" multiple>
+                data-icon="fa-solid fa-user-tie input-icon2" data-placeholder="Select" multiple>
                 <option value=""></option>
                 @foreach ($ownerPays as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
@@ -967,7 +967,7 @@
 
     <div class="input-cover" wire:ignore>
         <select id="terms_of_lease" class="terms_of_lease form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-file-signature input-icon2" multiple>
+            data-icon="fa-solid fa-file-signature input-icon2" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($lease_types as $type)
             <option value="{{ $type['name'] }}">{{ $type['name'] }}</option>
@@ -1055,7 +1055,7 @@
     </span>
     <div class="input-cover" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-calendar-days input-icon2" multiple>
+            data-icon="fa-solid fa-calendar-days input-icon2" data-placeholder="Select" multiple>
             <option value=""></option>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
