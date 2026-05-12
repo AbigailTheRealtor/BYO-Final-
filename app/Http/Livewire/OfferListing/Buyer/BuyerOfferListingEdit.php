@@ -1012,6 +1012,147 @@ class BuyerOfferListingEdit extends Component
 
         $this->citySuggestions = [];
         $this->highlightedCityIndex = -1;
+        $this->autoPopulateFromCity($suggestion);
+    }
+
+    public function updatedPropertyCity($value)
+    {
+        if (strlen($value) > 2) {
+            $this->propertyCitySuggestions = $this->getPlaceSuggestions($value, 'city');
+        } else {
+            $this->propertyCitySuggestions = [];
+        }
+    }
+
+    public function selectPropertyCitySuggestion($suggestion = null)
+    {
+        $suggestion = $suggestion ?? ($this->highlightedPropertyCityIndex >= 0 ? ($this->propertyCitySuggestions[$this->highlightedPropertyCityIndex] ?? null) : null) ?? $this->property_city;
+        $this->property_city = $suggestion;
+        $this->propertyCitySuggestions = [];
+        $this->highlightedPropertyCityIndex = -1;
+        $this->autoPopulateFromPropertyCity($suggestion);
+    }
+
+    private function autoPopulateFromCity($cityString)
+    {
+        $stateAbbr = $this->extractStateFromLocationString($cityString);
+
+        if ($stateAbbr && empty($this->state)) {
+            $stateRecord = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbr))->first();
+            if ($stateRecord) {
+                $this->state = $stateRecord->name;
+            }
+        }
+
+        $cityName = $this->extractNameFromLocationString($cityString);
+        $normalizedCityName = trim(preg_replace('/\s+/', ' ', preg_replace('/\.+/', '', (string) $cityName)));
+        if ($cityName && $stateAbbr) {
+            $cities = \App\Models\UsCity::with(['state', 'county.state'])
+                ->where(function ($q) use ($cityName, $normalizedCityName) {
+                    $q->where('name', 'ILIKE', $cityName)
+                      ->orWhere('name', 'ILIKE', $normalizedCityName)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$normalizedCityName]);
+                })
+                ->whereHas('state', function ($q) use ($stateAbbr) {
+                    $q->where('abbreviation', strtoupper($stateAbbr));
+                })
+                ->get();
+
+            foreach ($cities as $city) {
+                if ($city->county) {
+                    $countyString = $city->county->name . ', ' . ($city->county->state ? $city->county->state->abbreviation : strtoupper($stateAbbr));
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
+
+            if (empty($this->counties)) {
+                $zipCode = \App\Models\UsZipCode::where(function ($q) use ($cityName, $normalizedCityName) {
+                    $q->where('city', 'ILIKE', $cityName)
+                      ->orWhere('city', 'ILIKE', $normalizedCityName)
+                      ->orWhereRaw("REPLACE(city, '.', '') ILIKE ?", [$normalizedCityName]);
+                })
+                ->where('state_abbrev', strtoupper($stateAbbr))
+                ->first();
+                if ($zipCode && !empty($zipCode->county)) {
+                    $countyString = $zipCode->county . ', ' . strtoupper($stateAbbr);
+                    if (!$this->countyExistsIgnoreCase($countyString)) {
+                        $this->counties[] = $countyString;
+                    }
+                }
+            }
+        }
+    }
+
+    protected function autoPopulateFromPropertyCity($cityWithState)
+    {
+        $cityName = $this->extractNameFromLocationString($cityWithState);
+        $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
+
+        if (empty($cityName)) return;
+
+        if ($stateAbbrev) {
+            $state = \App\Models\UsState::where('abbreviation', strtoupper($stateAbbrev))->first();
+            if ($state) {
+                $this->property_state = $state->name;
+            }
+        }
+
+        $variants = \App\Services\CityNameNormalizer::searchVariants($cityName);
+        $city = \App\Models\UsCity::where(function ($q) use ($variants) {
+                foreach ($variants as $v) {
+                    $stripped = str_replace('.', '', $v);
+                    $q->orWhere('name', 'ILIKE', $v)
+                      ->orWhereRaw("REPLACE(name, '.', '') ILIKE ?", [$stripped]);
+                }
+            })
+            ->when($stateAbbrev, function ($query) use ($stateAbbrev) {
+                return $query->whereHas('state', function ($q) use ($stateAbbrev) {
+                    $q->where('abbreviation', strtoupper($stateAbbrev));
+                });
+            })
+            ->with(['county', 'state'])
+            ->first();
+
+        if ($city && $city->county) {
+            $countyName = $city->county->name;
+            if (!str_contains(strtolower($countyName), 'county')) {
+                $countyName .= ' County';
+            }
+            $stateAbbr = $city->state ? $city->state->abbreviation : '';
+            $this->property_county = $countyName . ', ' . $stateAbbr;
+        }
+    }
+
+    private function countyExistsIgnoreCase($countyString)
+    {
+        $normalized = strtolower(trim($countyString));
+        foreach ($this->counties as $existing) {
+            if (strtolower(trim($existing)) === $normalized) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function extractStateFromLocationString($locationString)
+    {
+        if (empty($locationString)) return null;
+        if (preg_match('/,\s*([A-Z]{2})(?:\s|$|,)/', $locationString, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
+    private function extractNameFromLocationString($locationString)
+    {
+        if (empty($locationString)) return null;
+        $parts = explode(',', $locationString);
+        if (count($parts) >= 1) {
+            return trim($parts[0]);
+        }
+        return null;
     }
 
     public function selectCountySuggestion($suggestion = null)
