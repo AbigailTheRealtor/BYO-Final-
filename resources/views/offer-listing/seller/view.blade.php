@@ -54,8 +54,20 @@
     <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
         <div>
             <h2 class="mb-1 fw-bold">{{ $auction->title ?? ($meta['address'] ?? 'Seller Offer Listing') }}</h2>
-            @if(!empty($meta['address']))
-                <p class="text-muted mb-0"><i class="fa-solid fa-location-dot me-1"></i>{{ $meta['address'] }}</p>
+            @php
+                $addrParts = array_filter([
+                    $meta['address'] ?? null,
+                    !empty($meta['unit']) ? 'Unit ' . $meta['unit'] : null,
+                    $meta['property_city'] ?? null,
+                ]);
+                $addrState = trim($meta['property_state'] ?? '');
+                $addrZip   = trim(($meta['property_zip'] ?? '') ?: ($meta['zip_code'] ?? ''));
+                $stateZip  = trim($addrState . ($addrState && $addrZip ? ' ' : '') . $addrZip);
+                if ($stateZip) $addrParts[] = $stateZip;
+                $fullAddress = implode(', ', array_filter($addrParts));
+            @endphp
+            @if($fullAddress)
+                <p class="text-muted mb-0"><i class="fa-solid fa-location-dot me-1"></i>{{ $fullAddress }}</p>
             @endif
         </div>
         @if(auth()->id() == $auction->user_id)
@@ -67,6 +79,32 @@
         </div>
         @endif
     </div>
+
+    {{-- =====================================================================
+         INTENTIONAL FIELD EXCLUSIONS (not rendered on this view page):
+         - listing_ai_faq        : AI-generated FAQ, internal content only.
+         - photo                 : Livewire temp upload, not a display meta value.
+         - video_link            : Agent intro video (seller-info tab), not property media.
+         - current_status        : Internal workflow field, not a user-facing detail.
+         - state                 : Livewire autocomplete holder; saved as property_state.
+         - newCity               : Livewire holder; saved as property_city.
+         - newPropertyPhotos     : Livewire file-upload holder; rendered via property_photos.
+         - openHouseCount        : Event counter, not persisted listing data.
+         - photo_enhancements    : Photo-editing preference flag, no display value.
+         - other_preferences     : Internal catch-all, no standard display key.
+         - other_services_enabled / other_services.N : Rendered via the services array.
+         - prepayment_penalty    : Yes/No toggle; amount rendered as prepayment_penalty_amount.
+         - baths_unit / beds_unit / expected_rent / number_occupied : Sub-fields of
+           unit_type_configurations JSON; summary rendered via unit_number / unit_buildings.
+         - pool_type.community / pool_type.private : Rendered via $arr('pool_type') below.
+         - videoTourUrl / virtualTourUrl : Aliases; rendered as video_tour_url / virtual_tour_url.
+         - other_building_features, other_current_use, other_current_adjacent_use,
+           other_easements, other_electrical_service, other_fences, other_licenses,
+           other_non_negotiable_amenities, other_parking_space_wrapper, other_road_frontage,
+           other_road_surface_type, other_sale_includes, other_vegetation,
+           other_carport_needed, other_garage_needed : "Other" companion inputs for
+           land/commercial-specific multi-selects not rendered in this layout.
+         ===================================================================== --}}
 
     {{-- Photos & Tours --}}
     @php
@@ -80,30 +118,73 @@
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
         <div class="card-body">
-            @if($str('video_tour_url'))
-                <p><span class="field-label">Video Tour URL:</span>
-                    <a href="{{ $str('video_tour_url') }}" target="_blank" rel="noopener">{{ $str('video_tour_url') }}</a>
+            @php
+                $videoUrl = $str('video_tour_url');
+                $videoEmbedUrl = null;
+                if ($videoUrl) {
+                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_\-]{11})/', $videoUrl, $vm)) {
+                        $videoEmbedUrl = 'https://www.youtube.com/embed/' . $vm[1];
+                    } elseif (preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vm)) {
+                        $videoEmbedUrl = 'https://player.vimeo.com/video/' . $vm[1];
+                    }
+                }
+                $virtualUrl = $str('virtual_tour_url');
+                $virtualEmbedUrl = null;
+                if ($virtualUrl) {
+                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_\-]{11})/', $virtualUrl, $vm)) {
+                        $virtualEmbedUrl = 'https://www.youtube.com/embed/' . $vm[1];
+                    } elseif (preg_match('/vimeo\.com\/(\d+)/', $virtualUrl, $vm)) {
+                        $virtualEmbedUrl = 'https://player.vimeo.com/video/' . $vm[1];
+                    }
+                }
+            @endphp
+            @if($videoUrl)
+                @if($videoEmbedUrl)
+                    <div class="ratio ratio-16x9 mb-2" style="max-width:560px;">
+                        <iframe src="{{ $videoEmbedUrl }}" title="Video Tour"
+                                allowfullscreen
+                                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                        </iframe>
+                    </div>
+                @endif
+                <p class="mb-3"><span class="field-label">Video Tour:</span>
+                    <a href="{{ $videoUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $videoUrl }}</a>
                 </p>
             @endif
-            @if($str('virtual_tour_url'))
-                <p><span class="field-label">Virtual Tour URL:</span>
-                    <a href="{{ $str('virtual_tour_url') }}" target="_blank" rel="noopener">{{ $str('virtual_tour_url') }}</a>
+            @if($virtualUrl)
+                @if($virtualEmbedUrl)
+                    <div class="ratio ratio-16x9 mb-2" style="max-width:560px;">
+                        <iframe src="{{ $virtualEmbedUrl }}" title="Virtual Tour"
+                                allowfullscreen
+                                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
+                        </iframe>
+                    </div>
+                @endif
+                <p class="mb-3"><span class="field-label">3D / Virtual Tour:</span>
+                    <a href="{{ $virtualUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $virtualUrl }}</a>
                 </p>
             @endif
 
             @if(count($propertyPhotos))
+            @php $galleryIdx = -1; @endphp
             <div class="d-flex flex-wrap gap-2 mt-3">
-                @foreach($propertyPhotos as $idx => $photo)
+                @foreach($propertyPhotos as $photo)
                 @php
                     $filename = is_array($photo) ? ($photo['filename'] ?? '') : $photo;
                     $isCover  = is_array($photo) && !empty($photo['is_cover']);
+                    if ($filename) $galleryIdx++;
                 @endphp
                 @if($filename)
                 <div class="text-center">
-                    <img src="{{ asset('storage/auction/images/' . $filename) }}"
-                         alt="Property photo {{ $idx + 1 }}"
-                         class="photo-thumb"
-                         onerror="this.style.display='none'">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#photoModal"
+                       data-src="{{ asset('storage/auction/images/' . $filename) }}"
+                       data-index="{{ $galleryIdx }}"
+                       style="display:block;">
+                        <img src="{{ asset('storage/auction/images/' . $filename) }}"
+                             alt="Property photo {{ $galleryIdx + 1 }}"
+                             class="photo-thumb"
+                             onerror="this.style.display='none'">
+                    </a>
                     @if($isCover)
                         <div><span class="cover-badge">Cover</span></div>
                     @endif
@@ -114,6 +195,54 @@
             @endif
         </div>
     </div>
+
+    {{-- Photo lightbox modal --}}
+    @if(count($propertyPhotos))
+    <div class="modal fade" id="photoModal" tabindex="-1" aria-label="Property photo viewer" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-dark border-0">
+                <div class="modal-header border-0 pb-0">
+                    <span class="text-white small" id="photoModalCounter"></span>
+                    <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-2">
+                    <img id="photoModalImg" src="" alt="Property photo"
+                         style="max-width:100%;max-height:70vh;object-fit:contain;border-radius:6px;">
+                </div>
+                <div class="modal-footer border-0 justify-content-center gap-3 pt-0">
+                    <button type="button" class="btn btn-outline-light btn-sm px-4" id="photoModalPrev">&#8249; Prev</button>
+                    <button type="button" class="btn btn-outline-light btn-sm px-4" id="photoModalNext">Next &#8250;</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function () {
+        var gallery = Array.from(document.querySelectorAll('[data-bs-target="#photoModal"]'))
+                           .map(function (el) { return el.getAttribute('data-src'); });
+        var currentIndex = 0;
+
+        function showPhoto(idx) {
+            if (idx < 0) idx = gallery.length - 1;
+            if (idx >= gallery.length) idx = 0;
+            currentIndex = idx;
+            document.getElementById('photoModalImg').src = gallery[idx];
+            document.getElementById('photoModalCounter').textContent = (idx + 1) + ' / ' + gallery.length;
+        }
+
+        document.addEventListener('click', function (e) {
+            var trigger = e.target.closest('[data-bs-target="#photoModal"]');
+            if (trigger) {
+                e.preventDefault();
+                showPhoto(parseInt(trigger.getAttribute('data-index') || '0', 10));
+            }
+        });
+
+        document.getElementById('photoModalPrev').addEventListener('click', function () { showPhoto(currentIndex - 1); });
+        document.getElementById('photoModalNext').addEventListener('click', function () { showPhoto(currentIndex + 1); });
+    })();
+    </script>
+    @endif
     @endif
 
     {{-- Listing Details --}}
@@ -168,7 +297,7 @@
             @if(count($pItems))
             <hr>
             <div class="mb-1"><span class="field-label">Property Items / Amenities</span></div>
-            <p class="field-value">{{ implode(', ', $pItems) }}</p>
+            <p class="field-value">{{ implode(', ', $pItems) }}@if($str('other_property_items')) – {{ $str('other_property_items') }}@endif</p>
             @endif
 
             @php $appliances = $arr('appliances'); @endphp
@@ -182,14 +311,14 @@
             {{-- MLS Fields --}}
             @php
                 $mlsFields = [
-                    ['Roof Type', implode(', ', $arr('roof_type'))],
-                    ['Exterior Construction', implode(', ', $arr('exterior_construction'))],
-                    ['Foundation', implode(', ', $arr('foundation'))],
-                    ['Heating & Fuel', implode(', ', $arr('heating_and_fuel'))],
-                    ['Air Conditioning', implode(', ', $arr('air_conditioning'))],
-                    ['Water', implode(', ', $arr('water'))],
-                    ['Sewer', implode(', ', $arr('sewer'))],
-                    ['Utilities', implode(', ', $arr('utilities'))],
+                    ['Roof Type',             implode(', ', $arr('roof_type'))             . ($str('other_roof_type')             ? ' – ' . $str('other_roof_type')             : '')],
+                    ['Exterior Construction', implode(', ', $arr('exterior_construction'))  . ($str('other_exterior_construction')  ? ' – ' . $str('other_exterior_construction')  : '')],
+                    ['Foundation',            implode(', ', $arr('foundation'))             . ($str('other_foundation')             ? ' – ' . $str('other_foundation')             : '')],
+                    ['Heating & Fuel',        implode(', ', $arr('heating_and_fuel'))       . ($str('other_heating_and_fuel')       ? ' – ' . $str('other_heating_and_fuel')       : '')],
+                    ['Air Conditioning',      implode(', ', $arr('air_conditioning'))       . ($str('other_air_conditioning')       ? ' – ' . $str('other_air_conditioning')       : '')],
+                    ['Water',                 implode(', ', $arr('water'))                  . ($str('other_water')                  ? ' – ' . $str('other_water')                  : '')],
+                    ['Sewer',                 implode(', ', $arr('sewer'))                  . ($str('other_sewer')                  ? ' – ' . $str('other_sewer')                  : '')],
+                    ['Utilities',             implode(', ', $arr('utilities'))              . ($str('other_utilities')              ? ' – ' . $str('other_utilities')              : '')],
                 ];
                 $mlsFields = array_filter($mlsFields, fn($f) => !empty($f[1]));
             @endphp
@@ -201,8 +330,155 @@
                 @endforeach
             </div>
             @endif
+
+            {{-- Extended Property Attributes --}}
+            @php
+                $extPropFields = array_filter([
+                    ['Sq Ft Heated Source',  $str('sqft_heated_source')],
+                    ['Buildable',            $str('buildable')],
+                    ['Ceiling Height',       $str('ceiling_height')],
+                    ['Lot Dimensions',       $str('lot_dimensions')],
+                    ['Front Footage',        $str('front_footage') ? $str('front_footage') . ' ft' : null],
+                    ['Total Parcel Count',   $str('total_parcel_count')],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($extPropFields))
+            <hr>
+            <div class="row">
+                @foreach($extPropFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Garage & Parking --}}
+            @php
+                $garageFields = array_filter([
+                    ['Garage',                  $str('garage_needed')],
+                    ['Garage Spaces',           $str('garage_spaces') ?: $str('other_garage_needed')],
+                    ['Carport',                 $str('carport_needed')],
+                    ['Carport Spaces',          $str('carport_spaces') ?: $str('other_carport_needed')],
+                    ['Garage/Parking Features', $str('garage_parking_spaces') ?: $str('garage_parking_spaces_option')],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($garageFields))
+            <hr>
+            <div class="row">
+                @foreach($garageFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Pool Type sub-fields (pool_type.community / pool_type.private) --}}
+            @php
+                $poolTypeRaw  = $arr('pool_type');
+                $poolTypeList = [];
+                if (!empty($poolTypeRaw['community'])) $poolTypeList[] = 'Community';
+                if (!empty($poolTypeRaw['private']))   $poolTypeList[] = 'Private';
+            @endphp
+            @if(count($poolTypeList))
+            <div class="mb-1 mt-2"><span class="field-label">Pool Type</span></div>
+            <p class="field-value">{{ implode(', ', $poolTypeList) }}</p>
+            @endif
+
+            {{-- Income / Multi-Unit Configuration --}}
+            @php
+                $unitFields = array_filter([
+                    ['Total Number of Units',     $str('unit_number')],
+                    ['Total Number of Buildings', $str('unit_buildings')],
+                    ['Unit Type',                 $str('number_of_unit') . ($str('number_of_unit_other') ? ' – ' . $str('number_of_unit_other') : '')],
+                    ['Number of Unit Types',      $str('number_of_units')],
+                    ['Unit Type Description',     $str('unit_type_description')],
+                    ['Value Determination',       $str('value_determination')],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($unitFields))
+            <hr>
+            <div class="row">
+                @foreach($unitFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Business Info --}}
+            @php
+                $bizFields = array_filter([
+                    ['Business Name',                    $str('business_name')],
+                    ['Business Type',                    $str('business_type') . ($str('other_business_type') ? ' – ' . $str('other_business_type') : '')],
+                    ['Year Established',                 $str('year_established')],
+                    ['Custom Enhancements / Value-Adds', $str('custom_enhancement')],
+                    ['Included Assets (Other)',          $str('assets_other')],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($bizFields))
+            <hr>
+            <div class="row">
+                @foreach($bizFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Site Utilities (land/commercial) --}}
+            @php
+                $siteUtilFields = array_filter([
+                    ['Water Available to Site',      $str('water_available')      . ($str('water_available_other')      ? ' – ' . $str('water_available_other')      : '')],
+                    ['Sewer Available to Site',      $str('sewer_available')      . ($str('sewer_available_other')      ? ' – ' . $str('sewer_available_other')      : '')],
+                    ['Electric Available to Site',   $str('electric_available')   . ($str('electric_available_other')   ? ' – ' . $str('electric_available_other')   : '')],
+                    ['Gas Available to Site',        $str('gas_available')        . ($str('gas_available_other')        ? ' – ' . $str('gas_available_other')        : '')],
+                    ['Telecom / Internet Available', $str('telecom_available')    . ($str('telecom_available_other')    ? ' – ' . $str('telecom_available_other')    : '')],
+                    ['Number of Wells',              $str('number_of_wells')],
+                    ['Number of Septics',            $str('number_of_septics')],
+                    ['Number of Electric Meters',    $str('number_electric_meters')],
+                    ['Number of Water Meters',       $str('number_water_meters')],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($siteUtilFields))
+            <hr>
+            <div class="row">
+                @foreach($siteUtilFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
+            {{-- Pet & Leasing Policy --}}
+            @php
+                $petLeaseFields = array_filter([
+                    ['Age-Restricted Community (55+)', $str('leasing_55_plus')],
+                    ['Furnishings Required',           $str('tenant_require')],
+                    ['Pets Allowed',                  $str('pets')],
+                    ['Number of Pets Allowed',         $str('number_of_pets')],
+                    ['Acceptable Pet Types',           $str('type_of_pets')],
+                    ['Breed of Pets',                  $str('breed_of_pets')],
+                    ['Max Pet Weight (lbs)',            $str('weight_of_pets')],
+                    ['Breed Restrictions',             $str('breed_restrictions')],
+                    ['Additional Lease Restrictions',  $str('additional_lease_restrictions')],
+                ], fn($f) => !empty($f[1]));
+            @endphp
+            @if(count($petLeaseFields))
+            <hr>
+            <div class="row">
+                @foreach($petLeaseFields as $f)
+                <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
+                @endforeach
+            </div>
+            @endif
+
         </div>
     </div>
+
+    {{-- Property Description --}}
+    @if($val('additional_details'))
+    <div class="card section-card">
+        <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Property Description</div>
+        <div class="card-body">
+            <p class="field-value mb-0">{!! nl2br(e($val('additional_details'))) !!}</p>
+        </div>
+    </div>
+    @endif
 
     {{-- Sale Terms --}}
     <div class="card section-card">
@@ -211,26 +487,230 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Sale Provision', $str('sale_provision') . ($str('sale_provision_other') ? ' – ' . $str('sale_provision_other') : '')) !!}
+                    @if($str('sale_provision_assignment'))
+                        {!! $row('Seller Under Contract for Assignment', $str('sale_provision_assignment')) !!}
+                        {!! $row('Assignment Fee Type', $str('assignment_fee_type') === '$' ? 'Flat Fee' : ($str('assignment_fee_type') === '%' ? 'Percentage' : $str('assignment_fee_type'))) !!}
+                        {!! $row('Assignment Fee Amount', $str('assignment_fee_type') === '$' ? $fmtMoney($str('assignment_fee_amount')) : ($str('assignment_fee_type') === '%' ? $fmtPercent($str('assignment_fee_amount')) : $str('assignment_fee_amount'))) !!}
+                    @endif
+                    {!! $row('Target Closing Timeframe', $str('target_closing_date')) !!}
+                    {!! $row('Occupant Type', $str('occupant_status')) !!}
+                    {!! $row('Occupied Until', $str('occupant_tenant')) !!}
+                    {!! $row('Desired Sale Price', $fmtMoney($str('maximum_budget'))) !!}
                     {!! $row('Purchase Price', $fmtMoney($str('purchase_price'))) !!}
                     {!! $row('Starting Price', $fmtMoney($str('starting_price'))) !!}
                     {!! $row('Reserve Price', $fmtMoney($str('reserve_price'))) !!}
                     {!! $row('Buy Now Price', $fmtMoney($str('buy_now_price'))) !!}
-                    {!! $row('Maximum Budget', $fmtMoney($str('maximum_budget'))) !!}
                 </div>
                 <div class="col-md-6">
                     @php $ofFinancing = $arr('offered_financing'); @endphp
                     @if(count($ofFinancing)) {!! $row('Offered Financing', implode(', ', $ofFinancing)) !!} @endif
+                    {!! $row('Other Financing / Currency', $str('other_financing')) !!}
                     {!! $row('Down Payment Type', $str('down_payment_type')) !!}
                     {!! $row('Down Payment Amount', $fmtMoney($str('down_payment_amount'))) !!}
                     {!! $row('Buyer Sell Contract', $str('buyer_sell_contract')) !!}
                     {!! $row('Initial Deposit Requested', $yesNo($str('initial_deposit_requested'))) !!}
                     {!! $row('Initial Deposit Timeframe', $str('initial_deposit_timeframe') . ($str('initial_deposit_timeframe_other') ? ' – ' . $str('initial_deposit_timeframe_other') : '')) !!}
                     {!! $row('Additional Deposit Requested', $yesNo($str('additional_deposit_requested'))) !!}
+                    {!! $row('Additional Deposit Timeframe', $str('additional_deposit_timeframe') . ($str('additional_deposit_timeframe_other') ? ' – ' . $str('additional_deposit_timeframe_other') : '')) !!}
                     {!! $row('Escrow Agent Preference', $str('escrow_agent_preference')) !!}
                 </div>
             </div>
         </div>
     </div>
+
+    {{-- Financing Details (sub-fields per offered_financing type) --}}
+    @php
+        $ofFin        = $arr('offered_financing');
+        $hasCashFin   = in_array('Cash', $ofFin);
+        $hasAssumable = in_array('Assumable', $ofFin);
+        $hasCrypto    = in_array('Cryptocurrency', $ofFin);
+        $hasExchange  = in_array('Exchange/Trade', $ofFin);
+        $hasLeaseOpt  = in_array('Lease Option', $ofFin);
+        $hasLeasePur  = in_array('Lease Purchase', $ofFin);
+        $hasNFT       = in_array('Non-Fungible Token (NFT)', $ofFin);
+        $hasSellerFin = in_array('Seller Financing', $ofFin);
+        $showFinDetails = $hasCashFin || $hasAssumable || $hasCrypto || $hasExchange
+            || $hasLeaseOpt || $hasLeasePur || $hasNFT || $hasSellerFin
+            || $str('seller_financing_type') || $str('interest_rate')
+            || $str('assumable_loan_type')   || $str('assumable_terms')
+            || $str('lease_option_price')    || $str('lease_purchase_price')
+            || $str('cryptocurrency_type')   || $str('nft_description')
+            || $str('exchange_item_value')   || $str('cash_budget')
+            || $str('pre_approved');
+    @endphp
+    @if($showFinDetails)
+    <div class="card section-card">
+        <div class="card-header"><i class="fa-solid fa-file-invoice-dollar me-2"></i>Financing Details</div>
+        <div class="card-body">
+
+            {{-- Cash --}}
+            @if($hasCashFin || $str('cash_budget') || $str('pre_approved'))
+            <h6 class="fw-semibold mb-2">Cash</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Maximum Cash Budget', $fmtMoney($str('cash_budget'))) !!}
+                    {!! $row('Buyer Pre-Approved for a Loan', $str('pre_approved')) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Buyer Pre-Approval Amount', $fmtMoney($str('pre_approval_amount'))) !!}
+                    {!! $row('Max Monthly Payment', $fmtMoney($str('max_monthly_payment'))) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Assumable --}}
+            @if($hasAssumable || $str('assumable_loan_type') || $str('assumable_terms'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Assumable Mortgage</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Assumable Terms', $str('assumable_terms')) !!}
+                    {!! $row('Loan Type', $str('assumable_loan_type')) !!}
+                    {!! $row('Interest Rate of Assumable Loan', $str('max_assumable_rate') ? $fmtPercent($str('max_assumable_rate')) : null) !!}
+                    {!! $row('Monthly Payment (P&amp;I)', $fmtMoney($str('max_monthly_payment'))) !!}
+                    {!! $row('Monthly Escrow (Informational)', $fmtMoney($str('assumable_monthly_escrow'))) !!}
+                    {!! $row('Outstanding Loan Balance', $fmtMoney($str('outstanding_balance'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Gap Payment Type', $str('gap_payment_type') === '$' ? 'Flat Fee' : ($str('gap_payment_type') === '%' ? 'Percentage' : $str('gap_payment_type'))) !!}
+                    {!! $row('Gap Payment Amount', $str('gap_payment_type') === '$' ? $fmtMoney($str('gap_payment_amount')) : ($str('gap_payment_type') === '%' ? $fmtPercent($str('gap_payment_amount')) : $str('gap_payment_amount'))) !!}
+                    {!! $row('Loan Term Remaining', $str('assumable_loan_term_remaining')) !!}
+                    {!! $row('Date Loan Originated', $str('assumable_loan_origination_date')) !!}
+                    {!! $row('Loan Servicer / Lender', $str('assumable_loan_servicer')) !!}
+                    {!! $row('Assumption Fee', $str('assumable_fee_type') === '%' ? $fmtPercent($str('assumable_fee_amount')) : $fmtMoney($str('assumable_fee_amount'))) !!}
+                    {!! $row('Occupancy Requirement', $str('assumable_occupancy_requirement') . ($str('assumable_occupancy_other') ? ' – ' . $str('assumable_occupancy_other') : '')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Cryptocurrency --}}
+            @if($hasCrypto || $str('cryptocurrency_type'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Cryptocurrency</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Cryptocurrency Type', $str('cryptocurrency_type')) !!}
+                    {!! $row('Crypto % of Purchase Price', $str('crypto_percentage') ? $fmtPercent($str('crypto_percentage')) : null) !!}
+                    {!! $row('Cash % of Purchase Price', $str('cash_percentage_crypto') ? $fmtPercent($str('cash_percentage_crypto')) : null) !!}
+                    {!! $row('Exchange Method', $str('crypto_exchange_method')) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Custodian / Wallet', $str('crypto_custodian_wallet')) !!}
+                    {!! $row('Transaction Fees Responsibility', $str('crypto_transaction_fees')) !!}
+                    {!! $row('Timing of Transfer', $str('crypto_transfer_timing') . ($str('crypto_transfer_timing_other') ? ' – ' . $str('crypto_transfer_timing_other') : '')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Exchange / Trade --}}
+            @if($hasExchange || $str('exchange_item_value'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Exchange / Trade</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Exchange Item', $str('other_exchange_item')) !!}
+                    {!! $row('Estimated Value of Exchange Item', $fmtMoney($str('exchange_item_value'))) !!}
+                    {!! $row('Condition of Exchange Item', $str('exchange_item_condition')) !!}
+                    {!! $row('Additional Cash Required', $fmtMoney($str('additional_cash'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Transfer Method', $str('exchange_transfer_method')) !!}
+                    {!! $row('Liens / Encumbrances', $str('exchange_liens') . ($str('exchange_liens_details') ? ' – ' . $str('exchange_liens_details') : '')) !!}
+                    {!! $row('Inspection / Verification Rights', $str('exchange_inspection_rights')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Lease Option --}}
+            @if($hasLeaseOpt || $str('lease_option_price'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Lease Option</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Option Purchase Price', $fmtMoney($str('lease_option_price'))) !!}
+                    {!! $row('Monthly Payment', $fmtMoney($str('lease_option_payment'))) !!}
+                    {!! $row('Duration (Months)', $str('lease_option_duration')) !!}
+                    {!! $row('Option Fee Offered', $yesNo($str('has_option_fee'))) !!}
+                    {!! $row('Option Fee Amount', $fmtMoney($str('option_fee_amount'))) !!}
+                    {!! $row('Option Fee Credit', $str('lease_option_fee_credit')) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Option Fee Credit %', $str('lease_option_fee_credit_percentage') ? $fmtPercent($str('lease_option_fee_credit_percentage')) : null) !!}
+                    {!! $row('Conditions / Requirements', $str('lease_option_conditions')) !!}
+                    {!! $row('Specific Terms', $str('lease_option_terms')) !!}
+                    {!! $row('Maintenance / Repair Responsibility', $str('lease_option_maintenance')) !!}
+                    {!! $row('Extension Terms', $str('lease_option_extension_terms')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Lease Purchase --}}
+            @if($hasLeasePur || $str('lease_purchase_price'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Lease Purchase</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Purchase Price', $fmtMoney($str('lease_purchase_price'))) !!}
+                    {!! $row('Monthly Payment', $fmtMoney($str('lease_purchase_payment'))) !!}
+                    {!! $row('Duration (Months)', $str('lease_purchase_duration')) !!}
+                    {!! $row('Rent Credit Toward Purchase', $str('lease_purchase_rent_credit')) !!}
+                    {!! $row('Rent Credit Amount', $fmtMoney($str('lease_purchase_rent_credit_amount'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Non-Refundable Deposit', $fmtMoney($str('lease_purchase_deposit'))) !!}
+                    {!! $row('Conditions / Requirements', $str('lease_purchase_conditions')) !!}
+                    {!! $row('Specific Terms', $str('lease_purchase_terms')) !!}
+                    {!! $row('Maintenance / Repair Responsibility', $str('lease_purchase_maintenance')) !!}
+                    {!! $row('Extension Terms', $str('lease_purchase_extension_terms')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Non-Fungible Token (NFT) --}}
+            @if($hasNFT || $str('nft_description'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Non-Fungible Token (NFT)</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('NFT Description', $str('nft_description')) !!}
+                    {!! $row('NFT % of Purchase Price', $str('nft_percentage') ? $fmtPercent($str('nft_percentage')) : null) !!}
+                    {!! $row('Cash % of Purchase Price', $str('cash_percentage_nft') ? $fmtPercent($str('cash_percentage_nft')) : null) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('NFT Valuation Method', $str('nft_valuation_method')) !!}
+                    {!! $row('NFT Transfer Method', $str('nft_transfer_method')) !!}
+                    {!! $row('Gas Fees Responsibility', $str('nft_gas_fees')) !!}
+                </div>
+            </div>
+            @endif
+
+            {{-- Seller Financing --}}
+            @if($hasSellerFin || $str('seller_financing_type') || $str('interest_rate'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Seller Financing</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Financing Type', $str('seller_financing_type') === '$' ? 'Flat / Dollar Amount' : ($str('seller_financing_type') === '%' ? 'Percentage of Price' : $str('seller_financing_type'))) !!}
+                    {!! $row('Down Payment', $fmtMoney($str('seller_down_payment_amount'))) !!}
+                    {!! $row('Interest Rate', $str('interest_rate') ? $fmtPercent($str('interest_rate')) : null) !!}
+                    {!! $row('Loan Duration (Years)', $str('loan_duration')) !!}
+                    {!! $row('Real Estate Purchase Included', $str('real_estate_purchase')) !!}
+                    {!! $row('Prepayment Penalty Amount', $fmtMoney($str('prepayment_penalty_amount'))) !!}
+                </div>
+                <div class="col-md-6">
+                    {!! $row('Balloon Payment', $yesNo($str('balloon_payment'))) !!}
+                    {!! $row('Balloon Payment Amount', $fmtMoney($str('balloon_payment_amount'))) !!}
+                    {!! $row('Balloon Payment Due Date', $str('balloon_payment_date')) !!}
+                    {!! $row('Amortization Type', $str('seller_amortization_type') . ($str('seller_amortization_other') ? ' – ' . $str('seller_amortization_other') : '')) !!}
+                    {!! $row('Payment Frequency', $str('seller_payment_frequency') . ($str('seller_payment_frequency_other') ? ' – ' . $str('seller_payment_frequency_other') : '')) !!}
+                    {!! $row('Late Payment Fee', $fmtMoney($str('seller_late_fee_amount'))) !!}
+                </div>
+            </div>
+            @endif
+
+        </div>
+    </div>
+    @endif
 
     {{-- Seller Sale Terms --}}
     @php
@@ -268,22 +748,112 @@
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-percent me-2"></i>Broker Compensation &amp; Agency Agreement</div>
         <div class="card-body">
+
+            {{-- Purchase Compensation --}}
+            <h6 class="fw-semibold mb-2">Purchase Compensation</h6>
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Commission Structure', $str('commission_structure')) !!}
-                    {!! $row('Purchase Fee Type', $str('purchase_fee_type')) !!}
-                    {!! $row('Purchase Fee %', $fmtPercent($str('purchase_fee_percentage'))) !!}
-                    {!! $row('Purchase Fee Flat', $fmtMoney($str('purchase_fee_flat'))) !!}
-                    {!! $row('Lease Fee Type', $str('lease_fee_type')) !!}
-                    {!! $row('Lease Fee %', $fmtPercent($str('lease_fee_percentage'))) !!}
-                    {!! $row('Lease Fee Flat', $fmtMoney($str('lease_fee_flat'))) !!}
+                    {!! $row('Buyer\'s Broker Commission Structure', $str('commission_structure')) !!}
+                    {!! $row('Buyer\'s Broker Commission Fee Type', $str('commission_structure_type')) !!}
+                    @if($str('commission_structure_type') === 'Flat Fee')
+                        {!! $row('Buyer\'s Broker Commission Fee', $fmtMoney($str('commission_structure_type_fee_flat'))) !!}
+                    @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price')
+                        {!! $row('Buyer\'s Broker Commission Fee', $fmtPercent($str('commission_structure_type_fee_percentage'))) !!}
+                    @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price + Flat Fee')
+                        {!! $row('Buyer\'s Broker Commission Fee', $fmtPercent($str('commission_structure_type_fee_percentage_combo')) . ' + ' . $fmtMoney($str('commission_structure_type_fee_flat_combo'))) !!}
+                    @elseif($str('commission_structure_type') === 'other')
+                        {!! $row('Buyer\'s Broker Commission Fee', $str('commission_structure_type_fee_other')) !!}
+                    @endif
                 </div>
+                <div class="col-md-6">
+                    {!! $row('Seller\'s Broker Purchase Fee Type', $str('purchase_fee_type')) !!}
+                    @if($str('purchase_fee_type') === 'percentage')
+                        {!! $row('Seller\'s Broker Purchase Fee', $fmtPercent($str('purchase_fee_percentage'))) !!}
+                    @elseif($str('purchase_fee_type') === 'flat')
+                        {!! $row('Seller\'s Broker Purchase Fee', $fmtMoney($str('purchase_fee_flat'))) !!}
+                    @elseif($str('purchase_fee_type') === 'combo')
+                        {!! $row('Seller\'s Broker Purchase Fee', $fmtPercent($str('purchase_fee_percentage_combo')) . ' + ' . $fmtMoney($str('purchase_fee_flat_combo'))) !!}
+                    @elseif($str('purchase_fee_type') === 'other')
+                        {!! $row('Seller\'s Broker Purchase Fee', $str('purchase_fee_other')) !!}
+                    @endif
+                    {!! $row('Nominal Consideration Fee', $fmtMoney($str('nominal'))) !!}
+                </div>
+            </div>
+
+            {{-- Leasing Compensation --}}
+            @if($str('interested_purchase_fee_type'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Leasing Compensation</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Interested in Offering a Lease Agreement', $str('interested_purchase_fee_type')) !!}
+                    @if($str('interested_purchase_fee_type') === 'Yes')
+                        {!! $row('Seller\'s Broker Leasing Fee Type', $str('seller_leasing_fee_type')) !!}
+                        @if($str('seller_leasing_fee_type') === 'Percentage of the Gross Lease Value')
+                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross'))) !!}
+                            {!! $row('Sales Tax', $str('sales_tax_option_gross')) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'Percentage of the Rent Due Each Rental Period')
+                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_rental'))) !!}
+                        @elseif(in_array($str('seller_leasing_fee_type'), ["Percentage of the First Month's Rent", "Percentage of Month's Rent"]))
+                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_month_rent'))) !!}
+                            {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_first_month')) !!}
+                            {!! $row('Number of Months', $str('seller_leasing_gross_no_of_months')) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'Flat Fee')
+                            {{-- Flat Fee: stored as seller_leasing_gross_purchase_fee_flat_amount --}}
+                            {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_purchase_fee_flat_amount'))) !!}
+                            {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_flat_free_gross')) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
+                            {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_flat_combo')) . ' + ' . $fmtPercent($str('seller_leasing_gross_percentage_combo'))) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'Flat Fee + Percentage of the Net Aggregate Rent')
+                            {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_flat_net_combo')) . ' + ' . $fmtPercent($str('seller_leasing_gross_percentage_net_combo'))) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'Percentage of Gross Rent')
+                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_percentage'))) !!}
+                            {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_option_gross')) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'Percentage of Net Aggregate Rent')
+                            {!! $row('Leasing Fee', $fmtPercent($str('seller_leasing_gross_other'))) !!}
+                        @elseif($str('seller_leasing_fee_type') === 'other')
+                            {!! $row('Leasing Fee', $str('seller_leasing_gross_purchase_fee_other')) !!}
+                        @endif
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            {{-- Lease-Option Compensation --}}
+            @if($str('interested_lease_option_agreement'))
+            <hr>
+            <h6 class="fw-semibold mb-2">Lease-Option Compensation</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Interested in Lease-Option Agreement', $str('interested_lease_option_agreement')) !!}
+                    @if($str('interested_lease_option_agreement') === 'Yes')
+                        @php
+                            $leaseTypeLabel = $str('lease_type') === 'flat' ? 'Flat Fee' : ($str('lease_type') === 'percent' ? 'Percentage' : $str('lease_type'));
+                            $leaseValFmt = $str('lease_type') === 'flat' ? $fmtMoney($str('lease_value')) : ($str('lease_type') === 'percent' ? $fmtPercent($str('lease_value')) : $str('lease_value'));
+                            $purchaseTypeLabel = $str('purchase_type') === 'flat' ? 'Flat Fee' : ($str('purchase_type') === 'percent' ? 'Percentage' : $str('purchase_type'));
+                            $purchaseValFmt = $str('purchase_type') === 'flat' ? $fmtMoney($str('purchase_value')) : ($str('purchase_type') === 'percent' ? $fmtPercent($str('purchase_value')) : $str('purchase_value'));
+                        @endphp
+                        {!! $row('Lease-Option Creation Fee', ($leaseTypeLabel ? $leaseTypeLabel . ': ' : '') . $leaseValFmt) !!}
+                        {!! $row('If Purchase Option Exercised', ($purchaseTypeLabel ? $purchaseTypeLabel . ': ' : '') . $purchaseValFmt) !!}
+                    @endif
+                </div>
+            </div>
+            @endif
+
+            {{-- Agency Agreement --}}
+            <hr>
+            <h6 class="fw-semibold mb-2">Agency Agreement &amp; Other Terms</h6>
+            <div class="row">
                 <div class="col-md-6">
                     {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
                     {!! $row('Agency Agreement Timeframe', $str('agency_agreement_timeframe') . ($str('agency_agreement_custom') ? ' – ' . $str('agency_agreement_custom') : '')) !!}
-                    {!! $row('Protection Period', $str('protection_period')) !!}
+                    {!! $row('Protection Period (Days)', $str('protection_period')) !!}
+                    {!! $row('Broker\'s Share of Retained Deposits', $str('retained_deposits') !== '' && $str('retained_deposits') !== null ? $fmtPercent($str('retained_deposits')) : null) !!}
+                </div>
+                <div class="col-md-6">
                     {!! $row('Retainer Fee', $yesNo($str('retainer_fee_option'))) !!}
                     {!! $row('Retainer Fee Amount', $fmtMoney($str('retainer_fee_amount'))) !!}
+                    {!! $row('Retainer Fee Application', $str('retainer_fee_application')) !!}
                     {!! $row('Early Termination Fee', $yesNo($str('early_termination_fee_option'))) !!}
                     {!! $row('Early Termination Fee Amount', $fmtMoney($str('early_termination_fee_amount'))) !!}
                     {!! $row('Additional Broker Details', $str('additional_details_broker')) !!}
@@ -291,6 +861,74 @@
             </div>
         </div>
     </div>
+
+    {{-- Financial Details (Income / Commercial / Business property types only) --}}
+    {{-- Fields: minimum_annual_net_income, minimum_cap_rate, gross_annual_income, annual_operating_expenses,
+         rent_roll_available, operating_statement_available (Income);
+         price_per_sqft, existing_lease_type, other_lease_type, lease_expiration, lease_assignable (Commercial);
+         annual_revenue, gross_profit, sde_ebitda, inventory_value, ffe_value, reason_for_sale,
+         other_reason_for_sale, employee_count, financial_statements_available, tax_returns_available,
+         nda_required, business_location_leased + sub-fields (Business) --}}
+    @php
+        $finPropType = $str('property_type');
+        $hasFinancial = in_array($finPropType, ['Income', 'Commercial', 'Business'])
+            && ($str('minimum_annual_net_income') || $str('minimum_cap_rate') || $str('gross_annual_income')
+                || $str('annual_operating_expenses') || $str('rent_roll_available') || $str('operating_statement_available')
+                || $str('price_per_sqft') || $str('existing_lease_type') || $str('lease_expiration') || $str('lease_assignable')
+                || $str('annual_revenue') || $str('gross_profit') || $str('sde_ebitda') || $str('inventory_value')
+                || $str('ffe_value') || $str('reason_for_sale') || $str('employee_count')
+                || $str('financial_statements_available') || $str('tax_returns_available') || $str('nda_required')
+                || $str('business_location_leased'));
+    @endphp
+    @if($hasFinancial)
+    <div class="card section-card">
+        <div class="card-header"><i class="fa-solid fa-chart-line me-2"></i>Financial Details</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    {!! $row('Annual Net Income', $fmtMoney($str('minimum_annual_net_income'))) !!}
+                    {!! $row('Cap Rate', $fmtPercent($str('minimum_cap_rate'))) !!}
+                    @if($finPropType === 'Income')
+                        {!! $row('Gross Annual Income', $fmtMoney($str('gross_annual_income'))) !!}
+                        {!! $row('Annual Operating Expenses', $fmtMoney($str('annual_operating_expenses'))) !!}
+                        {!! $row('Rent Roll Available', $str('rent_roll_available')) !!}
+                        {!! $row('Operating Statement Available', $str('operating_statement_available')) !!}
+                    @elseif($finPropType === 'Commercial')
+                        {!! $row('Price Per Square Foot', $fmtMoney($str('price_per_sqft'))) !!}
+                        {!! $row('Existing Lease Type', $str('existing_lease_type')) !!}
+                        @if($str('existing_lease_type') === 'Other')
+                            {!! $row('Other Lease Type', $str('other_lease_type')) !!}
+                        @endif
+                        {!! $row('Lease Expiration Date', $str('lease_expiration')) !!}
+                        {!! $row('Lease Assignable to Buyer', $str('lease_assignable')) !!}
+                    @elseif($finPropType === 'Business')
+                        {!! $row('Annual Revenue', $fmtMoney($str('annual_revenue'))) !!}
+                        {!! $row('Gross Profit', $fmtMoney($str('gross_profit'))) !!}
+                        {!! $row('SDE / EBITDA', $fmtMoney($str('sde_ebitda'))) !!}
+                        {!! $row('Inventory Value', $fmtMoney($str('inventory_value'))) !!}
+                        {!! $row('FF&amp;E Value', $fmtMoney($str('ffe_value'))) !!}
+                        {!! $row('Reason for Sale', $str('reason_for_sale')) !!}
+                        @if($str('reason_for_sale') === 'Other')
+                            {!! $row('Other Reason for Sale', $str('other_reason_for_sale')) !!}
+                        @endif
+                        {!! $row('Number of Employees', $str('employee_count')) !!}
+                        {!! $row('Financial Statements Available', $str('financial_statements_available')) !!}
+                        {!! $row('Tax Returns Available', $str('tax_returns_available')) !!}
+                        {!! $row('NDA Required to Access Financials', $str('nda_required')) !!}
+                        {!! $row('Business Location Leased', $str('business_location_leased')) !!}
+                        @if($str('business_location_leased') === 'Yes')
+                            {!! $row('Monthly Rent', $fmtMoney($str('business_lease_monthly_rent'))) !!}
+                            {!! $row('Lease Expiration Date', $str('business_lease_expiration')) !!}
+                            {!! $row('Lease Renewal Options', $str('business_lease_renewal_options')) !!}
+                            {!! $row('Lease Assignable to Buyer', $str('business_lease_assignable')) !!}
+                            {!! $row('Additional Lease Terms', $str('business_lease_additional_terms')) !!}
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- Tax, Legal, HOA & Disclosures --}}
     @php
@@ -341,7 +979,7 @@
                     {!! $row('Has HOA', $yesNo($str('has_hoa'))) !!}
                     {!! $row('Association Type', $str('association_type') . ($str('association_type_other') ? ' – ' . $str('association_type_other') : '')) !!}
                     {!! $row('Association Name', $str('association_name')) !!}
-                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . ($str('association_fee_frequency') ? ' / ' . $str('association_fee_frequency') : '')) !!}
+                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . ($str('association_fee_frequency') ? ' / ' . $str('association_fee_frequency') . ($str('association_fee_frequency_other') ? ' – ' . $str('association_fee_frequency_other') : '') : '')) !!}
                     {!! $row('Application Fee', $fmtMoney($str('association_application_fee'))) !!}
                 </div>
                 <div class="col-md-6">
