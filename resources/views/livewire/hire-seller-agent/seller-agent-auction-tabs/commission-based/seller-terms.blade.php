@@ -740,6 +740,7 @@
             $eiArr = is_array($exchange_item) ? $exchange_item : (is_string($exchange_item) && trim($exchange_item) !== '' ? (json_decode($exchange_item, true) ?? [$exchange_item]) : []);
         @endphp
         <div class="input-cover" wire:ignore>
+            <i class="input-icon fa-solid fa-right-left input-icon2"></i>
             <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-right-left" data-selected='@json($eiArr)' multiple>
                 @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $eiOpt)
                     <option value="{{ $eiOpt }}" {{ in_array($eiOpt, $eiArr) ? 'selected' : '' }}>{{ $eiOpt }}</option>

@@ -1160,7 +1160,7 @@
                 var $appliances = $('#appliances');
                 if ($appliances.length) {
                     if (!$appliances.hasClass('select2-hidden-accessible')) {
-                        $appliances.select2({ placeholder: "Select Appliances", allowClear: true });
+                        $appliances.select2({ placeholder: "Select", allowClear: true });
                         if (!$appliances.data('appliances-change-bound')) {
                             $appliances.on('change', function() {
                                 var selectedValues = $(this).val() || [];
@@ -1382,7 +1382,7 @@
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#property_items').on('change', function(e) {
@@ -1393,7 +1393,7 @@
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -1421,7 +1421,7 @@
                 if (!$exEl.data('exchange-change-bound')) {
                     $exEl.on('change', function(e) {
                         var selectedValues = $(this).val() || [];
-                        @this.set('exchange_item', selectedValues);
+                        @this.set('exchange_item', selectedValues, false);
                     });
                     $exEl.data('exchange-change-bound', true);
                 }
@@ -1611,7 +1611,7 @@
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
-                    placeholder: "Select Preference",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
@@ -1627,7 +1627,7 @@
 
             if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
                 $('#appliances').select2({
-                    placeholder: "Select Appliances",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#appliances').on('change', function() {
@@ -1643,7 +1643,7 @@
 
             if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
                 $('#garage_parking_spaces_option_landlord').select2({
-                    placeholder: "Select garage/parking features",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#garage_parking_spaces_option_landlord').on('change', function() {
