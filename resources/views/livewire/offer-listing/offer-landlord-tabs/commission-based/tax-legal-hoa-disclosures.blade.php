@@ -476,9 +476,9 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control has-icon landlord-compact-textarea" rows="2"
+                        <input type="text" wire:model="association_approval_process" class="form-control has-icon"
                             data-icon="fa-solid fa-clipboard-check"
-                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
+                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)">
                     </div>
                 </div>
 
