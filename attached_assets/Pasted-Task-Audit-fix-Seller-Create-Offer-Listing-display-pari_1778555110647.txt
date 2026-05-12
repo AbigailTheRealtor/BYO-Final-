@@ -1,0 +1,134 @@
+Task: Audit + fix Seller Create Offer Listing display parity and dashboard classification
+
+Reference URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/seller/agent/auction/view/38
+
+Problem summary:
+The Seller Create Offer Listing read-only/view page is not showing all fields that exist in the Seller Create Offer Listing form. Some fields are missing, not autopopulating, incorrectly formatted, or not rendering at all.
+
+There is also a dashboard classification issue:
+Seller Create Offer Listings are incorrectly appearing under:
+- "Hiring Seller's Agent"
+
+They should instead appear under:
+- "Property Auctions"
+
+Important clarification:
+This task is ONLY for Seller Create Offer Listings (Full Service Offer Listing flow).
+
+Do NOT confuse this with:
+- Hire Agent flows
+- Agent bidding flows
+- Marketplace hiring listings
+
+Correct separation:
+- Create Offer Listing = Property Auctions
+- Hire Agent Listing = Hiring Seller's Agent
+
+STRICT SCOPE:
+ONLY audit and fix:
+- Seller Full Service Create Offer Listing display/view parity
+- Seller Create Offer Listing dashboard grouping/classification
+
+Allowed areas:
+- Seller Offer Listing controller/data mapping
+- Seller Offer Listing read-only blade/view
+- Existing Seller Offer Listing meta mapping if required to expose already-saved data
+- Dashboard grouping/filter logic specifically for Seller Create Offer Listings
+
+Do NOT touch:
+- Hire Agent create/edit/bid logic
+- Buyer, Landlord, or Tenant flows
+- Limited Service / legacy flows
+- Database schema
+- Routes
+- Validation rules
+- Save Draft logic unless a field is confirmed not saving
+- Existing meta keys unless fixing a confirmed typo
+- Agent marketplace logic
+- Bid logic
+- Dashboard cards unrelated to Seller Create Offer Listings
+
+Required process:
+1. Perform a READ-ONLY audit first.
+2. Identify every field that exists in the Seller Create Offer Listing form.
+3. Compare against:
+   - controller/view data mapping
+   - read-only display blade
+4. Create a checklist with:
+   - Field label
+   - Meta key/property
+   - Status:
+     - displaying correctly
+     - missing from controller/data
+     - missing from view
+     - formatting issue
+     - conditional rendering issue
+5. Fix ONLY confirmed missing/broken Seller fields.
+
+Display/view requirements:
+- Every saved Seller Create Offer Listing field that should be visible must display correctly on the read-only page.
+- Preserve existing formatting style.
+- Do not display empty/null fields.
+- Preserve conditional rendering behavior.
+- Only show fields relevant to the selected property type.
+- Only show lease/lease-option fields when applicable.
+- Only show “Other” custom text when selected.
+- Array/multiselect fields must render as readable comma-separated text, not JSON.
+- Currency fields must render consistently as money values.
+- Yes/No fields must not wipe out descriptive text fields.
+- Ensure recently added Seller fields are included.
+
+Specific field categories to verify:
+- Residential Seller fields
+- Income property fields
+- Commercial fields
+- Business Opportunity fields
+- Vacant Land fields
+- HOA / Association fields
+- Documents / Disclosures fields
+- Sale Terms fields
+- Lease / Lease-Option fields if applicable
+- Broker Compensation fields that are still intended to display for Seller
+- Additional Details fields
+
+Important:
+AI Questions fields should NOT appear on the public/read-only listing view unless intentionally designed for internal/admin use.
+
+Dashboard classification fix:
+Current incorrect behavior:
+- Seller Create Offer Listings appear under "Hiring Seller's Agent"
+
+Required behavior:
+- Seller Create Offer Listings must appear under "Property Auctions"
+
+Audit:
+1. Find where dashboard/grouping logic determines listing placement.
+2. Identify why Seller Create Offer Listings are being grouped as Hire Agent listings.
+3. Fix ONLY the incorrect classification logic.
+
+Dashboard safeguards:
+- Do not move Hire Agent listings.
+- Do not change Buyer/Tenant/Landlord grouping behavior unless absolutely required for parity.
+- Do not create duplicate listings across tabs.
+- Do not break dashboard counts/search/filtering.
+
+Global safeguards:
+- Do not rename meta keys.
+- Do not remove existing displayed fields.
+- Do not alter form submission behavior.
+- Do not touch Limited Service.
+- Do not create migrations.
+- If a field was never saved originally, document it separately instead of inventing data paths.
+
+Done looks like:
+- Seller Create Offer Listing read-only view displays all intended saved fields.
+- No raw JSON appears.
+- No empty fields appear.
+- Property-type conditional logic still works correctly.
+- Seller Create Offer Listings appear under "Property Auctions."
+- Hire Seller Agent listings still appear under "Hiring Seller's Agent."
+- No Buyer/Landlord/Tenant regressions.
+- No Limited Service regressions.
+- Existing filters/search continue working.
+- Provide a before/after checklist of missing fields fixed and dashboard classification corrected.
