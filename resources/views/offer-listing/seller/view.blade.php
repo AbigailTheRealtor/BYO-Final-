@@ -26,6 +26,22 @@
         return is_array($v) ? $v : [];
     };
     $yesNo = fn($v) => match((string)$v) { '1','true','yes','Yes' => 'Yes', '0','false','no','No' => 'No', default => $v };
+    $fmtDate = function($v) {
+        if ($v === null || $v === '') return null;
+        try {
+            $d = \Carbon\Carbon::parse((string)$v);
+            return $d->format('F j, Y');
+        } catch (\Exception $e) {
+            return null;
+        }
+    };
+    $subOther = function(array $items, string $otherVal): array {
+        if (!$otherVal) return $items;
+        return array_map(fn($v) => $v === 'Other' ? $otherVal : $v, $items);
+    };
+    $orOther = function(string $primary, string $otherVal): string {
+        return ($primary === 'Other' && $otherVal !== '') ? $otherVal : $primary;
+    };
     $row = function($label, $value) {
         if ($value === null || $value === '' || $value === false) return '';
         return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7">' . e($value) . '</div></div>';
@@ -276,15 +292,13 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Listing Title', $str('listing_title') ?: $auction->title) !!}
-                    {!! $row('Service Type', $str('service_type')) !!}
                     {!! $row('Auction Type', $str('auction_type')) !!}
                     {!! $row('Listing Status', $str('listing_status')) !!}
                 </div>
                 <div class="col-md-6">
-                    {!! $row('Listing Date', $str('listing_date')) !!}
-                    {!! $row('Expiration Date', $str('expiration_date')) !!}
+                    {!! $row('Listing Date', $fmtDate($str('listing_date'))) !!}
+                    {!! $row('Expiration Date', $fmtDate($str('expiration_date'))) !!}
                     {!! $row('Auction Time', $str('auction_time')) !!}
-                    {!! $row('Working with Agent', $str('working_with_agent')) !!}
                 </div>
             </div>
         </div>
@@ -306,43 +320,47 @@
                     {!! $row('Bathrooms', $str('bathrooms') . ($str('other_bathrooms') ? ' (' . $str('other_bathrooms') . ')' : '')) !!}
                 </div>
                 <div class="col-md-6">
-                    {!! $row('Heated Sq Ft', $str('minimum_heated_square') ? ('≥ ' . $str('minimum_heated_square') . ' sq ft') : null) !!}
+                    {!! $row('Heated Sq Ft', $str('minimum_heated_square') ?: null) !!}
+                    {!! $row('Sq Ft Heated Source', $str('sqft_heated_source')) !!}
                     {!! $row('Total Sq Ft', $str('total_square_feet')) !!}
                     {!! $row('Acreage', $str('min_acreage') ?: $str('total_acreage')) !!}
                     {!! $row('Year Built', $str('year_built')) !!}
                     {!! $row('Zoning', $str('zoning')) !!}
-                    {!! $row('Property Condition', $str('condition_prop') . ($str('other_property_condition') ? ' – ' . $str('other_property_condition') : '')) !!}
+                    @php
+                        $_cond = $str('condition_prop');
+                        $_cond = $orOther($_cond, $str('other_property_condition'));
+                        $_cond = ($_cond === 'Older but Clean') ? 'Older but Clean & Well Maintained' : $_cond;
+                    @endphp
+                    {!! $row('Property Condition', $_cond) !!}
                     {!! $row('Pool', $str('pool_needed')) !!}
                     {!! $row('Video/Tour Link', $str('video_tour_url') ?: $str('virtual_tour_url')) !!}
                 </div>
             </div>
 
-            @php $pItems = $arr('property_items'); @endphp
+            @php $pItems = $subOther($arr('property_items'), $str('other_property_items')); @endphp
             @if(count($pItems))
             <hr>
             <div class="mb-1"><span class="field-label">Property Items / Amenities</span></div>
-            <p class="field-value">{{ implode(', ', $pItems) }}@if($str('other_property_items')) – {{ $str('other_property_items') }}@endif</p>
+            <p class="field-value">{{ implode(', ', $pItems) }}</p>
             @endif
 
-            @php $appliances = $arr('appliances'); @endphp
+            @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
             @if(count($appliances))
             <div class="mb-1"><span class="field-label">Appliances</span></div>
-            <p class="field-value">{{ implode(', ', $appliances) }}
-                @if($str('other_appliances')) — {{ $str('other_appliances') }} @endif
-            </p>
+            <p class="field-value">{{ implode(', ', $appliances) }}</p>
             @endif
 
             {{-- MLS Fields --}}
             @php
                 $mlsFields = [
-                    ['Roof Type',             implode(', ', $arr('roof_type'))             . ($str('other_roof_type')             ? ' – ' . $str('other_roof_type')             : '')],
-                    ['Exterior Construction', implode(', ', $arr('exterior_construction'))  . ($str('other_exterior_construction')  ? ' – ' . $str('other_exterior_construction')  : '')],
-                    ['Foundation',            implode(', ', $arr('foundation'))             . ($str('other_foundation')             ? ' – ' . $str('other_foundation')             : '')],
-                    ['Heating & Fuel',        implode(', ', $arr('heating_and_fuel'))       . ($str('other_heating_and_fuel')       ? ' – ' . $str('other_heating_and_fuel')       : '')],
-                    ['Air Conditioning',      implode(', ', $arr('air_conditioning'))       . ($str('other_air_conditioning')       ? ' – ' . $str('other_air_conditioning')       : '')],
-                    ['Water',                 implode(', ', $arr('water'))                  . ($str('other_water')                  ? ' – ' . $str('other_water')                  : '')],
-                    ['Sewer',                 implode(', ', $arr('sewer'))                  . ($str('other_sewer')                  ? ' – ' . $str('other_sewer')                  : '')],
-                    ['Utilities',             implode(', ', $arr('utilities'))              . ($str('other_utilities')              ? ' – ' . $str('other_utilities')              : '')],
+                    ['Roof Type',             implode(', ', $subOther($arr('roof_type'),             $str('other_roof_type')))],
+                    ['Exterior Construction', implode(', ', $subOther($arr('exterior_construction'),  $str('other_exterior_construction')))],
+                    ['Foundation',            implode(', ', $subOther($arr('foundation'),             $str('other_foundation')))],
+                    ['Heating & Fuel',        implode(', ', $subOther($arr('heating_and_fuel'),       $str('other_heating_and_fuel')))],
+                    ['Air Conditioning',      implode(', ', $subOther($arr('air_conditioning'),       $str('other_air_conditioning')))],
+                    ['Water',                 implode(', ', $subOther($arr('water'),                  $str('other_water')))],
+                    ['Sewer',                 implode(', ', $subOther($arr('sewer'),                  $str('other_sewer')))],
+                    ['Utilities',             implode(', ', $subOther($arr('utilities'),              $str('other_utilities')))],
                 ];
                 $mlsFields = array_filter($mlsFields, fn($f) => !empty($f[1]));
             @endphp
@@ -358,7 +376,6 @@
             {{-- Extended Property Attributes --}}
             @php
                 $extPropFields = array_filter([
-                    ['Sq Ft Heated Source',  $str('sqft_heated_source')],
                     ['Buildable',            $str('buildable')],
                     ['Ceiling Height',       $str('ceiling_height')],
                     ['Lot Dimensions',       $str('lot_dimensions')],
@@ -411,7 +428,7 @@
                 $unitFields = array_filter([
                     ['Total Number of Units',     $str('unit_number')],
                     ['Total Number of Buildings', $str('unit_buildings')],
-                    ['Unit Type',                 $str('number_of_unit') . ($str('number_of_unit_other') ? ' – ' . $str('number_of_unit_other') : '')],
+                    ['Unit Type',                 $orOther($str('number_of_unit'), $str('number_of_unit_other'))],
                     ['Number of Unit Types',      $str('number_of_units')],
                     ['Unit Type Description',     $str('unit_type_description')],
                     ['Value Determination',       $str('value_determination')],
@@ -430,7 +447,7 @@
             @php
                 $bizFields = array_filter([
                     ['Business Name',                    $str('business_name')],
-                    ['Business Type',                    $str('business_type') . ($str('other_business_type') ? ' – ' . $str('other_business_type') : '')],
+                    ['Business Type',                    $orOther($str('business_type'), $str('other_business_type'))],
                     ['Year Established',                 $str('year_established')],
                     ['Custom Enhancements / Value-Adds', $str('custom_enhancement')],
                     ['Included Assets (Other)',          $str('assets_other')],
@@ -448,11 +465,11 @@
             {{-- Site Utilities (land/commercial) --}}
             @php
                 $siteUtilFields = array_filter([
-                    ['Water Available to Site',      $str('water_available')      . ($str('water_available_other')      ? ' – ' . $str('water_available_other')      : '')],
-                    ['Sewer Available to Site',      $str('sewer_available')      . ($str('sewer_available_other')      ? ' – ' . $str('sewer_available_other')      : '')],
-                    ['Electric Available to Site',   $str('electric_available')   . ($str('electric_available_other')   ? ' – ' . $str('electric_available_other')   : '')],
-                    ['Gas Available to Site',        $str('gas_available')        . ($str('gas_available_other')        ? ' – ' . $str('gas_available_other')        : '')],
-                    ['Telecom / Internet Available', $str('telecom_available')    . ($str('telecom_available_other')    ? ' – ' . $str('telecom_available_other')    : '')],
+                    ['Water Available to Site',      $orOther($str('water_available'),    $str('water_available_other'))],
+                    ['Sewer Available to Site',      $orOther($str('sewer_available'),    $str('sewer_available_other'))],
+                    ['Electric Available to Site',   $orOther($str('electric_available'), $str('electric_available_other'))],
+                    ['Gas Available to Site',        $orOther($str('gas_available'),      $str('gas_available_other'))],
+                    ['Telecom / Internet Available', $orOther($str('telecom_available'),  $str('telecom_available_other'))],
                     ['Number of Wells',              $str('number_of_wells')],
                     ['Number of Septics',            $str('number_of_septics')],
                     ['Number of Electric Meters',    $str('number_electric_meters')],
@@ -500,7 +517,7 @@
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Sale Provision', $str('sale_provision') . ($str('sale_provision_other') ? ' – ' . $str('sale_provision_other') : '')) !!}
+                    {!! $row('Sale Provision', $orOther($str('sale_provision'), $str('sale_provision_other'))) !!}
                     @if($str('sale_provision_assignment'))
                         {!! $row('Seller Under Contract for Assignment', $str('sale_provision_assignment')) !!}
                         {!! $row('Assignment Fee Type', $str('assignment_fee_type') === '$' ? 'Flat Fee' : ($str('assignment_fee_type') === '%' ? 'Percentage' : $str('assignment_fee_type'))) !!}
@@ -519,13 +536,18 @@
                     @php $ofFinancing = $arr('offered_financing'); @endphp
                     @if(count($ofFinancing)) {!! $row('Offered Financing', implode(', ', $ofFinancing)) !!} @endif
                     {!! $row('Other Financing / Currency', $str('other_financing')) !!}
-                    {!! $row('Down Payment Type', $str('down_payment_type')) !!}
-                    {!! $row('Down Payment Amount', $fmtMoney($str('down_payment_amount'))) !!}
+                    @php
+                        $_dpType = $str('down_payment_type');
+                        $_dpTypeDisplay = $_dpType === '%' ? 'Percentage' : ($_dpType === '$' ? 'Dollar Amount' : $_dpType);
+                        $_dpAmt = $_dpType === '%' ? $fmtPercent($str('down_payment_amount')) : $fmtMoney($str('down_payment_amount'));
+                    @endphp
+                    {!! $row('Down Payment Type', $_dpTypeDisplay) !!}
+                    {!! $row('Down Payment Amount', $_dpAmt) !!}
                     {!! $row('Buyer Sell Contract', $str('buyer_sell_contract')) !!}
-                    {!! $row('Initial Deposit Requested', $yesNo($str('initial_deposit_requested'))) !!}
-                    {!! $row('Initial Deposit Timeframe', $str('initial_deposit_timeframe') . ($str('initial_deposit_timeframe_other') ? ' – ' . $str('initial_deposit_timeframe_other') : '')) !!}
+                    {!! $row('Initial Deposit Requested', $fmtMoney($str('initial_deposit_requested'))) !!}
+                    {!! $row('Initial Deposit Timeframe', $orOther($str('initial_deposit_timeframe'), $str('initial_deposit_timeframe_other'))) !!}
                     {!! $row('Additional Deposit Requested', $yesNo($str('additional_deposit_requested'))) !!}
-                    {!! $row('Additional Deposit Timeframe', $str('additional_deposit_timeframe') . ($str('additional_deposit_timeframe_other') ? ' – ' . $str('additional_deposit_timeframe_other') : '')) !!}
+                    {!! $row('Additional Deposit Timeframe', $orOther($str('additional_deposit_timeframe'), $str('additional_deposit_timeframe_other'))) !!}
                     {!! $row('Escrow Agent Preference', $str('escrow_agent_preference')) !!}
                 </div>
             </div>
@@ -592,7 +614,7 @@
                     {!! $row('Date Loan Originated', $str('assumable_loan_origination_date')) !!}
                     {!! $row('Loan Servicer / Lender', $str('assumable_loan_servicer')) !!}
                     {!! $row('Assumption Fee', $str('assumable_fee_type') === '%' ? $fmtPercent($str('assumable_fee_amount')) : $fmtMoney($str('assumable_fee_amount'))) !!}
-                    {!! $row('Occupancy Requirement', $str('assumable_occupancy_requirement') . ($str('assumable_occupancy_other') ? ' – ' . $str('assumable_occupancy_other') : '')) !!}
+                    {!! $row('Occupancy Requirement', $orOther($str('assumable_occupancy_requirement'), $str('assumable_occupancy_other'))) !!}
                 </div>
             </div>
             @endif
@@ -611,7 +633,7 @@
                 <div class="col-md-6">
                     {!! $row('Custodian / Wallet', $str('crypto_custodian_wallet')) !!}
                     {!! $row('Transaction Fees Responsibility', $str('crypto_transaction_fees')) !!}
-                    {!! $row('Timing of Transfer', $str('crypto_transfer_timing') . ($str('crypto_transfer_timing_other') ? ' – ' . $str('crypto_transfer_timing_other') : '')) !!}
+                    {!! $row('Timing of Transfer', $orOther($str('crypto_transfer_timing'), $str('crypto_transfer_timing_other'))) !!}
                 </div>
             </div>
             @endif
@@ -715,8 +737,8 @@
                     {!! $row('Balloon Payment', $yesNo($str('balloon_payment'))) !!}
                     {!! $row('Balloon Payment Amount', $fmtMoney($str('balloon_payment_amount'))) !!}
                     {!! $row('Balloon Payment Due Date', $str('balloon_payment_date')) !!}
-                    {!! $row('Amortization Type', $str('seller_amortization_type') . ($str('seller_amortization_other') ? ' – ' . $str('seller_amortization_other') : '')) !!}
-                    {!! $row('Payment Frequency', $str('seller_payment_frequency') . ($str('seller_payment_frequency_other') ? ' – ' . $str('seller_payment_frequency_other') : '')) !!}
+                    {!! $row('Amortization Type', $orOther($str('seller_amortization_type'), $str('seller_amortization_other'))) !!}
+                    {!! $row('Payment Frequency', $orOther($str('seller_payment_frequency'), $str('seller_payment_frequency_other'))) !!}
                     {!! $row('Late Payment Fee', $fmtMoney($str('seller_late_fee_amount'))) !!}
                 </div>
             </div>
@@ -870,7 +892,7 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
-                    {!! $row('Agency Agreement Timeframe', $str('agency_agreement_timeframe') . ($str('agency_agreement_custom') ? ' – ' . $str('agency_agreement_custom') : '')) !!}
+                    {!! $row('Agency Agreement Timeframe', $orOther($str('agency_agreement_timeframe'), $str('agency_agreement_custom'))) !!}
                     {!! $row('Protection Period (Days)', $str('protection_period')) !!}
                     {!! $row('Broker\'s Share of Retained Deposits', $str('retained_deposits') !== '' && $str('retained_deposits') !== null ? $fmtPercent($str('retained_deposits')) : null) !!}
                 </div>
@@ -973,7 +995,7 @@
                 </div>
                 <div class="col-md-6">
                     {!! $row('Legal Description', $str('legal_description')) !!}
-                    {!! $row('Flood Zone Code', $str('flood_zone_code') . ($str('flood_zone_code_other') ? ' – ' . $str('flood_zone_code_other') : '')) !!}
+                    {!! $row('Flood Zone Code', $orOther($str('flood_zone_code'), $str('flood_zone_code_other'))) !!}
                     {!! $row('Flood Insurance Required', $yesNo($str('flood_insurance_required'))) !!}
                     {!! $row('Flood Zone Panel', $str('flood_zone_panel')) !!}
                 </div>
@@ -1001,27 +1023,34 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Has HOA', $yesNo($str('has_hoa'))) !!}
-                    {!! $row('Association Type', $str('association_type') . ($str('association_type_other') ? ' – ' . $str('association_type_other') : '')) !!}
+                    {!! $row('Association Type', $orOther($str('association_type'), $str('association_type_other'))) !!}
                     {!! $row('Association Name', $str('association_name')) !!}
-                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . ($str('association_fee_frequency') ? ' / ' . $str('association_fee_frequency') . ($str('association_fee_frequency_other') ? ' – ' . $str('association_fee_frequency_other') : '') : '')) !!}
+                    @php
+                        $_freq = $str('association_fee_frequency');
+                        $_freqDisplay = $_freq ? (' / ' . $orOther($_freq, $str('association_fee_frequency_other'))) : '';
+                    @endphp
+                    {!! $row('Association Fee', $fmtMoney($str('association_fee_amount')) . $_freqDisplay) !!}
                     {!! $row('Application Fee', $fmtMoney($str('association_application_fee'))) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Approval Required', $yesNo($str('association_approval_required'))) !!}
                     {!! $row('Approval Process', $str('association_approval_process')) !!}
                     {!! $row('Leasing Restrictions', $yesNo($str('leasing_restrictions'))) !!}
-                    {!! $row('Min Lease Period', $str('min_lease_period') . ($str('min_lease_period_other') ? ' – ' . $str('min_lease_period_other') : '')) !!}
+                    {!! $row('Min Lease Period', $orOther($str('min_lease_period'), $str('min_lease_period_other'))) !!}
                     {!! $row('Max Leases / Year', $str('max_leases_per_year')) !!}
                     {!! $row('Pet Restrictions', $yesNo($str('pet_restrictions'))) !!}
                     {!! $row('Pet Restriction Details', $str('pet_restrictions_detail')) !!}
                 </div>
             </div>
-            @php $assocAmenities = $arr('association_amenities'); $assocIncludes = $arr('association_fee_includes'); @endphp
+            @php
+                $assocAmenities = $subOther($arr('association_amenities'), $str('association_amenities_other'));
+                $assocIncludes  = $subOther($arr('association_fee_includes'), $str('association_fee_includes_other'));
+            @endphp
             @if(count($assocIncludes))
-                {!! $row('Fee Includes', implode(', ', $assocIncludes) . ($str('association_fee_includes_other') ? ' – ' . $str('association_fee_includes_other') : '')) !!}
+                {!! $row('Fee Includes', implode(', ', $assocIncludes)) !!}
             @endif
             @if(count($assocAmenities))
-                {!! $row('Association Amenities', implode(', ', $assocAmenities) . ($str('association_amenities_other') ? ' – ' . $str('association_amenities_other') : '')) !!}
+                {!! $row('Association Amenities', implode(', ', $assocAmenities)) !!}
             @endif
             @endif
         </div>
