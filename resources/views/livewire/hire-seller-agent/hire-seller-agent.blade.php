@@ -1408,6 +1408,7 @@
                     $exEl.select2({
                         placeholder: "Select",
                         allowClear: true,
+                        width: "100%",
                     });
                 }
                 var savedExchangeItems = [];

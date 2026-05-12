@@ -667,7 +667,7 @@
         @endphp
         <select id="garage_parking_spaces_option"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
-            <option value="">Select</option>
+            <option value=""></option>
             @foreach ($garage_parking_spaces as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedGarageOptions) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach

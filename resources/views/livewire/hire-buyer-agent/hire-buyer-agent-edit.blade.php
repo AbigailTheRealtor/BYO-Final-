@@ -1377,6 +1377,30 @@
                 }
             });
 
+            if ($('#assets').length && !$('#assets').hasClass('select2-hidden-accessible')) {
+                $('#assets').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: "100%",
+                });
+                $('#assets').off('change.assetsSync').on('change.assetsSync', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    debouncedSet('assets', selectedValues);
+                });
+            }
+
+            if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: "100%",
+                });
+                $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    debouncedSet('garage_parking_spaces_option', selectedValues);
+                });
+            }
+
             jsonRestoreSelect2();
 
             // Function to toggle "auction time" input field

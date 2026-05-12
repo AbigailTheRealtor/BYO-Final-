@@ -984,6 +984,7 @@
                 $('#exchange_item').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: "100%",
                 });
                 var savedExchangeItems = @this.get('exchange_item') || [];
                 if (savedExchangeItems.length > 0) {
@@ -1198,6 +1199,39 @@
                         $('#other_preferences').show();
                     } else {
                         $('#other_preferences').hide();
+                    }
+                });
+            }
+
+            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
+                $('#appliances').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: "100%",
+                });
+                $('#appliances').on('change', function(e) {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('appliances', selectedValues, false);
+                    if (selectedValues.includes('Other')) {
+                        $('#other_appliances').show();
+                    } else {
+                        $('#other_appliances').hide();
+                    }
+                });
+            }
+
+            if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option_landlord').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: "100%",
+                });
+                $('#garage_parking_spaces_option_landlord').on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('garage_parking_spaces_option', selectedValues, false);
+                    const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
+                    if (otherDiv) {
+                        otherDiv.style.display = selectedValues.includes('Other') ? '' : 'none';
                     }
                 });
             }

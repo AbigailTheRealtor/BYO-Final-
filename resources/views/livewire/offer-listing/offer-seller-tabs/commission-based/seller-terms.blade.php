@@ -61,7 +61,7 @@
     <div class="input-cover has-select-icon" wire:ignore>
         <select id="sale_provision" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-screwdriver-wrench" data-placeholder="Select" multiple required>
-            <option value="">Select</option>
+            <option value=""></option>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}" {{ in_array($row_pt['name'], $sale_provision ?? []) ? 'selected' : '' }}>
                     {{ $row_pt['name'] }}
@@ -353,7 +353,7 @@
     <div class="input-cover has-select-icon" wire:ignore wire:key="offered-financing-cover">
         <select id="offered_financing" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-money-bill-wave" data-placeholder="Select" multiple>
-            <option value="">Select</option>
+            <option value=""></option>
             @foreach ($financing_options_seller as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}" {{ in_array($option['name'], $offered_financing ?? []) ? 'selected' : '' }}>
                     {{ $option['name'] }}
@@ -807,7 +807,7 @@
         @endphp
         <div class="input-cover has-select-icon" wire:ignore>
             <select id="exchange_item" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-right-left" data-placeholder="Select" data-selected='@json($eiArr)' multiple>
-                <option value="">Select</option>
+                <option value=""></option>
                 @foreach (['Another Home', 'Artwork', 'Boat', 'Jewelry', 'Motorhome', 'Vehicle', 'Other'] as $eiOpt)
                     <option value="{{ $eiOpt }}" {{ in_array($eiOpt, $eiArr) ? 'selected' : '' }}>{{ $eiOpt }}</option>
                 @endforeach

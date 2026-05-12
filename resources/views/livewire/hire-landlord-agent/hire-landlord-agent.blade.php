@@ -1853,6 +1853,22 @@
                 });
             }
 
+            if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option_landlord').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: "100%",
+                });
+                $('#garage_parking_spaces_option_landlord').on('change', function() {
+                    let selectedValues = $(this).val() || [];
+                    @this.set('garage_parking_spaces_option', selectedValues);
+                    const otherDiv = document.getElementById('other_garage_parking_spaces_option_landlord');
+                    if (otherDiv) {
+                        otherDiv.style.display = selectedValues.includes('Other') ? '' : 'none';
+                    }
+                });
+            }
+
             if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
                 $('#rent_includes').select2({
                     placeholder: "Select",

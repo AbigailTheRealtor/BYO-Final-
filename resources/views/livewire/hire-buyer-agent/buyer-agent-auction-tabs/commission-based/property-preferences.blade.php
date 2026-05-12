@@ -333,6 +333,7 @@
             <select id="property_items" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-home input-icon2" @if (!$property_type) disabled @endif multiple
                 required>
+                <option value=""></option>
                 @if ($property_type === 'Residential')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'residential-length'))
@@ -696,7 +697,7 @@
 
         <select id="garage_parking_spaces_option"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
-
+            <option value=""></option>
             @foreach ($garage_parking_spaces as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $garage_parking_spaces_option ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -1032,6 +1033,7 @@
         <div class="input-cover" wire:ignore>
             <select id="assets" class="form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-building input-icon2" multiple>
+                <option value=""></option>
                 <option value="Goodwill and Business Name" {{ in_array('Goodwill and Business Name', $assets ?? []) ? 'selected' : '' }}>
                     Goodwill and Business Name
                 </option>
@@ -1148,6 +1150,7 @@
             <select wire:model="number_of_unit_type"
                 class="number_of_unit_type form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-home input-icon2" multiple>
+                <option value=""></option>
                 @foreach ($unit_types as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
