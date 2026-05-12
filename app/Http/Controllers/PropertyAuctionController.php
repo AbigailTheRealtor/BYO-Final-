@@ -1457,64 +1457,161 @@ class PropertyAuctionController extends Controller
         $page_data['property_types'] = PropertyType::orderBy('id', 'DESC')->get();
         $page_data['bedrooms'] = Bedroom::all();
         $page_data['bathrooms'] = Bathroom::all();
-        $auctions = PropertyAuction::all();
-        $auctions = PropertyAuction::selectRaw("*, (SELECT meta_value FROM property_auction_metas WHERE property_auction_metas.property_auction_id = property_auctions.id AND meta_key = 'starting_price') as price")->where('sold', false)->where('is_approved', true);
+
+        // PropertyAuction query (existing Seller Property Auctions)
+        $paQuery = PropertyAuction::selectRaw("*, (SELECT meta_value FROM property_auction_metas WHERE property_auction_metas.property_auction_id = property_auctions.id AND meta_key = 'starting_price') as price")
+            ->where('sold', false)
+            ->where('is_approved', true);
 
         if ($request->title != "") {
-            $auctions->where('address', 'like', '%' . $request->title . '%');
+            $paQuery->where('address', 'like', '%' . $request->title . '%');
         }
-
         if ($request->bedrooms != "") {
-            $auctions->whereHas('meta', function ($meta) use ($request) {
-                $meta->where('meta_key', 'bedrooms')->where('meta_value', $request->bedrooms);
+            $paQuery->whereHas('meta', function ($m) use ($request) {
+                $m->where('meta_key', 'bedrooms')->where('meta_value', $request->bedrooms);
             });
         }
-
         if ($request->bathrooms != "") {
-            $auctions->whereHas('meta', function ($meta) use ($request) {
-                $meta->where('meta_key', 'bathrooms')->where('meta_value', $request->bathrooms);
+            $paQuery->whereHas('meta', function ($m) use ($request) {
+                $m->where('meta_key', 'bathrooms')->where('meta_value', $request->bathrooms);
             });
         }
-
         if ($request->property_type != "") {
-            $auctions->whereHas('meta', function ($meta) use ($request) {
-                $meta->where('meta_key', 'property_type')->where('meta_value', $request->property_type);
+            $paQuery->whereHas('meta', function ($m) use ($request) {
+                $m->where('meta_key', 'property_type')->where('meta_value', $request->property_type);
             });
         }
+        $paResults = $paQuery->get();
 
-        if ($request->sort) {
-            $sort = $request->sort;
-            if ($sort == 1) {
-                $sort_by = 'address';
-                $sort_type = 'DESC';
-            } elseif ($sort == 2) {
-                $sort_by = 'address';
-                $sort_type = 'DESC';
-            } elseif ($sort == 3) {
-                $sort_by = 'created_at';
-                $sort_type = 'DESC';
-            } elseif ($sort == 4) {
-                $sort_by = 'created_at';
-                $sort_type = 'DESC';
-            } elseif ($sort == 5) {
-                $sort_by = 'price';
-                $sort_type = 'DESC';
-            } elseif ($sort == 6) {
-                $sort_by = 'price';
-                $sort_type = 'DESC';
-            }
-            $auctions->orderBy($sort_by, $sort_type);
-        } else {
-            $auctions->orderBy(DB::raw('id', 'DESC'));
+        // OfferAuction seller query (Seller Create Offer Listings)
+        $oaQuery = \App\Models\OfferAuction::where('is_approved', true)
+            ->where('is_draft', false)
+            ->where(function ($q) {
+                $q->whereHas('metas', function ($m) {
+                    $m->where('meta_key', 'user_type')->where('meta_value', 'seller');
+                })->orWhereHas('metas', function ($m) {
+                    $m->where('meta_key', 'listing_role')->where('meta_value', 'seller');
+                });
+            })
+            ->with('metas');
+
+        if ($request->title != "") {
+            $oaQuery->whereHas('metas', function ($m) use ($request) {
+                $m->where('meta_key', 'address')->where('meta_value', 'like', '%' . $request->title . '%');
+            });
+        }
+        if ($request->bedrooms != "") {
+            $oaQuery->whereHas('metas', function ($m) use ($request) {
+                $m->where('meta_key', 'bedrooms')->where('meta_value', $request->bedrooms);
+            });
+        }
+        if ($request->bathrooms != "") {
+            $oaQuery->whereHas('metas', function ($m) use ($request) {
+                $m->where('meta_key', 'bathrooms')->where('meta_value', $request->bathrooms);
+            });
+        }
+        if ($request->property_type != "") {
+            $oaQuery->whereHas('metas', function ($m) use ($request) {
+                $m->where('meta_key', 'property_type')->where('meta_value', $request->property_type);
+            });
+        }
+        $oaResults = $oaQuery->get();
+
+        // Normalize & merge into a unified keyed collection
+        $normalized = collect();
+
+        foreach ($paResults as $pa) {
+            $pa->_source_key = 'property_auction:' . $pa->id;
+            $pa->_view_url   = route('view-pl', $pa->id);
+            $normalized->put($pa->_source_key, $pa);
         }
 
-        $auctions_c = $auctions;
+        foreach ($oaResults as $oa) {
+            $sourceKey = 'offer_auction:' . $oa->id;
+            if ($normalized->has($sourceKey)) {
+                continue;
+            }
+            $metaMap = $oa->metas->pluck('meta_value', 'meta_key');
 
-        // dd($auctions->toSql());
+            $photosRaw = $metaMap['property_photos'] ?? null;
+            $photos    = [];
+            if ($photosRaw) {
+                $decoded = json_decode($photosRaw, true);
+                if (is_array($decoded)) {
+                    $photos = array_values(array_filter($decoded));
+                }
+            }
+            $photoUrls = array_map(fn($p) => 'storage/auction/images/' . $p, $photos);
 
-        $page_data['count'] = $auctions_c->count();
-        // dd($page_data['count']);
-        $page_data['pAuctions'] = $auctions->paginate(12);
+            $priceRaw = $metaMap['maximum_budget'] ?? $metaMap['starting_price'] ?? null;
+            $price    = $priceRaw ? preg_replace('/[^0-9.]/', '', str_replace(',', '', $priceRaw)) : null;
+
+            $displayTitle = $metaMap['listing_title'] ?? ($metaMap['address'] ?? '');
+
+            $getObj = (object) [
+                'address'             => $displayTitle,
+                'bedrooms'            => $metaMap['bedrooms']  ?? '',
+                'bathrooms'           => $metaMap['bathrooms'] ?? '',
+                'property_type'       => $metaMap['property_type'] ?? '',
+                'agent_mls_id'        => null,
+                'auction_length_days' => 0,
+                'photos'              => $photoUrls,
+            ];
+
+            $listingStatus  = $metaMap['listing_status'] ?? '';
+            $listingExpiry  = $metaMap['listing_expiration'] ?? null;
+            $isStatusClosed = in_array($listingStatus, ['Accepted', 'Withdrawn', 'Expired']);
+            $isExpired      = $listingExpiry && \Carbon\Carbon::now()->gt(\Carbon\Carbon::parse($listingExpiry));
+
+            $wrapper                = new \stdClass();
+            $wrapper->id            = $oa->id;
+            $wrapper->get           = $getObj;
+            $wrapper->heated_sqft   = $metaMap['minimum_heated_square'] ?? null;
+            $wrapper->price         = $price;
+            $wrapper->created_at    = $oa->created_at;
+            $wrapper->auction_length = 0;
+            $wrapper->auction_ended  = $isStatusClosed || $isExpired;
+            $wrapper->_source_key   = $sourceKey;
+            $wrapper->_view_url     = route('offer.listing.view', ['id' => $oa->id]) . '?role=seller';
+
+            $normalized->put($sourceKey, $wrapper);
+        }
+
+        // Sort: 1=Title Z-a (desc), 2=Title A-z (asc), 3=Date new, 4=Date old, 5=Price high, 6=Price low
+        $sort = $request->sort;
+        $getTitle = fn($a) => strtolower((string) ($a->get->address ?? ''));
+        $getDate  = fn($a) => (string) ($a->created_at ?? '');
+        $getPrice = fn($a) => floatval($a->price ?? 0);
+        if ($sort == 1) {
+            $sorted = $normalized->sortByDesc($getTitle);
+        } elseif ($sort == 2) {
+            $sorted = $normalized->sortBy($getTitle);
+        } elseif ($sort == 3) {
+            $sorted = $normalized->sortByDesc($getDate);
+        } elseif ($sort == 4) {
+            $sorted = $normalized->sortBy($getDate);
+        } elseif ($sort == 5) {
+            $sorted = $normalized->sortByDesc($getPrice);
+        } elseif ($sort == 6) {
+            $sorted = $normalized->sortBy($getPrice);
+        } else {
+            $sorted = $normalized->sortByDesc(fn($a) => $a->id ?? 0);
+        }
+
+        // Paginate the combined result as a single unit
+        $perPage     = 12;
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage();
+        $items       = $sorted->values()->forPage($currentPage, $perPage);
+        $paginator   = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $sorted->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $page_data['count']    = $sorted->count();
+        $page_data['pAuctions'] = $paginator;
         return view('seller_property.search', $page_data);
     }
 

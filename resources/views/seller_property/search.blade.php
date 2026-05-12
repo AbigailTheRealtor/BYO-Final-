@@ -77,8 +77,12 @@
                   $photo = url('auction/images/noimage.png');
                   if (gettype(@$auction->get->photos) == 'array') {
                       $photos = @$auction->get->photos;
-                      $photo = url(current($photos));
+                      $firstPhoto = current($photos);
+                      if ($firstPhoto) {
+                          $photo = str_starts_with($firstPhoto, 'storage/') ? asset($firstPhoto) : url($firstPhoto);
+                      }
                   }
+                  $cardUrl = $auction->_view_url ?? route('view-pl', @$auction->id);
                 @endphp
                 <img src="{{ $photo }}" class="card-img-top" alt="..."
                   style="width: 100%; height:202px; object-fit: cover;">
@@ -86,11 +90,11 @@
               <div class="card-body pb-2 pt-2" style="position: relative;">
                 <div style="min-height: 56px;">
                   <h5 class="card-title w-75"><a
-                      href="{{ route('view-pl', @$auction->id) }}">{{ @$auction->get->address }}</a>
+                      href="{{ $cardUrl }}">{{ @$auction->get->address }}</a>
                   </h5>
                 </div>
                 <div class="qr-code" style="width: 50px; height:50px; position: absolute; top:0; right:0;">
-                  {{ qr_code(route('view-pl', @$auction->id), 150) }}
+                  {{ qr_code($cardUrl, 150) }}
                 </div>
                 <div class="houseDetails mb-1">
                   <span>

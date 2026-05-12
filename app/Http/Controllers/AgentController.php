@@ -493,61 +493,33 @@ class AgentController extends Controller
     {
         $uid = Auth::id();
 
-        // Each role uses its own auto-increment table, so the same $id can appear
-        // in more than one table. We search in a fixed priority order and return
-        // the first match owned by the current user. Callers that need a specific
-        // role should pass a role discriminator (e.g. via query param or session)
-        // and extend this method once the route is made role-aware.
-        $roleMap = [
-            'seller'   => SellerAgentAuction::class,
-            'landlord' => LandlordAgentAuction::class,
-            'buyer'    => BuyerAgentAuction::class,
-            'tenant'   => TenantAgentAuctionModel::class,
-        ];
-
-        $auction = null;
-        $role    = null;
-
         // Admins may view any listing regardless of ownership (oversight access).
         $isAdmin = Auth::user()?->user_type === 'admin';
 
-        // Prefer an explicit role discriminator passed via query string to avoid
-        // cross-table ID collisions (each role table uses its own auto-increment).
-        $requestedRole = request()->query('role');
-        if ($requestedRole && isset($roleMap[$requestedRole])) {
-            $modelClass = $roleMap[$requestedRole];
-            $query = $modelClass::where('id', $id)->with('meta');
-            if (!$isAdmin) {
-                $query->where('user_id', $uid);
-            }
-            $found = $query->first();
-            if ($found) {
-                $auction = $found;
-                $role    = $requestedRole;
-            }
+        // Offer listings are stored in the OfferAuction model (offer_auctions table).
+        $query = OfferAuctionModel::where('id', $id)->with('metas');
+        if (!$isAdmin) {
+            $query->where('user_id', $uid);
         }
-
-        // Fall back to priority-order search when no role discriminator provided.
-        if (!$auction) {
-            foreach ($roleMap as $r => $modelClass) {
-                $query = $modelClass::where('id', $id)->with('meta');
-                if (!$isAdmin) {
-                    $query->where('user_id', $uid);
-                }
-                $found = $query->first();
-                if ($found) {
-                    $auction = $found;
-                    $role    = $r;
-                    break;
-                }
-            }
-        }
+        $auction = $query->first();
 
         if (!$auction) {
             abort(404);
         }
 
-        $meta = $auction->meta->pluck('meta_value', 'meta_key');
+        // Determine role: explicit query param takes precedence, then listing_role meta,
+        // then offer_type meta, then user_type meta, defaulting to 'seller'.
+        $allowedRoles  = ['seller', 'buyer', 'landlord', 'tenant'];
+        $requestedRole = request()->query('role');
+        $metas         = $auction->metas;
+        $metaRole      = $metas->where('meta_key', 'listing_role')->first()?->meta_value
+                      ?? $metas->where('meta_key', 'offer_type')->first()?->meta_value
+                      ?? $metas->where('meta_key', 'user_type')->first()?->meta_value
+                      ?? '';
+        $role = in_array($requestedRole, $allowedRoles) ? $requestedRole
+              : (in_array($metaRole, $allowedRoles)    ? $metaRole : 'seller');
+
+        $meta = $auction->metas->pluck('meta_value', 'meta_key');
 
         $isDraft    = (bool) $auction->is_draft;
         $isApproved = (bool) $auction->is_approved;
