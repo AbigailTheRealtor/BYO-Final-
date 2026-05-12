@@ -50,7 +50,10 @@ class UserController extends Controller
             $page_data['pAuctions'] = BuyerAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
             return view('author_inc.buyer_agent_auctions', $page_data);
         } else if ($user->user_type == 'seller') {
-            $page_data['pAuctions'] = SellerAgentAuction::where('is_sold', 'false')->where('is_approved', 'true')->paginate(12);
+            $page_data['pAuctions'] = SellerAgentAuction::where('is_sold', 'false')->where('is_approved', 'true')
+                ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+                ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
+                ->paginate(12);
             return view('author_inc.seller_agent_auctions', $page_data);
         } else if ($user->user_type == 'landlord') {
             $page_data['pAuctions'] = LandlordAgentAuction::where('is_sold', false)->where('is_approved', 1)->paginate(12);
@@ -80,7 +83,9 @@ class UserController extends Controller
                 return view('author_inc.tenant_agent_auctions', $page_data);
             } else if ($type == 1) {
                 $query = SellerAgentAuction::where('user_id', $user->id)
-                    ->where('is_sold', 'false');
+                    ->where('is_sold', 'false')
+                    ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+                    ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); });
                 if (!$isOwner) {
                     $query->where('is_draft', false);
                     $query->where('is_approved', 'true');

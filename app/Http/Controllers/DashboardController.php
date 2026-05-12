@@ -450,12 +450,29 @@ class DashboardController extends Controller
     public function allListings()
     {
         $uid = Auth::id();
+        $offerListingMetaKeys = SellerOfferListingController::OFFER_LISTING_META_KEYS;
+
+        // Hire Seller's Agent listings — exclude Seller Offer Listings (two-tier detection).
+        $sellerHireListings = SellerAgentAuction::where('user_id', $uid)
+            ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+            ->whereDoesntHave('meta', function ($m) use ($offerListingMetaKeys) { $m->whereIn('meta_key', $offerListingMetaKeys); })
+            ->withCount('bids')->latest()->get();
+
+        // Seller Offer Listings — the other half of the SellerAgentAuction table.
+        $sellerOfferListings = SellerAgentAuction::where('user_id', $uid)
+            ->where(function ($q) use ($offerListingMetaKeys) {
+                $q->whereHas('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+                  ->orWhereHas('meta', function ($m) use ($offerListingMetaKeys) { $m->whereIn('meta_key', $offerListingMetaKeys); });
+            })
+            ->withCount('bids')->latest()->get();
+
         return view('myListings', [
-            'title'           => 'My Listings',
-            'tenantListings'  => TenantAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
-            'landlordListings'=> LandlordAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
-            'buyerListings'   => BuyerAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
-            'sellerListings'  => SellerAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'title'              => 'My Listings',
+            'tenantListings'     => TenantAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'landlordListings'   => LandlordAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'buyerListings'      => BuyerAgentAuction::where('user_id', $uid)->withCount('bids')->latest()->get(),
+            'sellerHireListings' => $sellerHireListings,
+            'sellerOfferListings'=> $sellerOfferListings,
         ]);
     }
 }

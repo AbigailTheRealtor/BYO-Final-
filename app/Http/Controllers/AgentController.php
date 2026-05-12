@@ -457,7 +457,10 @@ class AgentController extends Controller
                         ->map(fn($a) => $this->normalizeHireListing($a, 'landlord'));
         $buyer    = BuyerAgentAuction::where('user_id', $uid)->with('bids')->get()
                         ->map(fn($a) => $this->normalizeHireListing($a, 'buyer'));
-        $seller   = SellerAgentAuction::where('user_id', $uid)->with('bids')->get()
+        $seller   = SellerAgentAuction::where('user_id', $uid)
+                        ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+                        ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
+                        ->with('bids')->get()
                         ->map(fn($a) => $this->normalizeHireListing($a, 'seller'));
 
         $all = collect([...$tenant, ...$landlord, ...$buyer, ...$seller])

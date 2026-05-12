@@ -283,9 +283,18 @@ class SellerAgentAuctionController extends Controller
     {
         $page_data['title'] = 'Hire Seller\'s Agent Auctions';
         $page_data['type'] = $type = $request->type ?? "2";
-        $pendingApprovalAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => 'false', 'is_draft' => false])->with(['bids.user', 'bids.meta']);
-        $liveAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'false', 'is_draft' => false])->with(['bids.user', 'bids.meta']);
-        $soldAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'true', 'is_draft' => false])->with(['bids.user', 'bids.meta']);
+        $pendingApprovalAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => false, 'is_sold' => 'false', 'is_draft' => false])
+            ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+            ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
+            ->with(['bids.user', 'bids.meta']);
+        $liveAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'false', 'is_draft' => false])
+            ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+            ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
+            ->with(['bids.user', 'bids.meta']);
+        $soldAuctions = SellerAgentAuction::where(['user_id' => Auth::user()->id, 'is_approved' => true, 'is_sold' => 'true', 'is_draft' => false])
+            ->whereDoesntHave('meta', function ($m) { $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'); })
+            ->whereDoesntHave('meta', function ($m) { $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS); })
+            ->with(['bids.user', 'bids.meta']);
 
         if ($type == "1") {
             $auctions = $pendingApprovalAuctions->get();
@@ -1102,19 +1111,9 @@ class SellerAgentAuctionController extends Controller
         $page_data['title'] = 'Search Listings';
         $auctions = SellerAgentAuction::query();
 
-        // Offer Listing-specific meta keys used to identify (and exclude) offer listing records.
-        // Mirrors the two-tier detection in SellerOfferListingController.
-        $offerListingMetaKeys = [
-            'parcel_id',
-            'flood_zone_code',
-            'annual_property_taxes',
-            'seller_disclosure_available',
-            'property_photos',
-            'listing_documents',
-            'brokerage_relationship',
-            'association_type',
-            'auction_type',
-        ];
+        // Offer Listing-specific meta keys — sourced from the single authoritative list
+        // in SellerOfferListingController to avoid duplication.
+        $offerListingMetaKeys = SellerOfferListingController::OFFER_LISTING_META_KEYS;
 
         $auctions->selectRaw("*, (SELECT meta_value FROM seller_agent_auction_metas WHERE seller_agent_auction_metas.seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'ideal_price') as price")
             ->where('is_approved', true)

@@ -11,7 +11,7 @@ class SellerOfferListingController extends Controller
      * Meta keys that are exclusive to Seller Offer Listings (Full Service).
      * Used as a fallback identifier for records that pre-date the workflow_type stamp.
      */
-    private const OFFER_LISTING_META_KEYS = [
+    public const OFFER_LISTING_META_KEYS = [
         'parcel_id',
         'flood_zone_code',
         'annual_property_taxes',

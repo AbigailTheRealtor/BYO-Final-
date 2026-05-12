@@ -173,15 +173,23 @@ $roles = [
     ],
     [
         'key'       => 'seller',
-        'label'     => "Seller's Agent",
+        'label'     => "Hire Seller's Agent",
         'icon'      => 'fa-solid fa-sign-out',
-        'listings'  => $sellerListings,
+        'listings'  => $sellerHireListings,
         'listRoute' => 'hireSellerAgentHireAuctions',
         'viewRoute' => 'seller.agent.auction.detail',
     ],
+    [
+        'key'       => 'seller_offer',
+        'label'     => "Seller Offer Listing",
+        'icon'      => 'fa-solid fa-list',
+        'listings'  => $sellerOfferListings,
+        'listRoute' => 'offer.listing.seller.searchListing',
+        'viewRoute' => 'offer.listing.seller.view',
+    ],
 ];
 
-$grandTotal = $tenantListings->count() + $landlordListings->count() + $buyerListings->count() + $sellerListings->count();
+$grandTotal = $tenantListings->count() + $landlordListings->count() + $buyerListings->count() + $sellerHireListings->count() + $sellerOfferListings->count();
 @endphp
 
 @section('content')
