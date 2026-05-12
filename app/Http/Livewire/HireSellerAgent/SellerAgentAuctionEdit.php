@@ -231,6 +231,35 @@ class SellerAgentAuctionEdit extends Component
     public $brokerage_relationship = '';
     public $additional_details_broker = '';
 
+    // Seller-specific broker compensation (leasing agreement & commission structure)
+    public $nominal = '';
+    public $interested_purchase_fee_type = '';
+    public $seller_leasing_fee_type = '';
+    public $seller_leasing_gross = '';
+    public $seller_leasing_gross_rental = '';
+    public $seller_leasing_gross_month_rent = '';
+    public $seller_leasing_gross_no_of_months = '';
+    public $seller_leasing_gross_flat = '';
+    public $seller_leasing_gross_other = '';
+    public $seller_leasing_each_rental = '';
+    public $seller_leasing_gross_percentage = '';
+    public $seller_leasing_gross_percentage_combo = '';
+    public $seller_leasing_gross_flat_combo = '';
+    public $seller_leasing_gross_flat_net_combo = '';
+    public $seller_leasing_gross_percentage_net_combo = '';
+    public $seller_leasing_gross_purchase_fee_flat_amount = '';
+    public $seller_leasing_gross_purchase_fee_other = '';
+    public $sales_tax_option_gross = '';
+    public $seller_leasing_gross_sales_tax_first_month = '';
+    public $seller_leasing_gross_sales_tax_flat_free_gross = '';
+    public $seller_leasing_gross_sales_tax_option_gross = '';
+    public $commission_structure_type = '';
+    public $commission_structure_type_fee_flat = '';
+    public $commission_structure_type_fee_percentage = '';
+    public $commission_structure_type_fee_other = '';
+    public $commission_structure_type_fee_flat_combo = '';
+    public $commission_structure_type_fee_percentage_combo = '';
+
     // Personal information
     public $first_name = '';
     public $last_name = '';
@@ -1251,6 +1280,35 @@ class SellerAgentAuctionEdit extends Component
             $this->brokerage_relationship = $auction->get->brokerage_relationship;
             $this->additional_details_broker = $auction->get->additional_details_broker ?? '';
 
+            // Seller-specific broker compensation (leasing agreement & commission structure)
+            $this->nominal = $auction->get->nominal ?? '';
+            $this->interested_purchase_fee_type = $auction->get->interested_purchase_fee_type ?? '';
+            $this->seller_leasing_fee_type = $auction->get->seller_leasing_fee_type ?? '';
+            $this->seller_leasing_gross = $auction->get->seller_leasing_gross ?? '';
+            $this->seller_leasing_gross_rental = $auction->get->seller_leasing_gross_rental ?? '';
+            $this->seller_leasing_gross_month_rent = $auction->get->seller_leasing_gross_month_rent ?? '';
+            $this->seller_leasing_gross_no_of_months = $auction->get->seller_leasing_gross_no_of_months ?? '';
+            $this->seller_leasing_gross_flat = $auction->get->seller_leasing_gross_flat ?? '';
+            $this->seller_leasing_gross_other = $auction->get->seller_leasing_gross_other ?? '';
+            $this->seller_leasing_each_rental = $auction->get->seller_leasing_each_rental ?? '';
+            $this->seller_leasing_gross_percentage = $auction->get->seller_leasing_gross_percentage ?? '';
+            $this->seller_leasing_gross_percentage_combo = $auction->get->seller_leasing_gross_percentage_combo ?? '';
+            $this->seller_leasing_gross_flat_combo = $auction->get->seller_leasing_gross_flat_combo ?? '';
+            $this->seller_leasing_gross_flat_net_combo = $auction->get->seller_leasing_gross_flat_net_combo ?? '';
+            $this->seller_leasing_gross_percentage_net_combo = $auction->get->seller_leasing_gross_percentage_net_combo ?? '';
+            $this->seller_leasing_gross_purchase_fee_flat_amount = $auction->get->seller_leasing_gross_purchase_fee_flat_amount ?? '';
+            $this->seller_leasing_gross_purchase_fee_other = $auction->get->seller_leasing_gross_purchase_fee_other ?? '';
+            $this->sales_tax_option_gross = $auction->get->sales_tax_option_gross ?? '';
+            $this->seller_leasing_gross_sales_tax_first_month = $auction->get->seller_leasing_gross_sales_tax_first_month ?? '';
+            $this->seller_leasing_gross_sales_tax_flat_free_gross = $auction->get->seller_leasing_gross_sales_tax_flat_free_gross ?? '';
+            $this->seller_leasing_gross_sales_tax_option_gross = $auction->get->seller_leasing_gross_sales_tax_option_gross ?? '';
+            $this->commission_structure_type = $auction->get->commission_structure_type ?? '';
+            $this->commission_structure_type_fee_flat = $auction->get->commission_structure_type_fee_flat ?? '';
+            $this->commission_structure_type_fee_percentage = $auction->get->commission_structure_type_fee_percentage ?? '';
+            $this->commission_structure_type_fee_other = $auction->get->commission_structure_type_fee_other ?? '';
+            $this->commission_structure_type_fee_flat_combo = $auction->get->commission_structure_type_fee_flat_combo ?? '';
+            $this->commission_structure_type_fee_percentage_combo = $auction->get->commission_structure_type_fee_percentage_combo ?? '';
+
             // Personal information
             $this->first_name = $auction->get->first_name;
             $this->last_name = $auction->get->last_name;
@@ -1600,6 +1658,35 @@ class SellerAgentAuctionEdit extends Component
         $auction->saveMeta('agency_agreement_custom', $this->agency_agreement_custom);
         $auction->saveMeta('brokerage_relationship', $this->brokerage_relationship);
         $auction->saveMeta('additional_details_broker', $this->additional_details_broker);
+
+        // Seller-specific broker compensation (leasing agreement & commission structure)
+        $auction->saveMeta('nominal', $this->nominal);
+        $auction->saveMeta('interested_purchase_fee_type', $this->interested_purchase_fee_type);
+        $auction->saveMeta('seller_leasing_fee_type', $this->seller_leasing_fee_type);
+        $auction->saveMeta('seller_leasing_gross', $this->seller_leasing_gross);
+        $auction->saveMeta('seller_leasing_gross_rental', $this->seller_leasing_gross_rental);
+        $auction->saveMeta('seller_leasing_gross_month_rent', $this->seller_leasing_gross_month_rent);
+        $auction->saveMeta('seller_leasing_gross_no_of_months', $this->seller_leasing_gross_no_of_months);
+        $auction->saveMeta('seller_leasing_gross_flat', $this->seller_leasing_gross_flat);
+        $auction->saveMeta('seller_leasing_gross_other', $this->seller_leasing_gross_other);
+        $auction->saveMeta('seller_leasing_each_rental', $this->seller_leasing_each_rental);
+        $auction->saveMeta('seller_leasing_gross_percentage', $this->seller_leasing_gross_percentage);
+        $auction->saveMeta('seller_leasing_gross_percentage_combo', $this->seller_leasing_gross_percentage_combo);
+        $auction->saveMeta('seller_leasing_gross_flat_combo', $this->seller_leasing_gross_flat_combo);
+        $auction->saveMeta('seller_leasing_gross_flat_net_combo', $this->seller_leasing_gross_flat_net_combo);
+        $auction->saveMeta('seller_leasing_gross_percentage_net_combo', $this->seller_leasing_gross_percentage_net_combo);
+        $auction->saveMeta('seller_leasing_gross_purchase_fee_flat_amount', $this->seller_leasing_gross_purchase_fee_flat_amount);
+        $auction->saveMeta('seller_leasing_gross_purchase_fee_other', $this->seller_leasing_gross_purchase_fee_other);
+        $auction->saveMeta('sales_tax_option_gross', $this->sales_tax_option_gross);
+        $auction->saveMeta('seller_leasing_gross_sales_tax_first_month', $this->seller_leasing_gross_sales_tax_first_month);
+        $auction->saveMeta('seller_leasing_gross_sales_tax_flat_free_gross', $this->seller_leasing_gross_sales_tax_flat_free_gross);
+        $auction->saveMeta('seller_leasing_gross_sales_tax_option_gross', $this->seller_leasing_gross_sales_tax_option_gross);
+        $auction->saveMeta('commission_structure_type', $this->commission_structure_type);
+        $auction->saveMeta('commission_structure_type_fee_flat', $this->commission_structure_type_fee_flat);
+        $auction->saveMeta('commission_structure_type_fee_percentage', $this->commission_structure_type_fee_percentage);
+        $auction->saveMeta('commission_structure_type_fee_other', $this->commission_structure_type_fee_other);
+        $auction->saveMeta('commission_structure_type_fee_flat_combo', $this->commission_structure_type_fee_flat_combo);
+        $auction->saveMeta('commission_structure_type_fee_percentage_combo', $this->commission_structure_type_fee_percentage_combo);
 
         // 2nd tab limited services
         // Meeting details
