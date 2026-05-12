@@ -3025,12 +3025,14 @@
         });
     </script>
     <script>
-        document.addEventListener('livewire:load', function() {
-            var draftEl = document.getElementById('draftModal');
-            if (draftEl) {
-                var draftModal = new bootstrap.Modal(draftEl);
-                draftModal.show();
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                var draftEl = document.getElementById('draftModal');
+                if (draftEl) {
+                    var draftModal = new bootstrap.Modal(draftEl);
+                    draftModal.show();
+                }
+            }, 150);
         });
     </script>
 
