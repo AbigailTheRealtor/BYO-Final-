@@ -519,8 +519,8 @@
         ['name' => 'Other'],
     ];
 
-    // Define the updated services array
-    $services = [
+    // Define the updated services array (renamed to avoid overriding the Livewire $services property)
+    $_tenantAgentServiceList = [
         ['name' => 'List the Tenant’s rental criteria on BidYourOffer.com.'],
         [
             'name' =>
@@ -1264,10 +1264,16 @@
             setTimeout(function() {
                 syncSelectValues();
                 rehydrateSelect2MultiFields();
+                addIconsToInputs();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
                 }
             }, 100);
+        });
+
+        // Re-apply icons when a Bootstrap tab is shown (handles tab-switch icon visibility)
+        $(document).on('shown.bs.tab', function() {
+            addIconsToInputs();
         });
 
         function rehydrateSelect2MultiFields() {
@@ -1340,7 +1346,7 @@
             if ($('#offered_financing').length) {
                 if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
                     $('#offered_financing').select2({
-                        placeholder: "Select offered financing",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                 }
@@ -1358,7 +1364,7 @@
             if ($('#sale_provision').length) {
                 if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
                     $('#sale_provision').select2({
-                        placeholder: "Select sale provisions",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                 }
@@ -1400,7 +1406,7 @@
                 var $exEl = $('#exchange_item');
                 if (!$exEl.hasClass('select2-hidden-accessible')) {
                     $exEl.select2({
-                        placeholder: "Select acceptable exchange items",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                 }
@@ -1457,29 +1463,6 @@
             // Re-attach the event listener after Livewire re-renders the DOM
             Livewire.hook('message.processed', () => {
                 attachAuctionDropdownListener();
-                if ($('#exchange_item').length) {
-                    var $exEl = $('#exchange_item');
-                    if (!$exEl.hasClass('select2-hidden-accessible')) {
-                        $exEl.select2({
-                            placeholder: "Select acceptable exchange items",
-                            allowClear: true,
-                        });
-                    }
-                    var saved = [];
-                    try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
-                    if (!saved.length) { saved = @this.get('exchange_item') || []; }
-                    var current = $exEl.val() || [];
-                    if (saved.length > 0 && current.length === 0) {
-                        $exEl.val(saved).trigger('change.select2');
-                    }
-                    if (!$exEl.data('exchange-change-bound')) {
-                        $exEl.on('change', function(e) {
-                            var selectedValues = $(this).val() || [];
-                            @this.set('exchange_item', selectedValues);
-                        });
-                        $exEl.data('exchange-change-bound', true);
-                    }
-                }
             });
 
 
@@ -1605,7 +1588,7 @@
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
                 $('#included_assets').select2({
-                    placeholder: "Select included assets",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#included_assets').on('change', function() {
