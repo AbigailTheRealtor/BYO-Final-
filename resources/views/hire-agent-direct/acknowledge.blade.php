@@ -201,65 +201,15 @@
         @csrf
         <input type="hidden" name="_ack_nonce" value="{{ $pending['ack_nonce'] ?? '' }}">
 
-        <div class="ack-section">
-            <div class="ack-section-header"><i class="fa-solid fa-address-card"></i> Your Contact Information</div>
-            <div class="ack-section-body">
-                <p class="text-muted small mb-3">Provide your contact details so the agent can reach you. All fields are optional.</p>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label class="fw-bold form-label">Full Name</label>
-                        <input type="text" name="client_name" class="form-control @error('client_name') is-invalid @enderror"
-                               placeholder="Your full name" value="{{ old('client_name') }}">
-                        @error('client_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="fw-bold form-label">Phone Number</label>
-                        <input type="text" name="client_phone" class="form-control @error('client_phone') is-invalid @enderror"
-                               placeholder="Your phone number" value="{{ old('client_phone') }}">
-                        @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-6">
-                        <label class="fw-bold form-label">Email Address</label>
-                        <input type="email" name="client_email" class="form-control @error('client_email') is-invalid @enderror"
-                               placeholder="Your email address" value="{{ old('client_email') }}">
-                        @error('client_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="ack-section">
-            <div class="ack-section-header"><i class="fa-solid fa-map-marker-alt"></i> Property Address</div>
-            <div class="ack-section-body">
-                <p class="text-muted small mb-3">Enter the address of the property this hire request relates to. Optional.</p>
-                <div class="row g-3">
-                    <div class="col-md-12">
-                        <label class="fw-bold form-label">Street Address</label>
-                        <input type="text" name="client_property_address" class="form-control @error('client_property_address') is-invalid @enderror"
-                               placeholder="Street address" value="{{ old('client_property_address') }}">
-                        @error('client_property_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-5">
-                        <label class="fw-bold form-label">City</label>
-                        <input type="text" name="client_property_city" class="form-control @error('client_property_city') is-invalid @enderror"
-                               placeholder="City" value="{{ old('client_property_city') }}">
-                        @error('client_property_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-4">
-                        <label class="fw-bold form-label">State</label>
-                        <input type="text" name="client_property_state" class="form-control @error('client_property_state') is-invalid @enderror"
-                               placeholder="State" value="{{ old('client_property_state') }}">
-                        @error('client_property_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                    <div class="col-md-3">
-                        <label class="fw-bold form-label">ZIP Code</label>
-                        <input type="text" name="client_property_zip" class="form-control @error('client_property_zip') is-invalid @enderror"
-                               placeholder="ZIP" value="{{ old('client_property_zip') }}">
-                        @error('client_property_zip')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
-                </div>
-            </div>
-        </div>
+        @if($role === 'seller')
+            @include('hire-agent-direct.client-details.seller')
+        @elseif($role === 'buyer')
+            @include('hire-agent-direct.client-details.buyer')
+        @elseif($role === 'landlord')
+            @include('hire-agent-direct.client-details.landlord')
+        @else
+            @include('hire-agent-direct.client-details.tenant')
+        @endif
 
         <div class="ack-notice">
             <i class="fa-solid fa-circle-info me-2"></i>

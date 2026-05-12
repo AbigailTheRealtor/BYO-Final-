@@ -442,15 +442,58 @@ class HireAgentDirectController extends Controller
             abort(403, 'You cannot hire yourself.');
         }
 
-        $contactValidated = $request->validate([
-            'client_name'             => 'nullable|string|max:255',
-            'client_phone'            => 'nullable|string|max:50',
-            'client_email'            => 'nullable|email|max:255',
-            'client_property_address' => 'nullable|string|max:500',
-            'client_property_city'    => 'nullable|string|max:255',
-            'client_property_state'   => 'nullable|string|max:100',
-            'client_property_zip'     => 'nullable|string|max:20',
-        ]);
+        // client_name, client_phone, client_email required for all roles.
+        // Property address fields are only required for seller/landlord (via $roleRules).
+        $baseRules = [
+            'client_name'  => 'required|string|max:255',
+            'client_phone' => 'required|string|max:50',
+            'client_email' => 'required|email|max:255',
+        ];
+
+        $roleRules = match ($role) {
+            'seller' => [
+                // Property address required for seller
+                'client_property_address' => 'required|string|max:500',
+                'client_property_city'    => 'required|string|max:255',
+                'client_property_state'   => 'required|string|max:100',
+                'client_property_zip'     => 'required|string|max:20',
+                'desired_sale_price'      => 'nullable|string|max:100',
+                'timeline_to_sell'        => 'nullable|string|max:100',
+                'motivation_level'        => 'nullable|string|max:255',
+            ],
+            'buyer' => [
+                // Areas of interest is the location equivalent for buyer
+                'areas_of_interest'      => 'required|string|max:500',
+                'target_purchase_price'  => 'nullable|string|max:100',
+                'timeline_to_purchase'   => 'nullable|string|max:100',
+                'pre_approval_status'    => 'nullable|string|max:100',
+                'cash_buyer'             => 'nullable|string|max:10',
+                'estimated_down_payment' => 'nullable|string|max:100',
+            ],
+            'landlord' => [
+                // Property address required for landlord
+                'client_property_address' => 'required|string|max:500',
+                'client_property_city'    => 'required|string|max:255',
+                'client_property_state'   => 'required|string|max:100',
+                'client_property_zip'     => 'required|string|max:20',
+                'desired_monthly_rent'    => 'nullable|string|max:100',
+                'availability_date'       => 'nullable|date',
+                'occupancy_status'        => 'nullable|string|max:100',
+                'flexibility'             => 'nullable|string|max:100',
+            ],
+            'tenant' => [
+                // Areas of interest is the location equivalent for tenant
+                'areas_of_interest'        => 'required|string|max:500',
+                'max_monthly_lease_price'  => 'nullable|string|max:100',
+                'desired_lease_length'     => 'nullable|string|max:100',
+                'move_in_date'             => 'nullable|date',
+                'number_of_occupants'      => 'nullable|string|max:100',
+                'household_monthly_income' => 'nullable|string|max:100',
+            ],
+            default => [],
+        };
+
+        $contactValidated = $request->validate(array_merge($baseRules, $roleRules));
 
         $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
         if (!$profile) {
@@ -576,6 +619,72 @@ class HireAgentDirectController extends Controller
                 $listing->saveMeta('client_property_zip', $contactInfo['client_property_zip']);
             }
 
+            // Role-specific extended client fields — listing meta (client_ prefix).
+            // These fields are stored but not yet displayed in the listing detail views;
+            // a future task will surface them there.
+            if ($role === 'seller') {
+                if (!empty($contactInfo['desired_sale_price'])) {
+                    $listing->saveMeta('client_desired_sale_price', $contactInfo['desired_sale_price']);
+                }
+                if (!empty($contactInfo['timeline_to_sell'])) {
+                    $listing->saveMeta('client_timeline_to_sell', $contactInfo['timeline_to_sell']);
+                }
+                if (!empty($contactInfo['motivation_level'])) {
+                    $listing->saveMeta('client_motivation_level', $contactInfo['motivation_level']);
+                }
+            } elseif ($role === 'buyer') {
+                if (!empty($contactInfo['areas_of_interest'])) {
+                    $listing->saveMeta('client_areas_of_interest', $contactInfo['areas_of_interest']);
+                }
+                if (!empty($contactInfo['target_purchase_price'])) {
+                    $listing->saveMeta('client_target_purchase_price', $contactInfo['target_purchase_price']);
+                }
+                if (!empty($contactInfo['timeline_to_purchase'])) {
+                    $listing->saveMeta('client_timeline_to_purchase', $contactInfo['timeline_to_purchase']);
+                }
+                if (!empty($contactInfo['pre_approval_status'])) {
+                    $listing->saveMeta('client_pre_approval_status', $contactInfo['pre_approval_status']);
+                }
+                if (!empty($contactInfo['cash_buyer'])) {
+                    $listing->saveMeta('client_cash_buyer', $contactInfo['cash_buyer']);
+                }
+                if (!empty($contactInfo['estimated_down_payment'])) {
+                    $listing->saveMeta('client_estimated_down_payment', $contactInfo['estimated_down_payment']);
+                }
+            } elseif ($role === 'landlord') {
+                if (!empty($contactInfo['desired_monthly_rent'])) {
+                    $listing->saveMeta('client_desired_monthly_rent', $contactInfo['desired_monthly_rent']);
+                }
+                if (!empty($contactInfo['availability_date'])) {
+                    $listing->saveMeta('client_availability_date', $contactInfo['availability_date']);
+                }
+                if (!empty($contactInfo['occupancy_status'])) {
+                    $listing->saveMeta('client_occupancy_status', $contactInfo['occupancy_status']);
+                }
+                if (!empty($contactInfo['flexibility'])) {
+                    $listing->saveMeta('client_flexibility', $contactInfo['flexibility']);
+                }
+            } elseif ($role === 'tenant') {
+                if (!empty($contactInfo['areas_of_interest'])) {
+                    $listing->saveMeta('client_areas_of_interest', $contactInfo['areas_of_interest']);
+                }
+                if (!empty($contactInfo['max_monthly_lease_price'])) {
+                    $listing->saveMeta('client_max_monthly_lease_price', $contactInfo['max_monthly_lease_price']);
+                }
+                if (!empty($contactInfo['desired_lease_length'])) {
+                    $listing->saveMeta('client_desired_lease_length', $contactInfo['desired_lease_length']);
+                }
+                if (!empty($contactInfo['move_in_date'])) {
+                    $listing->saveMeta('client_move_in_date', $contactInfo['move_in_date']);
+                }
+                if (!empty($contactInfo['number_of_occupants'])) {
+                    $listing->saveMeta('client_number_of_occupants', $contactInfo['number_of_occupants']);
+                }
+                if (!empty($contactInfo['household_monthly_income'])) {
+                    $listing->saveMeta('client_household_monthly_income', $contactInfo['household_monthly_income']);
+                }
+            }
+
             // ── 3. Create the bid ────────────────────────────────────────
             $bidClass = self::BID_MODELS[$role];
             $bid = new $bidClass();
@@ -628,6 +737,72 @@ class HireAgentDirectController extends Controller
             }
             if (!empty($contactInfo['client_property_zip'])) {
                 $bid->saveMeta('counter_property_zip', $contactInfo['client_property_zip']);
+            }
+
+            // Role-specific extended client fields — bid meta (counter_ prefix, matching Counter Terms keys).
+            // These fields are stored but not yet displayed in the listing detail views;
+            // a future task will surface them there.
+            if ($role === 'seller') {
+                if (!empty($contactInfo['desired_sale_price'])) {
+                    $bid->saveMeta('counter_desired_sale_price', $contactInfo['desired_sale_price']);
+                }
+                if (!empty($contactInfo['timeline_to_sell'])) {
+                    $bid->saveMeta('counter_timeline_to_sell', $contactInfo['timeline_to_sell']);
+                }
+                if (!empty($contactInfo['motivation_level'])) {
+                    $bid->saveMeta('counter_motivation_level', $contactInfo['motivation_level']);
+                }
+            } elseif ($role === 'buyer') {
+                if (!empty($contactInfo['areas_of_interest'])) {
+                    $bid->saveMeta('counter_areas_of_interest', $contactInfo['areas_of_interest']);
+                }
+                if (!empty($contactInfo['target_purchase_price'])) {
+                    $bid->saveMeta('counter_target_purchase_price', $contactInfo['target_purchase_price']);
+                }
+                if (!empty($contactInfo['timeline_to_purchase'])) {
+                    $bid->saveMeta('counter_timeline_to_purchase', $contactInfo['timeline_to_purchase']);
+                }
+                if (!empty($contactInfo['pre_approval_status'])) {
+                    $bid->saveMeta('counter_pre_approval_status', $contactInfo['pre_approval_status']);
+                }
+                if (!empty($contactInfo['cash_buyer'])) {
+                    $bid->saveMeta('counter_cash_buyer', $contactInfo['cash_buyer']);
+                }
+                if (!empty($contactInfo['estimated_down_payment'])) {
+                    $bid->saveMeta('counter_estimated_down_payment', $contactInfo['estimated_down_payment']);
+                }
+            } elseif ($role === 'landlord') {
+                if (!empty($contactInfo['desired_monthly_rent'])) {
+                    $bid->saveMeta('counter_desired_monthly_rent', $contactInfo['desired_monthly_rent']);
+                }
+                if (!empty($contactInfo['availability_date'])) {
+                    $bid->saveMeta('counter_availability_date', $contactInfo['availability_date']);
+                }
+                if (!empty($contactInfo['occupancy_status'])) {
+                    $bid->saveMeta('counter_occupancy_status', $contactInfo['occupancy_status']);
+                }
+                if (!empty($contactInfo['flexibility'])) {
+                    $bid->saveMeta('counter_flexibility', $contactInfo['flexibility']);
+                }
+            } elseif ($role === 'tenant') {
+                if (!empty($contactInfo['areas_of_interest'])) {
+                    $bid->saveMeta('counter_areas_of_interest', $contactInfo['areas_of_interest']);
+                }
+                if (!empty($contactInfo['max_monthly_lease_price'])) {
+                    $bid->saveMeta('counter_max_monthly_lease_price', $contactInfo['max_monthly_lease_price']);
+                }
+                if (!empty($contactInfo['desired_lease_length'])) {
+                    $bid->saveMeta('counter_desired_lease_length', $contactInfo['desired_lease_length']);
+                }
+                if (!empty($contactInfo['move_in_date'])) {
+                    $bid->saveMeta('counter_move_in_date', $contactInfo['move_in_date']);
+                }
+                if (!empty($contactInfo['number_of_occupants'])) {
+                    $bid->saveMeta('counter_number_of_occupants', $contactInfo['number_of_occupants']);
+                }
+                if (!empty($contactInfo['household_monthly_income'])) {
+                    $bid->saveMeta('counter_household_monthly_income', $contactInfo['household_monthly_income']);
+                }
             }
 
             DB::commit();
