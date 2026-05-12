@@ -1288,8 +1288,8 @@
             if (!wireEl || typeof Livewire === 'undefined') return;
             const component = Livewire.find(wireEl.getAttribute('wire:id'));
             if (!component) return;
-            document.querySelectorAll('select[wire\\:model]').forEach(select => {
-                const wireModel = select.getAttribute('wire:model');
+            document.querySelectorAll('select[wire\\:model], select[wire\\:model\\.lazy]').forEach(select => {
+                const wireModel = select.getAttribute('wire:model') || select.getAttribute('wire:model.lazy');
                 if (wireModel && component.get) {
                     try {
                         const lwValue = component.get(wireModel);
@@ -1419,7 +1419,7 @@
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -1587,7 +1587,7 @@
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
-                    placeholder: "Select Preference",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
@@ -1838,7 +1838,7 @@
 
             if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
                 $('#appliances').select2({
-                    placeholder: "Select appliances",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#appliances').on('change', function(e) {
@@ -1862,7 +1862,7 @@
 
             if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
                 $('#terms_of_lease').select2({
-                    placeholder: "Select terms of lease",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#terms_of_lease').on('change', function(e) {
@@ -1881,7 +1881,7 @@
 
             if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
                 $('#tenant_pays').select2({
-                    placeholder: "Select tenant pays",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#tenant_pays').on('change', function(e) {
@@ -1907,7 +1907,7 @@
                 var $dlt = $('.lease_term_options');
                 if (!$dlt.length || $dlt.hasClass('select2-hidden-accessible')) return;
                 $dlt.select2({
-                    placeholder: "Select desired lease term",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $dlt.off('change.ltsSync').on('change.ltsSync', function() {
@@ -1924,6 +1924,56 @@
 
             Livewire.hook('message.processed', () => {
                 initLeaseTermSelect2();
+            });
+
+            Livewire.hook('message.processed', () => {
+                if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
+                    $('#appliances').select2({ placeholder: "Select", allowClear: true });
+                    $('#appliances').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('appliances', selectedValues);
+                        @this.call('updateAppliances', selectedValues);
+                    });
+                }
+                if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
+                    $('#rent_includes').select2({ placeholder: "Select rent", allowClear: true });
+                    $('#rent_includes').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('rent_includes', selectedValues);
+                        @this.call('updateRentIncludes', selectedValues);
+                    });
+                }
+                if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
+                    $('#terms_of_lease').select2({ placeholder: "Select", allowClear: true });
+                    $('#terms_of_lease').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('terms_of_lease', selectedValues);
+                        var container = document.getElementById('otherLeaseContainer');
+                        if (container) {
+                            if (selectedValues.includes('Other')) {
+                                container.classList.remove('d-none');
+                            } else {
+                                container.classList.add('d-none');
+                            }
+                        }
+                    });
+                }
+                if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
+                    $('#tenant_pays').select2({ placeholder: "Select", allowClear: true });
+                    $('#tenant_pays').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('tenant_pays', selectedValues);
+                        @this.call('updateTenantPays', selectedValues);
+                    });
+                }
+                if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
+                    $('#owner_pays').select2({ placeholder: "Select owner pays", allowClear: true });
+                    $('#owner_pays').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('owner_pays', selectedValues);
+                        @this.call('updateOwnerPays', selectedValues);
+                    });
+                }
             });
 
             window.syncLandlordSelect2BeforeSave = function() {

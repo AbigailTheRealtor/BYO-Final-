@@ -897,8 +897,14 @@ class LandLordAgentAuction extends Component
     public function setType($field, $value)
     {
         if ($field === 'lease') {
+            if ($this->lease_type === $value) {
+                return;
+            }
             $this->lease_type = $value;
         } elseif ($field === 'purchase') {
+            if ($this->purchase_type === $value) {
+                return;
+            }
             $this->purchase_type = $value;
         }
     }

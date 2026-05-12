@@ -34,14 +34,14 @@
 
             <div class="input-group">
                 <!-- Select for type -->
-                <select wire:model.lazy="lease_type" wire:change="setType('lease', $event.target.value)"
+                <select wire:change="setType('lease', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
-                    <option value="percent">%</option>
-                    <option value="flat">$</option>
+                    <option value="percent" @selected($lease_type === 'percent')>%</option>
+                    <option value="flat" @selected($lease_type === 'flat')>$</option>
                 </select>
 
                 <!-- Single input -->
-                <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
+                <input type="text" step="any" wire:model.defer="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1500)' }}"
@@ -73,14 +73,14 @@
 
             <div class="input-group">
                 <!-- Select for type -->
-                <select wire:model.lazy="purchase_type" wire:change="setType('purchase', $event.target.value)"
+                <select wire:change="setType('purchase', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
-                    <option value="percent">%</option>
-                    <option value="flat">$</option>
+                    <option value="percent" @selected($purchase_type === 'percent')>%</option>
+                    <option value="flat" @selected($purchase_type === 'flat')>$</option>
                 </select>
 
                 <!-- Single input -->
-                <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
+                <input type="text" step="any" wire:model.defer="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5000)' }}"
