@@ -373,7 +373,7 @@
     @php $ofv::row('Reserve Price', $d['reserve_price'] ? '$' . number_format((float)str_replace(',', '', $d['reserve_price'])) : null); @endphp
     @php $ofv::row('Buy Now Price', $d['buy_now_price'] ? '$' . number_format((float)str_replace(',', '', $d['buy_now_price'])) : null); @endphp
     @php $ofv::row('Maximum Budget', $d['maximum_budget'] ? '$' . number_format((float)str_replace(',', '', $d['maximum_budget'])) : null); @endphp
-    @php $ofv::row('Target Closing Date', $fmtDate($d['target_closing_date'])); @endphp
+    @php $ofv::row('Target Closing Date', $fmt($d['target_closing_date'])); @endphp
     @php $ofv::row('Occupant Status', $fmt($d['occupant_status'])); @endphp
     {{-- Seller Sale Terms Questions --}}
     @php $ofv::row('Purchase Type', $fmt($d['purchase_type'])); @endphp
@@ -385,9 +385,9 @@
     @php $ofv::row('Additional Deposit Timeframe (Other)', $fmt($d['additional_deposit_timeframe_other'])); @endphp
     @php $ofv::row('Escrow Agent Preference', $fmt($d['escrow_agent_preference'])); @endphp
     @php $ofv::row('Preferred Inspection Period', $d['preferred_inspection_period'] ? $d['preferred_inspection_period'] . ' days' : null); @endphp
-    @php $ofv::badge('Appraisal Contingency', $fmtBool($d['appraisal_contingency_preference'])); @endphp
-    @php $ofv::badge('Financing Contingency', $fmtBool($d['financing_contingency_preference'])); @endphp
-    @php $ofv::badge('Sale of Buyer\'s Property Contingency', $fmtBool($d['sale_of_buyer_property_contingency'])); @endphp
+    @php $ofv::row('Appraisal Contingency Preference', $fmt($d['appraisal_contingency_preference'])); @endphp
+    @php $ofv::row('Financing Contingency Preference', $fmt($d['financing_contingency_preference'])); @endphp
+    @php $ofv::row('Sale of Buyer\'s Property Contingency', $fmt($d['sale_of_buyer_property_contingency'])); @endphp
     @php $ofv::badge('Seller Contribution / Credit Offered', $fmtBool($d['seller_contribution_credit_offered'])); @endphp
     @php $ofv::row('Seller Contribution Details', $fmt($d['seller_contribution_amount_details'])); @endphp
     @php $ofv::row('Possession Preference', $fmt($d['possession_preference'])); @endphp
@@ -411,7 +411,7 @@
     @endif
     @php $ofv::row('Maximum Budget', $d['maximum_budget'] ? '$' . number_format((float)str_replace(',', '', $d['maximum_budget'])) : null); @endphp
     @php $ofv::row('Purchase Price', $d['purchase_price'] ? '$' . number_format((float)str_replace(',', '', $d['purchase_price'])) : null); @endphp
-    @php $ofv::row('Target Closing Date', $fmtDate($d['target_closing_date'])); @endphp
+    @php $ofv::row('Target Closing Date', $fmt($d['target_closing_date'])); @endphp
     @php $ofv::row('Earnest Money', $d['earnest_money_amount'] ? '$' . number_format((float)str_replace(',', '', $d['earnest_money_amount'])) : null); @endphp
     @php $ofv::row('Earnest Money Timing', $fmt($d['earnest_money_timing'])); @endphp
     @php $ofv::row('Inspection Period', $d['inspection_period_days'] ? $d['inspection_period_days'] . ' days' : null); @endphp
@@ -562,16 +562,16 @@
     <div class="col-12"><div class="fw-semibold small text-muted border-top pt-2 mt-2">Seller Financing</div></div>
     @php $ofv::row('Loan Amount', ($d['seller_financing_type'] ?? '$') . number_format((float)str_replace(',', '', $d['seller_financing_amount']))); @endphp
     @php $ofv::row('Interest Rate', $d['interest_rate'] ? $d['interest_rate'] . '%' : null); @endphp
-    @php $ofv::row('Loan Duration', $d['loan_duration'] ? $d['loan_duration'] . ' months' : null); @endphp
+    @php $ofv::row('Loan Duration', $d['loan_duration'] ? $d['loan_duration'] . ' years' : null); @endphp
     @php $ofv::row('Amortization Type', $fmt($d['seller_amortization_type'])); @endphp
     @php $ofv::row('Other Amortization Type', $fmt($d['seller_amortization_other'])); @endphp
     @php $ofv::row('Payment Frequency', $fmt($d['seller_payment_frequency'])); @endphp
     @php $ofv::row('Other Payment Frequency', $fmt($d['seller_payment_frequency_other'])); @endphp
-    @php $ofv::row('Late Fee', $d['seller_late_fee_amount'] ? '$' . number_format((float)str_replace(',', '', $d['seller_late_fee_amount'])) : null); @endphp
+    @php $ofv::row('Late Fee', $fmt($d['seller_late_fee_amount'])); @endphp
     @php $ofv::row('Prepayment Penalty', $fmtBool($d['prepayment_penalty'])); @endphp
     @php $ofv::row('Prepayment Penalty Amount', $d['prepayment_penalty_amount'] ? '$' . number_format((float)str_replace(',', '', $d['prepayment_penalty_amount'])) : null); @endphp
     @php $ofv::row('Balloon Payment Amount', $d['balloon_payment_amount'] ? '$' . number_format((float)str_replace(',', '', $d['balloon_payment_amount'])) : null); @endphp
-    @php $ofv::row('Balloon Payment Date', $fmtDate($d['balloon_payment_date'])); @endphp
+    @php $ofv::row('Balloon Payment Date', $fmt($d['balloon_payment_date'])); @endphp
     @endif
 
     {{-- Assumable --}}

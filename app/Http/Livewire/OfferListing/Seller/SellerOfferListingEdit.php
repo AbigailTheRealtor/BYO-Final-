@@ -838,6 +838,11 @@ class SellerOfferListingEdit extends Component
         $this->gap_payment_amount = '';
     }
 
+    public function updatedAppliances()
+    {
+        $this->showOtherAppliances = in_array('Other', $this->appliances ?? []);
+    }
+
     public function updatedOfferedFinancing()
     {
         if ($this->isLoadingData) return;
@@ -2707,6 +2712,7 @@ class SellerOfferListingEdit extends Component
             $rawAppliances = $auction->get->appliances ?? [];
             $this->appliances = is_string($rawAppliances) ? json_decode($rawAppliances, true) ?? [] : (array)$rawAppliances;
             $this->other_appliances = $auction->get->other_appliances ?? '';
+            $this->showOtherAppliances = in_array('Other', $this->appliances ?? []);
 
             // Additional multi-unit fields
             $this->number_of_units      = $auction->get->number_of_units ?? '';

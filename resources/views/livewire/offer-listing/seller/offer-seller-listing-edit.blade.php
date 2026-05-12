@@ -1182,6 +1182,7 @@
             var regularFields = {
                 property_items: '#property_items',
                 non_negotiable_amenities: '#non_negotiable_amenities',
+                appliances: '#appliances',
                 exchange_item: '#exchange_item',
                 business_assets: '#included_assets',
                 sale_provision: '#sale_provision',
@@ -1222,6 +1223,15 @@
                 });
             });
         });
+
+        if (!document._editAppliancesDelegateAdded) {
+            document._editAppliancesDelegateAdded = true;
+            $(document).on('change', '#appliances', function() {
+                var vals = $(this).val() || [];
+                $('#other_appliances').toggle(vals.includes('Other'));
+                @this.set('appliances', vals, false);
+            });
+        }
 
         function applyFinancingVisibility() {
             var data = ($('#offered_financing').val() || []);
@@ -1418,6 +1428,20 @@
                     let selectedValues = $(this).val();
                     debouncedSet('non_negotiable_amenities', selectedValues);
                 });
+            }
+
+            if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
+                $('#appliances').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            }
+            if ($('#appliances').length) {
+                var savedAppliances = @this.get('appliances') || [];
+                if (savedAppliances.length > 0) {
+                    var currentAppliances = $('#appliances').val() || [];
+                    if (currentAppliances.length === 0) {
+                        $('#appliances').val(savedAppliances).trigger('change.select2');
+                    }
+                }
+                $('#other_appliances').toggle(($('#appliances').val() || []).includes('Other'));
             }
 
             if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {

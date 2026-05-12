@@ -2482,7 +2482,7 @@
                 });
 
                 // Validate required Select2 multi-selects
-                var select2RequiredSelectors = ['#offered_financing', '#sale_provision', '#appliances'];
+                var select2RequiredSelectors = ['#sale_provision'];
                 select2RequiredSelectors.forEach(function(selector) {
                     var $el = $(selector);
                     if ($el.length) {
@@ -2646,9 +2646,7 @@
 
                 // Validate required Select2 multi-selects present in current tab
                 var select2RequiredMap = {
-                    '#offered_financing': '#offered_financing_error',
                     '#sale_provision': '#sale_provision_error',
-                    '#appliances': '#appliances_error',
                 };
                 Object.keys(select2RequiredMap).forEach(function(selector) {
                     var $el = $(selector, currentTabContent);
@@ -2805,9 +2803,7 @@
                 if (!btn) return;
 
                 var select2RequiredMap = {
-                    '#offered_financing': '#offered_financing_error',
                     '#sale_provision': '#sale_provision_error',
-                    '#appliances': '#appliances_error',
                 };
 
                 // Build ordered list of tab pane IDs from the nav so we can pick the earliest invalid tab
