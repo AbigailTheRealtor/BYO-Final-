@@ -1,0 +1,77 @@
+Task #848 — Audit and fix unfiltered SellerAgentAuction pages
+
+Please complete this as an audit-first, targeted fix.
+
+Problem:
+Task #840 separated Seller Offer Listings from Hire Seller’s Agent in public Browse/Search, but several internal pages still query SellerAgentAuction without filtering workflow_type. This causes Seller Offer Listing records to appear in Hire Seller’s Agent pages and link incorrectly to seller.agent.auction.detail instead of offer.listing.seller.view.
+
+Confirmed affected areas:
+1. /my-listings
+   - DashboardController@allListings around lines 450–462
+   - resources/views/myListings.blade.php around lines 165–185
+   - Current issue: SellerAgentAuction::where('user_id', $uid) pulls both Hire Seller’s Agent and Seller Offer Listing records, then hardcodes seller.agent.auction.detail.
+
+2. User author/profile page
+   - UserController@author around lines 52–98
+   - resources/views/author_inc/seller_agent_auctions.blade.php
+   - Current issue: SellerAgentAuction query is unfiltered and may show Offer Listing records in the Seller Agent tab.
+
+3. /hire/agent/seller/list
+   - SellerAgentAuctionController@hireSellerAgentHireAuctions around lines 282–307
+   - resources/views/hire_seller_agent/list.blade.php
+   - Current issue: page should only show Hire Seller’s Agent records, but query may include Seller Offer Listing records.
+
+Scope:
+- Audit every SellerAgentAuction query in the codebase outside the already-fixed public search and offer-listing controllers.
+- Catalogue each query location, controller method/page, and whether it can receive Seller Offer Listing records.
+- Fix only confirmed mixed SellerAgentAuction pages.
+- Do not touch Buyer, Tenant, Landlord flows unless the audit proves a query is incidentally mixing SellerAgentAuction records.
+- Do not change database schema, routes, validation, public Browse/Search tabs, or redesign page layouts.
+
+Detection logic:
+Use the same two-tier detection logic already established in SellerOfferListingController:
+1. Primary: workflow_type = offer_listing
+2. Fallback: presence of any OFFER_LISTING_META_KEYS
+
+Important:
+Reference the existing constant / helper from SellerOfferListingController if available. Do not duplicate the full offer-listing meta key list in multiple places. If the constant is not accessible from other controllers, create a small shared helper/scope/service in the least invasive way, then update SellerOfferListingController to use that shared source too.
+
+Required fixes:
+
+A) /my-listings
+- Update DashboardController@allListings so SellerAgentAuction records are separated into:
+  1. Hire Seller’s Agent records
+  2. Seller Offer Listing records
+- Update resources/views/myListings.blade.php so:
+  - Hire Seller’s Agent records keep route: seller.agent.auction.detail
+  - Seller Offer Listing records use route: offer.listing.seller.view
+- Preserve existing display format. Do not redesign the page.
+
+B) Author/profile page
+- Update UserController@author so the seller agent tab excludes Seller Offer Listing records, unless the existing UI intentionally needs to show both.
+- If both remain visible, update resources/views/author_inc/seller_agent_auctions.blade.php to route Offer Listing records to offer.listing.seller.view and Hire Seller’s Agent records to seller.agent.auction.detail.
+- Prefer exclusion if this page is specifically a Hire Seller’s Agent/profile seller-agent listing section.
+
+C) /hire/agent/seller/list
+- Update SellerAgentAuctionController@hireSellerAgentHireAuctions to exclude Seller Offer Listing records using the same two-tier logic.
+- This page must show only Hire Seller’s Agent records.
+- Do not change hire_seller_agent/list.blade.php unless needed for route safety.
+
+Acceptance criteria:
+- Full SellerAgentAuction query audit is documented in the task response.
+- /my-listings shows Seller Offer Listings and links them to offer.listing.seller.view.
+- /my-listings still shows Hire Seller’s Agent listings and links them to seller.agent.auction.detail.
+- Author/profile seller-agent section no longer misroutes Seller Offer Listing records.
+- /hire/agent/seller/list excludes Seller Offer Listing records completely.
+- Existing Hire Seller’s Agent functionality remains unchanged.
+- No Buyer, Tenant, Landlord, database schema, route, or validation changes.
+- Public Browse/Search tabs are not modified.
+
+Verification:
+- Run grep/search for SellerAgentAuction:: and seller_agent_auctions usage.
+- Verify each affected controller query has the correct offer-listing exclusion or split logic.
+- Verify view routes are conditional where mixed records are intentionally displayed.
+- Test with at least:
+  1. A Hire Seller’s Agent record
+  2. A Seller Offer Listing record with workflow_type = offer_listing
+  3. A Seller Offer Listing fallback record identified only by offer-listing meta keys
