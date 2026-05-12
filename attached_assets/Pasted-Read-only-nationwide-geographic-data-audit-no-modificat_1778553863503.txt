@@ -1,0 +1,84 @@
+Read-only nationwide geographic data audit — no modifications unless a critical issue is found.
+
+We recently expanded us_cities from ~972 rows to ~25,827 rows using us_zip_codes as the source.
+
+Please perform a nationwide geographic coverage audit for the following tables:
+
+- us_states
+- us_counties
+- us_cities
+- us_zip_codes
+- us_zip_code_cities (if present)
+
+Goals:
+Verify that the platform now has strong nationwide geographic coverage for:
+- states
+- counties
+- cities
+- ZIP codes
+- city aliases
+
+Please provide:
+
+1. Row counts
+- Total rows in each table
+- Distinct states represented
+- Distinct counties represented
+- Distinct city/state combinations represented
+
+2. State audit
+Confirm:
+- All 50 U.S. states exist
+- DC exists if intended
+- Territories exist or intentionally do not exist
+- No duplicate state abbreviations
+
+3. County audit
+Confirm:
+- Nationwide county coverage exists
+- Typical expected total (~3,000+ counties/parishes/boroughs/census areas)
+- No obvious missing major counties
+- County naming normalization looks correct
+  (County, Parish, Borough, Census Area, etc.)
+
+4. City audit
+Confirm:
+- us_cities now contains nationwide coverage
+- Approximate distinct city/state combo count
+- Major metros exist
+- Small municipalities exist
+- Florida coastal edge cases exist:
+  - Treasure Island
+  - Dunedin
+  - Safety Harbor
+  - Indian Rocks Beach
+  - St. Pete Beach
+
+5. ZIP audit
+Confirm:
+- ZIP table has strong nationwide coverage
+- Approximate expected ZIP count
+- ZIP/state consistency appears valid
+
+6. Alias audit
+Confirm whether us_zip_code_cities:
+- exists
+- has rows or is empty
+- is still needed
+- should remain optional
+
+7. Risk analysis
+Identify any remaining geographic weaknesses that could affect:
+- autocomplete
+- county mapping
+- property matching
+- search filters
+- MLS-style workflows
+- future nationwide scaling
+
+IMPORTANT:
+- Read-only audit unless a severe data issue is discovered.
+- Do not modify frontend code.
+- Do not modify Livewire components.
+- Do not touch Hire Agent or Limited Service flows.
+- No schema changes unless absolutely necessary and explained first.
