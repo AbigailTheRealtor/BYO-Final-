@@ -99,12 +99,19 @@ class PopulateCitiesFromZipCodes extends Command
         // Supplemental: cities that exist but whose USPS ZIP records list
         // a different primary city name (e.g. Saint Petersburg instead of
         // the actual municipality name). Hard-coded with known state/county.
-        // state_id 10 = Florida, county_id 368 = Pinellas County.
+        // state_id 10 = Florida, county_id 368 = Pinellas County,
+        //                        county_id 327 = Collier County.
+        // state_id 33 = New York.  "New York" row is an autocomplete alias
+        //   so that typing "New York" surfaces "New York City" alongside it;
+        //   county_id 723 = New York County (Manhattan).
         // ---------------------------------------------------------------
         $supplemental = [
-            ['name' => 'Dunedin',           'state_id' => 10, 'county_id' => 368],
-            ['name' => 'Safety Harbor',     'state_id' => 10, 'county_id' => 368],
-            ['name' => 'St. Pete Beach',    'state_id' => 10, 'county_id' => 368],
+            ['name' => 'Dunedin',        'state_id' => 10, 'county_id' => 368],
+            ['name' => 'Safety Harbor',  'state_id' => 10, 'county_id' => 368],
+            ['name' => 'St. Pete Beach', 'state_id' => 10, 'county_id' => 368],
+            ['name' => 'Madeira Beach',  'state_id' => 10, 'county_id' => 368], // Pinellas – absent from USPS ZIP source
+            ['name' => 'Naples',         'state_id' => 10, 'county_id' => 327], // Collier – absent from USPS ZIP source
+            ['name' => 'New York',       'state_id' => 33, 'county_id' => 723], // NY autocomplete alias (stored as "New York City")
         ];
 
         $suppInserted = 0;

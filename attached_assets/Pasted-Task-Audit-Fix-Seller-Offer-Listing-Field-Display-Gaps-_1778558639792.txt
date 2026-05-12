@@ -1,0 +1,215 @@
+Task: Audit & Fix Seller Offer Listing Field Display Gaps (Full Service Only)
+
+Scope:
+FULL SERVICE Seller Create Offer Listing only.
+
+Create route:
+- /offer-listing/seller
+
+Listing view routes:
+- /seller/agent/auction/view/{id}
+- Seller offer listing read-only/public view
+
+Problem:
+The Seller Full Service Create Offer Listing form collects many fields across 12 tabs, but numerous values either:
+- save correctly and never display,
+- are loaded under the wrong key,
+- are missing from the controller/view mapping,
+- or render incorrectly on the listing view.
+
+This task is a complete end-to-end audit and repair of Seller Full Service listing display wiring.
+
+Do NOT touch:
+- Hire Agent flows
+- Buyer flows
+- Tenant flows
+- Landlord flows
+- Limited Service / legacy flows
+- Database schema
+- Routes
+- Migrations
+- Validation
+- Submit logic unless audit proves save failure is causing display failure
+- AI Questions/chatbot-only fields unless already intended for public display
+
+Goal:
+Trace EVERY Seller Full Service field:
+Form field
+→ Livewire property
+→ saved meta/database value
+→ AgentController data mapping
+→ offer-listing-view.blade.php rendering
+
+Then fix every confirmed display gap.
+
+==================================================
+PHASE 1 — FULL SELLER FIELD AUDIT
+==================================================
+
+Audit all Seller Full Service tabs and partials.
+
+Likely files:
+- app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/*.blade.php
+- app/Http/Controllers/AgentController.php
+- resources/views/agent/offer-listing-view.blade.php
+
+Use a real listing example:
+- /seller/agent/auction/view/38
+
+For EVERY Seller field:
+1. Field label
+2. Tab/section
+3. Livewire property
+4. Saved meta key/database column
+5. Confirm save works
+6. Confirm controller loads it
+7. Confirm view renders it
+8. Confirm formatting is correct
+
+Field statuses:
+- PASS
+- SAVE ONLY
+- DISPLAY ONLY
+- NOT SAVING
+- BROKEN FORMAT
+- INTENTIONALLY HIDDEN
+
+==================================================
+PHASE 2 — CREATE AUDIT REPORT
+==================================================
+
+Create:
+.local/audit-reports/seller-fullservice-display-audit.md
+
+Report must include:
+- Routes tested
+- Listing ID tested
+- Files inspected
+- Field-by-field table
+- Missing field summary
+- Root cause category for each failure:
+  1. not saved
+  2. wrong meta key
+  3. controller missing mapping
+  4. view missing render block
+  5. formatting/helper issue
+  6. intentionally hidden
+- Recommended fix per field
+
+==================================================
+PHASE 3 — FIX CONFIRMED DISPLAY GAPS
+==================================================
+
+Fix ONLY confirmed Seller Full Service display gaps.
+
+Preferred fix order:
+1. Add missing controller/data mappings
+2. Add missing render blocks to listing view
+3. Support canonical saved meta keys
+4. Fix formatting/helper rendering
+
+Do NOT:
+- rename meta keys unless absolutely necessary
+- rewrite the entire listing view
+- remove existing fields
+- touch Buyer/Tenant/Landlord views unless a shared helper absolutely requires a safe additive fix
+
+==================================================
+DISPLAY REQUIREMENTS
+==================================================
+
+Arrays/multiselects:
+- render readable comma-separated labels
+
+Currency:
+- render with proper $ formatting
+
+Booleans:
+- render Yes / No
+
+Dates:
+- render consistently
+
+Empty values:
+- hide rows unless intentionally shown
+
+Conditional fields:
+- display only when relevant values exist
+
+==================================================
+SPECIAL AUDIT TARGETS
+==================================================
+
+Pay extra attention to:
+- HOA / Association fields
+- Appliances Included + Other
+- Financial Details
+- Sale Terms
+- Flood Zone fields
+- Additional Details
+- Tax/Legal/Disclosure fields
+- Broker Compensation
+- Photos/Tours/Documents metadata
+- Exchange/Trade fields
+- Conditional “Other” fields
+- Lease-related fields accidentally hidden on Seller view
+- Meta key mismatches (example:
+  other_appliances vs appliances_other)
+
+Confirm whether:
+- controller expects different key names than Create saves
+- arrays are failing due to json/string mismatch
+- fields exist in controller but not rendered
+- fields render but use wrong formatting helper
+
+==================================================
+VERIFICATION REQUIRED
+==================================================
+
+1. Static verification
+Show:
+- files changed
+- confirmation no Limited Service files changed
+- confirmation no Hire Agent files changed
+- confirmation no Buyer/Tenant/Landlord files changed unless shared helper required
+
+2. Seller listing verification
+Open:
+- /seller/agent/auction/view/38
+
+Confirm:
+- previously missing fields now display
+- arrays display correctly
+- booleans display correctly
+- currency formatting works
+- conditional fields display correctly
+- no noisy blank rows
+
+3. Save/load verification
+Create or load Seller listing:
+- confirm displayed values match saved form values
+
+==================================================
+ACCEPTANCE CRITERIA
+==================================================
+
+- Every Seller Full Service field is audited.
+- Audit report exists at:
+  .local/audit-reports/seller-fullservice-display-audit.md
+- Confirmed Seller display gaps are fixed.
+- Listing view displays all intended Seller fields correctly.
+- Arrays/currency/booleans/dates format correctly.
+- AI Questions remain hidden unless intentionally public.
+- No Hire Agent changes.
+- No Limited Service changes.
+- No schema/routes/migrations changes.
+
+Final Replit response must include:
+- Root causes found
+- Audit report path
+- Files changed
+- Fields fixed
+- Fields intentionally hidden
+- Verification results
