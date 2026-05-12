@@ -1,0 +1,66 @@
+Audit first, then fix Hire a Landlord’s Agent only.
+
+URL:
+ /hire/agent/auction/landlord
+
+Scope:
+- ONLY Hire Agent Listing flow using shared TenantAgentAuction.php / tenant-agent-auction.blade.php if that is the confirmed file.
+- ONLY Landlord user_type behavior.
+- Do NOT touch Create Offer Listing flows.
+- Do NOT touch Limited Service / legacy files.
+- Do NOT change routes, migrations, database schema, or unrelated validation.
+
+Issues to fix:
+
+1. Acceptable Counties:
+- Remove/hide Acceptable Counties from Landlord listings.
+- Remove it from Landlord required-field validation.
+- It should not block Save Draft or Submit for Landlord.
+
+2. Placeholder text:
+These Landlord fields are missing “Select” in the placeholder. Update placeholders to exactly “Select”:
+- Appliances Included
+- View
+- Amenities and Property Features
+- Desired Lease Term
+- Tenant Pays
+- Terms of Lease
+
+3. Broker Compensation dropdowns not opening conditional fields:
+The following fields currently snap back to placeholder/select and do not reveal their conditional inputs:
+- Landlord’s Broker Lease Fee
+- Tenant’s Broker Commission Structure
+- Lease Renewal/Extension Fee
+- Interested in Property Management
+
+Audit the Livewire model names, JS/select2 sync, updated hooks, and conditional Blade checks. Fix so selecting an option persists and opens the correct follow-up fields.
+
+4. Lease-option compensation numeric inputs:
+When entering numbers into:
+- Compensation for Creating the Lease-Option Agreement
+- Compensation if Purchase Option is Exercised
+
+The input deletes/erases the typed number. Fix the binding/formatting/mask issue so users can enter $ or % values without the field clearing.
+
+5. Submit required-field flashing:
+Submit button flashes “Please complete required details before submitting” and flags:
+- Offered Lease Term
+- Leasing Space
+
+Fix validation/disabled/hidden-field logic so only visible, enabled, required Landlord fields are validated. Hidden or property-type-incompatible fields must not block Submit.
+
+6. Save Draft not working:
+Audit Landlord Save Draft path in this same Hire Agent flow.
+Fix the cause without changing unrelated roles.
+Save Draft should work even if final Submit-required fields are incomplete.
+
+Verification required:
+- Login with test account if needed.
+- Open /hire/agent/auction/landlord.
+- Confirm Acceptable Counties is absent and not required.
+- Confirm all listed placeholders show “Select.”
+- Confirm compensation dropdowns persist and reveal their conditional fields.
+- Confirm lease-option compensation inputs accept numbers.
+- Confirm Save Draft works.
+- Confirm Submit does not flash/block on hidden or disabled fields.
+- Confirm no Tenant, Buyer, Seller, Offer Listing, or Limited Service files were changed unless audit proves the shared file requires guarded user_type-specific logic.

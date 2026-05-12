@@ -1,0 +1,64 @@
+**Replit Instructions — Audit First, Then Fix City Autopopulation**
+
+City autocomplete/autopopulation is still broken for **Treasure Island** and other Pinellas County cities. Do **not** apply another surface-level patch. Find and fix the root cause.
+
+Test login:
+
+* Email: `abigailbaschuk@gmail.com`
+* Password: `12345678`
+
+Scope:
+
+* All affected **Create/Edit/Draft** flows where City, County, State, and ZIP should autopopulate.
+* Include Offer Listing and Hire Agent listing flows.
+* Do **not** touch Limited Service legacy flows.
+* Do **not** remove or change unrelated fields, tabs, tooltips, validation, routes, or database schema unless the audit proves the city reference data itself is missing.
+
+Audit first:
+
+1. Confirm database data exists for:
+
+   * Treasure Island
+   * Dunedin
+   * Madeira Beach
+   * Indian Rocks Beach
+   * Safety Harbor
+   * St. Pete Beach
+2. Confirm `us_cities` has the full national import, not only the old small dataset.
+3. Confirm `us_zip_code_cities` is populated and Treasure Island maps to Pinellas County, Florida, and valid ZIP codes.
+4. Audit the Livewire city autocomplete methods in affected components:
+
+   * `updatedCity`
+   * `searchCity`
+   * `selectCitySuggestion`
+   * `autoPopulateFromCity`
+   * role-specific versions like `updatedPropertyCity`, `searchPropertyCity`, `selectPropertyCitySuggestion`, and `autoPopulateFromPropertyCity`
+5. Compare a working flow against a broken flow and identify the exact missing method, wrong property name, visibility flag, stale query, or missing alias lookup.
+
+Fix requirements:
+
+* Selecting **Treasure Island** must immediately populate:
+
+  * City: Treasure Island
+  * County: Pinellas
+  * State: Florida
+  * ZIP options/ZIP field as applicable
+* Apply the same proven fix pattern consistently across affected Create/Edit/Draft flows.
+* If the issue is missing seed/import data, run or repair the proper importer/seeder instead of hardcoding frontend values.
+* If the issue is Livewire hydration, ensure Draft/Edit reload restores City, County, State, ZIP, suggestions, and visibility flags correctly.
+
+Verification:
+
+* Use the login above.
+* Browser-test the actual UI, not only static/database checks.
+* Test Treasure Island on first selection.
+* Test at least Dunedin and St. Pete Beach as regression checks.
+* Verify Save Draft and Edit reload preserve the selected city/county/state/ZIP values.
+* Provide the exact files changed and browser-test notes.
+
+Done means:
+
+* Treasure Island works immediately on first selection.
+* Known Pinellas cities still work.
+* Create/Edit/Draft behavior matches.
+* No unrelated listing logic or UI was changed.
