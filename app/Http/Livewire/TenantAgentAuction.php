@@ -1702,6 +1702,7 @@ class TenantAgentAuction extends Component
                 return redirect()->route('hire.agent.auction', ['user_type' => $this->user_type]);
             }
 
+            $this->listingId = $listingId;
             $this->loadDraft($listingId);
 
             // Enforce Residential-only field cleanup for Commercial properties after draft load
