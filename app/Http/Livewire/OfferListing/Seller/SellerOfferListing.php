@@ -1610,10 +1610,29 @@ class SellerOfferListing extends Component
                 ->get();
             
             $cities = $citiesStartWith->merge($citiesContain);
-            
-            foreach ($cities as $city) {
-                $stateAbbrev = $city->state ? $city->state->abbreviation : '';
-                $results[] = $city->name . ', ' . $stateAbbrev;
+
+            // Fallback: city absent from us_cities (e.g. USPS-alias cities).
+            // Query us_zip_code_cities so suggestion dropdown still renders.
+            if ($cities->isEmpty()) {
+                $aliasRows = \Illuminate\Support\Facades\DB::table('us_zip_code_cities')
+                    ->where('city', 'ILIKE', $input . '%')
+                    ->orderBy('city')
+                    ->limit(10)
+                    ->get(['city', 'state_abbrev']);
+
+                $seen = [];
+                foreach ($aliasRows as $row) {
+                    $key = strtolower($row->city . ',' . $row->state_abbrev);
+                    if (!in_array($key, $seen)) {
+                        $seen[]    = $key;
+                        $results[] = $row->city . ', ' . $row->state_abbrev;
+                    }
+                }
+            } else {
+                foreach ($cities as $city) {
+                    $stateAbbrev = $city->state ? $city->state->abbreviation : '';
+                    $results[] = $city->name . ', ' . $stateAbbrev;
+                }
             }
         }
         
@@ -1641,17 +1660,31 @@ class SellerOfferListing extends Component
     {
         $cityName = $this->extractNameFromLocationString($cityWithState);
         $stateAbbrev = $this->extractStateFromLocationString($cityWithState);
-        
+
         if (empty($cityName)) return;
-        
-        $zipCodes = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName);
-        
+
+        $q = \App\Models\UsZipCode::where('city', 'ILIKE', $cityName);
+
         if ($stateAbbrev) {
-            $zipCodes->where('state_abbrev', strtoupper($stateAbbrev));
+            $q->where('state_abbrev', strtoupper($stateAbbrev));
         }
-        
-        $foundZips = $zipCodes->orderBy('zip_code')->limit(20)->pluck('zip_code')->toArray();
-        
+
+        $foundZips = $q->orderBy('zip_code')->limit(20)->pluck('zip_code')->toArray();
+
+        // Fallback: some cities (e.g. Treasure Island) are alias cities whose
+        // primary USPS row in us_zip_codes has a different city name.
+        // Check us_zip_code_cities for alias entries.
+        if (empty($foundZips)) {
+            $aliasQ = \Illuminate\Support\Facades\DB::table('us_zip_code_cities')
+                ->whereRaw('LOWER(city) = ?', [strtolower($cityName)]);
+
+            if ($stateAbbrev) {
+                $aliasQ->where('state_abbrev', strtoupper($stateAbbrev));
+            }
+
+            $foundZips = $aliasQ->orderBy('zip_code')->limit(20)->pluck('zip_code')->toArray();
+        }
+
         foreach ($foundZips as $zip) {
             if (!in_array($zip, $this->zipCodes)) {
                 $this->zipCodes[] = $zip;

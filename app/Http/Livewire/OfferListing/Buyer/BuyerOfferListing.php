@@ -1037,9 +1037,31 @@ class BuyerOfferListing extends Component
         
         $cities = $citiesStartWith->merge($citiesContain);
 
-        return $cities->map(function ($city) {
-            return $city->name . ', ' . ($city->state ? $city->state->abbreviation : '');
-        })->toArray();
+        if (!$cities->isEmpty()) {
+            return $cities->map(function ($city) {
+                return $city->name . ', ' . ($city->state ? $city->state->abbreviation : '');
+            })->toArray();
+        }
+
+        // Fallback: city absent from us_cities (e.g. USPS-alias cities).
+        // Query us_zip_code_cities so suggestion dropdown still renders.
+        $aliasRows = \Illuminate\Support\Facades\DB::table('us_zip_code_cities')
+            ->where('city', 'ILIKE', $input . '%')
+            ->orderBy('city')
+            ->limit(10)
+            ->get(['city', 'state_abbrev']);
+
+        $seen    = [];
+        $results = [];
+        foreach ($aliasRows as $row) {
+            $key = strtolower($row->city . ',' . $row->state_abbrev);
+            if (!in_array($key, $seen)) {
+                $seen[]    = $key;
+                $results[] = $row->city . ', ' . $row->state_abbrev;
+            }
+        }
+
+        return $results;
     }
 
     protected function getPlaceSuggestionsFromApi($input, $type = null)
