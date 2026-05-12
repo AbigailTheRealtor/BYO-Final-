@@ -62,7 +62,7 @@
 
     <div class="input-cover" wire:ignore>
         <i class="input-icon fa-solid fa-screwdriver-wrench input-icon2"></i>
-        <select id="sale_provision" class="form-control select2-multiple" data-placeholder="Select" multiple>
+        <select id="sale_provision" class="form-control has-icon select2-multiple" data-placeholder="Select" multiple>
             <option value=""></option>
             @foreach ($seller_property as $row_pt)
                 <option value="{{ $row_pt['name'] }}" title="{{ $row_pt['description'] }}" {{ in_array($row_pt['name'], $sale_provision ?? []) ? 'selected' : '' }}>{{ $row_pt['name'] }}
@@ -215,7 +215,7 @@
 
     <div class="input-cover" id="offered_financing_wrapper" wire:ignore>
         <i class="input-icon fa-solid fa-money-bill-wave input-icon2"></i>
-        <select id="offered_financing" class="form-control select2-multiple" data-placeholder="Select" multiple required>
+        <select id="offered_financing" class="form-control has-icon select2-multiple" data-placeholder="Select" multiple required>
             <option value=""></option>
             @foreach ($financing_options as $option)
                 <option value="{{ $option['name'] }}" title="{{ $option['description'] }}"

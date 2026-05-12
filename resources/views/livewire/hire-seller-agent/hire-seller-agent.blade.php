@@ -267,6 +267,19 @@
             padding: 2px 8px;
         }
 
+        .input-cover .input-icon2 {
+            z-index: 1 !important;
+        }
+
+        .input-cover .select2 .selection .select2-selection--multiple {
+            padding-left: 44px !important;
+            padding-bottom: 0 !important;
+        }
+
+        .input-cover .select2 .selection .select2-selection--multiple input {
+            font-size: 1rem !important;
+        }
+
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -1160,7 +1173,7 @@
                 var $appliances = $('#appliances');
                 if ($appliances.length) {
                     if (!$appliances.hasClass('select2-hidden-accessible')) {
-                        $appliances.select2({ placeholder: "Select", allowClear: true });
+                        window.initFullServiceSelect2Multiple($appliances);
                         if (!$appliances.data('appliances-change-bound')) {
                             $appliances.on('change', function() {
                                 var selectedValues = $(this).val() || [];
@@ -1345,10 +1358,7 @@
         function initializeFullService() {
             if ($('#offered_financing').length) {
                 if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    $('#offered_financing').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                    });
+                    window.initFullServiceSelect2Multiple($('#offered_financing'));
                 }
                 if (!$('#offered_financing').data('of-change-bound')) {
                     $('#offered_financing').on('change', function() {
@@ -1363,10 +1373,7 @@
 
             if ($('#sale_provision').length) {
                 if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    $('#sale_provision').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                    });
+                    window.initFullServiceSelect2Multiple($('#sale_provision'));
                 }
                 if (!$('#sale_provision').data('sp-change-bound')) {
                     $('#sale_provision').on('change', function() {
@@ -1381,10 +1388,7 @@
 
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
-                $('#property_items').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#property_items'));
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
                     debouncedSet('property_items', selectedValues);
@@ -1392,10 +1396,7 @@
             }
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
-                $('#non_negotiable_amenities').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#non_negotiable_amenities'));
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
                     @this.set('non_negotiable_amenities', selectedValues, false);
@@ -1405,11 +1406,7 @@
             if ($('#exchange_item').length) {
                 var $exEl = $('#exchange_item');
                 if (!$exEl.hasClass('select2-hidden-accessible')) {
-                    $exEl.select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                        width: "100%",
-                    });
+                    window.initFullServiceSelect2Multiple($exEl);
                 }
                 var savedExchangeItems = [];
                 try { savedExchangeItems = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -1588,10 +1585,7 @@
             });
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
-                $('#included_assets').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
+                window.initFullServiceSelect2Multiple($('#included_assets'));
                 $('#included_assets').on('change', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('business_assets', selectedValues, false);
@@ -1611,10 +1605,7 @@
             }
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
+                window.initFullServiceSelect2Multiple($('#view_preference'));
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('view_preference', selectedValues, false);
@@ -1627,10 +1618,7 @@
             }
 
             if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                $('#appliances').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
+                window.initFullServiceSelect2Multiple($('#appliances'));
                 $('#appliances').on('change', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('appliances', selectedValues, false);
@@ -1643,10 +1631,7 @@
             }
 
             if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
-                $('#garage_parking_spaces_option_landlord').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
+                window.initFullServiceSelect2Multiple($('#garage_parking_spaces_option_landlord'));
                 $('#garage_parking_spaces_option_landlord').on('change', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('garage_parking_spaces_option', selectedValues, false);

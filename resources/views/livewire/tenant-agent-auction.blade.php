@@ -294,6 +294,19 @@
         padding: 2px 8px;
     }
 
+    .input-cover .input-icon2 {
+        z-index: 1 !important;
+    }
+
+    .input-cover .select2 .selection .select2-selection--multiple {
+        padding-left: 44px !important;
+        padding-bottom: 0 !important;
+    }
+
+    .input-cover .select2 .selection .select2-selection--multiple input {
+        font-size: 1rem !important;
+    }
+
     .tooltip-inner {
         font-size: 12px;
         /* Decrease text size */
@@ -2125,7 +2138,7 @@ $lease_types = [
             $exEl.data('exchange-change-bound', false);
         }
         if (!$exEl.hasClass('select2-hidden-accessible')) {
-            $exEl.select2({ placeholder: "Select", allowClear: true });
+            window.initFullServiceSelect2Multiple($exEl);
         }
         var saved = [];
         try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -2557,10 +2570,8 @@ $lease_types = [
 
 
         if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
-            $('#sale_provision').select2({
-                placeholder: "Select",
-                allowClear: true,
-            }).on('change', function() {
+            window.initFullServiceSelect2Multiple($('#sale_provision'));
+            $('#sale_provision').on('change', function() {
                 debouncedSet('sale_provision', $(this).val());
 
                 // Add tooltips to selected options dynamically
@@ -2584,10 +2595,8 @@ $lease_types = [
 
         // Enable Bootstrap tooltips for the entire document
         if ($('#offered_financing').length && !$('#offered_financing').hasClass('select2-hidden-accessible')) {
-            $('#offered_financing').select2({
-                placeholder: "Select",
-                allowClear: true,
-            }).on('change', function() {
+            window.initFullServiceSelect2Multiple($('#offered_financing'));
+            $('#offered_financing').on('change', function() {
                 debouncedSet('offered_financing', $(this).val());
 
                 // Reapply tooltips to all options dynamically
@@ -2606,10 +2615,7 @@ $lease_types = [
             var $ia = $('#included_assets');
             if (!$ia.length) return;
             if (!$ia.hasClass('select2-hidden-accessible')) {
-                $ia.select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
+                window.initFullServiceSelect2Multiple($ia);
                 $ia.off('change.includedAssets').on('change.includedAssets', function() {
                     let selectedValues = $(this).val() || [];
                     @this.set('business_assets', selectedValues, false);
@@ -2656,10 +2662,7 @@ $lease_types = [
             var $sel = $('.condition_prop_buyer');
             if ($sel.hasClass('select2-hidden-accessible')) return;
 
-            $sel.select2({
-                placeholder: "Select",
-                allowClear: true
-            });
+            window.initFullServiceSelect2Multiple($sel);
 
             $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
                 let data = $(this).val() || [];
@@ -2684,7 +2687,7 @@ $lease_types = [
             if ($sel.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $sel.select2({ placeholder: "Select", allowClear: true });
+            window.initFullServiceSelect2Multiple($sel);
             $sel.off('change.garageLandlordSync').on('change.garageLandlordSync', function() {
                 let selectedValues = $sel.val() || [];
                 debouncedSet('garage_parking_spaces_option', selectedValues);
@@ -2705,7 +2708,7 @@ $lease_types = [
                 if ($el.hasClass('select2-hidden-accessible')) {
                     $el.select2('destroy');
                 }
-                $el.select2({ placeholder: "Select", allowClear: true });
+                $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
                 $el.off('change.unitTypeBuyer').on('change.unitTypeBuyer', function() {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
@@ -2756,6 +2759,7 @@ $lease_types = [
             $pi.select2({
                 placeholder: "Select",
                 allowClear: true,
+                width: '100%',
             });
             var lwVals = @this.get('property_items') || [];
             if (lwVals.length) {
@@ -2941,7 +2945,7 @@ $lease_types = [
             if ($assetSel.hasClass('select2-hidden-accessible')) {
                 $assetSel.select2('destroy');
             }
-            $assetSel.select2({ placeholder: "Select", allowClear: true });
+            $assetSel.select2({ placeholder: "Select", allowClear: true, width: '100%' });
             $assetSel.off('change.assetsBuyer').on('change.assetsBuyer', function() {
                 const vals = $assetSel.val() || [];
                 debouncedSet('assets', vals);
@@ -3007,7 +3011,8 @@ $lease_types = [
             }
             $nn.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 })
                 .on('select2:select select2:unselect', function(e) {
                     const vals = $(this).val() || [];
@@ -3235,7 +3240,8 @@ $lease_types = [
             }
             $vp.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
                 })
                 .on('select2:select select2:unselect', function(e) {
                     const vals = $(this).val() || [];
@@ -3268,7 +3274,7 @@ $lease_types = [
             if ($gps.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $gps.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            window.initFullServiceSelect2Multiple($gps);
             $gps.off('change.garageBuyer').on('change.garageBuyer', function() {
                 const vals = $(this).val() || [];
                 debouncedSet('garage_parking_spaces_option', vals);
@@ -3301,7 +3307,7 @@ $lease_types = [
             if ($app.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $app.select2({ placeholder: "Select", allowClear: true });
+            window.initFullServiceSelect2Multiple($app);
             $app.off('change.appliancesSync').on('change.appliancesSync', function() {
                 let selectedValuesAppliances = $app.val() || [];
                 if (selectedValuesAppliances.includes('Other')) {
@@ -3325,10 +3331,7 @@ $lease_types = [
         /////////////////// leasing_spaces
 
         if ($('#leasing_spaces_tenant').length && !$('#leasing_spaces_tenant').hasClass('select2-hidden-accessible')) {
-            $('#leasing_spaces_tenant').select2({
-                placeholder: "Select",
-                allowClear: true
-            });
+            window.initFullServiceSelect2Multiple($('#leasing_spaces_tenant'));
 
             $('#leasing_spaces_tenant').on('change', function(e) {
                 debouncedSet('leasing_spaces_tenant', $(this).val() || []);
@@ -3351,7 +3354,7 @@ $lease_types = [
             $('.tenant_pays').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true });
+                    window.initFullServiceSelect2Multiple($el);
                     $el.off('change.tenantPaysSync').on('change.tenantPaysSync', function() {
                         let selectedValues = $el.val() || [];
                         toggleOtherTenantField(selectedValues);
@@ -3370,7 +3373,7 @@ $lease_types = [
                 if ($el.hasClass('select2-hidden-accessible')) {
                     return;
                 }
-                $el.select2({ placeholder: "Select", allowClear: true });
+                window.initFullServiceSelect2Multiple($el);
                 $el.off('change.leaseTermSync').on('change.leaseTermSync', function() {
                     let selectedValues = $el.val() || [];
                     if (selectedValues.includes('Other')) {
@@ -3454,7 +3457,7 @@ $lease_types = [
             $('.owner_pays').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true });
+                    window.initFullServiceSelect2Multiple($el);
                     $el.off('change.ownerPaysSync').on('change.ownerPaysSync', function() {
                         let selectedValues = $el.val() || [];
                         if (selectedValues.includes('Other')) {
@@ -3493,7 +3496,8 @@ $lease_types = [
 
             $sel.select2({
                 placeholder: "Select",
-                allowClear: true
+                allowClear: true,
+                width: '100%',
             });
 
             var lwValues = @this.get('lease_for') || [];
@@ -3568,7 +3572,7 @@ $lease_types = [
             $('.rent_includes').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true });
+                    window.initFullServiceSelect2Multiple($el);
                     $el.off('change.rentIncludesSync').on('change.rentIncludesSync', function() {
                         let selectedValues = $el.val() || [];
                         if (selectedValues.includes('Other')) {
@@ -4253,7 +4257,7 @@ $lease_types = [
         let $el = $(selectorId.startsWith('#') ? selectorId : '#' + selectorId);
         if (!$el.length) return;
         if ($el.hasClass('select2-hidden-accessible')) return;
-        $el.select2({ placeholder: 'Select', allowClear: true });
+        window.initFullServiceSelect2Multiple($el);
         $el.on('change', function() {
             let data = $(this).val() || [];
             debouncedSet(wireModel, data);

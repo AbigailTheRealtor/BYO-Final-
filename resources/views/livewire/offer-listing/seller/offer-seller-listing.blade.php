@@ -279,6 +279,11 @@
             padding-left: 44px !important;
         }
 
+        .input-cover .select2 .selection .select2-selection--multiple {
+            padding-left: 44px !important;
+            padding-bottom: 0 !important;
+        }
+
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -1884,11 +1889,7 @@
             }
             if ($('#offered_financing').length) {
                 if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    $('#offered_financing').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                        width: '100%',
-                    });
+                    window.initFullServiceSelect2Multiple($('#offered_financing'));
                 }
                 if (!$('#offered_financing').data('of-change-bound')) {
                     $('#offered_financing').on('change', function() {
@@ -1903,11 +1904,7 @@
 
             if ($('#sale_provision').length) {
                 if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    $('#sale_provision').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                        width: '100%',
-                    });
+                    window.initFullServiceSelect2Multiple($('#sale_provision'));
                 }
                 if (!$('#sale_provision').data('sp-change-bound')) {
                     $('#sale_provision').on('change', function() {

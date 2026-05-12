@@ -74,7 +74,7 @@
             var $el = $(this);
             if ($el.hasClass('select2-hidden-accessible')) return;
             if ($el.closest('[style*="display: none"], [style*="display:none"], .d-none').length && !container) return;
-            $el.select2({ placeholder: $el.data('placeholder') || 'Select', allowClear: true });
+            $el.select2({ placeholder: $el.data('placeholder') || 'Select', allowClear: true, width: '100%' });
             var wireModel = $el.attr('wire:model');
             if (wireModel && !$el.attr('wire:model.defer') && !$el.attr('wire:model.lazy')) {
                 $el.off('change.s2stable').on('change.s2stable', function() {
@@ -114,8 +114,16 @@
         });
     }
 
+    window.initFullServiceSelect2Multiple = function($el) {
+        if (!$el || !$el.length) return;
+        if ($el.hasClass('select2-hidden-accessible')) return;
+        var placeholder = $el.data('placeholder') || 'Select';
+        $el.select2({ placeholder: placeholder, allowClear: true, width: '100%', closeOnSelect: false });
+    };
+
     window.Select2Stable = {
         initUninitialized: initUninitialized,
-        repairBrokenSelects: repairBrokenSelects
+        repairBrokenSelects: repairBrokenSelects,
+        initFullServiceSelect2Multiple: window.initFullServiceSelect2Multiple
     };
 })(jQuery);

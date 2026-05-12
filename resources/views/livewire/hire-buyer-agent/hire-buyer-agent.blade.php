@@ -267,6 +267,19 @@
             padding: 2px 8px;
         }
 
+        .input-cover .input-icon2 {
+            z-index: 1 !important;
+        }
+
+        .input-cover .select2 .selection .select2-selection--multiple {
+            padding-left: 44px !important;
+            padding-bottom: 0 !important;
+        }
+
+        .input-cover .select2 .selection .select2-selection--multiple input {
+            font-size: 1rem !important;
+        }
+
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -1287,10 +1300,7 @@
 
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
-                $('#property_items').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#property_items'));
 
                 $('#property_items').off('change.piSync').on('change.piSync', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1308,10 +1318,7 @@
             }
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
-                $('#non_negotiable_amenities').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#non_negotiable_amenities'));
 
                 $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1328,10 +1335,7 @@
             }
 
             if ($('#condition_prop_buyer').length && !$('#condition_prop_buyer').hasClass('select2-hidden-accessible')) {
-                $('#condition_prop_buyer').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#condition_prop_buyer'));
 
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1342,10 +1346,7 @@
             }
 
             if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                $('#garage_parking_spaces_option').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#garage_parking_spaces_option'));
 
                 $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
                     let selectedValues = $(this).val() || [];
@@ -1361,10 +1362,7 @@
             }
 
             if ($('#assets').length && !$('#assets').hasClass('select2-hidden-accessible')) {
-                $('#assets').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#assets'));
 
                 $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
                     let selectedValues = $(this).val() || [];
@@ -1377,10 +1375,7 @@
                 var $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
                     $el.attr('multiple', 'multiple');
-                    $el.select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                    });
+                    window.initFullServiceSelect2Multiple($el);
 
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
                         let selectedValues = $el.val() || [];
@@ -1505,10 +1500,7 @@
             Livewire.hook('message.processed', () => {
                 toggleGarageOptions();
                 if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
-                    $('#garage_parking_spaces_option').select2({
-                        placeholder: "Select",
-                        allowClear: true,
-                    });
+                    window.initFullServiceSelect2Multiple($('#garage_parking_spaces_option'));
                     $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
                         let selectedValues = $(this).val() || [];
                         selectedValues = [...new Set(selectedValues)];
@@ -1570,10 +1562,7 @@
 
             // Initialize Select2 for multi-select
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
-                $('#view_preference').select2({
-                    placeholder: "Select",
-                    allowClear: true
-                });
+                window.initFullServiceSelect2Multiple($('#view_preference'));
 
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val() || [];
@@ -1623,10 +1612,7 @@
 
             // Initialize Select2 for sale_provision (Purchasing Terms tab)
             if ($('#sale_provision').length && !$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                $('#sale_provision').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#sale_provision'));
                 // Initial visibility sync
                 window.updateAssignmentContractSection($('#sale_provision').val() || []);
             }
@@ -1643,10 +1629,7 @@
             
             // Initialize Select2 for offered_financing (Purchasing Terms tab)
             if ($('#offered_financing').length && !$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                $('#offered_financing').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
+                window.initFullServiceSelect2Multiple($('#offered_financing'));
                 // Initial visibility sync
                 window.updateFinancingSections($('#offered_financing').val() || []);
             }
