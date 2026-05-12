@@ -1,0 +1,92 @@
+Task: Fix Seller Offer Listing display formatting issues
+
+Example page:
+ /offer-listing/seller/view/38
+
+Login for QA:
+ abigailbaschuk@gmail.com
+ 12345678
+
+SAFEGUARDS:
+- Only edit: resources/views/offer-listing/seller/view.blade.php
+- Do NOT edit controllers, routes, models, migrations, validation, Livewire components, or database schema.
+- Do NOT touch Hire Agent flows, Buyer/Landlord/Tenant Offer Listing views, or Limited Service code.
+- This is display-only cleanup for Seller Offer Listing view.
+
+Issues to fix:
+
+1. Remove these rows from the public Seller Offer Listing display:
+- Service Type
+- Working with Agent
+
+These fields should not appear on /offer-listing/seller/view/{id}.
+
+2. Format Listing Date and Expiration Date as full readable dates:
+Current format should be changed to:
+- May 4, 2026
+- May 29, 2029
+
+Use Month Day, Year format.
+Hide invalid/empty dates.
+
+3. Fix Heated Sq Ft display:
+Current issue:
+- Heated Sq Ft shows a “>” symbol.
+
+Requirement:
+- Do not show the “>” symbol.
+- Display only the actual heated square footage value.
+
+4. Move Sq Ft Heated Source:
+Requirement:
+- Sq Ft Heated Source should display directly below Heated Sq Ft.
+
+5. Fix Property Condition label/value:
+Current value shows:
+- Older but Clean
+
+It should display:
+- Older but Clean & Well Maintained
+
+If the saved value is “Older but Clean”, map it on display to “Older but Clean & Well Maintained”.
+
+6. Fix “Other” option display:
+Current issue:
+Some fields only show the word “Other”.
+
+Requirement:
+- If a selected value is “Other” and a matching other/custom input exists, display the actual custom input value instead of just “Other”.
+- Apply this only in view.blade.php using existing meta keys.
+- Do not change saved database values.
+
+7. Fix Down Payment formatting:
+Current issue:
+Down Payment Type and Down Payment Amount render awkwardly like:
+
+Down Payment Type
+%
+Down Payment Amount
+$23
+Initial Deposit Requested
+500
+
+Requirement:
+- Format these rows cleanly and human-readably.
+- If Down Payment Type is “%”, display as “Percentage”.
+- If Down Payment Type is “$”, display as “Dollar Amount”.
+- Down Payment Amount should format correctly based on type:
+  - percentage type: show as percent, example “23%”
+  - dollar type: show as money, example “$23”
+- Initial Deposit Requested should show as money, example “$500”.
+
+Final QA:
+- Visit /offer-listing/seller/view/38
+- Confirm removed rows are gone.
+- Confirm dates show like “May 4, 2026”.
+- Confirm Heated Sq Ft has no “>”.
+- Confirm Sq Ft Heated Source appears directly below Heated Sq Ft.
+- Confirm Property Condition displays “Older but Clean & Well Maintained”.
+- Confirm Other/custom values display actual custom input text.
+- Confirm Down Payment and Initial Deposit rows are formatted cleanly.
+- Confirm no Blade errors and no JS console errors.
+- Confirm only resources/views/offer-listing/seller/view.blade.php was modified.
