@@ -1267,7 +1267,7 @@ $tenantPays = [
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#property_items').on('change', function(e) {
@@ -1278,7 +1278,7 @@ $tenantPays = [
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -1424,7 +1424,7 @@ $tenantPays = [
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
-                    placeholder: "Select Preference",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
@@ -1630,7 +1630,7 @@ $tenantPays = [
 
             if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
                 $('#rent_includes').select2({
-                    placeholder: "Select rent",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#rent_includes').on('change', function(e) {
@@ -1641,7 +1641,7 @@ $tenantPays = [
 
             if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
                 $('#terms_of_lease').select2({
-                    placeholder: "Select terms of lease",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#terms_of_lease').on('change', function(e) {
@@ -1652,7 +1652,7 @@ $tenantPays = [
 
             if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
                 $('#tenant_pays').select2({
-                    placeholder: "Select tenant pays",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#tenant_pays').on('change', function(e) {
@@ -1663,7 +1663,7 @@ $tenantPays = [
 
             if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
                 $('#owner_pays').select2({
-                    placeholder: "Select owner pays",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#owner_pays').on('change', function(e) {
@@ -1678,7 +1678,7 @@ $tenantPays = [
                 if (!$dlt.length) return;
                 if (!$dlt.hasClass('select2-hidden-accessible')) {
                     $dlt.select2({
-                        placeholder: "Select desired lease term",
+                        placeholder: "Select",
                         allowClear: true,
                     });
                 }

@@ -1413,7 +1413,7 @@
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#property_items').on('change', function(e) {
@@ -1855,7 +1855,7 @@
 
             if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
                 $('#rent_includes').select2({
-                    placeholder: "Select rent",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#rent_includes').on('change', function(e) {
@@ -1898,7 +1898,7 @@
 
             if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
                 $('#owner_pays').select2({
-                    placeholder: "Select owner pays",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#owner_pays').on('change', function(e) {

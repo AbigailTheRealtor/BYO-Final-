@@ -960,7 +960,7 @@
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#property_items').on('change', function(e) {
@@ -971,7 +971,7 @@
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -982,7 +982,7 @@
 
             if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
                 $('#exchange_item').select2({
-                    placeholder: "Select acceptable exchange items",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 var savedExchangeItems = @this.get('exchange_item') || [];
@@ -1003,7 +1003,7 @@
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
                 $('#included_assets').select2({
-                    placeholder: "Select included assets",
+                    placeholder: "Select",
                     allowClear: true,
                 });
                 var savedBusinessAssets = @this.get('business_assets') || [];
@@ -1188,7 +1188,7 @@
 
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
-                    placeholder: "Select Preference",
+                    placeholder: "Select",
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {

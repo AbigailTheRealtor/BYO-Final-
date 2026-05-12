@@ -1267,7 +1267,7 @@ This page should redirect and never be used.
                     // searchResultLimit: 5,
                     // renderChoiceLimit: 5
                 }); */
-                $('.multiple').select2();
+                $('.multiple').select2({ placeholder: "Select", allowClear: true });
 
                 $('.select2').each(function() {
                     $(this).prependTo($(this).parent('.select2-parent'));

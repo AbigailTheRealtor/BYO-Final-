@@ -2086,7 +2086,7 @@
                 $exEl.data('exchange-change-bound', false);
             }
             if (!$exEl.hasClass('select2-hidden-accessible')) {
-                $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true });
+                $exEl.select2({ placeholder: "Select", allowClear: true });
             }
             var saved = [];
             try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -2900,7 +2900,7 @@
 
             if ($('#credit_scroe_rating').length && !$('#credit_scroe_rating').hasClass('select2-hidden-accessible')) {
                 $('#credit_scroe_rating').select2({
-                    placeholder: "Select credit score rating(s)",
+                    placeholder: "Select",
                     allowClear: true,
                 });
 
@@ -3337,7 +3337,7 @@
             $('.terms_of_lease').each(function() {
                 if (!$(this).hasClass('select2-hidden-accessible')) {
                     $(this).select2({
-                        placeholder: "Select lease terms",
+                        placeholder: "Select",
                         allowClear: true,
                         width: '100%'
                     });
