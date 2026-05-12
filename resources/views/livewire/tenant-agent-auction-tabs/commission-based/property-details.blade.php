@@ -324,6 +324,7 @@
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple
                 style="visibility:hidden;height:0;overflow:hidden">
+            <option value="">Select</option>
             @php
                 $displayMapping = [
                     'Updated/Renovated' => 'Updated / Renovated',
@@ -652,7 +653,7 @@
     </div>
 @endif
 <!-- Garage/Parking Spaces Type Dropdown -->
-<div class="form-group {{ ($this->garage_parking_spaces ?? '') === 'Yes' ? '' : 'd-none' }}" id="garage_parking_spaces_option_wrapper" wire:ignore>
+<div class="form-group {{ ($this->garage_parking_spaces ?? '') === 'Yes' && ($property_type ?? '') === 'Commercial Property' ? '' : 'd-none' }}" id="garage_parking_spaces_option_wrapper" wire:ignore>
     <label class="fw-bold">Garage/Parking Features:</label>
 
     <div class="input-cover">
@@ -665,7 +666,7 @@
         @endphp
         <select id="garage_parking_spaces_option"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
-
+            <option value="">Select</option>
             @foreach ($garage_parking_spaces as $row_pt)
                 <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $selectedGarageOptions) ? 'selected' : '' }}>{{ $row_pt['name'] }}</option>
             @endforeach
@@ -674,7 +675,7 @@
     <span class="error mt-2" id="garage_parking_spaces_option_error"></span>
 </div>
 <!-- Other Parking Space Text Input -->
-<div class="form-group {{ ($this->garage_parking_spaces ?? '') === 'Yes' && in_array('Other', (array)($this->garage_parking_spaces_option ?? [])) ? '' : 'd-none' }}" id="other_parking_space_wrapper" wire:ignore>
+<div class="form-group {{ ($this->garage_parking_spaces ?? '') === 'Yes' && ($property_type ?? '') === 'Commercial Property' && in_array('Other', (array)($this->garage_parking_spaces_option ?? [])) ? '' : 'd-none' }}" id="other_parking_space_wrapper" wire:ignore>
     {{-- <label class="fw-bold">Other Garage/Parking Features:</label> --}}
     <div class="input-cover">
 

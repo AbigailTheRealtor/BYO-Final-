@@ -91,8 +91,9 @@
     @endif
 
     <!-- Full-Screen Loader (Handled by Livewire) -->
+    <style>#photo-loader { display: none; }</style>
     <div id="photo-loader" wire:loading.flex wire:target="photo"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; justify-content: center; align-items: center; display: none;">
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; justify-content: center; align-items: center;">
         <div style="text-align: center; color: white;">
             <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -143,18 +144,60 @@
 
 <script>
 function formatPhoneNumber(input) {
-    let value = input.value.replace(/\D/g, '');
-    if (value.length > 10) {
-        value = value.substring(0, 10);
+    var raw = input.value;
+    var cursorPos = input.selectionStart;
+
+    // Count how many digits appear before the cursor position
+    var digitsBefore = 0;
+    for (var i = 0; i < cursorPos; i++) {
+        if (/\d/.test(raw[i])) digitsBefore++;
     }
-    if (value.length >= 6) {
-        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3, 6) + '-' + value.substring(6);
-    } else if (value.length >= 3) {
-        input.value = '(' + value.substring(0, 3) + ') ' + value.substring(3);
-    } else if (value.length > 0) {
-        input.value = '(' + value;
+
+    // Strip to digits only, cap at 10
+    var digits = raw.replace(/\D/g, '');
+    if (digits.length > 10) digits = digits.substring(0, 10);
+
+    // Build formatted string
+    var formatted = '';
+    if (digits.length >= 6) {
+        formatted = '(' + digits.substring(0, 3) + ') ' + digits.substring(3, 6) + '-' + digits.substring(6);
+    } else if (digits.length >= 3) {
+        formatted = '(' + digits.substring(0, 3) + ') ' + digits.substring(3);
+    } else if (digits.length > 0) {
+        formatted = '(' + digits;
+    }
+
+    input.value = formatted;
+
+    // Restore cursor: advance through formatted string counting digits until we reach digitsBefore
+    var newCursor = formatted.length;
+    if (digitsBefore === 0) {
+        newCursor = 0;
     } else {
-        input.value = '';
+        var counted = 0;
+        for (var j = 0; j < formatted.length; j++) {
+            if (/\d/.test(formatted[j])) counted++;
+            if (counted === digitsBefore) {
+                newCursor = j + 1;
+                break;
+            }
+        }
+    }
+    input.setSelectionRange(newCursor, newCursor);
+}
+
+function handlePhoneKeydown(event) {
+    if (event.key !== 'Backspace') return;
+    var input = event.target;
+    var start = input.selectionStart;
+    var end = input.selectionEnd;
+    // Only act when nothing is selected (single cursor position)
+    if (start !== end || start === 0) return;
+    var prevChar = input.value[start - 1];
+    // If the character before the cursor is a formatting char, move the cursor
+    // back one extra position so the native delete removes the digit before it
+    if (prevChar === '(' || prevChar === ')' || prevChar === ' ' || prevChar === '-') {
+        input.setSelectionRange(start - 1, start - 1);
     }
 }
 
@@ -175,6 +218,10 @@ function initPhoneFormatting() {
             phoneInput.addEventListener('paste', handlePhonePaste);
             phoneInput.setAttribute('data-paste-init', 'true');
         }
+        if (!phoneInput.hasAttribute('data-keydown-init')) {
+            phoneInput.addEventListener('keydown', handlePhoneKeydown);
+            phoneInput.setAttribute('data-keydown-init', 'true');
+        }
     }
 }
 
@@ -186,11 +233,21 @@ document.addEventListener('DOMContentLoaded', initPhoneFormatting);
 
 // Re-initialize after any Livewire update
 document.addEventListener('livewire:load', function() {
-    Livewire.hook('message.processed', initPhoneFormatting);
+    Livewire.hook('message.processed', function() {
+        initPhoneFormatting();
+        // Safety net: always hide photo loader after any Livewire response
+        var loader = document.getElementById('photo-loader');
+        if (loader) loader.style.display = 'none';
+    });
 });
 
 // For Livewire v3 compatibility
 document.addEventListener('livewire:init', function() {
-    Livewire.hook('morph.updated', initPhoneFormatting);
+    Livewire.hook('morph.updated', function() {
+        initPhoneFormatting();
+        // Safety net: always hide photo loader after any Livewire morph
+        var loader = document.getElementById('photo-loader');
+        if (loader) loader.style.display = 'none';
+    });
 });
 </script>

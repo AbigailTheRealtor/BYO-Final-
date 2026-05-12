@@ -369,17 +369,17 @@ $safeKey = function(...$parts) {
             </label>
 
             <div class="input-group mt-2">
-                <select wire:model="lease_type" wire:change="setType('lease', $event.target.value)"
+                <select wire:change="setType('lease', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
-                    <option value="percent">%</option>
-                    <option value="flat">$</option>
+                    <option value="percent" {{ $lease_type === 'percent' ? 'selected' : '' }}>%</option>
+                    <option value="flat" {{ $lease_type === 'flat' ? 'selected' : '' }}>$</option>
                 </select>
 
                 @if ($lease_type === 'flat')
                     <span class="input-group-text">$</span>
                 @endif
 
-                <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
+                <input type="text" step="any" wire:model.defer="lease_value" class="form-control"
                     wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
@@ -408,17 +408,17 @@ $safeKey = function(...$parts) {
             </label>
 
             <div class="input-group mt-2">
-                <select wire:model="purchase_type" wire:change="setType('purchase', $event.target.value)"
+                <select wire:change="setType('purchase', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
-                    <option value="percent">%</option>
-                    <option value="flat">$</option>
+                    <option value="percent" {{ $purchase_type === 'percent' ? 'selected' : '' }}>%</option>
+                    <option value="flat" {{ $purchase_type === 'flat' ? 'selected' : '' }}>$</option>
                 </select>
 
                 @if ($purchase_type === 'flat')
                     <span class="input-group-text">$</span>
                 @endif
 
-                <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
+                <input type="text" step="any" wire:model.defer="purchase_value" class="form-control"
                     wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'

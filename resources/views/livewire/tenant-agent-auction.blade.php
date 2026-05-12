@@ -3098,26 +3098,41 @@ $lease_types = [
             let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
             let garageOptions = document.getElementById('garage_parking_spaces_option');
 
+            // Always hide both wrappers when property_type is not Commercial
+            var currentPropType = '';
+            try { currentPropType = @this.get('property_type') || ''; } catch(e) {}
+            var isCommercial = currentPropType === 'Commercial Property';
+
+            if (!isCommercial) {
+                if (optionsWrapper) optionsWrapper.classList.add('d-none');
+                if (otherInputWrapper) otherInputWrapper.classList.add('d-none');
+                return;
+            }
+
             // First check the main garage/parking spaces selection
             if (garageSelect) {
                 if (garageSelect.value === "Yes") {
-                    optionsWrapper.classList.remove('d-none'); // Show options dropdown
+                    if (optionsWrapper) optionsWrapper.classList.remove('d-none'); // Show options dropdown
                 } else {
-                    optionsWrapper.classList.add('d-none'); // Hide options dropdown
-                    otherInputWrapper.classList.add('d-none'); // Also hide other input
+                    if (optionsWrapper) optionsWrapper.classList.add('d-none'); // Hide options dropdown
+                    if (otherInputWrapper) otherInputWrapper.classList.add('d-none'); // Also hide other input
                 }
+            } else {
+                // garageSelect not in DOM (shouldn't happen when Commercial, but guard anyway)
+                if (optionsWrapper) optionsWrapper.classList.add('d-none');
+                if (otherInputWrapper) otherInputWrapper.classList.add('d-none');
             }
 
             // Then check if "Other" is selected in the options dropdown
-            if (garageOptions) {
+            if (garageOptions && garageSelect && garageSelect.value === "Yes") {
                 // Use jQuery .val() to get correct values when Select2 is active
                 let selectedOptions = $('#garage_parking_spaces_option').val() || [];
 
                 // Check if "Other" is among the selected options
-                if (selectedOptions.includes("Other") && garageSelect.value === "Yes") {
-                    otherInputWrapper.classList.remove('d-none'); // Show input field
+                if (selectedOptions.includes("Other")) {
+                    if (otherInputWrapper) otherInputWrapper.classList.remove('d-none'); // Show input field
                 } else {
-                    otherInputWrapper.classList.add('d-none'); // Hide input field
+                    if (otherInputWrapper) otherInputWrapper.classList.add('d-none'); // Hide input field
                 }
             }
         }
