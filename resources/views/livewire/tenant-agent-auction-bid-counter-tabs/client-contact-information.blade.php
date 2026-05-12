@@ -34,31 +34,15 @@
 
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">Target Rental Area</h5>
+        <h5 class="mb-0">Areas of Interest</h5>
     </div>
     <div class="card-body">
-        <p class="text-muted small">Enter the area where the client is looking to rent a property.</p>
+        <p class="text-muted small">Enter the areas where the client is looking to rent a property (e.g., cities, neighborhoods, ZIP codes).</p>
         <div class="row">
-            <div class="col-md-5 mb-3">
-                <label class="fw-bold">City <span class="text-danger">*</span></label>
-                <div class="input-cover">
-                    <input type="text" class="form-control has-icon" data-icon="fa-solid fa-city" wire:model="client_target_city" placeholder="City" required>
-                </div>
-                @error('client_target_city') <span class="error">{{ $message }}</span> @enderror
-            </div>
-            <div class="col-md-4 mb-3">
-                <label class="fw-bold">State <span class="text-danger">*</span></label>
-                <div class="input-cover">
-                    <input type="text" class="form-control has-icon" data-icon="fa-solid fa-map" wire:model="client_target_state" placeholder="State" required>
-                </div>
-                @error('client_target_state') <span class="error">{{ $message }}</span> @enderror
-            </div>
-            <div class="col-md-3 mb-3">
-                <label class="fw-bold">ZIP Code <span class="text-danger">*</span></label>
-                <div class="input-cover">
-                    <input type="text" class="form-control has-icon" data-icon="fa-solid fa-hashtag" wire:model="client_target_zip" placeholder="ZIP" required>
-                </div>
-                @error('client_target_zip') <span class="error">{{ $message }}</span> @enderror
+            <div class="col-md-12 mb-3">
+                <label class="fw-bold">Areas of Interest <span class="text-danger">*</span></label>
+                <textarea class="form-control" wire:model="areas_of_interest" placeholder="e.g., Downtown Miami, Coral Gables, 33101" rows="3" required style="min-height:80px;"></textarea>
+                @error('areas_of_interest') <span class="error">{{ $message }}</span> @enderror
             </div>
         </div>
     </div>

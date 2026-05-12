@@ -219,12 +219,12 @@
                         $bsOtherRaw2 = is_array($bsOtherRaw2) ? array_values(array_filter($bsOtherRaw2, fn($s) => is_string($s) && !empty(trim($s)))) : [];
                         $allBaselineServices = array_merge($bsRaw2, $bsOtherRaw2);
 
-                        $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
-                        $mismatchBadge = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Changed</span>';
+                        $mismatchStyle = $isOfferListing ? '' : 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
+                        $mismatchBadge = $isOfferListing ? '' : '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Changed</span>';
                         $addedStyle    = $isOfferListing ? '' : 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
                         $addedBadge    = $isOfferListing ? '' : '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added</span>';
-                        $missingStyle  = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
-                        $missingBadge  = '<span class="badge" style="background-color: #ffc107; color: #000; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Removed</span>';
+                        $missingStyle  = $isOfferListing ? '' : 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
+                        $missingBadge  = $isOfferListing ? '' : '<span class="badge" style="background-color: #ffc107; color: #000; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Removed</span>';
 
                         // Service categories
                         $isCommercial = str_contains(strtolower($counterPropType), 'commercial');
@@ -402,6 +402,7 @@
                         </div>
                         @endif
 
+                        @if(!$isOfferListing)
                         @if ($hasAnyBaseline)
                         <div class="match-score-panel mb-4 p-3" style="background: white; border-radius: 10px; border: 1px solid #dee2e6;">
 
@@ -524,7 +525,6 @@
                             @endif
                         </div>
                         @else
-                        @if(!$isOfferListing)
                         <div class="alert alert-secondary mb-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
                             <i class="fa-solid fa-circle-info me-2"></i>No match score available — no requirements were provided in the baseline.
                         </div>

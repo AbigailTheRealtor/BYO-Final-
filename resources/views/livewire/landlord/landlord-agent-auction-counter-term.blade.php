@@ -51,7 +51,9 @@
             if ($isListingCreatedByAgent) {
                 $tabs[] = 'Referral Fee & Cooperation Terms';
             }
-            $tabs[] = 'Client Details';
+            if ($isOfferListing) {
+                $tabs[] = 'Client Details';
+            }
             $counterTermsTabIndex = $isListingCreatedByAgent ? 4 : 3;
           @endphp
 
@@ -89,9 +91,11 @@
               @include('livewire.landlord-agent-auction-bid-tabs.commission-based.referral-fee')
             </div>
             @endif
+            @if ($isOfferListing)
             <div class="tab-pane fade {{ $activeTab === $counterTermsTabIndex ? 'show active' : '' }}">
               @include('livewire.landlord-agent-auction-bid-counter-tabs.counter-terms')
             </div>
+            @endif
           </div>
 
           <div class="d-flex justify-content-between form-group mt-4">

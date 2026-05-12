@@ -91,6 +91,7 @@ class TenantAgentAuctionCounterTerm extends Component
     public $retainer_fee_amount = '';
     public $referral_fee_percent = '';
     public $isListingCreatedByAgent = false;
+    public bool $isOfferListing = false;
     public $retainer_fee_application = ''; // applied | additional
     public $agency_agreement_timeframe = ''; // preset | custom
     public $agency_agreement_custom = '';
@@ -110,10 +111,27 @@ class TenantAgentAuctionCounterTerm extends Component
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
+        if ($this->isOfferListing) {
+            $rules['client_name']       = ['required', 'string', 'max:255'];
+            $rules['client_phone']      = ['required', 'string', 'max:50'];
+            $rules['client_email']      = ['required', 'email', 'max:255'];
+            $rules['areas_of_interest'] = ['required', 'string', 'max:500'];
+        }
+        return $rules;
     }
+
+    protected array $messages = [
+        'referral_fee_percent.numeric'   => 'Referral fee must be a number.',
+        'referral_fee_percent.between'   => 'Referral fee must be between 0 and 100.',
+        'client_name.required'           => 'Client name is required for offer listings.',
+        'client_phone.required'          => 'Client phone is required for offer listings.',
+        'client_email.required'          => 'Client email is required for offer listings.',
+        'client_email.email'             => 'Please enter a valid email address.',
+        'areas_of_interest.required'     => 'Areas of interest are required for offer listings.',
+    ];
 
     // Counter-specific deal negotiation fields
     public $areas_of_interest = '';
@@ -122,11 +140,6 @@ class TenantAgentAuctionCounterTerm extends Component
     public $move_in_date = '';
     public $number_of_occupants = '';
     public $household_monthly_income = '';
-
-    protected $messages = [
-        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
-        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
-    ];
 
     public function getServicesConfigProperty(): array
     {
@@ -467,6 +480,7 @@ class TenantAgentAuctionCounterTerm extends Component
             $this->property_type = $pab->get->property_type ?? '';
         }
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
+        $this->isOfferListing = $auction ? ($auction->info('workflow_type') === 'offer_listing') : false;
 
         // Always load proposed services from the agent's original bid (immutable reference)
         $bidData = $pab->get ?? null;

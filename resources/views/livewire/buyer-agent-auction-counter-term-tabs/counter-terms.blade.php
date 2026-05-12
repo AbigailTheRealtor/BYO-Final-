@@ -6,16 +6,19 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-12 mb-3">
-                <label class="fw-bold">Full Name</label>
-                <input type="text" class="form-control" wire:model="client_name" placeholder="Client's full name">
+                <label class="fw-bold">Full Name @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_name" placeholder="Client's full name" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_name') <span class="error" style="color:red;font-size:14px;">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-6 mb-3">
-                <label class="fw-bold">Phone Number</label>
-                <input type="text" class="form-control" wire:model="client_phone" placeholder="Client's phone number">
+                <label class="fw-bold">Phone Number @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_phone" placeholder="Client's phone number" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_phone') <span class="error" style="color:red;font-size:14px;">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-6 mb-3">
-                <label class="fw-bold">Email Address</label>
-                <input type="email" class="form-control" wire:model="client_email" placeholder="Client's email address">
+                <label class="fw-bold">Email Address @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="email" class="form-control" wire:model="client_email" placeholder="Client's email address" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_email') <span class="error" style="color:red;font-size:14px;">{{ $message }}</span> @enderror @endif
             </div>
         </div>
     </div>
@@ -26,8 +29,9 @@
     <div class="card-header"><h5 class="mb-0">Location &amp; Target</h5></div>
     <div class="card-body">
         <div class="form-group mb-0">
-            <label class="fw-bold">Areas of Interest</label>
-            <input type="text" class="form-control" wire:model="areas_of_interest" placeholder="e.g. Downtown, Westside, North suburbs">
+            <label class="fw-bold">Areas of Interest @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+            <textarea class="form-control" wire:model="areas_of_interest" placeholder="e.g. Downtown, Westside, North suburbs" rows="3" @if($isOfferListing) required @endif style="min-height:80px;"></textarea>
+            @if($isOfferListing) @error('areas_of_interest') <span class="error" style="color:red;font-size:14px;">{{ $message }}</span> @enderror @endif
         </div>
     </div>
 </div>
@@ -90,4 +94,3 @@
         </div>
     </div>
 </div>
-

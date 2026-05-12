@@ -149,6 +149,7 @@ class LandlordAgentAuctionCounterTerm extends Component
     public $additional_details_broker = '';          // textarea
     public $referral_fee_percent = '';
     public $isListingCreatedByAgent = false;
+    public bool $isOfferListing = false;
     public $showEnhancements = false;
     public $showCustomEnhancement = false;
     public ?int $counterTermId = null;   // <— track existing record for edit
@@ -165,14 +166,32 @@ class LandlordAgentAuctionCounterTerm extends Component
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
+        if ($this->isOfferListing) {
+            $rules['client_name']             = ['required', 'string', 'max:255'];
+            $rules['client_phone']            = ['required', 'string', 'max:50'];
+            $rules['client_email']            = ['required', 'email', 'max:255'];
+            $rules['client_property_address'] = ['required', 'string', 'max:255'];
+            $rules['client_property_city']    = ['required', 'string', 'max:100'];
+            $rules['client_property_state']   = ['required', 'string', 'max:100'];
+            $rules['client_property_zip']     = ['required', 'string', 'max:20'];
+        }
+        return $rules;
     }
 
     protected array $messages = [
-        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
-        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+        'referral_fee_percent.numeric'        => 'Referral fee must be a number.',
+        'referral_fee_percent.between'        => 'Referral fee must be between 0 and 100.',
+        'client_name.required'                => 'Client name is required for offer listings.',
+        'client_phone.required'               => 'Client phone is required for offer listings.',
+        'client_email.required'               => 'Client email is required for offer listings.',
+        'client_email.email'                  => 'Please enter a valid email address.',
+        'client_property_address.required'    => 'Property street address is required for offer listings.',
+        'client_property_city.required'       => 'Property city is required for offer listings.',
+        'client_property_state.required'      => 'Property state is required for offer listings.',
+        'client_property_zip.required'        => 'Property ZIP code is required for offer listings.',
     ];
 
     public function updatedReferralFeePercent(): void
@@ -469,6 +488,7 @@ class LandlordAgentAuctionCounterTerm extends Component
             $auc = \App\Models\LandlordAgentAuction::find($auctionId);
             $this->property_type = $auc ? ($auc->get->property_type ?? '') : '';
             $this->isListingCreatedByAgent = optional($auc)->isCreatedByAgent() ?? false;
+            $this->isOfferListing = $auc ? ($auc->info('workflow_type') === 'offer_listing') : false;
         } else {
             $this->property_type = $pab->get->property_type ?? '';
         }

@@ -119,6 +119,7 @@ public $brokerage_relationship = '';
 public $additional_details_broker = '';
 public $referral_fee_percent = '';
 public $isListingCreatedByAgent = false;
+public bool $isOfferListing = false;
  public $purchase_fee_flat_type = '$';
     public string $lease_fee_flat_type = '$';
     public $gap_payment_type = '$';
@@ -139,14 +140,26 @@ public $isListingCreatedByAgent = false;
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
+        if ($this->isOfferListing) {
+            $rules['client_name']       = ['required', 'string', 'max:255'];
+            $rules['client_phone']      = ['required', 'string', 'max:50'];
+            $rules['client_email']      = ['required', 'email', 'max:255'];
+            $rules['areas_of_interest'] = ['required', 'string', 'max:500'];
+        }
+        return $rules;
     }
 
     protected array $messages = [
-        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
-        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+        'referral_fee_percent.numeric'   => 'Referral fee must be a number.',
+        'referral_fee_percent.between'   => 'Referral fee must be between 0 and 100.',
+        'client_name.required'           => 'Client name is required for offer listings.',
+        'client_phone.required'          => 'Client phone is required for offer listings.',
+        'client_email.required'          => 'Client email is required for offer listings.',
+        'client_email.email'             => 'Please enter a valid email address.',
+        'areas_of_interest.required'     => 'Areas of interest are required for offer listings.',
     ];
 
     public function setType(string $which, string $type): void
@@ -245,6 +258,7 @@ public $isListingCreatedByAgent = false;
         $this->auctionId = $pab->buyer_agent_auction_id;
         $this->property_type = $auction ? ($auction->get->property_type ?? '') : '';
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
+        $this->isOfferListing = $auction ? ($auction->info('workflow_type') === 'offer_listing') : false;
 
         // Always load proposed services from the agent's original bid (immutable reference)
         $bidData = $pab->get ?? null;
