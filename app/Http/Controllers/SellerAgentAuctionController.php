@@ -1102,9 +1102,31 @@ class SellerAgentAuctionController extends Controller
         $page_data['title'] = 'Search Listings';
         $auctions = SellerAgentAuction::query();
 
+        // Offer Listing-specific meta keys used to identify (and exclude) offer listing records.
+        // Mirrors the two-tier detection in SellerOfferListingController.
+        $offerListingMetaKeys = [
+            'parcel_id',
+            'flood_zone_code',
+            'annual_property_taxes',
+            'seller_disclosure_available',
+            'property_photos',
+            'listing_documents',
+            'brokerage_relationship',
+            'association_type',
+            'auction_type',
+        ];
+
         $auctions->selectRaw("*, (SELECT meta_value FROM seller_agent_auction_metas WHERE seller_agent_auction_metas.seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'ideal_price') as price")
             ->where('is_approved', true)
-            ->where('is_draft', false);
+            ->where('is_draft', false)
+            // Exclude Seller Offer Listings — primary check: workflow_type = offer_listing
+            ->whereDoesntHave('meta', function ($m) {
+                $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
+            })
+            // Exclude Seller Offer Listings — fallback: presence of any offer-listing-specific meta key
+            ->whereDoesntHave('meta', function ($m) use ($offerListingMetaKeys) {
+                $m->whereIn('meta_key', $offerListingMetaKeys);
+            });
 
         if ($request->title != "") {
             $auctions->where('address', 'like', '%' . $request->title . '%');

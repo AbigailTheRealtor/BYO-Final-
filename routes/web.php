@@ -272,6 +272,7 @@ Route::get('get-cities', [DashboardController::class, 'getCities'])->name('getCi
 Route::get('/search/properties-auctions', [PropertyAuctionController::class, 'searchListing'])->name('searchListing');
 Route::get('/search/agent-service-needed', [AgentServiceAuctionController::class, 'searchListing'])->name('service.searchListing');
 Route::get('/search/seller-agent-needed', [SellerAgentAuctionController::class, 'searchListing'])->name('seller.agent.searchListing');
+Route::get('/search/seller-listings', [SellerOfferListingController::class, 'searchOfferListings'])->name('offer.listing.seller.searchListing');
 Route::get('/search/buyer-agent-needed', [BuyerAgentAuctionController::class, 'searchListing'])->name('buyer.agent.searchListing');
 Route::get('/search/buyer-criteria-auctions', [BuyerCriteriaAuctionController::class, 'searchListing'])->name('buyer.criteria.searchListing');
 Route::get('/search/agents', [SearchAgentController::class, 'search'])->name('search.agents');

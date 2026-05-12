@@ -39,6 +39,9 @@
       <a href="{{ route('tenant.criteria.auctions.search') }}">Tenant's Criteria Auctions</a>
     </li>
     <li class="nav-item search-menu-item" role="presentation">
+      <a href="{{ route('offer.listing.seller.searchListing') }}">Seller Listings</a>
+    </li>
+    <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('seller.agent.searchListing') }}">Hiring Seller's Agent</a>
     </li>
     <li class="nav-item search-menu-item" role="presentation">
