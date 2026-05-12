@@ -1,0 +1,143 @@
+Audit + fix Offer Listing Preset Counter Terms only. Do not touch Hire Agent counter terms.
+
+Scope:
+This task applies ONLY to Offer Listing Presets when a user clicks Request Changes / Counter Terms from an agent’s preset/profile attached to an Offer Listing.
+
+Do NOT modify:
+- Hire Agent marketplace counter terms
+- Hire Seller Agent / Hire Buyer Agent / Hire Landlord Agent / Hire Tenant Agent flows
+- Match Score logic used in BidYourAgent / Hire Agent flows
+- Limited Service code
+- database schema
+- routes unless absolutely required and proven by audit
+- validation unrelated to this specific Offer Listing Preset flow
+
+Part 1 — Read-only audit first
+
+Find the exact files, routes, controllers, Livewire components, and blades used when:
+1. A Seller Offer Listing user clicks Request Changes / Counter Terms on an Offer Listing Preset.
+2. A Landlord Offer Listing user clicks Request Changes / Counter Terms on an Offer Listing Preset.
+3. A Buyer Offer Listing user clicks Request Changes / Counter Terms on an Offer Listing Preset.
+4. A Tenant Offer Listing user clicks Request Changes / Counter Terms on an Offer Listing Preset.
+
+Confirm whether these are shared with Hire Agent counter terms. If any file is shared with Hire Agent counter terms, do not edit it directly unless you first isolate the Offer Listing Preset version with role/workflow checks.
+
+Part 2 — Required Client Details fields
+
+In the Offer Listing Preset Counter Terms submission flow, make these fields required.
+
+For Seller and Landlord counter bid submission:
+- Full Name
+- Phone Number
+- Email Address
+- Property Address
+- Street Address
+- City
+- State
+- ZIP Code
+
+For Buyer and Tenant counter bid submission:
+- Full Name
+- Phone Number
+- Email Address
+- Areas of Interest
+
+Important:
+- These required fields are for Offer Listing Preset Counter Terms only.
+- Do not change Hire Agent counter term validation.
+- Add frontend required indicators and backend validation.
+- Use existing field names where possible.
+- Preserve saved old input / existing values.
+
+Part 3 — Restore missing Client Details tab
+
+The Client Details tab was removed from Seller Counter Agent Bid / Offer Listing Preset Counter Terms.
+
+Add it back only for the Offer Listing Preset counter flow.
+
+The tab should appear as part of the Request Changes / Counter Terms flow before final submission and should collect the required Seller fields listed above.
+
+Do not alter Hire Agent Seller counter tabs.
+
+Part 4 — Remove Match Score display from Offer Preset Counter Terms summary only
+
+On the Offer Listing Preset Counter Terms pages and submitted summary, remove:
+- Match Score
+- Added
+- Changed
+- Removed
+- Any green/red/yellow comparison styling
+- Any “Your Submitted Counter Terms” formatting that highlights service differences
+
+Services should display in normal format only:
+- plain section headings
+- plain bullet points
+- no green “added” formatting
+- no comparison badges
+- no match score labels
+
+Important:
+- Do not remove Match Score from Hire Agent counter terms.
+- Do not remove Match Score from BidYourAgent bid comparison pages.
+- Only remove it from Offer Listing Preset Request Changes / Counter Terms flow.
+
+Part 5 — Fix post-submit redirect
+
+Current issue:
+After the user clicks Accept & Submit Hire Request, fills in their information, and clicks Submit Hire Request, the system redirects to a listing.
+
+Required behavior:
+After Submit Hire Request, redirect to the submitted terms summary page for that specific Offer Listing Preset counter / accepted request.
+
+Do not redirect to:
+- seller listing detail
+- offer listing view
+- hire agent listing view
+
+The confirmation/summary page should show the submitted terms and client details.
+
+Part 6 — Safeguards
+
+Before editing, print the audited file list and state which files are Offer Listing Preset specific and which files are shared.
+
+If a file is shared with Hire Agent:
+- do not make global changes
+- add workflow-specific branching or create an Offer Listing Preset-specific partial/component
+- confirm Hire Agent behavior remains unchanged
+
+Use small, surgical edits only.
+
+Do not rename existing methods, routes, database columns, or models unless the audit proves there is no other safe option.
+
+Part 7 — Verification
+
+After changes, verify:
+
+Seller Offer Listing Preset:
+- Request Changes / Counter Terms shows Client Details tab
+- Full Name, Phone, Email, Property Address, Street Address, City, State, ZIP are required
+- Submitting incomplete form shows validation errors
+- Submitting complete form redirects to submitted terms summary page
+- No Match Score / Added / Changed / green styling appears
+
+Landlord Offer Listing Preset:
+- Same required Seller/Landlord client detail fields are required
+- No Match Score / Added / Changed styling
+- Redirects to submitted terms summary page
+
+Buyer Offer Listing Preset:
+- Full Name, Phone, Email, Areas of Interest are required
+- No Match Score / Added / Changed styling
+- Redirects to submitted terms summary page
+
+Tenant Offer Listing Preset:
+- Full Name, Phone, Email, Areas of Interest are required
+- No Match Score / Added / Changed styling
+- Redirects to submitted terms summary page
+
+Hire Agent counter terms:
+- Match Score still appears where it appeared before
+- Added / Changed comparison formatting still works where it existed before
+- Existing Hire Agent Client Details behavior is unchanged
+
+Stop and report before editing if the Offer Listing Preset counter flow cannot be separated safely from Hire Agent counter terms.
