@@ -33,15 +33,17 @@
             <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
             <div class="input-group">
-                <!-- Select for type -->
-                <select wire:change="setType('lease', $event.target.value)"
+                <!-- Select for type — id used by JS mousedown capture below -->
+                <select id="lease-compensation-type-select"
+                    wire:change="setType('lease', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
                     <option value="percent" @selected($lease_type === 'percent')>%</option>
                     <option value="flat" @selected($lease_type === 'flat')>$</option>
                 </select>
 
                 <!-- Single input -->
-                <input type="text" step="any" wire:model.defer="lease_value" class="form-control"
+                <input type="text" step="any" id="lease-compensation-value-input"
+                    wire:model.defer="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1500)' }}"
@@ -72,15 +74,17 @@
             <label class="fw-bold d-block mb-1">Compensation Amount</label>
 
             <div class="input-group">
-                <!-- Select for type -->
-                <select wire:change="setType('purchase', $event.target.value)"
+                <!-- Select for type — id used by JS mousedown capture below -->
+                <select id="purchase-compensation-type-select"
+                    wire:change="setType('purchase', $event.target.value)"
                     class="form-select" style="max-width: 100px;">
                     <option value="percent" @selected($purchase_type === 'percent')>%</option>
                     <option value="flat" @selected($purchase_type === 'flat')>$</option>
                 </select>
 
                 <!-- Single input -->
-                <input type="text" step="any" wire:model.defer="purchase_value" class="form-control"
+                <input type="text" step="any" id="purchase-compensation-value-input"
+                    wire:model.defer="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5000)' }}"
@@ -101,3 +105,33 @@
         <strong>Note:</strong> Select $ or % to switch between entering a dollar amount or a percentage.
     </div>
 @endif
+
+<script>
+    (function () {
+        function bindLeaseOptionTypeCapture() {
+            var pairs = [
+                { typeId: 'lease-compensation-type-select',    valueId: 'lease-compensation-value-input',    prop: 'lease_value'    },
+                { typeId: 'purchase-compensation-type-select', valueId: 'purchase-compensation-value-input', prop: 'purchase_value' },
+            ];
+            pairs.forEach(function (pair) {
+                var typeSelect = document.getElementById(pair.typeId);
+                if (!typeSelect || typeSelect._lcCaptureBound) return;
+                typeSelect._lcCaptureBound = true;
+                typeSelect.addEventListener('mousedown', function () {
+                    var valueInput = document.getElementById(pair.valueId);
+                    if (valueInput && valueInput.value !== '') {
+                        @this.set(pair.prop, valueInput.value);
+                    }
+                });
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bindLeaseOptionTypeCapture);
+        } else {
+            bindLeaseOptionTypeCapture();
+        }
+        if (typeof Livewire !== 'undefined') {
+            Livewire.hook('message.processed', bindLeaseOptionTypeCapture);
+        }
+    })();
+</script>

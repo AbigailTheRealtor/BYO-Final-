@@ -1337,8 +1337,13 @@
                 Object.keys(select2Fields).forEach(function(fieldName) {
                     var values = select2Fields[fieldName];
                     if (values && values.length > 0) {
-                        var selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
-                        if (selectEl && $(selectEl).hasClass('select2-multiple')) {
+                        var selectEl;
+                        if (fieldName === 'desired_lease_length') {
+                            selectEl = document.querySelector('.lease_term_options');
+                        } else {
+                            selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
+                        }
+                        if (selectEl && $(selectEl).hasClass('select2-hidden-accessible')) {
                             console.log('[DraftLoaded] Hydrating Select2: ' + fieldName + ' with ' + values.length + ' values');
                             $(selectEl).val(values).trigger('change');
                         }
@@ -1591,8 +1596,8 @@
                     allowClear: true
                 });
                 $('#view_preference').on('change', function() {
-                    let selectedValues = $(this).val();
-                    Livewire.emit('updatePreference', selectedValues);
+                    let selectedValues = $(this).val() || [];
+                    @this.set('view_preference', selectedValues);
                     if (selectedValues.includes('Other')) {
                         $('#other_preferences').show();
                     } else {
@@ -1926,55 +1931,6 @@
                 initLeaseTermSelect2();
             });
 
-            Livewire.hook('message.processed', () => {
-                if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                    $('#appliances').select2({ placeholder: "Select", allowClear: true });
-                    $('#appliances').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('appliances', selectedValues);
-                        @this.call('updateAppliances', selectedValues);
-                    });
-                }
-                if ($('#rent_includes').length && !$('#rent_includes').hasClass('select2-hidden-accessible')) {
-                    $('#rent_includes').select2({ placeholder: "Select rent", allowClear: true });
-                    $('#rent_includes').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('rent_includes', selectedValues);
-                        @this.call('updateRentIncludes', selectedValues);
-                    });
-                }
-                if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
-                    $('#terms_of_lease').select2({ placeholder: "Select", allowClear: true });
-                    $('#terms_of_lease').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('terms_of_lease', selectedValues);
-                        var container = document.getElementById('otherLeaseContainer');
-                        if (container) {
-                            if (selectedValues.includes('Other')) {
-                                container.classList.remove('d-none');
-                            } else {
-                                container.classList.add('d-none');
-                            }
-                        }
-                    });
-                }
-                if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
-                    $('#tenant_pays').select2({ placeholder: "Select", allowClear: true });
-                    $('#tenant_pays').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('tenant_pays', selectedValues);
-                        @this.call('updateTenantPays', selectedValues);
-                    });
-                }
-                if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
-                    $('#owner_pays').select2({ placeholder: "Select owner pays", allowClear: true });
-                    $('#owner_pays').on('change', function(e) {
-                        let selectedValues = $(this).val() || [];
-                        @this.set('owner_pays', selectedValues);
-                        @this.call('updateOwnerPays', selectedValues);
-                    });
-                }
-            });
 
             window.syncLandlordSelect2BeforeSave = function() {
                 var selects2Map = {
@@ -2733,8 +2689,9 @@
             function isFieldVisibleAndEnabled(field) {
                 if (!field) return false;
                 if (field.disabled) return false;
-                if (field.getAttribute('aria-hidden') === 'true') return false;
-                if (field.offsetWidth === 0 && field.offsetHeight === 0) return false;
+                var isSelect2Hidden = field.classList.contains('select2-hidden-accessible');
+                if (field.getAttribute('aria-hidden') === 'true' && !isSelect2Hidden) return false;
+                if (field.offsetWidth === 0 && field.offsetHeight === 0 && !isSelect2Hidden) return false;
                 let el = field.parentElement;
                 while (el && el !== document.body) {
                     const style = window.getComputedStyle(el);
@@ -3029,6 +2986,12 @@
             // Livewire reactivity hook: drives button state AND guided correction
             if (typeof Livewire !== 'undefined') {
                 Livewire.hook('message.processed', () => {
+                    // Immediately re-assert banner visibility to prevent the 300ms morphdom
+                    // re-render gap from causing the error banner to flash invisible.
+                    if (_landlordCorrectionMode) {
+                        var _bannerImmediate = document.getElementById('submit-error-banner');
+                        if (_bannerImmediate) _bannerImmediate.classList.remove('d-none');
+                    }
                     setTimeout(() => {
                         const updatedServiceType = document.querySelector('[data-service-type]');
                         if (updatedServiceType) {
