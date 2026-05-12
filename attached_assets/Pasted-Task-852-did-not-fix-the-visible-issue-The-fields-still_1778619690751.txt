@@ -1,0 +1,52 @@
+Task #852 did not fix the visible issue. The fields still are not showing the correct “Select” placeholder, so replacing the leading <option>Select</option> with <option value=""></option> was not enough.
+
+Please do a deeper fix focused on Select2 initialization and Livewire re-render behavior.
+
+Problem:
+Select2 multiselect placeholders still do not consistently show “Select” across Hire Agent flows and Seller Offer Listing after Task #852.
+
+Likely causes to audit:
+1. Select2 is initialized without placeholder: "Select"
+2. data-placeholder="Select" is missing on the <select>
+3. Select2 is being initialized multiple times and the later init overrides the placeholder
+4. Livewire re-renders the field and Select2 is not destroyed/reinitialized correctly
+5. Edit/draft rehydration scripts are reinitializing Select2 without placeholder
+6. Empty leading <option value=""></option> exists, but Select2 still needs placeholder config
+7. Some fields may need .val(null).trigger('change') only when no saved value exists
+
+Required standard:
+Every Select2 multiselect should have:
+- data-placeholder="Select"
+- placeholder: "Select"
+- width: "100%"
+- allowClear: true where compatible
+- no visible “Select” option inside the dropdown list
+- clearing the field returns the visible placeholder to “Select”
+
+Please audit and fix the shared Select2 init helper/pattern rather than only changing option markup.
+
+Important:
+- Native single-select wire:model fields should remain unchanged.
+- Preserve saved value loading.
+- Preserve draft/edit rehydration.
+- Do not touch DB schema, routes, validation, or Limited Service.
+- Do not break create/edit parity.
+
+Verification required:
+For each affected create/edit page, confirm:
+1. Field shows “Select” before selection.
+2. Dropdown does not show “Select” as a selectable item.
+3. Saved values still load correctly in edit/draft mode.
+4. Clearing selected values returns placeholder to “Select.”
+5. No duplicate Select2 containers appear after tab switches or Livewire updates.
+
+Deliverable:
+Report the actual root cause found:
+- option markup issue
+- missing data-placeholder
+- missing placeholder config
+- duplicate initializer
+- Livewire re-render issue
+- edit/draft rehydration issue
+
+Then list exact files changed and confirm visually tested fields.
