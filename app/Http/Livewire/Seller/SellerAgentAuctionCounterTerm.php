@@ -108,6 +108,9 @@ class SellerAgentAuctionCounterTerm extends Component
     public $client_property_state = '';
     public $client_property_zip = '';
 
+    // Offer listing preset context flag
+    public bool $isOfferListing = false;
+
     // Services UI toggles (required by services partial)
     public bool $showEnhancements = false;
     public bool $showCustomEnhancement = false;
@@ -125,14 +128,32 @@ class SellerAgentAuctionCounterTerm extends Component
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
+        if ($this->isOfferListing) {
+            $rules['client_name']             = ['required', 'string', 'max:255'];
+            $rules['client_phone']            = ['required', 'string', 'max:50'];
+            $rules['client_email']            = ['required', 'email', 'max:255'];
+            $rules['client_property_address'] = ['required', 'string', 'max:255'];
+            $rules['client_property_city']    = ['required', 'string', 'max:100'];
+            $rules['client_property_state']   = ['required', 'string', 'max:100'];
+            $rules['client_property_zip']     = ['required', 'string', 'max:20'];
+        }
+        return $rules;
     }
 
     protected array $messages = [
-        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
-        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+        'referral_fee_percent.numeric'        => 'Referral fee must be a number.',
+        'referral_fee_percent.between'        => 'Referral fee must be between 0 and 100.',
+        'client_name.required'               => 'Client name is required for offer listings.',
+        'client_phone.required'              => 'Client phone is required for offer listings.',
+        'client_email.required'              => 'Client email is required for offer listings.',
+        'client_email.email'                 => 'Please enter a valid email address.',
+        'client_property_address.required'   => 'Property street address is required for offer listings.',
+        'client_property_city.required'      => 'Property city is required for offer listings.',
+        'client_property_state.required'     => 'Property state is required for offer listings.',
+        'client_property_zip.required'       => 'Property ZIP code is required for offer listings.',
     ];
 
     public function setActiveTab($index)
@@ -208,6 +229,7 @@ class SellerAgentAuctionCounterTerm extends Component
             $this->auctionId     = $pab->seller_agent_auction_id ?? null;
         }
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
+        $this->isOfferListing         = $pab->info('workflow_type') === 'offer_listing';
 
         // Always load proposed services from the agent's original bid (immutable reference)
         $bidData = $pab->get ?? null;

@@ -180,6 +180,17 @@ class TenantAgentAuctionBidCounter extends Component
     public $referral_fee_percent = '';
     public $isListingCreatedByAgent = false;
 
+    // Offer listing preset context flag
+    public bool $isOfferListing = false;
+
+    // Client Contact Info (offer listing preset context)
+    public string $client_name = '';
+    public string $client_phone = '';
+    public string $client_email = '';
+    public string $client_target_city = '';
+    public string $client_target_state = '';
+    public string $client_target_zip = '';
+
     // Broker Fee Timing
     public $broker_fee_timing = '';
     public $broker_fee_days_from_rent = '';
@@ -197,14 +208,30 @@ class TenantAgentAuctionBidCounter extends Component
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
+        if ($this->isOfferListing) {
+            $rules['client_name']        = ['required', 'string', 'max:255'];
+            $rules['client_phone']       = ['required', 'string', 'max:50'];
+            $rules['client_email']       = ['required', 'email', 'max:255'];
+            $rules['client_target_city'] = ['required', 'string', 'max:100'];
+            $rules['client_target_state']= ['required', 'string', 'max:100'];
+            $rules['client_target_zip']  = ['required', 'string', 'max:20'];
+        }
+        return $rules;
     }
 
     protected $messages = [
-        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
-        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+        'referral_fee_percent.numeric'  => 'Referral fee must be a number.',
+        'referral_fee_percent.between'  => 'Referral fee must be between 0 and 100.',
+        'client_name.required'         => 'Client name is required for offer listings.',
+        'client_phone.required'        => 'Client phone is required for offer listings.',
+        'client_email.required'        => 'Client email is required for offer listings.',
+        'client_email.email'           => 'Please enter a valid email address.',
+        'client_target_city.required'  => 'Target city is required for offer listings.',
+        'client_target_state.required' => 'Target state is required for offer listings.',
+        'client_target_zip.required'   => 'Target ZIP code is required for offer listings.',
     ];
 
     public function getServicesConfigProperty(): array
@@ -560,6 +587,7 @@ class TenantAgentAuctionBidCounter extends Component
             $this->property_type = $pab->get->property_type ?? '';
         }
         $this->isListingCreatedByAgent = optional($auction)->isCreatedByAgent() ?? false;
+        $this->isOfferListing = $pab->info('workflow_type') === 'offer_listing';
         
         // COUNTER BID PREFILL RULE: Agent counters with Tenant's latest terms for THIS bid thread
         // TenantCounterTerm stores bid ID in tenant_agent_auction_id field
@@ -666,6 +694,14 @@ class TenantAgentAuctionBidCounter extends Component
                 $this->referral_fee_percent = $sourceData->referral_fee_percent ?? '';
             }
             $this->additional_details = $sourceData->additional_details ?? '';
+
+            // Client Contact Info (offer listing preset context)
+            $this->client_name         = $sourceData->counter_client_name  ?? '';
+            $this->client_phone        = $sourceData->counter_client_phone ?? '';
+            $this->client_email        = $sourceData->counter_client_email ?? '';
+            $this->client_target_city  = $sourceData->counter_target_city  ?? '';
+            $this->client_target_state = $sourceData->counter_target_state ?? '';
+            $this->client_target_zip   = $sourceData->counter_target_zip   ?? '';
             
             // Load service_type if available in sourceData
             if (!empty($sourceData->service_type)) {
@@ -944,5 +980,13 @@ class TenantAgentAuctionBidCounter extends Component
         $counterBid->saveMeta('neighborhood_insights_fee', $this->neighborhood_insights_fee);
         $counterBid->saveMeta('neighborhood_marketing_fee', $this->neighborhood_marketing_fee);
         $counterBid->saveMeta('neighborhood_materials_fee', $this->neighborhood_materials_fee);
+
+        // Client Contact Info (offer listing preset context)
+        $counterBid->saveMeta('counter_client_name', $this->client_name);
+        $counterBid->saveMeta('counter_client_phone', $this->client_phone);
+        $counterBid->saveMeta('counter_client_email', $this->client_email);
+        $counterBid->saveMeta('counter_target_city', $this->client_target_city);
+        $counterBid->saveMeta('counter_target_state', $this->client_target_state);
+        $counterBid->saveMeta('counter_target_zip', $this->client_target_zip);
     }
 }

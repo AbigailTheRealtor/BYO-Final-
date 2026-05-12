@@ -555,13 +555,14 @@ class TenantAgentAuctionBidController extends Controller
         $viewerRole = $isAgent ? 'agent' : 'tenant';
         
         return view('hire_tenant_agent.view_counter_terms', [
-            'bid' => $bid,
-            'auction' => $auction,
-            'agentCounter' => $agentCounter,
-            'tenantCounter' => $tenantCounter,
-            'viewerRole' => $viewerRole,
-            'isAgent' => $isAgent,
-            'isTenant' => $isTenant,
+            'bid'            => $bid,
+            'auction'        => $auction,
+            'agentCounter'   => $agentCounter,
+            'tenantCounter'  => $tenantCounter,
+            'viewerRole'     => $viewerRole,
+            'isAgent'        => $isAgent,
+            'isTenant'       => $isTenant,
+            'isOfferListing' => $auction->info('workflow_type') === 'offer_listing',
         ]);
     }
 

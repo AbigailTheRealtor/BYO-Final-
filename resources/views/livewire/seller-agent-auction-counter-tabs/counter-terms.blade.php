@@ -6,16 +6,19 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-12 mb-3">
-                <label class="fw-bold">Full Name</label>
-                <input type="text" class="form-control" wire:model="client_name" placeholder="Client's full name">
+                <label class="fw-bold">Full Name @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_name" placeholder="Client's full name" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_name') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-6 mb-3">
-                <label class="fw-bold">Phone Number</label>
-                <input type="text" class="form-control" wire:model="client_phone" placeholder="Client's phone number">
+                <label class="fw-bold">Phone Number @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_phone" placeholder="Client's phone number" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_phone') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-6 mb-3">
-                <label class="fw-bold">Email Address</label>
-                <input type="email" class="form-control" wire:model="client_email" placeholder="Client's email address">
+                <label class="fw-bold">Email Address @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="email" class="form-control" wire:model="client_email" placeholder="Client's email address" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_email') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
         </div>
     </div>
@@ -27,20 +30,24 @@
     <div class="card-body">
         <div class="row">
             <div class="col-md-12 mb-3">
-                <label class="fw-bold">Street Address</label>
-                <input type="text" class="form-control" wire:model="client_property_address" placeholder="Street address">
+                <label class="fw-bold">Street Address @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_property_address" placeholder="Street address" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_property_address') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-5 mb-3">
-                <label class="fw-bold">City</label>
-                <input type="text" class="form-control" wire:model="client_property_city" placeholder="City">
+                <label class="fw-bold">City @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_property_city" placeholder="City" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_property_city') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-4 mb-3">
-                <label class="fw-bold">State</label>
-                <input type="text" class="form-control" wire:model="client_property_state" placeholder="State">
+                <label class="fw-bold">State @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_property_state" placeholder="State" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_property_state') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
             <div class="col-md-3 mb-3">
-                <label class="fw-bold">ZIP Code</label>
-                <input type="text" class="form-control" wire:model="client_property_zip" placeholder="ZIP">
+                <label class="fw-bold">ZIP Code @if($isOfferListing)<span class="text-danger">*</span>@endif</label>
+                <input type="text" class="form-control" wire:model="client_property_zip" placeholder="ZIP" @if($isOfferListing) required @endif>
+                @if($isOfferListing) @error('client_property_zip') <span class="error">{{ $message }}</span> @enderror @endif
             </div>
         </div>
     </div>
@@ -90,4 +97,3 @@
         </div>
     </div>
 </div>
-

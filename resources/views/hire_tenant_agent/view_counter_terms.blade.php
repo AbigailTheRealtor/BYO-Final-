@@ -220,8 +220,8 @@
                         
                         $mismatchStyle = 'background-color: #ffe6e6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #dc3545;';
                         $mismatchBadge = '<span class="badge" style="background-color: #dc3545; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Changed</span>';
-                        $addedStyle = 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
-                        $addedBadge = '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added</span>';
+                        $addedStyle = $isOfferListing ? '' : 'background-color: #e6ffe6; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #28a745;';
+                        $addedBadge = $isOfferListing ? '' : '<span class="badge" style="background-color: #28a745; color: white; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Added</span>';
                         $missingStyle = 'background-color: #fff3cd; padding: 2px 6px; border-radius: 4px; border-left: 3px solid #ffc107;';
                         $missingBadge = '<span class="badge" style="background-color: #ffc107; color: #000; font-size: 0.7rem; vertical-align: middle; margin-left: 8px;">Removed</span>';
                         
@@ -428,9 +428,11 @@
                             @endif
                         </div>
                         @else
+                        @if(!$isOfferListing)
                         <div class="alert alert-secondary mb-4" style="border-radius: 10px; border: 1px solid #dee2e6;">
                             <i class="fa-solid fa-circle-info me-2"></i>No match score available — no requirements were provided in the baseline.
                         </div>
+                        @endif
                         @endif
                         
                         <div class="mb-4">
@@ -677,13 +679,13 @@
                                     <ul class="list-unstyled ps-3 mt-2">
                                         @foreach ($matchedServicesInCategory as $serviceData)
                                         <li class="mb-1" style="{{ !$serviceData['inBaseline'] ? $addedStyle : '' }}">
-                                            @if (!$serviceData['inBaseline'])
+                                            @if (!$serviceData['inBaseline'] && !$isOfferListing)
                                                 <i class="fa-solid fa-plus-circle me-2" style="color: #28a745;"></i>
                                             @else
                                                 <span class="me-2" style="color: #6c757d;">•</span>
                                             @endif
                                             {{ $serviceData['service'] }}
-                                            @if (!$serviceData['inBaseline'])
+                                            @if (!$serviceData['inBaseline'] && !$isOfferListing)
                                             {!! $addedBadge !!}
                                             @endif
                                         </li>
@@ -702,13 +704,13 @@
                                         $isInBaseline = in_array($normalizeService($otherService), $baselineNorm);
                                     @endphp
                                     <li class="mb-1" style="{{ !$isInBaseline ? $addedStyle : '' }}">
-                                        @if (!$isInBaseline)
+                                        @if (!$isInBaseline && !$isOfferListing)
                                             <i class="fa-solid fa-plus-circle me-2" style="color: #28a745;"></i>
                                         @else
                                             <span class="me-2" style="color: #6c757d;">•</span>
                                         @endif
                                         {{ $otherService }}
-                                        @if (!$isInBaseline)
+                                        @if (!$isInBaseline && !$isOfferListing)
                                         {!! $addedBadge !!}
                                         @endif
                                     </li>
@@ -717,7 +719,7 @@
                             </div>
                             @endif
                             
-                            @if (!empty($servicesMissing))
+                            @if (!empty($servicesMissing) && !$isOfferListing)
                             <div class="mt-4 p-3" style="background-color: #fff3cd; border-radius: 8px; border: 1px solid #ffc107;">
                                 <strong style="color: #856404;"><i class="fa-solid fa-triangle-exclamation me-2"></i>Services Not Included in Counter:</strong>
                                 <ul class="list-unstyled ps-3 mt-2 mb-0">
@@ -818,10 +820,12 @@
                         </div>
                         @endif
 
+                        @if(!$isOfferListing)
                         <a href="{{ route('tenant.agent.auction.view', $auction->id) }}"
                            class="btn" style="background-color: #fff; border: 2px solid #049399; color: #049399; padding: 10px 20px; font-weight: 600;">
                             <i class="fa-solid fa-eye me-2"></i>View Listing
                         </a>
+                        @endif
                     </div>
                     @else
                     <div class="alert alert-info">

@@ -691,13 +691,14 @@ class BuyerAgentAuctionBidController extends Controller
         $viewerRole = $isAgent ? 'agent' : 'buyer';
 
         return view('hire_buyer_agent.view_counter_terms', [
-            'bid'          => $bid,
-            'auction'      => $auction,
-            'agentCounter' => $agentCounter,
-            'buyerCounter' => $buyerCounter,
-            'viewerRole'   => $viewerRole,
-            'isAgent'      => $isAgent,
-            'isBuyer'      => $isBuyer,
+            'bid'             => $bid,
+            'auction'         => $auction,
+            'agentCounter'    => $agentCounter,
+            'buyerCounter'    => $buyerCounter,
+            'viewerRole'      => $viewerRole,
+            'isAgent'         => $isAgent,
+            'isBuyer'         => $isBuyer,
+            'isOfferListing'  => $auction->info('workflow_type') === 'offer_listing',
         ]);
     }
 

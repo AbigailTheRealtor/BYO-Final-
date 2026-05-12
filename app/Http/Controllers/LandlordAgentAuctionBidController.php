@@ -570,8 +570,10 @@ class LandlordAgentAuctionBidController extends Controller
         // Agent's counter = submitted by bid owner
         $agentCounter = $allCounters->firstWhere('user_id', $bid->user_id);
 
+        $isOfferListing = $auction->info('workflow_type') === 'offer_listing';
+
         return view('hire_landlord_agent.view_counter_terms', compact(
-            'bid', 'auction', 'viewerRole', 'landlordCounter', 'agentCounter'
+            'bid', 'auction', 'viewerRole', 'landlordCounter', 'agentCounter', 'isOfferListing'
         ));
     }
 

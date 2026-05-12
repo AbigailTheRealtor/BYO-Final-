@@ -130,6 +130,18 @@ class LandlordAgentAuctionBidCounter extends Component
     public $referral_fee_percent = '';
     public $isListingCreatedByAgent = false;
 
+    // Offer listing preset context flag
+    public bool $isOfferListing = false;
+
+    // Client Contact Info (offer listing preset context)
+    public string $client_name = '';
+    public string $client_phone = '';
+    public string $client_email = '';
+    public string $client_property_address = '';
+    public string $client_property_city = '';
+    public string $client_property_state = '';
+    public string $client_property_zip = '';
+
 
     // Presentation & Promotional Materials
     public $presentation_link;
@@ -157,14 +169,32 @@ class LandlordAgentAuctionBidCounter extends Component
 
     protected function rules(): array
     {
-        return [
+        $rules = [
             'referral_fee_percent' => ['nullable', 'numeric', 'between:0,100'],
         ];
+        if ($this->isOfferListing) {
+            $rules['client_name']             = ['required', 'string', 'max:255'];
+            $rules['client_phone']            = ['required', 'string', 'max:50'];
+            $rules['client_email']            = ['required', 'email', 'max:255'];
+            $rules['client_property_address'] = ['required', 'string', 'max:255'];
+            $rules['client_property_city']    = ['required', 'string', 'max:100'];
+            $rules['client_property_state']   = ['required', 'string', 'max:100'];
+            $rules['client_property_zip']     = ['required', 'string', 'max:20'];
+        }
+        return $rules;
     }
 
     protected array $messages = [
-        'referral_fee_percent.numeric' => 'Referral fee must be a number.',
-        'referral_fee_percent.between' => 'Referral fee must be between 0 and 100.',
+        'referral_fee_percent.numeric'       => 'Referral fee must be a number.',
+        'referral_fee_percent.between'       => 'Referral fee must be between 0 and 100.',
+        'client_name.required'              => 'Client name is required for offer listings.',
+        'client_phone.required'             => 'Client phone is required for offer listings.',
+        'client_email.required'             => 'Client email is required for offer listings.',
+        'client_email.email'                => 'Please enter a valid email address.',
+        'client_property_address.required'  => 'Property street address is required for offer listings.',
+        'client_property_city.required'     => 'Property city is required for offer listings.',
+        'client_property_state.required'    => 'Property state is required for offer listings.',
+        'client_property_zip.required'      => 'Property ZIP code is required for offer listings.',
     ];
 
     public function updatedReferralFeePercent(): void
@@ -447,6 +477,9 @@ class LandlordAgentAuctionBidCounter extends Component
         $this->property_type = $pab->get->property_type;
         $this->isListingCreatedByAgent = $pab->isCreatedByAgent();
 
+        $landlordAuction = \App\Models\LandlordAgentAuction::find($pab->landlord_agent_auction_id ?? null);
+        $this->isOfferListing = $pab->info('workflow_type') === 'offer_listing';
+
         // COUNTER BID PREFILL RULE: Agent counters with the Landlord's latest counter terms.
         // landlord_counter_terms.landlord_agent_auction_id stores BID IDs (not auction IDs).
         $landlordCounter = LandlordCounterTerm::with('meta')
@@ -580,6 +613,15 @@ class LandlordAgentAuctionBidCounter extends Component
             $this->other_services_enabled = filter_var($m['other_services_enabled'], FILTER_VALIDATE_BOOLEAN)
                 || $m['other_services_enabled'] === '1';
         }
+
+        // Client Contact Info (offer listing preset context)
+        if (array_key_exists('counter_client_name', $m))     $this->client_name             = $m['counter_client_name'];
+        if (array_key_exists('counter_client_phone', $m))    $this->client_phone            = $m['counter_client_phone'];
+        if (array_key_exists('counter_client_email', $m))    $this->client_email            = $m['counter_client_email'];
+        if (array_key_exists('counter_property_address', $m))$this->client_property_address = $m['counter_property_address'];
+        if (array_key_exists('counter_property_city', $m))   $this->client_property_city    = $m['counter_property_city'];
+        if (array_key_exists('counter_property_state', $m))  $this->client_property_state   = $m['counter_property_state'];
+        if (array_key_exists('counter_property_zip', $m))    $this->client_property_zip     = $m['counter_property_zip'];
     }
 
 
@@ -757,5 +799,14 @@ class LandlordAgentAuctionBidCounter extends Component
         if ($this->isListingCreatedByAgent) {
             $counterBid->saveMeta('referral_fee_percent', $this->referral_fee_percent);
         }
+
+        // Client Contact Info (offer listing preset context)
+        $counterBid->saveMeta('counter_client_name', $this->client_name);
+        $counterBid->saveMeta('counter_client_phone', $this->client_phone);
+        $counterBid->saveMeta('counter_client_email', $this->client_email);
+        $counterBid->saveMeta('counter_property_address', $this->client_property_address);
+        $counterBid->saveMeta('counter_property_city', $this->client_property_city);
+        $counterBid->saveMeta('counter_property_state', $this->client_property_state);
+        $counterBid->saveMeta('counter_property_zip', $this->client_property_zip);
     }
 }

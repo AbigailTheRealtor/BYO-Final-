@@ -930,6 +930,7 @@ class SellerAgentAuctionController extends Controller
             'viewerRole'      => $viewerRole,
             'isAgent'         => $isAgent,
             'isSeller'        => $isSeller,
+            'isOfferListing'  => $auction->info('workflow_type') === 'offer_listing',
         ]);
     }
 

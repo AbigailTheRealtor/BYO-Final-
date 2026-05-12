@@ -57,6 +57,10 @@
             if ($isListingCreatedByAgent) {
                 $tabs[] = 'Referral & Cooperation Terms';
             }
+            $clientDetailsIndex = count($tabs);
+            if ($isOfferListing) {
+                $tabs[] = 'Client Details';
+            }
           @endphp
 
           <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -101,6 +105,11 @@
             @if ($isListingCreatedByAgent)
             <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}">
               @include('livewire.tenant-agent-auction-bid-counter-tabs.referral-fee')
+            </div>
+            @endif
+            @if ($isOfferListing)
+            <div class="tab-pane fade {{ $activeTab === $clientDetailsIndex ? 'show active' : '' }}">
+              @include('livewire.tenant-agent-auction-bid-counter-tabs.client-contact-information')
             </div>
             @endif
           </div>
