@@ -18,13 +18,17 @@
     $str = function($key) use ($meta) { $v = $meta[$key] ?? ''; return is_array($v) ? implode(', ', $v) : $v; };
     $arr = function($key) use ($meta) {
         $v = $meta[$key] ?? [];
-        if (is_string($v)) { $d = json_decode($v, true); return is_array($d) ? $d : []; }
+        if (is_string($v)) {
+            $d = json_decode($v, true);
+            if (is_string($d)) { $d = json_decode($d, true); }
+            return is_array($d) ? $d : [];
+        }
         return is_array($v) ? $v : [];
     };
     $yesNo = fn($v) => match((string)$v) { '1','true','yes','Yes' => 'Yes', '0','false','no','No' => 'No', default => $v };
     $row = function($label, $value) {
         if ($value === null || $value === '' || $value === false) return '';
-        return '<div class="row mb-1"><div class="col-sm-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-sm-7">' . e($value) . '</div></div>';
+        return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7">' . e($value) . '</div></div>';
     };
 @endphp
 
@@ -122,7 +126,7 @@
                 $videoUrl = $str('video_tour_url');
                 $videoEmbedUrl = null;
                 if ($videoUrl) {
-                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_\-]{11})/', $videoUrl, $vm)) {
+                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $videoUrl, $vm)) {
                         $videoEmbedUrl = 'https://www.youtube.com/embed/' . $vm[1];
                     } elseif (preg_match('/vimeo\.com\/(\d+)/', $videoUrl, $vm)) {
                         $videoEmbedUrl = 'https://player.vimeo.com/video/' . $vm[1];
@@ -131,7 +135,7 @@
                 $virtualUrl = $str('virtual_tour_url');
                 $virtualEmbedUrl = null;
                 if ($virtualUrl) {
-                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_\-]{11})/', $virtualUrl, $vm)) {
+                    if (preg_match('/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_\-]{11})/', $virtualUrl, $vm)) {
                         $virtualEmbedUrl = 'https://www.youtube.com/embed/' . $vm[1];
                     } elseif (preg_match('/vimeo\.com\/(\d+)/', $virtualUrl, $vm)) {
                         $virtualEmbedUrl = 'https://player.vimeo.com/video/' . $vm[1];
@@ -223,6 +227,7 @@
         var currentIndex = 0;
 
         function showPhoto(idx) {
+            if (gallery.length === 0) return;
             if (idx < 0) idx = gallery.length - 1;
             if (idx >= gallery.length) idx = 0;
             currentIndex = idx;
@@ -238,11 +243,30 @@
             }
         });
 
-        document.getElementById('photoModalPrev').addEventListener('click', function () { showPhoto(currentIndex - 1); });
-        document.getElementById('photoModalNext').addEventListener('click', function () { showPhoto(currentIndex + 1); });
+        var photoModalEl = document.getElementById('photoModal');
+        if (photoModalEl) {
+            photoModalEl.addEventListener('show.bs.modal', function () {
+                showPhoto(currentIndex);
+            });
+        }
+
+        var prevBtn = document.getElementById('photoModalPrev');
+        var nextBtn = document.getElementById('photoModalNext');
+        if (prevBtn) prevBtn.addEventListener('click', function () { showPhoto(currentIndex - 1); });
+        if (nextBtn) nextBtn.addEventListener('click', function () { showPhoto(currentIndex + 1); });
     })();
     </script>
     @endif
+    @endif
+
+    {{-- Property Description --}}
+    @if($val('additional_details'))
+    <div class="card section-card">
+        <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Property Description</div>
+        <div class="card-body">
+            <p class="field-value mb-0">{!! nl2br(e($val('additional_details'))) !!}</p>
+        </div>
+    </div>
     @endif
 
     {{-- Listing Details --}}
@@ -470,16 +494,6 @@
         </div>
     </div>
 
-    {{-- Property Description --}}
-    @if($val('additional_details'))
-    <div class="card section-card">
-        <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Property Description</div>
-        <div class="card-body">
-            <p class="field-value mb-0">{!! nl2br(e($val('additional_details'))) !!}</p>
-        </div>
-    </div>
-    @endif
-
     {{-- Sale Terms --}}
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Sale Terms</div>
@@ -545,7 +559,7 @@
 
             {{-- Cash --}}
             @if($hasCashFin || $str('cash_budget') || $str('pre_approved'))
-            <h6 class="fw-semibold mb-2">Cash</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Cash</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Maximum Cash Budget', $fmtMoney($str('cash_budget'))) !!}
@@ -561,7 +575,7 @@
             {{-- Assumable --}}
             @if($hasAssumable || $str('assumable_loan_type') || $str('assumable_terms'))
             <hr>
-            <h6 class="fw-semibold mb-2">Assumable Mortgage</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Assumable Mortgage</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Assumable Terms', $str('assumable_terms')) !!}
@@ -586,7 +600,7 @@
             {{-- Cryptocurrency --}}
             @if($hasCrypto || $str('cryptocurrency_type'))
             <hr>
-            <h6 class="fw-semibold mb-2">Cryptocurrency</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Cryptocurrency</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Cryptocurrency Type', $str('cryptocurrency_type')) !!}
@@ -605,7 +619,7 @@
             {{-- Exchange / Trade --}}
             @if($hasExchange || $str('exchange_item_value'))
             <hr>
-            <h6 class="fw-semibold mb-2">Exchange / Trade</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Exchange / Trade</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Exchange Item', $str('other_exchange_item')) !!}
@@ -624,7 +638,7 @@
             {{-- Lease Option --}}
             @if($hasLeaseOpt || $str('lease_option_price'))
             <hr>
-            <h6 class="fw-semibold mb-2">Lease Option</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Lease Option</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Option Purchase Price', $fmtMoney($str('lease_option_price'))) !!}
@@ -647,7 +661,7 @@
             {{-- Lease Purchase --}}
             @if($hasLeasePur || $str('lease_purchase_price'))
             <hr>
-            <h6 class="fw-semibold mb-2">Lease Purchase</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Lease Purchase</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Purchase Price', $fmtMoney($str('lease_purchase_price'))) !!}
@@ -669,7 +683,7 @@
             {{-- Non-Fungible Token (NFT) --}}
             @if($hasNFT || $str('nft_description'))
             <hr>
-            <h6 class="fw-semibold mb-2">Non-Fungible Token (NFT)</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Non-Fungible Token (NFT)</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('NFT Description', $str('nft_description')) !!}
@@ -687,7 +701,7 @@
             {{-- Seller Financing --}}
             @if($hasSellerFin || $str('seller_financing_type') || $str('interest_rate'))
             <hr>
-            <h6 class="fw-semibold mb-2">Seller Financing</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Seller Financing</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Financing Type', $str('seller_financing_type') === '$' ? 'Flat / Dollar Amount' : ($str('seller_financing_type') === '%' ? 'Percentage of Price' : $str('seller_financing_type'))) !!}
@@ -750,7 +764,7 @@
         <div class="card-body">
 
             {{-- Purchase Compensation --}}
-            <h6 class="fw-semibold mb-2">Purchase Compensation</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Purchase Compensation</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Buyer\'s Broker Commission Structure', $str('commission_structure')) !!}
@@ -760,7 +774,12 @@
                     @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price')
                         {!! $row('Buyer\'s Broker Commission Fee', $fmtPercent($str('commission_structure_type_fee_percentage'))) !!}
                     @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price + Flat Fee')
-                        {!! $row('Buyer\'s Broker Commission Fee', $fmtPercent($str('commission_structure_type_fee_percentage_combo')) . ' + ' . $fmtMoney($str('commission_structure_type_fee_flat_combo'))) !!}
+                        @php
+                            $_bbPct = $fmtPercent($str('commission_structure_type_fee_percentage_combo'));
+                            $_bbFlat = $fmtMoney($str('commission_structure_type_fee_flat_combo'));
+                            $_bbCombo = ($_bbPct && $_bbFlat) ? $_bbPct . ' + ' . $_bbFlat : ($_bbPct ?: $_bbFlat);
+                        @endphp
+                        {!! $row('Buyer\'s Broker Commission Fee', $_bbCombo) !!}
                     @elseif($str('commission_structure_type') === 'other')
                         {!! $row('Buyer\'s Broker Commission Fee', $str('commission_structure_type_fee_other')) !!}
                     @endif
@@ -772,7 +791,12 @@
                     @elseif($str('purchase_fee_type') === 'flat')
                         {!! $row('Seller\'s Broker Purchase Fee', $fmtMoney($str('purchase_fee_flat'))) !!}
                     @elseif($str('purchase_fee_type') === 'combo')
-                        {!! $row('Seller\'s Broker Purchase Fee', $fmtPercent($str('purchase_fee_percentage_combo')) . ' + ' . $fmtMoney($str('purchase_fee_flat_combo'))) !!}
+                        @php
+                            $_sbPct = $fmtPercent($str('purchase_fee_percentage_combo'));
+                            $_sbFlat = $fmtMoney($str('purchase_fee_flat_combo'));
+                            $_sbCombo = ($_sbPct && $_sbFlat) ? $_sbPct . ' + ' . $_sbFlat : ($_sbPct ?: $_sbFlat);
+                        @endphp
+                        {!! $row('Seller\'s Broker Purchase Fee', $_sbCombo) !!}
                     @elseif($str('purchase_fee_type') === 'other')
                         {!! $row('Seller\'s Broker Purchase Fee', $str('purchase_fee_other')) !!}
                     @endif
@@ -783,7 +807,7 @@
             {{-- Leasing Compensation --}}
             @if($str('interested_purchase_fee_type'))
             <hr>
-            <h6 class="fw-semibold mb-2">Leasing Compensation</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Leasing Compensation</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Interested in Offering a Lease Agreement', $str('interested_purchase_fee_type')) !!}
@@ -822,7 +846,7 @@
             {{-- Lease-Option Compensation --}}
             @if($str('interested_lease_option_agreement'))
             <hr>
-            <h6 class="fw-semibold mb-2">Lease-Option Compensation</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Lease-Option Compensation</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Interested in Lease-Option Agreement', $str('interested_lease_option_agreement')) !!}
@@ -842,7 +866,7 @@
 
             {{-- Agency Agreement --}}
             <hr>
-            <h6 class="fw-semibold mb-2">Agency Agreement &amp; Other Terms</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Agency Agreement &amp; Other Terms</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
@@ -938,7 +962,7 @@
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-landmark me-2"></i>Tax, Legal, HOA &amp; Disclosures</div>
         <div class="card-body">
-            <h6 class="fw-semibold mb-2">Tax &amp; Legal</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Tax &amp; Legal</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Parcel ID', $str('parcel_id')) !!}
@@ -957,7 +981,7 @@
 
             @if($str('has_cdd'))
             <hr>
-            <h6 class="fw-semibold mb-2">CDD / Special Assessments</h6>
+            <h6 class="fw-semibold mt-3 mb-2">CDD / Special Assessments</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Has CDD', $yesNo($str('has_cdd'))) !!}
@@ -973,7 +997,7 @@
 
             @if($str('has_hoa'))
             <hr>
-            <h6 class="fw-semibold mb-2">HOA / Association</h6>
+            <h6 class="fw-semibold mt-3 mb-2">HOA / Association</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Has HOA', $yesNo($str('has_hoa'))) !!}
@@ -1044,7 +1068,7 @@
             </div>
             @if(count($docRows))
             <hr>
-            <h6 class="fw-semibold mb-2">Additional Documents</h6>
+            <h6 class="fw-semibold mt-3 mb-2">Additional Documents</h6>
             <ul class="list-unstyled mb-0">
                 @foreach($docRows as $dr)
                 <li class="mb-1">
