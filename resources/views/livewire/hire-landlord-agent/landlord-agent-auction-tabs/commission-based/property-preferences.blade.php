@@ -190,6 +190,7 @@
     </div>
 @endif
 
+@if ($user_type !== 'landlord')
 <!-- Acceptable Counties -->
 <div class="form-group mb-3">
     <label class="fw-bold">Acceptable Counties:<span class="text-danger">*</span>
@@ -241,6 +242,7 @@
     </div>
     <span class="error mt-2" id="counties_error"></span>
 </div>
+@endif
 
 <!-- Acceptable State -->
 @if ($stateFieldVisible)

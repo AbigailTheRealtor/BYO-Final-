@@ -2283,6 +2283,25 @@ $lease_types = [
     
     // Sync select element values from Livewire component data
     // This fixes the issue where DOM select values don't match Livewire state after draft load
+    // Track user-changed selects so syncSelectValues() doesn't snap them back
+    // during an in-flight Livewire round-trip. Any select the user has touched
+    // within the last 2 seconds is protected from auto-sync overwrite.
+    if (!window._lwUserChangeListenerAdded) {
+        window._lwUserChangeListenerAdded = true;
+        document.addEventListener('change', function(e) {
+            var tgt = e.target;
+            var sel = (tgt.tagName === 'SELECT' && tgt.hasAttribute('wire:model')) ? tgt : null;
+            if (!sel && tgt.closest) { sel = tgt.closest('select[wire\\:model]'); }
+            if (sel) {
+                var prop = sel.getAttribute('wire:model');
+                if (prop) {
+                    window._lwRecentUserChange = window._lwRecentUserChange || {};
+                    window._lwRecentUserChange[prop] = Date.now();
+                }
+            }
+        }, true);
+    }
+
     function syncSelectValues() {
         // Find Livewire component
         const wireEl = document.querySelector('[wire\\:id]');
@@ -2295,6 +2314,13 @@ $lease_types = [
         document.querySelectorAll('select[wire\\:model]').forEach(select => {
             const wireModel = select.getAttribute('wire:model');
             if (wireModel && component.get) {
+                // Skip selects the user has changed within the last 2 seconds —
+                // their wire:model (immediate) is already syncing; overwriting here
+                // would cause a visible snapback during the Livewire round-trip.
+                if (window._lwRecentUserChange && window._lwRecentUserChange[wireModel] &&
+                    (Date.now() - window._lwRecentUserChange[wireModel]) < 2000) {
+                    return;
+                }
                 try {
                     const lwValue = component.get(wireModel);
                     if (lwValue && select.value !== lwValue) {
@@ -3906,7 +3932,7 @@ $lease_types = [
 
         const countiesContainer = currentTabContent.querySelector('.counties-container');
         const countiesErrorSpan = currentTabContent.querySelector('#counties_error');
-        if (countiesContainer) {
+        if (countiesContainer && CURRENT_USER_TYPE !== 'landlord') {
             const countyBadges = countiesContainer.querySelectorAll('.badge');
             if (!countyBadges || countyBadges.length === 0) {
                 isValid = false;
@@ -4746,7 +4772,7 @@ $lease_types = [
 
                 // Counties badge check
                 var countiesContainer = document.querySelector('.counties-container');
-                if (countiesContainer) {
+                if (countiesContainer && (typeof CURRENT_USER_TYPE === 'undefined' || CURRENT_USER_TYPE !== 'landlord')) {
                     var countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         items.push({ field: countiesContainer, tab: countiesContainer.closest('.tab-pane'), fieldName: TENANT_FIELD_LABELS['counties'] || 'Acceptable Counties', key: 'counties' });
@@ -4830,6 +4856,20 @@ $lease_types = [
                                         var _dllElGi = document.querySelector('.lease_term_options');
                                         var _dllTabGi = _dllElGi ? _dllElGi.closest('.tab-pane') : null;
                                         items.push({ field: _dllElGi || document.body, tab: _dllTabGi, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
+                                    }
+                                    // leasing_spaces: landlord-only native select — prefer Livewire state;
+                                    // fall back to DOM value for rapid-change + immediate-submit scenarios.
+                                    // (required attr removed from DOM to prevent pre-sync false positives)
+                                    var _lsValGi = _comp.get('leasing_spaces');
+                                    var _lsEmptyGi = !_lsValGi || _lsValGi === '';
+                                    if (_lsEmptyGi) {
+                                        var $lsDomGi = document.querySelector('[wire\\:model="leasing_spaces"]');
+                                        if ($lsDomGi && $lsDomGi.value && $lsDomGi.value !== '') _lsEmptyGi = false;
+                                    }
+                                    if (_lsEmptyGi && !items.some(function(i) { return i.key === 'leasing_spaces'; })) {
+                                        var _lsElGi = document.querySelector('[wire\\:model="leasing_spaces"]');
+                                        var _lsTabGi = _lsElGi ? _lsElGi.closest('.tab-pane') : null;
+                                        items.push({ field: _lsElGi || document.body, tab: _lsTabGi, fieldName: TENANT_FIELD_LABELS['leasing_spaces'] || 'Leasing Space', key: 'leasing_spaces' });
                                     }
                                 } else if (_curUTgi === 'buyer') {
                                     // Buyer — property_items: Select2 multi-select (wire:ignore), required when property_type is selected
@@ -5120,7 +5160,7 @@ $lease_types = [
                 }
 
                 const countiesContainer = document.querySelector('.counties-container');
-                if (countiesContainer) {
+                if (countiesContainer && CURRENT_USER_TYPE_LOCAL !== 'landlord') {
                     const countyBadges = countiesContainer.querySelectorAll('.badge');
                     if (!countyBadges || countyBadges.length === 0) {
                         const tab = countiesContainer.closest('.tab-pane');
@@ -5215,6 +5255,20 @@ $lease_types = [
                                         var _dllEl = document.querySelector('.lease_term_options');
                                         var _dllTab = _dllEl ? _dllEl.closest('.tab-pane') : null;
                                         invalidItems.push({ field: _dllEl || document.body, tab: _dllTab, fieldName: TENANT_FIELD_LABELS['desired_lease_length'] || 'Desired Lease Term', key: 'desired_lease_length' });
+                                    }
+                                    // leasing_spaces: landlord-only native select — prefer Livewire state;
+                                    // fall back to DOM value for rapid-change + immediate-submit scenarios.
+                                    // (required attr removed from DOM to prevent pre-sync false positives)
+                                    var _lsVal = comp.get('leasing_spaces');
+                                    var _lsEmpty = !_lsVal || _lsVal === '';
+                                    if (_lsEmpty) {
+                                        var _lsDomEl = document.querySelector('[wire\\:model="leasing_spaces"]');
+                                        if (_lsDomEl && _lsDomEl.value && _lsDomEl.value !== '') _lsEmpty = false;
+                                    }
+                                    if (_lsEmpty && !invalidItems.some(function(i) { return i.key === 'leasing_spaces'; })) {
+                                        var _lsEl = document.querySelector('[wire\\:model="leasing_spaces"]');
+                                        var _lsTab = _lsEl ? _lsEl.closest('.tab-pane') : null;
+                                        invalidItems.push({ field: _lsEl || document.body, tab: _lsTab, fieldName: TENANT_FIELD_LABELS['leasing_spaces'] || 'Leasing Space', key: 'leasing_spaces' });
                                     }
                                 } else if (curUT === 'seller') {
                                     // Seller: sale_provision is a Select2 multi-select (wire:ignore) — check Livewire state.

@@ -82,7 +82,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
     <div class="input-cover">
-        <select wire:model="leasing_spaces" class="form-control has-icon" data-icon="fa-solid fa-building" required>
+        <select wire:model="leasing_spaces" class="form-control has-icon" data-icon="fa-solid fa-building">
             <option value="">Select</option>
             @foreach ($acceptable_leasing_space as $row_pt)
                 @if ($property_type === 'Residential Property' || $row_pt['name'] !== 'Accessory Unit / Guest Suite (ADU)')
@@ -1053,7 +1053,7 @@
     </span>
     <div class="input-cover" wire:ignore>
         <select class="lease_term_options form-control has-icon select2-multiple"
-            data-icon="fa-solid fa-calendar-days input-icon2" multiple required>
+            data-icon="fa-solid fa-calendar-days input-icon2" multiple>
             @if ($property_type === 'Residential Property')
                 @foreach ($residential_lease_term_options as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>

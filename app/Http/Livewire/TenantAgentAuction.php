@@ -1206,7 +1206,9 @@ class TenantAgentAuction extends Component
         if (empty($value)) {
             $this->lease_type = 'percent';
         }
-        $this->lease_value = ''; // clear when type changes
+        if ($this->user_type !== 'landlord') {
+            $this->lease_value = ''; // clear when type changes (not for landlord)
+        }
     }
 
     // Ensure purchase_type never becomes empty during transitions
@@ -1219,17 +1221,23 @@ class TenantAgentAuction extends Component
         if (empty($value)) {
             $this->purchase_type = 'percent';
         }
-        $this->purchase_value = ''; // clear when type changes
+        if ($this->user_type !== 'landlord') {
+            $this->purchase_value = ''; // clear when type changes (not for landlord)
+        }
     }
 
     public function setType(string $which, string $type): void
     {
         if ($which === 'lease') {
             $this->lease_type = $type ?: 'percent';
-            $this->lease_value = ''; // clear lease input when switching type
+            if ($this->user_type !== 'landlord') {
+                $this->lease_value = ''; // clear lease input when switching type (not for landlord)
+            }
         } elseif ($which === 'purchase') {
             $this->purchase_type = $type ?: 'percent';
-            $this->purchase_value = ''; // clear purchase input when switching type
+            if ($this->user_type !== 'landlord') {
+                $this->purchase_value = ''; // clear purchase input when switching type (not for landlord)
+            }
         }
 
         if ($which === 'purchase_fee_flat') {
@@ -3817,21 +3825,45 @@ class TenantAgentAuction extends Component
         }
 
         if ($this->isDraft) {
-            $filledRules = [];
-            foreach ($rules as $field => $rule) {
-                $value = $this->$field ?? null;
-                if (!empty($value)) {
-                    $filledRules[$field] = $rule;
+            if ($this->user_type === 'landlord') {
+                // Landlord draft: use a minimal, explicit ruleset — only common/format fields.
+                // All submit-level required rules (address, leasing terms, desired_lease_length,
+                // contact info completeness, etc.) are intentionally excluded so that drafts
+                // always succeed when submit-only fields are still incomplete.
+                // Full submit (isDraft=false) still enforces the complete $rules set above.
+                $landlordDraftRules = [];
+                $commonFields = [
+                    'service_type'       => 'required',
+                    'user_type'          => 'required',
+                    'listing_title'      => 'required|string|max:255',
+                    'working_with_agent' => 'required',
+                    'auction_type'       => 'required',
+                ];
+                foreach ($commonFields as $field => $rule) {
+                    if (!empty($this->$field)) {
+                        $landlordDraftRules[$field] = $rule;
+                    }
                 }
+                // Format-only validation for contact fields (if filled; not required for draft)
+                if (!empty($this->email))      { $landlordDraftRules['email']      = 'email'; }
+                if (!empty($this->first_name)) { $landlordDraftRules['first_name'] = 'string|max:255'; }
+                if (!empty($this->last_name))  { $landlordDraftRules['last_name']  = 'string|max:255'; }
+                $this->validate($landlordDraftRules);
+            } else {
+                // Non-landlord roles: validate only fields that are already filled.
+                // FIX-05: date fields excluded — partial date strings (e.g. "2026-05") are
+                // non-empty yet fail the `date` rule; user corrects them before final submit.
+                $filledRules = [];
+                foreach ($rules as $field => $rule) {
+                    $value = $this->$field ?? null;
+                    if (!empty($value)) {
+                        $filledRules[$field] = $rule;
+                    }
+                }
+                unset($filledRules['listing_date'], $filledRules['expiration_date']);
+                unset($filledRules['desired_agent_hire_date'], $filledRules['lease_date'], $filledRules['occupant_tenant']);
+                $this->validate($filledRules);
             }
-            // FIX-05: A partially-typed date string (e.g. "2026-05") is non-empty yet still
-            // fails the `date` rule. To prevent any date field from blocking a draft save,
-            // remove all date-specific rules entirely from the draft validation pass.
-            // The user can correct dates before final submit, which still uses required|date.
-            unset($filledRules['listing_date'], $filledRules['expiration_date']);
-            // Also remove role-specific date fields that can appear partially typed during a draft.
-            unset($filledRules['desired_agent_hire_date'], $filledRules['lease_date'], $filledRules['occupant_tenant']);
-            $this->validate($filledRules);
         } else {
             $this->validate($rules);
         }

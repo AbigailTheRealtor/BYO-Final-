@@ -28,7 +28,7 @@ $safeKey = function(...$parts) {
             </span>
         </label>
         <div class="input-cover mt-2">
-            <select wire:model.lazy="purchase_fee_type" class="form-control has-icon"
+            <select wire:model="purchase_fee_type" wire:change="$set('purchase_fee_type', $event.target.value)" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 <option value="Percentage of the Rent Due Each Rental Period">Percentage of the Rent Due Each Rental
@@ -131,7 +131,7 @@ $safeKey = function(...$parts) {
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model.lazy="purchase_fee_type" class="form-control has-icon"
+            <select wire:model="purchase_fee_type" wire:change="$set('purchase_fee_type', $event.target.value)" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
@@ -267,7 +267,7 @@ $safeKey = function(...$parts) {
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model.lazy="tenant_broker_commission_structure" class="form-control has-icon"
+            <select wire:model="tenant_broker_commission_structure" wire:change="$set('tenant_broker_commission_structure', $event.target.value)" class="form-control has-icon"
                 data-icon="fa-solid fa-handshake">
                 <option value="">Select</option>
                 <option value="Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission">Landlord's Broker to Compensate Tenant's Broker from Landlord's Broker Commission</option>
@@ -471,7 +471,7 @@ $safeKey = function(...$parts) {
         </label>
 
         <div class="input-cover mt-2">
-            <select wire:model.lazy="renewal_fee_type" class="form-control has-icon"
+            <select wire:model="renewal_fee_type" wire:change="$set('renewal_fee_type', $event.target.value)" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select</option>
                 @if ($property_type === 'Residential Property')
@@ -554,7 +554,7 @@ $safeKey = function(...$parts) {
 
         </label>
         <div class="input-cover mt-2">
-            <select wire:model.lazy="renewal_fee_type" class="form-control has-icon"
+            <select wire:model="renewal_fee_type" wire:change="$set('renewal_fee_type', $event.target.value)" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
                 <option value="">Select </option>
                 <option value="Percentage of the Net Aggregate Rent">Percentage of the Net Aggregate Rent</option>
@@ -701,7 +701,7 @@ $safeKey = function(...$parts) {
         </span>
     </label>
     <div class="input-cover mt-2">
-        <select wire:model.lazy="interested_in_property_management" class="form-control has-icon"
+        <select wire:model="interested_in_property_management" wire:change="$set('interested_in_property_management', $event.target.value)" class="form-control has-icon"
             data-icon="fa-solid fa-ruler">
             <option value="">Select</option>
             <option value="yes">Yes</option>
@@ -829,8 +829,7 @@ $safeKey = function(...$parts) {
                     <span class="input-group-text">$</span>
                 @endif
 
-                <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
-                    wire:key="lease-value-input-{{ $lease_type }}"
+                <input type="text" step="any" wire:model.defer="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
                         : 'Enter flat fee amount (e.g., 1,500)' }}"
@@ -868,8 +867,7 @@ $safeKey = function(...$parts) {
                     <span class="input-group-text">$</span>
                 @endif
 
-                <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
-                    wire:key="purchase-value-input-{{ $purchase_type }}"
+                <input type="text" step="any" wire:model.defer="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
                         : 'Enter flat fee amount (e.g., 5,000)' }}"
