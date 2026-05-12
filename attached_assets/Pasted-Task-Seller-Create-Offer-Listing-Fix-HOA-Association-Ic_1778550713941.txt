@@ -1,0 +1,51 @@
+Task: Seller Create Offer Listing — Fix HOA / Association Icon Layout Issues
+
+Scope:
+FULL SERVICE Create Offer Listing for Seller only.
+
+Route:
+- /offer-listing/seller
+
+Problem:
+In the HOA / Association section, several icons are not displaying correctly. Some icons appear outside the input/select field, overlap labels, or stack between fields.
+
+Visible examples:
+- Association Name icon appears too low / outside the input.
+- Fee Frequency icon/extra icon appears between fields.
+- Association Approval Required icon appears outside normal alignment.
+- Some conditional “Other” fields and Select2 fields do not maintain consistent icon positioning.
+
+Do NOT touch:
+- Hire Agent flows
+- Buyer, Tenant, or Landlord flows
+- Limited Service / legacy files
+- Database schema
+- Routes
+- Migrations
+- Validation or submit logic
+
+Likely files:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+- resources/views/livewire/offer-listing/offer-seller-listing.blade.php
+- Seller Create icon initialization JS/CSS only if required
+
+Required fix:
+Audit the HOA / Association section and make icon wrappers consistent with the working Seller Create fields.
+
+For every input/select/textarea in HOA / Association:
+- Ensure each field uses the correct `.input-cover.has-icon` wrapper.
+- Ensure each wrapper has only one `data-icon`.
+- Ensure icons are injected inside the field wrapper, not between labels or rows.
+- Ensure conditional “Other” inputs use the same icon structure as normal text fields.
+- Ensure Select2 fields have proper left padding and icon alignment.
+- Ensure textareas either use the correct textarea-safe icon placement or no misplaced overlay icon.
+- Prevent duplicate icons after Livewire re-render, tab switching, Save Draft, and Select2 reinitialization.
+
+Specific acceptance:
+- No icons appear floating between fields.
+- No icons overlap labels.
+- No duplicate icons appear.
+- HOA / Association fields align like the rest of Seller Create.
+- Switching tabs away and back does not create duplicate or misplaced icons.
+- Saving draft and reloading does not create duplicate or misplaced icons.
+- No non-seller files changed unless a shared CSS/JS helper requires a safe additive fix.
