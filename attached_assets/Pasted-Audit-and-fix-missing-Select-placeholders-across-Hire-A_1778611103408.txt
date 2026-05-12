@@ -1,0 +1,109 @@
+Audit and fix missing “Select” placeholders across Hire Agent listing flows only
+
+Problem:
+Several Hire Agent listing select/multiselect fields are missing the word “Select” as placeholder text. This was already fixed in Create Offer Listing flows, but Hire Agent flows still have inconsistent Select2/native select placeholder behavior.
+
+Scope:
+ONLY audit/fix Hire Agent listing flows:
+- Hire Tenant’s Agent
+- Hire Buyer’s Agent
+- Hire Landlord’s Agent
+- Hire Seller’s Agent
+
+DO NOT touch:
+- Create Offer Listing flows
+- Limited Service flows
+- Database schema
+- Routes
+- Validation rules
+- Controllers unless strictly required for view data consistency
+
+Primary goal:
+Find the shared reason these Hire Agent fields are not showing “Select” and fix the pattern globally within Hire Agent blade/component files where appropriate, instead of patching each field manually if a shared Select2 initialization/placeholder helper is responsible.
+
+Reference correct behavior:
+Use the Hire Landlord “Amenities and Property Features” field as the visual/behavior example if it currently shows “Select” correctly.
+
+Audit requirements:
+1. Search all Hire Agent blade files and related JS sections for Select2 initialization and placeholder configuration.
+2. Compare fields that correctly show “Select” against fields that do not.
+3. Identify whether the issue is caused by:
+   - Missing placeholder: 'Select'
+   - Missing data-placeholder="Select"
+   - Placeholder being overridden by verbose text
+   - Select2 initialized without placeholder
+   - Multiple duplicate Select2 initializers overriding each other
+   - Missing empty <option></option> on native select fields
+   - Draft/edit rehydration code reinitializing Select2 without placeholder
+4. Fix the shared pattern so Hire Agent create/edit/draft states consistently show “Select”.
+
+Fields known to audit/fix:
+
+Hire Tenant’s Agent:
+- Acceptable Property Styles
+- Acceptable Property Conditions
+- View Preference Needed
+- Non-Negotiable Amenities and Property Features
+- Offered Lease Term
+- Leasing Space
+
+Hire Buyer’s Agent edits:
+- Acceptable Property Conditions
+- Acceptable Special Sale Provisions
+- Offered Financing/Currency
+
+Hire Landlord edits:
+- Appliances Included
+- View
+- Amenities and Property Features
+- Desired Lease Term
+- Tenant Pays
+- Terms of Lease
+
+Hire Seller Agent:
+- Special Sale Provision
+- Offered Financing/Currency
+- Included Property or Business Assets
+
+Required placeholder standard:
+All select and multiselect fields in Hire Agent flows should show exactly:
+Select
+
+Not:
+- Select one
+- Choose
+- Choose option
+- Select acceptable property styles
+- Select all that apply
+- blank placeholder
+
+Implementation guidance:
+- Prefer a shared JS/helper-level correction inside the relevant Hire Agent blade files if duplicate Select2 initialization is the root cause.
+- If individual field markup is missing data-placeholder or placeholder config, add it consistently.
+- For native single selects, ensure an empty/default option displays “Select” and is disabled/selected where appropriate.
+- For Select2 multiselects, ensure placeholder: 'Select' and allowClear behavior remains compatible.
+- Remove or consolidate duplicate Select2 initializers if they override the correct placeholder.
+- Preserve Livewire bindings and existing save/load behavior.
+
+Verification:
+After the fix, test create/edit/draft pages for each Hire Agent role:
+- Tenant
+- Buyer
+- Landlord
+- Seller
+
+Confirm:
+1. The listed fields show “Select” before any value is chosen.
+2. Existing saved values still load correctly.
+3. Clearing a field returns it to “Select”.
+4. Select2 dropdowns still open normally.
+5. No Create Offer Listing files were changed.
+6. No Limited Service files were changed.
+
+Deliverable:
+Provide a short report listing:
+- Root cause found
+- Files changed
+- Shared fix applied
+- Any individual field fixes needed
+- Confirmation that Create Offer Listing and Limited Service files were untouched
