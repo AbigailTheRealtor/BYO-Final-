@@ -15,7 +15,7 @@
         return (floor($num) == $num ? (string)(int)$num : (string)$num) . '%';
     };
     $val = fn($key) => $meta[$key] ?? null;
-    $str = fn($key) => $meta[$key] ?? '';
+    $str = function($key) use ($meta) { $v = $meta[$key] ?? ''; return is_array($v) ? implode(', ', $v) : $v; };
     $arr = function($key) use ($meta) {
         $v = $meta[$key] ?? [];
         if (is_string($v)) { $d = json_decode($v, true); return is_array($d) ? $d : []; }

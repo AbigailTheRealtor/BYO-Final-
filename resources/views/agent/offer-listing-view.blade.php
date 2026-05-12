@@ -8,7 +8,7 @@
     $isLandlord = $role === 'landlord';
     $isTenant   = $role === 'tenant';
 
-    $fmt = fn($v) => $v !== '' && $v !== null ? $v : null;
+    $fmt = function($v) { if (is_array($v)) return count($v) ? implode(', ', $v) : null; return $v !== '' && $v !== null ? $v : null; };
     $fmtMoney = function($v) {
         if ($v === '' || $v === null) return null;
         $n = (float) str_replace(',', '', $v);
