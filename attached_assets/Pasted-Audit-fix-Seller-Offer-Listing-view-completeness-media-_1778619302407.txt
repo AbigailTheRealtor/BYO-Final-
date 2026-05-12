@@ -1,0 +1,262 @@
+Audit & fix Seller Offer Listing view completeness + media UX (Full Service only)
+
+Scope:
+This task applies ONLY to the Seller Full Service Offer Listing flow and Seller Offer Listing view pages.
+
+Included:
+- /offer-listing/seller/view/{id}
+- Seller Offer Listing controllers/views/components used by that route
+- Full Service Seller Offer Listing data only
+
+Do NOT modify:
+- Hire Agent flows
+- SellerAgentAuction create/edit flows
+- Buyer/Tenant/Landlord flows
+- Limited Service (legacy/frozen)
+- Database schema
+- Route names unless absolutely required
+- Validation rules unless a field is provably not saving
+
+Goal:
+Perform a full end-to-end audit of Seller Full Service Create Offer Listing fields and ensure every field that is successfully saved is also rendered correctly on the Seller Offer Listing view page.
+
+Current confirmed issues:
+1. Full property address is not rendering at the top of the listing
+2. Video Tour URL renders as plain text link instead of embedded player
+3. Property photos are not clickable/enlargeable
+4. Description section/content missing
+5. Broker Compensation & Agency Agreement section missing actual commission fee values
+6. Multiple saved fields appear missing from the final listing view
+
+Reference URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/view/38
+
+==================================================
+PHASE 1 — READ-ONLY AUDIT FIRST
+==================================================
+
+Before changing anything:
+
+1. Trace Seller Offer Listing view flow end-to-end:
+   - Route
+   - Controller
+   - Query/model loading
+   - Meta mapping
+   - Blade rendering
+
+2. Identify:
+   - Which fields are saved in Create Offer Listing
+   - Which meta keys exist in database
+   - Which keys are loaded into controller/view data
+   - Which fields are NOT rendered in the blade
+
+3. Produce a categorized audit:
+   A. Saved + rendered correctly
+   B. Saved but not rendered
+   C. Rendered but mapped to wrong meta key
+   D. UI/UX improvements needed (media/gallery/embed behavior)
+
+4. Verify whether the issue is:
+   - missing save
+   - missing retrieval
+   - missing blade rendering
+   - wrong meta key mapping
+   - conditional hiding logic
+   - empty() suppression
+   - formatting logic bug
+
+DO NOT start editing until the audit is complete.
+
+==================================================
+PHASE 2 — FIXES
+==================================================
+
+A. FULL PROPERTY ADDRESS
+==================================================
+
+At the top property header section:
+
+Current:
+- partial/minimal address
+
+Required:
+- render full property address consistently:
+  street + unit + city + state + zip
+
+Requirements:
+- gracefully skip empty pieces
+- no duplicate commas/spaces
+- preserve existing styling/layout
+
+==================================================
+B. VIDEO TOUR EMBED
+==================================================
+
+Current:
+- plain text URL shown
+
+Required:
+- auto-embed supported video URLs
+
+Support:
+- YouTube
+- youtu.be
+- Vimeo (if already used elsewhere)
+
+Requirements:
+- responsive embedded player
+- safe URL normalization
+- preserve fallback link if embed fails
+- no external JS libraries
+
+DO NOT break existing saved URLs.
+
+==================================================
+C. CLICKABLE PHOTO GALLERY
+==================================================
+
+Current:
+- static thumbnails only
+
+Required:
+- clicking thumbnail opens larger image
+
+Acceptable:
+- Bootstrap modal
+- lightbox
+- existing gallery component already in project
+
+Requirements:
+- mobile responsive
+- preserve current thumbnails
+- allow next/previous browsing if easy
+- no heavy new package installs
+
+==================================================
+D. DESCRIPTION SECTION
+==================================================
+
+Audit:
+- Determine why description is missing
+
+Verify:
+- description field save key
+- retrieval key
+- controller mapping
+- blade rendering
+
+Fix:
+- render description section when populated
+
+Requirements:
+- preserve line breaks
+- escape safely
+- avoid empty card rendering
+
+==================================================
+E. BROKER COMPENSATION & AGENCY AGREEMENT
+==================================================
+
+Current:
+- section header renders
+- fee values missing
+
+Audit all compensation-related fields including:
+- listing commission
+- buyer broker compensation
+- flat fee/hourly/percentage structures
+- lease-option compensation
+- retainer fee
+- early termination fee
+- protection period
+- additional compensation terms
+
+Determine:
+- which fields save correctly
+- which meta keys exist
+- which keys are ignored in view
+
+Fix:
+- render ALL populated compensation fields
+
+Requirements:
+- hide empty fields only
+- maintain existing section style
+- use formatted labels
+- preserve percentage/currency formatting
+
+==================================================
+F. COMPLETE FIELD COVERAGE AUDIT
+==================================================
+
+Perform a FULL comparison between:
+- Seller Create Offer Listing fields
+VS
+- Seller Offer Listing View rendering
+
+Goal:
+Every saved Seller Full Service field should either:
+- render correctly
+OR
+- be intentionally excluded with documented reason
+
+Pay special attention to:
+- Description
+- AI Questions
+- Financial fields
+- HOA fields
+- Property features
+- Auction/Bidding fields
+- Financing/Currency
+- Special Sale Provisions
+- Terms/Conditions
+- Additional seller terms
+- Media fields
+- Broker compensation fields
+
+AI Questions:
+- confirm they remain intentionally hidden from public listing views
+
+==================================================
+SAFETY RULES
+==================================================
+
+DO NOT:
+- modify Limited Service
+- modify Hire Agent flows
+- rename meta keys
+- remove existing rendering
+- change DB schema
+- alter validation unnecessarily
+- touch unrelated roles
+
+ONLY add/fix missing rendering and media UX behavior.
+
+==================================================
+DONE LOOKS LIKE
+==================================================
+
+1. Seller Offer Listing view shows:
+   - full address
+   - embedded video
+   - clickable/enlargeable photos
+   - description section
+   - complete compensation details
+
+2. All saved Seller Full Service fields are audited and accounted for
+
+3. Missing fields are restored to rendering where appropriate
+
+4. AI Questions remain hidden intentionally
+
+5. No regressions to:
+   - Hire Agent flows
+   - Buyer/Tenant/Landlord
+   - Limited Service
+
+6. Existing saved listings continue loading correctly
+
+7. No JS console errors
+8. No broken image rendering
+9. No duplicate sections/cards
+10. Mobile layout remains stable
