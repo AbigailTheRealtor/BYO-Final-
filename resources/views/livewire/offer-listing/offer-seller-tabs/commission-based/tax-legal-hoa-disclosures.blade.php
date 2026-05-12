@@ -449,10 +449,9 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <div class="input-cover" style="display: flex; min-height: 38px;">
+                <div class="input-cover">
                     <select wire:model="association_approval_required" class="form-control has-icon"
-                        data-icon="fa-solid fa-stamp"
-                        style="display: block; width: 100%;">
+                        data-icon="fa-solid fa-stamp">
                         <option value="">Select</option>
                         <option value="Yes">Yes</option>
                         <option value="No">No</option>
@@ -470,8 +469,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="2"
-                            data-icon="fa-solid fa-clipboard-check"
+                        <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
                             placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
                 </div>
