@@ -53,6 +53,7 @@ use App\Http\Controllers\Admin\AgentServiceController;
 use App\Http\Controllers\Admin\PropertyTypeController;
 use App\Http\Controllers\PropertyAuctionBidController;
 use App\Http\Controllers\SellerAgentAuctionController;
+use App\Http\Controllers\SellerOfferListingController;
 use App\Http\Controllers\AcceptedBidSummaryController;
 use App\Http\Controllers\TenantAgentAuctionController;
 use App\Http\Controllers\Admin\SellerServiceController;
@@ -921,6 +922,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/offer-listing/landlord',
         \App\Http\Livewire\OfferListing\Landlord\LandlordOfferListing::class
     )->name('offer.listing.landlord');
+
+    // ── Offer Listing View routes (production) ─────────────────────────────
+    Route::get('/offer-listing/seller/view/{id}',
+        [SellerOfferListingController::class, 'view']
+    )->name('offer.listing.seller.view');
+    // ── End Offer Listing View routes ──────────────────────────────────────
 
     // ── Offer Listing Edit routes (production) ─────────────────────────────
     // IMPORTANT: specific /edit/ routes must be declared BEFORE any catch-all

@@ -3026,6 +3026,7 @@ class SellerOfferListing extends Component
 
         $auction->saveMeta('service_type', $this->service_type);
         $auction->saveMeta('user_type', $this->user_type);
+        $auction->saveMeta('workflow_type', 'offer_listing');
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('auction_type', $this->auction_type);
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
@@ -4152,7 +4153,7 @@ class SellerOfferListing extends Component
 
             session()->flash('success', 'Listing submitted successfully!');
 
-            $url = route('seller.agent.auction.detail', ['id' => $auction->id]);
+            $url = route('offer.listing.seller.view', ['id' => $auction->id]);
 
             \Log::info('[SELLER STORE BEFORE REDIRECT EVENT]', ['url' => $url]);
 
