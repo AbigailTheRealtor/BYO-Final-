@@ -1,0 +1,76 @@
+Task: Fix HOA / Association Icon Layout — Seller Create Offer Listing
+
+Scope:
+FULL SERVICE Seller Create Offer Listing only.
+
+Route:
+- /offer-listing/seller
+
+Problem:
+The HOA / Association section has icon layout bugs:
+- Icons float between rows.
+- Icons overlap labels.
+- Icons do not align consistently with the rest of the form.
+
+Confirmed root causes:
+1. The Association Approval Required wrapper has an inline `display: flex` style that disrupts normal icon injection.
+2. A textarea uses `.has-icon` without textarea-safe icon positioning.
+3. `association_fee_frequency_other` conditional field does not follow the same wrapper structure as other conditional “Other” inputs.
+
+Likely file:
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/tax-legal-hoa-disclosures.blade.php
+
+Only touch shared JS/CSS if absolutely required:
+- resources/views/livewire/offer-listing/offer-seller-listing.blade.php
+
+Do NOT touch:
+- Hire Agent flows
+- Buyer/Tenant/Landlord flows
+- Limited Service
+- Database schema
+- Routes
+- Migrations
+- Validation
+- Submit logic
+
+Required fix:
+1. Remove the inline `display: flex` style from the Association Approval Required input wrapper.
+2. Ensure the wrapper follows the same pattern as other normal select fields:
+   - `.input-cover.has-icon`
+   - one `data-icon`
+   - select/input inside the wrapper
+   - icon injected inside the wrapper only
+
+3. Fix textarea icon issue:
+   - Either remove `.has-icon` from the textarea wrapper, OR
+   - apply the existing textarea-safe icon pattern used elsewhere in Seller Create.
+   - Do not allow icons to float between the label and textarea.
+
+4. Fix `association_fee_frequency_other`:
+   - Match the same wrapper pattern used by other conditional “Other” fields.
+   - Use a clean `.input-cover.has-icon` wrapper.
+   - One `data-icon`.
+   - Input inside wrapper.
+   - No loose icon container outside the wrapper.
+
+5. Verify icon injection:
+   - No duplicate icons after tab switching.
+   - No duplicate icons after Livewire re-render.
+   - No floating icons after Save Draft/reload.
+   - No label overlap.
+
+Acceptance Criteria:
+- HOA / Association icons align inside their fields.
+- No icons appear between rows.
+- No icons overlap labels.
+- Conditional Other field icon aligns correctly.
+- Textarea no longer creates misplaced icon behavior.
+- No Buyer/Tenant/Landlord files changed.
+- No Hire Agent files changed.
+- No Limited Service files changed.
+
+Final Replit response should include:
+- Files changed
+- Root cause confirmed
+- Fix summary
+- Verification results
