@@ -68,6 +68,54 @@
         @endif
     </div>
 
+    {{-- Photos & Tours --}}
+    @php
+        $propertyPhotos = $meta['property_photos'] ?? [];
+        if (is_string($propertyPhotos)) {
+            $decoded = json_decode($propertyPhotos, true);
+            $propertyPhotos = is_array($decoded) ? $decoded : [];
+        }
+    @endphp
+    @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url'))
+    <div class="card section-card">
+        <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
+        <div class="card-body">
+            @if($str('video_tour_url'))
+                <p><span class="field-label">Video Tour URL:</span>
+                    <a href="{{ $str('video_tour_url') }}" target="_blank" rel="noopener">{{ $str('video_tour_url') }}</a>
+                </p>
+            @endif
+            @if($str('virtual_tour_url'))
+                <p><span class="field-label">Virtual Tour URL:</span>
+                    <a href="{{ $str('virtual_tour_url') }}" target="_blank" rel="noopener">{{ $str('virtual_tour_url') }}</a>
+                </p>
+            @endif
+
+            @if(count($propertyPhotos))
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                @foreach($propertyPhotos as $idx => $photo)
+                @php
+                    $filename = is_array($photo) ? ($photo['filename'] ?? '') : $photo;
+                    $isCover  = is_array($photo) && !empty($photo['is_cover']);
+                @endphp
+                @if($filename)
+                <div class="text-center">
+                    <img src="{{ asset('storage/auction/images/' . $filename) }}"
+                         alt="Property photo {{ $idx + 1 }}"
+                         class="photo-thumb"
+                         onerror="this.style.display='none'">
+                    @if($isCover)
+                        <div><span class="cover-badge">Cover</span></div>
+                    @endif
+                </div>
+                @endif
+                @endforeach
+            </div>
+            @endif
+        </div>
+    </div>
+    @endif
+
     {{-- Listing Details --}}
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Details</div>
@@ -243,54 +291,6 @@
             </div>
         </div>
     </div>
-
-    {{-- Photos & Tours --}}
-    @php
-        $propertyPhotos = $meta['property_photos'] ?? [];
-        if (is_string($propertyPhotos)) {
-            $decoded = json_decode($propertyPhotos, true);
-            $propertyPhotos = is_array($decoded) ? $decoded : [];
-        }
-    @endphp
-    @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url'))
-    <div class="card section-card">
-        <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
-        <div class="card-body">
-            @if($str('video_tour_url'))
-                <p><span class="field-label">Video Tour URL:</span>
-                    <a href="{{ $str('video_tour_url') }}" target="_blank" rel="noopener">{{ $str('video_tour_url') }}</a>
-                </p>
-            @endif
-            @if($str('virtual_tour_url'))
-                <p><span class="field-label">Virtual Tour URL:</span>
-                    <a href="{{ $str('virtual_tour_url') }}" target="_blank" rel="noopener">{{ $str('virtual_tour_url') }}</a>
-                </p>
-            @endif
-
-            @if(count($propertyPhotos))
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                @foreach($propertyPhotos as $idx => $photo)
-                @php
-                    $filename = is_array($photo) ? ($photo['filename'] ?? '') : $photo;
-                    $isCover  = is_array($photo) && !empty($photo['is_cover']);
-                @endphp
-                @if($filename)
-                <div class="text-center">
-                    <img src="{{ asset('storage/auction/images/' . $filename) }}"
-                         alt="Property photo {{ $idx + 1 }}"
-                         class="photo-thumb"
-                         onerror="this.style.display='none'">
-                    @if($isCover)
-                        <div><span class="cover-badge">Cover</span></div>
-                    @endif
-                </div>
-                @endif
-                @endforeach
-            </div>
-            @endif
-        </div>
-    </div>
-    @endif
 
     {{-- Tax, Legal, HOA & Disclosures --}}
     @php
