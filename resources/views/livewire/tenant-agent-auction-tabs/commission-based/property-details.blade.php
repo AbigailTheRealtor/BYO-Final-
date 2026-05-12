@@ -274,6 +274,7 @@
             data-icon="fa-solid fa-home input-icon2" multiple
             data-property-type="{{ $property_type }}"
             data-selected="{{ json_encode($selectedPropertyItems) }}">
+            <option value=""></option>
             @if ($property_type === 'Residential Property')
                 @foreach ($property_items as $item)
                     @if (str_contains($item['class'], 'residential-length'))
@@ -324,7 +325,7 @@
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple
                 style="visibility:hidden;height:0;overflow:hidden">
-            <option value="">Select</option>
+            <option value=""></option>
             @php
                 $displayMapping = [
                     'Updated/Renovated' => 'Updated / Renovated',
@@ -736,6 +737,7 @@
     <div class="input-cover" wire:ignore>
         <select id="view_preference" class="form-control has-icon select2-multiple"
             data-icon="fa-solid fa-tree input-icon2" multiple>
+            <option value=""></option>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $view_preference ?? []) ? 'selected' : '' }}>
@@ -802,6 +804,7 @@
             <select id="non_negotiable_amenities"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
                 @if (!$property_type) disabled @endif multiple>
+                <option value=""></option>
                 @if (in_array($property_type, ['Residential Property']))
                     @foreach ($non_negotialble_terms as $item)
                         @if (str_contains($item['class'], 'residential-length'))

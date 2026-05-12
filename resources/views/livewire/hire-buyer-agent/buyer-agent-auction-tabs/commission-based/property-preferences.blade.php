@@ -429,6 +429,7 @@
             <select id="condition_prop_buyer"
                 class="condition_prop_buyer form-control has-icon select2-multiple"
                 data-icon="fa-solid fa-screwdriver-wrench input-icon2" multiple>
+                <option value=""></option>
                 @foreach ($property_condition as $row_pt)
                     <option value="{{ $row_pt['name'] }}" {{ in_array($row_pt['name'], $this->condition_prop_buyer ?? []) ? 'selected' : '' }}>{{ $row_pt['display'] ?? $row_pt['name'] }}</option>
                 @endforeach
@@ -769,6 +770,7 @@
     <div class="input-cover" wire:ignore>
         <select id="view_preference"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-tree input-icon2" multiple>
+            <option value=""></option>
             @foreach ($preferences as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ in_array($row_pt['name'], $view_preference ?? []) ? 'selected' : '' }}>
@@ -830,6 +832,7 @@
         <select wire:model="non_negotiable_amenities" id="non_negotiable_amenities"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
             @if (!$property_type) disabled @endif multiple>
+            <option value=""></option>
             @if ($property_type === 'Residential' or $property_type === 'Income')
                 @foreach ($non_negotialble_terms as $item)
                     @if (str_contains($item['class'], 'residential-length'))

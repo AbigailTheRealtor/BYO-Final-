@@ -1450,6 +1450,7 @@
     <div class="input-cover" wire:ignore>
         <select id="included_assets"
             class="form-control has-icon select2-multiple" data-icon="fa-solid fa-briefcase input-icon2" multiple>
+            <option value=""></option>
             @foreach ($included_assets as $row_pt)
                 <option value="{{ $row_pt['name'] }}"
                     {{ is_array($business_assets) && in_array($row_pt['name'], $business_assets) ? 'selected' : '' }}>
