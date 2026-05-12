@@ -1,0 +1,101 @@
+Fix Hire Agent saved draft modal not popping up — safeguards required
+
+This task is ONLY for Hire Agent listings.
+
+Affected routes:
+- /hire/agent/auction/landlord
+- /hire/agent/auction/seller
+- /hire/agent/auction/buyer
+- /hire/agent/auction/tenant
+
+Problem:
+When a user selects Hire Landlord’s Agent, Hire Seller’s Agent, Hire Buyer’s Agent, or Hire Tenant’s Agent, the saved draft modal should automatically pop up if saved drafts exist. Right now it does not.
+
+DO NOT TOUCH:
+- Create Offer Listing flows
+- /offer-listing/... files
+- SellerOfferListing, BuyerOfferListing, LandlordOfferListing, TenantOfferListing components
+- Limited Service / legacy flows
+- Database schema
+- Routes
+- Validation rules
+- Any unrelated UI text, fields, or tooltips
+
+ONLY inspect/fix:
+- The shared Hire Agent Livewire component, likely:
+  app/Livewire/TenantAgentAuction.php
+- The Hire Agent blade/view files used by:
+  /hire/agent/auction/{user_type}
+
+Audit first before making changes:
+1. Confirm which component powers all four Hire Agent routes.
+2. Confirm how $user_type is passed into the component.
+3. Confirm how $listingId is passed when loading an existing draft.
+4. Confirm how saved drafts are queried.
+5. Confirm whether $hasDrafts is being set during mount().
+6. Confirm whether the modal blade condition is incorrect.
+7. Confirm whether the JavaScript auto-show code is running.
+
+Required behavior:
+1. On base Hire Agent routes with no listingId:
+   /hire/agent/auction/landlord
+   /hire/agent/auction/seller
+   /hire/agent/auction/buyer
+   /hire/agent/auction/tenant
+
+   If saved drafts exist for that same user type, the saved draft modal must automatically pop up.
+
+2. On specific draft routes:
+   /hire/agent/auction/landlord/{draftId}
+   /hire/agent/auction/seller/{draftId}
+   /hire/agent/auction/buyer/{draftId}
+   /hire/agent/auction/tenant/{draftId}
+
+   The selected draft should load directly and the saved draft modal should NOT pop up over it.
+
+Fix requirements:
+1. Make sure mount() assigns both:
+   $this->user_type = $user_type;
+   $this->listingId = $listingId;
+
+2. Make sure saved drafts are filtered by the correct Hire Agent user type:
+   landlord drafts only show for landlord
+   seller drafts only show for seller
+   buyer drafts only show for buyer
+   tenant drafts only show for tenant
+
+3. Make sure $hasDrafts is set correctly after drafts are loaded:
+   $this->hasDrafts = count($this->drafts) > 0;
+
+4. Fix the modal condition so it renders only when drafts exist AND no specific draft/listingId is loaded.
+
+   Correct logic:
+   @if ($hasDrafts && empty($listingId))
+
+   or, if the Livewire property is used:
+   @if ($hasDrafts && empty($this->listingId))
+
+5. Make sure the modal auto-show script runs after the modal exists in the DOM.
+
+   Use the project’s existing Bootstrap/Livewire modal pattern if one already exists.
+
+   If needed, safely trigger it with DOMContentLoaded and Livewire processed/rendered hooks, without duplicating modals or breaking other scripts.
+
+Important:
+- Do not change create offer listing draft modal logic.
+- Do not copy code from Offer Listing components unless only used as reference.
+- Do not make broad refactors.
+- Do not rename properties.
+- Do not change database columns.
+- Do not change routes.
+
+Done looks like:
+- /hire/agent/auction/landlord shows draft modal if landlord hire-agent drafts exist.
+- /hire/agent/auction/seller shows draft modal if seller hire-agent drafts exist.
+- /hire/agent/auction/buyer shows draft modal if buyer hire-agent drafts exist.
+- /hire/agent/auction/tenant shows draft modal if tenant hire-agent drafts exist.
+- Opening /hire/agent/auction/{user_type}/{draftId} loads the draft directly with no modal overlay.
+- Draft modal only shows drafts for the selected user type.
+- No Create Offer Listing files changed.
+- No Limited Service files changed.
+- No schema, route, or validation changes.
