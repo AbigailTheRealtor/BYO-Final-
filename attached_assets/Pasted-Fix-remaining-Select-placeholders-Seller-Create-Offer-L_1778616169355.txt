@@ -1,0 +1,100 @@
+Fix remaining Select placeholders — Seller Create Offer Listing (2 fields only) + Hire Agent placeholder audit/fix
+
+Reference correct implementation:
+Use Create Landlord Listing fields such as:
+- Appliances Included
+- View
+
+as the source-of-truth working example for how Select placeholders should behave.
+
+Compare against those working fields:
+- rendered HTML
+- leading option pattern
+- Select2 initialization
+- Livewire reinitialization behavior
+- hidden tab behavior
+- placeholder rendering
+
+Problem:
+Create Offer Listings are mostly fixed already.
+
+The ONLY remaining Create Offer Listing issue is Seller Create Offer Listing:
+1. Special Sale Provision
+2. Offered Financing/Currency
+
+However, Hire Agent listings still have several fields missing the visible “Select” placeholder across create/edit/draft flows.
+
+Scope:
+
+A. Create Offer Listing — Seller ONLY
+Fix only:
+- Special Sale Provision
+- Offered Financing/Currency
+
+B. Hire Agent Listings
+Audit and fix missing Select placeholders across:
+- Hire Seller’s Agent
+- Hire Buyer’s Agent
+- Hire Landlord’s Agent
+- Hire Tenant’s Agent
+- create/edit/draft states
+
+Do NOT touch:
+- Create Offer Listing Buyer/Tenant/Landlord flows
+- Limited Service flows
+- Database/schema
+- Routes
+- Controllers
+- Validation
+- Option values
+- Saved-value logic
+- Draft/edit persistence logic
+
+Correct Select2 multiselect pattern:
+HTML:
+<option value=""></option>
+
+JS:
+placeholder: "Select",
+allowClear: true,
+width: "100%"
+
+Native single-select dropdowns may use:
+<option value="">Select</option>
+
+Audit/fix requirements:
+
+1. For Seller Create Offer Listing ONLY:
+Inspect/fix:
+- Special Sale Provision
+- Offered Financing/Currency
+
+2. For Hire Agent flows:
+Audit all select/select2 fields not visibly showing:
+Select
+
+3. For every failing field identify:
+- blade file / tab partial
+- selector id/class
+- single-select vs multiselect
+- current leading option pattern
+- Select2 initializer
+- Livewire reinitializer behavior
+- whether hidden tabs require reinit on shown.bs.tab
+
+4. Fix the actual rendered field markup and JS behavior to match the working Create Landlord Listing pattern.
+
+5. Ensure:
+- visible placeholder says exactly “Select”
+- clearing returns to “Select”
+- no fake selectable “Select” option exists in multiselect dropdowns
+- no blank ghost options
+- saved draft/edit values still load correctly
+
+Deliverable:
+Provide:
+- files changed
+- fields fixed
+- root cause categories found
+- confirmation Create Offer Listing Buyer/Tenant/Landlord were untouched
+- confirmation Limited Service untouched
