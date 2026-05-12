@@ -1,0 +1,151 @@
+Search Listings tab fix — Create Seller Listings need their own separate tab/category
+
+Problem:
+The routing/view fix created a dedicated Seller Offer Listing view route, but the Browse/Search Listings page still groups Create Seller Listings under the existing “Hiring Seller’s Agent” tab and links them to the old Hire Seller route.
+
+This is wrong because:
+
+Create Seller Listing:
+- /offer-listing/seller
+- view: /offer-listing/seller/view/{id}
+- edit: /offer-listing/seller/edit/{id}
+- should represent property listings/offers
+
+Hire Seller’s Agent:
+- /hire/agent/seller
+- view: /seller/agent/auction/view/{id}
+- edit: /hire/agent/auction/edit/{id}/seller
+- should represent hiring an agent
+
+They must be separate in Search Listings.
+
+STRICT SCOPE:
+- Search/Browse Listings UI and link routing only.
+- Seller Offer Listing category/tab only.
+- Do NOT change Create Seller Listing form fields.
+- Do NOT change Hire Seller’s Agent form/view/edit.
+- Do NOT touch Buyer/Tenant/Landlord flows unless the shared search tab logic requires safe non-breaking label separation.
+- Do NOT touch Limited Service.
+- Do NOT change DB schema.
+
+Required changes:
+
+1. Add a new Search Listings tab/category for Create Seller Listings.
+
+Add a separate tab label such as:
+
+Seller Listings
+
+or:
+
+Seller Offer Listings
+
+Recommended label:
+Seller Listings
+
+This tab should include records created from:
+/offer-listing/seller
+
+It should NOT include Hire Seller’s Agent records.
+
+2. Keep the existing tab:
+
+Hiring Seller’s Agent
+
+This tab should continue to include only records created from:
+/hire/agent/seller
+
+It should NOT include Create Seller Listing records.
+
+3. Update card/link generation logic
+
+For Seller Offer Listing records:
+- link cards/buttons to:
+  route('offer.listing.seller.view', ['id' => $auction->id])
+  or /offer-listing/seller/view/{id}
+
+For Hire Seller’s Agent records:
+- keep linking to:
+  route('seller.agent.auction.detail', ['id' => $auction->id])
+  or /seller/agent/auction/view/{id}
+
+4. Add workflow-aware detection
+
+Primary detection:
+workflow_type = offer_listing
+
+Fallback for older Seller Offer Listing records without workflow_type:
+detect using Offer Listing-only meta keys such as:
+- parcel_id
+- flood_zone_code
+- annual_property_taxes
+- seller_disclosure_available
+- listing_documents
+- property_photos
+- association_type
+- auction_type
+- brokerage_relationship
+
+Do not rely only on user_type = seller because Hire Seller’s Agent records may also use seller.
+
+5. Search result filtering
+
+When the user clicks the new Seller Listings tab:
+- show only Seller Offer Listing records
+- cards must open /offer-listing/seller/view/{id}
+
+When the user clicks Hiring Seller’s Agent:
+- show only Hire Seller’s Agent records
+- cards must open /seller/agent/auction/view/{id}
+
+6. Card labeling
+
+Seller Offer Listing cards should NOT say:
+Seller’s Agent Required
+
+They should show property/listing language instead, such as:
+Seller Listing
+or:
+Property Listing
+
+Hire Seller’s Agent cards can still say:
+Seller’s Agent Required
+
+7. Verify all browse/search locations
+
+Audit and fix:
+- /search/seller-agent-needed
+- Browse Listings page tabs
+- search result cards
+- clickable card wrappers
+- view buttons
+- favorite/saved cards if they reuse this card partial
+- share/copy links if generated from card URL
+
+Done looks like:
+
+PASS:
+- A new “Seller Listings” tab appears in Search Listings.
+- Create Seller Listings appear there.
+- Create Seller Listing cards open:
+  /offer-listing/seller/view/{id}
+- Hiring Seller’s Agent tab still exists.
+- Hire Seller’s Agent cards open:
+  /seller/agent/auction/view/{id}
+- Create Seller Listing cards no longer say “Seller’s Agent Required.”
+- Hire Seller’s Agent listings remain unchanged.
+
+FAIL:
+- Create Seller Listings still appear under Hiring Seller’s Agent.
+- Create Seller Listings still open /seller/agent/auction/view/{id}.
+- Hire Seller’s Agent records open /offer-listing/seller/view/{id}.
+- Buyer/Tenant/Landlord flows are changed unintentionally.
+
+Deliverable:
+Provide:
+- files changed
+- new tab/category name
+- old mixed logic found
+- new workflow-aware separation logic
+- confirmation Seller Listings tab opens new Offer Listing Seller view
+- confirmation Hiring Seller’s Agent tab still opens old Hire Seller view
