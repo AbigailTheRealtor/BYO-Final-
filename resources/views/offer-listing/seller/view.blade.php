@@ -357,6 +357,16 @@
             <p class="field-value">{{ implode(', ', $pItems) }}</p>
             @endif
 
+            @php $viewPref = $subOther($arr('view_preference'), $str('other_preferences')); @endphp
+            @if(count($viewPref))
+            {!! $row('View', implode(', ', $viewPref)) !!}
+            @endif
+
+            @php $nonNegAmenities = $subOther($arr('non_negotiable_amenities'), $str('other_non_negotiable_amenities')); @endphp
+            @if(count($nonNegAmenities))
+            {!! $row('Non-Negotiable Amenities', implode(', ', $nonNegAmenities)) !!}
+            @endif
+
             {{-- MLS Fields --}}
             @php
                 $mlsFields = [
@@ -1070,8 +1080,9 @@
             if ($str($d[1]) || $str($d[2])) { $hasAnyDisclosure = true; break; }
         }
         $docRows = $arr('doc_rows');
+        $addDocNames = $arr('additional_documents');
     @endphp
-    @if($hasAnyDisclosure || count($docRows))
+    @if($hasAnyDisclosure || count($docRows) || count($addDocNames))
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-folder-open me-2"></i>Documents &amp; Disclosures</div>
         <div class="card-body">
@@ -1092,6 +1103,18 @@
             @endif
             @endforeach
             </div>
+            @if(count($addDocNames))
+            <hr>
+            <h6 class="fw-semibold mt-3 mb-2">Additional Documents Available</h6>
+            <div class="row">
+                @foreach($addDocNames as $addDocName)
+                <div class="col-md-6 mb-2 d-flex align-items-baseline gap-2 flex-wrap">
+                    <span class="field-label">{{ $addDocName }}</span>
+                    <span class="badge bg-light text-dark border">Available</span>
+                </div>
+                @endforeach
+            </div>
+            @endif
             @if(count($docRows))
             <hr>
             <h6 class="fw-semibold mt-3 mb-2">Additional Documents</h6>
@@ -1115,7 +1138,7 @@
 
     {{-- Agent Credentials & Contact Info --}}
     @php
-        $hasContact = $str('first_name') || $str('email') || $str('phone_number') || $str('agent_brokerage') || $str('agent_license_number');
+        $hasContact = $str('first_name') || $str('last_name') || $str('email') || $str('phone_number') || $str('agent_brokerage') || $str('agent_license_number') || $str('agent_nar_member_id');
     @endphp
     @if($hasContact)
     <div class="card section-card">

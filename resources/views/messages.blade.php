@@ -1021,7 +1021,13 @@
                                                             $auction_link = $current_token->auction ? route('buyer.view-auction', $current_token->auction->id) : '#';
                                                         } elseif ($type == 'seller-agent') {
                                                             $chat_title = optional($current_token->auction)->address;
-                                                            $auction_link = $current_token->auction ? route('seller.agent.auction.detail', $current_token->auction->id) : '#';
+                                                            $auction_link = '#';
+                                                            if ($current_token->auction) {
+                                                                $_sellerIsOffer = $current_token->auction->info('workflow_type') === 'offer_listing';
+                                                                $auction_link = $_sellerIsOffer
+                                                                    ? route('offer.listing.seller.view', $current_token->auction->id)
+                                                                    : route('seller.agent.auction.detail', $current_token->auction->id);
+                                                            }
                                                         } elseif ($type == 'landlord-agent') {
                                                             $chat_title = optional($current_token->auction)->address;
                                                             $auction_link = $current_token->auction ? route('landlord.agent.auction.view', $current_token->auction->id) : '#';

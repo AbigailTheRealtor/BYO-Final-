@@ -452,6 +452,18 @@ class SellerAgentAuctionController extends Controller
             abort(404, 'Listing not found');
         }
 
+        // Guard: if this record is actually a Seller Offer Listing, redirect to the correct route.
+        // Use the already-eager-loaded meta collection — no extra query.
+        $workflowType = $auction->meta->where('meta_key', 'workflow_type')->first()?->meta_value;
+        if ($workflowType === 'offer_listing') {
+            return redirect()->route('offer.listing.seller.view', $id);
+        }
+        // Fallback: detect older offer listing records that predate the workflow_type stamp.
+        $offerMetaKeys = SellerOfferListingController::OFFER_LISTING_META_KEYS;
+        if ($auction->meta->whereIn('meta_key', $offerMetaKeys)->isNotEmpty()) {
+            return redirect()->route('offer.listing.seller.view', $id);
+        }
+
         $data = $auction;
 
         // Auto-transition Bidding Period listing to Pending when timer ends
