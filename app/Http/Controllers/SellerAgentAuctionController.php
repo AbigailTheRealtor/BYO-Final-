@@ -459,8 +459,9 @@ class SellerAgentAuctionController extends Controller
             return redirect()->route('offer.listing.seller.view', $id);
         }
         // Fallback: detect older offer listing records that predate the workflow_type stamp.
+        // Skip the fallback if the listing is already confirmed as hire_agent.
         $offerMetaKeys = SellerOfferListingController::OFFER_LISTING_META_KEYS;
-        if ($auction->meta->whereIn('meta_key', $offerMetaKeys)->isNotEmpty()) {
+        if ($workflowType !== 'hire_agent' && $auction->meta->whereIn('meta_key', $offerMetaKeys)->isNotEmpty()) {
             return redirect()->route('offer.listing.seller.view', $id);
         }
 
@@ -1135,9 +1136,11 @@ class SellerAgentAuctionController extends Controller
             ->whereDoesntHave('meta', function ($m) {
                 $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing');
             })
-            // Exclude Seller Offer Listings — fallback: presence of any offer-listing-specific meta key
-            ->whereDoesntHave('meta', function ($m) use ($offerListingMetaKeys) {
-                $m->whereIn('meta_key', $offerListingMetaKeys);
+            // Exclude Seller Offer Listings — fallback: presence of any offer-listing-specific meta key,
+            // but only if the listing is not already confirmed as hire_agent by workflow_type.
+            ->where(function ($q) use ($offerListingMetaKeys) {
+                $q->whereHas('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent'))
+                  ->orWhereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', $offerListingMetaKeys));
             });
 
         if ($request->title != "") {
