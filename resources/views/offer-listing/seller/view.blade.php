@@ -333,6 +333,13 @@
                     @endphp
                     {!! $row('Property Condition', $_cond) !!}
                     {!! $row('Pool', $str('pool_needed')) !!}
+                    @php
+                        $poolTypeRaw  = $arr('pool_type');
+                        $poolTypeList = [];
+                        if (!empty($poolTypeRaw['community'])) $poolTypeList[] = 'Community';
+                        if (!empty($poolTypeRaw['private']))   $poolTypeList[] = 'Private';
+                    @endphp
+                    {!! $row('Pool Type', count($poolTypeList) ? implode(', ', $poolTypeList) : null) !!}
                 </div>
             </div>
 
@@ -345,8 +352,7 @@
 
             @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
             @if(count($appliances))
-            <div class="mb-1"><span class="field-label">Appliances</span></div>
-            <p class="field-value">{{ implode(', ', $appliances) }}</p>
+            {!! $row('Appliances', implode(', ', $appliances)) !!}
             @endif
 
             {{-- MLS Fields --}}
@@ -408,18 +414,6 @@
                 <div class="col-md-6">{!! $row($f[0], $f[1]) !!}</div>
                 @endforeach
             </div>
-            @endif
-
-            {{-- Pool Type sub-fields (pool_type.community / pool_type.private) --}}
-            @php
-                $poolTypeRaw  = $arr('pool_type');
-                $poolTypeList = [];
-                if (!empty($poolTypeRaw['community'])) $poolTypeList[] = 'Community';
-                if (!empty($poolTypeRaw['private']))   $poolTypeList[] = 'Private';
-            @endphp
-            @if(count($poolTypeList))
-            <div class="mb-1 mt-2"><span class="field-label">Pool Type</span></div>
-            <p class="field-value">{{ implode(', ', $poolTypeList) }}</p>
             @endif
 
             {{-- Income / Multi-Unit Configuration --}}
@@ -488,7 +482,6 @@
             @php
                 $petLeaseFields = array_filter([
                     ['Age-Restricted Community (55+)', $str('leasing_55_plus')],
-                    ['Furnishings Required',           $str('tenant_require')],
                     ['Pets Allowed',                  $str('pets')],
                     ['Number of Pets Allowed',         $str('number_of_pets')],
                     ['Acceptable Pet Types',           $str('type_of_pets')],
@@ -532,20 +525,17 @@
                     {!! $row('Buy Now Price', $fmtMoney($str('buy_now_price'))) !!}
                 </div>
                 <div class="col-md-6">
-                    @php $ofFinancing = $arr('offered_financing'); @endphp
+                    @php $ofFinancing = $subOther($arr('offered_financing'), $str('other_financing')); @endphp
                     @if(count($ofFinancing)) {!! $row('Offered Financing', implode(', ', $ofFinancing)) !!} @endif
-                    {!! $row('Other Financing / Currency', $str('other_financing')) !!}
                     @php
                         $_dpType = $str('down_payment_type');
-                        $_dpTypeDisplay = $_dpType === '%' ? 'Percentage' : ($_dpType === '$' ? 'Dollar Amount' : $_dpType);
                         $_dpAmt = $_dpType === '%' ? $fmtPercent($str('down_payment_amount')) : $fmtMoney($str('down_payment_amount'));
                     @endphp
-                    {!! $row('Down Payment Type', $_dpTypeDisplay) !!}
                     {!! $row('Down Payment Amount', $_dpAmt) !!}
                     {!! $row('Buyer Sell Contract', $str('buyer_sell_contract')) !!}
                     {!! $row('Initial Deposit Requested', $fmtMoney($str('initial_deposit_requested'))) !!}
                     {!! $row('Initial Deposit Timeframe', $orOther($str('initial_deposit_timeframe'), $str('initial_deposit_timeframe_other'))) !!}
-                    {!! $row('Additional Deposit Requested', $yesNo($str('additional_deposit_requested'))) !!}
+                    {!! $row('Additional Deposit Requested', $fmtMoney($str('additional_deposit_requested'))) !!}
                     {!! $row('Additional Deposit Timeframe', $orOther($str('additional_deposit_timeframe'), $str('additional_deposit_timeframe_other'))) !!}
                     {!! $row('Escrow Agent Preference', $str('escrow_agent_preference')) !!}
                 </div>
@@ -588,7 +578,6 @@
                 </div>
                 <div class="col-md-6">
                     {!! $row('Buyer Pre-Approval Amount', $fmtMoney($str('pre_approval_amount'))) !!}
-                    {!! $row('Max Monthly Payment', $fmtMoney($str('max_monthly_payment'))) !!}
                 </div>
             </div>
             @endif
@@ -602,12 +591,11 @@
                     {!! $row('Assumable Terms', $str('assumable_terms')) !!}
                     {!! $row('Loan Type', $str('assumable_loan_type')) !!}
                     {!! $row('Interest Rate of Assumable Loan', $str('max_assumable_rate') ? $fmtPercent($str('max_assumable_rate')) : null) !!}
-                    {!! $row('Monthly Payment (P&amp;I)', $fmtMoney($str('max_monthly_payment'))) !!}
+                    {!! $row('Monthly Payment (P&I)', $fmtMoney($str('max_monthly_payment'))) !!}
                     {!! $row('Monthly Escrow (Informational)', $fmtMoney($str('assumable_monthly_escrow'))) !!}
                     {!! $row('Outstanding Loan Balance', $fmtMoney($str('outstanding_balance'))) !!}
                 </div>
                 <div class="col-md-6">
-                    {!! $row('Gap Payment Type', $str('gap_payment_type') === '$' ? 'Flat Fee' : ($str('gap_payment_type') === '%' ? 'Percentage' : $str('gap_payment_type'))) !!}
                     {!! $row('Gap Payment Amount', $str('gap_payment_type') === '$' ? $fmtMoney($str('gap_payment_amount')) : ($str('gap_payment_type') === '%' ? $fmtPercent($str('gap_payment_amount')) : $str('gap_payment_amount'))) !!}
                     {!! $row('Loan Term Remaining', $str('assumable_loan_term_remaining')) !!}
                     {!! $row('Date Loan Originated', $str('assumable_loan_origination_date')) !!}
@@ -947,7 +935,7 @@
                         {!! $row('Gross Profit', $fmtMoney($str('gross_profit'))) !!}
                         {!! $row('SDE / EBITDA', $fmtMoney($str('sde_ebitda'))) !!}
                         {!! $row('Inventory Value', $fmtMoney($str('inventory_value'))) !!}
-                        {!! $row('FF&amp;E Value', $fmtMoney($str('ffe_value'))) !!}
+                        {!! $row('FF&E Value', $fmtMoney($str('ffe_value'))) !!}
                         {!! $row('Reason for Sale', $orOther($str('reason_for_sale'), $str('other_reason_for_sale'))) !!}
                         {!! $row('Number of Employees', $str('employee_count')) !!}
                         {!! $row('Financial Statements Available', $str('financial_statements_available')) !!}
