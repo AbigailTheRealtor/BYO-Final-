@@ -100,6 +100,8 @@
         $propLabel        = \App\Models\AgentDefaultProfile::propertyLabel($propertyType);
     @endphp
 
+    @php $isCounterFlow = ($pending['flow'] ?? null) === 'counter'; @endphp
+
     {{-- Breadcrumb --}}
     <div class="mb-4">
         <nav aria-label="breadcrumb">
@@ -111,13 +113,29 @@
                         Review Agent Terms
                     </a>
                 </li>
+                @if($isCounterFlow)
+                <li class="breadcrumb-item">
+                    <a href="{{ route('hire.agent.direct.counter', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}">
+                        Request Changes
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">Review Counter Terms</li>
+                @else
                 <li class="breadcrumb-item active">Confirm Hire Request</li>
+                @endif
             </ol>
         </nav>
+        @if($isCounterFlow)
+        <h4 class="fw-bold mb-1">Review Your Counter Terms</h4>
+        <p class="text-muted" style="font-size:.93rem;">
+            Review the counter terms below, then submit your request. The agent will respond to your proposed changes.
+        </p>
+        @else
         <h4 class="fw-bold mb-1">Confirm Your Hire Request</h4>
         <p class="text-muted" style="font-size:.93rem;">
             Review the accepted terms below, provide your contact information, and submit your hire request.
         </p>
+        @endif
     </div>
 
     {{-- Flash errors --}}
@@ -144,10 +162,13 @@
         </div>
     </div>
 
-    {{-- Accepted compensation terms --}}
+    {{-- Accepted / Proposed compensation terms --}}
     @if(count($compRows) > 0)
     <div class="ack-section">
-        <div class="ack-section-header"><i class="fa-solid fa-file-lines"></i> Accepted Broker Compensation &amp; Agency Agreement Terms</div>
+        <div class="ack-section-header">
+            <i class="fa-solid fa-file-lines"></i>
+            {{ $isCounterFlow ? 'Agent\'s Proposed Broker Compensation &amp; Agency Agreement Terms' : 'Accepted Broker Compensation &amp; Agency Agreement Terms' }}
+        </div>
         <div class="ack-section-body">
             <table class="comp-table">
                 @foreach($compRows as $row)
@@ -161,10 +182,10 @@
     </div>
     @endif
 
-    {{-- Accepted services --}}
+    {{-- Accepted / Requested services --}}
     @if(!empty($services) || !empty($otherServices))
     <div class="ack-section">
-        <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> Accepted Services</div>
+        <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> {{ $isCounterFlow ? 'Requested Services' : 'Accepted Services' }}</div>
         <div class="ack-section-body">
             @php $isFirstGroup = true; @endphp
             @foreach($groupedServices as $categoryLabel => $categoryServices)
@@ -201,6 +222,14 @@
         @csrf
         <input type="hidden" name="_ack_nonce" value="{{ $pending['ack_nonce'] ?? '' }}">
 
+        {{-- Additional counter terms (counter flow only) — shown before client details --}}
+        @if($isCounterFlow && !empty($pending['additional_terms']))
+        <div class="ack-section mb-3">
+            <div class="ack-section-header"><i class="fa-solid fa-comment-dots"></i> Your Additional Terms / Notes</div>
+            <div class="ack-section-body" style="font-size:.9rem;color:#1a1a1a;line-height:1.65;white-space:pre-line;">{{ $pending['additional_terms'] }}</div>
+        </div>
+        @endif
+
         @if($role === 'seller')
             @include('hire-agent-direct.client-details.seller')
         @elseif($role === 'buyer')
@@ -213,18 +242,34 @@
 
         <div class="ack-notice">
             <i class="fa-solid fa-circle-info me-2"></i>
-            <strong>Submitting this request does not finalize an agreement.</strong>
-            The agent will receive your request and both parties may accept, counter, or reject terms before anything is finalized.
+            @if($isCounterFlow)
+                <strong>Submitting this counter request does not finalize an agreement.</strong>
+                The agent will receive your proposed changes and both parties may negotiate further before anything is finalized.
+            @else
+                <strong>Submitting this request does not finalize an agreement.</strong>
+                The agent will receive your request and both parties may accept, counter, or reject terms before anything is finalized.
+            @endif
         </div>
 
         <div class="d-flex align-items-center gap-3 flex-wrap mb-4">
             <button type="submit" id="ack-submit-btn" class="submit-btn btn">
-                <i class="fa-solid fa-handshake me-2"></i>Submit Hire Request
+                @if($isCounterFlow)
+                    <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Submit Counter Request
+                @else
+                    <i class="fa-solid fa-handshake me-2"></i>Submit Hire Request
+                @endif
             </button>
+            @if($isCounterFlow)
+            <a href="{{ route('hire.agent.direct.counter', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}"
+               class="btn btn-outline-secondary">
+                ← Back to Counter Form
+            </a>
+            @else
             <a href="{{ route('hire.agent.direct.preview', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}"
                class="btn btn-outline-secondary">
                 ← Back to Review
             </a>
+            @endif
         </div>
 
     </form>

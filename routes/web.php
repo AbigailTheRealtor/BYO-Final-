@@ -156,6 +156,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}/acknowledge', [\App\Http\Controllers\HireAgentDirectController::class, 'acknowledgeSubmit'])->name('hire.agent.direct.acknowledge.submit');
     Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType}/submitted', [\App\Http\Controllers\HireAgentDirectController::class, 'submitted'])->name('hire.agent.direct.submitted');
 
+    // Phase-2 Hire-Me counter flow (self-contained, no listing/bid created)
+    Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType}/counter', [\App\Http\Controllers\HireAgentDirectController::class, 'counter'])->name('hire.agent.direct.counter');
+    Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}/counter', [\App\Http\Controllers\HireAgentDirectController::class, 'counterSubmit'])->name('hire.agent.direct.counter.submit');
+
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');
 

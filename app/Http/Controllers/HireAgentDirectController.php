@@ -341,12 +341,27 @@ class HireAgentDirectController extends Controller
             ]);
         }
 
-        // ── Counter intent: commit transaction immediately ────────────────
-        return $this->commitListingAndBid(
-            $agent, $role, $propertyType, $mapped,
-            $clientServices, $clientOtherServices, $clientCustomServices,
-            $validated, $intent
-        );
+        // ── Counter intent: store in session, redirect to counter form ────
+        $counterNonce = bin2hex(random_bytes(16));
+
+        session([
+            'hire_direct_pending' => [
+                'agent_id'               => $agentId,
+                'role'                   => $role,
+                'property_type'          => $propertyType,
+                'flow'                   => 'counter',
+                'services'               => $clientServices,
+                'other_services'         => $clientOtherServices,
+                'client_custom_services' => $clientCustomServices,
+                'counter_nonce'          => $counterNonce,
+            ],
+        ]);
+
+        return redirect()->route('hire.agent.direct.counter', [
+            'agentId'      => $agentId,
+            'role'         => $role,
+            'propertyType' => $propertyType,
+        ]);
     }
 
     /**
@@ -392,6 +407,11 @@ class HireAgentDirectController extends Controller
 
         $flowKey = $role . '_agent.' . $propertyType;
         $groupedServices = \App\Support\ServicesFormatter::orderSelectedServices($services, $flowKey);
+
+        // For counter flow: pre-populate old() values so client-details partials show saved data.
+        if (($pending['flow'] ?? null) === 'counter' && !empty($pending['contact'])) {
+            session()->flashInput($pending['contact']);
+        }
 
         return view('hire-agent-direct.acknowledge', compact(
             'agent', 'role', 'propertyType', 'mapped', 'compRows',
@@ -450,50 +470,7 @@ class HireAgentDirectController extends Controller
             'client_email' => 'required|email|max:255',
         ];
 
-        $roleRules = match ($role) {
-            'seller' => [
-                // Property address required for seller
-                'client_property_address' => 'required|string|max:500',
-                'client_property_city'    => 'required|string|max:255',
-                'client_property_state'   => 'required|string|max:100',
-                'client_property_zip'     => 'required|string|max:20',
-                'desired_sale_price'      => 'nullable|string|max:100',
-                'timeline_to_sell'        => 'nullable|string|max:100',
-                'motivation_level'        => 'nullable|string|max:255',
-            ],
-            'buyer' => [
-                // Areas of interest is the location equivalent for buyer
-                'areas_of_interest'      => 'required|string|max:500',
-                'target_purchase_price'  => 'nullable|string|max:100',
-                'timeline_to_purchase'   => 'nullable|string|max:100',
-                'pre_approval_status'    => 'nullable|string|max:100',
-                'cash_buyer'             => 'nullable|string|max:10',
-                'estimated_down_payment' => 'nullable|string|max:100',
-            ],
-            'landlord' => [
-                // Property address required for landlord
-                'client_property_address' => 'required|string|max:500',
-                'client_property_city'    => 'required|string|max:255',
-                'client_property_state'   => 'required|string|max:100',
-                'client_property_zip'     => 'required|string|max:20',
-                'desired_monthly_rent'    => 'nullable|string|max:100',
-                'availability_date'       => 'nullable|date',
-                'occupancy_status'        => 'nullable|string|max:100',
-                'flexibility'             => 'nullable|string|max:100',
-            ],
-            'tenant' => [
-                // Areas of interest is the location equivalent for tenant
-                'areas_of_interest'        => 'required|string|max:500',
-                'max_monthly_lease_price'  => 'nullable|string|max:100',
-                'desired_lease_length'     => 'nullable|string|max:100',
-                'move_in_date'             => 'nullable|date',
-                'number_of_occupants'      => 'nullable|string|max:100',
-                'household_monthly_income' => 'nullable|string|max:100',
-            ],
-            default => [],
-        };
-
-        $contactValidated = $request->validate(array_merge($baseRules, $roleRules));
+        $contactValidated = $request->validate(array_merge($baseRules, $this->roleContactRules($role)));
 
         $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
         if (!$profile) {
@@ -517,7 +494,7 @@ class HireAgentDirectController extends Controller
             'services'               => $clientServices,
             'other_services'         => $clientOtherServices,
             'client_custom_services' => $clientCustomServices,
-            'additional_requested'   => $additionalRequested,
+            'additional_requested'   => $pending['additional_terms'] ?? $additionalRequested,
             'contact'                => $contactValidated,
             'mapped'                 => $mapped,
         ]);
@@ -582,6 +559,221 @@ class HireAgentDirectController extends Controller
             'agent', 'role', 'propertyType', 'mapped', 'compRows',
             'services', 'otherServices', 'groupedServices', 'contact', 'submitted'
         ));
+    }
+
+    /**
+     * Private helper: returns validation rules for role-specific client contact fields.
+     * Shared between acknowledgeSubmit() and counterSubmit().
+     */
+    private function roleContactRules(string $role): array
+    {
+        return match ($role) {
+            'seller' => [
+                'client_property_address' => 'required|string|max:500',
+                'client_property_city'    => 'required|string|max:255',
+                'client_property_state'   => 'required|string|max:100',
+                'client_property_zip'     => 'required|string|max:20',
+                'desired_sale_price'      => 'nullable|string|max:100',
+                'timeline_to_sell'        => 'nullable|string|max:100',
+                'motivation_level'        => 'nullable|string|max:255',
+            ],
+            'buyer' => [
+                'areas_of_interest'      => 'required|string|max:500',
+                'target_purchase_price'  => 'nullable|string|max:100',
+                'timeline_to_purchase'   => 'nullable|string|max:100',
+                'pre_approval_status'    => 'nullable|string|max:100',
+                'cash_buyer'             => 'nullable|string|max:10',
+                'estimated_down_payment' => 'nullable|string|max:100',
+            ],
+            'landlord' => [
+                'client_property_address' => 'required|string|max:500',
+                'client_property_city'    => 'required|string|max:255',
+                'client_property_state'   => 'required|string|max:100',
+                'client_property_zip'     => 'required|string|max:20',
+                'desired_monthly_rent'    => 'nullable|string|max:100',
+                'availability_date'       => 'nullable|date',
+                'occupancy_status'        => 'nullable|string|max:100',
+                'flexibility'             => 'nullable|string|max:100',
+            ],
+            'tenant' => [
+                'areas_of_interest'        => 'required|string|max:500',
+                'max_monthly_lease_price'  => 'nullable|string|max:100',
+                'desired_lease_length'     => 'nullable|string|max:100',
+                'move_in_date'             => 'nullable|date',
+                'number_of_occupants'      => 'nullable|string|max:100',
+                'household_monthly_income' => 'nullable|string|max:100',
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * GET — Counter form page (4 tabs): services, comp terms, additional terms, client details.
+     * Requires a valid 'counter' flow pending session.
+     */
+    public function counter(Request $request, int $agentId, string $role, string $propertyType = 'residential')
+    {
+        if (!in_array($role, self::VALID_ROLES, true)) {
+            abort(404);
+        }
+        if (!in_array($propertyType, self::VALID_PROPERTY_TYPES, true)) {
+            $propertyType = 'residential';
+        }
+
+        $pending = session('hire_direct_pending');
+        if (
+            !$pending
+            || ($pending['agent_id']      ?? null) != $agentId
+            || ($pending['role']          ?? null) !== $role
+            || ($pending['property_type'] ?? null) !== $propertyType
+            || ($pending['flow']          ?? null) !== 'counter'
+        ) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'Your session has expired. Please review the agent\'s terms again and resubmit.');
+        }
+
+        $agent = User::where('id', $agentId)->where('user_type', 'agent')->firstOrFail();
+
+        $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
+        $mapped  = $profile
+            ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? [])
+            : [];
+
+        $compRows = \App\Support\CompensationFormatter::formatPresetRows($role, $propertyType, $mapped);
+
+        $agentServices = self::resolveServices($profile);
+        $flowKey = $role . '_agent.' . $propertyType;
+        $groupedAgentServices = \App\Support\ServicesFormatter::orderSelectedServices($agentServices, $flowKey);
+
+        $otherServices = [];
+        if ($profile) {
+            $rawOther = $profile->profile_data['other_services'] ?? [];
+            if (is_array($rawOther)) {
+                $otherServices = array_values(array_filter(
+                    $rawOther,
+                    fn($s) => is_string($s) && trim($s) !== ''
+                ));
+            }
+        }
+
+        $selectedServices      = $pending['services']      ?? $agentServices;
+        $selectedOtherServices = $pending['other_services'] ?? $otherServices;
+
+        return view('hire-agent-direct.counter', compact(
+            'agent', 'role', 'propertyType', 'mapped', 'compRows',
+            'agentServices', 'groupedAgentServices', 'otherServices',
+            'selectedServices', 'selectedOtherServices', 'pending'
+        ));
+    }
+
+    /**
+     * POST — Counter form submit: validate selections + contact info, update session, redirect to acknowledge.
+     * No listing or bid is created here.
+     */
+    public function counterSubmit(Request $request, int $agentId, string $role, string $propertyType = 'residential')
+    {
+        if (!in_array($role, self::VALID_ROLES, true)) {
+            abort(404);
+        }
+        if (!in_array($propertyType, self::VALID_PROPERTY_TYPES, true)) {
+            abort(422);
+        }
+
+        $pending = session('hire_direct_pending');
+        if (
+            !$pending
+            || ($pending['agent_id']      ?? null) != $agentId
+            || ($pending['role']          ?? null) !== $role
+            || ($pending['property_type'] ?? null) !== $propertyType
+            || ($pending['flow']          ?? null) !== 'counter'
+        ) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'Your session has expired. Please review the agent\'s terms again and resubmit.');
+        }
+
+        // Validate and consume the counter nonce
+        $submittedNonce = $request->input('_counter_nonce');
+        $expectedNonce  = $pending['counter_nonce'] ?? null;
+        if (!$expectedNonce || !$submittedNonce || !hash_equals($expectedNonce, $submittedNonce)) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'This request has already been submitted or the page has expired. Please start again.');
+        }
+
+        $agent = User::where('id', $agentId)->where('user_type', 'agent')->firstOrFail();
+
+        if (Auth::id() === $agent->id) {
+            abort(403, 'You cannot hire yourself.');
+        }
+
+        $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
+        if (!$profile) {
+            return redirect()->back()->with('error', 'Agent profile not found. Please try again.');
+        }
+
+        $agentServices = self::resolveServices($profile);
+        $presetOtherServices = array_values(array_filter(
+            is_array($profile->profile_data['other_services'] ?? null)
+                ? $profile->profile_data['other_services']
+                : [],
+            fn($s) => is_string($s) && trim($s) !== ''
+        ));
+
+        // Validate counter-specific inputs
+        $validated = $request->validate([
+            'services'         => 'nullable|array',
+            'services.*'       => 'string|max:500',
+            'other_services'   => 'nullable|array',
+            'other_services.*' => 'string|max:500',
+            'additional_terms' => 'nullable|string|max:3000',
+        ]);
+
+        // Validate client contact fields — capture result for session persistence
+        $baseRules = [
+            'client_name'  => 'required|string|max:255',
+            'client_phone' => 'required|string|max:50',
+            'client_email' => 'required|email|max:255',
+        ];
+        $contactValidated = $request->validate(array_merge($baseRules, $this->roleContactRules($role)));
+
+        // Intersect services against agent preset (security: client cannot add services).
+        // Use $request->has() to distinguish deliberate "deselect all" (key absent from POST
+        // when all checkboxes are unchecked) from a missing field — so full deselection persists.
+        $submittedServices      = $request->has('services')       ? ($validated['services']       ?? []) : $agentServices;
+        $submittedOtherServices = $request->has('other_services')  ? ($validated['other_services'] ?? []) : $presetOtherServices;
+
+        $counterServices = array_values(array_intersect($submittedServices, $agentServices));
+        $counterOtherServices = array_values(array_intersect($submittedOtherServices, $presetOtherServices));
+
+        // Generate a fresh ack nonce for the review/acknowledge step
+        $ackNonce = bin2hex(random_bytes(16));
+
+        session([
+            'hire_direct_pending' => array_merge($pending, [
+                'flow'             => 'counter',
+                'services'         => $counterServices,
+                'other_services'   => $counterOtherServices,
+                'additional_terms' => $validated['additional_terms'] ?? null,
+                'contact'          => $contactValidated,
+                'ack_nonce'        => $ackNonce,
+                'counter_nonce'    => null,
+            ]),
+        ]);
+
+        Log::info('HireAgentDirect: counter form submitted, redirecting to acknowledge', [
+            'agent_id'      => $agentId,
+            'role'          => $role,
+            'property_type' => $propertyType,
+            'client_id'     => Auth::id(),
+        ]);
+
+        return redirect()->route('hire.agent.direct.acknowledge', [
+            'agentId'      => $agentId,
+            'role'         => $role,
+            'propertyType' => $propertyType,
+        ]);
     }
 
     /**
