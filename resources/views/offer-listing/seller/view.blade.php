@@ -346,9 +346,8 @@
             @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
             @if(count($appliances))
             <hr>
-            <div class="row mb-2">
-                <div class="col-md-3 field-label">Appliances</div>
-                <div class="col-md-9 field-value" style="overflow-wrap:break-word;word-break:break-word;">{{ implode(', ', $appliances) }}</div>
+            <div class="row">
+                <div class="col-md-6">{!! $row('Appliances', implode(', ', $appliances)) !!}</div>
             </div>
             @endif
 
@@ -361,17 +360,15 @@
 
             @php $viewPref = $subOther($arr('view_preference'), $str('other_preferences')); @endphp
             @if(count($viewPref))
-            <div class="row mb-2">
-                <div class="col-md-3 field-label">View</div>
-                <div class="col-md-9 field-value" style="overflow-wrap:break-word;word-break:break-word;">{{ implode(', ', $viewPref) }}</div>
+            <div class="row">
+                <div class="col-md-6">{!! $row('View', implode(', ', $viewPref)) !!}</div>
             </div>
             @endif
 
             @php $nonNegAmenities = $subOther($arr('non_negotiable_amenities'), $str('other_non_negotiable_amenities')); @endphp
             @if(count($nonNegAmenities))
-            <div class="row mb-2">
-                <div class="col-md-3 field-label">Non-Negotiable Amenities</div>
-                <div class="col-md-9 field-value" style="overflow-wrap:break-word;word-break:break-word;">{{ implode(', ', $nonNegAmenities) }}</div>
+            <div class="row">
+                <div class="col-md-6">{!! $row('Non-Negotiable Amenities', implode(', ', $nonNegAmenities)) !!}</div>
             </div>
             @endif
 
@@ -1060,15 +1057,13 @@
                 $assocIncludes  = $subOther($arr('association_fee_includes'), $str('association_fee_includes_other'));
             @endphp
             @if(count($assocIncludes))
-            <div class="row mb-2">
-                <div class="col-md-3 field-label">Fee Includes</div>
-                <div class="col-md-9 field-value" style="overflow-wrap:break-word;word-break:break-word;">{{ implode(', ', $assocIncludes) }}</div>
+            <div class="row">
+                <div class="col-md-6">{!! $row('Fee Includes', implode(', ', $assocIncludes)) !!}</div>
             </div>
             @endif
             @if(count($assocAmenities))
-            <div class="row mb-2">
-                <div class="col-md-3 field-label">Association Amenities</div>
-                <div class="col-md-9 field-value" style="overflow-wrap:break-word;word-break:break-word;">{{ implode(', ', $assocAmenities) }}</div>
+            <div class="row">
+                <div class="col-md-6">{!! $row('Association Amenities', implode(', ', $assocAmenities)) !!}</div>
             </div>
             @endif
             @endif
