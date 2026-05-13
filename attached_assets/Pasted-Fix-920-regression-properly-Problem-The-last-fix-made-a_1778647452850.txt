@@ -1,0 +1,60 @@
+Fix #920 regression properly.
+
+Problem:
+The last fix made alignment worse. Appliances, View, and Non-Negotiable Amenities are now shifted/centered incorrectly, and Fee Includes / Association Amenities are still too far right.
+
+File:
+resources/views/offer-listing/seller/view.blade.php
+
+STRICT SAFEGUARDS:
+- Only edit Seller Offer Listing view.
+- Do NOT edit database, routes, controllers, create/edit forms, or other roles.
+- Do NOT change field values.
+- Do NOT change typography globally.
+- Preserve $row() helper where it works.
+- Fix layout only.
+
+Root cause:
+These fields cannot be placed as bare $row() calls at full card width, and they also should not be wrapped in a way that creates a centered value column.
+
+Required fix:
+For these full-width multi-value fields, use the SAME visual row typography as $row(), but with explicit label/value columns that align to the page’s normal two-column grid.
+
+Fix these fields:
+- Appliances
+- View
+- Non-Negotiable Amenities
+- Fee Includes
+- Association Amenities
+
+Desired layout:
+Each should render as a normal full-width detail row:
+
+<div class="row detail-row">
+    <div class="col-md-3 field-label">Label</div>
+    <div class="col-md-9 field-value">Comma, separated, values</div>
+</div>
+
+Use the existing class names actually used in the file for label/value styling. If the file uses different classes, match those exact classes.
+
+Important:
+- Do NOT use $row() bare for these full-width multi-value fields if it causes offset.
+- Do NOT wrap them in col-md-6 if the value becomes too narrow or centered.
+- They should align like a full-width row: label on left, value begins consistently after label.
+- Keep comma-separated output.
+- Keep each existing @if/count conditional.
+- Keep existing hr separators only where they already belong.
+
+Specific checks:
+1. Appliances value should start near the same horizontal position as standard left-side values, not centered across the page.
+2. View and Non-Negotiable Amenities should align exactly the same as Appliances.
+3. Fee Includes and Association Amenities should align the same way inside HOA / Association.
+4. No field should float in the center of the card.
+5. Roof Type, Foundation, Air Conditioning, Sewer, HOA rows should not be changed.
+
+After fix, visually verify:
+- /offer-listing/seller/view/38
+- Appliances, View, Non-Negotiable Amenities are aligned correctly.
+- Fee Includes and Association Amenities are aligned correctly.
+- Typography still matches surrounding rows.
+- Desktop and mobile do not break.
