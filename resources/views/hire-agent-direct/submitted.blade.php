@@ -417,7 +417,7 @@
     <div class="ack-section">
         <div class="ack-section-header">
             <i class="fa-solid fa-file-lines"></i>
-            {{ $isCounterSubmission ? 'Your Proposed Broker Compensation &amp; Agency Agreement Terms' : 'Accepted Broker Compensation &amp; Agency Agreement Terms' }}
+            {{ $isCounterSubmission ? 'Your Proposed Broker Compensation and Agency Agreement Terms' : 'Accepted Broker Compensation and Agency Agreement Terms' }}
         </div>
         <div class="ack-section-body">
             <table class="comp-table">

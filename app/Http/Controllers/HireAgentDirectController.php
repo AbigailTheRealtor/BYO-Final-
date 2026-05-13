@@ -653,7 +653,15 @@ class HireAgentDirectController extends Controller
             ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? [])
             : [];
 
-        $compRows = \App\Support\CompensationFormatter::formatPresetRows($role, $propertyType, $mapped);
+        // Merge any previously saved counter_comp overrides on top of mapped values
+        // so the Comp Terms tab pre-fills with the client's last-saved edits, and the
+        // Review tab's static $compRows reflects the effective counter state.
+        $counterCompPending = $pending['counter_comp'] ?? [];
+        $effectiveMappedForDisplay = !empty($counterCompPending)
+            ? array_merge($mapped, $counterCompPending)
+            : $mapped;
+
+        $compRows = \App\Support\CompensationFormatter::formatPresetRows($role, $propertyType, $effectiveMappedForDisplay);
 
         $agentServices = self::resolveServices($profile);
         $flowKey = $role . '_agent.' . $propertyType;
@@ -681,20 +689,24 @@ class HireAgentDirectController extends Controller
     }
 
     /**
-     * POST — Counter form submit: validate selections + contact info, update session, redirect to acknowledge.
+     * POST — Counter form submit: validate inputs, commit listing + bid atomically,
+     *        store hire_direct_submitted session, and redirect to the submitted page.
      *
      * Service deselection: when the client unchecks every service checkbox the
      * POST body will not contain the 'services' key at all (browsers omit absent
      * checkbox groups). We detect this with $request->has('services') and resolve
      * to [] rather than falling back to the agent preset list, so full deselection
-     * persists correctly through acknowledge and submitted pages.
+     * is preserved correctly.
      *
      * cc[] empty overrides: if the client clears a compensation field the POST
      * will contain cc[key] = '' (empty string). We deliberately preserve these
      * empty strings rather than filtering them out, so the cleared value
-     * overwrites the agent preset value when merged on the acknowledge page.
+     * overwrites the agent preset value when merged for the effective comp.
      *
-     * No listing or bid is created here.
+     * Idempotency: the counter_nonce is validated first (fails on replay/back-button),
+     * then consumed (nullified in session) immediately after all form validation passes
+     * but before the DB commit — so validation errors allow retry without restarting
+     * the flow, while duplicate commits are blocked once validation succeeds.
      */
     public function counterSubmit(Request $request, int $agentId, string $role, string $propertyType = 'residential')
     {
@@ -718,7 +730,7 @@ class HireAgentDirectController extends Controller
                 ->with('error', 'Your session has expired. Please review the agent\'s terms again and resubmit.');
         }
 
-        // Validate and consume the counter nonce
+        // Validate the counter nonce (but do not consume yet — see below).
         $submittedNonce = $request->input('_counter_nonce');
         $expectedNonce  = $pending['counter_nonce'] ?? null;
         if (!$expectedNonce || !$submittedNonce || !hash_equals($expectedNonce, $submittedNonce)) {
@@ -799,31 +811,64 @@ class HireAgentDirectController extends Controller
             }
         }
 
-        // Generate a fresh ack nonce for the review/acknowledge step
-        $ackNonce = bin2hex(random_bytes(16));
+        // All form validation has passed — consume the nonce now (before DB commit).
+        // This allows the user to fix validation errors and resubmit, while ensuring
+        // any back-button replay after a successful commit is blocked.
+        $pending['counter_nonce'] = null;
+        session(['hire_direct_pending' => $pending]);
 
-        session([
-            'hire_direct_pending' => array_merge($pending, [
-                'flow'                    => 'counter',
-                'services'                => $counterServices,
-                'other_services'          => $counterOtherServices,
-                'additional_terms'        => $validated['additional_terms'] ?? null,
-                'client_requested_services' => $clientRequestedServices,
-                'counter_comp'            => $counterComp,
-                'contact'                 => $contactValidated,
-                'ack_nonce'               => $ackNonce,
-                'counter_nonce'           => null,
-            ]),
-        ]);
+        // Resolve mapped fields from the agent profile, then apply counter_comp overrides.
+        $mapped = AgentBidMapperService::mapFromProfile($profile->profile_data ?? []);
+        $effectiveMapped = !empty($counterComp) ? array_merge($mapped, $counterComp) : $mapped;
 
-        Log::info('HireAgentDirect: counter form submitted, redirecting to acknowledge', [
+        Log::info('HireAgentDirect: counter form submitted, committing listing + bid', [
             'agent_id'      => $agentId,
             'role'          => $role,
             'property_type' => $propertyType,
             'client_id'     => Auth::id(),
         ]);
 
-        return redirect()->route('hire.agent.direct.acknowledge', [
+        // Commit listing + bid atomically. 'direct_counter' intent returns null on success
+        // so the caller (here) can set the submitted session and redirect.
+        $commitResult = $this->commitListingAndBid(
+            $agent,
+            $role,
+            $propertyType,
+            $effectiveMapped,
+            $counterServices,
+            $counterOtherServices,
+            $clientRequestedServices,
+            ['additional_requested' => $validated['additional_terms'] ?? null],
+            'direct_counter',
+            $contactValidated
+        );
+
+        if ($commitResult !== null) {
+            // commitListingAndBid returned an error redirect — propagate it.
+            return $commitResult;
+        }
+
+        // Commit succeeded — clear the pending session so back-button replays cannot
+        // re-submit the same form (nonce was already nullified pre-commit, this ensures
+        // the session guard also fails on any further replay).
+        session()->forget('hire_direct_pending');
+
+        // Store submitted session data and redirect to the submitted page.
+        session(['hire_direct_submitted' => [
+            'agent_id'                  => $agentId,
+            'role'                      => $role,
+            'property_type'             => $propertyType,
+            'flow'                      => 'counter',
+            'mapped'                    => $mapped,
+            'services'                  => $counterServices,
+            'other_services'            => $counterOtherServices,
+            'client_requested_services' => $clientRequestedServices,
+            'counter_comp'              => $counterComp,
+            'additional_requested'      => $validated['additional_terms'] ?? null,
+            'contact'                   => $contactValidated,
+        ]]);
+
+        return redirect()->route('hire.agent.direct.submitted', [
             'agentId'      => $agentId,
             'role'         => $role,
             'propertyType' => $propertyType,
@@ -1142,6 +1187,12 @@ class HireAgentDirectController extends Controller
                 }
                 return redirect()
                     ->route($counterRoute, ['id' => $bid->id]);
+            }
+
+            // Direct counter path: listing + bid are committed; caller handles
+            // session storage and redirect to the submitted confirmation page.
+            if ($intent === 'direct_counter') {
+                return null;
             }
 
             $viewRoute = self::LISTING_VIEW_ROUTES[$role];

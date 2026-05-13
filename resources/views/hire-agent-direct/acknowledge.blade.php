@@ -167,7 +167,7 @@
     <div class="ack-section">
         <div class="ack-section-header">
             <i class="fa-solid fa-file-lines"></i>
-            {{ $isCounterFlow ? 'Your Proposed Counter Compensation &amp; Agency Agreement Terms' : 'Accepted Broker Compensation &amp; Agency Agreement Terms' }}
+            {{ $isCounterFlow ? 'Your Proposed Broker Compensation and Agency Agreement Terms' : 'Accepted Broker Compensation and Agency Agreement Terms' }}
         </div>
         <div class="ack-section-body">
             <table class="comp-table">

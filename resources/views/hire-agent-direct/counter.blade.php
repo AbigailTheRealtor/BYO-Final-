@@ -161,10 +161,47 @@
         margin-top: 1.5rem;
         padding-top: 1.25rem;
     }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: .5rem 1.5rem;
+        font-size: .9rem;
+    }
+    .detail-grid dt {
+        font-size: .78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #6c757d;
+        margin-bottom: 1px;
+    }
+    .detail-grid dd {
+        color: #1a1a1a;
+        margin: 0 0 .6rem 0;
+    }
+    .service-bullet-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .service-bullet-list li {
+        font-size: .9rem;
+        color: #1a1a1a;
+        padding: 2px 0;
+    }
+    .service-bullet-list li::before {
+        content: "✓ ";
+        color: #049399;
+        font-weight: 700;
+    }
 </style>
 @endpush
 
 @section('content')
+@php $viewerIsAgent = auth()->check() && auth()->user()->user_type === 'agent'; @endphp
 <div class="buyerOfferContentDetails py-4">
 <div class="container counter-wrap">
 
@@ -227,8 +264,9 @@
     <div class="counter-notice">
         <i class="fa-solid fa-triangle-exclamation me-2"></i>
         <strong>This is a counter request, not a final agreement.</strong>
-        Adjust the services and comp terms below, add any notes in the Additional Terms tab, then submit.
-        No listing or bid will be created until both parties agree on terms.
+        Adjust the services and comp terms below, add any notes in the Additional Terms tab, then review and submit.
+        Submitting sends your proposed counter terms to the agent for review.
+        The agent may accept, counter, or decline before anything is finalized.
     </div>
 
     <form method="POST"
@@ -252,6 +290,14 @@
                     <i class="fa-solid fa-file-lines me-1"></i> Comp Terms
                 </button>
             </li>
+            @if($viewerIsAgent)
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-referral-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-referral" type="button" role="tab">
+                    <i class="fa-solid fa-handshake me-1"></i> Referral Fee
+                </button>
+            </li>
+            @endif
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-notes-btn" data-bs-toggle="tab"
                         data-bs-target="#tab-notes" type="button" role="tab">
@@ -262,6 +308,13 @@
                 <button class="nav-link" id="tab-client-btn" data-bs-toggle="tab"
                         data-bs-target="#tab-client" type="button" role="tab">
                     <i class="fa-solid fa-address-card me-1"></i> Your Details
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-review-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-review" type="button" role="tab"
+                        onclick="populateReviewTab()">
+                    <i class="fa-solid fa-clipboard-check me-1"></i> Review Your Counter Terms
                 </button>
             </li>
         </ul>
@@ -315,9 +368,9 @@
                 </div>
                 @endif
 
-                {{-- Additional Requested Services --}}
+                {{-- Additional Services Requested --}}
                 <div class="additional-requested-wrap">
-                    <div class="counter-section-label">Additionally Requested Services</div>
+                    <div class="counter-section-label">Additional Services Requested</div>
                     <p class="text-muted small mb-2">
                         List any services not offered above that you'd like to request from the agent.
                         Enter one service per line.
@@ -327,12 +380,23 @@
                         $existingClientServicesText = is_array($existingClientServices)
                             ? implode("\n", $existingClientServices)
                             : '';
+                        $isCommercialSvc = $propertyType !== 'residential';
+                        $addlServicesPlaceholder = match(true) {
+                            $role === 'seller' && !$isCommercialSvc => 'e.g., Custom Neighborhood Mailer, Seller Video Script, Pre-Listing Strategy Call, Relocation Buyer Outreach',
+                            $role === 'seller' && $isCommercialSvc  => 'e.g., Investor Prospect List, Property Offering Memorandum Outline, Broker Outreach Script, Tenant Mix Strategy Notes',
+                            $role === 'buyer'  && !$isCommercialSvc => 'e.g., Off-Market Outreach Letter, Neighborhood Comparison Summary, School Zone Research Summary, Commute Area Shortlist',
+                            $role === 'buyer'  && $isCommercialSvc  => 'e.g., Site Selection Matrix, Trade Area Snapshot, Parking Demand Review, Business Use Fit Summary',
+                            $role === 'landlord' && !$isCommercialSvc => 'e.g., Rental Pricing Snapshot, Tenant Persona Summary, Local Employer Outreach List, Move-In Readiness Checklist',
+                            $role === 'landlord' && $isCommercialSvc  => 'e.g., Tenant Prospect List, Use Compatibility Notes, Broker Outreach Script, Leasing Flyer Outline',
+                            $role === 'tenant' && !$isCommercialSvc => 'e.g., Rental Application Strategy, Neighborhood Fit Summary, Commute Zone Shortlist, Pet-Friendly Housing Notes',
+                            default => 'e.g., Space Requirement Summary, Trade Area Snapshot, LOI Question List, Business Use Fit Notes',
+                        };
                     @endphp
                     <textarea name="client_requested_services"
                               rows="4"
                               class="form-control @error('client_requested_services') is-invalid @enderror"
                               maxlength="3000"
-                              placeholder="e.g. Virtual staging photography&#10;Professional floor plan&#10;Weekly market updates">{{ old('client_requested_services', $existingClientServicesText) }}</textarea>
+                              placeholder="{{ $addlServicesPlaceholder }}">{{ old('client_requested_services', $existingClientServicesText) }}</textarea>
                     @error('client_requested_services')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     <div class="text-muted small mt-1">One service per line. Maximum 50 entries, 3,000 characters total.</div>
                 </div>
@@ -1049,39 +1113,94 @@
                     <button type="button" class="tab-nav-btn" onclick="switchTab('tab-services-btn')">
                         <i class="fa-solid fa-arrow-left me-1"></i> Back: Services
                     </button>
+                    @if($viewerIsAgent)
+                    <button type="button" class="tab-nav-btn" onclick="switchTab('tab-referral-btn')">
+                        Next: Referral Fee <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </button>
+                    @else
+                    <button type="button" class="tab-nav-btn" onclick="switchTab('tab-notes-btn')">
+                        Next: Additional Terms <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </button>
+                    @endif
+                </div>
+            </div>
+
+            {{-- Referral Fee tab (agents only) --}}
+            @if($viewerIsAgent)
+            <div class="tab-pane fade counter-tab-pane" id="tab-referral" role="tabpanel">
+                <p class="text-muted small mb-3">
+                    Specify the referral fee percentage for this agent-to-agent referral arrangement. This tab is only visible to agents.
+                </p>
+                <div class="cc-group">
+                    <label class="cc-label">Referral Fee (%)</label>
+                    <div class="input-group input-group-sm" style="max-width:220px;">
+                        <input type="number" name="cc[referral_fee_percent]" class="form-control"
+                               value="{{ $ccv('referral_fee_percent') }}"
+                               min="0" max="100" step="0.01"
+                               placeholder="e.g. 25">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <div class="text-muted small mt-2">
+                        Enter the referral fee percentage offered for this agent-to-agent referral arrangement.
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="tab-nav-btn" onclick="switchTab('tab-comp-btn')">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back: Comp Terms
+                    </button>
                     <button type="button" class="tab-nav-btn" onclick="switchTab('tab-notes-btn')">
                         Next: Additional Terms <i class="fa-solid fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
+            @endif
 
-            {{-- Tab 3: Additional Terms --}}
+            {{-- Additional Terms tab --}}
             <div class="tab-pane fade counter-tab-pane" id="tab-notes" role="tabpanel">
                 <p class="text-muted small mb-3">
                     Use this space to add any supplemental notes, clarifications, or conditions not covered above.
                 </p>
                 <div class="mb-3">
                     <label class="fw-bold form-label">Your Additional Terms / Notes <span class="text-muted fw-normal">(optional)</span></label>
+                    @php
+                        $isCommercialNotes = $propertyType !== 'residential';
+                        $addlTermsPlaceholder = match(true) {
+                            $role === 'seller' && !$isCommercialNotes => "e.g., I'd prefer to start with a 90-day listing agreement, or I have questions about the showing schedule...",
+                            $role === 'seller' && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review in your strategy, or I have questions about marketing strategy and business/property fit...",
+                            $role === 'buyer'  && !$isCommercialNotes => "e.g., I'd prefer a 30-day buyer representation agreement, or I have questions about the offer process...",
+                            $role === 'buyer'  && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review, or I have questions about lease terms and marketing strategy for this property type...",
+                            $role === 'landlord' && !$isCommercialNotes => "e.g., I'd prefer a 60-day listing agreement, or I have questions about tenant screening and lease terms...",
+                            $role === 'landlord' && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review, or I have questions about lease terms and marketing strategy for commercial properties...",
+                            $role === 'tenant' && !$isCommercialNotes => "e.g., I'd prefer a 30-day search agreement, or I have questions about the application process...",
+                            default => "e.g., Please include LOI support, zoning/use review, and lease terms analysis, or I have questions about marketing strategy and business/property fit...",
+                        };
+                    @endphp
                     <textarea name="additional_terms" rows="7"
                               class="form-control @error('additional_terms') is-invalid @enderror"
                               maxlength="3000"
-                              placeholder="e.g. I'd prefer to start with a 30-day trial period, or I have a few questions about the referral clause..."
+                              placeholder="{{ $addlTermsPlaceholder }}"
                               >{{ old('additional_terms', $pending['additional_terms'] ?? '') }}</textarea>
                     @error('additional_terms')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     <div class="text-muted small mt-1">Maximum 3,000 characters.</div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
+                    @if($viewerIsAgent)
+                    <button type="button" class="tab-nav-btn" onclick="switchTab('tab-referral-btn')">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back: Referral Fee
+                    </button>
+                    @else
                     <button type="button" class="tab-nav-btn" onclick="switchTab('tab-comp-btn')">
                         <i class="fa-solid fa-arrow-left me-1"></i> Back: Comp Terms
                     </button>
+                    @endif
                     <button type="button" class="tab-nav-btn" onclick="switchTab('tab-client-btn')">
                         Next: Your Details <i class="fa-solid fa-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
 
-            {{-- Tab 4: Client Details --}}
+            {{-- Your Details tab --}}
             <div class="tab-pane fade counter-tab-pane" id="tab-client" role="tabpanel">
                 @if($role === 'seller')
                     @include('hire-agent-direct.client-details.seller')
@@ -1097,20 +1216,112 @@
                     <button type="button" class="tab-nav-btn" onclick="switchTab('tab-notes-btn')">
                         <i class="fa-solid fa-arrow-left me-1"></i> Back: Additional Terms
                     </button>
+                    <button type="button" class="tab-nav-btn" onclick="switchTab('tab-review-btn')">
+                        Next: Review <i class="fa-solid fa-arrow-right ms-1"></i>
+                    </button>
                 </div>
             </div>
 
-        </div>
+            {{-- Review Your Counter Terms tab --}}
+            <div class="tab-pane fade counter-tab-pane" id="tab-review" role="tabpanel">
+                <p class="text-muted small mb-3">
+                    Review your counter terms below before submitting. Use the tabs above to make any changes.
+                </p>
 
-        {{-- Submit footer --}}
-        <div class="d-flex align-items-center gap-3 flex-wrap mb-4 mt-2">
-            <button type="submit" id="counter-submit-btn" class="submit-btn btn">
-                <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Submit Counter Request
-            </button>
-            <a href="{{ route('hire.agent.direct.preview', ['agentId' => $agent->id, 'role' => $role, 'propertyType' => $propertyType]) }}"
-               class="btn btn-outline-secondary">
-                ← Back to Review
-            </a>
+                {{-- Services summary — pre-rendered grouped structure; JS filters by checkbox state --}}
+                <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;">
+                    <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> Requested Services</div>
+                    <div class="ack-section-body" id="review-services-body">
+                        @php $isFirstReviewGroup = true; @endphp
+                        @foreach($groupedAgentServices as $categoryLabel => $categoryServices)
+                            @if(!empty($categoryServices))
+                            <div data-review-category style="margin-top: {{ $isFirstReviewGroup ? '0' : '1rem' }}; display:none;">
+                                <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;" data-review-category-label>{{ $categoryLabel }}</div>
+                                <ul class="service-bullet-list" data-review-service-list>
+                                    @foreach($categoryServices as $svc)
+                                    <li data-review-service-item="{{ $svc }}" style="display:none;">{{ $svc }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                            @php $isFirstReviewGroup = false; @endphp
+                            @endif
+                        @endforeach
+                        @if(!empty($otherServices))
+                        <div data-review-category style="margin-top: 1rem; display:none;">
+                            <div style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6c757d;margin-bottom:.5rem;" data-review-category-label>Additional Services</div>
+                            <ul class="service-bullet-list" data-review-service-list>
+                                @foreach($otherServices as $svc)
+                                <li data-review-service-item="{{ $svc }}" style="display:none;">{{ $svc }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        @endif
+                        <p id="review-services-empty" class="text-muted small mb-0"><em>Complete the Services tab, then return here to review your selection.</em></p>
+                    </div>
+                </div>
+
+                {{-- Comp terms — initial render from $compRows (effective comp); populateReviewTab() overwrites with live cc[] values --}}
+                @if(count($compRows) > 0)
+                <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;">
+                    <div class="ack-section-header">
+                        <i class="fa-solid fa-file-lines"></i> Your Proposed Broker Compensation and Agency Agreement Terms
+                    </div>
+                    <div class="ack-section-body" id="review-comp-body">
+                        <table class="comp-table">
+                            @foreach($compRows as $row)
+                            {{-- Referral Fee rows are agent-only; never render for consumer viewers --}}
+                            @if($row['label'] !== 'Referral Fee (%)' || $viewerIsAgent)
+                            <tr>
+                                <td>{{ $row['label'] }}</td>
+                                <td>{{ $row['value'] }}</td>
+                            </tr>
+                            @endif
+                            @endforeach
+                        </table>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Additional Services Requested (JS-populated) --}}
+                <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;">
+                    <div class="ack-section-header"><i class="fa-solid fa-circle-plus"></i> Additional Services Requested</div>
+                    <div class="ack-section-body" id="review-addl-services-body">
+                        <p class="text-muted small mb-0"><em>None entered.</em></p>
+                    </div>
+                </div>
+
+                {{-- Additional Terms (JS-populated) --}}
+                <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;">
+                    <div class="ack-section-header"><i class="fa-solid fa-comment-dots"></i> Your Additional Terms / Notes</div>
+                    <div class="ack-section-body" id="review-notes-body">
+                        <p class="text-muted small mb-0"><em>None entered.</em></p>
+                    </div>
+                </div>
+
+                {{-- Your Details (JS-populated) --}}
+                <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;">
+                    <div class="ack-section-header"><i class="fa-solid fa-address-card"></i> Your Details</div>
+                    <div class="ack-section-body" id="review-contact-body">
+                        <p class="text-muted small mb-0"><em>Complete the Your Details tab, then return here to review.</em></p>
+                    </div>
+                </div>
+
+                <div class="counter-notice mt-3">
+                    <i class="fa-solid fa-circle-info me-2"></i>
+                    <strong>Submitting this counter request does not finalize an agreement.</strong>
+                    The agent will receive your proposed changes and both parties may negotiate further before anything is finalized.
+                </div>
+
+                <div class="d-flex align-items-center gap-3 flex-wrap mt-3 mb-2">
+                    <button type="button" class="tab-nav-btn" onclick="switchTab('tab-client-btn')">
+                        <i class="fa-solid fa-arrow-left me-1"></i> Back: Your Details
+                    </button>
+                    <button type="submit" id="counter-submit-btn" class="submit-btn btn">
+                        <i class="fa-solid fa-arrow-right-arrow-left me-2"></i>Submit Counter Request
+                    </button>
+                </div>
+            </div>
+
         </div>
 
     </form>
@@ -1131,6 +1342,180 @@ function counterFormSubmit(form) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
     return true;
+}
+
+// Server-side agent flag exposed to JS — single source of truth matching $viewerIsAgent in Blade.
+var viewerIsAgent = {{ $viewerIsAgent ? 'true' : 'false' }};
+
+function populateReviewTab() {
+    var escape = function(s) {
+        return String(s).replace(/[<>&"]/g, function(c) {
+            return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];
+        });
+    };
+
+    // ── Services (grouped display; show/hide pre-rendered items) ──────────────
+    var servicesBody = document.getElementById('review-services-body');
+    if (servicesBody) {
+        var checkedValues = new Set();
+        document.querySelectorAll('input[name="services[]"]:checked, input[name="other_services[]"]:checked').forEach(function(cb) {
+            checkedValues.add(cb.value);
+        });
+
+        var hasAnyVisible = false;
+        servicesBody.querySelectorAll('[data-review-service-item]').forEach(function(li) {
+            var svcVal = li.getAttribute('data-review-service-item');
+            var show = checkedValues.has(svcVal);
+            li.style.display = show ? '' : 'none';
+            if (show) hasAnyVisible = true;
+        });
+
+        // Show/hide entire category block based on whether any item within is visible
+        servicesBody.querySelectorAll('[data-review-category]').forEach(function(cat) {
+            var visCount = 0;
+            cat.querySelectorAll('[data-review-service-item]').forEach(function(li) {
+                if (li.style.display !== 'none') visCount++;
+            });
+            cat.style.display = visCount > 0 ? '' : 'none';
+        });
+
+        var emptyMsg = document.getElementById('review-services-empty');
+        if (emptyMsg) emptyMsg.style.display = hasAnyVisible ? 'none' : '';
+    }
+
+    // ── Comp Terms (rebuild from current cc[] inputs; overwrites initial server-side render) ──────
+    var compBody = document.getElementById('review-comp-body');
+    if (compBody) {
+        var compRows = '';
+        var processedGroups = new Set();
+        // Read from both the Comp Terms tab and the Referral Fee tab (agent-only)
+        [document.getElementById('tab-comp'), document.getElementById('tab-referral')].forEach(function(tab) {
+            if (!tab) return;
+            tab.querySelectorAll('.cc-group').forEach(function(group) {
+                if (processedGroups.has(group)) return;
+                processedGroups.add(group);
+
+                // Avoid :scope pseudo-class for broader browser compatibility:
+                // first try a direct child with class cc-label, then fall back to any descendant.
+                var labelEl = null;
+                for (var ci = 0; ci < group.children.length; ci++) {
+                    if (group.children[ci].classList.contains('cc-label')) {
+                        labelEl = group.children[ci];
+                        break;
+                    }
+                }
+                if (!labelEl) labelEl = group.querySelector('.cc-label');
+                var label = labelEl ? labelEl.textContent.trim() : '';
+                if (!label) return;
+
+                var valueParts = [];
+                group.querySelectorAll('[name^="cc["]').forEach(function(el) {
+                    // Referral Fee is agent-only — never leak into consumer review
+                    if (!viewerIsAgent && el.name === 'cc[referral_fee_percent]') return;
+                    // Skip inputs inside conditionally hidden sub-sections
+                    var conditional = el.closest('.cc-conditional');
+                    if (conditional && getComputedStyle(conditional).display === 'none') return;
+
+                    var val = '';
+                    if (el.tagName === 'SELECT') {
+                        if (!el.value) return;
+                        val = (el.selectedIndex >= 0 && el.options[el.selectedIndex])
+                            ? (el.options[el.selectedIndex].text || el.value)
+                            : el.value;
+                    } else {
+                        val = el.value.trim();
+                    }
+                    if (val) valueParts.push(val);
+                });
+
+                if (valueParts.length > 0) {
+                    compRows += '<tr><td>' + escape(label) + '</td><td>' + escape(valueParts.join(' + ')) + '</td></tr>';
+                }
+            });
+        });
+
+        if (compRows) {
+            compBody.innerHTML = '<table class="comp-table"><tbody>' + compRows + '</tbody></table>';
+        }
+        // If no rows are found (all inputs blank), keep the initial $compRows server-side render.
+    }
+
+    // Additional Services Requested
+    var addlBody = document.getElementById('review-addl-services-body');
+    if (addlBody) {
+        var addlTa = document.querySelector('textarea[name="client_requested_services"]');
+        var addlVal = addlTa ? addlTa.value.trim() : '';
+        if (addlVal) {
+            var lines = addlVal.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l; });
+            if (lines.length > 0) {
+                var html2 = '<ul class="service-bullet-list">';
+                lines.forEach(function(s) { html2 += '<li>' + escape(s) + '</li>'; });
+                html2 += '</ul>';
+                addlBody.innerHTML = html2;
+            } else {
+                addlBody.innerHTML = '<p class="text-muted small mb-0"><em>None entered.</em></p>';
+            }
+        } else {
+            addlBody.innerHTML = '<p class="text-muted small mb-0"><em>None entered.</em></p>';
+        }
+    }
+
+    // Additional Terms / Notes
+    var notesBody = document.getElementById('review-notes-body');
+    if (notesBody) {
+        var notesTa = document.querySelector('textarea[name="additional_terms"]');
+        var notesVal = notesTa ? notesTa.value.trim() : '';
+        if (notesVal) {
+            notesBody.innerHTML = '<div style="font-size:.9rem;color:#1a1a1a;line-height:1.65;white-space:pre-line;">' + escape(notesVal) + '</div>';
+        } else {
+            notesBody.innerHTML = '<p class="text-muted small mb-0"><em>None entered.</em></p>';
+        }
+    }
+
+    // Contact Details
+    var contactBody = document.getElementById('review-contact-body');
+    if (contactBody) {
+        var fields = [
+            { label: 'Name', name: 'client_name' },
+            { label: 'Phone', name: 'client_phone' },
+            { label: 'Email', name: 'client_email' },
+            { label: 'Property Address', name: 'client_property_address' },
+            { label: 'City', name: 'client_property_city' },
+            { label: 'State', name: 'client_property_state' },
+            { label: 'ZIP', name: 'client_property_zip' },
+            { label: 'Areas of Interest', name: 'areas_of_interest' },
+            { label: 'Desired Sale Price', name: 'desired_sale_price' },
+            { label: 'Timeline to Sell', name: 'timeline_to_sell' },
+            { label: 'Motivation Level', name: 'motivation_level' },
+            { label: 'Target Purchase Price', name: 'target_purchase_price' },
+            { label: 'Timeline to Purchase', name: 'timeline_to_purchase' },
+            { label: 'Pre-Approval Status', name: 'pre_approval_status' },
+            { label: 'Cash Buyer', name: 'cash_buyer' },
+            { label: 'Estimated Down Payment', name: 'estimated_down_payment' },
+            { label: 'Desired Monthly Rent', name: 'desired_monthly_rent' },
+            { label: 'Availability Date', name: 'availability_date' },
+            { label: 'Occupancy Status', name: 'occupancy_status' },
+            { label: 'Flexibility', name: 'flexibility' },
+            { label: 'Max Monthly Lease Price', name: 'max_monthly_lease_price' },
+            { label: 'Desired Lease Length', name: 'desired_lease_length' },
+            { label: 'Move-In Date', name: 'move_in_date' },
+            { label: 'Number of Occupants', name: 'number_of_occupants' },
+            { label: 'Household Monthly Income', name: 'household_monthly_income' },
+        ];
+        var rows = '';
+        fields.forEach(function(f) {
+            var el = document.querySelector('[name="' + f.name + '"]');
+            var val = el ? el.value.trim() : '';
+            if (val) {
+                rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(val) + '</dd></div>';
+            }
+        });
+        if (rows) {
+            contactBody.innerHTML = '<dl class="detail-grid">' + rows + '</dl>';
+        } else {
+            contactBody.innerHTML = '<p class="text-muted small mb-0"><em>No details entered yet.</em></p>';
+        }
+    }
 }
 
 /**
