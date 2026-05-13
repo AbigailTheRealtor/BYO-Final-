@@ -1,0 +1,114 @@
+Final Phase 1 polish + Hero Carousel for Seller Offer Listing only.
+
+Target:
+resources/views/offer-listing/seller/view.blade.php
+
+Safeguards:
+- Blade/CSS/JS only.
+- Only edit resources/views/offer-listing/seller/view.blade.php.
+- Do not change backend, routes, controllers, models, migrations, validation, create/edit/draft flows, or other role views.
+- Do not remove or rename data fields/meta keys.
+- Do not replace the existing Photos & Tours section.
+- Do not replace the existing lightbox/gallery system.
+- Preserve all existing listing data rendering.
+- No console errors.
+
+Tasks:
+
+1. Center and balance the page layout
+The listing content still feels visually left-heavy with excess whitespace on the right.
+Adjust the main layout/grid so:
+- hero section
+- tabs row
+- main content cards
+- sticky action card
+
+all feel centered and visually balanced at 100% zoom.
+
+Do not create horizontal overflow.
+
+2. Improve main content width balance
+The left content column should feel slightly wider/more comfortable for reading.
+Reduce dead whitespace while keeping the right-side action rail usable and aligned.
+
+3. Normalize subsection heading typography
+Some subsection h6 headings still look decorative/condensed.
+
+Normalize these:
+- Assumable Mortgage
+- Cryptocurrency
+- Exchange / Trade
+- Lease Option
+- Lease Purchase
+- Seller Financing
+- Tax & Legal
+- CDD / Special Assessments
+- HOA / Association
+- Additional Documents Available
+
+Requirements:
+- no decorative font
+- no stretched/condensed appearance
+- no excessive letter-spacing
+- no uppercase transform
+- consistent readable bold styling matching the rest of the page
+
+4. Improve section spacing consistency
+Audit spacing between all major cards:
+- Photos & Tours
+- Property Description
+- Listing Details
+- Property Details
+- Sale Terms
+- Financing Details
+- Broker Compensation & Agency Agreement
+- Tax, Legal, HOA & Disclosures
+- Documents & Disclosures
+- Contact Information
+
+Spacing should feel visually even and professional throughout the page.
+
+5. Add Hero Image Carousel
+Upgrade the hero image area into a lightweight inline carousel.
+
+Requirements:
+- overlay left/right arrow buttons
+- overlay X / Y image counter
+- arrows wrap around at beginning/end
+- clicking hero image opens the existing Bootstrap photoModal lightbox at the currently displayed image
+- reuse the existing lightbox/gallery logic
+- do not duplicate photos anywhere
+- hide arrows/counter if only one photo
+- preserve existing no-photo fallback behavior
+
+Implementation guidance:
+- replace only the static hero image block with a position:relative carousel wrapper
+- pass ordered photo URLs into JS safely
+- expose existing showPhoto as:
+  window._solShowPhoto = showPhoto;
+inside the existing lightbox IIFE only
+- add a separate scoped JS block for the hero carousel
+- all selectors must be null-guarded
+
+6. Final QA
+At:
+ /offer-listing/seller/view/38
+
+Verify:
+- layout feels centered
+- no horizontal overflow
+- hero aligns with content below
+- tabs align with content column
+- sticky action rail aligns properly
+- hero arrows work
+- counter works
+- hero click opens correct lightbox image
+- existing thumbnail gallery still works
+- existing lightbox Prev/Next still works
+- video still embeds
+- raw video URL is not duplicated
+- all original listing data still appears
+- no console errors
+
+Only change:
+resources/views/offer-listing/seller/view.blade.php

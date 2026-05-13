@@ -1,0 +1,109 @@
+Please apply Task #958 exactly as scoped.
+
+Task:
+Fix the Hire Agent saved draft picker modal so it works reliably for all four roles:
+Tenant, Buyer, Seller, Landlord.
+
+Affected flow:
+- /hire/agent/auction/tenant
+- /hire/agent/auction/buyer
+- /hire/agent/auction/seller
+- /hire/agent/auction/landlord
+- /hire/agent/auction/{role}/{listingId}
+
+Critical safeguards:
+- Do NOT change database schema, migrations, models, or validation rules.
+- Do NOT touch Offer Listing flows.
+- Do NOT touch Hire Agent Direct counter flows.
+- Do NOT touch Limited Service / legacy flow logic.
+- Do NOT touch public search/listing pages.
+- Do NOT touch TenantAgentAuctionEdit edit flow.
+- Keep this limited to shared Hire Agent create/draft modal behavior.
+- Preserve existing draft loading behavior.
+- Prevent the modal from opening repeatedly or stacking duplicate Bootstrap modal instances.
+
+Root causes to fix:
+
+1. Blade condition suppresses modal when listingId exists
+Current issue:
+The modal is wrapped with:
+@if ($hasDrafts && !$listingId)
+
+Required fix:
+Change to:
+@if ($hasDrafts)
+
+Reason:
+Even if a listing ID is present, the user may still have other drafts for that role. The modal should still be available and can be dismissed.
+
+2. Add Livewire lifecycle hook for user_type changes
+In TenantAgentAuction.php, add an updatedUserType() hook.
+
+Required behavior:
+- When user_type changes, re-run the same draft existence query used in mount().
+- Set $hasDrafts correctly for the newly selected role.
+- If drafts exist, dispatch a browser event such as:
+  open-draft-modal
+- If no drafts exist, do not open the modal.
+
+Reuse the existing role matching logic already used in mount().
+Do not create a separate inconsistent draft query.
+
+3. Fix modal trigger after Livewire re-render
+Current issue:
+DOMContentLoaded only runs once, so switching agent type does not reopen the modal after Livewire updates.
+
+Required fix:
+- Keep DOMContentLoaded behavior for initial page load.
+- Add a listener for the Livewire/browser event from updatedUserType().
+- When event fires, open #draftModal using Bootstrap Modal only if:
+  - the modal exists
+  - it is not already visible
+  - it has not already been opened for the same role/render cycle
+
+Use a simple guard to prevent duplicate openings or stacked modal instances.
+
+4. Audit and fix landlord route conflict
+In routes/web.php:
+- Confirm whether a dedicated LandLordAgentAuction route intercepts /hire/agent/auction/landlord before the shared TenantAgentAuction route.
+- The create/draft flow for landlord must resolve to the shared TenantAgentAuction component, same as tenant/buyer/seller.
+- If a duplicate landlord route is intercepting this flow, safely remove or reorder it so:
+  /hire/agent/auction/landlord
+  and
+  /hire/agent/auction/landlord/{listingId}
+  use TenantAgentAuction with user_type=landlord.
+- Do not break any unrelated landlord-specific routes.
+
+Relevant files:
+- routes/web.php
+- app/Http/Livewire/TenantAgentAuction.php
+- resources/views/livewire/tenant-agent-auction.blade.php
+
+Done looks like:
+- Visiting /hire/agent/auction/tenant shows the draft modal if tenant drafts exist.
+- Visiting /hire/agent/auction/buyer shows the draft modal if buyer drafts exist.
+- Visiting /hire/agent/auction/seller shows the draft modal if seller drafts exist.
+- Visiting /hire/agent/auction/landlord shows the draft modal if landlord drafts exist.
+- Visiting /hire/agent/auction/landlord/38 still shows the modal if other landlord drafts exist.
+- Switching “Select Agent Type” to a role with drafts opens the modal.
+- Switching to a role with no drafts does not open the modal.
+- Modal does not open more than once per role selection/page load.
+- All four roles behave consistently.
+- No unrelated flows changed.
+
+QA:
+1. Confirm route resolution:
+   - /hire/agent/auction/tenant
+   - /hire/agent/auction/buyer
+   - /hire/agent/auction/seller
+   - /hire/agent/auction/landlord
+   - /hire/agent/auction/landlord/38
+   all resolve to the shared TenantAgentAuction create/draft flow.
+
+2. Test each role with a user that has saved drafts.
+3. Confirm the modal opens automatically.
+4. Dismiss the modal and confirm it does not immediately reopen.
+5. Switch “Select Agent Type” to another role with drafts and confirm modal opens once.
+6. Switch to a role without drafts and confirm modal does not open.
+7. Confirm no duplicate Bootstrap modal overlays or console errors.
+8. Confirm git diff only touches routes/web.php, TenantAgentAuction.php, and tenant-agent-auction.blade.php unless audit proves otherwise.
