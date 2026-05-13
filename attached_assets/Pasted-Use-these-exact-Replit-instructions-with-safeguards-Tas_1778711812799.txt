@@ -1,0 +1,171 @@
+Use these exact Replit instructions with safeguards:
+
+---
+
+# Task — Sync Counter Flow Placeholder Text With Main Hire Agent Listing Forms
+
+## What & Why
+
+The Direct Hire counter flow pages are using generic placeholder text like:
+
+* “Flat fee”
+* “Enter % amount”
+* “gross lease”
+* “Amount”
+
+This creates inconsistency and looks unfinished compared to the polished placeholder examples already used in the main “Create Hire Agent Listing” workflows.
+
+The goal is to make ALL placeholder text in the Direct Hire counter forms match the exact placeholder text/examples already used in the corresponding Hire Agent listing forms for:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+This is a UI consistency task only.
+
+Example affected URL:
+`/hire/agent/direct/{id}/{role}/{propertyType}/counter`
+
+Example:
+`/hire/agent/direct/142/buyer/residential/counter`
+
+Reference screenshot/context: 
+
+---
+
+# HARD SAFEGUARDS
+
+DO NOT:
+
+* change routes
+* change validation
+* change controllers/business logic
+* change database schema
+* change saving logic
+* change wire:model names
+* change compensation calculations
+* change tab navigation
+* change marketplace counter flows
+* change standard Hire Agent marketplace bidding flows
+* touch Limited Service logic
+* modify non-direct-hire flows
+* refactor global placeholder systems
+
+ONLY:
+
+* update placeholder text values
+* reuse the already-approved placeholder examples from the main Hire Agent listing forms
+
+---
+
+# Scope
+
+ONLY affect:
+Direct Hire counter pages:
+
+* buyer
+* seller
+* landlord
+* tenant
+
+ONLY compensation & agreement placeholder text fields.
+
+Do NOT alter:
+
+* Services tab behavior
+* Review tab
+* Additional Terms
+* Client Details
+* submission flow
+
+---
+
+# Audit First (Read-Only)
+
+First identify:
+
+1. The Blade/view file rendering the Direct Hire counter compensation forms
+2. The existing placeholder values currently being used
+3. The corresponding source Blade(s) where the finalized placeholder text already exists in the main Hire Agent listing forms
+
+Likely areas:
+
+* direct hire counter Blade partials
+* compensation partials
+* shared compensation components
+
+Find where the polished placeholders already exist in:
+
+* Hire Buyer Agent form
+* Hire Seller Agent form
+* Hire Landlord Agent form
+* Hire Tenant Agent form
+
+---
+
+# Required Fix
+
+Replace generic placeholders in Direct Hire counter forms with the exact finalized placeholders already used in the main Hire Agent listing forms.
+
+Examples of desired style:
+
+* “Enter flat fee amount (e.g., $5,000)”
+* “Enter percentage amount (e.g., 2.5%)”
+* “Enter retainer fee amount (e.g., $500)”
+* “Enter protection period in days (e.g., 90)”
+* “Flat Fee + Percentage of Gross Lease Value”
+* etc.
+
+The Direct Hire counter forms should visually and textually match the polished listing creation forms.
+
+---
+
+# Important Consistency Rule
+
+DO NOT invent new placeholder copy.
+
+Reuse the exact existing placeholder text already approved and currently used in the main Hire Agent listing flows.
+
+This keeps:
+
+* Buyer
+* Seller
+* Landlord
+* Tenant
+
+fully consistent platform-wide.
+
+---
+
+# QA Requirements
+
+Verify:
+
+* Buyer direct hire counter flow
+* Seller direct hire counter flow
+* Landlord direct hire counter flow
+* Tenant direct hire counter flow
+
+Confirm:
+
+* placeholders show examples properly
+* placeholders match main listing forms
+* dollar fields still show icons correctly
+* percentage fields still align correctly
+* no broken spacing/layout
+* no console errors
+* no missing conditional fields
+* saved values still load correctly
+* no regression to marketplace counter flow
+
+---
+
+# Done Looks Like
+
+* Direct Hire counter forms now use polished example-based placeholder text
+* Placeholder copy matches the corresponding Hire Agent listing forms
+* Generic text like “Flat fee” and “Enter % amount” is gone
+* Buyer/Seller/Landlord/Tenant flows are consistent
+* No business logic changed
+* No regressions introduced
