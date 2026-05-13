@@ -1400,12 +1400,17 @@
                 });
             }
 
-            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
-                window.initFullServiceSelect2Multiple($('#non_negotiable_amenities'));
-                $('#non_negotiable_amenities').on('change', function(e) {
-                    let selectedValues = $(this).val() || [];
-                    @this.set('non_negotiable_amenities', selectedValues, false);
-                });
+            if ($('#non_negotiable_amenities').length) {
+                if (!$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#non_negotiable_amenities'));
+                }
+                if (!$('#non_negotiable_amenities').data('nna-change-bound')) {
+                    $('#non_negotiable_amenities').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('non_negotiable_amenities', selectedValues, false);
+                    });
+                    $('#non_negotiable_amenities').data('nna-change-bound', true);
+                }
             }
 
             if ($('#property_style_select').length && !$('#property_style_select').hasClass('select2-hidden-accessible')) {

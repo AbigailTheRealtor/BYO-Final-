@@ -468,19 +468,19 @@
         </label>
         <div class="input-group">
             <select wire:model="gap_payment_type" class="form-select" style="max-width: 100px;">
-                <option value="flat">$</option>
-                <option value="percent">%</option>
+                <option value="$">$</option>
+                <option value="%">%</option>
             </select>
-            @if (($gap_payment_type ?? 'flat') === 'flat')
+            @if (($gap_payment_type ?? '$') === '$')
                 <span class="input-group-text">$</span>
             @endif
             <input type="text" step="any" wire:model.lazy="gap_payment_amount" class="form-control"
-                placeholder="{{ ($gap_payment_type ?? 'flat') === 'percent'
+                placeholder="{{ ($gap_payment_type ?? '$') === '%'
                     ? 'Enter down payment percentage (e.g., 20)'
                     : 'Enter down payment amount (e.g., 50000)' }}"
                 data-error-id="gap_payment_amount_error" oninput="validateInput(this)"
                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
-            @if (($gap_payment_type ?? 'flat') === 'percent')
+            @if (($gap_payment_type ?? '$') === '%')
                 <span class="input-group-text">%</span>
             @endif
         </div>
@@ -549,7 +549,7 @@
                 <span class="input-group-text">$</span>
             @endif
             <input type="text" wire:model="assumable_fee_amount" class="form-control"
-                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., $5000)' }}"
+                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 5000)' }}"
                 data-error-id="assumable_fee_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             @if (($assumable_fee_type ?? '$') === '%')

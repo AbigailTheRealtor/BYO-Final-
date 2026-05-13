@@ -1936,7 +1936,9 @@ class SellerAgentAuction extends Component
             $this->assumable_occupancy_requirement = $auction->get->assumable_occupancy_requirement ?? '';
             $this->assumable_occupancy_other = $auction->get->assumable_occupancy_other ?? '';
             $this->max_monthly_payment = $auction->get->max_monthly_payment;
-            $this->gap_payment_type = $auction->get->gap_payment_type;
+            $rawGapType = $auction->get->gap_payment_type;
+            $legacyGapTypeMap = ['flat' => '$', 'percent' => '%'];
+            $this->gap_payment_type = $legacyGapTypeMap[$rawGapType] ?? $rawGapType ?? '$';
             $this->gap_payment_amount = $auction->get->gap_payment_amount;
 
             // Exchange/Trade
