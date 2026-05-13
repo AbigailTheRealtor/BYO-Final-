@@ -1,0 +1,107 @@
+Task: Seller Offer Listing Public View — Layout Polish / Readability Cleanup
+
+Listing example:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/view/38
+
+STRICT SAFEGUARDS:
+- Modify ONLY: resources/views/offer-listing/seller/view.blade.php
+- Display-only changes only.
+- Do NOT modify controllers, routes, models, migrations, Livewire components, database schema, validation, save logic, create/edit forms, JS assets, CSS assets, or attached_assets.
+- Do NOT touch Buyer, Tenant, Landlord, Hire Agent, or Limited Service files.
+- Preserve all completed Task #877, #884, and #887 fixes.
+- Before editing, run git status.
+- After editing, run git diff and confirm ONLY resources/views/offer-listing/seller/view.blade.php changed.
+- Stop after improving this view only. Do not refactor unrelated sections.
+
+Goal:
+Improve readability and professional presentation of the Seller Offer Listing public view without changing any saved data or business logic.
+
+Recommended display improvements:
+
+1. Add consistent spacing between major cards
+- Each section card should have clear margin-bottom spacing.
+- Current cards feel crowded, especially from Property Details through Financing Details.
+- Use existing classes if possible; otherwise add minimal inline style/CSS inside this Blade only.
+
+2. Standardize all label/value rows
+- All field rows should use the same visual pattern:
+  label left, value right.
+- Avoid fields wrapping into awkward lines where possible.
+- Long values should wrap cleanly under the value column, not under the label.
+- Keep Appliances, Pool Type, Offered Financing, Association Amenities, Fee Includes, etc. consistent.
+
+3. Improve Property Details readability
+- Keep important property basics near the top:
+  Property Type, Address, City, County, State, ZIP, Bedrooms, Bathrooms, Heated Sq Ft, Total Sq Ft, Year Built, Property Condition, Pool, Pool Type, Appliances.
+- After the basics, show MLS/building features like Roof Type, Foundation, Exterior Construction, Heating & Fuel, Air Conditioning, Water, Sewer, Utilities.
+- Keep Pool Type directly after Pool.
+- Keep Appliances as a standard row, not a special block.
+
+4. Improve Sale Terms readability
+- Keep price and offer-related fields grouped together:
+  Sale Provision, Target Closing Timeframe, Occupant Type, Desired Sale Price, Purchase Price, Starting Price, Reserve Price, Buy Now Price.
+- Deposit/down payment fields should be grouped together on the right side:
+  Offered Financing, Down Payment Amount, Initial Deposit Requested, Initial Deposit Timeframe, Additional Deposit Requested, Additional Deposit Timeframe, Escrow Agent Preference.
+- Do not show Down Payment Type as a visible row.
+
+5. Improve Financing Details readability
+- Remove empty financing subsection headers. If a section such as Cash has no visible rows, do not display the Cash heading.
+- Keep turquoise subsection headings, but reduce excess letter spacing if it looks too spaced out.
+- Each financing subsection should only show if at least one visible row inside it has a value.
+- Keep these as clean subsections:
+  Assumable Mortgage
+  Cryptocurrency
+  Exchange / Trade
+  Lease Option
+  Lease Purchase
+  Non-Fungible Token (NFT)
+  Seller Financing
+- Do not show Cash unless there are actual valid Cash-specific rows.
+- Do not show Max Monthly Payment under Cash.
+
+6. Improve Broker Compensation display
+- Keep “Purchase Compensation” heading.
+- Display only useful rows:
+  Buyer’s Broker Commission Structure
+  Buyer’s Broker Commission Fee
+- Do not show Buyer’s Broker Commission Fee Type.
+- Make sure the fee value still shows correctly, e.g. 3%.
+
+7. Improve Documents & Disclosures display
+- File download buttons should align cleanly with their labels.
+- Yes/No badges should not look cramped.
+- Do not change upload/download logic.
+
+8. Improve long text fields
+- Long text like Offered Financing, Association Amenities, Fee Includes, Additional Terms, etc. should wrap cleanly.
+- Avoid overflowing or cramped text.
+- Do not truncate values.
+
+9. Keep page width professional
+- Do not make the page full browser width.
+- Keep centered container layout.
+- If needed, slightly increase max-width for better two-column readability, but keep it polished.
+
+10. No data logic changes
+- Do not change field names, meta keys, helper behavior, saving, formatting rules, or database values.
+- This is a visual layout cleanup only.
+
+DONE LOOKS LIKE:
+- /offer-listing/seller/view/38 loads with no Blade/Whoops errors.
+- Page looks cleaner, less cramped, and more professional.
+- Cards have consistent spacing.
+- Rows align consistently across all sections.
+- Long values wrap neatly.
+- Empty financing headers do not display.
+- Cash does not show unless it has valid Cash-specific fields.
+- Pool Type remains directly after Pool.
+- Appliances remains a normal label/value row.
+- Down Payment Type and Buyer’s Broker Commission Fee Type remain hidden.
+- All Task #877, #884, and #887 fixes remain intact.
+- git diff shows ONLY resources/views/offer-listing/seller/view.blade.php changed.
+
+After completion provide:
+1. Files changed.
+2. Summary of layout improvements.
+3. Screenshot or live QA confirmation for listing #38.
+4. Confirmation no controllers/routes/models/migrations/Livewire/database files were changed.

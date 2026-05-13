@@ -307,7 +307,7 @@
 
     <div class="input-cover">
         <select wire:model="property_type" id="property_type" class="form-control has-icon"
-            data-icon="fa-solid fa-building" required>
+            data-icon="fa-solid fa-building" data-placeholder="Select" required>
             <option value="">Select</option>
             <option value="Residential" data-display="Residential"> Residential</option>
             <option value="Income" data-display="Income">Income</option>
