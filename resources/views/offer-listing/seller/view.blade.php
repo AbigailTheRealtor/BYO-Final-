@@ -431,7 +431,6 @@
     position: relative;
     height: 100%;
     min-height: 280px;
-    max-height: 420px;
     overflow: hidden;
     background: #0f172a;
 }
@@ -442,6 +441,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    max-height: none;
 }
 .sol-view-page .sol-hero-carousel-arrow {
     position: absolute;
