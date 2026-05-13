@@ -471,12 +471,18 @@
                 <option value="flat">$</option>
                 <option value="percent">%</option>
             </select>
+            @if (($gap_payment_type ?? 'flat') === 'flat')
+                <span class="input-group-text">$</span>
+            @endif
             <input type="text" step="any" wire:model.lazy="gap_payment_amount" class="form-control"
                 placeholder="{{ ($gap_payment_type ?? 'flat') === 'percent'
                     ? 'Enter down payment percentage (e.g., 20)'
                     : 'Enter down payment amount (e.g., 50000)' }}"
                 data-error-id="gap_payment_amount_error" oninput="validateInput(this)"
                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+            @if (($gap_payment_type ?? 'flat') === 'percent')
+                <span class="input-group-text">%</span>
+            @endif
         </div>
         <span class="error mt-2" id="gap_payment_amount_error"></span>
     </div>
@@ -543,7 +549,7 @@
                 <span class="input-group-text">$</span>
             @endif
             <input type="text" wire:model="assumable_fee_amount" class="form-control"
-                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 1,000)' }}"
+                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., $5000)' }}"
                 data-error-id="assumable_fee_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             @if (($assumable_fee_type ?? '$') === '%')

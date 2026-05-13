@@ -1408,6 +1408,17 @@
                 });
             }
 
+            if ($('#property_style_select').length && !$('#property_style_select').hasClass('select2-hidden-accessible')) {
+                $('#property_style_select').select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                if (!$('#property_style_select').data('ps-change-bound')) {
+                    $('#property_style_select').on('change', function() {
+                        var selectedValue = $(this).val();
+                        @this.set('property_items', selectedValue, false);
+                    });
+                    $('#property_style_select').data('ps-change-bound', true);
+                }
+            }
+
             if ($('#exchange_item').length) {
                 var $exEl = $('#exchange_item');
                 if (!$exEl.hasClass('select2-hidden-accessible')) {
