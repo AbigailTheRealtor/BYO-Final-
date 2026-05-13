@@ -481,6 +481,171 @@
     pointer-events: none;
     letter-spacing: .02em;
 }
+
+/* ============================================================
+   sol-interaction-hub — six-panel action hub
+   ============================================================ */
+.sol-view-page .sol-interaction-hub {
+    margin-bottom: 1.75rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.25rem 1rem;
+    box-shadow: 0 2px 12px rgba(37,99,235,.07);
+}
+.sol-view-page .sol-interaction-hub-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #94a3b8;
+    margin-bottom: 0.9rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+.sol-view-page .sol-interaction-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.75rem;
+}
+@media (max-width: 1199.98px) {
+    .sol-view-page .sol-interaction-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 767.98px) {
+    .sol-view-page .sol-interaction-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+@media (max-width: 479.98px) {
+    .sol-view-page .sol-interaction-grid {
+        grid-template-columns: 1fr;
+    }
+}
+.sol-view-page .sol-interaction-card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1rem 0.85rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    transition: box-shadow .15s, border-color .15s, transform .15s;
+    min-height: 0;
+}
+.sol-view-page .sol-interaction-card:hover {
+    box-shadow: 0 4px 18px rgba(37,99,235,.12);
+    border-color: #bfdbfe;
+    transform: translateY(-2px);
+}
+.sol-view-page .sol-interaction-card-icon {
+    font-size: 1.45rem;
+    color: #2563eb;
+    margin-bottom: 0.1rem;
+    line-height: 1;
+}
+.sol-view-page .sol-interaction-card-label {
+    font-size: 0.83rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+.sol-view-page .sol-interaction-card-helper {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.45;
+    flex: 1;
+}
+.sol-view-page .sol-interaction-price-row {
+    font-size: 0.72rem;
+    color: #334155;
+    line-height: 1.5;
+    margin-bottom: 0.1rem;
+}
+.sol-view-page .sol-interaction-price-row strong {
+    color: #1e293b;
+    font-size: 0.8rem;
+}
+.sol-view-page .sol-interaction-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.38rem 0.7rem;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+    white-space: nowrap;
+    margin-top: 0.25rem;
+    align-self: flex-start;
+    text-decoration: none;
+}
+.sol-view-page .sol-interaction-cta:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+.sol-view-page .sol-interaction-cta-primary {
+    background: #2563eb;
+    color: #fff;
+}
+.sol-view-page .sol-interaction-cta-primary:hover { background: #1d4ed8; color: #fff; }
+.sol-view-page .sol-interaction-cta-outline {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+.sol-view-page .sol-interaction-cta-outline:hover { background: #dbeafe; color: #1e40af; }
+.sol-view-page .sol-interaction-cta-muted {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    cursor: default;
+    font-weight: 600;
+    opacity: .75;
+}
+.sol-view-page .sol-interaction-share-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.25rem;
+}
+.sol-view-page .sol-interaction-activity-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #64748b;
+    padding: 0.18rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+.sol-view-page .sol-interaction-activity-row:last-child { border-bottom: none; }
+.sol-view-page .sol-interaction-activity-val {
+    font-weight: 700;
+    color: #94a3b8;
+    font-size: 0.72rem;
+}
+.sol-view-page .sol-interaction-ai-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 0.28rem;
+    margin-bottom: 0.35rem;
+}
+.sol-view-page .sol-interaction-ai-chip {
+    font-size: 0.69rem;
+    color: #3b82f6;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 20px;
+    padding: 0.2rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    cursor: default;
+}
 </style>
 @endpush
 
@@ -726,13 +891,13 @@
                     @endif
 
                     <div class="sol-hero-ctas">
-                        <button class="btn btn-primary sol-hero-offer-btn" data-bs-toggle="modal" data-bs-target="#solOfferModal">
+                        <button type="button" class="btn btn-primary sol-hero-cta-btn" data-sol-modal="#solOfferModal" aria-label="Submit an offer on this property">
                             <i class="fa-solid fa-file-signature me-1"></i>Submit Offer
                         </button>
-                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#solShowingModal">
+                        <button type="button" class="btn btn-outline-secondary sol-hero-cta-btn" data-sol-modal="#solShowingModal" aria-label="Schedule a showing">
                             <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
                         </button>
-                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
+                        <button type="button" class="btn btn-outline-secondary sol-hero-cta-btn" data-sol-modal="#solQuestionModal" aria-label="Ask a question about this listing">
                             <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
                         </button>
                     </div>
@@ -740,6 +905,146 @@
             </div>
         </div>
     </div>
+
+    {{-- ===== INTERACTION HUB ===== --}}
+    @php
+        $hubAuctionType  = strtolower($str('auction_type'));
+        $hubIsBidding    = (strpos($hubAuctionType, 'bidding') !== false || strpos($hubAuctionType, 'auction') !== false);
+        $hubStartPrice   = $fmtMoney($str('starting_price'));
+        $hubReserve      = $fmtMoney($str('reserve_price'));
+        $hubBuyNow       = $fmtMoney($str('buy_now_price'));
+        $hubAsking       = $fmtMoney($str('desired_sale_price')) ?: $fmtMoney($str('purchase_price')) ?: $heroPrice;
+        $hubBidEnd       = $fmtDate($str('bidding_end_date') ?: $str('offer_deadline'));
+        $hubReservePublic = in_array(strtolower((string)($str('reserve_price_public') ?: '')), ['yes','1','true']);
+        $hubLastUpdated  = $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('M j, Y') : null;
+    @endphp
+    <div class="sol-interaction-hub" id="sol-interaction-hub">
+        <div class="sol-interaction-hub-label"><i class="fa-solid fa-bolt me-1"></i>Quick Actions &amp; Listing Info</div>
+        <div class="sol-interaction-grid">
+
+            {{-- 1. Submit Offer --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-file-signature"></i></div>
+                <div class="sol-interaction-card-label">Submit Offer</div>
+                @if($hubIsBidding)
+                    <div class="sol-interaction-price-row">
+                        @if($hubStartPrice)<div>Starting: <strong>{{ $hubStartPrice }}</strong></div>@endif
+                        @if($hubReserve && $hubReservePublic)<div>Reserve: <strong>{{ $hubReserve }}</strong></div>@endif
+                        @if($hubBuyNow)<div>Buy Now: <strong>{{ $hubBuyNow }}</strong></div>@endif
+                        @if($hubBidEnd)<div style="color:#94a3b8;font-size:.69rem;">Bidding ends {{ $hubBidEnd }}</div>@endif
+                    </div>
+                @elseif($hubAsking)
+                    <div class="sol-interaction-price-row">Asking: <strong>{{ $hubAsking }}</strong></div>
+                @else
+                    <div class="sol-interaction-card-helper">Review listing terms and submit your offer.</div>
+                @endif
+                <button type="button" class="sol-interaction-cta sol-interaction-cta-primary"
+                        data-bs-toggle="modal" data-bs-target="#solOfferModal"
+                        aria-label="Submit an offer on this property">
+                    <i class="fa-solid fa-file-signature"></i>Submit Offer
+                </button>
+            </div>
+
+            {{-- 2. Schedule Showing --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="sol-interaction-card-label">Schedule Showing</div>
+                <div class="sol-interaction-card-helper">Request an in-person or virtual tour at your preferred date &amp; time.</div>
+                <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#solShowingModal"
+                        aria-label="Schedule a showing for this property">
+                    <i class="fa-solid fa-calendar-plus"></i>Book a Showing
+                </button>
+            </div>
+
+            {{-- 3. Ask AI --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-robot"></i></div>
+                <div class="sol-interaction-card-label">Ask AI</div>
+                <div class="sol-interaction-ai-chips">
+                    <span class="sol-interaction-ai-chip">HOA fees &amp; what they cover?</span>
+                    <span class="sol-interaction-ai-chip">Is this in a flood zone?</span>
+                    <span class="sol-interaction-ai-chip">Financing options available?</span>
+                    <span class="sol-interaction-ai-chip">Roof age &amp; condition?</span>
+                    <span class="sol-interaction-ai-chip">School districts nearby?</span>
+                </div>
+                <input type="text" class="form-control form-control-sm"
+                       placeholder="Ask a question about this property…"
+                       aria-label="AI question input"
+                       disabled
+                       style="font-size:.73rem;border-radius:6px;background:#f8fafc;cursor:default;">
+                <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#solAiModal"
+                        aria-label="Ask AI a question about this property">
+                    <i class="fa-solid fa-robot"></i>Ask AI
+                </button>
+            </div>
+
+            {{-- 4. Ask a Question --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
+                <div class="sol-interaction-card-label">Ask a Question</div>
+                <div class="sol-interaction-card-helper">Send a direct question to the listing agent — typically answered within 24 hours.</div>
+                <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
+                        data-bs-toggle="modal" data-bs-target="#solQuestionModal"
+                        aria-label="Ask the agent a question about this listing">
+                    <i class="fa-solid fa-paper-plane"></i>Send Question
+                </button>
+            </div>
+
+            {{-- 5. Share Listing --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-share-nodes"></i></div>
+                <div class="sol-interaction-card-label">Share Listing</div>
+                <div class="sol-interaction-card-helper">Share this property with friends, family, or your network.</div>
+                <div class="sol-interaction-share-row">
+                    <button type="button" class="sol-interaction-cta sol-interaction-cta-outline" id="solHubCopyBtn"
+                            aria-label="Copy listing link to clipboard">
+                        <i class="fa-solid fa-link"></i>Copy Link
+                    </button>
+                    <button type="button" class="sol-interaction-cta sol-interaction-cta-outline" id="solHubNativeShareBtn"
+                            style="display:none;" aria-label="Share this listing via your device's share sheet">
+                        <i class="fa-solid fa-share-nodes"></i>Share
+                    </button>
+                </div>
+                <div class="sol-interaction-share-row" style="margin-top:.15rem;">
+                    <span class="sol-interaction-cta sol-interaction-cta-muted" aria-label="QR Code — coming soon">
+                        <i class="fa-solid fa-qrcode"></i>QR Code
+                    </span>
+                    <span class="sol-interaction-cta sol-interaction-cta-muted" aria-label="Embed widget — coming soon">
+                        <i class="fa-solid fa-code"></i>Embed
+                    </span>
+                </div>
+            </div>
+
+            {{-- 6. Activity --}}
+            <div class="sol-interaction-card">
+                <div class="sol-interaction-card-icon"><i class="fa-solid fa-chart-simple"></i></div>
+                <div class="sol-interaction-card-label">Activity</div>
+                <div style="margin-top:.1rem;">
+                    <div class="sol-interaction-activity-row">
+                        <span>Views</span><span class="sol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="sol-interaction-activity-row">
+                        <span>Saves</span><span class="sol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="sol-interaction-activity-row">
+                        <span>Questions</span><span class="sol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    <div class="sol-interaction-activity-row">
+                        <span>Offers</span><span class="sol-interaction-activity-val">Coming Soon</span>
+                    </div>
+                    @if($hubLastUpdated)
+                    <div class="sol-interaction-activity-row" style="margin-top:.3rem;border-top:1px solid #e2e8f0;padding-top:.3rem;">
+                        <span style="color:#94a3b8;">Last Updated</span>
+                        <span class="sol-interaction-activity-val" style="color:#475569;">{{ $hubLastUpdated }}</span>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+        </div>{{-- /sol-interaction-grid --}}
+    </div>{{-- /sol-interaction-hub --}}
 
     {{-- ===== TWO-COLUMN LAYOUT: MAIN + STICKY RAIL ===== --}}
     <div class="row g-4 align-items-start">
@@ -2101,23 +2406,61 @@
         aiEl.style.transition = 'opacity .3s ease';
     }
 
-    /* ---- Share listing (Web Share API with clipboard fallback) ---- */
+    /* ---- Share listing (Web Share API with clipboard fallback, clipboard-guarded) ---- */
     function shareHandler() {
         var url = window.location.href;
         if (navigator.share) {
             navigator.share({ title: document.title, url: url }).catch(function () {});
-        } else {
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(function () {
                 alert('Link copied to clipboard!');
             }).catch(function () {
                 alert('Share: ' + url);
             });
+        } else {
+            alert('Share: ' + url);
         }
     }
     var solShareBtn = document.getElementById('solShareBtn');
     if (solShareBtn) solShareBtn.addEventListener('click', shareHandler);
     var solMobileShareBtn = document.getElementById('solMobileShareBtn');
     if (solMobileShareBtn) solMobileShareBtn.addEventListener('click', shareHandler);
+
+    /* ---- Hub: Copy Link and Native Share — both reuse shareHandler ---- */
+    var solHubCopyBtn = document.getElementById('solHubCopyBtn');
+    if (solHubCopyBtn) solHubCopyBtn.addEventListener('click', shareHandler);
+    var solHubNativeShareBtn = document.getElementById('solHubNativeShareBtn');
+    if (solHubNativeShareBtn && navigator.share) {
+        solHubNativeShareBtn.style.display = '';
+        solHubNativeShareBtn.addEventListener('click', shareHandler);
+    }
+
+    /* ---- Hero CTAs: scroll hub into view, then open modal after animation ---- */
+    function openModal(targetSelector) {
+        var el = document.querySelector(targetSelector);
+        if (!el) return;
+        var Modal = window.bootstrap && window.bootstrap.Modal;
+        if (Modal) {
+            Modal.getOrCreateInstance(el).show();
+        }
+    }
+    document.querySelectorAll('.sol-hero-cta-btn[data-sol-modal]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var target = this.getAttribute('data-sol-modal');
+            var hub = document.getElementById('sol-interaction-hub');
+            if (!hub) { openModal(target); return; }
+            var offset = 82;
+            var hubTop = hub.getBoundingClientRect().top + window.scrollY - offset;
+            var alreadyVisible = hub.getBoundingClientRect().top >= 0 &&
+                                 hub.getBoundingClientRect().top <= window.innerHeight;
+            if (alreadyVisible) {
+                openModal(target);
+            } else {
+                window.scrollTo({ top: hubTop, behavior: 'smooth' });
+                setTimeout(function () { openModal(target); }, 420);
+            }
+        });
+    });
 
 })();
 </script>
