@@ -60,9 +60,9 @@
     {{-- <li class="nav-item search-menu-item" role="presentation">
             <a href="{{ route('seller.service.auction.search') }}">Seller Service Auction</a>
         </li> --}}
-    <li class="nav-item search-menu-item" role="presentation">
+    {{-- <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('agent.landlord.auctions.search') }}">Auctions for Landlords</a>
-    </li>
+    </li> --}}
 
   </ul>
 </div>
