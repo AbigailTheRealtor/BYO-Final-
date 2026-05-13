@@ -1,0 +1,94 @@
+Task: Fix Seller Offer Listing view display formatting issues only
+
+Login for live QA:
+abigailbaschuk@gmail.com
+12345678
+
+Example listing:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/view/38
+
+STRICT SAFEGUARDS:
+- Modify ONLY: resources/views/offer-listing/seller/view.blade.php
+- Do NOT modify controllers, routes, models, migrations, Livewire components, validation, database schema, seeders, or attached_assets.
+- This is display-only. Do not change saved data.
+- Do not touch Buyer, Tenant, Landlord, Hire Agent, or Limited Service files.
+- Preserve all existing working fixes from Task #877.
+- Before editing, run git status and confirm target file.
+- After editing, run git diff and confirm only this Blade file changed.
+
+Issues to fix:
+
+1. Property Details layout alignment
+- Appliances and Pool Type are currently rendering with the value underneath the label and in a different-looking style.
+- They should render like the other field rows: label on the left, value aligned in the value column on the right.
+- Appliances should show: Appliances | Bar Fridge, Built-In Oven, Air Fryer
+- Pool Type should appear directly after Pool and should show on the same row as its label.
+- Do not use special heading/font styling for Appliances or Pool Type.
+
+2. Financing Details — Offered Financing “Other”
+- If Offered Financing includes “Other” and the companion custom input exists, display the custom input text instead of the literal word “Other”.
+- Do not display the word “Other” when a custom value is available.
+
+3. Financing Details — remove wrong Cash/Max Monthly Payment pairing
+- “Cash” should not appear as a lonely turquoise subsection title beside/above “Max Monthly Payment.”
+- “Max Monthly Payment” does not belong under Cash on a Seller Offer Listing display.
+- Audit the mapping for max_monthly_payment and remove/hide it from the Cash financing subsection unless there is a valid seller-side field label that belongs there.
+- Do not invent a new field. If this is buyer-side data or incorrectly mapped data, hide it on this Seller Offer Listing view.
+
+4. Remove invalid field
+- Remove/hide “Furnishings Required” from Seller Offer Listing view.
+- That is not a valid Seller Offer Listing field and should not display.
+
+5. Deposit / down payment formatting cleanup
+Current bad output:
+Down Payment Type: Percentage
+Down Payment Amount: 23%
+Initial Deposit Requested: $500
+Initial Deposit Timeframe: Within 1 Day
+Additional Deposit Requested: 100
+
+Required display:
+- Do NOT show “Down Payment Type” as a separate row.
+- Show only “Down Payment Amount” with the correctly formatted value:
+  - If stored type is percentage/%: show 23%
+  - If stored type is dollar/$/flat: show $23,000 or money format
+- Initial Deposit Requested should be money formatted when numeric.
+- Additional Deposit Requested should be money formatted when numeric, e.g. 100 should show $100.
+- If there are related type fields used only to determine formatting, do not display those type fields as rows.
+
+6. Gap Payment formatting cleanup
+Current bad output:
+Gap Payment Type: Flat Fee
+Gap Payment Amount: $23
+
+Required display:
+- Do NOT show “Gap Payment Type” as a separate row.
+- Show only “Gap Payment Amount” with the correctly formatted amount.
+- If type is percentage/% then format as percent.
+- If type is flat fee/dollar/$ then format as money.
+- Use the stored type only for formatting, not as a visible field.
+
+7. HTML entity cleanup
+- Fix label output showing encoded text like “Monthly Payment (P&amp;I)”.
+- It should display as: Monthly Payment (P&I)
+- Check this view for other visible encoded entities caused by double escaping and fix display only.
+
+QA / Done looks like:
+- /offer-listing/seller/view/38 loads with no Blade/Whoops errors.
+- git diff shows ONLY resources/views/offer-listing/seller/view.blade.php changed.
+- Appliances and Pool Type align like normal field rows.
+- Pool Type appears after Pool.
+- Offered Financing custom “Other” text displays instead of “Other”.
+- Cash no longer appears incorrectly next to Max Monthly Payment.
+- Max Monthly Payment is not shown in the wrong Cash section.
+- Furnishings Required is gone.
+- Down Payment Type and Gap Payment Type are hidden.
+- Down Payment Amount, Initial Deposit Requested, Additional Deposit Requested, and Gap Payment Amount are correctly formatted as $ or % based on stored type.
+- Monthly Payment (P&I) displays correctly.
+- No unrelated pages/files are changed.
+
+After fixing, provide:
+1. Files changed.
+2. Summary of exact display fixes.
+3. Live QA result for listing #38.
+4. Confirmation no database/schema/routes/controllers were changed.
