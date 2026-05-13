@@ -1,0 +1,71 @@
+TASK: Fix “Load Saved Draft” modal so it works for all Hire Agent listing roles
+
+Issue:
+The saved draft modal currently appears only on:
+ /hire/agent/auction/tenant
+
+It must also appear for:
+ /hire/agent/auction/seller
+ /hire/agent/auction/buyer
+ /hire/agent/auction/landlord
+ /hire/agent/auction/tenant
+
+Goal:
+When a logged-in user visits any Hire Agent listing creation page and has saved drafts for that same role/listing type, the “Load Saved Draft” modal should appear with available drafts.
+
+Done looks like:
+- Seller hire agent page shows Load Saved Draft modal when seller drafts exist.
+- Buyer hire agent page shows Load Saved Draft modal when buyer drafts exist.
+- Landlord hire agent page shows Load Saved Draft modal when landlord drafts exist.
+- Tenant hire agent page continues working as it does now.
+- Draft list only shows drafts for the correct role/type.
+- Start New, Load Draft, Delete Draft, and Delete All Drafts still work.
+- No duplicate modals appear.
+- No route, database, migration, model, validation, or schema changes.
+
+Safeguards:
+- Do NOT change database schema.
+- Do NOT modify Limited Service flows.
+- Do NOT alter saved draft data format unless absolutely required.
+- Do NOT change listing form fields, labels, tabs, validation, or submission logic.
+- Do NOT break the existing Tenant draft modal behavior.
+- Make the smallest surgical fix possible.
+
+Steps:
+1. Audit the current Tenant hire-agent route/view/controller/livewire component to find where the saved draft modal is triggered.
+2. Compare Seller, Buyer, and Landlord hire-agent creation pages against Tenant.
+3. Identify what Tenant has that the other roles are missing, such as:
+   - draft lookup query
+   - modal include
+   - role/type variable
+   - JavaScript event/listener
+   - Livewire mount/loadDraftModal logic
+   - session/dispatch browser event
+4. Add the same saved-draft modal behavior to Seller, Buyer, and Landlord using the existing shared pattern.
+5. Make sure the draft lookup filters by the correct role:
+   - seller
+   - buyer
+   - landlord
+   - tenant
+6. Reuse the existing modal/component if possible. Do not create a second duplicate draft system.
+7. Verify each URL:
+   - /hire/agent/auction/seller
+   - /hire/agent/auction/buyer
+   - /hire/agent/auction/landlord
+   - /hire/agent/auction/tenant
+
+QA:
+- Log in as a test user with drafts.
+- Visit each of the four Hire Agent listing pages.
+- Confirm modal appears only when drafts exist.
+- Load one draft and confirm fields populate correctly.
+- Click Start New and confirm blank form loads.
+- Delete one draft and confirm it disappears.
+- Delete All Drafts and confirm modal no longer appears.
+- Confirm Tenant still works exactly as before.
+
+Report back with:
+- Files changed
+- Root cause
+- Confirmation that all four roles were tested
+- Screenshots or notes showing modal appeared for Seller, Buyer, Landlord, and Tenant
