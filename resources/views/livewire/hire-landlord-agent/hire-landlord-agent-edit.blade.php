@@ -277,6 +277,11 @@
                 font-size: 1rem;
             }
         }
+
+        /* Select2 placeholder styling */
+        .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
+        .select2-container .select2-search__field { min-width: 120px; }
+        .select2-selection__placeholder { color: #6c757d; }
     </style>
 @endpush
 

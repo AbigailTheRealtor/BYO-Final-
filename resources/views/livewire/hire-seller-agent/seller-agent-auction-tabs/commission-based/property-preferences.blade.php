@@ -1139,7 +1139,7 @@
 
         <div class="input-cover">
             <select wire:model="garage_parking_spaces_option" id="garage_parking_spaces_option"
-                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" multiple>
+                class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse input-icon2" data-placeholder="Select" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
