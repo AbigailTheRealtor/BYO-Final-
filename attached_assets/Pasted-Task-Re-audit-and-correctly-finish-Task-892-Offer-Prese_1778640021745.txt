@@ -1,0 +1,103 @@
+Task: Re-audit and correctly finish Task #892 — Offer Preset Counter Terms
+
+Issue:
+Task #892 was marked complete but the fix is not actually working. Re-audit the full Offer Preset Counter Terms flow end-to-end and repair it.
+
+STRICT SAFEGUARDS:
+- Touch ONLY the files required for Offer Preset Counter Terms.
+- Do NOT touch Limited Service files.
+- Do NOT modify migrations, database schema, routes, unrelated controllers, unrelated views, or unrelated listing flows.
+- Do NOT break normal Hire-Agent counter terms.
+- Offer Listing flow and normal Hire-Agent flow must remain separated by isOfferListing.
+- Before editing, run git status.
+- After editing, run git diff and explain every changed file.
+
+Relevant files to inspect:
+- app/Http/Livewire/Seller/SellerAgentAuctionCounterTerm.php
+- app/Http/Livewire/Buyer/BuyerAgentAuctionCounterTerm.php
+- app/Http/Livewire/Landlord/LandlordAgentAuctionCounterTerm.php
+- app/Http/Livewire/Tenant/TenantAgentAuctionCounterTerm.php
+- resources/views/hire_seller_agent/view_counter_terms.blade.php
+- resources/views/hire_buyer_agent/view_counter_terms.blade.php
+- resources/views/hire_landlord_agent/view_counter_terms.blade.php
+- resources/views/hire_tenant_agent/view_counter_terms.blade.php
+- all 4 counter-term tab partials that contain Client Details fields
+- all 4 parent counter-term Livewire blades where tabs are rendered
+
+Required audit:
+1. Confirm how isOfferListing is detected in all 4 Livewire classes.
+2. Confirm Client Details tab appears ONLY for Offer Listing counter terms.
+3. Confirm Client Details tab does NOT appear for normal Hire-Agent counter bids.
+4. Confirm all Client Details fields are public properties in each Livewire class.
+5. Confirm validation rules are conditionally required ONLY when isOfferListing is true.
+6. Confirm hydrate/load logic fills Client Details fields from existing meta when editing/viewing.
+7. Confirm save logic writes counter_client_* and role-specific fields ONLY when isOfferListing is true.
+8. Confirm Buyer/Tenant use areas_of_interest, not property address fields.
+9. Confirm Seller/Landlord use property address fields.
+10. Confirm view_counter_terms pages display submitted Client Details correctly for Offer Listing flow.
+11. Confirm Match Score panels and added/changed/missing service formatting are hidden for Offer Listing flow.
+12. Confirm Match Score panels still work for normal Hire-Agent counter bids.
+
+Expected behavior:
+
+Offer Listing Counter Terms:
+- Client Details tab appears.
+- Seller/Landlord required fields:
+  Full Name
+  Phone Number
+  Email Address
+  Property Address
+  Street Address
+  City
+  State
+  ZIP Code
+- Buyer/Tenant required fields:
+  Full Name
+  Phone Number
+  Email Address
+  Areas of Interest
+- After submit, view_counter_terms displays Client Details before Broker Compensation.
+- Buyer/Tenant display Areas of Interest only, not property address.
+- Seller/Landlord display property address fields.
+- No Match Score panel.
+- No “Added,” “Changed,” “Missing,” or green service comparison formatting.
+- Services should display as normal bullet points.
+
+Normal Hire-Agent Counter Terms:
+- Client Details tab does NOT appear.
+- No counter_client_* empty meta is saved.
+- Match Score panel remains visible/working.
+- Existing service comparison formatting remains unchanged.
+- Normal counter bid submission remains unaffected.
+
+Direct Hire Accept path:
+- Confirm HireAgentDirectController::acknowledgeSubmit() still redirects to submitted confirmation page.
+- Confirm no listing or bid is created for Accept/Confirm hire request.
+- Do not change this unless broken.
+
+Important:
+If the previous commit only changed view_counter_terms display but did not fix the actual counter-term form submission path, fix the form path too.
+If fields exist in partials but the parent blade does not render the tab for Offer Listing, fix the parent blade.
+If fields render but are not saved, fix the Livewire save method.
+If fields save but do not display on view_counter_terms, fix the display blade.
+If normal hire-agent counters are receiving empty counter_client_* meta, guard those saves with if ($this->isOfferListing).
+
+Done looks like:
+- Offer Listing counter terms work end-to-end for Seller, Buyer, Landlord, and Tenant.
+- Client Details tab appears only for Offer Listing counter terms.
+- Client Details save and display correctly.
+- Buyer/Tenant use Areas of Interest only.
+- Seller/Landlord use property address.
+- Normal Hire-Agent counter terms remain unchanged.
+- No empty Client Details meta is written for normal Hire-Agent counters.
+- Match Score/service comparison is hidden only for Offer Listing flow.
+- No Limited Service files touched.
+- No migrations/schema/routes changed.
+
+After completion provide:
+1. Files changed.
+2. Exact root cause found.
+3. What was missing from prior Task #892.
+4. Live QA result for all 4 Offer Listing roles.
+5. Regression QA result for one normal Hire-Agent counter flow.
+6. Confirmation no DB/schema/routes/Limited Service files were modified.
