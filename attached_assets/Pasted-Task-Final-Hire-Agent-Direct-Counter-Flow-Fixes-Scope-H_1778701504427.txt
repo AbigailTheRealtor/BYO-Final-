@@ -1,0 +1,145 @@
+Task: Final Hire Agent Direct Counter Flow Fixes
+
+Scope:
+Hire Agent Direct only:
+- /hire/agent/direct/{id}/{role}/{propertyType}/submitted
+- /hire/agent/direct/{id}/{role}/{propertyType}/counter
+
+Roles:
+seller, buyer, landlord, tenant
+
+Property types:
+all supported property types
+
+Critical safeguards:
+- Do NOT touch marketplace Hire Agent listing counter/bid flows.
+- Do NOT touch Limited Service legacy flows.
+- Do NOT change database schema, migrations, models, routes, validation, or saved meta keys.
+- Do NOT remove saved data.
+- Do NOT change actual service checkbox options.
+- Only update the Hire Agent Direct counter/submitted Blade/controller files confirmed by audit.
+- First audit and identify exact files used by this flow before editing.
+
+Fixes needed:
+
+1. Fix compensation heading typo
+Change:
+“Your Proposed Broker Compensation &amp; Agency Agreement Terms”
+
+To:
+“Your Proposed Broker Compensation and Agency Agreement Terms”
+
+Use “and,” not “&”.
+Make sure no escaped HTML entity appears.
+
+2. Move Review Your Counter Terms into the tab flow
+Current issue:
+Clicking “Submit Counter Request” goes to a separate “Review Your Counter Terms” page.
+
+Required behavior:
+- “Review Your Counter Terms” must be the final tab in the counter form.
+- It should appear after “Your Details.”
+- User reviews terms inside the tab flow.
+- Final submit button should be on the review tab.
+- After final submit, redirect directly to:
+  /hire/agent/direct/{id}/{role}/{propertyType}/submitted
+
+Submitted page must show:
+“Hire Request Submitted”
+“Your hire request has been recorded. Review the details below.”
+
+3. Update Additional Services Requested placeholder text
+Rules:
+- Placeholder only.
+- Do NOT change service checkbox options.
+- Examples must be role/property-specific.
+- Do NOT reuse examples already shown as selectable services.
+- Capitalize each example item.
+
+Use these examples:
+
+Seller / Residential:
+e.g., Custom Neighborhood Mailer, Seller Video Script, Pre-Listing Strategy Call, Relocation Buyer Outreach
+
+Seller / Commercial:
+e.g., Investor Prospect List, Property Offering Memorandum Outline, Broker Outreach Script, Tenant Mix Strategy Notes
+
+Buyer / Residential:
+e.g., Off-Market Outreach Letter, Neighborhood Comparison Summary, School Zone Research Summary, Commute Area Shortlist
+
+Buyer / Commercial:
+e.g., Site Selection Matrix, Trade Area Snapshot, Parking Demand Review, Business Use Fit Summary
+
+Landlord / Residential:
+e.g., Rental Pricing Snapshot, Tenant Persona Summary, Local Employer Outreach List, Move-In Readiness Checklist
+
+Landlord / Commercial:
+e.g., Tenant Prospect List, Use Compatibility Notes, Broker Outreach Script, Leasing Flyer Outline
+
+Tenant / Residential:
+e.g., Rental Application Strategy, Neighborhood Fit Summary, Commute Zone Shortlist, Pet-Friendly Housing Notes
+
+Tenant / Commercial:
+e.g., Space Requirement Summary, Trade Area Snapshot, LOI Question List, Business Use Fit Notes
+
+If property type is not residential, treat it as commercial unless existing code has more specific buckets.
+
+4. Update Your Additional Terms / Notes placeholder text
+Rules:
+- Placeholder only.
+- Must be role/property-specific.
+- Must NOT mention referral clause for consumers.
+
+Use these examples:
+
+Seller:
+e.g., I would like clarification on the marketing timeline, cancellation terms, or commission structure.
+
+Buyer:
+e.g., I would like clarification on showing availability, offer strategy, communication expectations, or compensation terms.
+
+Landlord:
+e.g., I would like clarification on tenant screening, showing coordination, lease support, or management-related expectations.
+
+Tenant:
+e.g., I would like clarification on property search support, application assistance, lease review, or compensation terms.
+
+For commercial property types, adjust naturally to mention LOI support, zoning/use review, lease terms, marketing strategy, or business/property fit when relevant.
+
+5. Remove Referral Fee from consumer compensation tab
+In the consumer-facing “Your Proposed Broker Compensation and Agency Agreement Terms” tab:
+- Hide/remove Referral Fee.
+- Consumer roles include seller, buyer, landlord, tenant.
+- Do NOT delete saved referral fee data.
+
+6. Add Agent-only Referral Fee tab
+Add a separate tab directly after the compensation terms tab:
+“Referral Fee”
+
+Only show this tab if the signed-in user is an agent / agent-to-agent context.
+
+Do not show it for consumer logins.
+
+Reuse existing role/user checks. If unclear, audit the current user role logic first and use the safest existing agent-role check.
+
+Done looks like:
+- Seller, buyer, landlord, and tenant Hire Agent Direct counter pages load.
+- All supported property types still load.
+- Additional Services placeholder changes by role/property type.
+- Examples are capitalized and not copied from the selectable service list.
+- Additional Terms / Notes placeholder is role/property-specific.
+- Referral Fee is hidden from consumer users.
+- Referral Fee appears only in its own Agent-only tab.
+- Review Your Counter Terms appears as the final tab inside the counter form.
+- Final submit redirects directly to the submitted page.
+- No separate post-submit Review Your Counter Terms page appears.
+- Marketplace Hire Agent counter/bid flows are unchanged.
+
+QA:
+- Test seller residential using:
+  /hire/agent/direct/142/seller/residential/submitted
+- Click “Request Changes / Counter Terms.”
+- Confirm placeholders, tabs, referral fee visibility, and final submit redirect.
+- Repeat spot checks for buyer, landlord, tenant.
+- Test one commercial property type if available.
+- Confirm git diff only touches necessary Hire Agent Direct files.
