@@ -1260,22 +1260,39 @@
                     </div>
                 </div>
 
-                {{-- Comp terms — initial render from $compRows (effective comp); populateReviewTab() overwrites with live cc[] values --}}
-                @if(count($compRows) > 0)
+                {{-- Comp terms — pre-rendered from $reviewCompRows (referral fee always excluded; see dedicated section below).
+                     populateReviewTab() re-renders from the same server-computed JSON to avoid raw cc[] concatenation. --}}
+                @if(count($reviewCompRows) > 0)
                 <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;">
                     <div class="ack-section-header">
                         <i class="fa-solid fa-file-lines"></i> Your Proposed Broker Compensation and Agency Agreement Terms
                     </div>
                     <div class="ack-section-body" id="review-comp-body">
                         <table class="comp-table">
-                            @foreach($compRows as $row)
-                            {{-- Referral Fee rows are agent-only; never render for consumer viewers --}}
-                            @if($row['label'] !== 'Referral Fee (%)' || $viewerIsAgent)
+                            @foreach($reviewCompRows as $row)
                             <tr>
                                 <td>{{ $row['label'] }}</td>
                                 <td>{{ $row['value'] }}</td>
                             </tr>
-                            @endif
+                            @endforeach
+                        </table>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Referral Fee — dedicated section for agent viewers only (never inside the comp table) --}}
+                @if($viewerIsAgent && !empty($referralFeeRows))
+                <div class="mb-3" style="border:1px solid #dee2e6;border-radius:8px;overflow:hidden;" id="review-referral-section">
+                    <div class="ack-section-header">
+                        <i class="fa-solid fa-handshake"></i> Referral Fee
+                    </div>
+                    <div class="ack-section-body" id="review-referral-body">
+                        <table class="comp-table">
+                            @foreach($referralFeeRows as $row)
+                            <tr>
+                                <td>{{ $row['label'] }}</td>
+                                <td>{{ $row['value'] }}</td>
+                            </tr>
                             @endforeach
                         </table>
                     </div>
@@ -1347,6 +1364,14 @@ function counterFormSubmit(form) {
 // Server-side agent flag exposed to JS — single source of truth matching $viewerIsAgent in Blade.
 var viewerIsAgent = {{ $viewerIsAgent ? 'true' : 'false' }};
 
+// Pre-computed, server-formatted comp rows for the Review tab.
+// Referral Fee is always excluded here; it appears in a separate dedicated section for agents.
+// Using these avoids raw cc[] concatenation which cannot reproduce the canonical formatting.
+var reviewCompRowsData = {!! json_encode($reviewCompRows) !!};
+
+// Pre-computed referral fee row(s) for the agent-only dedicated section in the Review tab.
+var reviewReferralRowsData = {!! json_encode($referralFeeRows) !!};
+
 function populateReviewTab() {
     var escape = function(s) {
         return String(s).replace(/[<>&"]/g, function(c) {
@@ -1383,61 +1408,30 @@ function populateReviewTab() {
         if (emptyMsg) emptyMsg.style.display = hasAnyVisible ? 'none' : '';
     }
 
-    // ── Comp Terms (rebuild from current cc[] inputs; overwrites initial server-side render) ──────
+    // ── Comp Terms — render from pre-computed server-formatted JSON rows ──────
+    // Never rebuild from raw cc[] inputs (that produces unformatted concatenations like
+    // "Percentage of the Total Purchase Price + 6"). The server rows use CompensationFormatter
+    // for canonical formatting. Since counter submission triggers a full page reload to the
+    // submitted view, the initial server state is always correct for review purposes.
     var compBody = document.getElementById('review-comp-body');
-    if (compBody) {
-        var compRows = '';
-        var processedGroups = new Set();
-        // Read from both the Comp Terms tab and the Referral Fee tab (agent-only)
-        [document.getElementById('tab-comp'), document.getElementById('tab-referral')].forEach(function(tab) {
-            if (!tab) return;
-            tab.querySelectorAll('.cc-group').forEach(function(group) {
-                if (processedGroups.has(group)) return;
-                processedGroups.add(group);
-
-                // Avoid :scope pseudo-class for broader browser compatibility:
-                // first try a direct child with class cc-label, then fall back to any descendant.
-                var labelEl = null;
-                for (var ci = 0; ci < group.children.length; ci++) {
-                    if (group.children[ci].classList.contains('cc-label')) {
-                        labelEl = group.children[ci];
-                        break;
-                    }
-                }
-                if (!labelEl) labelEl = group.querySelector('.cc-label');
-                var label = labelEl ? labelEl.textContent.trim() : '';
-                if (!label) return;
-
-                var valueParts = [];
-                group.querySelectorAll('[name^="cc["]').forEach(function(el) {
-                    // Referral Fee is agent-only — never leak into consumer review
-                    if (!viewerIsAgent && el.name === 'cc[referral_fee_percent]') return;
-                    // Skip inputs inside conditionally hidden sub-sections
-                    var conditional = el.closest('.cc-conditional');
-                    if (conditional && getComputedStyle(conditional).display === 'none') return;
-
-                    var val = '';
-                    if (el.tagName === 'SELECT') {
-                        if (!el.value) return;
-                        val = (el.selectedIndex >= 0 && el.options[el.selectedIndex])
-                            ? (el.options[el.selectedIndex].text || el.value)
-                            : el.value;
-                    } else {
-                        val = el.value.trim();
-                    }
-                    if (val) valueParts.push(val);
-                });
-
-                if (valueParts.length > 0) {
-                    compRows += '<tr><td>' + escape(label) + '</td><td>' + escape(valueParts.join(' + ')) + '</td></tr>';
-                }
-            });
+    if (compBody && reviewCompRowsData.length > 0) {
+        var compHtml = '<table class="comp-table">';
+        reviewCompRowsData.forEach(function(row) {
+            compHtml += '<tr><td>' + escape(row.label) + '</td><td>' + escape(row.value) + '</td></tr>';
         });
+        compHtml += '</table>';
+        compBody.innerHTML = compHtml;
+    }
 
-        if (compRows) {
-            compBody.innerHTML = '<table class="comp-table"><tbody>' + compRows + '</tbody></table>';
-        }
-        // If no rows are found (all inputs blank), keep the initial $compRows server-side render.
+    // ── Referral Fee dedicated section (agent viewers only) ───────────────────
+    var referralBody = document.getElementById('review-referral-body');
+    if (referralBody && viewerIsAgent && reviewReferralRowsData.length > 0) {
+        var refHtml = '<table class="comp-table">';
+        reviewReferralRowsData.forEach(function(row) {
+            refHtml += '<tr><td>' + escape(row.label) + '</td><td>' + escape(row.value) + '</td></tr>';
+        });
+        refHtml += '</table>';
+        referralBody.innerHTML = refHtml;
     }
 
     // Additional Services Requested

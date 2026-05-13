@@ -172,6 +172,27 @@
         <div class="ack-section-body">
             <table class="comp-table">
                 @foreach($compRows as $row)
+                @if($row['label'] !== 'Referral Fee (%)')
+                <tr>
+                    <td>{{ $row['label'] }}</td>
+                    <td>{{ $row['value'] }}</td>
+                </tr>
+                @endif
+                @endforeach
+            </table>
+        </div>
+    </div>
+    @endif
+
+    {{-- Referral Fee — dedicated section for agent viewers only --}}
+    @if(($viewerIsAgent ?? false) && !empty($referralFeeRows))
+    <div class="ack-section">
+        <div class="ack-section-header">
+            <i class="fa-solid fa-handshake"></i> Referral Fee
+        </div>
+        <div class="ack-section-body">
+            <table class="comp-table">
+                @foreach($referralFeeRows as $row)
                 <tr>
                     <td>{{ $row['label'] }}</td>
                     <td>{{ $row['value'] }}</td>

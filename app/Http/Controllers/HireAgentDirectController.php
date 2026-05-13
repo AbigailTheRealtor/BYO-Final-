@@ -406,6 +406,10 @@ class HireAgentDirectController extends Controller
             $effectiveComp
         );
 
+        $viewerIsAgent   = auth()->check() && auth()->user()->user_type === 'agent';
+        $referralFeeRows = array_values(array_filter($compRows, fn($r) => ($r['label'] ?? '') === 'Referral Fee (%)'));
+        $compRows        = \App\Support\CompensationFormatter::filterReferralFeeRows($compRows);
+
         $services      = $pending['services']      ?? [];
         $otherServices = $pending['other_services'] ?? [];
 
@@ -419,7 +423,8 @@ class HireAgentDirectController extends Controller
 
         return view('hire-agent-direct.acknowledge', compact(
             'agent', 'role', 'propertyType', 'mapped', 'compRows',
-            'services', 'otherServices', 'groupedServices', 'pending'
+            'services', 'otherServices', 'groupedServices', 'pending',
+            'viewerIsAgent', 'referralFeeRows'
         ));
     }
 
@@ -562,6 +567,10 @@ class HireAgentDirectController extends Controller
             $effectiveComp
         );
 
+        $viewerIsAgent   = auth()->check() && auth()->user()->user_type === 'agent';
+        $referralFeeRows = array_values(array_filter($compRows, fn($r) => ($r['label'] ?? '') === 'Referral Fee (%)'));
+        $compRows        = \App\Support\CompensationFormatter::filterReferralFeeRows($compRows);
+
         $services      = $submitted['services']      ?? [];
         $otherServices = $submitted['other_services'] ?? [];
 
@@ -570,7 +579,8 @@ class HireAgentDirectController extends Controller
 
         return view('hire-agent-direct.submitted', compact(
             'agent', 'role', 'propertyType', 'mapped', 'compRows',
-            'services', 'otherServices', 'groupedServices', 'contact', 'submitted'
+            'services', 'otherServices', 'groupedServices', 'contact', 'submitted',
+            'viewerIsAgent', 'referralFeeRows'
         ));
     }
 
@@ -663,6 +673,18 @@ class HireAgentDirectController extends Controller
 
         $compRows = \App\Support\CompensationFormatter::formatPresetRows($role, $propertyType, $effectiveMappedForDisplay);
 
+        $viewerIsAgent = auth()->check() && auth()->user()->user_type === 'agent';
+
+        // $compRows for the counter comp-tab display: strip referral fee for non-agents (Blade guard is the second layer).
+        if (!$viewerIsAgent) {
+            $compRows = \App\Support\CompensationFormatter::filterReferralFeeRows($compRows);
+        }
+
+        // $reviewCompRows — always strips referral fee (shown in a dedicated section instead).
+        // $referralFeeRows — only the referral fee row(s), rendered in a separate agent-only section.
+        $referralFeeRows = array_values(array_filter($compRows, fn($r) => ($r['label'] ?? '') === 'Referral Fee (%)'));
+        $reviewCompRows  = \App\Support\CompensationFormatter::filterReferralFeeRows($compRows);
+
         $agentServices = self::resolveServices($profile);
         $flowKey = $role . '_agent.' . $propertyType;
         $groupedAgentServices = \App\Support\ServicesFormatter::orderSelectedServices($agentServices, $flowKey);
@@ -684,7 +706,8 @@ class HireAgentDirectController extends Controller
         return view('hire-agent-direct.counter', compact(
             'agent', 'role', 'propertyType', 'mapped', 'compRows',
             'agentServices', 'groupedAgentServices', 'otherServices',
-            'selectedServices', 'selectedOtherServices', 'pending'
+            'selectedServices', 'selectedOtherServices', 'pending',
+            'viewerIsAgent', 'reviewCompRows', 'referralFeeRows'
         ));
     }
 

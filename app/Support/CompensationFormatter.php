@@ -250,6 +250,24 @@ class CompensationFormatter
         return $rows;
     }
 
+    /**
+     * Strip any row whose label is 'Referral Fee (%)' from a comp-rows array.
+     *
+     * This is the single, canonical server-side filter applied everywhere a
+     * non-agent viewer can see compensation rows. Pass the result to the view
+     * and also use it as the source for the Review-tab JSON embed in counter.blade.php.
+     *
+     * @param  array<int, array{label: string, value: string}>  $compRows
+     * @return array<int, array{label: string, value: string}>
+     */
+    public static function filterReferralFeeRows(array $compRows): array
+    {
+        return array_values(array_filter(
+            $compRows,
+            fn($row) => ($row['label'] ?? '') !== 'Referral Fee (%)'
+        ));
+    }
+
     // ── Shared section builders ────────────────────────────────────────────
 
     /**
