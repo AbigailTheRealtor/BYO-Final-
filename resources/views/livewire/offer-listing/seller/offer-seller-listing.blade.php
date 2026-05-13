@@ -1476,7 +1476,7 @@
             Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
             _s2Timers = {};
             var regularFields = {
-                property_items: '#property_items',
+                property_items: '#property_style_select',
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 appliances: '#appliances',
                 exchange_item: '#exchange_item',
@@ -1945,8 +1945,8 @@
                     width: '100%',
                 });
                 $('#property_style_select').on('change', function(e) {
-                    let selectedValues = $(this).val();
-                    debouncedSet('property_items', selectedValues);
+                    let selectedValue = $(this).val();
+                    debouncedSet('property_items', selectedValue);
                 });
             }
 
@@ -2285,7 +2285,7 @@
 
             // Function to attach the event listener to the condition dropdown
             function attachItemConditionDropdownListener() {
-                const conditionDropdownItem = document.getElementById('property_items');
+                const conditionDropdownItem = document.getElementById('property_style_select');
                 if (conditionDropdownItem) {
                     conditionDropdownItem.addEventListener('change', function() {
                         toggleOtherPropertyItems(this);
