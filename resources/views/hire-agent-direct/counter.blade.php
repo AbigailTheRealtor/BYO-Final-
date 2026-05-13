@@ -441,20 +441,20 @@
                         </select>
                         <div class="cc-sub mt-2">
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Flat Fee">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the Total Purchase Price">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage]" class="form-control" value="{{ $ccv('purchase_fee_percentage') }}" placeholder="Percentage (e.g. 3)"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage]" class="form-control" value="{{ $ccv('purchase_fee_percentage') }}" placeholder="Enter percentage of the total purchase price (e.g., 3)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the Total Purchase Price + Flat Fee">
                                 <div class="row g-2">
-                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="% (e.g. 2)"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="Enter percentage of the total purchase price (e.g., 2)"><span class="input-group-text">%</span></div></div>
                                     <div class="col-md-1 text-center pt-1">+</div>
-                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Flat fee"></div></div>
+                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Enter flat fee amount (e.g., 3000)"></div></div>
                                 </div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="other">
-                                <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Describe fee structure">
+                                <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Enter purchase fee structure (e.g., 1000 upfront + 2% at Closing)">
                             </div>
                         </div>
                     </div>
@@ -484,36 +484,36 @@
                                     @endforeach
                                 </select>
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="flat">
-                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat]" class="form-control" value="{{ $ccv('lease_fee_flat') }}" placeholder="Flat fee"></div>
+                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat]" class="form-control" value="{{ $ccv('lease_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 2500)"></div>
                                 </div>
                                 @if($propertyType === 'residential')
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Percentage of Monthly Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_monthly_rent]" class="form-control" value="{{ $ccv('lease_fee_percentage_monthly_rent') }}" placeholder="% monthly rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_monthly_rent]" class="form-control" value="{{ $ccv('lease_fee_percentage_monthly_rent') }}" placeholder="Enter percentage of monthly rent (e.g., 100)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Percentage of the Gross Lease Value">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage]" class="form-control" value="{{ $ccv('lease_fee_percentage') }}" placeholder="% gross lease value"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage]" class="form-control" value="{{ $ccv('lease_fee_percentage') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Flat Fee + Percentage of the Gross Lease Value">
                                     <div class="row g-2">
-                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo]" class="form-control" value="{{ $ccv('lease_fee_flat_combo') }}" placeholder="Flat fee"></div></div>
+                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo]" class="form-control" value="{{ $ccv('lease_fee_flat_combo') }}" placeholder="Enter flat fee amount (e.g., 1000)"></div></div>
                                         <div class="col-md-1 text-center pt-1">+</div>
-                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo') }}" placeholder="% gross lease"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo') }}" placeholder="Enter percentage of the gross lease value (e.g., 7)"><span class="input-group-text">%</span></div></div>
                                     </div>
                                 </div>
                                 @else
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Percentage of the Net Aggregate Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_net') }}" placeholder="% net aggregate rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_net') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Flat Fee + Percentage of the Net Aggregate Rent">
                                     <div class="row g-2">
-                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo_net]" class="form-control" value="{{ $ccv('lease_fee_flat_combo_net') }}" placeholder="Flat fee"></div></div>
+                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo_net]" class="form-control" value="{{ $ccv('lease_fee_flat_combo_net') }}" placeholder="Enter flat fee amount (e.g., 1500)"></div></div>
                                         <div class="col-md-1 text-center pt-1">+</div>
-                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo_net') }}" placeholder="% net aggregate"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo_net') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div></div>
                                     </div>
                                 </div>
                                 @endif
                                 <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="other">
-                                    <input type="text" name="cc[lease_fee_other]" class="form-control form-control-sm" value="{{ $ccv('lease_fee_other') }}" placeholder="Describe lease fee">
+                                    <input type="text" name="cc[lease_fee_other]" class="form-control form-control-sm" value="{{ $ccv('lease_fee_other') }}" placeholder="Enter the total lease fee amount and payment structure for the Buyer's Broker (e.g., $1500 upfront, $2000 at lease execution)">
                                 </div>
                             </div>
                         </div>
@@ -533,20 +533,20 @@
                         </select>
                         <div class="cc-sub mt-2">
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="flat">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="percentage">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage]" class="form-control" value="{{ $ccv('purchase_fee_percentage') }}" placeholder="Percentage (e.g. 6)"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage]" class="form-control" value="{{ $ccv('purchase_fee_percentage') }}" placeholder="Enter percentage of total purchase price (e.g., 6)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="combo">
                                 <div class="row g-2">
-                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="% (e.g. 2)"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="Enter percentage of purchase price (e.g., 2)"><span class="input-group-text">%</span></div></div>
                                     <div class="col-md-1 text-center pt-1">+</div>
-                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Flat fee"></div></div>
+                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Enter flat fee amount (e.g., 2000)"></div></div>
                                 </div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="other">
-                                <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Describe fee structure">
+                                <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Enter commission structure (e.g., Tiered fee: 5% on the first $500000, 3% on any amount above $500000)">
                             </div>
                         </div>
                     </div>
@@ -573,13 +573,13 @@
                                     @endforeach
                                 </select>
                                 <div class="cc-conditional" data-cc-parent="cc_commission_structure_type" data-cc-values="Flat Fee">
-                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[commission_structure_type_fee_flat]" class="form-control" value="{{ $ccv('commission_structure_type_fee_flat') }}" placeholder="Flat fee amount"></div>
+                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[commission_structure_type_fee_flat]" class="form-control" value="{{ $ccv('commission_structure_type_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 4000)"></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_commission_structure_type" data-cc-values="Percentage of the Total Purchase Price">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[commission_structure_type_fee_percentage]" class="form-control" value="{{ $ccv('commission_structure_type_fee_percentage') }}" placeholder="% of purchase price"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[commission_structure_type_fee_percentage]" class="form-control" value="{{ $ccv('commission_structure_type_fee_percentage') }}" placeholder="Enter percentage of total purchase price (e.g., 6)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_commission_structure_type" data-cc-values="other">
-                                    <input type="text" name="cc[commission_structure_type_fee_other]" class="form-control form-control-sm" value="{{ $ccv('commission_structure_type_fee_other') }}" placeholder="Describe fee structure">
+                                    <input type="text" name="cc[commission_structure_type_fee_other]" class="form-control form-control-sm" value="{{ $ccv('commission_structure_type_fee_other') }}" placeholder="Enter compensation for the Buyer's Broker Commission Fee (e.g., 3% if the sale price is under $500000, 2% if over $500000)">
                                 </div>
                             </div>
                         </div>
@@ -612,32 +612,32 @@
                                 </select>
                                 {{-- Flat Fee (both property type groups) --}}
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Flat Fee">
-                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[seller_leasing_gross_purchase_fee_flat_amount]" class="form-control" value="{{ $ccv('seller_leasing_gross_purchase_fee_flat_amount') }}" placeholder="Flat fee amount"></div>
+                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[seller_leasing_gross_purchase_fee_flat_amount]" class="form-control" value="{{ $ccv('seller_leasing_gross_purchase_fee_flat_amount') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                                 </div>
                                 @if($isSellerLeasingResidential)
                                 {{-- Residential / Income / Vacant Land sub-fields --}}
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Percentage of the Gross Lease Value">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross]" class="form-control" value="{{ $ccv('seller_leasing_gross') }}" placeholder="% gross lease value"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross]" class="form-control" value="{{ $ccv('seller_leasing_gross') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Percentage of the Rent Due Each Rental Period">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_rental]" class="form-control" value="{{ $ccv('seller_leasing_gross_rental') }}" placeholder="% rent per period"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_rental]" class="form-control" value="{{ $ccv('seller_leasing_gross_rental') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Percentage of the First Month's Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_month_rent]" class="form-control" value="{{ $ccv('seller_leasing_gross_month_rent') }}" placeholder="% first month's rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_month_rent]" class="form-control" value="{{ $ccv('seller_leasing_gross_month_rent') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="other">
-                                    <input type="text" name="cc[seller_leasing_gross_purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('seller_leasing_gross_purchase_fee_other') }}" placeholder="Describe leasing fee">
+                                    <input type="text" name="cc[seller_leasing_gross_purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('seller_leasing_gross_purchase_fee_other') }}" placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
                                 </div>
                                 @else
                                 {{-- Commercial / Business sub-fields --}}
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Percentage of Net Aggregate Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_other]" class="form-control" value="{{ $ccv('seller_leasing_gross_other') }}" placeholder="% net aggregate rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_other]" class="form-control" value="{{ $ccv('seller_leasing_gross_other') }}" placeholder="Enter percentage of net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Percentage of Gross Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_percentage]" class="form-control" value="{{ $ccv('seller_leasing_gross_percentage') }}" placeholder="% gross rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_percentage]" class="form-control" value="{{ $ccv('seller_leasing_gross_percentage') }}" placeholder="Enter the percentage of the gross rent (e.g., 6)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_seller_leasing_fee_type" data-cc-values="Percentage of Month's Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_month_rent]" class="form-control" value="{{ $ccv('seller_leasing_gross_month_rent') }}" placeholder="% month's rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[seller_leasing_gross_month_rent]" class="form-control" value="{{ $ccv('seller_leasing_gross_month_rent') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
                                 </div>
                                 @endif
                             </div>
@@ -664,40 +664,40 @@
                         <div class="cc-sub mt-2">
                             @if($propertyType === 'residential')
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the Rent Due Each Rental Period">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_rental_period]" class="form-control" value="{{ $ccv('purchase_fee_rental_period') }}" placeholder="% rent per period"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_rental_period]" class="form-control" value="{{ $ccv('purchase_fee_rental_period') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the Gross Lease Value">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="% gross lease value"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the First Month's Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="% first month's rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Enter percentage of the first month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Flat Fee">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                             </div>
                             @else
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the Net Aggregate Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_net_aggregate]" class="form-control" value="{{ $ccv('purchase_fee_net_aggregate') }}" placeholder="% net aggregate rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_net_aggregate]" class="form-control" value="{{ $ccv('purchase_fee_net_aggregate') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 5)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of the Gross Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_gross_rent]" class="form-control" value="{{ $ccv('purchase_fee_gross_rent') }}" placeholder="% gross rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_gross_rent]" class="form-control" value="{{ $ccv('purchase_fee_gross_rent') }}" placeholder="Enter percentage of the gross rent (e.g., 5)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Percentage of Month's Rent">
                                 <div class="row g-1">
-                                    <div class="col-8"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_monthly_percentage]" class="form-control" value="{{ $ccv('purchase_fee_monthly_percentage') }}" placeholder="% month's rent"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-8"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_monthly_percentage]" class="form-control" value="{{ $ccv('purchase_fee_monthly_percentage') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div></div>
                                     <div class="col-4"><div class="input-group input-group-sm"><span class="input-group-text">#</span><input type="number" name="cc[purchase_fee_months]" class="form-control" value="{{ $ccv('purchase_fee_months') }}" placeholder="months"></div></div>
                                 </div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="Flat Fee">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_commercial]" class="form-control" value="{{ $ccv('purchase_fee_flat_commercial') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_commercial]" class="form-control" value="{{ $ccv('purchase_fee_flat_commercial') }}" placeholder="Enter flat fee amount (e.g., 3000)"></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="other">
-                                <input type="text" name="cc[purchase_fee_other_commercial]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other_commercial') }}" placeholder="Describe fee structure">
+                                <input type="text" name="cc[purchase_fee_other_commercial]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other_commercial') }}" placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
                             </div>
                             @endif
                             @if($propertyType === 'residential')
                             <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type" data-cc-values="other">
-                                <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Describe fee structure">
+                                <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Enter lease fee structure (e.g., 100% of First Month's Rent, or a Tiered Schedule for Multi-Year Leases)">
                             </div>
                             @endif
                         </div>
@@ -750,36 +750,36 @@
                             @if($propertyType === 'residential')
                             {{-- Residential: Percentage of the Rent Due Each Rental Period --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the Rent Due Each Rental Period">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_percentage]" class="form-control" value="{{ $ccv('renewal_fee_percentage') }}" placeholder="% rent per period"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_percentage]" class="form-control" value="{{ $ccv('renewal_fee_percentage') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 10)"><span class="input-group-text">%</span></div>
                             </div>
                             {{-- Residential: Percentage of the Gross Lease Value --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the Gross Lease Value">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_lease_value]" class="form-control" value="{{ $ccv('renewal_fee_lease_value') }}" placeholder="% gross lease value"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_lease_value]" class="form-control" value="{{ $ccv('renewal_fee_lease_value') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
                             </div>
                             {{-- Residential: Percentage of the First Month's Rent --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the First Month's Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_first_month]" class="form-control" value="{{ $ccv('renewal_fee_first_month') }}" placeholder="% first month's rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_first_month]" class="form-control" value="{{ $ccv('renewal_fee_first_month') }}" placeholder="Enter percentage of first month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
                             </div>
                             @else
                             {{-- Commercial: Percentage of the Net Aggregate Rent --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the Net Aggregate Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_percentage]" class="form-control" value="{{ $ccv('renewal_fee_percentage') }}" placeholder="% net aggregate rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_percentage]" class="form-control" value="{{ $ccv('renewal_fee_percentage') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 5)"><span class="input-group-text">%</span></div>
                             </div>
                             {{-- Commercial: Percentage of the Gross Rent --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the Gross Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_lease_value]" class="form-control" value="{{ $ccv('renewal_fee_lease_value') }}" placeholder="% gross rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_lease_value]" class="form-control" value="{{ $ccv('renewal_fee_lease_value') }}" placeholder="Enter percentage of the gross rent (e.g., 5)"><span class="input-group-text">%</span></div>
                             </div>
                             {{-- Commercial: Percentage of Month's Rent --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of Month's Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_first_month]" class="form-control" value="{{ $ccv('renewal_fee_first_month') }}" placeholder="% month's rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_first_month]" class="form-control" value="{{ $ccv('renewal_fee_first_month') }}" placeholder="Enter percentage of month's rent (e.g., 100)"><span class="input-group-text">%</span></div>
                             </div>
                             @endif
                             {{-- Flat Fee (both property type groups) --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Flat Fee">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[renewal_fee_flat_fee]" class="form-control" value="{{ $ccv('renewal_fee_flat_fee') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[renewal_fee_flat_fee]" class="form-control" value="{{ $ccv('renewal_fee_flat_fee') }}" placeholder="Enter flat fee amount (e.g., 2000)"></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="other">
-                                <input type="text" name="cc[renewal_fee_custom]" class="form-control form-control-sm" value="{{ $ccv('renewal_fee_custom') }}" placeholder="Describe renewal fee">
+                                <input type="text" name="cc[renewal_fee_custom]" class="form-control form-control-sm" value="{{ $ccv('renewal_fee_custom') }}" placeholder="Enter commission structure (e.g., $500 flat fee plus 5% of the gross lease value)">
                             </div>
                         </div>
                     </div>
@@ -807,19 +807,19 @@
                                     @endforeach
                                 </select>
                                 <div class="cc-conditional" data-cc-parent="cc_tenant_broker_fee_structure" data-cc-values="Percentage of the Rent Due Each Rental Period">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[tenant_broker_percentage]" class="form-control" value="{{ $ccv('tenant_broker_percentage') }}" placeholder="% rent per period"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[tenant_broker_percentage]" class="form-control" value="{{ $ccv('tenant_broker_percentage') }}" placeholder="Enter percentage of the rent due each rental period (e.g., 5)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_tenant_broker_fee_structure" data-cc-values="Percentage of the Gross Lease Value">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[tenant_broker_gross_lease]" class="form-control" value="{{ $ccv('tenant_broker_gross_lease') }}" placeholder="% gross lease value"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[tenant_broker_gross_lease]" class="form-control" value="{{ $ccv('tenant_broker_gross_lease') }}" placeholder="Enter percentage of the gross lease value (e.g., 5)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_tenant_broker_fee_structure" data-cc-values="Percentage of the First Month's Rent">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[tenant_broker_first_month_rent]" class="form-control" value="{{ $ccv('tenant_broker_first_month_rent') }}" placeholder="% first month's rent"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[tenant_broker_first_month_rent]" class="form-control" value="{{ $ccv('tenant_broker_first_month_rent') }}" placeholder="Enter percentage of the first month's rent (e.g., 50)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_tenant_broker_fee_structure" data-cc-values="Flat fee|Flat Fee">
-                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[tenant_broker_flat_fee]" class="form-control" value="{{ $ccv('tenant_broker_flat_fee') }}" placeholder="Flat fee amount"></div>
+                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[tenant_broker_flat_fee]" class="form-control" value="{{ $ccv('tenant_broker_flat_fee') }}" placeholder="Enter flat fee amount (e.g., 1000)"></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_tenant_broker_fee_structure" data-cc-values="Other">
-                                    <input type="text" name="cc[tenant_broker_other]" class="form-control form-control-sm" value="{{ $ccv('tenant_broker_other') }}" placeholder="Describe fee">
+                                    <input type="text" name="cc[tenant_broker_other]" class="form-control form-control-sm" value="{{ $ccv('tenant_broker_other') }}" placeholder="Enter Tenant's Broker commission arrangement (e.g., $500 bonus plus 2% of gross lease value)">
                                 </div>
                             </div>
                         </div>
@@ -846,20 +846,20 @@
                                     @endforeach
                                 </select>
                                 <div class="cc-conditional" data-cc-parent="cc_interested_in_selling_type" data-cc-values="Percentage of the Total Purchase Price">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[landlord_broker_purchase_price]" class="form-control" value="{{ $ccv('landlord_broker_purchase_price') }}" placeholder="% of purchase price"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[landlord_broker_purchase_price]" class="form-control" value="{{ $ccv('landlord_broker_purchase_price') }}" placeholder="Enter percentage of total purchase price (e.g., 6)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_interested_in_selling_type" data-cc-values="Percentage of the Total Purchase Price + Flat Fee">
                                     <div class="row g-2">
-                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[landlord_broker_percentage_price]" class="form-control" value="{{ $ccv('landlord_broker_percentage_price') }}" placeholder="% (e.g. 2)"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[landlord_broker_percentage_price]" class="form-control" value="{{ $ccv('landlord_broker_percentage_price') }}" placeholder="Enter percentage of purchase price (e.g., 2)"><span class="input-group-text">%</span></div></div>
                                         <div class="col-md-1 text-center pt-1">+</div>
-                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[landlord_broker_dollar_price]" class="form-control" value="{{ $ccv('landlord_broker_dollar_price') }}" placeholder="Flat fee"></div></div>
+                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[landlord_broker_dollar_price]" class="form-control" value="{{ $ccv('landlord_broker_dollar_price') }}" placeholder="Enter flat fee amount (e.g., 2000)"></div></div>
                                     </div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_interested_in_selling_type" data-cc-values="Flat Fee">
-                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[landlord_broker_flate_fee]" class="form-control" value="{{ $ccv('landlord_broker_flate_fee') }}" placeholder="Flat fee amount"></div>
+                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[landlord_broker_flate_fee]" class="form-control" value="{{ $ccv('landlord_broker_flate_fee') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_interested_in_selling_type" data-cc-values="Other">
-                                    <input type="text" name="cc[landlord_broker_other]" class="form-control form-control-sm" value="{{ $ccv('landlord_broker_other') }}" placeholder="Describe selling fee">
+                                    <input type="text" name="cc[landlord_broker_other]" class="form-control form-control-sm" value="{{ $ccv('landlord_broker_other') }}" placeholder="Enter purchase fee structure (e.g., Tiered: 5% on the first $500000, 3% on any amount above $500000)">
                                 </div>
                             </div>
                         </div>
@@ -897,36 +897,36 @@
                         </select>
                         <div class="cc-sub mt-2">
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Flat Fee">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat]" class="form-control" value="{{ $ccv('lease_fee_flat') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat]" class="form-control" value="{{ $ccv('lease_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                             </div>
                             @if($propertyType === 'residential')
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Percentage of Monthly Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_monthly_rent]" class="form-control" value="{{ $ccv('lease_fee_percentage_monthly_rent') }}" placeholder="% monthly rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_monthly_rent]" class="form-control" value="{{ $ccv('lease_fee_percentage_monthly_rent') }}" placeholder="Enter percentage of monthly rent (e.g., 100)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Percentage of the Gross Lease Value">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage]" class="form-control" value="{{ $ccv('lease_fee_percentage') }}" placeholder="% gross lease value"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage]" class="form-control" value="{{ $ccv('lease_fee_percentage') }}" placeholder="Enter percentage of the gross lease value (e.g., 10)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Flat Fee + Percentage of the Gross Lease Value">
                                 <div class="row g-2">
-                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo]" class="form-control" value="{{ $ccv('lease_fee_flat_combo') }}" placeholder="Flat fee"></div></div>
+                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo]" class="form-control" value="{{ $ccv('lease_fee_flat_combo') }}" placeholder="Enter flat fee amount (e.g., 1000)"></div></div>
                                     <div class="col-md-1 text-center pt-1">+</div>
-                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo') }}" placeholder="% gross lease"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo') }}" placeholder="Enter percentage of the gross lease value (e.g., 7)"><span class="input-group-text">%</span></div></div>
                                 </div>
                             </div>
                             @elseif($propertyType === 'commercial')
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Percentage of the Net Aggregate Rent">
-                                <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_net') }}" placeholder="% net aggregate rent"><span class="input-group-text">%</span></div>
+                                <div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_net') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="Flat Fee + Percentage of the Net Aggregate Rent">
                                 <div class="row g-2">
-                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo_net]" class="form-control" value="{{ $ccv('lease_fee_flat_combo_net') }}" placeholder="Flat fee"></div></div>
+                                    <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[lease_fee_flat_combo_net]" class="form-control" value="{{ $ccv('lease_fee_flat_combo_net') }}" placeholder="Enter flat fee amount (e.g., 1500)"></div></div>
                                     <div class="col-md-1 text-center pt-1">+</div>
-                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo_net') }}" placeholder="% net aggregate"><span class="input-group-text">%</span></div></div>
+                                    <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[lease_fee_percentage_combo_net]" class="form-control" value="{{ $ccv('lease_fee_percentage_combo_net') }}" placeholder="Enter percentage of the net aggregate rent (e.g., 6)"><span class="input-group-text">%</span></div></div>
                                 </div>
                             </div>
                             @endif
                             <div class="cc-conditional" data-cc-parent="cc_lease_fee_type" data-cc-values="other">
-                                <input type="text" name="cc[lease_fee_other]" class="form-control form-control-sm" value="{{ $ccv('lease_fee_other') }}" placeholder="Describe lease fee">
+                                <input type="text" name="cc[lease_fee_other]" class="form-control form-control-sm" value="{{ $ccv('lease_fee_other') }}" placeholder="Enter the total lease fee amount and payment structure for the Tenant's Broker (e.g., $1500 upfront, $2000 at lease execution)">
                             </div>
                         </div>
                     </div>
@@ -984,20 +984,20 @@
                                     @endforeach
                                 </select>
                                 <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type_tenant" data-cc-values="Flat Fee">
-                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Flat fee amount"></div>
+                                    <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat]" class="form-control" value="{{ $ccv('purchase_fee_flat') }}" placeholder="Enter flat fee amount (e.g., 5000)"></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type_tenant" data-cc-values="Percentage of the Total Purchase Price">
-                                    <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage]" class="form-control" value="{{ $ccv('purchase_fee_percentage') }}" placeholder="% of purchase price"><span class="input-group-text">%</span></div>
+                                    <div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage]" class="form-control" value="{{ $ccv('purchase_fee_percentage') }}" placeholder="Enter percentage of the total purchase price (e.g., 3)"><span class="input-group-text">%</span></div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type_tenant" data-cc-values="Percentage of the Total Purchase Price + Flat Fee">
                                     <div class="row g-2">
-                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="% (e.g. 3)"><span class="input-group-text">%</span></div></div>
+                                        <div class="col-md-6"><div class="input-group input-group-sm"><input type="number" name="cc[purchase_fee_percentage_combo]" class="form-control" value="{{ $ccv('purchase_fee_percentage_combo') }}" placeholder="Enter percentage of the total purchase price (e.g., 2)"><span class="input-group-text">%</span></div></div>
                                         <div class="col-md-1 text-center pt-1">+</div>
-                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Flat fee"></div></div>
+                                        <div class="col-md-5"><div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[purchase_fee_flat_combo]" class="form-control" value="{{ $ccv('purchase_fee_flat_combo') }}" placeholder="Enter flat fee amount (e.g., 3000)"></div></div>
                                     </div>
                                 </div>
                                 <div class="cc-conditional" data-cc-parent="cc_purchase_fee_type_tenant" data-cc-values="other">
-                                    <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Describe purchase fee">
+                                    <input type="text" name="cc[purchase_fee_other]" class="form-control form-control-sm" value="{{ $ccv('purchase_fee_other') }}" placeholder="Enter purchase fee amount (e.g., $1000 upfront + 2% at closing)">
                                 </div>
                             </div>
                         </div>
@@ -1064,7 +1064,7 @@
                     </select>
                     <div class="cc-sub mt-2">
                         <div class="cc-conditional" data-cc-parent="cc_early_termination_fee_option" data-cc-values="{{ $etfYesVal }}">
-                            <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[early_termination_fee_amount]" class="form-control" value="{{ $ccv('early_termination_fee_amount') }}" placeholder="Amount (e.g. 2,000)"></div>
+                            <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[early_termination_fee_amount]" class="form-control" value="{{ $ccv('early_termination_fee_amount') }}" placeholder="Amount (e.g. 2000)"></div>
                         </div>
                     </div>
                 </div>
