@@ -714,7 +714,7 @@
     <div class="input-cover">
 
         <select wire:model.defer="property_items" id="property_style_select" class="form-control has-icon"
-            data-icon="fa-solid fa-home" data-placeholder="Select" @if (!$property_type) disabled @endif required>
+            data-icon="fa-solid fa-home" @if (!$property_type) disabled @endif required>
             <option value="">Select</option>
 
             @if ($property_type === 'Residential')

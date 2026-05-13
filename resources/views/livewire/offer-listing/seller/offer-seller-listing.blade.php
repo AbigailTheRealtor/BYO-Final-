@@ -1938,18 +1938,6 @@
                 $('#hoa-amenities-other-section').toggle(amDataInit.includes('Other'));
             }
 
-            if ($('#property_style_select').length && !$('#property_style_select').hasClass('select2-hidden-accessible')) {
-                $('#property_style_select').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                    width: '100%',
-                });
-                $('#property_style_select').on('change', function(e) {
-                    let selectedValue = $(this).val();
-                    debouncedSet('property_items', selectedValue);
-                });
-            }
-
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select",
