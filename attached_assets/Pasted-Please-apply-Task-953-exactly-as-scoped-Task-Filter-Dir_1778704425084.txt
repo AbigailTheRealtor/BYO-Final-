@@ -1,0 +1,67 @@
+Please apply Task #953 exactly as scoped.
+
+Task:
+Filter Direct Hire / Offer Preset Seller Agent records out of the public Seller Agent search page.
+
+Affected page:
+/search/seller-agent-needed
+
+Primary file:
+app/Http/Controllers/SellerAgentAuctionController.php
+
+Critical safeguards:
+- Do NOT delete any records.
+- Do NOT change database schema, migrations, models, routes, validation, or saved meta keys.
+- Do NOT touch Buyer, Landlord, or Tenant search pages/controllers.
+- Do NOT touch Direct Hire routes or pages.
+- Do NOT change pagination, sorting, or existing search filters.
+- Do NOT alter existing offer_listing exclusion logic.
+- Query filter only.
+
+Root cause:
+Direct Hire records are stamped with:
+workflow_type = hire_agent
+
+So they can look like normal marketplace Hire Seller Agent listings.
+
+Reliable Direct Hire marker:
+meta_key = hire_me_flow
+meta_value = 1
+
+Required fix:
+In SellerAgentAuctionController::searchListing, immediately after the existing offer_listing exclusion block, add a new exclusion:
+
+Exclude any Seller Agent listing where meta has:
+meta_key = hire_me_flow
+meta_value = 1
+
+Use whereDoesntHave('meta', ...) consistently with the existing meta exclusion pattern.
+
+Expected behavior:
+- /search/seller-agent-needed no longer shows Direct Hire / Offer Preset Seller Agent records.
+- Normal marketplace Hire a Seller’s Agent listings still appear.
+- Direct Hire records still open from their own Direct Hire URLs.
+- Existing filters still work:
+  - title/search
+  - bedrooms
+  - bathrooms
+  - property_type
+  - sort
+  - pagination
+
+Files to audit:
+- app/Http/Controllers/SellerAgentAuctionController.php
+- app/Http/Controllers/HireAgentDirectController.php only to confirm hire_me_flow = 1 source
+- Do not edit HireAgentDirectController.php unless audit proves absolutely necessary.
+
+QA:
+1. Find one normal marketplace Hire Seller Agent listing without hire_me_flow.
+2. Find one Direct Hire / Offer Preset Seller Agent record with hire_me_flow = 1.
+3. Visit:
+   /search/seller-agent-needed
+4. Confirm the normal marketplace listing appears.
+5. Confirm the Direct Hire listing does NOT appear.
+6. Confirm the Direct Hire listing still opens from its own Direct Hire URL.
+7. Confirm pagination and filters still work.
+8. Confirm Buyer, Landlord, and Tenant search controllers were not changed.
+9. Confirm git diff only touches SellerAgentAuctionController.php unless audit proves otherwise.

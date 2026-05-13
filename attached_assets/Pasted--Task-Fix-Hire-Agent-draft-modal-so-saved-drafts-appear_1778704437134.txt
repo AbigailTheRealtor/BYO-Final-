@@ -1,0 +1,110 @@
+# Task: Fix Hire Agent draft modal so saved drafts appear when user clicks role-specific Hire Agent listing links
+
+Problem:
+On Hire a Landlord's Agent, saved drafts are not appearing when opening an existing listing link like:
+/hire/agent/auction/landlord/38
+
+Also, for all four Hire Agent flows:
+- Hire a Tenant's Agent
+- Hire a Buyer's Agent
+- Hire a Seller's Agent
+- Hire a Landlord's Agent
+
+When the user selects the role under “Select Agent Type,” the saved draft modal should appear every time a draft exists — not only the first time they originally selected that role from the dashboard.
+
+Important context:
+All four flows should use the shared TenantAgentAuction Livewire component and shared tenant-agent-auction Blade view. Do not create separate logic unless the existing architecture already requires it.
+
+Read-only audit first:
+Before editing anything, confirm:
+1. Which routes load:
+   - /hire/agent/auction/tenant
+   - /hire/agent/auction/buyer
+   - /hire/agent/auction/seller
+   - /hire/agent/auction/landlord
+   - /hire/agent/auction/landlord/{id}
+2. Whether all four routes use App\Http\Livewire\TenantAgentAuction.
+3. Where saved drafts are queried and where $hasDrafts is set.
+4. Whether drafts are being filtered incorrectly when a listing ID exists in the URL.
+5. Whether the draft modal is only triggered on initial dashboard selection instead of also triggering on role/listing load.
+6. Whether landlord drafts fail because of role name, workflow type, listing ID, draft status, or PHP class/alias mismatch.
+7. Exact files that will be changed.
+
+Files likely involved:
+- routes/web.php
+- app/Http/Livewire/TenantAgentAuction.php
+- resources/views/livewire/tenant-agent-auction.blade.php
+- any shared JS inside that Blade that opens the draft modal
+
+Do not change:
+- database schema
+- migrations
+- validation rules
+- unrelated controllers
+- unrelated listing views
+- Limited Service / legacy flows
+- Offer Listing flows
+- Direct Hire counter flows
+- public search/listing pages except where this exact route depends on them
+
+Required behavior:
+1. If a user opens any Hire Agent role flow and a saved draft exists for that user + role + flow, the draft modal should appear.
+2. This must work from:
+   - dashboard role selection
+   - direct URL entry
+   - clicking a “Hire a Landlord's Agent” listing link
+   - clicking a “Hire a Tenant's Agent” listing link
+   - clicking a “Hire a Buyer's Agent” listing link
+   - clicking a “Hire a Seller's Agent” listing link
+3. Example URL that must work:
+   /hire/agent/auction/landlord/38
+4. The presence of listing ID 38 must not prevent the draft lookup unless the intended design is to show only drafts connected to that same listing. If current drafts are role-based, preserve role-based behavior.
+5. The modal should not show if there is no saved draft.
+6. The modal should not show duplicate times after Livewire refreshes.
+7. The modal should be re-triggerable when switching/selecting a different Agent Type if that role has a draft.
+8. Landlord, Tenant, Buyer, and Seller should all behave consistently.
+
+Implementation guidance:
+- Centralize draft detection inside TenantAgentAuction.php so all four roles use the same logic.
+- Normalize role values consistently, likely:
+  tenant, buyer, seller, landlord
+- Make sure the route parameter role and selected Agent Type update the same internal property.
+- Make sure draft lookup runs when:
+  - component mounts
+  - role is changed from Select Agent Type
+  - listing ID is present in the URL
+- If using a browser event to open the modal, dispatch it after $hasDrafts is confirmed true.
+- Add a front-end guard so the same modal does not open multiple times from one render cycle.
+- Do not rely only on dashboard-origin session flags to show the draft modal.
+
+Acceptance checks:
+1. Log in as a test user with an existing Tenant draft.
+   Open /hire/agent/auction/tenant.
+   Draft modal appears.
+2. Log in as a test user with an existing Buyer draft.
+   Open /hire/agent/auction/buyer.
+   Draft modal appears.
+3. Log in as a test user with an existing Seller draft.
+   Open /hire/agent/auction/seller.
+   Draft modal appears.
+4. Log in as a test user with an existing Landlord draft.
+   Open /hire/agent/auction/landlord.
+   Draft modal appears.
+5. Open this example:
+   /hire/agent/auction/landlord/38
+   Draft modal still appears when a Landlord draft exists.
+6. From the Select Agent Type dropdown, switch to a role that has a saved draft.
+   Draft modal appears.
+7. Switch to a role with no saved draft.
+   Draft modal does not appear.
+8. Confirm no duplicate modals appear after tab switching, Livewire updates, or page refresh.
+9. Confirm saved draft loads correctly after clicking “Load Saved Draft.”
+10. Confirm no Buyer/Seller/Tenant/Landlord flow was broken.
+
+Final response required from Replit:
+- List files changed.
+- Explain root cause.
+- Confirm whether listing ID was blocking draft lookup.
+- Confirm all four role checks passed.
+- Include screenshots or browser QA notes for landlord URL:
+  /hire/agent/auction/landlord/38
