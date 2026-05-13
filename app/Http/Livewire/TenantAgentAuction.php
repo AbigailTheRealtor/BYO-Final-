@@ -2798,7 +2798,13 @@ class TenantAgentAuction extends Component
             session()->flash('success', 'Draft saved successfully (Version ' . ($previousVersion + 1) . '). You can return later to complete your listing.');
             return redirect()->route('hire.agent.auction.draft', ['user_type' => $this->user_type, 'listingId' => $this->listingId]);
         } catch (\Exception $e) {
-            session()->flash('error', 'Error saving draft: ' . $e->getMessage());
+            \Log::error('[SAVE_DRAFT] landlord/hire draft save failed', [
+                'user_type'  => $this->user_type,
+                'user_id'    => auth()->id(),
+                'message'    => $e->getMessage(),
+            ]);
+            session()->flash('error', 'Error saving draft. Please review the form and try again.');
+            return redirect()->route('hire.agent.auction', ['user_type' => $this->user_type]);
         }
     }
 

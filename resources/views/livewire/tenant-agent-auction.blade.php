@@ -1667,17 +1667,17 @@ $lease_types = [
                 </div>
                 @endif
 
-                {{-- @if (session()->has('success'))
+                @if (session()->has('success'))
                     <div class="alert alert-success">
                         {{ session('success') }}
-            </div>
-            @endif
+                    </div>
+                @endif
 
-            @if (session()->has('error'))
-            <div class="alert alert-danger">
-                {{ session('error') }}
-            </div>
-            @endif --}}
+                @if (session()->has('error'))
+                    <div class="alert alert-danger">
+                        {{ session('error') }}
+                    </div>
+                @endif
 
             <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
 
