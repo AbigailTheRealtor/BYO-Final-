@@ -346,8 +346,7 @@
             @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
             @if(count($appliances))
             <hr>
-            <div class="mb-1"><span class="field-label">Appliances</span></div>
-            <p class="field-value">{{ implode(', ', $appliances) }}</p>
+            {!! $row('Appliances', implode(', ', $appliances)) !!}
             @endif
 
             @php $pItems = $subOther($arr('property_items'), $str('other_property_items')); @endphp
@@ -1052,12 +1051,10 @@
                 $assocIncludes  = $subOther($arr('association_fee_includes'), $str('association_fee_includes_other'));
             @endphp
             @if(count($assocIncludes))
-                <div class="mb-1"><span class="field-label">Fee Includes</span></div>
-                <p class="field-value">{{ implode(', ', $assocIncludes) }}</p>
+                {!! $row('Fee Includes', implode(', ', $assocIncludes)) !!}
             @endif
             @if(count($assocAmenities))
-                <div class="mb-1"><span class="field-label">Association Amenities</span></div>
-                <p class="field-value">{{ implode(', ', $assocAmenities) }}</p>
+                {!! $row('Association Amenities', implode(', ', $assocAmenities)) !!}
             @endif
             @endif
         </div>
