@@ -316,8 +316,8 @@
                     {!! $row('County', $str('property_county')) !!}
                     {!! $row('State', $str('property_state')) !!}
                     {!! $row('ZIP Code', $str('property_zip') ?: $str('zip_code')) !!}
-                    {!! $row('Bedrooms', $str('bedrooms') . ($str('other_bedrooms') ? ' (' . $str('other_bedrooms') . ')' : '')) !!}
-                    {!! $row('Bathrooms', $str('bathrooms') . ($str('other_bathrooms') ? ' (' . $str('other_bathrooms') . ')' : '')) !!}
+                    {!! $row('Bedrooms', $orOther($str('bedrooms'), $str('other_bedrooms'))) !!}
+                    {!! $row('Bathrooms', $orOther($str('bathrooms'), $str('other_bathrooms'))) !!}
                 </div>
                 <div class="col-md-6">
                     {!! $row('Heated Sq Ft', $str('minimum_heated_square') ?: null) !!}
@@ -333,7 +333,6 @@
                     @endphp
                     {!! $row('Property Condition', $_cond) !!}
                     {!! $row('Pool', $str('pool_needed')) !!}
-                    {!! $row('Video/Tour Link', $str('video_tour_url') ?: $str('virtual_tour_url')) !!}
                 </div>
             </div>
 
@@ -790,7 +789,6 @@
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Buyer\'s Broker Commission Structure', $str('commission_structure')) !!}
-                    {!! $row('Buyer\'s Broker Commission Fee Type', $str('commission_structure_type')) !!}
                     @if($str('commission_structure_type') === 'Flat Fee')
                         {!! $row('Buyer\'s Broker Commission Fee', $fmtMoney($str('commission_structure_type_fee_flat'))) !!}
                     @elseif($str('commission_structure_type') === 'Percentage of the Total Purchase Price')
@@ -941,10 +939,7 @@
                         {!! $row('Operating Statement Available', $str('operating_statement_available')) !!}
                     @elseif($finPropType === 'Commercial')
                         {!! $row('Price Per Square Foot', $fmtMoney($str('price_per_sqft'))) !!}
-                        {!! $row('Existing Lease Type', $str('existing_lease_type')) !!}
-                        @if($str('existing_lease_type') === 'Other')
-                            {!! $row('Other Lease Type', $str('other_lease_type')) !!}
-                        @endif
+                        {!! $row('Existing Lease Type', $orOther($str('existing_lease_type'), $str('other_lease_type'))) !!}
                         {!! $row('Lease Expiration Date', $str('lease_expiration')) !!}
                         {!! $row('Lease Assignable to Buyer', $str('lease_assignable')) !!}
                     @elseif($finPropType === 'Business')
@@ -953,10 +948,7 @@
                         {!! $row('SDE / EBITDA', $fmtMoney($str('sde_ebitda'))) !!}
                         {!! $row('Inventory Value', $fmtMoney($str('inventory_value'))) !!}
                         {!! $row('FF&amp;E Value', $fmtMoney($str('ffe_value'))) !!}
-                        {!! $row('Reason for Sale', $str('reason_for_sale')) !!}
-                        @if($str('reason_for_sale') === 'Other')
-                            {!! $row('Other Reason for Sale', $str('other_reason_for_sale')) !!}
-                        @endif
+                        {!! $row('Reason for Sale', $orOther($str('reason_for_sale'), $str('other_reason_for_sale'))) !!}
                         {!! $row('Number of Employees', $str('employee_count')) !!}
                         {!! $row('Financial Statements Available', $str('financial_statements_available')) !!}
                         {!! $row('Tax Returns Available', $str('tax_returns_available')) !!}
