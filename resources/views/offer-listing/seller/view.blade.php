@@ -50,18 +50,366 @@
 
 @push('styles')
 <style>
-    .section-card { margin-bottom: 2rem; border-radius: 0.5rem; border: 1px solid #dee2e6; }
-    .section-card .card-header { background: #f1f5f9; font-weight: 700; font-size: 1.05rem; padding: 0.75rem 1rem; }
-    .section-card .card-body { padding: 1rem 1.25rem; }
-    .field-label { color: #6c757d; font-weight: 600; font-size: 0.875rem; }
-    .field-value { font-size: 0.925rem; overflow-wrap: break-word; }
-    .photo-thumb { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; }
-    .cover-badge { font-size: 0.7rem; background: #0d6efd; color: #fff; border-radius: 3px; padding: 1px 5px; }
+/* ============================================================
+   sol-view-page — namespaced to this page only
+   ============================================================ */
+
+/* Section cards */
+.sol-view-page .section-card {
+    margin-bottom: 1.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+.sol-view-page .section-card .card-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+    letter-spacing: -0.01em;
+    color: #1e293b;
+}
+.sol-view-page .section-card .card-body {
+    padding: 1.25rem 1.5rem;
+}
+.sol-view-page hr {
+    border-color: #e9ecef;
+    opacity: 0.6;
+    margin: 1rem 0;
+}
+.sol-view-page .field-label {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+.sol-view-page .field-value {
+    font-size: 0.925rem;
+    overflow-wrap: break-word;
+    color: #1e293b;
+}
+.sol-view-page h6.fw-semibold {
+    color: #334155;
+    font-size: 0.95rem;
+}
+
+/* Photo thumbnails */
+.sol-view-page .photo-thumb {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 2px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0,0,0,.10);
+    transition: transform .2s ease, box-shadow .2s ease;
+    display: block;
+}
+.sol-view-page .photo-thumb:hover {
+    transform: scale(1.06);
+    box-shadow: 0 6px 20px rgba(0,0,0,.18);
+}
+.sol-view-page .cover-badge {
+    font-size: 0.68rem;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-weight: 600;
+}
+
+/* ---- Hero ---- */
+.sol-view-page .sol-hero {
+    border-radius: 1rem;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,.10);
+    background: #1e293b;
+}
+.sol-view-page .sol-hero-photo {
+    min-height: 280px;
+    max-height: 420px;
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+.sol-view-page .sol-hero-photo-placeholder {
+    min-height: 280px;
+    background: linear-gradient(135deg, #1e3a5f, #0f172a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 3rem;
+}
+.sol-view-page .sol-hero-summary {
+    background: #fff;
+    padding: 1.5rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+.sol-view-page .sol-hero-price {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1e293b;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+.sol-view-page .sol-hero-address {
+    color: #475569;
+    font-size: 0.92rem;
+    margin-top: 0.35rem;
+}
+.sol-view-page .sol-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.25rem;
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: #334155;
+}
+.sol-view-page .sol-hero-meta-item i {
+    color: #2563eb;
+    margin-right: 4px;
+}
+.sol-view-page .sol-hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+}
+.sol-view-page .sol-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.65rem;
+    border-radius: 20px;
+    border: 1px solid;
+    white-space: nowrap;
+}
+.sol-view-page .sol-badge-blue   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.sol-view-page .sol-badge-green  { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+.sol-view-page .sol-badge-purple { background: #faf5ff; color: #7c3aed; border-color: #ddd6fe; }
+.sol-view-page .sol-badge-amber  { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.sol-view-page .sol-badge-teal   { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+.sol-view-page .sol-badge-rose   { background: #fff1f2; color: #be123c; border-color: #fecdd3; }
+.sol-view-page .sol-hero-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+    margin-top: 0.75rem;
+}
+.sol-view-page .sol-hero-dates {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin-top: 0.5rem;
+}
+.sol-view-page .sol-hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+.sol-view-page .sol-hero-ctas .btn {
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.45rem 0.9rem;
+    border-radius: 8px;
+}
+
+/* ---- Smooth-scroll nav tabs ---- */
+.sol-view-page .sol-nav-tabs-wrap {
+    position: sticky;
+    top: 70px;
+    z-index: 100;
+    background: #fff;
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.sol-view-page .sol-nav-tabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    gap: 0;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.sol-view-page .sol-nav-tabs::-webkit-scrollbar { display: none; }
+.sol-view-page .sol-nav-tabs li a {
+    display: block;
+    padding: 0.75rem 1.1rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #64748b;
+    text-decoration: none;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color .15s, border-color .15s;
+    letter-spacing: 0.01em;
+}
+.sol-view-page .sol-nav-tabs li a:hover {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+/* ---- Sticky desktop action card ---- */
+.sol-view-page .sol-sticky-card {
+    position: sticky;
+    top: 72px;
+    background: #fff;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    padding: 1.25rem 1rem;
+}
+.sol-view-page .sol-sticky-card .sol-sticky-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+.sol-view-page .sol-sticky-card .sol-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.83rem;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-bottom: 0.4rem;
+    text-align: left;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    text-decoration: none;
+}
+.sol-view-page .sol-sticky-card .sol-action-btn i {
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.sol-view-page .sol-action-primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+.sol-view-page .sol-action-primary:hover { background: #1d4ed8; color: #fff; }
+.sol-view-page .sol-action-outline { background: #fff; color: #334155; border-color: #e2e8f0; }
+.sol-view-page .sol-action-outline:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* ---- Mobile sticky bottom bar ---- */
+.sol-mobile-bar {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.10);
+    padding: 0.5rem 1rem;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+    gap: 0.5rem;
+}
+.sol-mobile-bar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #334155;
+    text-decoration: none;
+    padding: 0.4rem 0.25rem;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: background .15s;
+    min-height: 52px;
+    justify-content: center;
+}
+.sol-mobile-bar-btn i {
+    font-size: 1.15rem;
+    color: #2563eb;
+}
+.sol-mobile-bar-btn:hover, .sol-mobile-bar-btn:active { background: #f1f5f9; color: #1e293b; }
+@media (max-width: 991.98px) {
+    .sol-mobile-bar { display: flex; }
+    .sol-main-content-wrap { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+}
+
+/* Documents & Disclosures polish */
+.sol-view-page .sol-doc-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+}
+.sol-view-page .sol-doc-download {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.sol-view-page .sol-doc-download:hover { background: #2563eb; color: #fff; }
+
+/* Contact CTA row */
+.sol-view-page .sol-contact-cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+/* Modal polish — modals render inside .sol-view-page container */
+.sol-view-page .sol-modal-header {
+    background: linear-gradient(135deg, #1e293b, #334155);
+    color: #fff;
+    border-radius: 0.75rem 0.75rem 0 0;
+    padding: 1.25rem 1.5rem;
+    border-bottom: none;
+}
+.sol-view-page .sol-modal-header .btn-close { filter: invert(1); }
 </style>
 @endpush
 
 @section('content')
-<div class="container py-4">
+<div class="container py-4 sol-view-page">
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -71,9 +419,9 @@
     @endif
 
     {{-- Page Header --}}
-    <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+    <div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
         <div>
-            <h2 class="mb-1 fw-bold">{{ $auction->title ?? ($meta['address'] ?? 'Seller Offer Listing') }}</h2>
+            <h2 class="mb-1 fw-bold" style="color:#1e293b;">{{ $auction->title ?? ($meta['address'] ?? 'Seller Offer Listing') }}</h2>
             @php
                 $addrParts = array_filter([
                     $meta['address'] ?? null,
@@ -126,16 +474,179 @@
            land/commercial-specific multi-selects not rendered in this layout.
          ===================================================================== --}}
 
-    {{-- Photos & Tours --}}
     @php
+        /* Resolve photos for hero + gallery */
         $propertyPhotos = $meta['property_photos'] ?? [];
         if (is_string($propertyPhotos)) {
             $decoded = json_decode($propertyPhotos, true);
             $propertyPhotos = is_array($decoded) ? $decoded : [];
         }
+        $coverPhoto = null;
+        foreach ($propertyPhotos as $ph) {
+            $fn = is_array($ph) ? ($ph['filename'] ?? '') : $ph;
+            if (!$fn) continue;
+            if (is_array($ph) && !empty($ph['is_cover'])) { $coverPhoto = $fn; break; }
+            if (!$coverPhoto) $coverPhoto = $fn;
+        }
+
+        /* Hero: price — seller-appropriate field priority; no buyer fields */
+        $heroPrice = null;
+        foreach (['desired_sale_price','purchase_price','buy_now_price','starting_price','reserve_price'] as $pk) {
+            $pv = $meta[$pk] ?? '';
+            if ($pv !== '' && $pv !== null) { $heroPrice = $fmtMoney($pv); break; }
+        }
+
+        /* Hero: beds / baths / sqft */
+        $heroBeds  = $str('bedrooms')  ?: null;
+        $heroBaths = $str('bathrooms') ?: null;
+        $heroHSqft = $str('minimum_heated_square') ?: null;
+        $heroTSqft = $str('total_square_feet') ?: null;
+        $heroPropType = $str('property_type') ?: null;
+        $heroStatus   = $str('listing_status') ?: null;
+        $heroListDate = $fmtDate($str('listing_date'));
+        $heroUpdDate  = $auction->updated_at ? \Carbon\Carbon::parse($auction->updated_at)->format('F j, Y') : null;
+
+        /* Hero badges */
+        $heroOfFin   = $arr('offered_financing');
+        $badgePool     = in_array(strtolower((string)($str('pool_needed'))), ['yes','1','true']);
+        $badgeWaterfront = false;
+        $vp = $arr('view_preference');
+        foreach ($vp as $v) {
+            if (stripos($v, 'water') !== false || stripos($v, 'lake') !== false || stripos($v, 'ocean') !== false || stripos($v, 'bay') !== false || stripos($v, 'gulf') !== false || stripos($v, 'river') !== false || stripos($v, 'canal') !== false) {
+                $badgeWaterfront = true; break;
+            }
+        }
+        $badgeFinancing  = count($heroOfFin) > 0;
+        $badgeLeaseOpt   = in_array('Lease Option', $heroOfFin) || in_array('Lease Purchase', $heroOfFin);
+        $badgeCrypto     = in_array('Cryptocurrency', $heroOfFin);
+        $badgeHOA        = in_array(strtolower((string)($str('has_hoa'))), ['yes','1','true']);
+        /* Bidding Period badge: only when auction_type explicitly indicates a bidding format */
+        $badgeBidding = (
+            stripos($str('auction_type'), 'bidding') !== false
+            || stripos($str('auction_type'), 'auction') !== false
+        );
     @endphp
+
+    {{-- ===== HERO SECTION ===== --}}
+    <div class="sol-hero mb-4">
+        <div class="row g-0" style="min-height:280px;">
+            <div class="col-lg-7" style="max-height:420px;overflow:hidden;">
+                @if($coverPhoto)
+                    <img src="{{ asset('storage/auction/images/' . $coverPhoto) }}"
+                         alt="Property cover photo"
+                         class="sol-hero-photo"
+                         onerror="this.parentElement.innerHTML='<div class=\'sol-hero-photo-placeholder\'><i class=\'fa-solid fa-house\'></i></div>'">
+                @else
+                    <div class="sol-hero-photo-placeholder">
+                        <i class="fa-solid fa-house"></i>
+                    </div>
+                @endif
+            </div>
+            <div class="col-lg-5">
+                <div class="sol-hero-summary">
+                    @if($heroPrice)
+                        <div class="sol-hero-price">{{ $heroPrice }}</div>
+                    @endif
+                    @if($fullAddress)
+                        <div class="sol-hero-address"><i class="fa-solid fa-location-dot me-1" style="color:#2563eb;"></i>{{ $fullAddress }}</div>
+                    @endif
+
+                    <div class="sol-hero-meta">
+                        @if($heroBeds)
+                            <span class="sol-hero-meta-item"><i class="fa-solid fa-bed"></i>{{ $heroBeds }} Bed{{ $heroBeds != '1' ? 's' : '' }}</span>
+                        @endif
+                        @if($heroBaths)
+                            <span class="sol-hero-meta-item"><i class="fa-solid fa-bath"></i>{{ $heroBaths }} Bath{{ $heroBaths != '1' ? 's' : '' }}</span>
+                        @endif
+                        @if($heroHSqft)
+                            <span class="sol-hero-meta-item"><i class="fa-solid fa-ruler-combined"></i>{{ number_format((int)preg_replace('/[^0-9]/','',$heroHSqft)) }} Heated Sq Ft</span>
+                        @endif
+                        @if($heroTSqft && $heroTSqft !== $heroHSqft)
+                            <span class="sol-hero-meta-item"><i class="fa-solid fa-expand"></i>{{ number_format((int)preg_replace('/[^0-9]/','',$heroTSqft)) }} Total Sq Ft</span>
+                        @endif
+                        @if($heroPropType)
+                            <span class="sol-hero-meta-item"><i class="fa-solid fa-tag"></i>{{ $heroPropType }}</span>
+                        @endif
+                    </div>
+
+                    @if($heroStatus)
+                        <div>
+                            <span class="sol-hero-status">
+                                <i class="fa-solid fa-circle-check"></i>{{ $heroStatus }}
+                            </span>
+                        </div>
+                    @endif
+
+                    @if($heroListDate || $heroUpdDate)
+                        <div class="sol-hero-dates">
+                            @if($heroListDate)<span>Listed: {{ $heroListDate }}</span>@endif
+                            @if($heroListDate && $heroUpdDate)<span class="mx-1">·</span>@endif
+                            @if($heroUpdDate)<span>Updated: {{ $heroUpdDate }}</span>@endif
+                        </div>
+                    @endif
+
+                    <div class="sol-hero-badges">
+                        @if($badgePool)
+                            <span class="sol-badge sol-badge-blue"><i class="fa-solid fa-water-ladder"></i> Pool</span>
+                        @endif
+                        @if($badgeWaterfront)
+                            <span class="sol-badge sol-badge-teal"><i class="fa-solid fa-water"></i> Waterfront / View</span>
+                        @endif
+                        @if($badgeFinancing)
+                            <span class="sol-badge sol-badge-green"><i class="fa-solid fa-hand-holding-dollar"></i> Financing Available</span>
+                        @endif
+                        @if($badgeLeaseOpt)
+                            <span class="sol-badge sol-badge-purple"><i class="fa-solid fa-key"></i> Lease Option</span>
+                        @endif
+                        @if($badgeCrypto)
+                            <span class="sol-badge sol-badge-amber"><i class="fa-brands fa-bitcoin"></i> Crypto Accepted</span>
+                        @endif
+                        @if($badgeHOA)
+                            <span class="sol-badge sol-badge-rose"><i class="fa-solid fa-building-columns"></i> HOA</span>
+                        @endif
+                        @if($badgeBidding)
+                            <span class="sol-badge sol-badge-blue"><i class="fa-solid fa-gavel"></i> Bidding Period Active</span>
+                        @endif
+                    </div>
+
+                    <div class="sol-hero-ctas">
+                        <button class="btn btn-primary sol-hero-offer-btn" data-bs-toggle="modal" data-bs-target="#solOfferModal">
+                            <i class="fa-solid fa-file-signature me-1"></i>Submit Offer
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#solShowingModal">
+                            <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
+                            <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ===== SMOOTH-SCROLL NAV TABS ===== --}}
+    <div class="sol-nav-tabs-wrap">
+        <ul class="sol-nav-tabs">
+            <li><a href="#section-overview">Overview</a></li>
+            <li><a href="#section-photos">Photos</a></li>
+            <li><a href="#section-details">Details</a></li>
+            <li><a href="#section-financing">Financing</a></li>
+            <li><a href="#section-terms">Terms</a></li>
+            <li><a href="#section-documents">Documents</a></li>
+            <li><a href="#section-contact">Contact</a></li>
+        </ul>
+    </div>
+
+    {{-- ===== TWO-COLUMN LAYOUT: MAIN + STICKY RAIL ===== --}}
+    <div class="row g-4 align-items-start">
+
+        {{-- Main content column --}}
+        <div class="col-lg-9 sol-main-content-wrap">
+
+    {{-- Photos & Tours --}}
     @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url'))
-    <div class="card section-card">
+    <div class="card section-card" id="section-photos">
         <div class="card-header"><i class="fa-solid fa-images me-2"></i>Photos &amp; Tours</div>
         <div class="card-body">
             @php
@@ -160,29 +671,31 @@
             @endphp
             @if($videoUrl)
                 @if($videoEmbedUrl)
-                    <div class="ratio ratio-16x9 mb-2" style="max-width:560px;">
+                    <div class="ratio ratio-16x9 mb-3" style="max-width:560px;">
                         <iframe src="{{ $videoEmbedUrl }}" title="Video Tour"
                                 allowfullscreen
                                 allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
                         </iframe>
                     </div>
+                @else
+                    <p class="mb-3"><span class="field-label">Video Tour:</span>
+                        <a href="{{ $videoUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $videoUrl }}</a>
+                    </p>
                 @endif
-                <p class="mb-3"><span class="field-label">Video Tour:</span>
-                    <a href="{{ $videoUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $videoUrl }}</a>
-                </p>
             @endif
             @if($virtualUrl)
                 @if($virtualEmbedUrl)
-                    <div class="ratio ratio-16x9 mb-2" style="max-width:560px;">
+                    <div class="ratio ratio-16x9 mb-3" style="max-width:560px;">
                         <iframe src="{{ $virtualEmbedUrl }}" title="Virtual Tour"
                                 allowfullscreen
                                 allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture">
                         </iframe>
                     </div>
+                @else
+                    <p class="mb-3"><span class="field-label">3D / Virtual Tour:</span>
+                        <a href="{{ $virtualUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $virtualUrl }}</a>
+                    </p>
                 @endif
-                <p class="mb-3"><span class="field-label">3D / Virtual Tour:</span>
-                    <a href="{{ $virtualUrl }}" target="_blank" rel="noopener" class="ms-1">{{ $virtualUrl }}</a>
-                </p>
             @endif
 
             @if(count($propertyPhotos))
@@ -277,7 +790,7 @@
 
     {{-- Property Description --}}
     @if($val('additional_details'))
-    <div class="card section-card">
+    <div class="card section-card" id="section-overview">
         <div class="card-header"><i class="fa-solid fa-align-left me-2"></i>Property Description</div>
         <div class="card-body">
             <p class="field-value mb-0">{!! nl2br(e($val('additional_details'))) !!}</p>
@@ -286,7 +799,7 @@
     @endif
 
     {{-- Listing Details --}}
-    <div class="card section-card">
+    <div class="card section-card" @if(!$val('additional_details')) id="section-overview" @endif>
         <div class="card-header"><i class="fa-solid fa-list-check me-2"></i>Listing Details</div>
         <div class="card-body">
             <div class="row">
@@ -305,7 +818,7 @@
     </div>
 
     {{-- Property Details --}}
-    <div class="card section-card">
+    <div class="card section-card" id="section-details">
         <div class="card-header"><i class="fa-solid fa-house me-2"></i>Property Details</div>
         <div class="card-body">
             <div class="row">
@@ -521,7 +1034,7 @@
     </div>
 
     {{-- Sale Terms --}}
-    <div class="card section-card">
+    <div class="card section-card" id="section-financing">
         <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Sale Terms</div>
         <div class="card-body">
             <div class="row">
@@ -787,7 +1300,7 @@
         ], fn($f) => !empty($f[1]));
     @endphp
     @if(count($sellerTermsFields))
-    <div class="card section-card">
+    <div class="card section-card" id="section-terms">
         <div class="card-header"><i class="fa-solid fa-handshake me-2"></i>Seller Sale Terms</div>
         <div class="card-body">
             <div class="row">
@@ -862,7 +1375,6 @@
                             {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_first_month')) !!}
                             {!! $row('Number of Months', $str('seller_leasing_gross_no_of_months')) !!}
                         @elseif($str('seller_leasing_fee_type') === 'Flat Fee')
-                            {{-- Flat Fee: stored as seller_leasing_gross_purchase_fee_flat_amount --}}
                             {!! $row('Leasing Fee', $fmtMoney($str('seller_leasing_gross_purchase_fee_flat_amount'))) !!}
                             {!! $row('Sales Tax', $str('seller_leasing_gross_sales_tax_flat_free_gross')) !!}
                         @elseif($str('seller_leasing_fee_type') === 'Flat Fee + Percentage of the Gross Lease Value')
@@ -1090,20 +1602,20 @@
         $addDocNames = $arr('additional_documents');
     @endphp
     @if($hasAnyDisclosure || count($docRows) || count($addDocNames))
-    <div class="card section-card">
+    <div class="card section-card" id="section-documents">
         <div class="card-header"><i class="fa-solid fa-folder-open me-2"></i>Documents &amp; Disclosures</div>
         <div class="card-body">
             <div class="row">
             @foreach($disclosures as $d)
             @if($str($d[1]) || $str($d[2]))
-            <div class="col-md-6 mb-2 d-flex align-items-baseline gap-2 flex-wrap">
+            <div class="col-md-6 mb-3 d-flex align-items-center gap-2 flex-wrap">
                 <span class="field-label">{{ $d[0] }}</span>
                 @if($str($d[1]))
-                    <span class="badge bg-light text-dark border">{{ $str($d[1]) }}</span>
+                    <span class="sol-doc-badge">{{ $str($d[1]) }}</span>
                 @endif
                 @if($str($d[2]))
-                    <a href="{{ asset('storage/' . $str($d[2])) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0">
-                        <i class="fa-solid fa-download me-1"></i>Download
+                    <a href="{{ asset('storage/' . $str($d[2])) }}" target="_blank" class="sol-doc-download">
+                        <i class="fa-solid fa-download"></i>Download
                     </a>
                 @endif
             </div>
@@ -1115,9 +1627,9 @@
             <h6 class="fw-semibold mt-3 mb-2">Additional Documents Available</h6>
             <div class="row">
                 @foreach($addDocNames as $addDocName)
-                <div class="col-md-6 mb-2 d-flex align-items-baseline gap-2 flex-wrap">
+                <div class="col-md-6 mb-2 d-flex align-items-center gap-2 flex-wrap">
                     <span class="field-label">{{ $addDocName }}</span>
-                    <span class="badge bg-light text-dark border">Available</span>
+                    <span class="sol-doc-badge"><i class="fa-solid fa-check me-1" style="color:#15803d;"></i>Available</span>
                 </div>
                 @endforeach
             </div>
@@ -1127,12 +1639,12 @@
             <h6 class="fw-semibold mt-3 mb-2">Additional Documents</h6>
             <ul class="list-unstyled mb-0">
                 @foreach($docRows as $dr)
-                <li class="mb-1">
-                    <i class="fa-solid fa-file me-1 text-muted"></i>
-                    {{ $dr['type'] ?? $dr['label'] ?? 'Document' }}
+                <li class="mb-2 d-flex align-items-center gap-2 flex-wrap">
+                    <i class="fa-solid fa-file text-muted"></i>
+                    <span class="field-value">{{ $dr['type'] ?? $dr['label'] ?? 'Document' }}</span>
                     @if(!empty($dr['file_path']))
-                        <a href="{{ asset('storage/' . $dr['file_path']) }}" target="_blank" class="ms-2 btn btn-sm btn-outline-secondary py-0">
-                            <i class="fa-solid fa-download me-1"></i>Download
+                        <a href="{{ asset('storage/' . $dr['file_path']) }}" target="_blank" class="sol-doc-download">
+                            <i class="fa-solid fa-download"></i>Download
                         </a>
                     @endif
                 </li>
@@ -1148,7 +1660,7 @@
         $hasContact = $str('first_name') || $str('last_name') || $str('email') || $str('phone_number') || $str('agent_brokerage') || $str('agent_license_number') || $str('agent_nar_member_id');
     @endphp
     @if($hasContact)
-    <div class="card section-card">
+    <div class="card section-card" id="section-contact">
         <div class="card-header"><i class="fa-solid fa-id-card me-2"></i>Contact Information</div>
         <div class="card-body">
             <div class="row">
@@ -1169,6 +1681,19 @@
                     {!! $row('NAR Member ID', $str('agent_nar_member_id')) !!}
                 </div>
             </div>
+            <div class="sol-contact-cta-row">
+                @if($str('email'))
+                    <a href="mailto:{{ $str('email') }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-envelope me-1"></i>Contact Agent
+                    </a>
+                @endif
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#solShowingModal">
+                    <i class="fa-solid fa-calendar-days me-1"></i>Schedule Showing
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
+                    <i class="fa-solid fa-circle-question me-1"></i>Ask a Question
+                </button>
+            </div>
         </div>
     </div>
     @endif
@@ -1183,5 +1708,262 @@
     </div>
     @endif
 
+        </div>{{-- /col-lg-9 --}}
+
+        {{-- ===== STICKY DESKTOP ACTION CARD ===== --}}
+        <div class="col-lg-3 d-none d-lg-block">
+            <div class="sol-sticky-card">
+                <div class="sol-sticky-title">Quick Actions</div>
+
+                <button class="sol-action-btn sol-action-primary" data-bs-toggle="modal" data-bs-target="#solOfferModal">
+                    <i class="fa-solid fa-file-signature"></i>Submit Offer
+                </button>
+                <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solShowingModal">
+                    <i class="fa-solid fa-calendar-days"></i>Schedule Showing
+                </button>
+                <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solAiModal">
+                    <i class="fa-solid fa-robot"></i>Ask AI About Property
+                </button>
+                <button class="sol-action-btn sol-action-outline" data-bs-toggle="modal" data-bs-target="#solQuestionModal">
+                    <i class="fa-solid fa-circle-question"></i>Ask a Question
+                </button>
+                <button class="sol-action-btn sol-action-outline" type="button" disabled style="cursor:default;opacity:.6;">
+                    <i class="fa-regular fa-bookmark"></i>Save Listing
+                </button>
+                <button class="sol-action-btn sol-action-outline" id="solShareBtn" type="button">
+                    <i class="fa-solid fa-share-nodes"></i>Share Listing
+                </button>
+
+                @if($heroPrice)
+                <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;text-align:center;">
+                    <div style="font-size:0.72rem;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Asking Price</div>
+                    <div style="font-size:1.4rem;font-weight:800;color:#1e293b;letter-spacing:-.02em;">{{ $heroPrice }}</div>
+                </div>
+                @endif
+            </div>
+        </div>
+
+    </div>{{-- /row --}}
+
+    {{-- ===== THREE UI-ONLY MODALS ===== --}}
+
+    {{-- Modal: Submit Offer (placeholder) --}}
+    <div class="modal fade" id="solOfferModal" tabindex="-1" aria-labelledby="solOfferModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header sol-modal-header">
+                    <h5 class="modal-title fw-bold" id="solOfferModalLabel"><i class="fa-solid fa-file-signature me-2"></i>Submit an Offer</h5>
+                    <button type="button" class="btn-close sol-modal-header" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div style="font-size:3rem;margin-bottom:1rem;">🏡</div>
+                    <h6 class="fw-bold mb-2">Online Offer Submission</h6>
+                    <p class="text-muted mb-3" style="font-size:.9rem;">Secure online offer submission is coming soon. In the meantime, please use the contact details in the listing to reach the agent directly.</p>
+                    <span class="badge bg-secondary px-3 py-2" style="font-size:.85rem;">Coming Soon</span>
+                </div>
+                <div class="modal-footer border-0 justify-content-center pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Schedule a Showing --}}
+    <div class="modal fade" id="solShowingModal" tabindex="-1" aria-labelledby="solShowingModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header sol-modal-header">
+                    <h5 class="modal-title fw-bold" id="solShowingModalLabel"><i class="fa-solid fa-calendar-days me-2"></i>Schedule a Showing</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name</label>
+                            <input type="text" class="form-control" placeholder="Jane Smith" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address</label>
+                            <input type="email" class="form-control" placeholder="jane@example.com" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                            <input type="tel" class="form-control" placeholder="(555) 000-0000" disabled>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Date</label>
+                            <input type="date" class="form-control" disabled>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Time</label>
+                            <input type="time" class="form-control" disabled>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Message (Optional)</label>
+                            <textarea class="form-control" rows="3" placeholder="Any special requests or notes…" disabled></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="fa-solid fa-clock me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Ask a Question --}}
+    <div class="modal fade" id="solQuestionModal" tabindex="-1" aria-labelledby="solQuestionModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header sol-modal-header">
+                    <h5 class="modal-title fw-bold" id="solQuestionModalLabel"><i class="fa-solid fa-circle-question me-2"></i>Ask a Question</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name</label>
+                            <input type="text" class="form-control" placeholder="Jane Smith" disabled>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address</label>
+                            <input type="email" class="form-control" placeholder="jane@example.com" disabled>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
+                            <input type="tel" class="form-control" placeholder="(555) 000-0000" disabled>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
+                            <textarea class="form-control" rows="4" placeholder="What would you like to know about this property?" disabled></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="fa-solid fa-clock me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal: Ask AI About This Property --}}
+    <div class="modal fade" id="solAiModal" tabindex="-1" aria-labelledby="solAiModalLabel" aria-modal="true" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <div class="modal-content" style="border-radius:.85rem;overflow:hidden;border:none;">
+                <div class="modal-header sol-modal-header">
+                    <h5 class="modal-title fw-bold" id="solAiModalLabel"><i class="fa-solid fa-robot me-2"></i>Ask AI About This Property</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted mb-3" style="font-size:.875rem;">Get instant AI-powered answers about this listing. Try asking:</p>
+                    <div id="solAiExamples" class="mb-3 p-3 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;min-height:60px;">
+                        <span class="text-muted fst-italic" style="font-size:.875rem;" id="solAiExampleText"></span>
+                    </div>
+                    <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
+                    <textarea class="form-control" rows="4" id="solAiTextarea"
+                              placeholder="What would you like to know?"
+                              disabled></textarea>
+                </div>
+                <div class="modal-footer border-0 pb-4">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" disabled>
+                        <i class="fa-solid fa-robot me-1"></i>Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>{{-- /container --}}
+
+{{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
+<div class="sol-mobile-bar d-lg-none">
+    <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solOfferModal">
+        <i class="fa-solid fa-file-signature"></i>
+        <span>Offer</span>
+    </button>
+    <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solShowingModal">
+        <i class="fa-solid fa-calendar-days"></i>
+        <span>Showing</span>
+    </button>
+    <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solAiModal">
+        <i class="fa-solid fa-robot"></i>
+        <span>Ask AI</span>
+    </button>
+    <button class="sol-mobile-bar-btn" id="solMobileShareBtn">
+        <i class="fa-solid fa-share-nodes"></i>
+        <span>Share</span>
+    </button>
 </div>
+
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    'use strict';
+
+    /* ---- Smooth scroll offset (app header ~70px + sticky nav tabs ~44px + buffer) ---- */
+    document.querySelectorAll('.sol-nav-tabs a[href^="#"]').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            var targetId = this.getAttribute('href').slice(1);
+            var target = document.getElementById(targetId);
+            if (!target) return;
+            e.preventDefault();
+            var navWrap = document.querySelector('.sol-nav-tabs-wrap');
+            var navH = navWrap ? navWrap.offsetHeight : 44;
+            var offset = 70 + navH + 12;
+            var top = target.getBoundingClientRect().top + window.scrollY - offset;
+            window.scrollTo({ top: top, behavior: 'smooth' });
+        });
+    });
+
+    /* ---- AI modal example questions rotation ---- */
+    var aiExamples = [
+        '"What are the HOA fees and what do they cover?"',
+        '"Is this property in a flood zone?"',
+        '"What financing options does the seller accept?"',
+        '"When was the roof last replaced?"'
+    ];
+    var aiIdx = 0;
+    var aiEl = document.getElementById('solAiExampleText');
+    if (aiEl) {
+        aiEl.textContent = aiExamples[0];
+        setInterval(function () {
+            aiIdx = (aiIdx + 1) % aiExamples.length;
+            aiEl.style.opacity = '0';
+            setTimeout(function () {
+                aiEl.textContent = aiExamples[aiIdx];
+                aiEl.style.opacity = '1';
+            }, 300);
+        }, 3500);
+        aiEl.style.transition = 'opacity .3s ease';
+    }
+
+    /* ---- Share listing (Web Share API with clipboard fallback) ---- */
+    function shareHandler() {
+        var url = window.location.href;
+        if (navigator.share) {
+            navigator.share({ title: document.title, url: url }).catch(function () {});
+        } else {
+            navigator.clipboard.writeText(url).then(function () {
+                alert('Link copied to clipboard!');
+            }).catch(function () {
+                alert('Share: ' + url);
+            });
+        }
+    }
+    var solShareBtn = document.getElementById('solShareBtn');
+    if (solShareBtn) solShareBtn.addEventListener('click', shareHandler);
+    var solMobileShareBtn = document.getElementById('solMobileShareBtn');
+    if (solMobileShareBtn) solMobileShareBtn.addEventListener('click', shareHandler);
+
+})();
+</script>
+@endpush
