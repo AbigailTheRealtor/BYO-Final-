@@ -353,6 +353,22 @@
     </div>
     @endif
 
+    {{-- Additionally requested services from counter flow --}}
+    @php $clientRequestedServices = $submitted['client_requested_services'] ?? []; @endphp
+    @if(!empty($clientRequestedServices))
+    <div class="ack-section">
+        <div class="ack-section-header"><i class="fa-solid fa-circle-plus"></i> Additionally Requested Services</div>
+        <div class="ack-section-body">
+            <p class="text-muted small mb-2">These services were additionally requested by you and are not part of the agent's standard offering.</p>
+            <ul class="service-bullet-list">
+                @foreach($clientRequestedServices as $svc)
+                <li>{{ $svc }}</li>
+                @endforeach
+            </ul>
+        </div>
+    </div>
+    @endif
+
     {{-- Additional notes / requests --}}
     @php $additionalRequested = $submitted['additional_requested'] ?? null; @endphp
     @if(!empty($additionalRequested))
@@ -365,7 +381,7 @@
     {{-- Accepted services --}}
     @if(!empty($services) || !empty($otherServices))
     <div class="ack-section">
-        <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> Accepted Services</div>
+        <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> {{ (($submitted['flow'] ?? '') === 'counter') ? 'Your Selected Services' : 'Accepted Services' }}</div>
         <div class="ack-section-body">
             @php $isFirstGroup = true; @endphp
             @foreach($groupedServices as $categoryLabel => $categoryServices)
@@ -397,8 +413,12 @@
 
     {{-- Compensation / Agency Agreement terms --}}
     @if(count($compRows) > 0)
+    @php $isCounterSubmission = ($submitted['flow'] ?? 'accept') === 'counter'; @endphp
     <div class="ack-section">
-        <div class="ack-section-header"><i class="fa-solid fa-file-lines"></i> Accepted Broker Compensation &amp; Agency Agreement Terms</div>
+        <div class="ack-section-header">
+            <i class="fa-solid fa-file-lines"></i>
+            {{ $isCounterSubmission ? 'Your Proposed Broker Compensation &amp; Agency Agreement Terms' : 'Accepted Broker Compensation &amp; Agency Agreement Terms' }}
+        </div>
         <div class="ack-section-body">
             <table class="comp-table">
                 @foreach($compRows as $row)

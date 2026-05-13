@@ -167,7 +167,7 @@
     <div class="ack-section">
         <div class="ack-section-header">
             <i class="fa-solid fa-file-lines"></i>
-            {{ $isCounterFlow ? 'Agent\'s Proposed Broker Compensation &amp; Agency Agreement Terms' : 'Accepted Broker Compensation &amp; Agency Agreement Terms' }}
+            {{ $isCounterFlow ? 'Your Proposed Counter Compensation &amp; Agency Agreement Terms' : 'Accepted Broker Compensation &amp; Agency Agreement Terms' }}
         </div>
         <div class="ack-section-body">
             <table class="comp-table">
@@ -211,6 +211,21 @@
                 </ul>
             </div>
             @endif
+        </div>
+    </div>
+    @endif
+
+    {{-- Additionally Requested Services (counter flow only) --}}
+    @if($isCounterFlow && !empty($pending['client_requested_services']))
+    <div class="ack-section">
+        <div class="ack-section-header"><i class="fa-solid fa-circle-plus"></i> Additionally Requested Services</div>
+        <div class="ack-section-body">
+            <p class="text-muted small mb-2">These are services not included in the agent's standard offering that you've requested to be considered.</p>
+            <ul class="service-bullet-list">
+                @foreach($pending['client_requested_services'] as $svc)
+                <li>{{ $svc }}</li>
+                @endforeach
+            </ul>
         </div>
     </div>
     @endif

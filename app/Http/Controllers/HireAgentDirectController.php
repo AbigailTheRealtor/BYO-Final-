@@ -396,10 +396,14 @@ class HireAgentDirectController extends Controller
             ? AgentBidMapperService::mapFromProfile($profile->profile_data ?? [])
             : [];
 
+        // Merge counter_comp overrides (if present) on top of the agent's mapped values.
+        $counterComp   = $pending['counter_comp'] ?? [];
+        $effectiveComp = !empty($counterComp) ? array_merge($mapped, $counterComp) : $mapped;
+
         $compRows = \App\Support\CompensationFormatter::formatPresetRows(
             $role,
             $propertyType,
-            $mapped
+            $effectiveComp
         );
 
         $services      = $pending['services']      ?? [];
@@ -479,24 +483,29 @@ class HireAgentDirectController extends Controller
 
         $mapped = AgentBidMapperService::mapFromProfile($profile->profile_data ?? []);
 
-        $clientServices       = $pending['services']               ?? [];
-        $clientOtherServices  = $pending['other_services']         ?? [];
-        $clientCustomServices = $pending['client_custom_services'] ?? [];
-        $additionalRequested  = $pending['additional_requested']   ?? null;
+        $clientServices           = $pending['services']                    ?? [];
+        $clientOtherServices      = $pending['other_services']              ?? [];
+        $clientCustomServices     = $pending['client_custom_services']      ?? [];
+        $clientRequestedServices  = $pending['client_requested_services']   ?? [];
+        $counterComp              = $pending['counter_comp']                ?? [];
+        $additionalRequested      = $pending['additional_requested']        ?? null;
 
         session()->forget('hire_direct_pending');
 
         // Store submission data for the confirmation page — no listing or bid is created.
         session()->flash('hire_direct_submitted', [
-            'agent_id'               => $agentId,
-            'role'                   => $role,
-            'property_type'          => $propertyType,
-            'services'               => $clientServices,
-            'other_services'         => $clientOtherServices,
-            'client_custom_services' => $clientCustomServices,
-            'additional_requested'   => $pending['additional_terms'] ?? $additionalRequested,
-            'contact'                => $contactValidated,
-            'mapped'                 => $mapped,
+            'agent_id'                   => $agentId,
+            'role'                       => $role,
+            'property_type'              => $propertyType,
+            'flow'                       => $pending['flow'] ?? 'accept',
+            'services'                   => $clientServices,
+            'other_services'             => $clientOtherServices,
+            'client_custom_services'     => $clientCustomServices,
+            'client_requested_services'  => $clientRequestedServices,
+            'counter_comp'               => $counterComp,
+            'additional_requested'       => $pending['additional_terms'] ?? $additionalRequested,
+            'contact'                    => $contactValidated,
+            'mapped'                     => $mapped,
         ]);
 
         Log::info('HireAgentDirect: acknowledge submitted (no listing created)', [
@@ -543,10 +552,14 @@ class HireAgentDirectController extends Controller
         $mapped  = $submitted['mapped'] ?? [];
         $contact = $submitted['contact'] ?? [];
 
+        // Merge any counter_comp overrides on top of the agent's mapped values before formatting.
+        $counterComp = $submitted['counter_comp'] ?? [];
+        $effectiveComp = !empty($counterComp) ? array_merge($mapped, $counterComp) : $mapped;
+
         $compRows = \App\Support\CompensationFormatter::formatPresetRows(
             $role,
             $propertyType,
-            $mapped
+            $effectiveComp
         );
 
         $services      = $submitted['services']      ?? [];
@@ -723,11 +736,14 @@ class HireAgentDirectController extends Controller
 
         // Validate counter-specific inputs
         $validated = $request->validate([
-            'services'         => 'nullable|array',
-            'services.*'       => 'string|max:500',
-            'other_services'   => 'nullable|array',
-            'other_services.*' => 'string|max:500',
-            'additional_terms' => 'nullable|string|max:3000',
+            'services'                   => 'nullable|array',
+            'services.*'                 => 'string|max:500',
+            'other_services'             => 'nullable|array',
+            'other_services.*'           => 'string|max:500',
+            'additional_terms'           => 'nullable|string|max:3000',
+            'client_requested_services'  => 'nullable|string|max:3000',
+            'cc'                         => 'nullable|array',
+            'cc.*'                       => 'nullable|string|max:255',
         ]);
 
         // Validate client contact fields — capture result for session persistence
@@ -739,26 +755,52 @@ class HireAgentDirectController extends Controller
         $contactValidated = $request->validate(array_merge($baseRules, $this->roleContactRules($role)));
 
         // Intersect services against agent preset (security: client cannot add services).
-        // Use $request->has() to distinguish deliberate "deselect all" (key absent from POST
-        // when all checkboxes are unchecked) from a missing field — so full deselection persists.
-        $submittedServices      = $request->has('services')       ? ($validated['services']       ?? []) : $agentServices;
-        $submittedOtherServices = $request->has('other_services')  ? ($validated['other_services'] ?? []) : $presetOtherServices;
+        // When all checkboxes are unchecked the POST key is absent, which means []
+        // (full deselection). We never fall back to the full agent service list.
+        $submittedServices      = $request->has('services')      ? ($validated['services']      ?? []) : [];
+        $submittedOtherServices = $request->has('other_services') ? ($validated['other_services'] ?? []) : [];
 
         $counterServices = array_values(array_intersect($submittedServices, $agentServices));
         $counterOtherServices = array_values(array_intersect($submittedOtherServices, $presetOtherServices));
+
+        // Parse client_requested_services: split on newlines, trim, filter, cap at 50 entries
+        $clientRequestedServices = [];
+        $rawClientServices = $validated['client_requested_services'] ?? null;
+        if (!empty($rawClientServices)) {
+            $lines = preg_split('/\r\n|\r|\n/', $rawClientServices);
+            $lines = array_map('trim', $lines);
+            $lines = array_filter($lines, fn($l) => $l !== '');
+            $lines = array_values(array_unique($lines));
+            // Cap each entry at 200 chars and total at 50 entries
+            $lines = array_map(fn($l) => mb_substr($l, 0, 200), $lines);
+            $clientRequestedServices = array_slice($lines, 0, 50);
+        }
+
+        // Collect counter comp fields — raw array from cc[] inputs.
+        // Preserve explicitly submitted empty strings as intentional overrides
+        // so users can clear a preset value (empty merges over the mapped default).
+        $counterComp = [];
+        $rawCc = $validated['cc'] ?? [];
+        if (is_array($rawCc)) {
+            foreach ($rawCc as $key => $value) {
+                $counterComp[$key] = trim((string) $value);
+            }
+        }
 
         // Generate a fresh ack nonce for the review/acknowledge step
         $ackNonce = bin2hex(random_bytes(16));
 
         session([
             'hire_direct_pending' => array_merge($pending, [
-                'flow'             => 'counter',
-                'services'         => $counterServices,
-                'other_services'   => $counterOtherServices,
-                'additional_terms' => $validated['additional_terms'] ?? null,
-                'contact'          => $contactValidated,
-                'ack_nonce'        => $ackNonce,
-                'counter_nonce'    => null,
+                'flow'                    => 'counter',
+                'services'                => $counterServices,
+                'other_services'          => $counterOtherServices,
+                'additional_terms'        => $validated['additional_terms'] ?? null,
+                'client_requested_services' => $clientRequestedServices,
+                'counter_comp'            => $counterComp,
+                'contact'                 => $contactValidated,
+                'ack_nonce'               => $ackNonce,
+                'counter_nonce'           => null,
             ]),
         ]);
 
