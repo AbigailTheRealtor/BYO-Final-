@@ -1,0 +1,87 @@
+Task: Fix Seller Offer Listing display cleanup only
+
+Login for QA:
+abigailbaschuk@gmail.com
+12345678
+
+Example listing:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/view/38
+
+STRICT SAFEGUARDS:
+- Only modify Seller Offer Listing public view display.
+- Target file should be:
+  resources/views/offer-listing/seller/view.blade.php
+- Do NOT modify controllers, routes, models, migrations, validation, Livewire components, database schema, seeders, or any Hire Agent flow.
+- Do NOT modify Buyer, Landlord, Tenant, or Limited Service files.
+- This is display-only. Do not change saved database values.
+- Preserve all existing cards/sections unless specifically listed below.
+
+Fixes required:
+
+1. Remove duplicate Video/Tour Link display
+The listing already shows the video/tour link above in the Photos & Tours area.
+If “Video/Tour Link” or similar appears again later in the listing details/description/extended fields, remove or suppress that duplicate row from the public Seller Offer Listing view.
+
+Done looks like:
+- Video/Tour Link appears only once.
+- Existing embedded video/tour display remains working.
+
+2. Verify all “Other” custom inputs display correctly
+Audit every displayed field in the Seller Offer Listing view.
+If a saved value is “Other” and there is a matching custom/other meta value, show the custom value instead of literally showing “Other”.
+
+Use a reusable display helper if needed, for example:
+- If field value is Other
+- Check common companion keys like:
+  field_other
+  field_custom
+  custom_field
+  other_field
+  field_custom_value
+- Display the custom value when present
+- Otherwise fall back safely to the original value
+
+Do not change stored data.
+
+Done looks like:
+- No field displays only “Other” when the user entered a custom value.
+- Custom Other values display in normal text formatting.
+
+3. Buyer’s Broker Commission display cleanup
+Currently this appears as:
+
+Buyer’s Broker Commission Fee Type
+Percentage of the Total Purchase Price
+
+Buyer’s Broker Commission Fee
+3%
+
+Change the Seller Offer Listing public view so it only shows:
+
+Buyer’s Broker Commission Fee
+3%
+
+Suppress/remove the row labeled:
+Buyer’s Broker Commission Fee Type
+
+Important:
+- Do not delete the value from the database.
+- Do not remove the field from create/edit forms.
+- Only hide the “Buyer’s Broker Commission Fee Type” row on the public Seller Offer Listing view.
+- Keep showing “Buyer’s Broker Commission Fee” when a fee exists.
+
+QA required:
+1. Log in using the credentials above.
+2. Visit /offer-listing/seller/view/38.
+3. Confirm Video/Tour Link is not repeated.
+4. Confirm Buyer’s Broker Commission Fee Type is gone.
+5. Confirm Buyer’s Broker Commission Fee still shows 3%.
+6. Confirm any saved “Other” values display their custom input instead of the word “Other”.
+7. Confirm no Blade/Whoops errors.
+8. Confirm git diff only shows resources/views/offer-listing/seller/view.blade.php.
+
+Report back with:
+- Files changed
+- Exact rows/labels removed or suppressed
+- QA result for listing #38
+- Confirmation no routes/controllers/schema/other roles were changed
