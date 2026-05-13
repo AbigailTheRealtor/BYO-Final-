@@ -471,15 +471,20 @@ class HireAgentDirectController extends Controller
             abort(403, 'You cannot hire yourself.');
         }
 
-        // client_name, client_phone, client_email required for all roles.
-        // Property address fields are only required for seller/landlord (via $roleRules).
         $baseRules = [
-            'client_name'  => 'required|string|max:255',
-            'client_phone' => 'required|string|max:50',
-            'client_email' => 'required|email|max:255',
+            'client_first_name' => 'required|string|max:255',
+            'client_last_name'  => 'required|string|max:255',
+            'client_name'       => 'nullable|string|max:255',
+            'client_phone'      => 'required|string|max:50',
+            'client_email'      => 'required|email|max:255',
         ];
 
         $contactValidated = $request->validate(array_merge($baseRules, $this->roleContactRules($role)));
+
+        // Synthesize legacy client_name from the split first/last fields.
+        $contactValidated['client_name'] = trim(
+            ($contactValidated['client_first_name'] ?? '') . ' ' . ($contactValidated['client_last_name'] ?? '')
+        );
 
         $profile = AgentDefaultProfile::findForAgent($agentId, $role, $propertyType);
         if (!$profile) {
@@ -607,6 +612,7 @@ class HireAgentDirectController extends Controller
                 'pre_approval_status'    => 'nullable|string|max:100',
                 'cash_buyer'             => 'nullable|string|max:10',
                 'estimated_down_payment' => 'nullable|string|max:100',
+                'down_payment_type'      => 'nullable|string|in:percent,dollar',
             ],
             'landlord' => [
                 'client_property_address' => 'required|string|max:500',
@@ -793,13 +799,20 @@ class HireAgentDirectController extends Controller
             'cc.*'                       => 'nullable|string|max:255',
         ]);
 
-        // Validate client contact fields — capture result for session persistence
+        // Validate client contact fields — capture result for session persistence.
         $baseRules = [
-            'client_name'  => 'required|string|max:255',
-            'client_phone' => 'required|string|max:50',
-            'client_email' => 'required|email|max:255',
+            'client_first_name' => 'required|string|max:255',
+            'client_last_name'  => 'required|string|max:255',
+            'client_name'       => 'nullable|string|max:255',
+            'client_phone'      => 'required|string|max:50',
+            'client_email'      => 'required|email|max:255',
         ];
         $contactValidated = $request->validate(array_merge($baseRules, $this->roleContactRules($role)));
+
+        // Synthesize legacy client_name from the split first/last fields.
+        $contactValidated['client_name'] = trim(
+            ($contactValidated['client_first_name'] ?? '') . ' ' . ($contactValidated['client_last_name'] ?? '')
+        );
 
         // Intersect services against agent preset (security: client cannot add services).
         // When all checkboxes are unchecked the POST key is absent, which means []

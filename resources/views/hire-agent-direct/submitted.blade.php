@@ -171,11 +171,39 @@
     <div class="ack-section">
         <div class="ack-section-header"><i class="fa-solid fa-address-card"></i> Your Submitted Information</div>
         <div class="ack-section-body">
+            @php
+                // Name display: prefer first+last, fall back to legacy client_name
+                $submittedDisplayName = '';
+                if (!empty($contact['client_first_name']) || !empty($contact['client_last_name'])) {
+                    $submittedDisplayName = trim(($contact['client_first_name'] ?? '') . ' ' . ($contact['client_last_name'] ?? ''));
+                } elseif (!empty($contact['client_name'])) {
+                    $submittedDisplayName = $contact['client_name'];
+                }
+
+                // Currency formatter helper — returns '' only when the raw input is blank/null,
+                // so an explicit $0 value still renders as "$0" rather than being silently hidden.
+                $fmtCurrency = function($val) {
+                    $raw = trim((string)($val ?? ''));
+                    if ($raw === '') return '';
+                    $num = (float) preg_replace('/[^0-9.]/', '', $raw);
+                    return '$' . number_format($num, 0);
+                };
+
+                // Date formatter helper — returns "May 13, 2026" or raw string on failure
+                $fmtDate = function($val) {
+                    if (empty($val)) return '';
+                    try {
+                        return \Carbon\Carbon::parse($val)->format('M j, Y');
+                    } catch (\Exception $e) {
+                        return (string) $val;
+                    }
+                };
+            @endphp
             <dl class="detail-grid">
-                @if(!empty($contact['client_name']))
+                @if(!empty($submittedDisplayName))
                 <div>
                     <dt>Name</dt>
-                    <dd>{{ $contact['client_name'] }}</dd>
+                    <dd>{{ $submittedDisplayName }}</dd>
                 </div>
                 @endif
                 @if(!empty($contact['client_phone']))
@@ -219,10 +247,11 @@
 
                 {{-- Seller-specific fields --}}
                 @if($role === 'seller')
-                    @if(!empty($contact['desired_sale_price']))
+                    @php $sellerPrice = $fmtCurrency($contact['desired_sale_price'] ?? ''); @endphp
+                    @if(!empty($sellerPrice))
                     <div>
                         <dt>Desired Sale Price</dt>
-                        <dd>{{ $contact['desired_sale_price'] }}</dd>
+                        <dd>{{ $sellerPrice }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['timeline_to_sell']))
@@ -241,10 +270,11 @@
 
                 {{-- Buyer-specific fields --}}
                 @if($role === 'buyer')
-                    @if(!empty($contact['target_purchase_price']))
+                    @php $buyerPrice = $fmtCurrency($contact['target_purchase_price'] ?? ''); @endphp
+                    @if(!empty($buyerPrice))
                     <div>
                         <dt>Target Purchase Price</dt>
-                        <dd>{{ $contact['target_purchase_price'] }}</dd>
+                        <dd>{{ $buyerPrice }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['timeline_to_purchase']))
@@ -268,23 +298,42 @@
                     @if(!empty($contact['estimated_down_payment']))
                     <div>
                         <dt>Estimated Down Payment</dt>
-                        <dd>{{ $contact['estimated_down_payment'] }}</dd>
+                        <dd>
+                            @php
+                                $dpType = $contact['down_payment_type'] ?? 'percent';
+                                $dpRaw  = preg_replace('/[^0-9.]/', '', (string)($contact['estimated_down_payment'] ?? ''));
+                                $dpNum  = (float) $dpRaw;
+                            @endphp
+                            @php
+                                $dpDisplay = (string)($contact['estimated_down_payment'] ?? '');
+                                if ($dpRaw !== '') {
+                                    if ($dpType === 'dollar') {
+                                        $dpDisplay = '$' . number_format($dpNum, 0);
+                                    } else {
+                                        // Strip trailing zeros: "20.00" → "20%", "20.50" → "20.5%"
+                                        $dpDisplay = rtrim(rtrim(number_format($dpNum, 2, '.', ''), '0'), '.') . '%';
+                                    }
+                                }
+                            @endphp
+                            {{ $dpDisplay }}
+                        </dd>
                     </div>
                     @endif
                 @endif
 
                 {{-- Landlord-specific fields --}}
                 @if($role === 'landlord')
-                    @if(!empty($contact['desired_monthly_rent']))
+                    @php $landlordRent = $fmtCurrency($contact['desired_monthly_rent'] ?? ''); @endphp
+                    @if(!empty($landlordRent))
                     <div>
                         <dt>Desired Monthly Rent</dt>
-                        <dd>{{ $contact['desired_monthly_rent'] }}</dd>
+                        <dd>{{ $landlordRent }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['availability_date']))
                     <div>
                         <dt>Availability Date</dt>
-                        <dd>{{ $contact['availability_date'] }}</dd>
+                        <dd>{{ $fmtDate($contact['availability_date']) ?: $contact['availability_date'] }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['occupancy_status']))
@@ -303,10 +352,11 @@
 
                 {{-- Tenant-specific fields --}}
                 @if($role === 'tenant')
-                    @if(!empty($contact['max_monthly_lease_price']))
+                    @php $tenantLeasePrice = $fmtCurrency($contact['max_monthly_lease_price'] ?? ''); @endphp
+                    @if(!empty($tenantLeasePrice))
                     <div>
                         <dt>Max Monthly Lease Price</dt>
-                        <dd>{{ $contact['max_monthly_lease_price'] }}</dd>
+                        <dd>{{ $tenantLeasePrice }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['desired_lease_length']))
@@ -318,7 +368,7 @@
                     @if(!empty($contact['move_in_date']))
                     <div>
                         <dt>Move-In Date</dt>
-                        <dd>{{ $contact['move_in_date'] }}</dd>
+                        <dd>{{ $fmtDate($contact['move_in_date']) ?: $contact['move_in_date'] }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['number_of_occupants']))
@@ -327,10 +377,11 @@
                         <dd>{{ $contact['number_of_occupants'] }}</dd>
                     </div>
                     @endif
-                    @if(!empty($contact['household_monthly_income']))
+                    @php $tenantIncome = $fmtCurrency($contact['household_monthly_income'] ?? ''); @endphp
+                    @if(!empty($tenantIncome))
                     <div>
                         <dt>Household Monthly Income</dt>
-                        <dd>{{ $contact['household_monthly_income'] }}</dd>
+                        <dd>{{ $tenantIncome }}</dd>
                     </div>
                     @endif
                 @endif

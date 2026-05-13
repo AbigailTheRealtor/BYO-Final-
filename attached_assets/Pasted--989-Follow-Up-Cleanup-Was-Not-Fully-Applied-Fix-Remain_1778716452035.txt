@@ -1,0 +1,93 @@
+#989 Follow-Up Cleanup Was Not Fully Applied — Fix Remaining Merge Blockers
+
+Please do one more surgical cleanup pass. The prior requested fixes were only partially applied, and several merge blockers still remain.
+
+Do NOT change routes, migrations, schema, models, permissions, workflow architecture, Limited Service flows, counter/session logic, or unrelated files.
+
+Files in scope only:
+
+* app/Http/Controllers/HireAgentDirectController.php
+* resources/views/hire-agent-direct/client-details/buyer.blade.php
+* resources/views/hire-agent-direct/client-details/seller.blade.php
+* resources/views/hire-agent-direct/client-details/landlord.blade.php
+* resources/views/hire-agent-direct/client-details/tenant.blade.php
+* resources/views/hire-agent-direct/submitted.blade.php
+
+1. Replace the full `$baseRules` array in BOTH `acknowledgeSubmit()` and `counterSubmit()`
+
+Do not add to the existing array. Replace it completely with:
+
+```php
+$baseRules = [
+    'client_first_name' => 'required|string|max:255',
+    'client_last_name'  => 'required|string|max:255',
+    'client_name'       => 'nullable|string|max:255',
+    'client_phone'      => 'required|string|max:50',
+    'client_email'      => 'required|email|max:255',
+];
+```
+
+There must be only one `client_name`, one `client_phone`, and one `client_email` key in each array.
+
+2. Fix malformed duplicate HTML in all four client-details files
+
+Search each file for duplicated fragments like:
+
+```html
+<input type="text" name="client_phone"
+<input type="text" name="client_phone" id="..."
+```
+
+and duplicated placeholders like:
+
+```html
+placeholder="Client's phone number"
+placeholder="(555) 555-5555"
+```
+
+Each field must have:
+
+* one `<input>` tag
+* one `class`
+* one `placeholder`
+* one `value`
+* one `required` if applicable
+
+Also remove any duplicate old input for `estimated_down_payment` so only the new toggle/input-group version remains.
+
+3. Fix duplicated display values in `submitted.blade.php`
+
+Remove raw duplicate `<dd>` lines and render only the final display value.
+
+Examples:
+
+* For name, render only `{{ $submittedDisplayName }}`
+* For desired sale price, render only `{{ $sellerPrice }}`
+* For target purchase price, render only `{{ $buyerPrice }}`
+* For estimated down payment, render only `{{ $dpDisplay }}`
+* For desired monthly rent, render only `{{ $landlordRent }}`
+* For max monthly lease price, render only `{{ $tenantLeasePrice }}`
+* For household monthly income, render only `{{ $tenantIncome }}`
+* For dates, render only formatted date output
+
+Do not show both raw and formatted versions.
+
+4. Verification required
+
+Run/search for:
+
+* duplicate keys in `$baseRules`
+* duplicated `<input type=`
+* duplicated `placeholder=`
+* repeated adjacent `<dd>` outputs for the same field
+* malformed Blade/HTML
+
+Confirm:
+
+* buyer/seller/landlord/tenant direct hire pages load
+* counter submit still works
+* accept/submit still works
+* submitted page shows clean single values
+* public preview still shows compensation terms but hides referral fee from non-agents
+
+Keep this strictly limited to correcting the incomplete cleanup.

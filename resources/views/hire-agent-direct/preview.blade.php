@@ -892,8 +892,13 @@
                     $propertyType ?? 'residential',
                     $mapped
                 );
+                $previewViewerIsAgent = \Illuminate\Support\Facades\Auth::check()
+                    && \Illuminate\Support\Facades\Auth::user()->user_type === 'agent';
+                $compReferralRows = array_values(array_filter($compRows, fn($r) => ($r['label'] ?? '') === 'Referral Fee (%)'));
+                $compPublicRows   = array_values(array_filter($compRows, fn($r) => ($r['label'] ?? '') !== 'Referral Fee (%)'));
             @endphp
-            @if(count($compRows) > 0)
+            {{-- Comp terms visible to all visitors; referral fee row only for logged-in agents --}}
+            @if(count($compPublicRows) > 0)
             <div class="preview-section">
                 <div class="preview-section-header">
                     <i class="fa-solid fa-file-lines"></i> Agent's Default Broker Compensation &amp; Agency Agreement Terms
@@ -904,7 +909,7 @@
                         Final terms may be accepted, rejected, or countered through the platform.
                     </p>
                     <table class="comp-table">
-                        @foreach($compRows as $row)
+                        @foreach($compPublicRows as $row)
                         <tr>
                             <td>{{ $row['label'] }}</td>
                             <td>{{ $row['value'] }}</td>
@@ -913,6 +918,26 @@
                     </table>
                     <p class="text-muted small mt-3 mb-0">
                         These are the Agent's proposed terms. To request changes to services, compensation, or agreement terms, select "Request Changes / Counter Terms".
+                    </p>
+                </div>
+            </div>
+            @endif
+            @if($previewViewerIsAgent && count($compReferralRows) > 0)
+            <div class="preview-section">
+                <div class="preview-section-header">
+                    <i class="fa-solid fa-handshake"></i> Agent Referral Terms
+                </div>
+                <div class="preview-section-body">
+                    <table class="comp-table">
+                        @foreach($compReferralRows as $row)
+                        <tr>
+                            <td>{{ $row['label'] }}</td>
+                            <td>{{ $row['value'] }}</td>
+                        </tr>
+                        @endforeach
+                    </table>
+                    <p class="text-muted small mt-2 mb-0">
+                        This referral fee information is only visible to logged-in agents.
                     </p>
                 </div>
             </div>

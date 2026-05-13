@@ -8,19 +8,27 @@
         <div class="card-header"><h5 class="mb-0">Client Contact Information</h5></div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-12 mb-3">
-                    <label class="fw-bold form-label">Full Name <span class="text-danger">*</span></label>
-                    <input type="text" name="client_name"
-                           class="form-control @error('client_name') is-invalid @enderror"
-                           placeholder="Client's full name"
-                           value="{{ old('client_name') }}" required>
-                    @error('client_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">First Name <span class="text-danger">*</span></label>
+                    <input type="text" name="client_first_name"
+                           class="form-control @error('client_first_name') is-invalid @enderror"
+                           placeholder="Enter first name"
+                           value="{{ old('client_first_name') }}" required>
+                    @error('client_first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" name="client_last_name"
+                           class="form-control @error('client_last_name') is-invalid @enderror"
+                           placeholder="Enter last name"
+                           value="{{ old('client_last_name') }}" required>
+                    @error('client_last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Phone Number <span class="text-danger">*</span></label>
-                    <input type="text" name="client_phone"
+                    <input type="text" name="client_phone" id="seller_client_phone"
                            class="form-control @error('client_phone') is-invalid @enderror"
-                           placeholder="Client's phone number"
+                           placeholder="(555) 555-5555"
                            value="{{ old('client_phone') }}" required>
                     @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -28,7 +36,7 @@
                     <label class="fw-bold form-label">Email Address <span class="text-danger">*</span></label>
                     <input type="email" name="client_email"
                            class="form-control @error('client_email') is-invalid @enderror"
-                           placeholder="Client's email address"
+                           placeholder="Enter email address"
                            value="{{ old('client_email') }}" required>
                     @error('client_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -45,7 +53,7 @@
                     <label class="fw-bold form-label">Street Address <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_address"
                            class="form-control @error('client_property_address') is-invalid @enderror"
-                           placeholder="Street address"
+                           placeholder="Enter street address (e.g., 123 Main St)"
                            value="{{ old('client_property_address') }}" required>
                     @error('client_property_address')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -53,7 +61,7 @@
                     <label class="fw-bold form-label">City <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_city"
                            class="form-control @error('client_property_city') is-invalid @enderror"
-                           placeholder="City"
+                           placeholder="Enter city"
                            value="{{ old('client_property_city') }}" required>
                     @error('client_property_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -61,7 +69,7 @@
                     <label class="fw-bold form-label">State <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_state"
                            class="form-control @error('client_property_state') is-invalid @enderror"
-                           placeholder="State"
+                           placeholder="Enter state (e.g., FL)"
                            value="{{ old('client_property_state') }}" required>
                     @error('client_property_state')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -69,7 +77,7 @@
                     <label class="fw-bold form-label">ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_zip"
                            class="form-control @error('client_property_zip') is-invalid @enderror"
-                           placeholder="ZIP"
+                           placeholder="Enter ZIP (e.g., 33701)"
                            value="{{ old('client_property_zip') }}" required>
                     @error('client_property_zip')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -88,7 +96,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="desired_sale_price"
                                class="form-control @error('desired_sale_price') is-invalid @enderror"
-                               placeholder="e.g. 450,000"
+                               placeholder="Enter desired sale price (e.g., 450,000)"
                                value="{{ old('desired_sale_price') }}">
                         @error('desired_sale_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -128,3 +136,22 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    var phoneInput = document.getElementById('seller_client_phone');
+    if (!phoneInput) return;
+    phoneInput.addEventListener('input', function() {
+        var digits = this.value.replace(/\D/g, '').substring(0, 10);
+        var formatted = digits;
+        if (digits.length >= 7) {
+            formatted = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6);
+        } else if (digits.length >= 4) {
+            formatted = digits.substring(0,3) + '-' + digits.substring(3);
+        }
+        this.value = formatted;
+    });
+})();
+</script>
+@endpush

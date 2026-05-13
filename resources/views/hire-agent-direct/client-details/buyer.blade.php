@@ -8,19 +8,27 @@
         <div class="card-header"><h5 class="mb-0">Client Contact Information</h5></div>
         <div class="card-body">
             <div class="row">
-                <div class="col-md-12 mb-3">
-                    <label class="fw-bold form-label">Full Name <span class="text-danger">*</span></label>
-                    <input type="text" name="client_name"
-                           class="form-control @error('client_name') is-invalid @enderror"
-                           placeholder="Client's full name"
-                           value="{{ old('client_name') }}" required>
-                    @error('client_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">First Name <span class="text-danger">*</span></label>
+                    <input type="text" name="client_first_name"
+                           class="form-control @error('client_first_name') is-invalid @enderror"
+                           placeholder="Enter first name"
+                           value="{{ old('client_first_name') }}" required>
+                    @error('client_first_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" name="client_last_name"
+                           class="form-control @error('client_last_name') is-invalid @enderror"
+                           placeholder="Enter last name"
+                           value="{{ old('client_last_name') }}" required>
+                    @error('client_last_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Phone Number <span class="text-danger">*</span></label>
-                    <input type="text" name="client_phone"
+                    <input type="text" name="client_phone" id="buyer_client_phone"
                            class="form-control @error('client_phone') is-invalid @enderror"
-                           placeholder="Client's phone number"
+                           placeholder="(555) 555-5555"
                            value="{{ old('client_phone') }}" required>
                     @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -28,7 +36,7 @@
                     <label class="fw-bold form-label">Email Address <span class="text-danger">*</span></label>
                     <input type="email" name="client_email"
                            class="form-control @error('client_email') is-invalid @enderror"
-                           placeholder="Client's email address"
+                           placeholder="Enter email address"
                            value="{{ old('client_email') }}" required>
                     @error('client_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -44,7 +52,7 @@
                 <label class="fw-bold form-label">Areas of Interest <span class="text-danger">*</span></label>
                 <input type="text" name="areas_of_interest"
                        class="form-control @error('areas_of_interest') is-invalid @enderror"
-                       placeholder="e.g. Downtown, Westside, North suburbs"
+                       placeholder="Enter areas of interest (e.g., Downtown, Westside, North suburbs)"
                        value="{{ old('areas_of_interest') }}" required>
                 @error('areas_of_interest')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
@@ -62,7 +70,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="target_purchase_price"
                                class="form-control @error('target_purchase_price') is-invalid @enderror"
-                               placeholder="e.g. 350,000"
+                               placeholder="Enter target purchase price (e.g., 350,000)"
                                value="{{ old('target_purchase_price') }}">
                         @error('target_purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -111,13 +119,69 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Estimated Down Payment <span class="text-muted fw-normal">(optional)</span></label>
-                    <input type="text" name="estimated_down_payment"
-                           class="form-control @error('estimated_down_payment') is-invalid @enderror"
-                           placeholder="e.g. 20% or 70,000"
-                           value="{{ old('estimated_down_payment') }}">
-                    @error('estimated_down_payment')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div class="input-group" id="down-payment-group">
+                        <button type="button" id="dp-toggle-btn"
+                                class="btn btn-outline-secondary btn-sm"
+                                style="border-top-right-radius:0;border-bottom-right-radius:0;min-width:44px;font-weight:700;"
+                                title="Toggle % or $">%</button>
+                        <input type="hidden" name="down_payment_type" id="down_payment_type" value="{{ old('down_payment_type', 'percent') }}">
+                        <input type="text" name="estimated_down_payment"
+                               id="estimated_down_payment"
+                               class="form-control @error('estimated_down_payment') is-invalid @enderror"
+                               placeholder="Enter estimated down payment (e.g., 20)"
+                               value="{{ old('estimated_down_payment') }}">
+                        @error('estimated_down_payment')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                    <div class="text-muted small mt-1">Toggle between % (percentage) and $ (dollar amount).</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+(function() {
+    var phoneInput = document.getElementById('buyer_client_phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function() {
+            var digits = this.value.replace(/\D/g, '').substring(0, 10);
+            var formatted = digits;
+            if (digits.length >= 7) {
+                formatted = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6);
+            } else if (digits.length >= 4) {
+                formatted = digits.substring(0,3) + '-' + digits.substring(3);
+            }
+            this.value = formatted;
+        });
+    }
+
+    var dpToggleBtn  = document.getElementById('dp-toggle-btn');
+    var dpTypeInput  = document.getElementById('down_payment_type');
+    var dpAmtInput   = document.getElementById('estimated_down_payment');
+
+    function applyDpMode(mode) {
+        if (!dpToggleBtn || !dpTypeInput || !dpAmtInput) return;
+        if (mode === 'dollar') {
+            dpToggleBtn.textContent = '$';
+            dpTypeInput.value = 'dollar';
+            dpAmtInput.placeholder = 'Enter estimated down payment (e.g., 70,000)';
+        } else {
+            dpToggleBtn.textContent = '%';
+            dpTypeInput.value = 'percent';
+            dpAmtInput.placeholder = 'Enter estimated down payment (e.g., 20)';
+        }
+    }
+
+    // Init from old() value
+    applyDpMode(dpTypeInput ? dpTypeInput.value : 'percent');
+
+    if (dpToggleBtn) {
+        dpToggleBtn.addEventListener('click', function() {
+            var current = dpTypeInput.value === 'dollar' ? 'dollar' : 'percent';
+            applyDpMode(current === 'dollar' ? 'percent' : 'dollar');
+        });
+    }
+})();
+</script>
+@endpush
