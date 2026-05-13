@@ -1,0 +1,82 @@
+Fix Offer Preset Counter Terms — restore full Client Details, clean display, preserve Accept page
+
+SCOPE:
+This applies ONLY to Offer Listing Preset flows where a user selects Request Changes / Counter Terms from an Offer Listing preset.
+Do NOT change normal Hire Agent marketplace counter terms.
+Do NOT change Limited Service.
+Do NOT change database schema, migrations, seeders, or stored data.
+Audit first, then make the smallest safe changes.
+
+IMPORTANT:
+Client Details must NOT be moved.
+Client Details must remain on the Accept & Submit Hire Request acknowledge page AND also be added back to the Request Changes / Counter Terms flow.
+
+SOURCE OF TRUTH FOR CLIENT DETAILS:
+Use the existing Client Details sections currently shown on:
+
+/hire/agent/direct/{agentId}/{role}/{propertyType}/acknowledge
+
+For each role, copy the FULL role-specific Client Details field set from the acknowledge page into the Offer Preset Counter Terms flow:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+
+Do not use a shortened field list. Copy all fields, sections, labels, placeholders, required flags, and validation behavior, including contact info, property/search area fields, deal terms, qualification signals, and any other role-specific questions already shown on the acknowledge page.
+
+REQUIRED FIXES:
+
+1. Restore Client Details to Request Changes / Counter Terms
+- Add Client Details as its own tab/section in the Offer Preset Counter Terms flow.
+- Seller Counter Terms must match Seller acknowledge Client Details.
+- Buyer Counter Terms must match Buyer acknowledge Client Details.
+- Landlord Counter Terms must match Landlord acknowledge Client Details.
+- Tenant Counter Terms must match Tenant acknowledge Client Details.
+- Counter submit must save these Client Details.
+- Submitted counter summary/view must display the submitted Client Details.
+
+2. Keep Client Details on Accept page
+- Do NOT remove or change Client Details on /acknowledge.
+- Accept & Submit Hire Request page should keep its current full Client Details section.
+
+3. Clean Offer Preset submitted counter view only
+On Offer Preset “Your Submitted Counter Terms” view:
+- Remove Match Score section completely.
+- Remove “No match score available…” message.
+- Remove Added/Changed/Removed comparison labels and badges.
+- Remove green highlighted service row formatting.
+- Display requested services as normal neutral bullet/list items under categories.
+- Keep all selected services, compensation terms, additional terms, and Client Details visible.
+
+4. Accept & Submit Hire Request redirect
+When user submits Accept & Submit Hire Request:
+- Do NOT create or redirect to a listing.
+- Redirect to a submitted/confirmation summary page.
+- Summary page must show submitted terms and Client Details.
+- This applies to Seller, Buyer, Landlord, and Tenant direct accept flows.
+
+AUDIT REQUIREMENT:
+Before editing, identify the exact routes, controllers, and Blade files for:
+- Offer Preset Request Changes / Counter Terms form
+- Offer Preset submitted counter view
+- Direct Accept acknowledge page
+- Direct Accept submitted/confirmation page
+- Normal Hire Agent marketplace counter terms
+
+If any partial is shared with normal Hire Agent marketplace counter terms, add a safe condition/flag so only Offer Preset behavior changes.
+
+QA REQUIRED:
+1. Seller acknowledge page still shows full Client Details.
+2. Buyer acknowledge page still shows full Client Details.
+3. Landlord acknowledge page still shows full Client Details.
+4. Tenant acknowledge page still shows full Client Details.
+5. Seller Request Changes / Counter Terms shows the same full Client Details fields as Seller acknowledge page.
+6. Buyer Request Changes / Counter Terms shows the same full Client Details fields as Buyer acknowledge page.
+7. Landlord Request Changes / Counter Terms shows the same full Client Details fields as Landlord acknowledge page.
+8. Tenant Request Changes / Counter Terms shows the same full Client Details fields as Tenant acknowledge page.
+9. Submitted counter summary displays submitted Client Details.
+10. /hire/seller/agent/auction/bid/15/view-counter shows no Match Score, no “No match score available,” no Added badges, and no green service rows.
+11. Normal Hire Agent marketplace counter terms still keeps its existing Match Score behavior.
+12. Accept & Submit Hire Request redirects to confirmation summary page, not to a listing.
+13. No Blade/Whoops errors.
+14. git diff shows only the minimum relevant controller/view/route files.
