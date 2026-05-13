@@ -1,0 +1,50 @@
+# Task: Fix misleading Review tab notice copy on Hire Agent Direct counter flow
+
+Issue:
+On the Direct Hire counter Review tab:
+
+/hire/agent/direct/{id}/{role}/{propertyType}/counter
+
+the yellow counter notice currently says:
+
+"This is a counter request, not a final agreement. Adjust the services and comp terms below, add any notes in the Additional Terms tab, then review and submit. Submitting sends your proposed counter terms to the agent for review. The agent may accept, counter, or decline before anything is finalized."
+
+This wording is misleading once the user is already on the final Review tab because they cannot directly edit fields on this page.
+
+Required fix:
+Update ONLY the Review tab notice copy to accurately reflect that this page is for reviewing before submission.
+
+Do NOT change:
+- Services tab messaging
+- Comp Terms messaging
+- Additional Terms messaging
+- Submitted page
+- Acknowledge page
+- Marketplace flows
+- Direct Hire logic
+- Buttons
+- Validation
+- JS
+- Routes/controllers
+
+File:
+resources/views/hire-agent-direct/counter.blade.php
+
+Find the yellow notice inside the Review tab section (near the submit button).
+
+Replace the current text with:
+
+"This is a counter request, not a final agreement. Review your proposed counter terms below before submitting. If you need to make changes, use the tabs above to return to the appropriate section. Submitting sends your proposed counter terms to the agent for review. The agent may accept, counter, or decline before anything is finalized."
+
+Important:
+- Only change the Review tab notice.
+- Preserve the warning style and icon.
+- Preserve the “not a final agreement” wording.
+- Preserve the negotiation disclosure wording.
+- Do not alter any other notices elsewhere in the flow.
+
+Done looks like:
+- Review tab messaging correctly reflects review-only behavior.
+- Users are told to use the tabs above if they need changes.
+- No other flow copy changes.
+- git diff only shows the single targeted text change in counter.blade.php
