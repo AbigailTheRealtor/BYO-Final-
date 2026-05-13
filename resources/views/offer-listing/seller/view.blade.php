@@ -241,6 +241,17 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
+.sol-view-page .sol-hero-ctas .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: #fff;
+}
+.sol-view-page .sol-hero-ctas .btn-primary:hover,
+.sol-view-page .sol-hero-ctas .btn-primary:focus {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    color: #fff;
+}
 
 /* ---- Smooth-scroll nav tabs ---- */
 .sol-view-page .sol-nav-tabs-wrap {
