@@ -29,15 +29,15 @@
 </style>
 <div class="p-2 border-bottom">
   <ul class="nav nav-tabs search-menu" id="myTab" role="tablist">
-    <li class="nav-item search-menu-item" role="presentation">
+    {{-- <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('searchListing') }}">Property Auctions</a>
-    </li>
-    <li class="nav-item search-menu-item" role="presentation">
+    </li> --}}
+    {{-- <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('buyer.criteria.searchListing') }}">Buyer's Criteria Auctions</a>
-    </li>
-    <li class="nav-item search-menu-item" role="presentation">
+    </li> --}}
+    {{-- <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('tenant.criteria.auctions.search') }}">Tenant's Criteria Auctions</a>
-    </li>
+    </li> --}}
     <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('offer.listing.seller.searchListing') }}">Seller Listings</a>
     </li>
@@ -54,9 +54,9 @@
     <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('tenant.agent.auctions.search') }}">Hiring Tenant's Agent</a>
     </li>
-    <li class="nav-item search-menu-item" role="presentation">
+    {{-- <li class="nav-item search-menu-item" role="presentation">
       <a href="{{ route('service.searchListing') }}">Agent Service Needed</a>
-    </li>
+    </li> --}}
     {{-- <li class="nav-item search-menu-item" role="presentation">
             <a href="{{ route('seller.service.auction.search') }}">Seller Service Auction</a>
         </li> --}}

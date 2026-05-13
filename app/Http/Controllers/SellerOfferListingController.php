@@ -80,6 +80,9 @@ class SellerOfferListingController extends Controller
             ->selectRaw("*, (SELECT meta_value FROM seller_agent_auction_metas WHERE seller_agent_auction_metas.seller_agent_auction_id = seller_agent_auctions.id AND meta_key = 'ideal_price') as price")
             ->where('is_approved', true)
             ->where('is_draft', false)
+            ->whereDoesntHave('meta', function ($m) {
+                $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent');
+            })
             ->where(function ($q) {
                 // Primary: workflow_type = offer_listing
                 $q->whereHas('meta', function ($m) {
