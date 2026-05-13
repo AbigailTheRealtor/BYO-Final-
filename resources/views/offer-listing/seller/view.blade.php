@@ -50,11 +50,11 @@
 
 @push('styles')
 <style>
-    .section-card { margin-bottom: 1.5rem; border-radius: 0.5rem; border: 1px solid #dee2e6; }
+    .section-card { margin-bottom: 2rem; border-radius: 0.5rem; border: 1px solid #dee2e6; }
     .section-card .card-header { background: #f1f5f9; font-weight: 700; font-size: 1.05rem; padding: 0.75rem 1rem; }
     .section-card .card-body { padding: 1rem 1.25rem; }
     .field-label { color: #6c757d; font-weight: 600; font-size: 0.875rem; }
-    .field-value { font-size: 0.925rem; }
+    .field-value { font-size: 0.925rem; overflow-wrap: break-word; }
     .photo-thumb { width: 120px; height: 90px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; }
     .cover-badge { font-size: 0.7rem; background: #0d6efd; color: #fff; border-radius: 3px; padding: 1px 5px; }
 </style>
@@ -343,16 +343,16 @@
                 </div>
             </div>
 
+            @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
+            @if(count($appliances))
+            {!! $row('Appliances', implode(', ', $appliances)) !!}
+            @endif
+
             @php $pItems = $subOther($arr('property_items'), $str('other_property_items')); @endphp
             @if(count($pItems))
             <hr>
             <div class="mb-1"><span class="field-label">Property Items / Amenities</span></div>
             <p class="field-value">{{ implode(', ', $pItems) }}</p>
-            @endif
-
-            @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
-            @if(count($appliances))
-            {!! $row('Appliances', implode(', ', $appliances)) !!}
             @endif
 
             {{-- MLS Fields --}}
@@ -570,7 +570,9 @@
 
             {{-- Cash --}}
             @if($hasCashFin || $str('cash_budget') || $str('pre_approved'))
+            @if($str('cash_budget') || $str('pre_approved'))
             <h6 class="fw-semibold mt-3 mb-2">Cash</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Maximum Cash Budget', $fmtMoney($str('cash_budget'))) !!}
@@ -585,7 +587,9 @@
             {{-- Assumable --}}
             @if($hasAssumable || $str('assumable_loan_type') || $str('assumable_terms'))
             <hr>
+            @if($str('assumable_terms') || $str('assumable_loan_type') || $str('max_assumable_rate') || $str('max_monthly_payment') || $str('assumable_monthly_escrow') || $str('outstanding_balance') || $str('gap_payment_amount') || $str('assumable_loan_term_remaining') || $str('assumable_loan_origination_date') || $str('assumable_loan_servicer') || $str('assumable_fee_amount') || $str('assumable_occupancy_requirement'))
             <h6 class="fw-semibold mt-3 mb-2">Assumable Mortgage</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Assumable Terms', $str('assumable_terms')) !!}
@@ -609,7 +613,9 @@
             {{-- Cryptocurrency --}}
             @if($hasCrypto || $str('cryptocurrency_type'))
             <hr>
+            @if($str('cryptocurrency_type') || $str('crypto_percentage') || $str('cash_percentage_crypto') || $str('crypto_exchange_method') || $str('crypto_custodian_wallet') || $str('crypto_transaction_fees') || $str('crypto_transfer_timing'))
             <h6 class="fw-semibold mt-3 mb-2">Cryptocurrency</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Cryptocurrency Type', $str('cryptocurrency_type')) !!}
@@ -628,7 +634,9 @@
             {{-- Exchange / Trade --}}
             @if($hasExchange || $str('exchange_item_value'))
             <hr>
+            @if($str('other_exchange_item') || $str('exchange_item_value') || $str('exchange_item_condition') || $str('additional_cash') || $str('exchange_transfer_method') || $str('exchange_liens') || $str('exchange_inspection_rights'))
             <h6 class="fw-semibold mt-3 mb-2">Exchange / Trade</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Exchange Item', $str('other_exchange_item')) !!}
@@ -647,7 +655,9 @@
             {{-- Lease Option --}}
             @if($hasLeaseOpt || $str('lease_option_price'))
             <hr>
+            @if($str('lease_option_price') || $str('lease_option_payment') || $str('lease_option_duration') || $str('has_option_fee') || $str('option_fee_amount') || $str('lease_option_fee_credit') || $str('lease_option_fee_credit_percentage') || $str('lease_option_conditions') || $str('lease_option_terms') || $str('lease_option_maintenance') || $str('lease_option_extension_terms'))
             <h6 class="fw-semibold mt-3 mb-2">Lease Option</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Option Purchase Price', $fmtMoney($str('lease_option_price'))) !!}
@@ -670,7 +680,9 @@
             {{-- Lease Purchase --}}
             @if($hasLeasePur || $str('lease_purchase_price'))
             <hr>
+            @if($str('lease_purchase_price') || $str('lease_purchase_payment') || $str('lease_purchase_duration') || $str('lease_purchase_rent_credit') || $str('lease_purchase_rent_credit_amount') || $str('lease_purchase_deposit') || $str('lease_purchase_conditions') || $str('lease_purchase_terms') || $str('lease_purchase_maintenance') || $str('lease_purchase_extension_terms'))
             <h6 class="fw-semibold mt-3 mb-2">Lease Purchase</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Purchase Price', $fmtMoney($str('lease_purchase_price'))) !!}
@@ -692,7 +704,9 @@
             {{-- Non-Fungible Token (NFT) --}}
             @if($hasNFT || $str('nft_description'))
             <hr>
+            @if($str('nft_description') || $str('nft_percentage') || $str('cash_percentage_nft') || $str('nft_valuation_method') || $str('nft_transfer_method') || $str('nft_gas_fees'))
             <h6 class="fw-semibold mt-3 mb-2">Non-Fungible Token (NFT)</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('NFT Description', $str('nft_description')) !!}
@@ -710,7 +724,9 @@
             {{-- Seller Financing --}}
             @if($hasSellerFin || $str('seller_financing_type') || $str('interest_rate'))
             <hr>
+            @if($str('seller_financing_type') || $str('seller_down_payment_amount') || $str('interest_rate') || $str('loan_duration') || $str('real_estate_purchase') || $str('prepayment_penalty_amount') || $str('balloon_payment') || $str('balloon_payment_amount') || $str('balloon_payment_date') || $str('seller_amortization_type') || $str('seller_payment_frequency') || $str('seller_late_fee_amount'))
             <h6 class="fw-semibold mt-3 mb-2">Seller Financing</h6>
+            @endif
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Financing Type', $str('seller_financing_type') === '$' ? 'Flat / Dollar Amount' : ($str('seller_financing_type') === '%' ? 'Percentage of Price' : $str('seller_financing_type'))) !!}
@@ -1061,13 +1077,13 @@
             <div class="row">
             @foreach($disclosures as $d)
             @if($str($d[1]) || $str($d[2]))
-            <div class="col-md-6 mb-2">
+            <div class="col-md-6 mb-2 d-flex align-items-center gap-2">
                 <span class="field-label">{{ $d[0] }}</span>
                 @if($str($d[1]))
-                    <span class="ms-1 badge bg-light text-dark border">{{ $str($d[1]) }}</span>
+                    <span class="badge bg-light text-dark border">{{ $str($d[1]) }}</span>
                 @endif
                 @if($str($d[2]))
-                    <a href="{{ asset('storage/' . $str($d[2])) }}" target="_blank" class="ms-1 btn btn-sm btn-outline-secondary py-0">
+                    <a href="{{ asset('storage/' . $str($d[2])) }}" target="_blank" class="btn btn-sm btn-outline-secondary py-0">
                         <i class="fa-solid fa-download me-1"></i>Download
                     </a>
                 @endif
