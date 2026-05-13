@@ -535,7 +535,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/hire/agent/auction', liverLandLordAgentAuction::class)->name('hire.agent.auction');
 
-
         // Route::get('/hire/agent/auction', [LandlordAgentAuctionController::class, 'index'])->name('hire.agent.auction');
         Route::post('/hire/agent/auction', [LandlordAgentAuctionController::class, 'store']);
         // Route::get('/hire/agent/auction/edit/{id}', [LandlordAgentAuctionController::class, 'edit'])->name('hire.agent.auction.edit');

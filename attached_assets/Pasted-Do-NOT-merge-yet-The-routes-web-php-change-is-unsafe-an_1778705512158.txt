@@ -1,0 +1,68 @@
+Do NOT merge yet.
+
+The routes/web.php change is unsafe and does not fully satisfy Task #958.
+
+Problems:
+1. The new redirect route:
+   Route::get('/hire/agent/auction', function () {
+       return redirect()->route('hire.agent.auction', ['user_type' => 'landlord']);
+   })->name('hire.agent.auction');
+
+   risks:
+   - route name conflicts
+   - recursive redirects
+   - overriding existing shared Hire Agent routes
+   - breaking unrelated landlord flows
+
+2. Task #958 required:
+   /hire/agent/auction/landlord
+   and
+   /hire/agent/auction/landlord/{listingId}
+
+   to resolve to the shared TenantAgentAuction component.
+
+The current diff does not prove that.
+
+Required fix:
+- Audit the actual shared Hire Agent route definitions first.
+- Confirm which route currently handles:
+  tenant
+  buyer
+  seller
+  landlord
+- Remove or reorder ONLY the conflicting landlord route if it intercepts the shared flow.
+- Do NOT introduce redirect loops or duplicate route names.
+- The final landlord create/draft flow must resolve directly to TenantAgentAuction, same as the other roles.
+
+Additional improvement needed:
+In updatedUserType():
+
+Current implementation duplicates the draft query logic instead of reusing the existing logic already used in mount()/getDrafts().
+
+Refactor safely:
+- centralize draft existence lookup into one reusable method
+- reuse the same role/model mapping everywhere
+- avoid future drift between mount(), updatedUserType(), and getDrafts()
+
+Also improve the JS guard slightly:
+
+Current code:
+if (instance) {
+    instance.show();
+} else {
+    new bootstrap.Modal(draftEl).show();
+}
+
+Safer approach:
+- create/reuse one instance
+- avoid repeated .show() calls during the same render cycle
+- add a lightweight data attribute or JS flag so repeated Livewire events do not stack/open repeatedly
+
+Everything else looks correct:
+- removing !$listingId condition
+- browser event listener
+- modal visibility guard
+- role switching behavior
+- landlord draft support direction
+
+But routes/web.php must be corrected before merge.

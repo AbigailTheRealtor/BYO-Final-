@@ -1620,7 +1620,7 @@ $lease_types = [
 
                 <!-- DEBUG: {{ $listingId ? 'DRAFT/EDIT MODE - LISTING ID: ' . $listingId : 'CREATE MODE' }} - COMPONENT: TenantAgentAuction (CREATE) -->
 
-                @if ($hasDrafts && !$listingId)
+                @if ($hasDrafts)
                 <div class="modal fade" id="draftModal" tabindex="-1" aria-labelledby="draftModalLabel"
                     aria-hidden="true" wire:ignore.self>
                     <div class="modal-dialog">
@@ -5506,6 +5506,21 @@ $lease_types = [
                 draftModal.show();
             }
         }, 150);
+    });
+
+    var _draftModalPending = false;
+    function _clearDraftModalPending() { _draftModalPending = false; }
+    window.addEventListener('open-draft-modal', function() {
+        var draftEl = document.getElementById('draftModal');
+        if (!draftEl) return;
+        if (draftEl.classList.contains('show')) return;
+        if (_draftModalPending) return;
+        _draftModalPending = true;
+        var instance = bootstrap.Modal.getInstance(draftEl) || new bootstrap.Modal(draftEl);
+        draftEl.addEventListener('hidden.bs.modal', _clearDraftModalPending, { once: true });
+        draftEl.addEventListener('shown.bs.modal', _clearDraftModalPending, { once: true });
+        setTimeout(_clearDraftModalPending, 2000);
+        instance.show();
     });
 </script>
 

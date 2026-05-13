@@ -29,6 +29,7 @@ class TenantAgentAuction extends Component
 
     // Livewire properties for form fields
     public $hasDrafts = false;
+    public $lastDispatchedUserType = null;
     public $auctionId; // To store the auction ID for editing
 
     public $listingId = null; // To track existing listings
@@ -1681,19 +1682,12 @@ class TenantAgentAuction extends Component
         $this->addService();
 
         // Check for existing drafts based on user_type
-        $draftModelClass = match ($this->user_type) {
-            'tenant'   => HireTenantAgentAuction::class,
-            'landlord' => HireLandLordAgentAuction::class,
-            'buyer'    => HireBuyerAgentAuction::class,
-            'seller'   => HireSellerAgentAuction::class,
-            default    => HireTenantAgentAuction::class,
-        };
-        $this->hasDrafts = $draftModelClass::where('user_id', Auth::id())
+        $this->hasDrafts = $this->draftModelClass()::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->exists();
 
         if ($listingId) {
-            $draftRecord = $draftModelClass::where('id', $listingId)
+            $draftRecord = $this->draftModelClass()::where('id', $listingId)
                 ->where('user_id', Auth::id())
                 ->first();
 
@@ -1726,17 +1720,32 @@ class TenantAgentAuction extends Component
         $this->listingId = null;
         $this->isDraft = false;
     }
-    public function getDrafts()
+    private function draftModelClass(): string
     {
-        // Return drafts from the correct model based on user_type
-        $draftModelClass = match ($this->user_type) {
+        return match ($this->user_type) {
             'tenant'   => HireTenantAgentAuction::class,
             'landlord' => HireLandLordAgentAuction::class,
             'buyer'    => HireBuyerAgentAuction::class,
             'seller'   => HireSellerAgentAuction::class,
             default    => HireTenantAgentAuction::class,
         };
-        return $draftModelClass::where('user_id', Auth::id())
+    }
+
+    public function updatedUserType()
+    {
+        $this->hasDrafts = $this->draftModelClass()::where('user_id', Auth::id())
+            ->where('is_draft', true)
+            ->exists();
+
+        if ($this->hasDrafts && $this->lastDispatchedUserType !== $this->user_type) {
+            $this->lastDispatchedUserType = $this->user_type;
+            $this->dispatchBrowserEvent('open-draft-modal');
+        }
+    }
+
+    public function getDrafts()
+    {
+        return $this->draftModelClass()::where('user_id', Auth::id())
             ->where('is_draft', true)
             ->latest()
             ->get();
