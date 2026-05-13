@@ -1,0 +1,55 @@
+Task: Final Select placeholder fixes for 3 remaining fields
+
+STRICT SAFEGUARDS:
+- Fix ONLY Select placeholder behavior for the 3 fields listed below.
+- Do NOT touch Limited Service files.
+- Do NOT modify database, migrations, routes, controllers, models, validation, or unrelated UI.
+- Do NOT refactor global Select2 logic unless absolutely required for these exact fields.
+- Preserve all previous Select2/icon fixes.
+- Before editing, run git status.
+- After editing, run git diff and confirm only the necessary Blade/JS view files changed.
+
+Fields to fix:
+
+1. Hire Buyer
+- Field: Acceptable Property Type
+- Ensure placeholder displays as “Select”
+- Confirm saved values still load correctly in edit/draft flows if applicable.
+
+2. Hire Landlord
+- Field: Property Type
+- Ensure placeholder displays as “Select”
+- Confirm saved values still load correctly in edit/draft flows if applicable.
+
+3. Create Offer Listing — Seller Listing
+- Field: Property Style
+- Condition: only when user selects Business as Property Type
+- Ensure placeholder displays as “Select”
+- Confirm conditional show/hide still works and saved values still load correctly.
+
+Implementation guidance:
+- Apply the same successful placeholder pattern used in the last Select fixes.
+- For Select2 multiselect fields, the leading option should be:
+  <option value=""></option>
+  and the select should include the correct data-placeholder="Select" where needed.
+- For native single-select fields, keep the normal placeholder option:
+  <option value="">Select</option>
+- Ensure Select2 initialization includes placeholder: "Select" and width: "100%" where applicable.
+- Avoid duplicate Select2 initialization or duplicate containers after Livewire/tab updates.
+- Do not change field names, wire:model values, option values, or saved-data logic.
+
+Done looks like:
+- Hire Buyer → Acceptable Property Type shows “Select” before selection.
+- Hire Landlord → Property Type shows “Select” before selection.
+- Create Offer Listing Seller → selecting Business as Property Type reveals Property Style and it shows “Select”.
+- No duplicate Select2 containers.
+- Previously saved values still display correctly.
+- No console errors.
+- git diff confirms only relevant view/JS files changed.
+- No Limited Service, controller, route, model, migration, validation, or DB changes.
+
+After completion, report:
+1. Files changed.
+2. Exact lines/fields fixed.
+3. Live QA result for all 3 fields.
+4. Confirmation safeguards were respected.
