@@ -1308,8 +1308,8 @@
 
                 <div class="counter-notice mt-3">
                     <i class="fa-solid fa-circle-info me-2"></i>
-                    <strong>Submitting this counter request does not finalize an agreement.</strong>
-                    The agent will receive your proposed changes and both parties may negotiate further before anything is finalized.
+                    <strong>This is a counter request, not a final agreement.</strong>
+                    Review your proposed counter terms below before submitting. If you need to make changes, use the tabs above to return to the appropriate section. Submitting sends your proposed counter terms to the agent for review. The agent may accept, counter, or decline before anything is finalized.
                 </div>
 
                 <div class="d-flex align-items-center gap-3 flex-wrap mt-3 mb-2">
