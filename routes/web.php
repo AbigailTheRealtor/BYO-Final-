@@ -154,6 +154,7 @@ Route::middleware('auth')->group(function () {
     // Phase-2 Hire-Me acknowledgment page (accept flow only)
     Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType}/acknowledge', [\App\Http\Controllers\HireAgentDirectController::class, 'acknowledge'])->name('hire.agent.direct.acknowledge');
     Route::post('/hire/agent/direct/{agentId}/{role}/{propertyType}/acknowledge', [\App\Http\Controllers\HireAgentDirectController::class, 'acknowledgeSubmit'])->name('hire.agent.direct.acknowledge.submit');
+    Route::get('/hire/agent/direct/{agentId}/{role}/{propertyType}/submitted', [\App\Http\Controllers\HireAgentDirectController::class, 'submitted'])->name('hire.agent.direct.submitted');
 
     // Agent Referral Activity page
     Route::get('/agent/my-referrals', [\App\Http\Controllers\AgentReferralPageController::class, 'index'])->name('agent.my-referrals');

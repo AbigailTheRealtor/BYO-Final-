@@ -502,26 +502,86 @@ class HireAgentDirectController extends Controller
 
         $mapped = AgentBidMapperService::mapFromProfile($profile->profile_data ?? []);
 
-        $clientServices      = $pending['services']               ?? [];
-        $clientOtherServices = $pending['other_services']         ?? [];
+        $clientServices       = $pending['services']               ?? [];
+        $clientOtherServices  = $pending['other_services']         ?? [];
         $clientCustomServices = $pending['client_custom_services'] ?? [];
         $additionalRequested  = $pending['additional_requested']   ?? null;
 
-        $validated = [
-            'address'              => null,
-            'additional_requested' => $additionalRequested,
-        ];
-
         session()->forget('hire_direct_pending');
 
-        $result = $this->commitListingAndBid(
-            $agent, $role, $propertyType, $mapped,
-            $clientServices, $clientOtherServices, $clientCustomServices,
-            $validated, 'accept',
-            $contactValidated
+        // Store submission data for the confirmation page — no listing or bid is created.
+        session()->flash('hire_direct_submitted', [
+            'agent_id'               => $agentId,
+            'role'                   => $role,
+            'property_type'          => $propertyType,
+            'services'               => $clientServices,
+            'other_services'         => $clientOtherServices,
+            'client_custom_services' => $clientCustomServices,
+            'additional_requested'   => $additionalRequested,
+            'contact'                => $contactValidated,
+            'mapped'                 => $mapped,
+        ]);
+
+        Log::info('HireAgentDirect: acknowledge submitted (no listing created)', [
+            'role'          => $role,
+            'property_type' => $propertyType,
+            'agent_id'      => $agentId,
+            'client_id'     => Auth::id(),
+        ]);
+
+        return redirect()->route('hire.agent.direct.submitted', [
+            'agentId'      => $agentId,
+            'role'         => $role,
+            'propertyType' => $propertyType,
+        ]);
+    }
+
+    /**
+     * GET — Submitted confirmation page (accept flow only, no listing/bid created).
+     */
+    public function submitted(Request $request, int $agentId, string $role, string $propertyType = 'residential')
+    {
+        if (!in_array($role, self::VALID_ROLES, true)) {
+            abort(404);
+        }
+        if (!in_array($propertyType, self::VALID_PROPERTY_TYPES, true)) {
+            $propertyType = 'residential';
+        }
+
+        $submitted = session('hire_direct_submitted');
+
+        if (
+            !$submitted
+            || ($submitted['agent_id']      ?? null) != $agentId
+            || ($submitted['role']          ?? null) !== $role
+            || ($submitted['property_type'] ?? null) !== $propertyType
+        ) {
+            return redirect()
+                ->route('hire.agent.direct.preview', compact('agentId', 'role', 'propertyType'))
+                ->with('error', 'Your session has expired or this page is no longer available.');
+        }
+
+        $agent = User::where('id', $agentId)->where('user_type', 'agent')->firstOrFail();
+
+        $mapped  = $submitted['mapped'] ?? [];
+        $contact = $submitted['contact'] ?? [];
+
+        $compRows = \App\Support\CompensationFormatter::formatPresetRows(
+            $role,
+            $propertyType,
+            $mapped
         );
 
-        return $result;
+        $services      = $submitted['services']      ?? [];
+        $otherServices = $submitted['other_services'] ?? [];
+
+        $flowKey = $role . '_agent.' . $propertyType;
+        $groupedServices = \App\Support\ServicesFormatter::orderSelectedServices($services, $flowKey);
+
+        return view('hire-agent-direct.submitted', compact(
+            'agent', 'role', 'propertyType', 'mapped', 'compRows',
+            'services', 'otherServices', 'groupedServices', 'contact', 'submitted'
+        ));
     }
 
     /**
