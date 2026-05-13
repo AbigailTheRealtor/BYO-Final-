@@ -390,6 +390,11 @@
         gap: 3px;
     }
 
+    /* Select2 placeholder styling */
+    .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
+    .select2-container .select2-search__field { min-width: 120px; }
+    .select2-selection__placeholder { color: #6c757d; }
+
 </style>
 @endpush
 
@@ -2175,7 +2180,7 @@ $lease_types = [
             $exEl.data('exchange-change-bound', false);
         }
         if (!$exEl.hasClass('select2-hidden-accessible')) {
-            $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true, width: '100%' });
+            $exEl.select2({ placeholder: "Select", allowClear: true, width: '100%' });
         }
         var saved = [];
         try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -2632,7 +2637,7 @@ $lease_types = [
             if (!$ia.length) return;
             if (!$ia.hasClass('select2-hidden-accessible')) {
                 $ia.select2({
-                    placeholder: "Select included assets",
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
@@ -3011,7 +3016,7 @@ $lease_types = [
 
         if ($('#credit_scroe_rating').length && !$('#credit_scroe_rating').hasClass('select2-hidden-accessible')) {
             $('#credit_scroe_rating').select2({
-                placeholder: "Select credit score rating(s)",
+                placeholder: "Select",
                 allowClear: true,
                 width: '100%',
             });

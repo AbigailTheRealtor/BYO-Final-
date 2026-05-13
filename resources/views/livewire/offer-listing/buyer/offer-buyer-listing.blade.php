@@ -317,6 +317,11 @@
             padding-left: 9px !important;
         }
 
+        /* Select2 placeholder styling */
+        .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
+        .select2-container .select2-search__field { min-width: 120px; }
+        .select2-selection__placeholder { color: #6c757d; }
+
     </style>
 @endpush
 
@@ -1457,7 +1462,7 @@
 
             if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
                 $('#garage_parking_spaces_option').select2({
-                    placeholder: "Select parking features",
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
@@ -1494,7 +1499,7 @@
                 if (!$el.hasClass('select2-hidden-accessible')) {
                     $el.attr('multiple', 'multiple');
                     $el.select2({
-                        placeholder: "Select unit types",
+                        placeholder: "Select",
                         allowClear: true,
                         width: '100%',
                     });
@@ -1623,7 +1628,7 @@
                 toggleGarageOptions();
                 if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
                     $('#garage_parking_spaces_option').select2({
-                        placeholder: "Select parking features",
+                        placeholder: "Select",
                         allowClear: true,
                         width: '100%',
                     });

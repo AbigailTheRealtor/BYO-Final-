@@ -338,6 +338,11 @@
             padding-left: 56px;
         }
 
+        /* Select2 placeholder styling */
+        .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
+        .select2-container .select2-search__field { min-width: 120px; }
+        .select2-selection__placeholder { color: #6c757d; }
+
     </style>
 @endpush
 
@@ -1918,7 +1923,7 @@
             }
 
             if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
-                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true, width: '100%' });
+                $('#association_fee_includes').select2({ placeholder: "Select", allowClear: true, width: '100%' });
             }
             if ($('#association_fee_includes').length) {
                 var fiDataInit = $('#association_fee_includes').val() || [];
@@ -1926,7 +1931,7 @@
             }
 
             if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
-                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true, width: '100%' });
+                $('#association_amenities').select2({ placeholder: "Select", allowClear: true, width: '100%' });
             }
             if ($('#association_amenities').length) {
                 var amDataInit = $('#association_amenities').val() || [];
@@ -1935,7 +1940,7 @@
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
-                    placeholder: "Select property style",
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
@@ -2140,7 +2145,7 @@
 
             if ($('#included_assets').length && !$('#included_assets').hasClass('select2-hidden-accessible')) {
                 $('#included_assets').select2({
-                    placeholder: "Select included assets",
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
@@ -2156,7 +2161,7 @@
 
             if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
                 $('#garage_parking_spaces_option_landlord').select2({
-                    placeholder: "Select garage/parking features",
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
