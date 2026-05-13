@@ -949,11 +949,11 @@
             <div class="sol-interaction-card">
                 <div class="sol-interaction-card-icon"><i class="fa-solid fa-calendar-days"></i></div>
                 <div class="sol-interaction-card-label">Schedule Showing</div>
-                <div class="sol-interaction-card-helper">Request an in-person or virtual tour at your preferred date &amp; time.</div>
+                <div class="sol-interaction-card-helper">Request an in-person or virtual showing.</div>
                 <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
                         data-bs-toggle="modal" data-bs-target="#solShowingModal"
                         aria-label="Schedule a showing for this property">
-                    <i class="fa-solid fa-calendar-plus"></i>Book a Showing
+                    <i class="fa-solid fa-calendar-plus"></i>Request Showing
                 </button>
             </div>
 
@@ -984,7 +984,7 @@
             <div class="sol-interaction-card">
                 <div class="sol-interaction-card-icon"><i class="fa-solid fa-circle-question"></i></div>
                 <div class="sol-interaction-card-label">Ask a Question</div>
-                <div class="sol-interaction-card-helper">Send a direct question to the listing agent — typically answered within 24 hours.</div>
+                <div class="sol-interaction-card-helper">Send a direct question to the listing contact.</div>
                 <button type="button" class="sol-interaction-cta sol-interaction-cta-outline"
                         data-bs-toggle="modal" data-bs-target="#solQuestionModal"
                         aria-label="Ask the agent a question about this listing">
@@ -2238,40 +2238,52 @@
                     <h5 class="modal-title fw-bold" id="solShowingModalLabel"><i class="fa-solid fa-calendar-days me-2"></i>Schedule a Showing</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
                 </div>
+                <form method="POST" action="{{ route('offer.listing.seller.showing', ['auction' => $auction->id]) }}">
+                @csrf
+                <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
                 <div class="modal-body p-4">
+                    @if(session('success') && str_contains(session('success'), 'showing'))
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name</label>
-                            <input type="text" class="form-control" placeholder="Jane Smith" disabled>
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name', 'showingInquiry') is-invalid @enderror" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                            @error('name', 'showingInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address</label>
-                            <input type="email" class="form-control" placeholder="jane@example.com" disabled>
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email', 'showingInquiry') is-invalid @enderror" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                            @error('email', 'showingInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
-                            <input type="tel" class="form-control" placeholder="(555) 000-0000" disabled>
+                            <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Date</label>
-                            <input type="date" class="form-control" disabled>
+                            <input type="date" class="form-control" name="preferred_date" value="{{ old('preferred_date') }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold" style="font-size:.85rem;">Preferred Time</label>
-                            <input type="time" class="form-control" disabled>
+                            <input type="time" class="form-control" name="preferred_time" value="{{ old('preferred_time') }}">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold" style="font-size:.85rem;">Message (Optional)</label>
-                            <textarea class="form-control" rows="3" placeholder="Any special requests or notes…" disabled></textarea>
+                            <textarea class="form-control" name="message" rows="3" placeholder="Any special requests or notes…">{{ old('message') }}</textarea>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-secondary" disabled>
-                        <i class="fa-solid fa-clock me-1"></i>Coming Soon
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-calendar-check me-1"></i>Request Showing
                     </button>
                 </div>
+                </form>
             </div>
         </div>
     </div>
@@ -2284,32 +2296,45 @@
                     <h5 class="modal-title fw-bold" id="solQuestionModalLabel"><i class="fa-solid fa-circle-question me-2"></i>Ask a Question</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
                 </div>
+                <form method="POST" action="{{ route('offer.listing.seller.question', ['auction' => $auction->id]) }}">
+                @csrf
+                <input type="text" name="website" value="" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1" autocomplete="off" aria-hidden="true">
                 <div class="modal-body p-4">
+                    @if(session('success') && str_contains(session('success'), 'question'))
+                        <div class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+                            {{ session('success') }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    @endif
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name</label>
-                            <input type="text" class="form-control" placeholder="Jane Smith" disabled>
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control @error('name', 'questionInquiry') is-invalid @enderror" name="name" placeholder="Jane Smith" value="{{ old('name') }}" required>
+                            @error('name', 'questionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address</label>
-                            <input type="email" class="form-control" placeholder="jane@example.com" disabled>
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control @error('email', 'questionInquiry') is-invalid @enderror" name="email" placeholder="jane@example.com" value="{{ old('email') }}" required>
+                            @error('email', 'questionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold" style="font-size:.85rem;">Phone Number</label>
-                            <input type="tel" class="form-control" placeholder="(555) 000-0000" disabled>
+                            <input type="tel" class="form-control" name="phone" placeholder="(555) 000-0000" value="{{ old('phone') }}">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question</label>
-                            <textarea class="form-control" rows="4" placeholder="What would you like to know about this property?" disabled></textarea>
+                            <label class="form-label fw-semibold" style="font-size:.85rem;">Your Question <span class="text-danger">*</span></label>
+                            <textarea class="form-control @error('question', 'questionInquiry') is-invalid @enderror" name="question" rows="4" placeholder="What would you like to know about this property?" required>{{ old('question') }}</textarea>
+                            @error('question', 'questionInquiry')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-secondary" disabled>
-                        <i class="fa-solid fa-clock me-1"></i>Coming Soon
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Send Question
                     </button>
                 </div>
+                </form>
             </div>
         </div>
     </div>
@@ -2383,6 +2408,18 @@
             window.scrollTo({ top: top, behavior: 'smooth' });
         });
     });
+
+    /* ---- Auto-reopen modal after validation failure ---- */
+    @if(session('open_modal'))
+    (function () {
+        var modalId = '{{ session('open_modal') }}' === 'question' ? 'solQuestionModal' : 'solShowingModal';
+        var el = document.getElementById(modalId);
+        if (el && typeof bootstrap !== 'undefined') {
+            var m = bootstrap.Modal.getOrCreate(el);
+            m.show();
+        }
+    }());
+    @endif
 
     /* ---- AI modal example questions rotation ---- */
     var aiExamples = [

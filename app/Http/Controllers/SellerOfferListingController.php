@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\SellerListingInquiryMail;
 use App\Models\SellerAgentAuction;
+use App\Models\SellerListingInquiry;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 
 class SellerOfferListingController extends Controller
 {
@@ -23,9 +28,21 @@ class SellerOfferListingController extends Controller
         'auction_type',
     ];
 
-    public function view($id)
+    /**
+     * Resolve a SellerAgentAuction by ID and confirm it is a Seller Offer Listing.
+     * Returns the auction on success or calls abort(404) when the record is absent
+     * or belongs to a different workflow (e.g. Hire Agent).
+     *
+     * @param  int|string  $id
+     * @param  bool        $withRelations  Load meta + bids.user when true (view page only).
+     */
+    private function resolveOfferListing($id, bool $withRelations = false): SellerAgentAuction
     {
-        $auction = SellerAgentAuction::with(['meta', 'bids.user'])->find($id);
+        $query   = $withRelations
+            ? SellerAgentAuction::with(['meta', 'bids.user'])
+            : SellerAgentAuction::query();
+
+        $auction = $query->find($id);
 
         if (!$auction) {
             abort(404, 'Listing not found');
@@ -40,20 +57,27 @@ class SellerOfferListingController extends Controller
             // These meta keys only appear in Full Service Seller Offer Listings, not in
             // Hire Seller's Agent records, so their presence is a safe identifier.
             // Additive OR — any single match is sufficient to recognise an Offer Listing.
-            $auction->info('parcel_id')                !== false ||
-            $auction->info('flood_zone_code')          !== false ||
-            $auction->info('annual_property_taxes')    !== false ||
+            $auction->info('parcel_id')                   !== false ||
+            $auction->info('flood_zone_code')             !== false ||
+            $auction->info('annual_property_taxes')       !== false ||
             $auction->info('seller_disclosure_available') !== false ||
-            $auction->info('property_photos')          !== false ||
-            $auction->info('listing_documents')        !== false ||
-            $auction->info('brokerage_relationship')   !== false ||
-            $auction->info('association_type')         !== false ||
-            $auction->info('auction_type')             !== false
+            $auction->info('property_photos')             !== false ||
+            $auction->info('listing_documents')           !== false ||
+            $auction->info('brokerage_relationship')      !== false ||
+            $auction->info('association_type')            !== false ||
+            $auction->info('auction_type')                !== false
         ) {
             // Fallback: presence of Offer Listing-specific meta keys
         } else {
             abort(404, 'Listing not found');
         }
+
+        return $auction;
+    }
+
+    public function view($id)
+    {
+        $auction = $this->resolveOfferListing($id, withRelations: true);
 
         $meta = [];
         foreach ($auction->meta as $row) {
@@ -70,6 +94,130 @@ class SellerOfferListingController extends Controller
         ];
 
         return view('offer-listing.seller.view', compact('auction', 'meta') + $page_data);
+    }
+
+    public function submitQuestion(Request $request, $auctionId)
+    {
+        // Honeypot check — silent discard for bots
+        if ($request->input('website') !== null && $request->input('website') !== '') {
+            return redirect()->back()->with('success', 'Your question has been sent.');
+        }
+
+        $auction = $this->resolveOfferListing($auctionId);
+
+        $validator = Validator::make($request->all(), [
+            'name'     => 'required|string|max:191',
+            'email'    => 'required|email|max:191',
+            'phone'    => 'nullable|string|max:64',
+            'question' => 'required|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator, 'questionInquiry')
+                ->withInput()
+                ->with('open_modal', 'question');
+        }
+
+        $inquiry = SellerListingInquiry::create([
+            'auction_id' => $auctionId,
+            'type'       => 'question',
+            'name'       => $request->input('name'),
+            'email'      => $request->input('email'),
+            'phone'      => $request->input('phone'),
+            'question'   => $request->input('question'),
+            'status'     => 'new',
+            'source'     => 'public_listing',
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        $this->sendInquiryEmail($inquiry, $auction);
+
+        return redirect()->back()->with('success', 'Your question has been sent.');
+    }
+
+    public function submitShowing(Request $request, $auctionId)
+    {
+        // Honeypot check — silent discard for bots
+        if ($request->input('website') !== null && $request->input('website') !== '') {
+            return redirect()->back()->with('success', 'Your showing request has been sent.');
+        }
+
+        $auction = $this->resolveOfferListing($auctionId);
+
+        $validator = Validator::make($request->all(), [
+            'name'           => 'required|string|max:191',
+            'email'          => 'required|email|max:191',
+            'phone'          => 'nullable|string|max:64',
+            'preferred_date' => 'nullable|date',
+            'preferred_time' => 'nullable|string|max:32',
+            'message'        => 'nullable|string|max:5000',
+        ]);
+
+        if ($validator->fails()) {
+            return redirect()->back()
+                ->withErrors($validator, 'showingInquiry')
+                ->withInput()
+                ->with('open_modal', 'showing');
+        }
+
+        $inquiry = SellerListingInquiry::create([
+            'auction_id'     => $auctionId,
+            'type'           => 'showing',
+            'name'           => $request->input('name'),
+            'email'          => $request->input('email'),
+            'phone'          => $request->input('phone'),
+            'preferred_date' => $request->input('preferred_date'),
+            'preferred_time' => $request->input('preferred_time'),
+            'message'        => $request->input('message'),
+            'status'         => 'new',
+            'source'         => 'public_listing',
+            'ip_address'     => $request->ip(),
+            'user_agent'     => $request->userAgent(),
+        ]);
+
+        $this->sendInquiryEmail($inquiry, $auction);
+
+        return redirect()->back()->with('success', 'Your showing request has been sent.');
+    }
+
+    /**
+     * Resolve recipient and send the inquiry notification email.
+     * Wrapped in try/catch — email failure is logged but never breaks the submission.
+     */
+    private function sendInquiryEmail(SellerListingInquiry $inquiry, SellerAgentAuction $auction): void
+    {
+        try {
+            // Recipient resolution priority:
+            // 1. Listing agent email stored in meta
+            // 2. Contact email from meta
+            // 3. config('mail.from.address') fallback
+            $recipient = $auction->info('agent_email')
+                ?: ($auction->info('contact_email')
+                ?: ($auction->info('seller_email')
+                ?: config('mail.from.address')));
+
+            if (empty($recipient)) {
+                Log::warning('SellerOfferListingController: no recipient resolved for inquiry', [
+                    'inquiry_id' => $inquiry->id,
+                    'auction_id' => $inquiry->auction_id,
+                ]);
+                return;
+            }
+
+            $listingTitle = $auction->address
+                ?? ($auction->info('listing_title') ?: 'Seller Offer Listing #' . $auction->id);
+            $listingUrl   = route('offer.listing.seller.view', ['id' => $auction->id]);
+
+            Mail::to($recipient)->send(new SellerListingInquiryMail($inquiry, $listingTitle, $listingUrl));
+        } catch (\Throwable $e) {
+            Log::warning('SellerOfferListingController: inquiry email failed', [
+                'inquiry_id' => $inquiry->id ?? null,
+                'auction_id' => $auction->id,
+                'error'      => $e->getMessage(),
+            ]);
+        }
     }
 
     public function searchOfferListings(Request $request)
