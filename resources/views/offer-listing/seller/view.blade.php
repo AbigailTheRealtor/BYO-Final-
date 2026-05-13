@@ -233,9 +233,6 @@
 
 /* ---- Smooth-scroll nav tabs ---- */
 .sol-view-page .sol-nav-tabs-wrap {
-    position: sticky;
-    top: 70px;
-    z-index: 100;
     background: #fff;
     border-bottom: 2px solid #e2e8f0;
     margin-bottom: 1.75rem;
@@ -625,6 +622,12 @@
         </div>
     </div>
 
+    {{-- ===== TWO-COLUMN LAYOUT: MAIN + STICKY RAIL ===== --}}
+    <div class="row g-4 align-items-start">
+
+        {{-- Main content column --}}
+        <div class="col-lg-9 sol-main-content-wrap">
+
     {{-- ===== SMOOTH-SCROLL NAV TABS ===== --}}
     <div class="sol-nav-tabs-wrap">
         <ul class="sol-nav-tabs">
@@ -637,12 +640,6 @@
             <li><a href="#section-contact">Contact</a></li>
         </ul>
     </div>
-
-    {{-- ===== TWO-COLUMN LAYOUT: MAIN + STICKY RAIL ===== --}}
-    <div class="row g-4 align-items-start">
-
-        {{-- Main content column --}}
-        <div class="col-lg-9 sol-main-content-wrap">
 
     {{-- Photos & Tours --}}
     @if(count($propertyPhotos) || $str('video_tour_url') || $str('virtual_tour_url'))
@@ -1506,7 +1503,7 @@
     <div class="card section-card">
         <div class="card-header"><i class="fa-solid fa-landmark me-2"></i>Tax, Legal, HOA &amp; Disclosures</div>
         <div class="card-body">
-            <h6 class="fw-semibold mt-3 mb-2">Tax &amp; Legal</h6>
+            <h6 class="fw-semibold mt-3 mb-2" style="letter-spacing:0">Tax &amp; Legal</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Parcel ID', $str('parcel_id')) !!}
@@ -1525,7 +1522,7 @@
 
             @if($str('has_cdd'))
             <hr>
-            <h6 class="fw-semibold mt-3 mb-2">CDD / Special Assessments</h6>
+            <h6 class="fw-semibold mt-3 mb-2" style="letter-spacing:0">CDD / Special Assessments</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Has CDD', $yesNo($str('has_cdd'))) !!}
@@ -1541,7 +1538,7 @@
 
             @if($str('has_hoa'))
             <hr>
-            <h6 class="fw-semibold mt-3 mb-2">HOA / Association</h6>
+            <h6 class="fw-semibold mt-3 mb-2" style="letter-spacing:0">HOA / Association</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Has HOA', $yesNo($str('has_hoa'))) !!}
@@ -1624,7 +1621,7 @@
             </div>
             @if(count($addDocNames))
             <hr>
-            <h6 class="fw-semibold mt-3 mb-2">Additional Documents Available</h6>
+            <h6 class="fw-semibold mt-3 mb-2" style="letter-spacing:0">Additional Documents Available</h6>
             <div class="row">
                 @foreach($addDocNames as $addDocName)
                 <div class="col-md-6 mb-2 d-flex align-items-center gap-2 flex-wrap">
@@ -1636,7 +1633,7 @@
             @endif
             @if(count($docRows))
             <hr>
-            <h6 class="fw-semibold mt-3 mb-2">Additional Documents</h6>
+            <h6 class="fw-semibold mt-3 mb-2" style="letter-spacing:0">Additional Documents</h6>
             <ul class="list-unstyled mb-0">
                 @foreach($docRows as $dr)
                 <li class="mb-2 d-flex align-items-center gap-2 flex-wrap">
@@ -1909,16 +1906,14 @@
 (function () {
     'use strict';
 
-    /* ---- Smooth scroll offset (app header ~70px + sticky nav tabs ~44px + buffer) ---- */
+    /* ---- Smooth scroll offset (app header ~70px + buffer) ---- */
     document.querySelectorAll('.sol-nav-tabs a[href^="#"]').forEach(function (link) {
         link.addEventListener('click', function (e) {
             var targetId = this.getAttribute('href').slice(1);
             var target = document.getElementById(targetId);
             if (!target) return;
             e.preventDefault();
-            var navWrap = document.querySelector('.sol-nav-tabs-wrap');
-            var navH = navWrap ? navWrap.offsetHeight : 44;
-            var offset = 70 + navH + 12;
+            var offset = 82;
             var top = target.getBoundingClientRect().top + window.scrollY - offset;
             window.scrollTo({ top: top, behavior: 'smooth' });
         });
