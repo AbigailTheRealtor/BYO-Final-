@@ -345,7 +345,9 @@
 
             @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
             @if(count($appliances))
-            {!! $row('Appliances', implode(', ', $appliances)) !!}
+            <hr>
+            <div class="mb-1"><span class="field-label">Appliances</span></div>
+            <p class="field-value">{{ implode(', ', $appliances) }}</p>
             @endif
 
             @php $pItems = $subOther($arr('property_items'), $str('other_property_items')); @endphp
@@ -729,7 +731,6 @@
             @endif
             <div class="row">
                 <div class="col-md-6">
-                    {!! $row('Financing Type', $str('seller_financing_type') === '$' ? 'Flat / Dollar Amount' : ($str('seller_financing_type') === '%' ? 'Percentage of Price' : $str('seller_financing_type'))) !!}
                     {!! $row('Down Payment', $fmtMoney($str('seller_down_payment_amount'))) !!}
                     {!! $row('Interest Rate', $str('interest_rate') ? $fmtPercent($str('interest_rate')) : null) !!}
                     {!! $row('Loan Duration (Years)', $str('loan_duration')) !!}
@@ -785,7 +786,7 @@
 
     {{-- Broker Compensation & Agency Agreement --}}
     <div class="card section-card">
-        <div class="card-header"><i class="fa-solid fa-percent me-2"></i>Broker Compensation &amp; Agency Agreement</div>
+        <div class="card-header"><i class="fa-solid fa-file-contract me-2"></i>Broker Compensation &amp; Agency Agreement</div>
         <div class="card-body">
 
             {{-- Purchase Compensation --}}
@@ -1041,10 +1042,12 @@
                 $assocIncludes  = $subOther($arr('association_fee_includes'), $str('association_fee_includes_other'));
             @endphp
             @if(count($assocIncludes))
-                {!! $row('Fee Includes', implode(', ', $assocIncludes)) !!}
+                <div class="mb-1"><span class="field-label">Fee Includes</span></div>
+                <p class="field-value">{{ implode(', ', $assocIncludes) }}</p>
             @endif
             @if(count($assocAmenities))
-                {!! $row('Association Amenities', implode(', ', $assocAmenities)) !!}
+                <div class="mb-1"><span class="field-label">Association Amenities</span></div>
+                <p class="field-value">{{ implode(', ', $assocAmenities) }}</p>
             @endif
             @endif
         </div>
