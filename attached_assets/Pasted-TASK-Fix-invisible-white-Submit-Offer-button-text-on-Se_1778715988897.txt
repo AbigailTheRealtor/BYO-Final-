@@ -1,0 +1,60 @@
+TASK: Fix invisible/white Submit Offer button text on Seller Offer Listing hero CTA
+
+ISSUE:
+On the Seller Offer Listing public view, the primary "Submit Offer" button in the hero CTA area renders with white/light text on a white/light background until hover. The hover state looks correct, but the default state is visually broken.
+
+This appears isolated to the hero CTA primary button styling after the Interaction Hub work.
+
+TARGET PAGE:
+ /offer-listing/seller/view/{id}
+
+SAFEGUARDS:
+- Do NOT redesign buttons globally.
+- Do NOT touch Bootstrap core files.
+- Do NOT modify Buyer, Tenant, Landlord, or Hire Agent views.
+- Do NOT touch modal logic, carousel logic, interaction hub logic, or routes/controllers.
+- Only apply the smallest scoped CSS fix necessary.
+- Keep all changes inside:
+  resources/views/offer-listing/seller/view.blade.php
+
+GOAL:
+The hero "Submit Offer" button should:
+- show proper visible blue background + white text on initial render
+- preserve existing hover state
+- preserve existing spacing/padding/icon
+- preserve interaction hub buttons
+- preserve sticky rail buttons
+- preserve mobile bottom bar buttons
+
+STEPS:
+1. Audit the hero CTA button markup and determine:
+   - whether a Bootstrap btn-outline-* class is conflicting
+   - whether a color: transparent/inherit rule is leaking
+   - whether a CSS specificity issue from .sol-interaction-* styles is overriding hero CTA styles
+
+2. Apply a scoped fix ONLY for the hero CTA primary button.
+   Likely target:
+   .sol-view-page .sol-hero-ctas .btn-primary
+   OR
+   .sol-view-page .sol-hero-ctas .sol-btn-primary
+
+3. Ensure default state explicitly sets:
+   - background
+   - border-color
+   - text color
+
+4. Preserve hover/focus states.
+
+5. QA:
+   - hero Submit Offer button visible immediately
+   - interaction hub Submit Offer button still correct
+   - sticky rail button still correct
+   - mobile bottom bar button still correct
+   - no console errors
+   - no layout shifts
+
+FINAL CONFIRMATION:
+Provide:
+- exact CSS rule added/changed
+- confirmation only seller view file changed
+- screenshot confirmation hero button visible before hover
