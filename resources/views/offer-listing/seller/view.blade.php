@@ -145,30 +145,35 @@
 }
 .sol-view-page .sol-hero-summary {
     background: #fff;
-    padding: 1.5rem 1.75rem;
+    padding: 1.6rem 1.4rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 100%;
+    min-height: 280px;
+    gap: 0.1rem;
 }
 .sol-view-page .sol-hero-price {
-    font-size: 2rem;
+    font-size: 1.85rem;
     font-weight: 800;
     color: #1e293b;
     letter-spacing: -0.03em;
-    line-height: 1.1;
+    line-height: 1.15;
 }
 .sol-view-page .sol-hero-address {
     color: #475569;
-    font-size: 0.92rem;
-    margin-top: 0.35rem;
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    line-height: 1.45;
 }
 .sol-view-page .sol-hero-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem 1.25rem;
-    margin-top: 0.75rem;
-    font-size: 0.875rem;
+    gap: 0.4rem 0.9rem;
+    margin-top: 0.65rem;
+    font-size: 0.84rem;
     color: #334155;
 }
 .sol-view-page .sol-hero-meta-item i {
@@ -178,19 +183,22 @@
 .sol-view-page .sol-hero-badges {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.9rem;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
 }
 .sol-view-page .sol-badge {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    font-size: 0.75rem;
+    gap: 4px;
+    font-size: 0.73rem;
     font-weight: 600;
-    padding: 0.3rem 0.65rem;
+    padding: 0.25rem 0.55rem;
     border-radius: 20px;
     border: 1px solid;
     white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .sol-view-page .sol-badge-blue   { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
 .sol-view-page .sol-badge-green  { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
@@ -202,33 +210,36 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 700;
-    padding: 0.3rem 0.75rem;
+    padding: 0.28rem 0.7rem;
     border-radius: 20px;
     background: #dcfce7;
     color: #166534;
     border: 1px solid #86efac;
-    margin-top: 0.75rem;
+    margin-top: 0.6rem;
+    white-space: nowrap;
 }
 .sol-view-page .sol-hero-dates {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: #94a3b8;
-    margin-top: 0.5rem;
+    margin-top: 0.4rem;
 }
 .sol-view-page .sol-hero-ctas {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
+    gap: 0.4rem;
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
     border-top: 1px solid #f1f5f9;
 }
 .sol-view-page .sol-hero-ctas .btn {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    padding: 0.45rem 0.9rem;
+    padding: 0.42rem 0.75rem;
     border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ---- Smooth-scroll nav tabs ---- */
@@ -402,6 +413,74 @@
     border-bottom: none;
 }
 .sol-view-page .sol-modal-header .btn-close { filter: invert(1); }
+
+/* ---- Subsection headings — normalised typography ---- */
+.sol-view-page h6.fw-semibold,
+.sol-view-page h6.fw-bold {
+    color: #1e293b;
+    font-size: 0.97rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    font-stretch: normal;
+    font-family: inherit;
+    text-transform: none;
+}
+
+/* ---- Hero carousel overlay controls ---- */
+.sol-view-page .sol-hero-carousel-wrap {
+    position: relative;
+    height: 100%;
+    min-height: 280px;
+    max-height: 420px;
+    overflow: hidden;
+    background: #0f172a;
+}
+.sol-view-page .sol-hero-carousel-wrap .sol-hero-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.sol-view-page .sol-hero-carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,.45);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.55rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+    padding: 0;
+    flex-shrink: 0;
+}
+.sol-view-page .sol-hero-carousel-arrow:hover { background: rgba(0,0,0,.72); }
+.sol-view-page .sol-hero-carousel-arrow.sol-hero-prev { left: 12px; }
+.sol-view-page .sol-hero-carousel-arrow.sol-hero-next { right: 12px; }
+.sol-view-page .sol-hero-carousel-counter {
+    position: absolute;
+    bottom: 12px;
+    right: 14px;
+    background: rgba(0,0,0,.50);
+    color: #fff;
+    font-size: 0.76rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    z-index: 10;
+    pointer-events: none;
+    letter-spacing: .02em;
+}
 </style>
 @endpush
 
@@ -479,11 +558,19 @@
             $propertyPhotos = is_array($decoded) ? $decoded : [];
         }
         $coverPhoto = null;
+        $heroPhotoUrls = [];
+        $coverPhotoIdx = 0;
+        $_hpTmpIdx = 0;
         foreach ($propertyPhotos as $ph) {
             $fn = is_array($ph) ? ($ph['filename'] ?? '') : $ph;
             if (!$fn) continue;
-            if (is_array($ph) && !empty($ph['is_cover'])) { $coverPhoto = $fn; break; }
+            $heroPhotoUrls[] = asset('storage/auction/images/' . $fn);
+            if (is_array($ph) && !empty($ph['is_cover'])) {
+                $coverPhoto = $fn;
+                $coverPhotoIdx = $_hpTmpIdx;
+            }
             if (!$coverPhoto) $coverPhoto = $fn;
+            $_hpTmpIdx++;
         }
 
         /* Hero: price — seller-appropriate field priority; no buyer fields */
@@ -527,19 +614,32 @@
     {{-- ===== HERO SECTION ===== --}}
     <div class="sol-hero mb-4">
         <div class="row g-0" style="min-height:280px;">
-            <div class="col-lg-7" style="max-height:420px;overflow:hidden;">
-                @if($coverPhoto)
-                    <img src="{{ asset('storage/auction/images/' . $coverPhoto) }}"
-                         alt="Property cover photo"
-                         class="sol-hero-photo"
-                         onerror="this.parentElement.innerHTML='<div class=\'sol-hero-photo-placeholder\'><i class=\'fa-solid fa-house\'></i></div>'">
-                @else
-                    <div class="sol-hero-photo-placeholder">
-                        <i class="fa-solid fa-house"></i>
-                    </div>
-                @endif
+            <div class="col-lg-8">
+                <div class="sol-hero-carousel-wrap">
+                    @if(count($heroPhotoUrls))
+                        <img id="heroCarouselImg"
+                             src="{{ $heroPhotoUrls[$coverPhotoIdx] }}"
+                             alt="Property photo"
+                             class="sol-hero-photo"
+                             style="cursor:pointer;"
+                             onerror="this.style.display='none';var ph=document.getElementById('heroCarouselPlaceholder');if(ph)ph.style.display='flex'">
+                        <div id="heroCarouselPlaceholder" class="sol-hero-photo-placeholder" style="display:none;">
+                            <i class="fa-solid fa-house"></i>
+                        </div>
+                        @if(count($heroPhotoUrls) > 1)
+                        <button class="sol-hero-carousel-arrow sol-hero-prev" id="heroCarouselPrev" aria-label="Previous photo">&#8249;</button>
+                        <button class="sol-hero-carousel-arrow sol-hero-next" id="heroCarouselNext" aria-label="Next photo">&#8250;</button>
+                        <div class="sol-hero-carousel-counter" id="heroCarouselCounter">{{ $coverPhotoIdx + 1 }} / {{ count($heroPhotoUrls) }}</div>
+                        @endif
+                    @else
+                        <div class="sol-hero-photo-placeholder">
+                            <i class="fa-solid fa-house"></i>
+                        </div>
+                    @endif
+                </div>
+                <script>var _solHeroPhotos={!! json_encode($heroPhotoUrls) !!};var _solHeroStartIdx={{ $coverPhotoIdx }};</script>
             </div>
-            <div class="col-lg-5">
+            <div class="col-lg-4">
                 <div class="sol-hero-summary">
                     @if($heroPrice)
                         <div class="sol-hero-price">{{ $heroPrice }}</div>
@@ -780,6 +880,47 @@
         var nextBtn = document.getElementById('photoModalNext');
         if (prevBtn) prevBtn.addEventListener('click', function () { showPhoto(currentIndex - 1); });
         if (nextBtn) nextBtn.addEventListener('click', function () { showPhoto(currentIndex + 1); });
+
+        window._solShowPhoto = showPhoto;
+    })();
+    </script>
+
+    {{-- Hero image carousel script --}}
+    <script>
+    (function () {
+        var photos = (typeof _solHeroPhotos !== 'undefined') ? _solHeroPhotos : [];
+        if (photos.length === 0) return;
+
+        var heroIdx = (typeof _solHeroStartIdx !== 'undefined') ? _solHeroStartIdx : 0;
+        var heroImg     = document.getElementById('heroCarouselImg');
+        var heroPrev    = document.getElementById('heroCarouselPrev');
+        var heroNext    = document.getElementById('heroCarouselNext');
+        var heroCounter = document.getElementById('heroCarouselCounter');
+
+        function updateHero(idx) {
+            if (idx < 0) idx = photos.length - 1;
+            if (idx >= photos.length) idx = 0;
+            heroIdx = idx;
+            if (heroImg)     heroImg.src = photos[heroIdx];
+            if (heroCounter) heroCounter.textContent = (heroIdx + 1) + ' / ' + photos.length;
+        }
+
+        if (heroPrev) heroPrev.addEventListener('click', function () { updateHero(heroIdx - 1); });
+        if (heroNext) heroNext.addEventListener('click', function () { updateHero(heroIdx + 1); });
+
+        if (heroImg) {
+            heroImg.addEventListener('click', function () {
+                if (typeof window._solShowPhoto === 'function') {
+                    window._solShowPhoto(heroIdx);
+                }
+                var modalEl = document.getElementById('photoModal');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                }
+            });
+        }
+
+        updateHero(heroIdx);
     })();
     </script>
     @endif
