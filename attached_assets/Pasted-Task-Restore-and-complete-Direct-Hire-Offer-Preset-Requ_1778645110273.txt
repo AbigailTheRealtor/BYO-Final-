@@ -1,0 +1,384 @@
+Task: Restore and complete Direct Hire Offer Preset “Request Changes / Counter Terms” flow with proper Client Details handling, acknowledgment flow parity, and submitted flow parity.
+
+Login for testing:
+abigailbaschuk@gmail.com
+password: 12345679
+
+Example base route:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/hire/agent/direct/142/buyer/residential
+
+==================================================
+STRICT SAFEGUARDS
+==================================================
+
+- Audit first before editing anything.
+- Do NOT modify database schema/migrations unless absolutely required.
+- Do NOT modify Limited Service / legacy flows.
+- Do NOT alter listing creation logic.
+- Do NOT create listings when submitting hire requests or counter requests.
+- Do NOT change public listing pages.
+- Keep edits scoped ONLY to Direct Hire Offer Preset flows.
+- Reuse existing blades/components/partials where possible.
+- Preserve all existing services, compensation, and agreement rendering.
+- Preserve existing acknowledgment/submitted pages.
+- Preserve existing validation and option sets.
+- Stop and report before modifying unrelated controllers/routes.
+
+==================================================
+IMPORTANT FLOW RULES
+==================================================
+
+There are TWO DIFFERENT FLOWS and both must remain intact.
+
+--------------------------------------------------
+FLOW 1 — ACCEPT & SUBMIT HIRE REQUEST
+--------------------------------------------------
+
+KEEP THIS FLOW EXACTLY AS-IS.
+
+This existing flow already contains the correct Client Details sections for:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+DO NOT:
+- remove fields
+- simplify fields
+- replace fields
+- alter existing qualification fields
+- remove existing validation
+- alter existing acknowledgment flow
+
+--------------------------------------------------
+FLOW 2 — REQUEST CHANGES / COUNTER TERMS
+--------------------------------------------------
+
+THIS is the flow being fixed.
+
+Current issues:
+- Client Details tab missing or incomplete
+- Counter flow bypasses proper acknowledgment/review flow
+- Counter flow does not mirror Accept flow properly
+- Submitted flow inconsistent
+
+==================================================
+GOAL
+==================================================
+
+When a user clicks “Request Changes / Counter Terms” on a Direct Hire Offer Preset:
+
+1. User can counter services/terms
+2. Final tab is Client Details
+3. Client Details must match the EXISTING role-specific acknowledgment page fields
+4. User submits Counter Terms
+5. System routes user to the SAME acknowledgment/review style page used by Accept flow
+6. User clicks Submit Hire Request
+7. User lands on existing Submitted page
+8. No listing is created
+
+==================================================
+REQUIRED COUNTER TERMS TABS
+==================================================
+
+For ALL Direct Hire Offer Preset flows:
+- Services
+- Broker Compensation & Agency Agreement Terms
+- Additional Terms (if currently used)
+- Client Details (LAST TAB)
+
+Applies to:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+==================================================
+VERY IMPORTANT CLIENT DETAILS RULE
+==================================================
+
+The Counter Terms Client Details tab MUST use the SAME role-specific fields currently used by the existing acknowledgment pages.
+
+DO NOT:
+- invent new fields
+- simplify the forms
+- create generic replacements
+- remove existing optional fields
+- remove qualification fields already used by acknowledgment pages
+
+Reuse the EXISTING acknowledgment/client-details role-specific partials and internal option sets so:
+- all dropdown options
+- conditional logic
+- validation rules
+- placeholders
+- select values
+- Livewire bindings
+- helper text
+- supported values
+
+continue functioning exactly as they already do in the Accept & Submit Hire Request flow.
+
+==================================================
+BUYER — CLIENT DETAILS STRUCTURE
+==================================================
+
+Section:
+Client Contact Information
+
+Required:
+- Full Name
+- Phone Number
+- Email Address
+
+Section:
+Location & Target
+
+Required:
+- Areas of Interest
+
+Section:
+Deal Terms
+
+Optional:
+- Target Purchase Price / Budget
+- Timeline to Purchase
+
+Section:
+Qualification Signals
+
+Optional:
+- Pre-Approval Status
+- Cash Buyer?
+- Estimated Down Payment
+
+==================================================
+TENANT — CLIENT DETAILS STRUCTURE
+==================================================
+
+Section:
+Client Contact Information
+
+Required:
+- Full Name
+- Phone Number
+- Email Address
+
+Section:
+Location & Target
+
+Required:
+- Areas of Interest
+
+Section:
+Deal Terms
+
+Optional:
+- Max Monthly Lease Price
+- Desired Lease Length
+- Move-In Date
+
+Section:
+Qualification Signals
+
+Optional:
+- Number of Occupants
+- Household Monthly Income
+
+==================================================
+SELLER — CLIENT DETAILS STRUCTURE
+==================================================
+
+Section:
+Client Contact Information
+
+Required:
+- Full Name
+- Phone Number
+- Email Address
+
+Section:
+Property Address
+
+Required:
+- Street Address
+- City
+- State
+- ZIP Code
+
+Section:
+Deal Terms
+
+Optional:
+- Desired Sale Price
+- Timeline to Sell
+
+Section:
+Qualification Signals
+
+Optional:
+- Motivation Level
+
+==================================================
+LANDLORD — CLIENT DETAILS STRUCTURE
+==================================================
+
+Section:
+Client Contact Information
+
+Required:
+- Full Name
+- Phone Number
+- Email Address
+
+Section:
+Property Address
+
+Required:
+- Street Address
+- City
+- State
+- ZIP Code
+
+Section:
+Deal Terms
+
+Optional:
+- Desired Monthly Rent
+- Availability Date
+
+Section:
+Qualification Signals
+
+Optional:
+- Occupancy Status
+- Flexibility
+
+==================================================
+IMPLEMENTATION
+==================================================
+
+--------------------------------------------------
+PART 1 — RESTORE CLIENT DETAILS TAB
+--------------------------------------------------
+
+Add/re-add Client Details as the LAST tab inside Counter Terms flow for:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+--------------------------------------------------
+PART 2 — REUSE EXISTING ROLE-SPECIFIC PARTIALS
+--------------------------------------------------
+
+Reuse the SAME role-specific Client Details structures currently used by the acknowledgment pages.
+
+Preferred approach:
+- reuse existing partials/components
+- reuse existing validation
+- reuse existing field mappings
+- reuse existing option arrays/selects
+
+Avoid:
+- duplicated inconsistent forms
+- hardcoded replacement forms
+- manually recreated select options
+
+--------------------------------------------------
+PART 3 — FIX COUNTER SUBMISSION FLOW
+--------------------------------------------------
+
+Current issue:
+Counter submission finalizes incorrectly or bypasses acknowledgment.
+
+Fix:
+Submitting Counter Terms should NOT finalize immediately.
+
+Instead:
+- redirect/render the SAME acknowledgment/review style page used by Accept flow
+- pass:
+  - services
+  - broker compensation/agreement terms
+  - additional terms
+  - client details
+
+The acknowledgment page should behave consistently whether:
+- request came from Accept flow
+OR
+- request came from Counter Terms flow
+
+--------------------------------------------------
+PART 4 — FINAL SUBMIT FLOW
+--------------------------------------------------
+
+When user clicks Submit Hire Request from acknowledgment/review page:
+
+- save/record request normally
+- redirect to existing Submitted page
+
+DO NOT:
+- create listing
+- redirect to listing
+- redirect to browse pages
+
+==================================================
+SUBMITTED PAGE REQUIREMENTS
+==================================================
+
+Existing submitted page should correctly show:
+- Request Received message
+- Agent card
+- Submitted client details
+- Submitted services
+- Submitted broker compensation/agreement terms
+- Additional terms if provided
+
+==================================================
+UI REQUIREMENTS
+==================================================
+
+- Client Details must be LAST tab.
+- Styling must match existing tabs/cards.
+- Keep existing acknowledgment/submitted page design.
+- No Match Score.
+- No Added/Changed/Removed labels.
+- No green comparison formatting.
+- Services display as clean checklist/bullets.
+
+==================================================
+TESTING REQUIRED
+==================================================
+
+Test ALL available Direct Hire Offer Preset flows:
+
+1. Buyer
+2. Tenant
+3. Seller
+4. Landlord
+
+For EACH:
+- Open Direct Hire Offer Preset
+- Click Request Changes / Counter Terms
+- Confirm Client Details exists as LAST tab
+- Confirm fields match existing acknowledgment page for that role
+- Confirm existing dropdown options/conditional logic still work
+- Submit Counter Terms
+- Confirm acknowledgment/review page appears
+- Submit Hire Request
+- Confirm Submitted page appears
+- Confirm no listing is created
+- Confirm submitted data displays correctly
+
+==================================================
+DONE LOOKS LIKE
+==================================================
+
+- Accept flow untouched
+- Counter Terms includes Client Details tab
+- Client Details fields match existing acknowledgment pages
+- Existing options/logic preserved
+- Counter flow routes through acknowledgment page
+- Final submit routes to submitted page
+- Submitted page displays correct role-specific data
+- No listing created
+- Limited Service untouched

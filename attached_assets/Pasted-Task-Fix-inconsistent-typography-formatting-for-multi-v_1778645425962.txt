@@ -1,0 +1,112 @@
+Task: Fix inconsistent typography/formatting for multi-value display fields on Seller Offer Listing public view page.
+
+Example listing:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/view/38
+
+Issue:
+The displayed values for:
+- Appliances
+- Fee Includes
+- Association Amenities
+
+are rendering with a different font size/style/spacing than the other property detail values on the page.
+
+Examples shown:
+- "Bar Fridge, Built-In Oven, Air Fryer"
+- "Common Area Maintenance, Exterior Maintenance..."
+- "Clubhouse, Gated Entry..."
+
+These should visually match the SAME typography, font-size, font-weight, line-height, spacing, and formatting used by the other standard detail values such as:
+- Roof Type
+- Foundation
+- Air Conditioning
+- Sewer
+- Bedrooms
+- Bathrooms
+
+==================================================
+STRICT SAFEGUARDS
+==================================================
+
+- Audit first before editing.
+- Do NOT modify database schema/migrations.
+- Do NOT alter listing data structure.
+- Do NOT change field values or labels.
+- Do NOT modify create/edit forms.
+- Do NOT modify Buyer/Landlord/Tenant views unless shared styling requires it.
+- Keep changes scoped to Seller Offer Listing public view rendering/styles only.
+- Reuse existing typography classes/styles where possible.
+- Do NOT hardcode inline styles unless absolutely necessary.
+
+==================================================
+LIKELY ISSUE
+==================================================
+
+These fields are probably rendering outside the shared detail-value class/markup structure used by the standard property detail rows.
+
+Potential causes:
+- rendered as standalone paragraph/text block
+- missing shared value class
+- custom wrapper missing typography class
+- using different tag structure than standard detail rows
+
+==================================================
+GOAL
+==================================================
+
+Make:
+- Appliances
+- Fee Includes
+- Association Amenities
+
+render identically to the other standard property detail values on the page.
+
+They should match:
+- font family
+- font size
+- font weight
+- text color
+- line-height
+- spacing
+- alignment
+- responsive behavior
+
+==================================================
+IMPLEMENTATION
+==================================================
+
+1. Audit resources/views/offer-listing/seller/view.blade.php
+2. Locate rendering for:
+   - appliances
+   - fee_includes
+   - association_amenities
+3. Compare markup/classes against standard detail rows like:
+   - roof_type
+   - foundation
+   - sewer
+   - bedrooms
+4. Refactor these fields to reuse the SAME detail value structure/classes.
+5. Preserve comma-separated output formatting.
+6. Preserve existing conditional rendering logic.
+
+==================================================
+TESTING REQUIRED
+==================================================
+
+Verify on listing view:
+- Appliances typography matches Roof Type/Foundation/etc
+- Fee Includes typography matches other detail values
+- Association Amenities typography matches other detail values
+- No layout shift or wrapping issues
+- Mobile responsiveness preserved
+- No other fields visually changed unexpectedly
+
+==================================================
+DONE LOOKS LIKE
+==================================================
+
+- Appliances text visually matches all other property detail values
+- Fee Includes text visually matches all other property detail values
+- Association Amenities text visually matches all other property detail values
+- Consistent font size/style across all detail sections
+- No regressions to other listing sections
