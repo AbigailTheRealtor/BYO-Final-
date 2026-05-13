@@ -600,15 +600,39 @@
                 $badgeWaterfront = true; break;
             }
         }
-        $badgeFinancing  = count($heroOfFin) > 0;
-        $badgeLeaseOpt   = in_array('Lease Option', $heroOfFin) || in_array('Lease Purchase', $heroOfFin);
-        $badgeCrypto     = in_array('Cryptocurrency', $heroOfFin);
-        $badgeHOA        = in_array(strtolower((string)($str('has_hoa'))), ['yes','1','true']);
+        $badgeFinancing      = count($heroOfFin) > 0;
+        $badgeLeaseOpt       = in_array('Lease Option', $heroOfFin) || in_array('Lease Purchase', $heroOfFin);
+        $badgeCrypto         = in_array('Cryptocurrency', $heroOfFin);
+        $badgeHOA            = in_array(strtolower((string)($str('has_hoa'))), ['yes','1','true']);
         /* Bidding Period badge: only when auction_type explicitly indicates a bidding format */
         $badgeBidding = (
             stripos($str('auction_type'), 'bidding') !== false
             || stripos($str('auction_type'), 'auction') !== false
         );
+        /* Additional badge variables for priority ordering */
+        $badgeAssumable       = in_array('Assumable Mortgage', $heroOfFin);
+        $badgeSellerFinancing = in_array('Seller Financing', $heroOfFin);
+        $badgeLeasePurchase   = in_array('Lease Purchase', $heroOfFin);
+        $badgeExchange        = in_array('Exchange', $heroOfFin) || in_array('Trade', $heroOfFin);
+        $badgeNoHOA           = in_array(strtolower((string)($str('has_hoa'))), ['no','0','false']);
+
+        /* Priority-ordered badge candidate list; slice to max 5 */
+        $heroBadges = [
+            ['show' => $badgeWaterfront,                      'label' => 'Waterfront / View',  'icon' => 'fa-solid fa-water',               'color' => 'teal',   'strong' => true],
+            ['show' => $badgePool,                            'label' => 'Pool',               'icon' => 'fa-solid fa-water-ladder',        'color' => 'blue',   'strong' => true],
+            ['show' => $badgeAssumable,                       'label' => 'Assumable Mortgage', 'icon' => 'fa-solid fa-hand-holding-dollar', 'color' => 'green',  'strong' => true],
+            ['show' => $badgeSellerFinancing,                 'label' => 'Seller Financing',   'icon' => 'fa-solid fa-hand-holding-dollar', 'color' => 'green',  'strong' => true],
+            ['show' => in_array('Lease Option', $heroOfFin),  'label' => 'Lease Option',       'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
+            ['show' => $badgeLeasePurchase,                   'label' => 'Lease Purchase',     'icon' => 'fa-solid fa-key',                 'color' => 'purple', 'strong' => true],
+            ['show' => $badgeCrypto,                          'label' => 'Crypto Accepted',    'icon' => 'fa-brands fa-bitcoin',            'color' => 'amber',  'strong' => true],
+            ['show' => $badgeExchange,                        'label' => 'Exchange / Trade',   'icon' => 'fa-solid fa-arrows-rotate',       'color' => 'amber',  'strong' => true],
+            ['show' => $badgeNoHOA,                           'label' => 'No HOA',             'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => false],
+            ['show' => $badgeHOA,                             'label' => 'HOA',                'icon' => 'fa-solid fa-building-columns',    'color' => 'rose',   'strong' => false],
+            ['show' => $badgeFinancing,                       'label' => 'Financing Available','icon' => 'fa-solid fa-hand-holding-dollar', 'color' => 'green',  'strong' => false],
+            ['show' => (bool)$heroPropType,                   'label' => (string)$heroPropType,'icon' => 'fa-solid fa-tag',                 'color' => 'blue',   'strong' => false],
+            ['show' => (bool)$heroStatus,                     'label' => (string)$heroStatus,  'icon' => 'fa-solid fa-circle-check',        'color' => 'green',  'strong' => false],
+        ];
+        $heroBadgesDisplay = array_slice(array_values(array_filter($heroBadges, fn($b) => $b['show'])), 0, 5);
     @endphp
 
     {{-- ===== HERO SECTION ===== --}}
@@ -683,28 +707,23 @@
                     @endif
 
                     <div class="sol-hero-badges">
-                        @if($badgePool)
-                            <span class="sol-badge sol-badge-blue"><i class="fa-solid fa-water-ladder"></i> Pool</span>
-                        @endif
-                        @if($badgeWaterfront)
-                            <span class="sol-badge sol-badge-teal"><i class="fa-solid fa-water"></i> Waterfront / View</span>
-                        @endif
-                        @if($badgeFinancing)
-                            <span class="sol-badge sol-badge-green"><i class="fa-solid fa-hand-holding-dollar"></i> Financing Available</span>
-                        @endif
-                        @if($badgeLeaseOpt)
-                            <span class="sol-badge sol-badge-purple"><i class="fa-solid fa-key"></i> Lease Option</span>
-                        @endif
-                        @if($badgeCrypto)
-                            <span class="sol-badge sol-badge-amber"><i class="fa-brands fa-bitcoin"></i> Crypto Accepted</span>
-                        @endif
-                        @if($badgeHOA)
-                            <span class="sol-badge sol-badge-rose"><i class="fa-solid fa-building-columns"></i> HOA</span>
-                        @endif
-                        @if($badgeBidding)
-                            <span class="sol-badge sol-badge-blue"><i class="fa-solid fa-gavel"></i> Bidding Period Active</span>
-                        @endif
+                        @foreach ($heroBadgesDisplay as $b)
+                            <span class="sol-badge sol-badge-{{ $b['color'] }}"><i class="{{ $b['icon'] }}"></i> {{ $b['label'] }}</span>
+                        @endforeach
                     </div>
+
+                    @php
+                        $heroStandoutParts = array_values(array_map(
+                            fn($b) => $b['label'],
+                            array_filter($heroBadgesDisplay, fn($b) => $b['strong'])
+                        ));
+                    @endphp
+                    @if(count($heroStandoutParts) >= 2)
+                        <div style="margin-top:10px;padding:10px 14px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;">
+                            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#1d4ed8;margin-bottom:3px;">Why This Property Stands Out</div>
+                            <div style="font-size:0.88rem;color:#1e3a5f;">This property stands out for its {{ implode(', ', array_slice($heroStandoutParts, 0, -1)) }}{{ count($heroStandoutParts) > 1 ? ' and ' . end($heroStandoutParts) : $heroStandoutParts[0] }}.</div>
+                        </div>
+                    @endif
 
                     <div class="sol-hero-ctas">
                         <button class="btn btn-primary sol-hero-offer-btn" data-bs-toggle="modal" data-bs-target="#solOfferModal">
