@@ -44,7 +44,7 @@
     };
     $row = function($label, $value) {
         if ($value === null || $value === '' || $value === false) return '';
-        return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7">' . e($value) . '</div></div>';
+        return '<div class="row mb-2"><div class="col-md-5 text-muted fw-semibold">' . e($label) . '</div><div class="col-md-7" style="overflow-wrap:break-word;word-break:break-word;">' . e($value) . '</div></div>';
     };
 @endphp
 
@@ -570,8 +570,8 @@
 
             {{-- Cash --}}
             @if($hasCashFin || $str('cash_budget') || $str('pre_approved'))
-            @if($str('cash_budget') || $str('pre_approved'))
-            <h6 class="fw-semibold mt-3 mb-2">Cash</h6>
+            @if($str('cash_budget') || $str('pre_approved') || $str('pre_approval_amount'))
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Cash</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -586,9 +586,9 @@
 
             {{-- Assumable --}}
             @if($hasAssumable || $str('assumable_loan_type') || $str('assumable_terms'))
-            <hr>
             @if($str('assumable_terms') || $str('assumable_loan_type') || $str('max_assumable_rate') || $str('max_monthly_payment') || $str('assumable_monthly_escrow') || $str('outstanding_balance') || $str('gap_payment_amount') || $str('assumable_loan_term_remaining') || $str('assumable_loan_origination_date') || $str('assumable_loan_servicer') || $str('assumable_fee_amount') || $str('assumable_occupancy_requirement'))
-            <h6 class="fw-semibold mt-3 mb-2">Assumable Mortgage</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Assumable Mortgage</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -612,9 +612,9 @@
 
             {{-- Cryptocurrency --}}
             @if($hasCrypto || $str('cryptocurrency_type'))
-            <hr>
             @if($str('cryptocurrency_type') || $str('crypto_percentage') || $str('cash_percentage_crypto') || $str('crypto_exchange_method') || $str('crypto_custodian_wallet') || $str('crypto_transaction_fees') || $str('crypto_transfer_timing'))
-            <h6 class="fw-semibold mt-3 mb-2">Cryptocurrency</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Cryptocurrency</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -633,9 +633,9 @@
 
             {{-- Exchange / Trade --}}
             @if($hasExchange || $str('exchange_item_value'))
-            <hr>
             @if($str('other_exchange_item') || $str('exchange_item_value') || $str('exchange_item_condition') || $str('additional_cash') || $str('exchange_transfer_method') || $str('exchange_liens') || $str('exchange_inspection_rights'))
-            <h6 class="fw-semibold mt-3 mb-2">Exchange / Trade</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Exchange / Trade</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -654,9 +654,9 @@
 
             {{-- Lease Option --}}
             @if($hasLeaseOpt || $str('lease_option_price'))
-            <hr>
             @if($str('lease_option_price') || $str('lease_option_payment') || $str('lease_option_duration') || $str('has_option_fee') || $str('option_fee_amount') || $str('lease_option_fee_credit') || $str('lease_option_fee_credit_percentage') || $str('lease_option_conditions') || $str('lease_option_terms') || $str('lease_option_maintenance') || $str('lease_option_extension_terms'))
-            <h6 class="fw-semibold mt-3 mb-2">Lease Option</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Lease Option</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -679,9 +679,9 @@
 
             {{-- Lease Purchase --}}
             @if($hasLeasePur || $str('lease_purchase_price'))
-            <hr>
             @if($str('lease_purchase_price') || $str('lease_purchase_payment') || $str('lease_purchase_duration') || $str('lease_purchase_rent_credit') || $str('lease_purchase_rent_credit_amount') || $str('lease_purchase_deposit') || $str('lease_purchase_conditions') || $str('lease_purchase_terms') || $str('lease_purchase_maintenance') || $str('lease_purchase_extension_terms'))
-            <h6 class="fw-semibold mt-3 mb-2">Lease Purchase</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Lease Purchase</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -703,9 +703,9 @@
 
             {{-- Non-Fungible Token (NFT) --}}
             @if($hasNFT || $str('nft_description'))
-            <hr>
             @if($str('nft_description') || $str('nft_percentage') || $str('cash_percentage_nft') || $str('nft_valuation_method') || $str('nft_transfer_method') || $str('nft_gas_fees'))
-            <h6 class="fw-semibold mt-3 mb-2">Non-Fungible Token (NFT)</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Non-Fungible Token (NFT)</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -723,9 +723,9 @@
 
             {{-- Seller Financing --}}
             @if($hasSellerFin || $str('seller_financing_type') || $str('interest_rate'))
-            <hr>
             @if($str('seller_financing_type') || $str('seller_down_payment_amount') || $str('interest_rate') || $str('loan_duration') || $str('real_estate_purchase') || $str('prepayment_penalty_amount') || $str('balloon_payment') || $str('balloon_payment_amount') || $str('balloon_payment_date') || $str('seller_amortization_type') || $str('seller_payment_frequency') || $str('seller_late_fee_amount'))
-            <h6 class="fw-semibold mt-3 mb-2">Seller Financing</h6>
+            <hr>
+            <h6 class="fw-semibold mt-4 mb-2" style="letter-spacing:0">Seller Financing</h6>
             @endif
             <div class="row">
                 <div class="col-md-6">
@@ -789,7 +789,6 @@
         <div class="card-body">
 
             {{-- Purchase Compensation --}}
-            <h6 class="fw-semibold mt-3 mb-2">Purchase Compensation</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Buyer\'s Broker Commission Structure', $str('commission_structure')) !!}
@@ -890,7 +889,6 @@
 
             {{-- Agency Agreement --}}
             <hr>
-            <h6 class="fw-semibold mt-3 mb-2">Agency Agreement &amp; Other Terms</h6>
             <div class="row">
                 <div class="col-md-6">
                     {!! $row('Brokerage Relationship', $str('brokerage_relationship')) !!}
@@ -1077,7 +1075,7 @@
             <div class="row">
             @foreach($disclosures as $d)
             @if($str($d[1]) || $str($d[2]))
-            <div class="col-md-6 mb-2 d-flex align-items-center gap-2">
+            <div class="col-md-6 mb-2 d-flex align-items-baseline gap-2 flex-wrap">
                 <span class="field-label">{{ $d[0] }}</span>
                 @if($str($d[1]))
                     <span class="badge bg-light text-dark border">{{ $str($d[1]) }}</span>
