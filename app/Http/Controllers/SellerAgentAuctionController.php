@@ -1141,6 +1141,11 @@ class SellerAgentAuctionController extends Controller
             ->where(function ($q) use ($offerListingMetaKeys) {
                 $q->whereHas('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'hire_agent'))
                   ->orWhereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', $offerListingMetaKeys));
+            })
+            // Exclude Direct Hire listings — these are stamped with hire_me_flow = '1' by HireAgentDirectController
+            // and share workflow_type = 'hire_agent' with normal marketplace listings, so they must be filtered separately.
+            ->whereDoesntHave('meta', function ($m) {
+                $m->where('meta_key', 'hire_me_flow')->where('meta_value', '1');
             });
 
         if ($request->title != "") {
