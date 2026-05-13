@@ -1,0 +1,244 @@
+TASK: Phase 1 Seller Offer Listing — Premium Launch-Ready Polish
+
+TARGET PAGE:
+resources/views/offer-listing/seller/view.blade.php
+
+PRIMARY GOAL:
+Upgrade the Seller Offer Listing view into a premium, modern, interactive listing page while preserving all existing rendered listing data.
+
+CRITICAL SAFEGUARDS:
+- DO NOT modify database schema.
+- DO NOT add migrations.
+- DO NOT change routes unless absolutely required for existing links.
+- DO NOT change controllers unless the view is missing data that already exists.
+- DO NOT alter create/edit/save/draft flows.
+- DO NOT touch Limited Service flows.
+- DO NOT remove existing fields or sections.
+- DO NOT rename existing variables, models, meta keys, or relationships.
+- DO NOT change validation.
+- DO NOT break current photo, video, document, or contact display.
+- Make changes only to the Seller Offer Listing public view and isolated CSS/JS needed for that page.
+- Any new buttons that are not wired yet must be harmless placeholders or open UI-only modals.
+- All changes must be additive and easy to revert.
+
+PHASE 1 SCOPE ONLY:
+This is visual/UX polish and interaction foundation only.
+Do NOT build AI backend, bidding engine, offer submission logic, chatbot connection, payment logic, or scheduling backend yet.
+
+FILES TO AUDIT FIRST:
+1. resources/views/offer-listing/seller/view.blade.php
+2. Any existing CSS/JS used only by this page
+3. Any existing lightbox/gallery code already present on this page
+
+BEFORE EDITING:
+- Identify the exact current section structure.
+- Confirm where photos, video, property description, listing details, property details, sale terms, financing details, seller sale terms, broker compensation, disclosures, documents, and contact information render.
+- Preserve all of them.
+
+REQUIRED UPGRADES:
+
+1. Add Premium Hero Section
+At the top of the listing, create a modern hero layout:
+- Left side: large primary listing image/gallery preview
+- Right side: summary card
+- Mobile: stacked layout
+
+Summary card should show, when data exists:
+- Price
+- Full address
+- Beds
+- Baths
+- Heated Sq Ft / Total Sq Ft
+- Property Type
+- Listing Status
+- Listing Date or updated date
+- Key badges when applicable:
+  - Pool
+  - Waterfront / View
+  - Financing Available
+  - Lease Option
+  - Crypto Accepted
+  - HOA
+  - Bidding Period if applicable
+
+Primary CTA buttons:
+- Submit Offer
+- Schedule Showing
+- Ask a Question
+
+For now, CTA buttons may be UI-only placeholders unless existing routes already exist.
+
+2. Add Sticky Desktop Action Card
+Add a sticky action card on desktop/right side with:
+- Submit Offer
+- Schedule Showing
+- Ask AI About Property
+- Ask a Question
+- Save Listing
+- Share Listing
+
+Requirements:
+- Sticky while scrolling
+- Modern button styling
+- Consistent icons
+- Good hover states
+- Does not cover content
+- Does not break mobile
+
+3. Add Mobile Bottom Action Bar
+On mobile only, add sticky bottom bar with:
+- Offer
+- Showing
+- Ask AI
+- Share
+
+Requirements:
+- Large touch targets
+- Does not block important page content
+- Add bottom padding to page on mobile so content is not hidden behind the bar
+
+4. Add Smooth-Scroll Listing Navigation Tabs
+Near the top, add tabs/buttons that smooth-scroll to existing sections:
+- Overview
+- Photos
+- Details
+- Financing
+- Terms
+- Documents
+- Contact
+
+Do not convert the full page into hidden tab panels yet.
+Use scroll anchors only so no content disappears.
+
+5. Improve Photos & Video Presentation
+- Keep current embedded video behavior.
+- Remove duplicate raw Video Tour URL display if video is already embedded.
+- Keep a clean “Video Tour” label/header.
+- Make thumbnails feel premium.
+- Preserve clickable/enlarged photo behavior.
+- If lightbox already exists, polish it only.
+- Do not replace working gallery logic with risky new global code.
+
+6. Add UI-Only “Ask AI About This Property” Placeholder
+Add a polished placeholder panel or modal:
+Title: Ask AI About This Property
+Input placeholder examples:
+- “What financing is accepted?”
+- “Can I Airbnb this property?”
+- “Summarize the seller’s terms.”
+- “What documents are available?”
+
+Important:
+- No OpenAI/API/backend integration in Phase 1.
+- Submit button can show disabled state or “Coming Soon”.
+
+7. Add UI-Only Schedule Showing Placeholder
+Add a polished modal or panel:
+Title: Schedule a Showing
+Fields may be UI-only:
+- Name
+- Email
+- Phone
+- Preferred Date
+- Preferred Time
+- Message
+
+Important:
+- No backend scheduling logic in Phase 1 unless an existing route already exists.
+- Submit button can say “Coming Soon” or be disabled.
+
+8. Add UI-Only Ask Question Placeholder
+Add a polished modal or panel:
+Title: Ask a Question
+Fields may be UI-only:
+- Name
+- Email
+- Phone
+- Question
+
+Important:
+- No backend messaging logic in Phase 1 unless an existing route already exists.
+
+9. Polish Existing Data Cards
+Improve only styling/spacing:
+- Better card padding
+- More consistent label/value alignment
+- Larger section headers
+- Lighter dividers
+- Better mobile wrapping
+- More premium border radius/shadow
+- Avoid cramped rows
+- Keep existing data exactly as-is
+
+10. Polish Documents & Disclosures
+Improve:
+- Badge styling
+- Download button spacing
+- Additional documents layout
+- Mobile wrapping
+
+Do not change file storage/download logic.
+
+11. Polish Contact Information
+Improve:
+- Layout
+- Typography
+- Optional avatar placeholder/icon
+- CTA button row:
+  - Contact
+  - Schedule Showing
+  - Ask Question
+
+Preserve all currently visible contact fields.
+
+RESPONSIVE REQUIREMENTS:
+Desktop:
+- Hero + sticky action card
+- Clean wide layout
+
+Tablet:
+- Stack cleanly
+
+Mobile:
+- No horizontal scrolling
+- Sticky bottom action bar
+- Readable font sizes
+- Touch-friendly buttons
+- Content not hidden behind bottom bar
+
+TESTING REQUIRED:
+After changes:
+1. Open /offer-listing/seller/view/38 at 100% browser zoom.
+2. Confirm all previous sections still appear.
+3. Confirm no existing data disappeared.
+4. Confirm video still embeds.
+5. Confirm raw video URL is not duplicated under embedded video.
+6. Confirm photos/thumbnails still work.
+7. Confirm sticky action card appears on desktop.
+8. Confirm mobile bottom bar appears only on mobile.
+9. Confirm smooth-scroll tabs go to correct sections.
+10. Confirm placeholder modals/panels open without console errors.
+11. Confirm page has no horizontal overflow.
+12. Confirm no create/edit/draft/listing save flows were touched.
+
+DONE LOOKS LIKE:
+- Seller listing feels premium, modern, and launch-ready.
+- Page has clear conversion actions.
+- Existing data remains intact.
+- Photos/video look better.
+- Sections are easier to read.
+- Desktop and mobile both look polished.
+- AI, Showing, Offer, Share, and Question entry points exist visually.
+- No backend functionality was added prematurely.
+- No unrelated files or flows were changed.
+
+STOP AND ASK BEFORE DOING ANY OF THESE:
+- Adding migrations
+- Changing routes
+- Changing controllers
+- Changing database fields
+- Changing create/edit forms
+- Removing fields
+- Touching other roles
+- Touching Limited Service files
+- Implementing real AI, bidding, scheduling, or messaging backend
