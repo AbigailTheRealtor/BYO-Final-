@@ -346,7 +346,9 @@
             @php $appliances = $subOther($arr('appliances'), $str('other_appliances')); @endphp
             @if(count($appliances))
             <hr>
-            {!! $row('Appliances', implode(', ', $appliances)) !!}
+            <div class="row"><div class="col-md-6">
+                {!! $row('Appliances', implode(', ', $appliances)) !!}
+            </div></div>
             @endif
 
             @php $pItems = $subOther($arr('property_items'), $str('other_property_items')); @endphp
@@ -1051,10 +1053,14 @@
                 $assocIncludes  = $subOther($arr('association_fee_includes'), $str('association_fee_includes_other'));
             @endphp
             @if(count($assocIncludes))
+            <div class="row"><div class="col-md-6">
                 {!! $row('Fee Includes', implode(', ', $assocIncludes)) !!}
+            </div></div>
             @endif
             @if(count($assocAmenities))
+            <div class="row"><div class="col-md-6">
                 {!! $row('Association Amenities', implode(', ', $assocAmenities)) !!}
+            </div></div>
             @endif
             @endif
         </div>
