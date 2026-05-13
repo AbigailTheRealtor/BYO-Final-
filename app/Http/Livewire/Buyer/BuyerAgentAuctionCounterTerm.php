@@ -594,20 +594,19 @@ public bool $isOfferListing = false;
             $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
         }
 
-        // Counter-specific client contact fields
-        $counterTerm->saveMeta('counter_client_name', $this->client_name);
-        $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
-        $counterTerm->saveMeta('counter_client_email', $this->client_email);
-        $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
-        $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
-        $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
-        $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
-        // Counter-specific deal negotiation fields
-        $counterTerm->saveMeta('counter_areas_of_interest', $this->areas_of_interest);
-        $counterTerm->saveMeta('counter_target_purchase_price', $this->target_purchase_price);
-        $counterTerm->saveMeta('counter_timeline_to_purchase', $this->timeline_to_purchase);
-        $counterTerm->saveMeta('counter_pre_approval_status', $this->pre_approval_status);
-        $counterTerm->saveMeta('counter_cash_buyer', $this->cash_buyer);
-        $counterTerm->saveMeta('counter_estimated_down_payment', $this->estimated_down_payment);
+        // Offer-listing-only: client contact and buyer qualification fields.
+        // Only written when $isOfferListing is true to avoid polluting meta for
+        // normal hire-agent counter bids with empty strings.
+        if ($this->isOfferListing) {
+            $counterTerm->saveMeta('counter_client_name', $this->client_name);
+            $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
+            $counterTerm->saveMeta('counter_client_email', $this->client_email);
+            $counterTerm->saveMeta('counter_areas_of_interest', $this->areas_of_interest);
+            $counterTerm->saveMeta('counter_target_purchase_price', $this->target_purchase_price);
+            $counterTerm->saveMeta('counter_timeline_to_purchase', $this->timeline_to_purchase);
+            $counterTerm->saveMeta('counter_pre_approval_status', $this->pre_approval_status);
+            $counterTerm->saveMeta('counter_cash_buyer', $this->cash_buyer);
+            $counterTerm->saveMeta('counter_estimated_down_payment', $this->estimated_down_payment);
+        }
     }
 }

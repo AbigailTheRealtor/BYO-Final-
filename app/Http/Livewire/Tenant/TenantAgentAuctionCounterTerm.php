@@ -880,20 +880,19 @@ class TenantAgentAuctionCounterTerm extends Component
             $counterTerm->saveMeta('referral_fee_percent', $this->referral_fee_percent);
         }
 
-        // Counter-specific client contact fields
-        $counterTerm->saveMeta('counter_client_name', $this->client_name);
-        $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
-        $counterTerm->saveMeta('counter_client_email', $this->client_email);
-        $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
-        $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
-        $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
-        $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
-        // Counter-specific deal negotiation fields
-        $counterTerm->saveMeta('counter_areas_of_interest', $this->areas_of_interest);
-        $counterTerm->saveMeta('counter_max_monthly_lease_price', $this->max_monthly_lease_price);
-        $counterTerm->saveMeta('counter_desired_lease_length', $this->desired_lease_length);
-        $counterTerm->saveMeta('counter_move_in_date', $this->move_in_date);
-        $counterTerm->saveMeta('counter_number_of_occupants', $this->number_of_occupants);
-        $counterTerm->saveMeta('counter_household_monthly_income', $this->household_monthly_income);
+        // Offer-listing-only: client contact and tenant qualification fields.
+        // Only written when $isOfferListing is true to avoid polluting meta for
+        // normal hire-agent counter bids with empty strings.
+        if ($this->isOfferListing) {
+            $counterTerm->saveMeta('counter_client_name', $this->client_name);
+            $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
+            $counterTerm->saveMeta('counter_client_email', $this->client_email);
+            $counterTerm->saveMeta('counter_areas_of_interest', $this->areas_of_interest);
+            $counterTerm->saveMeta('counter_max_monthly_lease_price', $this->max_monthly_lease_price);
+            $counterTerm->saveMeta('counter_desired_lease_length', $this->desired_lease_length);
+            $counterTerm->saveMeta('counter_move_in_date', $this->move_in_date);
+            $counterTerm->saveMeta('counter_number_of_occupants', $this->number_of_occupants);
+            $counterTerm->saveMeta('counter_household_monthly_income', $this->household_monthly_income);
+        }
     }
 }

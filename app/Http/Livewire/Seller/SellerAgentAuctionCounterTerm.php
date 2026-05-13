@@ -618,17 +618,21 @@ class SellerAgentAuctionCounterTerm extends Component
         $counterTerm->saveMeta('custom_enhancement', $this->custom_enhancement ?? '');
         $counterTerm->saveMeta('openHouseCount', $this->openHouseCount ?? '');
 
-        // Counter-specific client contact and property fields
-        $counterTerm->saveMeta('counter_client_name', $this->client_name);
-        $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
-        $counterTerm->saveMeta('counter_client_email', $this->client_email);
-        $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
-        $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
-        $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
-        $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
-        // Counter-specific deal negotiation fields
-        $counterTerm->saveMeta('counter_desired_sale_price', $this->desired_sale_price);
-        $counterTerm->saveMeta('counter_timeline_to_sell', $this->timeline_to_sell);
-        $counterTerm->saveMeta('counter_motivation_level', $this->motivation_level);
+        // Offer-listing-only: client contact, property address, and deal fields.
+        // These fields are only collected and relevant when $isOfferListing is true;
+        // skipping the writes for normal hire-agent counter bids avoids polluting
+        // the meta store with empty strings.
+        if ($this->isOfferListing) {
+            $counterTerm->saveMeta('counter_client_name', $this->client_name);
+            $counterTerm->saveMeta('counter_client_phone', $this->client_phone);
+            $counterTerm->saveMeta('counter_client_email', $this->client_email);
+            $counterTerm->saveMeta('counter_property_address', $this->client_property_address);
+            $counterTerm->saveMeta('counter_property_city', $this->client_property_city);
+            $counterTerm->saveMeta('counter_property_state', $this->client_property_state);
+            $counterTerm->saveMeta('counter_property_zip', $this->client_property_zip);
+            $counterTerm->saveMeta('counter_desired_sale_price', $this->desired_sale_price);
+            $counterTerm->saveMeta('counter_timeline_to_sell', $this->timeline_to_sell);
+            $counterTerm->saveMeta('counter_motivation_level', $this->motivation_level);
+        }
     }
 }

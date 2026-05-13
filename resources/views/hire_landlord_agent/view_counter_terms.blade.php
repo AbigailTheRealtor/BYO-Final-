@@ -531,6 +531,53 @@
                         @endif
                         @endif
 
+                        {{-- Client Details (Offer Listings only) --}}
+                        @if($isOfferListing)
+                        <div class="mb-4">
+                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                <i class="fa-solid fa-user me-2"></i>Client Details
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">Contact Information</h6>
+                                    <ul class="list-unstyled ps-3 mb-0">
+                                        @if (!empty($counterData['counter_client_name']))
+                                        <li class="mb-2"><span class="fw-semibold">Client Name:</span> {{ $counterData['counter_client_name'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_client_phone']))
+                                        <li class="mb-2"><span class="fw-semibold">Phone:</span> {{ $counterData['counter_client_phone'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_client_email']))
+                                        <li class="mb-2"><span class="fw-semibold">Email:</span> {{ $counterData['counter_client_email'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_property_address']))
+                                        <li class="mb-2"><span class="fw-semibold">Property Address:</span>
+                                            {{ $counterData['counter_property_address'] }}{{ !empty($counterData['counter_property_city']) ? ', '.$counterData['counter_property_city'] : '' }}{{ !empty($counterData['counter_property_state']) ? ', '.$counterData['counter_property_state'] : '' }}{{ !empty($counterData['counter_property_zip']) ? ' '.$counterData['counter_property_zip'] : '' }}
+                                        </li>
+                                        @endif
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">Landlord Details</h6>
+                                    <ul class="list-unstyled ps-3 mb-0">
+                                        @if (!empty($counterData['counter_desired_monthly_rent']))
+                                        <li class="mb-2"><span class="fw-semibold">Desired Monthly Rent:</span> {{ $fmtMoney($counterData['counter_desired_monthly_rent']) ?? $counterData['counter_desired_monthly_rent'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_availability_date']))
+                                        <li class="mb-2"><span class="fw-semibold">Availability Date:</span> {{ $counterData['counter_availability_date'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_occupancy_status']))
+                                        <li class="mb-2"><span class="fw-semibold">Occupancy Status:</span> {{ $counterData['counter_occupancy_status'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_flexibility']))
+                                        <li class="mb-2"><span class="fw-semibold">Flexibility:</span> {{ $counterData['counter_flexibility'] }}</li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         {{-- ===== BROKER COMPENSATION & AGENCY AGREEMENT TERMS ===== --}}
                         @php
                             $pft = $counterData['purchase_fee_type'] ?? '';

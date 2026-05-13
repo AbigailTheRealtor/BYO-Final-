@@ -350,6 +350,54 @@
                         @endif
                         @endif
 
+                        {{-- Client Details (Offer Listings only) --}}
+                        @if($isOfferListing)
+                        <div class="mb-4">
+                            <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
+                                <i class="fa-solid fa-user me-2"></i>Client Details
+                            </h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">Contact Information</h6>
+                                    <ul class="list-unstyled ps-3 mb-0">
+                                        @if (!empty($counterData['counter_client_name']))
+                                        <li class="mb-2"><span class="fw-semibold">Client Name:</span> {{ $counterData['counter_client_name'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_client_phone']))
+                                        <li class="mb-2"><span class="fw-semibold">Phone:</span> {{ $counterData['counter_client_phone'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_client_email']))
+                                        <li class="mb-2"><span class="fw-semibold">Email:</span> {{ $counterData['counter_client_email'] }}</li>
+                                        @endif
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="mb-2" style="color: #049399; font-weight: 600;">Buyer Details</h6>
+                                    <ul class="list-unstyled ps-3 mb-0">
+                                        @if (!empty($counterData['counter_areas_of_interest']))
+                                        <li class="mb-2"><span class="fw-semibold">Areas of Interest:</span> {{ $counterData['counter_areas_of_interest'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_target_purchase_price']))
+                                        <li class="mb-2"><span class="fw-semibold">Target Purchase Price:</span> {{ $fmtMoney($counterData['counter_target_purchase_price']) ?? $counterData['counter_target_purchase_price'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_timeline_to_purchase']))
+                                        <li class="mb-2"><span class="fw-semibold">Timeline to Purchase:</span> {{ $counterData['counter_timeline_to_purchase'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_pre_approval_status']))
+                                        <li class="mb-2"><span class="fw-semibold">Pre-Approval Status:</span> {{ $counterData['counter_pre_approval_status'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_cash_buyer']))
+                                        <li class="mb-2"><span class="fw-semibold">Cash Buyer:</span> {{ $counterData['counter_cash_buyer'] }}</li>
+                                        @endif
+                                        @if (!empty($counterData['counter_estimated_down_payment']))
+                                        <li class="mb-2"><span class="fw-semibold">Estimated Down Payment:</span> {{ $fmtMoney($counterData['counter_estimated_down_payment']) ?? $counterData['counter_estimated_down_payment'] }}</li>
+                                        @endif
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+
                         <div class="mb-4">
                             <h6 class="mb-3" style="color: #049399; font-weight: 600; border-bottom: 2px solid #049399; padding-bottom: 8px;">
                                 <i class="fa-solid fa-handshake me-2"></i>Broker Compensation & Agency Agreement Terms
