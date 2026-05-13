@@ -6,7 +6,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use App\Models\TenantAgentAuction as HireTenantAgentAuction;
 use App\Models\BuyerAgentAuction as HireBuyerAgentAuction;
-use App\Models\LandlordAgentAuction as HirelandLordAgentAuction;
+use App\Models\LandlordAgentAuction as HireLandLordAgentAuction;
 use App\Models\SellerAgentAuction as HireSellerAgentAuction;
 
 use Illuminate\Support\Facades\Auth;
