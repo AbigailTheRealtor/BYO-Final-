@@ -162,7 +162,7 @@
         </div>
     </div>
 
-    {{-- Accepted / Proposed compensation terms --}}
+    {{-- Compensation terms: counter flow shows client's proposed terms; accept flow shows agent's agreed terms --}}
     @if(count($compRows) > 0)
     <div class="ack-section">
         <div class="ack-section-header">

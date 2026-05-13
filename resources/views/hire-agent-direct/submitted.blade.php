@@ -378,10 +378,11 @@
     </div>
     @endif
 
-    {{-- Accepted services --}}
+    {{-- Services section: "Your Selected Services" in counter flow, "Accepted Services" in accept flow --}}
+    @php $isCounterSubmission = ($submitted['flow'] ?? 'accept') === 'counter'; @endphp
     @if(!empty($services) || !empty($otherServices))
     <div class="ack-section">
-        <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> {{ (($submitted['flow'] ?? '') === 'counter') ? 'Your Selected Services' : 'Accepted Services' }}</div>
+        <div class="ack-section-header"><i class="fa-solid fa-square-check"></i> {{ $isCounterSubmission ? 'Your Selected Services' : 'Accepted Services' }}</div>
         <div class="ack-section-body">
             @php $isFirstGroup = true; @endphp
             @foreach($groupedServices as $categoryLabel => $categoryServices)
@@ -413,7 +414,6 @@
 
     {{-- Compensation / Agency Agreement terms --}}
     @if(count($compRows) > 0)
-    @php $isCounterSubmission = ($submitted['flow'] ?? 'accept') === 'counter'; @endphp
     <div class="ack-section">
         <div class="ack-section-header">
             <i class="fa-solid fa-file-lines"></i>

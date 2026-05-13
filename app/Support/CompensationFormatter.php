@@ -588,7 +588,7 @@ class CompensationFormatter
         $g          = fn($k) => (string) ($data[$k] ?? '');
         $renewalType = self::norm($renewalType);
         if ($renewalType === 'Flat Fee') {
-            $flat = $g('renewal_fee_flat_free');
+            $flat = $g('renewal_fee_flat_fee');
             return $flat ? Format::money($flat) . ' Flat Fee' : 'Flat Fee';
         }
         if ($renewalType === 'Percentage of the Rent Due Each Rental Period') {

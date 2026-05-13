@@ -683,6 +683,7 @@
                             @endforeach
                         </select>
                         <div class="cc-sub mt-2">
+                            @if($propertyType === 'residential')
                             {{-- Residential: Percentage of the Rent Due Each Rental Period --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the Rent Due Each Rental Period">
                                 <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_percentage]" class="form-control" value="{{ $ccv('renewal_fee_percentage') }}" placeholder="% rent per period"><span class="input-group-text">%</span></div>
@@ -695,6 +696,7 @@
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the First Month's Rent">
                                 <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_first_month]" class="form-control" value="{{ $ccv('renewal_fee_first_month') }}" placeholder="% first month's rent"><span class="input-group-text">%</span></div>
                             </div>
+                            @else
                             {{-- Commercial: Percentage of the Net Aggregate Rent --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of the Net Aggregate Rent">
                                 <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_percentage]" class="form-control" value="{{ $ccv('renewal_fee_percentage') }}" placeholder="% net aggregate rent"><span class="input-group-text">%</span></div>
@@ -707,9 +709,10 @@
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Percentage of Month's Rent">
                                 <div class="input-group input-group-sm"><input type="number" name="cc[renewal_fee_first_month]" class="form-control" value="{{ $ccv('renewal_fee_first_month') }}" placeholder="% month's rent"><span class="input-group-text">%</span></div>
                             </div>
+                            @endif
                             {{-- Flat Fee (both property type groups) --}}
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="Flat Fee">
-                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[renewal_fee_flat_free]" class="form-control" value="{{ $ccv('renewal_fee_flat_free') }}" placeholder="Flat fee amount"></div>
+                                <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[renewal_fee_flat_fee]" class="form-control" value="{{ $ccv('renewal_fee_flat_fee') }}" placeholder="Flat fee amount"></div>
                             </div>
                             <div class="cc-conditional" data-cc-parent="cc_renewal_fee_type" data-cc-values="other">
                                 <input type="text" name="cc[renewal_fee_custom]" class="form-control form-control-sm" value="{{ $ccv('renewal_fee_custom') }}" placeholder="Describe renewal fee">
@@ -966,7 +969,7 @@
                             <option value="{{ $optVal }}" {{ $ccv('agency_agreement_timeframe') === $optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
                         @endforeach
                         {{-- Custom/Other option excluded from config (stored value differs by role) --}}
-                        <option value="{{ $aatCustomVal }}" {{ $ccv('agency_agreement_timeframe') === $aatCustomVal ? 'selected' : '' }}>Other (Custom)</option>
+                        <option value="{{ $aatCustomVal }}" {{ $ccv('agency_agreement_timeframe') === $aatCustomVal ? 'selected' : '' }}>{{ $role === 'buyer' ? 'Other (Custom)' : 'Other' }}</option>
                     </select>
                     <div class="cc-sub mt-2">
                         <div class="cc-conditional" data-cc-parent="cc_agency_agreement_timeframe" data-cc-values="custom|Other">
@@ -1033,16 +1036,6 @@
                     </div>
                 </div>
                 @endif
-
-                {{-- Referral Fee % --}}
-                <div class="cc-group">
-                    <label class="cc-label">Referral Fee (%)</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" name="cc[referral_fee_percent]" class="form-control"
-                               value="{{ $ccv('referral_fee_percent') }}" placeholder="e.g. 25" min="0" max="100" step="0.01">
-                        <span class="input-group-text">%</span>
-                    </div>
-                </div>
 
                 {{-- Additional Broker Notes --}}
                 <div class="cc-group">
@@ -1155,14 +1148,17 @@ function ccTrigger(selectEl, parentId) {
     conditionals.forEach(function(el) {
         var allowed = (el.getAttribute('data-cc-values') || '').split('|').map(normalize);
         if (allowed.indexOf(val) !== -1) {
-            el.style.display = '';
+            el.style.display = 'block';
         } else {
             el.style.display = 'none';
         }
     });
 }
 
-// Initialise all cc-conditional visibility on page load
+// Initialise all cc-conditional visibility on page load.
+// ccTrigger() normalises curly/smart apostrophes (U+2018/U+2019 → U+0027) on
+// both the select value and data-cc-values before comparing, so option strings
+// sourced from PHP config (which may contain curly apostrophes) always match.
 document.addEventListener('DOMContentLoaded', function() {
     // Find every element with data-cc-parent and trigger visibility based on current select value
     var triggers = {};

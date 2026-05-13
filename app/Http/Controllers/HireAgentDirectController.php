@@ -682,6 +682,18 @@ class HireAgentDirectController extends Controller
 
     /**
      * POST — Counter form submit: validate selections + contact info, update session, redirect to acknowledge.
+     *
+     * Service deselection: when the client unchecks every service checkbox the
+     * POST body will not contain the 'services' key at all (browsers omit absent
+     * checkbox groups). We detect this with $request->has('services') and resolve
+     * to [] rather than falling back to the agent preset list, so full deselection
+     * persists correctly through acknowledge and submitted pages.
+     *
+     * cc[] empty overrides: if the client clears a compensation field the POST
+     * will contain cc[key] = '' (empty string). We deliberately preserve these
+     * empty strings rather than filtering them out, so the cleared value
+     * overwrites the agent preset value when merged on the acknowledge page.
+     *
      * No listing or bid is created here.
      */
     public function counterSubmit(Request $request, int $agentId, string $role, string $propertyType = 'residential')
