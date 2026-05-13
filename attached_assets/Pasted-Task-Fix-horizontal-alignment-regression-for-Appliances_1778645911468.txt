@@ -1,0 +1,116 @@
+Task: Fix horizontal alignment regression for Appliances, Fee Includes, and Association Amenities on Seller Offer Listing view.
+
+Example:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/view/38
+
+Issue:
+Task #916 correctly normalized typography using the shared $row() helper, but now:
+- Appliances
+- Fee Includes
+- Association Amenities
+
+are horizontally offset too far to the right compared to the surrounding property detail rows.
+
+The values are no longer aligned with adjacent detail values like:
+- Roof Type
+- Foundation
+- Air Conditioning
+- Sewer
+- Association Name
+- Association Fee
+
+The typography is correct now — only alignment/layout spacing needs adjustment.
+
+==================================================
+STRICT SAFEGUARDS
+==================================================
+
+- Audit first before editing.
+- Do NOT modify database schema/migrations.
+- Do NOT modify create/edit forms.
+- Do NOT change data structure or values.
+- Do NOT alter typography styling already fixed in #916.
+- Keep changes scoped ONLY to:
+  - Appliances
+  - Fee Includes
+  - Association Amenities
+- Reuse existing shared layout structure/classes where possible.
+- Avoid inline style hacks unless absolutely necessary.
+
+==================================================
+LIKELY ISSUE
+==================================================
+
+The fields were switched to $row(), but are probably:
+- outside the expected grid/column wrapper
+- nested differently than surrounding rows
+- missing matching column structure
+- inheriting wrong width/alignment container
+
+Need to match the SAME row/grid structure used by surrounding property detail rows.
+
+==================================================
+GOAL
+==================================================
+
+Make:
+- Appliances
+- Fee Includes
+- Association Amenities
+
+align horizontally with the surrounding standard detail rows.
+
+They should:
+- start at the same left edge
+- use the same value column width
+- align with surrounding detail values
+- maintain current typography fix
+- preserve comma-separated formatting
+
+==================================================
+IMPLEMENTATION
+==================================================
+
+1. Audit surrounding markup structure for properly aligned rows:
+   - Roof Type
+   - Foundation
+   - Air Conditioning
+   - Sewer
+   - Association Name
+   - Association Fee
+
+2. Compare wrapper/grid structure against:
+   - Appliances
+   - Fee Includes
+   - Association Amenities
+
+3. Refactor only the layout wrappers/containers so these fields use the SAME alignment/grid structure as surrounding rows.
+
+4. Preserve:
+   - $row() helper usage
+   - typography consistency
+   - conditional rendering
+   - comma-separated output
+
+==================================================
+TESTING REQUIRED
+==================================================
+
+Verify on Seller Offer Listing view:
+- Appliances aligns with Roof Type/Foundation/etc
+- Fee Includes aligns with Association Name/Fee/etc
+- Association Amenities aligns with surrounding detail rows
+- Typography from #916 remains correct
+- No layout regressions
+- Mobile responsiveness preserved
+
+==================================================
+DONE LOOKS LIKE
+==================================================
+
+- Typography remains fixed from #916
+- Appliances no longer shifted right
+- Fee Includes no longer shifted right
+- Association Amenities no longer shifted right
+- All three fields align consistently with surrounding property detail rows
+- No other sections visually changed
