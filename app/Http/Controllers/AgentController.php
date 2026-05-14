@@ -403,12 +403,12 @@ class AgentController extends Controller
             return view('agent_biding_listing.seller', $page_data);
         }
 
-        // Manually build the query
-        $baseQuery = \App\Models\SellerAgentAuction::where('id', $auctionIds[0]);
-
-        for ($i = 1; $i < count($auctionIds); $i++) {
-            $baseQuery->orWhere('id', $auctionIds[$i]);
-        }
+        // Build base query. auctionIds come from seller_agent_auction_bids which agents
+        // only place on Hire Seller's Agent listings, but we exclude Offer Listing records
+        // explicitly as a belt-and-suspenders guard against mixed-record leakage.
+        $baseQuery = \App\Models\SellerAgentAuction::whereIn('id', $auctionIds)
+            ->whereDoesntHave('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
+            ->whereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS));
 
         // Create status-specific queries (is_approved and is_sold are varchar columns storing 'true'/'false')
         $pendingQuery = (clone $baseQuery)
@@ -1366,13 +1366,24 @@ class AgentController extends Controller
 
         $all = collect();
         foreach ($roleModels as $role => $modelClass) {
-            $modelClass::where('user_id', $uid)
+            $query = $modelClass::where('user_id', $uid)
                 ->with('meta')
-                ->orderByDesc('created_at')
-                ->get()
-                ->each(function ($auction) use ($role, &$all) {
-                    $all->push($this->normalizeRoleOfferListing($auction, $role));
+                ->orderByDesc('created_at');
+
+            // seller_agent_auctions stores both Seller Offer Listings and Hire Seller's Agent
+            // listings in the same table. Restrict to Offer Listing records only so that
+            // Hire Agent (and Direct Hire) listings do not appear in the Offer Listings Hub.
+            if ($role === 'seller') {
+                $offerMetaKeys = SellerOfferListingController::OFFER_LISTING_META_KEYS;
+                $query->where(function ($q) use ($offerMetaKeys) {
+                    $q->whereHas('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
+                      ->orWhereHas('meta', fn($m) => $m->whereIn('meta_key', $offerMetaKeys));
                 });
+            }
+
+            $query->get()->each(function ($auction) use ($role, &$all) {
+                $all->push($this->normalizeRoleOfferListing($auction, $role));
+            });
         }
         $all = $all->sortByDesc('created_at')->values();
 

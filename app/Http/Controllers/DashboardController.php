@@ -61,7 +61,10 @@ class DashboardController extends Controller
             'tenant'   => TenantAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
             'landlord' => LandlordAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', false)->where('is_draft', false)->count(),
             'buyer'    => BuyerAgentAuction::where('user_id', $uid)->whereIn('is_approved', ['true', '1', true])->whereIn('is_sold', ['false', '0', false])->where('is_draft', false)->count(),
-            'seller'   => SellerAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)->count(),
+            'seller'   => SellerAgentAuction::where('user_id', $uid)->where('is_approved', true)->where('is_sold', 'false')->where('is_draft', false)
+                            ->whereDoesntHave('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
+                            ->whereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS))
+                            ->count(),
         ];
 
         // ── Pending bids on user's listings (awaiting owner decision) ──────────
@@ -69,7 +72,10 @@ class DashboardController extends Controller
         $tenantAuctionIds   = TenantAgentAuction::where('user_id', $uid)->pluck('id');
         $landlordAuctionIds = LandlordAgentAuction::where('user_id', $uid)->pluck('id');
         $buyerAuctionIds    = BuyerAgentAuction::where('user_id', $uid)->pluck('id');
-        $sellerAuctionIds   = SellerAgentAuction::where('user_id', $uid)->pluck('id');
+        $sellerAuctionIds = SellerAgentAuction::where('user_id', $uid)
+            ->whereDoesntHave('meta', fn($m) => $m->where('meta_key', 'workflow_type')->where('meta_value', 'offer_listing'))
+            ->whereDoesntHave('meta', fn($m) => $m->whereIn('meta_key', SellerOfferListingController::OFFER_LISTING_META_KEYS))
+            ->pluck('id');
 
         $page_data['pendingBidCounts'] = [
             // Tenant: no accepted_date and no rejected_date = not yet decided
