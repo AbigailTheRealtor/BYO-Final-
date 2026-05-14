@@ -288,14 +288,22 @@
 
         /* Style for the dropdown container */
         .select2-container--default .select2-selection--multiple {
-            min-height: 38px;
-            /* Standard form control height */
+            min-height: 42px;
+            height: auto;
             padding: 2px 8px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
         }
 
         .input-cover.has-select-icon .select2-container .select2-selection {
             padding-left: 44px !important;
         }
+
+        /* Select2 placeholder styling */
+        .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
+        .select2-container .select2-search__field { min-width: 120px; }
+        .select2-selection__placeholder { color: #6c757d; }
 
         /* Fix invisible draft link text in Load Saved Draft modal */
         #draftModal .btn-link {
@@ -1297,7 +1305,6 @@ $tenantPays = [
                     if (tabId) {
                         sessionStorage.setItem('landlord_edit_active_tab', tabId);
                     }
-                    addIconsToInputs();
                     var _tgt = e.target.getAttribute('data-bs-target');
                     if (_tgt) {
                         var _pane = document.querySelector(_tgt);
@@ -1408,6 +1415,14 @@ $tenantPays = [
 
         function initializeFullService() {
 
+            if (!document._landlordEditTabNavListenerAdded) {
+                document._landlordEditTabNavListenerAdded = true;
+                document.addEventListener('shown.bs.tab', function(e) {
+                    if (e.target.closest('#myTab')) {
+                        addIconsToInputs();
+                    }
+                });
+            }
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
@@ -2192,6 +2207,8 @@ $tenantPays = [
                 });
             });
 
+            // Re-inject icons after all Select2 instances are initialized
+            addIconsToInputs();
 
         }
 
