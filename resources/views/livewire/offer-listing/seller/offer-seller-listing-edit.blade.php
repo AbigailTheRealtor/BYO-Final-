@@ -293,6 +293,24 @@
             padding: 6px 8px 6px 44px !important;
         }
 
+        /* Property Style single-select: match form-control height and clear icon overlap */
+        .input-cover.has-select-icon .select2-container .select2-selection--single {
+            height: 50px !important;
+            line-height: 50px !important;
+            padding-left: 44px !important;
+        }
+        .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__rendered {
+            line-height: 50px !important;
+            padding-left: 4px !important;
+        }
+        .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 50px !important;
+            top: 0 !important;
+        }
+        .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__placeholder {
+            color: #6c757d;
+        }
+
         .seller-compact-textarea {
             min-height: 42px !important;
             height: 42px;
@@ -1201,8 +1219,7 @@
             Object.keys(_s2Timers).forEach(function(k) { clearTimeout(_s2Timers[k]); });
             _s2Timers = {};
             var regularFields = {
-                property_items: '#property_items',
-                property_style_select: '#property_style_select',
+                property_items: '#property_style_select',
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 appliances: '#appliances',
                 exchange_item: '#exchange_item',
@@ -1401,10 +1418,8 @@
             const activeCard = document.querySelector(`input[value="${serviceType}"]`)?.closest('.service-option-card');
             if (activeCard) activeCard.classList.add('active-service');
 
-            // Clear old event listeners
-            removeWizardEventListeners();
-
-            // Initialize new service logic
+            // Initialize new service logic — delegated listener on document handles
+            // wizard nav clicks via window._wizardNextHandler; no need to clone/replace buttons
             if (serviceType === 'full_service') {
                 initializeFullService();
             } else if (serviceType === 'limited_service') {
@@ -1412,17 +1427,6 @@
             }
 
             Livewire.emit('serviceTypeChanged', serviceType);
-        }
-
-        function removeWizardEventListeners() {
-            const nextBtn = document.querySelector('.wizard-step-next');
-            const backBtn = document.querySelector('.wizard-step-back');
-
-            const nextClone = nextBtn?.cloneNode(true);
-            const backClone = backBtn?.cloneNode(true);
-
-            if (nextBtn && nextClone) nextBtn.parentNode.replaceChild(nextClone, nextBtn);
-            if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
         function initializeFullService() {
@@ -2364,9 +2368,10 @@
             setTimeout(addIconsToInputs, 800);
         });
 
-        // Re-inject icons and re-bind wizard handlers after draft data loads
+        // Re-inject icons and re-bind wizard handlers after draft data loads.
+        // The delegated listener on `document` is already bound once and survives
+        // any DOM replacement, so no button manipulation is needed here.
         window.addEventListener('draftLoaded', function() {
-            removeWizardEventListeners();
             setTimeout(function() {
                 if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
@@ -2391,6 +2396,27 @@
             addIconsToInputs();
             checkRepresentationStatus();
 
+            // Re-init #property_style_select Select2 when property_type changes so that
+            // the correct option list and "Select" placeholder are shown (e.g. Business type)
+            (function() {
+                var $pss = $('#property_style_select');
+                if (!$pss.length) return;
+                var _pssType = @this.get('property_type') || '';
+                if ($pss.data('last-prop-type') === _pssType) return;
+                if ($pss.hasClass('select2-hidden-accessible')) {
+                    $pss.select2('destroy');
+                }
+                $pss.data('last-prop-type', _pssType);
+                $pss.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                var _savedItems = @this.get('property_items') || [];
+                if (_savedItems.length > 0) {
+                    $pss.val(_savedItems).trigger('change.select2');
+                }
+                $pss.off('change.pss').on('change.pss', function() {
+                    debouncedSet('property_items', $(this).val() || []);
+                });
+            })();
+
             var fullServiceChecked = document.getElementById('fullService')?.checked;
             var limitedServiceChecked = document.getElementById('limitedService')?.checked;
 
@@ -2406,8 +2432,6 @@
             if (newServiceType !== currentServiceType) {
                 currentServiceType = newServiceType;
             }
-
-            removeWizardEventListeners();
 
             var _now = Date.now();
             if (_now - _lastInitTime > 300) {

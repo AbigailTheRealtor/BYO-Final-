@@ -417,6 +417,24 @@
     .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
         font-size: 1rem !important;
     }
+
+    /* Property Style single-select: match form-control height and clear icon overlap */
+    .input-cover.has-select-icon .select2-container .select2-selection--single {
+        height: 50px !important;
+        line-height: 50px !important;
+        padding-left: 44px !important;
+    }
+    .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__rendered {
+        line-height: 50px !important;
+        padding-left: 4px !important;
+    }
+    .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__arrow {
+        height: 50px !important;
+        top: 0 !important;
+    }
+    .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__placeholder {
+        color: #6c757d;
+    }
 </style>
 <h3>Property Details </h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
@@ -722,7 +740,7 @@
         <i class="fa-solid fa-circle-info"></i>
     </span>
 
-    <div class="input-cover">
+    <div class="input-cover has-select-icon">
 
         <select wire:model.defer="property_items" id="property_style_select" class="form-control has-icon"
             data-icon="fa-solid fa-home" @if (!$property_type) disabled @endif required>
@@ -2725,7 +2743,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
-            <select wire:model="sewer_available" class="form-control has-icon" data-icon="fa-solid fa-pipe-valve">
+            <select id="sewer_available" wire:model="sewer_available" class="form-control has-icon" data-icon="fa-solid fa-water">
                 <option value="">Select</option>
                 <option value="Yes" @selected($sewer_available === 'Yes')>Yes</option>
                 <option value="No" @selected($sewer_available === 'No')>No</option>

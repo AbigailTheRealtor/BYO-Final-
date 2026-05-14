@@ -1,0 +1,200 @@
+#1011 Follow-Up — Restore Seller Wizard Navigation Safety + Remove Stale Listener Calls
+
+You are working ONLY on the Seller Offer Listing Full Service flow.
+
+Scope is STRICTLY LIMITED to:
+
+* resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+* resources/views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php
+
+DO NOT touch:
+
+* Buyer
+* Tenant
+* Landlord
+* Limited Service flows
+* routes
+* controllers
+* models
+* validation
+* migrations
+* database schema
+* Livewire component classes
+
+This is a surgical JS/Blade stabilization fix only.
+
+---
+
+## Problem Summary
+
+Task #1011 migrated the wizard navigation to delegated listeners and removed the old button-cloning system. That direction is correct, BUT two regressions were introduced:
+
+1. The Seller Create page lost the inline Next button fallback:
+
+```html
+onclick="if(typeof window._wizardNextHandler==='function')window._wizardNextHandler();"
+```
+
+Without this safety net, the Next button can intermittently stop responding during:
+
+* Livewire morphs
+* draft hydration
+* initial load timing
+* tab changes
+
+2. The old function:
+
+```js
+removeWizardEventListeners()
+```
+
+was deleted, but stale calls to it still remain in the JS. Those calls now throw:
+
+```txt
+ReferenceError: removeWizardEventListeners is not defined
+```
+
+especially during draft load.
+
+---
+
+# DONE LOOKS LIKE
+
+## Seller Create Page
+
+* Next button always works:
+
+  * initial load
+  * after Livewire updates
+  * after switching tabs
+  * after loading drafts
+  * after changing service type
+* Inline fallback exists again on the Next button.
+* Delegated listener architecture remains intact.
+* No duplicate navigation firing occurs.
+
+## Seller Edit/Draft Page
+
+* No JS console errors referencing:
+
+  * removeWizardEventListeners
+  * undefined function
+* Draft loading works normally.
+* Wizard navigation still functions.
+
+## Codebase
+
+* ZERO remaining calls to:
+
+```txt
+removeWizardEventListeners(
+```
+
+* The deleted function itself is NOT restored.
+* Only stale invocations are removed.
+
+---
+
+# REQUIRED CHANGES
+
+## 1. Restore Inline Next Button Fallback (Create Page Only)
+
+File:
+
+```txt
+resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+```
+
+Find the Seller wizard Next button.
+
+Restore the inline fallback:
+
+```html
+<button
+    type="button"
+    class="btn btn-primary wizard-step-next"
+    onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}">
+    Next
+</button>
+```
+
+IMPORTANT:
+
+* Keep the delegated listener architecture.
+* Do NOT reintroduce button cloning.
+* Do NOT restore removeWizardEventListeners().
+* This is ONLY a resilience fallback.
+
+---
+
+## 2. Remove ALL Stale Calls to removeWizardEventListeners()
+
+Global search:
+
+```txt
+removeWizardEventListeners(
+```
+
+Remove EVERY remaining invocation in:
+
+* Seller create
+* Seller edit
+
+The function itself was intentionally deleted and must stay deleted.
+
+Do NOT:
+
+* recreate the function
+* add dummy no-op versions
+* add try/catch wrappers
+
+Simply remove stale calls.
+
+---
+
+# QA REQUIRED
+
+Before finishing:
+
+## Verify Seller Create
+
+* Next button works across all tabs
+* Back button still works
+* No double-navigation
+* No dead clicks
+* Draft loading still works
+* Property Style Select2 still works
+* Icons still render
+
+## Verify Seller Edit
+
+* No console errors
+* Draft loads correctly
+* Navigation works normally
+
+## Verify Console
+
+Search browser console for:
+
+```txt
+removeWizardEventListeners
+```
+
+There must be ZERO errors.
+
+---
+
+# OUT OF SCOPE
+
+Do NOT:
+
+* refactor Select2
+* refactor CSS
+* modify validation
+* alter icon logic
+* touch other roles
+* touch backend logic
+* change database structure
+* alter Limited Service flows
+
+This is a surgical stabilization fix only. 

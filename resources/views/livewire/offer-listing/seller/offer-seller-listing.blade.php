@@ -284,6 +284,24 @@
             padding-bottom: 0 !important;
         }
 
+        /* Property Style single-select: match form-control height and clear icon overlap */
+        .input-cover.has-select-icon .select2-container .select2-selection--single {
+            height: 50px !important;
+            line-height: 50px !important;
+            padding-left: 44px !important;
+        }
+        .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__rendered {
+            line-height: 50px !important;
+            padding-left: 4px !important;
+        }
+        .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 50px !important;
+            top: 0 !important;
+        }
+        .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__placeholder {
+            color: #6c757d;
+        }
+
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -1393,7 +1411,8 @@
                             <span wire:loading wire:target="saveDraft">Saving...</span>
                         </button>
 
-                        <button type="button" class="btn btn-primary wizard-step-next" onclick="if(typeof window._wizardNextHandler==='function')window._wizardNextHandler();">Next</button>
+                        <button type="button" class="btn btn-primary wizard-step-next"
+                            onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}">Next</button>
 
                         <button type="submit" class="btn btn-success wizard-step-finish" id="save-button" wire:loading.attr="disabled" wire:target="store">
                             <span wire:loading.remove wire:target="store">Submit</span>
@@ -1811,10 +1830,8 @@
             const activeCard = document.querySelector(`input[value="${serviceType}"]`)?.closest('.service-option-card');
             if (activeCard) activeCard.classList.add('active-service');
 
-            // Clear old event listeners
-            removeWizardEventListeners();
-
-            // Initialize new service logic
+            // Initialize new service logic — delegated listener on document handles
+            // wizard nav clicks via window._wizardNextHandler; no need to clone/replace buttons
             if (serviceType === 'full_service') {
                 initializeFullService();
             } else if (serviceType === 'limited_service') {
@@ -1822,17 +1839,6 @@
             }
 
             Livewire.emit('serviceTypeChanged', serviceType);
-        }
-
-        function removeWizardEventListeners() {
-            const nextBtn = document.querySelector('.wizard-step-next');
-            const backBtn = document.querySelector('.wizard-step-back');
-
-            const nextClone = nextBtn?.cloneNode(true);
-            const backClone = backBtn?.cloneNode(true);
-
-            if (nextBtn && nextClone) nextBtn.parentNode.replaceChild(nextClone, nextBtn);
-            if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
         // Shared visibility helper — used across all validation functions in this file
@@ -2066,20 +2072,22 @@
                 let garageOptions = document.getElementById('garage_parking_spaces_option');
 
                 // First check the main garage/parking spaces selection
-                if (garageSelect) {
+                if (garageSelect && optionsWrapper) {
                     if (garageSelect.value === "Yes") {
                         optionsWrapper.classList.remove('d-none'); // Show options dropdown
                     } else {
                         optionsWrapper.classList.add('d-none'); // Hide options dropdown
-                        otherInputWrapper.classList.add('d-none'); // Also hide other input
+                        if (otherInputWrapper) otherInputWrapper.classList.add('d-none'); // Also hide other input
                     }
                 }
 
                 // Then check if "Other" is selected in the options dropdown
-                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
-                    otherInputWrapper.classList.remove('d-none'); // Show input field
-                } else {
-                    otherInputWrapper.classList.add('d-none'); // Hide input field
+                if (otherInputWrapper) {
+                    if (garageOptions && garageOptions.value === "Other" && garageSelect && garageSelect.value === "Yes") {
+                        otherInputWrapper.classList.remove('d-none'); // Show input field
+                    } else {
+                        otherInputWrapper.classList.add('d-none'); // Hide input field
+                    }
                 }
             }
 
@@ -2775,11 +2783,15 @@
             });
         };
 
-        // Delegated wizard nav — bound once, survives Livewire DOM morphing
+        // Delegated wizard nav — bound once, survives Livewire DOM morphing.
+        // Next button has an inline onclick fallback; delegated listener only fires
+        // when onclick is absent (e.g. after a morph that strips attributes) to
+        // prevent double-calling _wizardNextHandler on the same click.
         if (!window.__wizardNavBound) {
             window.__wizardNavBound = true;
             document.addEventListener('click', function(e) {
-                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                var nextBtn = e.target.closest('.wizard-step-next');
+                if (nextBtn && typeof window._wizardNextHandler === 'function' && !nextBtn.onclick) {
                     window._wizardNextHandler();
                 }
                 if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
@@ -2873,6 +2885,27 @@
             addIconsToInputs(); // synchronous — runs immediately after morphdom, like Buyer
             setTimeout(function() { addIconsToInputs(); }, 0); // deferred safety net
 
+            // Re-init #property_style_select Select2 when property_type changes so that
+            // the correct option list and "Select" placeholder are shown (e.g. Business type)
+            (function() {
+                var $pss = $('#property_style_select');
+                if (!$pss.length) return;
+                var _pssType = @this.get('property_type') || '';
+                if ($pss.data('last-prop-type') === _pssType) return;
+                if ($pss.hasClass('select2-hidden-accessible')) {
+                    $pss.select2('destroy');
+                }
+                $pss.data('last-prop-type', _pssType);
+                $pss.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                var _savedItems = @this.get('property_items') || [];
+                if (_savedItems.length > 0) {
+                    $pss.val(_savedItems).trigger('change.select2');
+                }
+                $pss.off('change.pss').on('change.pss', function() {
+                    @this.set('property_items', $(this).val() || []);
+                });
+            })();
+
             // Re-detect selected service type after DOM update
             const fullServiceChecked = document.getElementById('fullService')?.checked;
             const limitedServiceChecked = document.getElementById('limitedService')?.checked;
@@ -2890,8 +2923,6 @@
             if (newServiceType !== currentServiceType) {
                 currentServiceType = newServiceType;
             }
-
-            removeWizardEventListeners();
 
             var _now = Date.now();
             if (_now - _lastInitTime > 300) {
