@@ -129,14 +129,27 @@
                     @error('occupancy_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="fw-bold form-label">Flexibility</label>
-                    <select name="flexibility" class="form-control @error('flexibility') is-invalid @enderror">
-                        <option value="">Select</option>
-                        <option value="Very flexible" {{ old('flexibility') === 'Very flexible' ? 'selected' : '' }}>Very flexible</option>
-                        <option value="Somewhat flexible" {{ old('flexibility') === 'Somewhat flexible' ? 'selected' : '' }}>Somewhat flexible</option>
-                        <option value="Not flexible – firm on terms" {{ old('flexibility') === 'Not flexible – firm on terms' ? 'selected' : '' }}>Not flexible – firm on terms</option>
+                    <label class="fw-bold form-label">Desired Lease Term</label>
+                    <select name="desired_lease_term" id="desired_lease_term"
+                            class="form-control @error('desired_lease_term') is-invalid @enderror"
+                            onchange="landlordToggleLeaseTerm(this.value)">
+                        <option value="">-- Select lease term --</option>
+                        <option value="Month-to-Month" {{ old('desired_lease_term') === 'Month-to-Month' ? 'selected' : '' }}>Month-to-Month</option>
+                        <option value="3 Months" {{ old('desired_lease_term') === '3 Months' ? 'selected' : '' }}>3 Months</option>
+                        <option value="6 Months" {{ old('desired_lease_term') === '6 Months' ? 'selected' : '' }}>6 Months</option>
+                        <option value="9 Months" {{ old('desired_lease_term') === '9 Months' ? 'selected' : '' }}>9 Months</option>
+                        <option value="1 Year" {{ old('desired_lease_term') === '1 Year' ? 'selected' : '' }}>1 Year</option>
+                        <option value="2 Years" {{ old('desired_lease_term') === '2 Years' ? 'selected' : '' }}>2 Years</option>
+                        <option value="Other" {{ old('desired_lease_term') === 'Other' ? 'selected' : '' }}>Other</option>
                     </select>
-                    @error('flexibility')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('desired_lease_term')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="desired_lease_term_other_wrap" class="mt-2"
+                         style="{{ old('desired_lease_term') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="desired_lease_term_other" id="desired_lease_term_other"
+                               class="form-control"
+                               placeholder="Enter desired lease term (e.g., 8 Months)"
+                               value="{{ old('desired_lease_term_other') }}">
+                    </div>
                 </div>
             </div>
         </div>
@@ -145,19 +158,71 @@
 
 @push('scripts')
 <script>
-(function() {
+(function () {
+    // ── Phone formatting ─────────────────────────────────────────────────────
     var phoneInput = document.getElementById('landlord_client_phone');
-    if (!phoneInput) return;
-    phoneInput.addEventListener('input', function() {
-        var digits = this.value.replace(/\D/g, '').substring(0, 10);
-        var formatted = digits;
-        if (digits.length >= 7) {
-            formatted = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6);
-        } else if (digits.length >= 4) {
-            formatted = digits.substring(0,3) + '-' + digits.substring(3);
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function () {
+            var digits = this.value.replace(/\D/g, '').substring(0, 10);
+            var formatted = digits;
+            if (digits.length >= 7) {
+                formatted = digits.substring(0, 3) + '-' + digits.substring(3, 6) + '-' + digits.substring(6);
+            } else if (digits.length >= 4) {
+                formatted = digits.substring(0, 3) + '-' + digits.substring(3);
+            }
+            this.value = formatted;
+        });
+    }
+
+    // ── Currency helpers ─────────────────────────────────────────────────────
+    function normalizeDecimal(val) {
+        var raw = val.replace(/[^0-9.]/g, '');
+        var firstDot = raw.indexOf('.');
+        if (firstDot !== -1) {
+            raw = raw.substring(0, firstDot + 1) + raw.substring(firstDot + 1).replace(/\./g, '');
         }
-        this.value = formatted;
-    });
-})();
+        return raw;
+    }
+
+    function formatWithCommas(val) {
+        var raw = normalizeDecimal(val);
+        var parts = raw.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+    }
+
+    // ── Desired Monthly Rent ─────────────────────────────────────────────────
+    var dmrInput = document.querySelector('input[name="desired_monthly_rent"]');
+    if (dmrInput) {
+        if (dmrInput.value !== '') {
+            dmrInput.value = formatWithCommas(dmrInput.value);
+        }
+        dmrInput.addEventListener('input', function () {
+            this.value = formatWithCommas(this.value);
+        });
+    }
+}());
+
+// ── Desired Lease Term show/hide ─────────────────────────────────────────────
+function landlordToggleLeaseTerm(val) {
+    var wrap = document.getElementById('desired_lease_term_other_wrap');
+    var inp  = document.getElementById('desired_lease_term_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
+// On page load: initialize the Desired Lease Term show/hide state and clear any
+// stale desired_lease_term_other value if the saved select value is not "Other".
+document.addEventListener('DOMContentLoaded', function () {
+    var sel = document.getElementById('desired_lease_term');
+    if (sel) {
+        landlordToggleLeaseTerm(sel.value);
+    }
+});
 </script>
 @endpush

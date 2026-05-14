@@ -321,6 +321,10 @@ function ackSubmit(form) {
     if (salePriceInput) {
         salePriceInput.value = salePriceInput.value.replace(/,/g, '');
     }
+    var monthlyRentInput = document.querySelector('input[name="desired_monthly_rent"]');
+    if (monthlyRentInput) {
+        monthlyRentInput.value = monthlyRentInput.value.replace(/,/g, '');
+    }
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
     return true;

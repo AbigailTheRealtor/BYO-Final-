@@ -1513,7 +1513,7 @@ function populateReviewTab() {
             { label: 'Desired Monthly Rent', name: 'desired_monthly_rent' },
             { label: 'Availability Date', name: 'availability_date' },
             { label: 'Occupancy Status', name: 'occupancy_status' },
-            { label: 'Flexibility', name: 'flexibility' },
+            { label: 'Desired Lease Term', name: 'desired_lease_term' },
             { label: 'Max Monthly Lease Price', name: 'max_monthly_lease_price' },
             { label: 'Desired Lease Length', name: 'desired_lease_length' },
             { label: 'Move-In Date', name: 'move_in_date' },
@@ -1528,6 +1528,9 @@ function populateReviewTab() {
                 if (f.name === 'desired_sale_price') {
                     var dspRaw = val.replace(/,/g, '').replace(/[^\d]/g, '');
                     displayVal = dspRaw ? '$' + parseInt(dspRaw, 10).toLocaleString('en-US') : val;
+                } else if (f.name === 'desired_monthly_rent') {
+                    var dmrRaw = val.replace(/,/g, '').replace(/[^\d]/g, '');
+                    displayVal = dmrRaw ? '$' + parseInt(dmrRaw, 10).toLocaleString('en-US') : val;
                 } else if (f.name === 'target_purchase_price') {
                     displayVal = '$' + val;
                 } else if (f.name === 'estimated_down_payment') {
@@ -1536,11 +1539,17 @@ function populateReviewTab() {
                     displayVal = (dpMode === 'dollar') ? '$' + val : val + '%';
                 } else if (f.name === 'max_monthly_lease_price' || f.name === 'household_monthly_income') {
                     displayVal = '$' + String(val).replace(/^\$/, '');
-                } else if (f.name === 'move_in_date') {
+                } else if (f.name === 'move_in_date' || f.name === 'availability_date') {
                     var parts = val.split('-');
                     if (parts.length === 3) {
                         var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
                         displayVal = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
+                } else if (f.name === 'desired_lease_term' && val === 'Other') {
+                    var dltOtherEl = document.querySelector('[name="desired_lease_term_other"]');
+                    var dltOtherVal = dltOtherEl ? dltOtherEl.value.trim() : '';
+                    if (dltOtherVal) {
+                        displayVal = dltOtherVal;
                     }
                 }
                 rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(displayVal) + '</dd></div>';
@@ -1596,6 +1605,21 @@ document.addEventListener('DOMContentLoaded', function() {
             ccTrigger(sel, parentId);
         });
     });
+
+    // ── Landlord: explicit post-init pass for nested Interested-in-Selling chain ──
+    // The generic init above processes triggers in DOM insertion order, which means
+    // cc_interested_in_selling (outer) is always initialized before
+    // cc_interested_in_selling_type (inner). This explicit re-pass guarantees that
+    // even if Object.keys ordering were non-deterministic, the parent is resolved
+    // first so the inner sub-fields render correctly when a saved value is present.
+    var iisOuter = document.querySelector('select[onchange*="cc_interested_in_selling"]:not([onchange*="cc_interested_in_selling_type"])');
+    if (iisOuter) {
+        ccTrigger(iisOuter, 'cc_interested_in_selling');
+    }
+    var iisInner = document.querySelector('select[onchange*="cc_interested_in_selling_type"]');
+    if (iisInner) {
+        ccTrigger(iisInner, 'cc_interested_in_selling_type');
+    }
 });
 
 // ── Comp Terms: comma formatting for all $-prefixed flat-fee text inputs ──────
