@@ -1316,10 +1316,7 @@ $tenantPays = [
             $('.select2-multiple').each(function () {
                 var $el = $(this);
                 if ($el.hasClass('select2-hidden-accessible')) {
-                    var _s2Open = false;
-                    try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
-                    if (_s2Open) return;
-                    $el.select2('destroy');
+                    return;
                 }
                 var placeholder = $el.attr('data-placeholder') || 'Select';
                 var isMultiple = $el.prop('multiple');
@@ -2583,6 +2580,7 @@ $tenantPays = [
 
                         // Re-init Desired Lease Term Select2 after Livewire re-render
                         initEditLeaseTermSelect2();
+                        addIconsToInputs();
 
                         // Re-attach Bathrooms Other listener after Livewire re-render
                         attachBathroomsDropdownListener();
