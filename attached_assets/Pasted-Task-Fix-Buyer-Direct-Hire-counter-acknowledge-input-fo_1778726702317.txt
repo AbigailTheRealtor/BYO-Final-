@@ -1,0 +1,73 @@
+Task: Fix Buyer Direct Hire counter/acknowledge input formatting and neutral Additional Terms placeholder
+
+Scope:
+Buyer Direct Hire only:
+- /hire/agent/direct/{id}/buyer/{propertyType}
+- /hire/agent/direct/{id}/buyer/{propertyType}/counter
+- /hire/agent/direct/{id}/buyer/{propertyType}/acknowledge
+- Any shared Buyer Direct Hire partials/components used by those pages
+
+Do NOT touch:
+- Seller, Landlord, or Tenant files yet
+- Marketplace Hire Agent bid/counter flows
+- Offer Listing counter flows
+- Limited Service flows
+- Routes, controllers, database schema, migrations, validation rules, or model relationships unless absolutely required for reading existing submitted values
+- Submitted page formatting unless needed only for shared display helper consistency
+
+Issue:
+On Buyer Direct Hire counter/acknowledge pages, the submitted display page formats values correctly, but the live input/review flow does not:
+1. Target Purchase Price / Budget needs dollar formatting while the user inputs it:
+   - visible $ prefix
+   - comma formatting while typing, example: 5,000,000
+   - submitted value must still save as clean numeric value if backend expects numeric
+2. Estimated Down Payment needs correct toggle-aware formatting:
+   - when dollar mode is selected, show $ prefix and comma formatting while typing
+   - when percentage mode is selected, show % indicator/suffix and percentage value
+   - input should accept/display commas in dollar mode
+   - review/acknowledge display must show either $800,000 or 50%, not raw 800000 or 50 without symbol
+3. Your Additional Terms / Notes placeholder is too specific:
+   Current: “e.g., I'd prefer a 30-day buyer representation agreement, or I have questions about the offer process...”
+   Replace with neutral text:
+   “Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.”
+
+Implementation requirements:
+1. Audit first:
+   - Find the Buyer Direct Hire counter Blade/view and any shared JS used for:
+     target_purchase_price / target purchase budget
+     estimated_down_payment
+     down payment type/toggle
+     additional_terms / notes textarea
+   - Confirm these are Direct Hire Buyer files before editing.
+
+2. Reuse existing formatting patterns if available:
+   - Search for the same currency/comma formatting already working on the submitted page or other Buyer forms.
+   - Prefer extracting/reusing an existing helper instead of creating duplicate logic.
+
+3. Input behavior:
+   - Currency fields should visually format with commas while typing.
+   - Preserve cursor reasonably.
+   - Strip commas/$/% before submit if the backend expects raw numeric values.
+   - Do not break existing saved/submitted values.
+   - Do not change field names.
+
+4. Estimated Down Payment:
+   - Confirm whether the existing form has a percent/dollar toggle or hidden type field.
+   - Formatting must follow that selected type.
+   - Switching from $ to % should remove dollar formatting and show percent style.
+   - Switching from % to $ should restore comma/currency style.
+   - Review and acknowledge summaries must use the selected type.
+
+5. Acceptance checks:
+   - On Buyer Direct Hire counter page:
+     Target Purchase Price / Budget input shows $ prefix and formats 5000000 as 5,000,000.
+     Estimated Down Payment in $ mode shows $ prefix and formats 800000 as 800,000.
+     Estimated Down Payment in % mode displays percentage format, like 50%.
+     Additional Terms placeholder uses the new neutral wording.
+   - On Buyer Direct Hire acknowledge/review page:
+     Target Purchase Price / Budget displays with $ and commas.
+     Estimated Down Payment displays with $ and commas or % depending on selected type.
+   - Submitted page still displays correctly.
+   - No Seller/Landlord/Tenant files changed in this task.
+
+After completing Buyer, do a read-only audit only for Seller, Landlord, and Tenant Direct Hire counter/acknowledge pages to check whether the same formatting/placeholder issue exists. Do not modify them yet. Report exact files/fields affected and recommended follow-up task.
