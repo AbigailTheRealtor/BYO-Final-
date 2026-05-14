@@ -1,0 +1,69 @@
+Audit and fix the icon flashing/deleting issue on Landlord Offer Listing edit/draft pages, especially:
+/offer-listing/landlord/edit/31
+
+Problem:
+On Landlord Offer Listing edit/draft pages, icons for normal single-select fields flash briefly and then disappear/delete after the page finishes loading or after clicking into the field. This appears specific to single-selection fields, not true multi-select Select2 fields. Seller Offer Listing create/edit does not have this issue, so compare Seller’s working icon/render logic against Landlord’s edit/draft logic.
+
+Important safeguards:
+- Do NOT change Seller Offer Listing behavior.
+- Do NOT change Hire Agent flows.
+- Do NOT change database schema, migrations, routes, models, or controllers unless a code audit proves it is absolutely required.
+- Do NOT rewrite the form.
+- Do NOT remove existing fields, labels, tooltips, placeholders, validation, or saved draft logic.
+- Only fix the Landlord Offer Listing icon rendering issue.
+- Preserve existing multi-select behavior, including closeOnSelect: false.
+- Preserve Select2 styling and sizing from recent fixes.
+
+Required audit:
+1. Compare Seller Offer Listing create/edit icon handling with Landlord Offer Listing create/edit.
+2. Specifically inspect:
+   - addIconsToInputs()
+   - any data-icon / has-icon / data-icon-rendered logic
+   - Landlord edit/draft Blade files
+   - Landlord tab partials
+   - Select2 initialization/reinitialization
+   - Livewire hooks, tab-change handlers, DOMContentLoaded handlers, and timeout-based icon re-renders.
+3. Identify why single-select icons are inserted, then removed or overwritten on Landlord edit/draft.
+4. Check whether Select2 initialization is replacing the original select wrapper after icons are injected.
+5. Check whether Landlord edit/draft has duplicate icon initialization, cleanup, or wrapper replacement logic that Seller does not have.
+
+Fix requirements:
+1. Icons must remain visible for all single-select fields on Landlord Offer Listing edit/draft after:
+   - initial page load
+   - clicking the select field
+   - changing tabs
+   - Livewire re-render
+   - loading saved draft/edit data
+2. Icons must not duplicate.
+3. Icons must not overlap placeholder text or selected values.
+4. Multi-select icons must remain working.
+5. Single-select and multi-select handling should be scoped safely so one does not break the other.
+6. Use the same stable pattern as Seller Offer Listing wherever possible.
+
+Likely fix direction:
+- Ensure Select2 fields are initialized before icons are injected, or re-run addIconsToInputs() after Select2 initialization.
+- Ensure addIconsToInputs() targets the final visible Select2 container/wrapper, not an element that gets replaced.
+- Ensure the data-icon-rendered guard does not incorrectly prevent re-injection after Select2 replaces DOM.
+- If needed, remove stale icon elements only inside the current field wrapper before injecting one fresh icon.
+- Do not globally remove icons from the page.
+
+QA required:
+Test these exact pages:
+- /offer-listing/landlord
+- /offer-listing/landlord/edit/31
+- /offer-listing/seller
+- a Seller edit/draft page
+
+Confirm:
+- Landlord edit/draft single-select icons no longer flash/delete.
+- Landlord create icons still work.
+- Seller create/edit icons still work.
+- Multi-select icons still work.
+- No duplicate icons.
+- No unrelated files changed.
+
+Before finishing, provide:
+1. Root cause found.
+2. Exact files changed.
+3. Confirmation that no routes/controllers/models/migrations/schema files changed.
+4. Browser QA results for Landlord create, Landlord edit/draft, Seller create, and Seller edit/draft.

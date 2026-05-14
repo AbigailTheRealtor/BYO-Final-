@@ -1,0 +1,229 @@
+Task: Seller Offer Listing — Remainder Audit + Fix After #285
+
+Affected URLs:
+- Create: /offer-listing/seller
+- Edit/Draft: /offer-listing/seller/edit/{id}
+- Example broken edit: /offer-listing/seller/edit/52
+
+Scope:
+Fix ONLY remaining Seller Offer Listing create/edit issues listed below.
+
+Do NOT touch:
+- Buyer, Landlord, Tenant flows
+- Hire Agent flows
+- Direct Hire flows
+- Counter Bid / Accepted Bid Summary
+- routes
+- migrations/schema
+- upload architecture from Task #588, except verifying existing property photo repopulation on edit/draft
+
+Important:
+Previous Task #285 did not fully resolve these issues. Do not assume it is fixed because code was changed. Re-test from browser behavior and fix the actual remaining root cause.
+
+Primary files to inspect:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php
+- resources/views/livewire/offer-listing/offer-seller-tabs/commission-based/*.blade.php
+- app/Http/Livewire/OfferListing/Seller/SellerOfferListing.php
+- app/Http/Livewire/OfferListing/Seller/SellerOfferListingEdit.php
+- config/ai_faq_seller.php only if relevant
+
+CRITICAL SAFEGUARDS:
+- Audit and document the exact root cause before editing.
+- Do not rewrite the full wizard system.
+- Do not refactor the full Seller form.
+- Preserve all existing field labels, tooltips, wire:model names, meta keys, and saved data structure.
+- Do not rename Livewire properties.
+- Do not change shared helpers unless Seller-only fix is impossible.
+- If a shared helper must change, stop and report the exact file and reason before editing.
+- Do not implement Task #588 upload performance fixes in this pass.
+- Do not apply to main until Seller create and Seller edit/draft are browser-tested.
+
+ISSUES TO FIX:
+
+1. Seller Edit/Draft Next button still broken:
+The Next button still does not work correctly on:
+- /offer-listing/seller/edit/52
+- Seller draft/edit generally
+
+Audit:
+- all Next/Back handlers in edit blade
+- duplicate event listeners
+- Bootstrap tab activation
+- wire:click setActiveTab interactions
+- sessionStorage restore logic
+- Livewire message.processed tab restore
+- inline onclick fallbacks
+- whether button selectors match actual DOM
+- whether hidden/disabled tabs or tab pane IDs mismatch
+- whether edit mode uses different tab IDs from create mode
+
+Expected:
+- Next advances exactly one tab
+- Back retreats exactly one tab
+- no double advance
+- no dead clicks
+- no reset to tab 1
+- works after Save Draft reload
+- works after validation errors
+- works after Select2 interaction
+- works on every tab in edit/draft
+
+2. Timing of Transfer “Other” placeholder capitalization:
+When user selects Other for Timing of Transfer, placeholder must be:
+Enter timing of transfer (e.g., Within 48 Hours of Contract Acceptance, Partial Transfer at Inspection Period)
+
+Make capitalization consistent with platform format.
+
+3. Smaller boxes + missing icons:
+Fix these fields so they match standard Seller input height, padding, and icon layout:
+- Additional Parcel IDs
+- Legal Description
+- Special Assessment Description
+- Application Approval Process
+- Additional Leasing Restriction
+- Additional Seller Sale Terms
+
+Expected:
+- standard height/spacing
+- icon visible inside input/textarea wrapper
+- no floating icon
+- no icon below field
+- no clipped text
+- no layout shift after Livewire render
+
+4. Association Type “Other” placeholder + icon issue:
+When Association Type = Other:
+- companion input must appear immediately
+- placeholder must include example text in platform format:
+  Enter association type (e.g., Master Association, Condo-Hotel Association, Community Development District)
+- wrong icon underneath it must be removed/fixed
+- no floating icon below the input
+
+5. Fee Frequency “Other” icon issue:
+When Fee Frequency = Other:
+- companion input must appear immediately
+- if placeholder is missing, use platform format:
+  Enter fee frequency (e.g., Quarterly, Semi-Annually, Annually)
+- fix wrong/floating icon underneath it
+- ensure saved custom value does not incorrectly display as 5000 unless that is the actual saved custom text
+
+6. Minimum Lease Period “Other” placeholder:
+When Minimum Lease Period = Other:
+- companion input must appear immediately
+- placeholder must follow platform format:
+  Enter minimum lease period (e.g., 6 Months, 12 Months, Seasonal Lease)
+
+7. Draft/Edit autopopulate audit:
+On Seller edit/draft, every field filled in must autopopulate. The following are still failing and must be fixed:
+
+- Listing Type
+- SqFt Heated Source
+- Special Sale Provision: Other box/value
+- Seller Under Contract Assignment
+- Target Closing Timeframe
+- Occupant Type
+- Exchange / Conversion Method
+- Custodian / Wallet for Transfer
+- Transaction Fees Responsibility
+- Liens / Encumbrances Disclosure
+- Timing of Transfer
+- Option Fee Credit Toward Purchase Price
+- Extension Terms
+- Rent Credit Toward Purchase Price
+- Non-Refundable Deposit / Purchase Deposit
+- Maintenance / Repair Responsibility
+- Extension Terms
+- NFT Valuation Method
+- NFT Transfer Method
+- Transaction Fees Responsibility (Gas Fees)
+- Balloon Payment
+- Amortization Type
+- Payment Frequency
+- Late Payment Fee
+- Initial Deposit Requested
+- Buyer’s Broker Commission Fee
+- Association Fee Amount
+- Fee Frequency Other box/value
+- Property Photos
+
+Audit for each field:
+- correct public Livewire property exists
+- correct wire:model is used
+- value is saved with correct meta key
+- edit component mount/load reads correct meta key
+- select options use @selected or bound value correctly
+- Select2 fields are initialized with saved values
+- “Other” companion fields render open when saved value is Other
+- companion custom text value loads correctly
+- no stale hardcoded/default value overwrites saved value
+- no formatting script wipes value on hydration
+
+Important:
+Do not rely only on grep. Browser-test the edit page after saving a draft.
+
+8. Property photos:
+Do NOT implement full Task #588 upload lifecycle improvements here.
+Only fix/verify edit/draft repopulation if photos were already saved.
+
+Expected:
+- saved property photos display on edit/draft load
+- tab switching does not wipe displayed saved photos
+- Save Draft reload does not remove displayed saved photos
+- no duplicate photos
+
+QA REQUIRED BEFORE COMPLETION:
+
+A. Report exact files changed.
+
+B. Confirm no files changed outside Seller Offer Listing create/edit scope.
+
+C. Confirm no:
+- Buyer files changed
+- Landlord files changed
+- Tenant files changed
+- Hire Agent files changed
+- Direct Hire files changed
+- routes changed
+- migrations/schema changed
+
+D. Browser-test Seller edit/draft:
+- Next works on every tab
+- Back works on every tab
+- no dead click
+- no double advance
+- no reset to first tab
+- works after Select2 interaction
+- works after validation error
+- works after Save Draft reload
+
+E. Browser-test placeholders:
+- Timing of Transfer Other
+- Association Type Other
+- Fee Frequency Other
+- Minimum Lease Period Other
+
+F. Browser-test icons:
+- Additional Parcel IDs
+- Legal Description
+- Special Assessment Description
+- Application Approval Process
+- Additional Leasing Restriction
+- Additional Seller Sale Terms
+- Association Type Other
+- Fee Frequency Other
+
+G. Browser-test edit/draft autopopulate:
+Save values in create or draft, reload edit URL, and confirm every listed field repopulates.
+
+H. Confirm property photos:
+- saved photos appear on edit load
+- saved photos remain after tab switching
+- saved photos remain after Save Draft reload
+
+I. Confirm console:
+- no JavaScript errors
+- no Livewire errors
+- no Select2 errors
+
+Do not mark complete until the actual edit/draft URL behavior is verified, not just code inspection.
