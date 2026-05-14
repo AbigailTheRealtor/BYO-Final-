@@ -156,6 +156,31 @@
         });
     }
 
+    // Shared helpers
+    function normalizeDecimal(val) {
+        var raw = val.replace(/[^0-9.]/g, '');
+        var firstDot = raw.indexOf('.');
+        if (firstDot !== -1) {
+            raw = raw.substring(0, firstDot + 1) + raw.substring(firstDot + 1).replace(/\./g, '');
+        }
+        return raw;
+    }
+
+    function formatWithCommas(val) {
+        var raw = normalizeDecimal(val);
+        var parts = raw.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+    }
+
+    // Target Purchase Price — comma formatting
+    var tppInput = document.querySelector('input[name="target_purchase_price"]');
+    if (tppInput) {
+        tppInput.addEventListener('input', function() {
+            this.value = formatWithCommas(this.value);
+        });
+    }
+
     var dpToggleBtn  = document.getElementById('dp-toggle-btn');
     var dpTypeInput  = document.getElementById('down_payment_type');
     var dpAmtInput   = document.getElementById('estimated_down_payment');
@@ -166,10 +191,16 @@
             dpToggleBtn.textContent = '$';
             dpTypeInput.value = 'dollar';
             dpAmtInput.placeholder = 'Enter estimated down payment (e.g., 70,000)';
+            if (dpAmtInput.value !== '') {
+                dpAmtInput.value = formatWithCommas(dpAmtInput.value);
+            }
         } else {
             dpToggleBtn.textContent = '%';
             dpTypeInput.value = 'percent';
             dpAmtInput.placeholder = 'Enter estimated down payment (e.g., 20)';
+            if (dpAmtInput.value !== '') {
+                dpAmtInput.value = normalizeDecimal(dpAmtInput.value);
+            }
         }
     }
 
@@ -180,6 +211,29 @@
         dpToggleBtn.addEventListener('click', function() {
             var current = dpTypeInput.value === 'dollar' ? 'dollar' : 'percent';
             applyDpMode(current === 'dollar' ? 'percent' : 'dollar');
+        });
+    }
+
+    if (dpAmtInput) {
+        dpAmtInput.addEventListener('input', function() {
+            if (dpTypeInput.value === 'dollar') {
+                this.value = formatWithCommas(this.value);
+            } else {
+                this.value = normalizeDecimal(this.value);
+            }
+        });
+    }
+
+    // Strip formatting before form submission — both fields, both modes
+    var buyerForm = tppInput ? tppInput.closest('form') : null;
+    if (buyerForm) {
+        buyerForm.addEventListener('submit', function() {
+            if (tppInput) {
+                tppInput.value = tppInput.value.replace(/[$,]/g, '');
+            }
+            if (dpAmtInput) {
+                dpAmtInput.value = dpAmtInput.value.replace(/[$,]/g, '');
+            }
         });
     }
 })();

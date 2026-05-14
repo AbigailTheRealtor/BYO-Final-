@@ -1175,8 +1175,8 @@
                         $addlTermsPlaceholder = match(true) {
                             $role === 'seller' && !$isCommercialNotes => "e.g., I'd prefer to start with a 90-day listing agreement, or I have questions about the showing schedule...",
                             $role === 'seller' && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review in your strategy, or I have questions about marketing strategy and business/property fit...",
-                            $role === 'buyer'  && !$isCommercialNotes => "e.g., I'd prefer a 30-day buyer representation agreement, or I have questions about the offer process...",
-                            $role === 'buyer'  && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review, or I have questions about lease terms and marketing strategy for this property type...",
+                            $role === 'buyer'  && !$isCommercialNotes => "Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.",
+                            $role === 'buyer'  && $isCommercialNotes  => "Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.",
                             $role === 'landlord' && !$isCommercialNotes => "e.g., I'd prefer a 60-day listing agreement, or I have questions about tenant screening and lease terms...",
                             $role === 'landlord' && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review, or I have questions about lease terms and marketing strategy for commercial properties...",
                             $role === 'tenant' && !$isCommercialNotes => "e.g., I'd prefer a 30-day search agreement, or I have questions about the application process...",
