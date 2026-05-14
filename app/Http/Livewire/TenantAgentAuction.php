@@ -1737,6 +1737,20 @@ class TenantAgentAuction extends Component
             ->where('is_draft', true)
             ->exists();
 
+        // Normalize property_items when the user switches types so stale values
+        // from a seller/landlord load don't crash buyer/tenant in_array() calls.
+        if ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
+            if (!is_array($this->property_items)) {
+                $this->property_items = is_string($this->property_items)
+                    ? (json_decode($this->property_items, true) ?? [])
+                    : [];
+            }
+        } elseif ($this->user_type === 'seller' || $this->user_type === 'landlord') {
+            if (!is_string($this->property_items)) {
+                $this->property_items = '';
+            }
+        }
+
         if ($this->hasDrafts && $this->lastDispatchedUserType !== $this->user_type) {
             $this->lastDispatchedUserType = $this->user_type;
             $this->dispatchBrowserEvent('open-draft-modal');
@@ -2677,6 +2691,21 @@ class TenantAgentAuction extends Component
     // Render the Blade view
     public function render()
     {
+        // Belt-and-suspenders: ensure property_items is always the correct type
+        // for the current user_type before the view renders, regardless of how
+        // internal state may have been set (draft load, type switch, etc.).
+        if ($this->user_type === 'buyer' || $this->user_type === 'tenant') {
+            if (!is_array($this->property_items)) {
+                $this->property_items = is_string($this->property_items)
+                    ? (json_decode($this->property_items, true) ?? [])
+                    : [];
+            }
+        } elseif ($this->user_type === 'seller' || $this->user_type === 'landlord') {
+            if (!is_string($this->property_items)) {
+                $this->property_items = '';
+            }
+        }
+
         return view('livewire.tenant-agent-auction')->extends('layouts.main')->section('content'); // Define the section
     }
 

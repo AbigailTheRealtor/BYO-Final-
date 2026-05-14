@@ -337,37 +337,37 @@
                 @if ($property_type === 'Residential')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'residential-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], (is_array($this->property_items) ? $this->property_items : [])) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif ($property_type === 'Income')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'income-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], (is_array($this->property_items) ? $this->property_items : [])) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif ($property_type === 'Commercial')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'commercial-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], (is_array($this->property_items) ? $this->property_items : [])) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif ($property_type === 'Business')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'business-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], (is_array($this->property_items) ? $this->property_items : [])) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif ($property_type === 'Opportunity')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'opportunity-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], (is_array($this->property_items) ? $this->property_items : [])) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @elseif ($property_type === 'Vacant Land')
                     @foreach ($property_items_buyer as $item)
                         @if (str_contains($item['class'], 'vacant-land-length'))
-                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], $this->property_items ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
+                            <option value="{{ $item['name'] }}" {{ in_array($item['name'], (is_array($this->property_items) ? $this->property_items : [])) ? 'selected' : '' }}>{{ $item['name'] }}</option>
                         @endif
                     @endforeach
                 @endif
