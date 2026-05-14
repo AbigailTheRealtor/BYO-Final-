@@ -130,19 +130,60 @@
 
 @push('scripts')
 <script>
-(function() {
+(function () {
+    // ── Phone formatting ─────────────────────────────────────────────────────
     var phoneInput = document.getElementById('tenant_client_phone');
-    if (!phoneInput) return;
-    phoneInput.addEventListener('input', function() {
-        var digits = this.value.replace(/\D/g, '').substring(0, 10);
-        var formatted = digits;
-        if (digits.length >= 7) {
-            formatted = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6);
-        } else if (digits.length >= 4) {
-            formatted = digits.substring(0,3) + '-' + digits.substring(3);
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function () {
+            var digits = this.value.replace(/\D/g, '').substring(0, 10);
+            var formatted = digits;
+            if (digits.length >= 7) {
+                formatted = digits.substring(0, 3) + '-' + digits.substring(3, 6) + '-' + digits.substring(6);
+            } else if (digits.length >= 4) {
+                formatted = digits.substring(0, 3) + '-' + digits.substring(3);
+            }
+            this.value = formatted;
+        });
+    }
+
+    // ── Currency helpers ─────────────────────────────────────────────────────
+    function normalizeDecimal(val) {
+        var raw = val.replace(/[^0-9.]/g, '');
+        var firstDot = raw.indexOf('.');
+        if (firstDot !== -1) {
+            raw = raw.substring(0, firstDot + 1) + raw.substring(firstDot + 1).replace(/\./g, '');
         }
-        this.value = formatted;
-    });
-})();
+        return raw;
+    }
+
+    function formatWithCommas(val) {
+        var raw = normalizeDecimal(val);
+        var parts = raw.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+    }
+
+    // ── Max Monthly Lease Price ──────────────────────────────────────────────
+    var mlpInput = document.querySelector('input[name="max_monthly_lease_price"]');
+    if (mlpInput) {
+        if (mlpInput.value !== '') {
+            mlpInput.value = formatWithCommas(mlpInput.value);
+        }
+        mlpInput.addEventListener('input', function () {
+            this.value = formatWithCommas(this.value);
+        });
+    }
+
+    // ── Household Monthly Income ─────────────────────────────────────────────
+    var hmiInput = document.querySelector('input[name="household_monthly_income"]');
+    if (hmiInput) {
+        if (hmiInput.value !== '') {
+            hmiInput.value = formatWithCommas(hmiInput.value);
+        }
+        hmiInput.addEventListener('input', function () {
+            this.value = formatWithCommas(this.value);
+        });
+    }
+}());
 </script>
 @endpush

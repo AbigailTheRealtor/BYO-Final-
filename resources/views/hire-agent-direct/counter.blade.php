@@ -1114,7 +1114,7 @@
                     <label class="cc-label">Additional Terms / Broker Notes</label>
                     <textarea name="cc[additional_details_broker]" rows="3"
                               class="form-control form-control-sm"
-                              placeholder="Enter any additional compensation terms or broker notes (e.g., Hourly consultation at $150/hr)">{{ $ccv('additional_details_broker') }}</textarea>
+                              placeholder="Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.">{{ $ccv('additional_details_broker') }}</textarea>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
@@ -1171,17 +1171,7 @@
                 <div class="mb-3">
                     <label class="fw-bold form-label">Your Additional Terms / Notes <span class="text-muted fw-normal">(optional)</span></label>
                     @php
-                        $isCommercialNotes = $propertyType !== 'residential';
-                        $addlTermsPlaceholder = match(true) {
-                            $role === 'seller' && !$isCommercialNotes => "e.g., I'd prefer to start with a 90-day listing agreement, or I have questions about the showing schedule...",
-                            $role === 'seller' && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review in your strategy, or I have questions about marketing strategy and business/property fit...",
-                            $role === 'buyer'  && !$isCommercialNotes => "Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.",
-                            $role === 'buyer'  && $isCommercialNotes  => "Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.",
-                            $role === 'landlord' && !$isCommercialNotes => "e.g., I'd prefer a 60-day listing agreement, or I have questions about tenant screening and lease terms...",
-                            $role === 'landlord' && $isCommercialNotes  => "e.g., Please include LOI support and zoning/use review, or I have questions about lease terms and marketing strategy for commercial properties...",
-                            $role === 'tenant' && !$isCommercialNotes => "e.g., I'd prefer a 30-day search agreement, or I have questions about the application process...",
-                            default => "e.g., Please include LOI support, zoning/use review, and lease terms analysis, or I have questions about marketing strategy and business/property fit...",
-                        };
+                        $addlTermsPlaceholder = "Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.";
                     @endphp
                     <textarea name="additional_terms" rows="7"
                               class="form-control @error('additional_terms') is-invalid @enderror"
@@ -1527,6 +1517,14 @@ function populateReviewTab() {
                     var dpTypeEl = document.querySelector('[name="down_payment_type"]');
                     var dpMode = dpTypeEl ? dpTypeEl.value : 'percent';
                     displayVal = (dpMode === 'dollar') ? '$' + val : val + '%';
+                } else if (f.name === 'max_monthly_lease_price' || f.name === 'household_monthly_income') {
+                    displayVal = '$' + String(val).replace(/^\$/, '');
+                } else if (f.name === 'move_in_date') {
+                    var parts = val.split('-');
+                    if (parts.length === 3) {
+                        var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                        displayVal = d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
                 }
                 rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(displayVal) + '</dd></div>';
             }
