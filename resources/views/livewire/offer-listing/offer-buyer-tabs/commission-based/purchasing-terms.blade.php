@@ -1,14 +1,5 @@
 <style>
 
-    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
-        padding-left: 44px !important;
-        padding-bottom: 0 !important;
-    }
-
-    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
-        font-size: 1rem !important;
-    }
-
     /* Ensure input-cover properly contains absolutely positioned icons */
     #offered_financing_wrapper {
         position: relative !important;
@@ -56,7 +47,6 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-
 
     <div class="input-cover has-select-icon" wire:ignore>
         <select id="sale_provision" class="form-control has-icon select2-multiple" data-icon="fa-solid fa-screwdriver-wrench" data-placeholder="Select" multiple>
@@ -151,7 +141,6 @@
         </span>
     </label>
 
-
     <div class="input-cover">
         <select wire:model="target_closing_date" id="target_closing_date" class="form-control has-icon"
             data-icon="fa-regular fa-calendar-days" required>
@@ -183,9 +172,6 @@
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-
-
-
 
         <div class="input-cover">
             <span class="input-group-text-seller">$</span>
@@ -291,7 +277,6 @@
         </div>
                 <span class="error mt-2" id="max_monthly_payment_error"></span>
 
-
     </div>
 
     <!-- Type of Loan -->
@@ -382,9 +367,6 @@
         </div>
 
     </div> --}}
-
-
-
 
        <div class="form-group mt-3">
         <label class="fw-bold">Down Payment Buyer Can Afford to Bridge the Gap:</label>
@@ -488,7 +470,6 @@
                 data-icon="fa-solid fa-money-bill-wave"
                 placeholder="Enter type of cryptocurrency (e.g., Bitcoin, Ethereum)">
         </div>
-
 
         
     </div>
@@ -1248,7 +1229,6 @@
     </div>
 </div>
 
-
 <!-- Seller Financing -->
 <div class="financing-seller-section" wire:key="seller-financing-section" x-data="{ visible: {{ (is_array($this->offered_financing) && in_array('Seller Financing', $this->offered_financing)) ? 'true' : 'false' }} }" x-show="visible" x-on:update-financing-visibility.window="if($event.detail.type === 'Seller Financing') visible = $event.detail.visible">
     <div class="financing-section-header mt-4 mb-3 pb-2 border-bottom">
@@ -1324,10 +1304,8 @@
 
     </div> --}}
 
-
     <div class="form-group mt-3">
               <label class="fw-bold">Desired Down Payment:</label>
-
 
            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the down payment amount the Buyer is offering.">
@@ -1353,13 +1331,9 @@
 
     </div>
 
-
-
-
     
     <div class="form-group mt-3">
         <label class="fw-bold">Desired Seller Financing Amount:</label>
-
 
            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the amount the Buyer is requesting the Seller to finance toward the purchase price.">
@@ -1384,7 +1358,6 @@
             <span class="error mt-2" id="seller_financing_amount_error"></span>
 
     </div>
-
 
     {{-- <div class="form-group mt-3">
         <label class="fw-bold">Desired Seller Financing Amount:</label>

@@ -53,10 +53,6 @@
             font-weight: bold;
         }
 
-        .form-control {
-            min-height: 42px;
-        }
-
         textarea.form-control {
             min-height: 80px;
             height: auto;
@@ -69,59 +65,10 @@
             resize: vertical;
         }
 
-        .input-cover .form-control {
-            padding-left: 50px;
-            /* Ensure the input text doesn't overlap the icon */
-            width: 100%;
-            /* Ensure the input field takes full width */
-        }
-
         .nav-tabs .nav-link.active {
             background-color: #049399 !important;
             color: white !important;
             border-color: #049399 !important;
-        }
-
-        .input-cover {
-            position: relative;
-            display: flex;
-            align-items: center;
-            /* Center the icon vertically */
-        }
-
-        .input-cover .input-icon {
-            position: absolute;
-            left: 10px;
-            font-size: 25px;
-            color: #11b7cf;
-            pointer-events: none;
-            z-index: 10;
-            top: 50%;
-            transform: translateY(-50%);
-            /* Center the icon vertically */
-        }
-
-        .has-icon {
-            padding-left: 40px;
-        }
-
-        .input-group-text-seller {
-            display: flex;
-            align-items: center;
-            padding: 0.7rem 0.75rem;
-            font-size: 1rem;
-            font-weight: 400;
-            line-height: 1.5;
-            color: #212529;
-            text-align: center;
-            white-space: nowrap;
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: .375rem;
-        }
-
-        .input-group-text-seller + input.form-control {
-            padding-left: 8px;
         }
 
         .error {
@@ -282,55 +229,6 @@
             display: block;
         }
 
-        /* Style for the select2 dropdown */
-        .select2-container--default .select2-results>.select2-results__options {
-            max-height: 300px;
-            /* Reduced from default 400px */
-            overflow-y: auto;
-        }
-
-        /* Style for individual options */
-        .select2-container--default .select2-results__option {
-            padding: 6px 12px;
-            /* Reduced padding */
-            font-size: 0.9rem;
-            /* Slightly smaller font */
-            line-height: 1.3;
-            /* Tighter line spacing */
-        }
-
-        /* Select2 single-select normalization */
-        .select2-container--default .select2-selection--single {
-            height: 42px;
-            padding: 6px 12px;
-            line-height: 28px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            line-height: 28px;
-            padding-left: 0;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 40px;
-        }
-
-        /* Style for the dropdown container */
-        .select2-container--default .select2-selection--multiple {
-            min-height: 42px;
-            height: auto;
-            padding: 2px 8px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .input-cover.has-select-icon .select2-container .select2-selection {
-            padding-left: 44px !important;
-        }
-
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -355,11 +253,6 @@
         #draftModal .btn-link {
             color: #0d6efd !important;
         }
-
-        /* Select2 placeholder styling */
-        .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
-        .select2-container .select2-search__field { min-width: 120px; }
-        .select2-selection__placeholder { color: #6c757d; }
 
     </style>
 @endpush

@@ -55,7 +55,7 @@
             </label>
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
-                <input type="text" wire:model="annual_property_taxes" class="form-control" style="padding-left: 24px;"
+                <input type="text" wire:model="annual_property_taxes" class="form-control"
                     placeholder="Enter Annual Property Taxes (e.g., 2500)"
                     data-error-id="annual_property_taxes_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -246,7 +246,7 @@
                 </label>
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
-                    <input type="text" wire:model="annual_cdd_fee" class="form-control" style="padding-left: 24px;"
+                    <input type="text" wire:model="annual_cdd_fee" class="form-control"
                         placeholder="Enter Annual CDD Fee (e.g., 1800)"
                         data-error-id="annual_cdd_fee_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -284,7 +284,7 @@
                 </label>
                 <div class="input-cover">
                     <span class="input-group-text-seller">$</span>
-                    <input type="text" wire:model="special_assessment_amount" class="form-control" style="padding-left: 24px;"
+                    <input type="text" wire:model="special_assessment_amount" class="form-control"
                         placeholder="Enter Special Assessment Amount (e.g., 4500)"
                         data-error-id="special_assessment_amount_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -396,7 +396,7 @@
                         </label>
                         <div class="input-cover">
                             <span class="input-group-text-seller">$</span>
-                            <input type="text" wire:model="association_fee_amount" class="form-control" style="padding-left: 24px;"
+                            <input type="text" wire:model="association_fee_amount" class="form-control"
                                 placeholder="Enter Association Fee Amount (e.g., 350)"
                                 data-error-id="association_fee_amount_error"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
@@ -483,7 +483,7 @@
                     </label>
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 24px;"
+                        <input type="text" wire:model="association_application_fee" class="form-control"
                             placeholder="Enter Association Application Fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">

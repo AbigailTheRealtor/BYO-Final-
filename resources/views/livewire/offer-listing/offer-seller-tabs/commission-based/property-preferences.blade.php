@@ -396,46 +396,6 @@
 
     $business_assets = $business_assets ?? [];
 @endphp
-<style>
-
-    /* Normalize Select2 multiselect height and width to match form-control reference fields (e.g. Total Acreage) */
-    .input-cover.has-select-icon .select2-container {
-        width: 100% !important;
-    }
-
-    .input-cover.has-select-icon .select2-container .select2-selection--multiple {
-        min-height: 50px;
-        padding: 6px 8px 6px 44px !important;
-    }
-
-    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
-        min-height: 50px;
-        padding-left: 44px !important;
-        padding-bottom: 0 !important;
-    }
-
-    .input-cover.has-select-icon .select2 .selection .select2-selection--multiple input {
-        font-size: 1rem !important;
-    }
-
-    /* Property Style single-select: match form-control height and clear icon overlap */
-    .input-cover.has-select-icon .select2-container .select2-selection--single {
-        height: 50px !important;
-        line-height: 50px !important;
-        padding-left: 44px !important;
-    }
-    .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__rendered {
-        line-height: 50px !important;
-        padding-left: 4px !important;
-    }
-    .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__arrow {
-        height: 50px !important;
-        top: 0 !important;
-    }
-    .input-cover.has-select-icon .select2-container .select2-selection--single .select2-selection__placeholder {
-        color: #6c757d;
-    }
-</style>
 <h3>Property Details </h3>
 <div class="alert alert-info bg-light-info border-info mb-4">
     <div class="d-flex align-items-center">

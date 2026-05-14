@@ -112,20 +112,6 @@
     ];
 @endphp
 
-<style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
-
-    .input-cover .select2 .selection .select2-selection--multiple {
-        padding-left: 44px !important;
-        padding-bottom: 0 !important;
-    }
-
-    .input-cover .select2 .selection .select2-selection--multiple input {
-        font-size: 1rem !important;
-    }
-</style>
 
 <input type="hidden" wire:model="condition_prop_buyer_json">
 <input type="hidden" wire:model.defer="number_of_unit_type_json">
@@ -1323,7 +1309,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <input type="text" wire:model.defer="minimum_cap_rate" class="form-control" style="padding-left: 12px;"
+                <input type="text" wire:model.defer="minimum_cap_rate" class="form-control percentage-value-set"
                     placeholder="Enter minimum cap rate needed (e.g., 6.5)"
                     data-error-id="minimum_cap_rate_error" oninput="validateInput(this)"
                     onblur="reformatNumber(this)" onpaste="handlePaste(event)">

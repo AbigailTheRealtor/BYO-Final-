@@ -1,16 +1,4 @@
 <style>
-    .input-cover .input-icon2 {
-        z-index: 1 !important;
-    }
-
-    .input-cover .select2 .selection .select2-selection--multiple {
-        padding-left: 44px !important;
-        padding-bottom: 0 !important;
-    }
-
-    .input-cover .select2 .selection .select2-selection--multiple input {
-        font-size: 1rem !important;
-    }
 
     /* Ensure input-cover properly contains absolutely positioned icons */
     #offered_financing_wrapper {

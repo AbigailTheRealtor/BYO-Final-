@@ -53,43 +53,10 @@
             font-weight: bold;
         }
 
-        .form-control {
-            min-height: 50px;
-        }
-
-        .input-cover .form-control {
-            padding-left: 50px;
-            /* Ensure the input text doesn't overlap the icon */
-            width: 100%;
-            /* Ensure the input field takes full width */
-        }
-
         .nav-tabs .nav-link.active {
             background-color: #049399 !important;
             color: white !important;
             border-color: #049399 !important;
-        }
-
-        .input-cover {
-            position: relative;
-            display: flex;
-            align-items: center;
-            /* Center the icon vertically */
-        }
-
-        .input-cover .input-icon {
-            position: absolute;
-            left: 10px;
-            font-size: 25px;
-            color: #11b7cf;
-            pointer-events: none;
-            top: 50%;
-            transform: translateY(-50%);
-            /* Center the icon vertically */
-        }
-
-        .has-icon {
-            padding-left: 40px;
         }
 
         .error {
@@ -243,30 +210,6 @@
             display: block;
         }
 
-        /* Style for the select2 dropdown */
-        .select2-container--default .select2-results>.select2-results__options {
-            max-height: 300px;
-            /* Reduced from default 400px */
-            overflow-y: auto;
-        }
-
-        /* Style for individual options */
-        .select2-container--default .select2-results__option {
-            padding: 6px 12px;
-            /* Reduced padding */
-            font-size: 0.9rem;
-            /* Slightly smaller font */
-            line-height: 1.3;
-            /* Tighter line spacing */
-        }
-
-        /* Style for the dropdown container */
-        .select2-container--default .select2-selection--multiple {
-            min-height: 38px;
-            /* Standard form control height */
-            padding: 2px 8px;
-        }
-
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -286,30 +229,6 @@
 
         .user-type-icon {
             color: #0ce7ef;
-        }
-
-        /* Dollar sign prefix styling for currency inputs */
-        .input-group-text-seller {
-            display: flex;
-            align-items: center;
-            padding: 0.7rem 0.75rem;
-            font-size: 1rem;
-            font-weight: 400;
-            line-height: 1.5;
-            color: #212529;
-            text-align: center;
-            white-space: nowrap;
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            border-radius: .375rem;
-        }
-
-        .input-group-text-seller+input.form-control {
-            padding-left: 8px;
-        }
-
-        .percentage-value-set {
-            padding-left: 9px !important;
         }
     </style>
 @endpush

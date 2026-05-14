@@ -53,43 +53,10 @@
             font-weight: bold;
         }
 
-        .form-control {
-            min-height: 50px;
-        }
-
-        .input-cover .form-control {
-            padding-left: 50px;
-            /* Ensure the input text doesn't overlap the icon */
-            width: 100%;
-            /* Ensure the input field takes full width */
-        }
-
         .nav-tabs .nav-link.active {
             background-color: #049399 !important;
             color: white !important;
             border-color: #049399 !important;
-        }
-
-        .input-cover {
-            position: relative;
-            display: flex;
-            align-items: center;
-            /* Center the icon vertically */
-        }
-
-        .input-cover .input-icon {
-            position: absolute;
-            left: 10px;
-            font-size: 25px;
-            color: #11b7cf;
-            pointer-events: none;
-            top: 50%;
-            transform: translateY(-50%);
-            /* Center the icon vertically */
-        }
-
-        .has-icon {
-            padding-left: 40px;
         }
 
         .error {
@@ -243,43 +210,6 @@
             display: block;
         }
 
-        /* Style for the select2 dropdown */
-        .select2-container--default .select2-results>.select2-results__options {
-            max-height: 300px;
-            /* Reduced from default 400px */
-            overflow-y: auto;
-        }
-
-        /* Style for individual options */
-        .select2-container--default .select2-results__option {
-            padding: 6px 12px;
-            /* Reduced padding */
-            font-size: 0.9rem;
-            /* Slightly smaller font */
-            line-height: 1.3;
-            /* Tighter line spacing */
-        }
-
-        /* Style for the dropdown container */
-        .select2-container--default .select2-selection--multiple {
-            min-height: 38px;
-            /* Standard form control height */
-            padding: 2px 8px;
-        }
-
-        .input-cover .input-icon2 {
-            z-index: 1 !important;
-        }
-
-        .input-cover .select2 .selection .select2-selection--multiple {
-            padding-left: 44px !important;
-            padding-bottom: 0 !important;
-        }
-
-        .input-cover .select2 .selection .select2-selection--multiple input {
-            font-size: 1rem !important;
-        }
-
         @media (max-width: 768px) {
             .status-text {
                 font-size: 0.9rem;
@@ -290,11 +220,6 @@
                 font-size: 1rem;
             }
         }
-
-        /* Select2 placeholder styling */
-        .select2-container .select2-search__field::placeholder { color: #6c757d; opacity: 1; }
-        .select2-container .select2-search__field { min-width: 120px; }
-        .select2-selection__placeholder { color: #6c757d; }
     </style>
 @endpush
 

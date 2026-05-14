@@ -491,7 +491,7 @@
                     </label>
                     <div class="input-cover">
                         <span class="input-group-text-seller">$</span>
-                        <input type="text" wire:model="association_application_fee" class="form-control" style="padding-left: 24px;"
+                        <input type="text" wire:model="association_application_fee" class="form-control"
                             placeholder="Enter Association Application Fee (e.g., 150)"
                             data-error-id="association_application_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">

@@ -32,8 +32,8 @@
 
 
     <!-- Load compiled CSS & JS -->
-    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-    <script src="{{ asset('js/app.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ mix('css/app.css') }}">
+    <script src="{{ mix('js/app.js') }}" defer></script>
 
     {{-- Bootstrap JS is loaded in the body at line 229, not here to avoid duplicate loading --}}
 
