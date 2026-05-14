@@ -61,7 +61,7 @@
                     <label class="fw-bold form-label">City <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_city"
                            class="form-control @error('client_property_city') is-invalid @enderror"
-                           placeholder="Enter city"
+                           placeholder="Enter city (e.g., Tampa)"
                            value="{{ old('client_property_city') }}" required>
                     @error('client_property_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -77,7 +77,7 @@
                     <label class="fw-bold form-label">ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_zip"
                            class="form-control @error('client_property_zip') is-invalid @enderror"
-                           placeholder="Enter ZIP (e.g., 33701)"
+                           placeholder="Enter ZIP Code (e.g., 33602)"
                            value="{{ old('client_property_zip') }}" required>
                     @error('client_property_zip')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -96,7 +96,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="desired_monthly_rent"
                                class="form-control @error('desired_monthly_rent') is-invalid @enderror"
-                               placeholder="Enter desired monthly rent (e.g., 2,200)"
+                               placeholder="Enter desired monthly rent (e.g., 2500)"
                                value="{{ old('desired_monthly_rent') }}">
                         @error('desired_monthly_rent')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -133,7 +133,7 @@
                     <select name="desired_lease_term" id="desired_lease_term"
                             class="form-control @error('desired_lease_term') is-invalid @enderror"
                             onchange="landlordToggleLeaseTerm(this.value)">
-                        <option value="">-- Select lease term --</option>
+                        <option value="">Select</option>
                         <option value="Month-to-Month" {{ old('desired_lease_term') === 'Month-to-Month' ? 'selected' : '' }}>Month-to-Month</option>
                         <option value="3 Months" {{ old('desired_lease_term') === '3 Months' ? 'selected' : '' }}>3 Months</option>
                         <option value="6 Months" {{ old('desired_lease_term') === '6 Months' ? 'selected' : '' }}>6 Months</option>

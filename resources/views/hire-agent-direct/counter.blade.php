@@ -386,8 +386,8 @@
                             $role === 'seller' && $isCommercialSvc  => 'e.g., Investor Prospect List, Property Offering Memorandum Outline, Broker Outreach Script, Tenant Mix Strategy Notes',
                             $role === 'buyer'  && !$isCommercialSvc => 'e.g., Off-Market Outreach Letter, Neighborhood Comparison Summary, School Zone Research Summary, Commute Area Shortlist',
                             $role === 'buyer'  && $isCommercialSvc  => 'e.g., Site Selection Matrix, Trade Area Snapshot, Parking Demand Review, Business Use Fit Summary',
-                            $role === 'landlord' && !$isCommercialSvc => 'e.g., Rental Pricing Snapshot, Tenant Persona Summary, Local Employer Outreach List, Move-In Readiness Checklist',
-                            $role === 'landlord' && $isCommercialSvc  => 'e.g., Tenant Prospect List, Use Compatibility Notes, Broker Outreach Script, Leasing Flyer Outline',
+                            $role === 'landlord' && !$isCommercialSvc => 'Enter additional services requested (e.g., Rental Pricing Snapshot, Tenant Persona Summary, Local Employer Outreach List, Move-In Readiness Checklist)',
+                            $role === 'landlord' && $isCommercialSvc  => 'Enter additional services requested (e.g., Tenant Prospect List, Use Compatibility Notes, Broker Outreach Script, Leasing Flyer Outline)',
                             $role === 'tenant' && !$isCommercialSvc => 'e.g., Rental Application Strategy, Neighborhood Fit Summary, Commute Zone Shortlist, Pet-Friendly Housing Notes',
                             default => 'e.g., Space Requirement Summary, Trade Area Snapshot, LOI Question List, Business Use Fit Notes',
                         };
@@ -1353,7 +1353,8 @@ function switchTab(tabBtnId) {
 
 function counterFormSubmit(form) {
     var btn = document.getElementById('counter-submit-btn');
-    if (!btn || btn.disabled) return false;
+    // Prevent double-submit only — a missing button must never block the POST.
+    if (btn && btn.disabled) return false;
     // Strip commas from all $-prefixed currency text inputs before submission
     document.querySelectorAll('#counter-form .input-group input[type="text"]').forEach(function(inp) {
         var grp = inp.closest('.input-group');
@@ -1365,8 +1366,10 @@ function counterFormSubmit(form) {
             inp.value = inp.value.replace(/,/g, '');
         }
     });
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
+    }
     return true;
 }
 
