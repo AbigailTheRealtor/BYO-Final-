@@ -78,7 +78,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Timeline to Purchase</label>
                     <select name="timeline_to_purchase" class="form-control @error('timeline_to_purchase') is-invalid @enderror">
-                        <option value="">-- Select timeline --</option>
+                        <option value="">Select</option>
                         <option value="As soon as possible" {{ old('timeline_to_purchase') === 'As soon as possible' ? 'selected' : '' }}>As soon as possible</option>
                         <option value="1–3 months" {{ old('timeline_to_purchase') === '1–3 months' ? 'selected' : '' }}>1–3 months</option>
                         <option value="3–6 months" {{ old('timeline_to_purchase') === '3–6 months' ? 'selected' : '' }}>3–6 months</option>
@@ -100,7 +100,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Pre-Approval Status</label>
                     <select name="pre_approval_status" class="form-control @error('pre_approval_status') is-invalid @enderror">
-                        <option value="">-- Select status --</option>
+                        <option value="">Select</option>
                         <option value="Pre-approved" {{ old('pre_approval_status') === 'Pre-approved' ? 'selected' : '' }}>Pre-approved</option>
                         <option value="Pre-qualified" {{ old('pre_approval_status') === 'Pre-qualified' ? 'selected' : '' }}>Pre-qualified</option>
                         <option value="In process" {{ old('pre_approval_status') === 'In process' ? 'selected' : '' }}>In process</option>
@@ -111,7 +111,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Cash Buyer?</label>
                     <select name="cash_buyer" class="form-control @error('cash_buyer') is-invalid @enderror">
-                        <option value="">-- Select --</option>
+                        <option value="">Select</option>
                         <option value="Yes" {{ old('cash_buyer') === 'Yes' ? 'selected' : '' }}>Yes</option>
                         <option value="No" {{ old('cash_buyer') === 'No' ? 'selected' : '' }}>No</option>
                     </select>

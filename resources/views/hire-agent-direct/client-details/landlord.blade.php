@@ -120,7 +120,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Occupancy Status</label>
                     <select name="occupancy_status" class="form-control @error('occupancy_status') is-invalid @enderror">
-                        <option value="">-- Select status --</option>
+                        <option value="">Select</option>
                         <option value="Vacant – ready now" {{ old('occupancy_status') === 'Vacant – ready now' ? 'selected' : '' }}>Vacant – ready now</option>
                         <option value="Occupied – tenant leaving soon" {{ old('occupancy_status') === 'Occupied – tenant leaving soon' ? 'selected' : '' }}>Occupied – tenant leaving soon</option>
                         <option value="Owner-occupied" {{ old('occupancy_status') === 'Owner-occupied' ? 'selected' : '' }}>Owner-occupied</option>
@@ -131,7 +131,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Flexibility</label>
                     <select name="flexibility" class="form-control @error('flexibility') is-invalid @enderror">
-                        <option value="">-- Select flexibility --</option>
+                        <option value="">Select</option>
                         <option value="Very flexible" {{ old('flexibility') === 'Very flexible' ? 'selected' : '' }}>Very flexible</option>
                         <option value="Somewhat flexible" {{ old('flexibility') === 'Somewhat flexible' ? 'selected' : '' }}>Somewhat flexible</option>
                         <option value="Not flexible – firm on terms" {{ old('flexibility') === 'Not flexible – firm on terms' ? 'selected' : '' }}>Not flexible – firm on terms</option>

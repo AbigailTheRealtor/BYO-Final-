@@ -104,7 +104,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Timeline to Sell</label>
                     <select name="timeline_to_sell" class="form-control @error('timeline_to_sell') is-invalid @enderror">
-                        <option value="">-- Select timeline --</option>
+                        <option value="">Select</option>
                         <option value="As soon as possible" {{ old('timeline_to_sell') === 'As soon as possible' ? 'selected' : '' }}>As soon as possible</option>
                         <option value="1–3 months" {{ old('timeline_to_sell') === '1–3 months' ? 'selected' : '' }}>1–3 months</option>
                         <option value="3–6 months" {{ old('timeline_to_sell') === '3–6 months' ? 'selected' : '' }}>3–6 months</option>
@@ -125,7 +125,7 @@
             <div class="form-group mb-0">
                 <label class="fw-bold form-label">Motivation Level</label>
                 <select name="motivation_level" class="form-control @error('motivation_level') is-invalid @enderror">
-                    <option value="">-- Select motivation level --</option>
+                    <option value="">Select</option>
                     <option value="Must sell immediately" {{ old('motivation_level') === 'Must sell immediately' ? 'selected' : '' }}>Must sell immediately</option>
                     <option value="Motivated – prefer to sell soon" {{ old('motivation_level') === 'Motivated – prefer to sell soon' ? 'selected' : '' }}>Motivated – prefer to sell soon</option>
                     <option value="Flexible – willing to wait for the right offer" {{ old('motivation_level') === 'Flexible – willing to wait for the right offer' ? 'selected' : '' }}>Flexible – willing to wait for the right offer</option>

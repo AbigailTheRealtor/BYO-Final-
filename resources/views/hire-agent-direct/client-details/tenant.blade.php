@@ -78,7 +78,7 @@
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Desired Lease Length</label>
                     <select name="desired_lease_length" class="form-control @error('desired_lease_length') is-invalid @enderror">
-                        <option value="">-- Select length --</option>
+                        <option value="">Select</option>
                         <option value="Month-to-month" {{ old('desired_lease_length') === 'Month-to-month' ? 'selected' : '' }}>Month-to-month</option>
                         <option value="6 months" {{ old('desired_lease_length') === '6 months' ? 'selected' : '' }}>6 months</option>
                         <option value="12 months" {{ old('desired_lease_length') === '12 months' ? 'selected' : '' }}>12 months</option>

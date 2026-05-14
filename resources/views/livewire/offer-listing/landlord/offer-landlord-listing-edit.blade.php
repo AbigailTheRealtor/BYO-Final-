@@ -1336,6 +1336,7 @@ $tenantPays = [
             }
 
             addIconsToInputs();
+            setTimeout(function() { addIconsToInputs(); }, 0);
             checkRepresentationStatus();
         });
 
@@ -1397,9 +1398,14 @@ $tenantPays = [
         window.addEventListener('draftLoaded', function() {
             console.log('[DraftLoaded] Edit event received - syncing select values');
             setTimeout(function() {
+                if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                } else {
+                    initializeFullService();
+                }
                 syncSelectValues();
                 addIconsToInputs();
-            }, 100);
+            }, 50);
         });
 
         function removeWizardEventListeners() {
@@ -1434,16 +1440,13 @@ $tenantPays = [
             addIconsToInputs();
         }
 
-        function initializeFullService() {
+        document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+            tabEl.addEventListener('shown.bs.tab', function(e) {
+                setTimeout(function() { addIconsToInputs(); }, 0);
+            });
+        });
 
-            if (!document._landlordEditTabNavListenerAdded) {
-                document._landlordEditTabNavListenerAdded = true;
-                document.addEventListener('shown.bs.tab', function(e) {
-                    if (e.target.closest('#myTab')) {
-                        addIconsToInputs();
-                    }
-                });
-            }
+        function initializeFullService() {
 
             if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
                 $('#property_items').select2({
@@ -2516,6 +2519,9 @@ $tenantPays = [
 
         document.addEventListener('livewire:load', function() {
             addIconsToInputs();
+            setTimeout(addIconsToInputs, 150);
+            setTimeout(addIconsToInputs, 400);
+            setTimeout(addIconsToInputs, 800);
         });
 
         Livewire.hook('message.processed', () => {
