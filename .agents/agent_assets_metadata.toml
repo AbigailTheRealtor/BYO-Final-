@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "nghOoT6lVqdi1A6LlG702"
+uri = "file://attached_assets/qa_sale_terms_icons.jpeg"
+type = "image"
+title = "Seller — Sale Terms tab: icon visible on Special Sale Provision multi-select"

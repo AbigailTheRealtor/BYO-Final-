@@ -56,9 +56,16 @@
     padding-left: 40px;
 }
 
-/* z-index fix for icon2 (used with Select2 multi-select) */
+/* z-index fix for icon2 (used with Select2 multi-select in hire flows) */
 #wizard-form-container .input-cover .input-icon2 {
     z-index: 1 !important;
+}
+
+/* z-index fix for input-icon inside has-select-icon wrappers (offer-listing flows).
+   Select2's .select2-container has position:relative and appears after the <i> in
+   DOM order, so it paints on top without this rule. */
+#wizard-form-container .input-cover.has-select-icon .input-icon {
+    z-index: 1;
 }
 
 /* Right-side icon positioning (tenant flow) */
