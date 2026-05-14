@@ -2267,6 +2267,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $dlt.off('change.ltsSync').on('change.ltsSync', function() {
                     var selectedValues = $(this).val() || [];

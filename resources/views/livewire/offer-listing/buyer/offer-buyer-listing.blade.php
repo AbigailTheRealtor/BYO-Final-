@@ -3192,12 +3192,15 @@
                 }
 
                 var placeholder = $el.attr('data-placeholder') || 'Select';
-
-                $el.select2({
+                var opts = {
                     placeholder: placeholder,
                     allowClear: true,
                     width: '100%'
-                });
+                };
+                if ($el.hasClass('select2-multiple')) {
+                    opts.closeOnSelect = false;
+                }
+                $el.select2(opts);
             });
         }
 

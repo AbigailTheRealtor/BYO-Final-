@@ -2713,7 +2713,7 @@ $lease_types = [
                 if ($el.hasClass('select2-hidden-accessible')) {
                     $el.select2('destroy');
                 }
-                $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                $el.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                 $el.off('change.unitTypeBuyer').on('change.unitTypeBuyer', function() {
                     let selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
@@ -2765,6 +2765,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
             });
             var lwVals = @this.get('property_items') || [];
             if (lwVals.length) {
@@ -2950,7 +2951,7 @@ $lease_types = [
             if ($assetSel.hasClass('select2-hidden-accessible')) {
                 $assetSel.select2('destroy');
             }
-            $assetSel.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            $assetSel.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             $assetSel.off('change.assetsBuyer').on('change.assetsBuyer', function() {
                 const vals = $assetSel.val() || [];
                 debouncedSet('assets', vals);
@@ -3248,6 +3249,7 @@ $lease_types = [
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 })
                 .on('select2:select select2:unselect', function(e) {
                     const vals = $(this).val() || [];
@@ -3504,6 +3506,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
             });
 
             var lwValues = @this.get('lease_for') || [];

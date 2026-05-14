@@ -1402,6 +1402,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#property_items').off('change.piSync').on('change.piSync', function(e) {
@@ -1424,6 +1425,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
@@ -1445,6 +1447,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -1463,6 +1466,7 @@
                         placeholder: "Select unit types",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
 
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
@@ -1650,6 +1654,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#view_preference').on('change', function() {
@@ -1681,6 +1686,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 }).on('change', function() {
                     let selectedValues = $(this).val() || [];
                     debouncedSet('sale_provision', selectedValues);
@@ -1696,6 +1702,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 }).on('change', function() {
                     // Skip Livewire sync if we're loading draft data (prevents updatedOfferedFinancing reset)
                     if (window.financingSyncInProgress) {

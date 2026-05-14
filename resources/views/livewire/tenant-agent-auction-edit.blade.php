@@ -2086,7 +2086,7 @@
                 $exEl.data('exchange-change-bound', false);
             }
             if (!$exEl.hasClass('select2-hidden-accessible')) {
-                $exEl.select2({ placeholder: "Select", allowClear: true });
+                $exEl.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             }
             var saved = [];
             try { saved = JSON.parse($exEl.attr('data-selected') || '[]'); } catch(e) {}
@@ -2640,6 +2640,8 @@
                 $pi.select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
                 });
                 var lwVals = @this.get('property_items') || [];
                 if (lwVals.length) {
@@ -2867,7 +2869,7 @@
                 if ($sellerAssetsSelect.hasClass('select2-hidden-accessible')) {
                     $sellerAssetsSelect.select2('destroy');
                 }
-                $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true });
+                $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                 const _sellerSavedAssets = @json(is_array($business_assets) ? $business_assets : []);
                 if (Array.isArray(_sellerSavedAssets) && _sellerSavedAssets.length > 0) {
                     $sellerAssetsSelect.val(_sellerSavedAssets).trigger('change.select2');
@@ -2924,7 +2926,8 @@
                 }
                 $nn.select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        closeOnSelect: false,
                     })
                     .on('select2:select select2:unselect', function(e) {
                         const vals = $(this).val() || [];
@@ -3152,7 +3155,9 @@
                 if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                     $('#view_preference').select2({
                         placeholder: "Select",
-                        allowClear: true
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false,
                     });
 
                     $('#view_preference').on('change', function() {
@@ -3417,7 +3422,9 @@
 
                 $sel.select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
                 });
 
                 var lwValues = @this.get('lease_for') || [];
