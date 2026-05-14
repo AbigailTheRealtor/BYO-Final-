@@ -89,10 +89,6 @@
     overflow-wrap: break-word;
     color: #1e293b;
 }
-.sol-view-page h6.fw-semibold {
-    color: #334155;
-    font-size: 0.95rem;
-}
 
 /* Photo thumbnails */
 .sol-view-page .photo-thumb {
@@ -241,16 +237,23 @@
     white-space: nowrap;
     flex-shrink: 0;
 }
-.sol-view-page .sol-hero-ctas .btn-primary {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-    color: #fff;
+.sol-view-page .sol-hero-ctas .btn-primary,
+.sol-view-page button.btn.btn-primary.sol-hero-cta-btn {
+    background-color: #0d6efd !important;
+    border-color: #0d6efd !important;
+    color: #fff !important;
+}
+.sol-view-page .sol-hero-ctas .btn-primary i,
+.sol-view-page button.btn.btn-primary.sol-hero-cta-btn i {
+    color: #fff !important;
 }
 .sol-view-page .sol-hero-ctas .btn-primary:hover,
-.sol-view-page .sol-hero-ctas .btn-primary:focus {
-    background-color: #0b5ed7;
-    border-color: #0a58ca;
-    color: #fff;
+.sol-view-page .sol-hero-ctas .btn-primary:focus,
+.sol-view-page button.btn.btn-primary.sol-hero-cta-btn:hover,
+.sol-view-page button.btn.btn-primary.sol-hero-cta-btn:focus {
+    background-color: #0b5ed7 !important;
+    border-color: #0a58ca !important;
+    color: #fff !important;
 }
 
 /* ---- Smooth-scroll nav tabs ---- */
@@ -430,11 +433,31 @@
 .sol-view-page h6.fw-bold {
     color: #1e293b;
     font-size: 0.97rem;
-    font-weight: 700;
+    font-weight: 600;
     letter-spacing: 0;
     font-stretch: normal;
     font-family: inherit;
     text-transform: none;
+}
+
+/* ---- Row spacing — slightly more breathing room in card bodies ---- */
+.sol-view-page .section-card .card-body .row.mb-2 {
+    margin-bottom: 0.65rem !important;
+}
+
+/* ---- Mobile bar: highlight the Submit Offer button ---- */
+.sol-mobile-bar-btn.sol-mobile-bar-offer {
+    background: #2563eb !important;
+    color: #fff !important;
+    border-radius: 10px;
+}
+.sol-mobile-bar-btn.sol-mobile-bar-offer i {
+    color: #fff !important;
+}
+.sol-mobile-bar-btn.sol-mobile-bar-offer:hover,
+.sol-mobile-bar-btn.sol-mobile-bar-offer:active {
+    background: #1d4ed8 !important;
+    color: #fff !important;
 }
 
 /* ---- Hero carousel overlay controls ---- */
@@ -2382,7 +2405,7 @@
 
 {{-- ===== MOBILE STICKY BOTTOM BAR ===== --}}
 <div class="sol-mobile-bar d-lg-none">
-    <button class="sol-mobile-bar-btn" data-bs-toggle="modal" data-bs-target="#solOfferModal">
+    <button class="sol-mobile-bar-btn sol-mobile-bar-offer" data-bs-toggle="modal" data-bs-target="#solOfferModal">
         <i class="fa-solid fa-file-signature"></i>
         <span>Offer</span>
     </button>
