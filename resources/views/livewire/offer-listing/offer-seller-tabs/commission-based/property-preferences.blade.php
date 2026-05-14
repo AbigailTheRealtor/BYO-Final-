@@ -398,7 +398,18 @@
 @endphp
 <style>
 
+    /* Normalize Select2 multiselect height and width to match form-control reference fields (e.g. Total Acreage) */
+    .input-cover.has-select-icon .select2-container {
+        width: 100% !important;
+    }
+
+    .input-cover.has-select-icon .select2-container .select2-selection--multiple {
+        min-height: 50px;
+        padding: 6px 8px 6px 44px !important;
+    }
+
     .input-cover.has-select-icon .select2 .selection .select2-selection--multiple {
+        min-height: 50px;
         padding-left: 44px !important;
         padding-bottom: 0 !important;
     }
@@ -2702,7 +2713,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="water_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Describe water availability (e.g., well required, utility nearby, extension needed)">
+                data-icon="fa-solid fa-pen" placeholder="Enter water availability (e.g., Well Required, Utility Nearby, Extension Needed)">
         </div>
     </div>
     @endif
@@ -2728,7 +2739,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="sewer_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Describe sewer availability (e.g., septic required, city sewer nearby)">
+                data-icon="fa-solid fa-pen" placeholder="Enter sewer availability (e.g., Septic Required, City Sewer Nearby)">
         </div>
     </div>
     @endif
@@ -2754,7 +2765,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="electric_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Describe electric availability (e.g., solar only, generator required)">
+                data-icon="fa-solid fa-pen" placeholder="Enter electric availability (e.g., Solar Only, Generator Required)">
         </div>
     </div>
     @endif
@@ -2780,7 +2791,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="gas_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Describe gas availability (e.g., propane only, not available)">
+                data-icon="fa-solid fa-pen" placeholder="Enter gas availability (e.g., Propane Only, Not Available)">
         </div>
     </div>
     @endif
@@ -2806,7 +2817,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="telecom_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Describe telecom availability (e.g., satellite only, fiber nearby)">
+                data-icon="fa-solid fa-pen" placeholder="Enter telecom availability (e.g., Satellite Only, Fiber Nearby)">
         </div>
     </div>
     @endif

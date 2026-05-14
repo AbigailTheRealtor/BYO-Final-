@@ -279,6 +279,20 @@
             padding-left: 44px !important;
         }
 
+        .input-cover .select2 .selection .select2-selection--multiple {
+            padding-left: 44px !important;
+            padding-bottom: 0 !important;
+        }
+
+        .input-cover.has-select-icon .select2-container {
+            width: 100% !important;
+        }
+
+        .input-cover.has-select-icon .select2-container .select2-selection--multiple {
+            min-height: 50px;
+            padding: 6px 8px 6px 44px !important;
+        }
+
         .seller-compact-textarea {
             min-height: 42px !important;
             height: 42px;
@@ -1118,10 +1132,17 @@
                                 <button type="button" class="btn btn-secondary wizard-step-back">Back</button>
                             </div>
                             <div>
+                                @if($isDraft)
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('saveDraft');" wire:loading.attr="disabled" wire:target="saveDraft">
+                                    <span wire:loading.remove wire:target="saveDraft"><i class="fa-solid fa-save me-1"></i> Save Draft</span>
+                                    <span wire:loading wire:target="saveDraft">Saving...</span>
+                                </button>
+                                @else
                                 <button type="button" class="btn btn-outline-primary me-2" onclick="syncAllSelect2BeforeSave(); @this.call('update');" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update"><i class="fa-solid fa-save me-1"></i> Save Edit</span>
                                     <span wire:loading wire:target="update">Saving...</span>
                                 </button>
+                                @endif
 
                                 <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
@@ -1181,6 +1202,7 @@
             _s2Timers = {};
             var regularFields = {
                 property_items: '#property_items',
+                property_style_select: '#property_style_select',
                 non_negotiable_amenities: '#non_negotiable_amenities',
                 appliances: '#appliances',
                 exchange_item: '#exchange_item',
@@ -1317,7 +1339,7 @@
                 selectors.forEach(function(selector) {
                     var $el = $(selector);
                     if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: field.placeholder, allowClear: true, width: '100%' });
+                        $el.select2({ placeholder: field.placeholder, allowClear: true, width: '100%', closeOnSelect: false });
                     }
                     if ($el.length) {
                         var current = $el.val() || [];
@@ -1406,13 +1428,13 @@
         function initializeFullService() {
 
 
-            if ($('#property_items').length && !$('#property_items').hasClass('select2-hidden-accessible')) {
-                $('#property_items').select2({
-                    placeholder: "Select property style",
+            if ($('#property_style_select').length && !$('#property_style_select').hasClass('select2-hidden-accessible')) {
+                $('#property_style_select').select2({
+                    placeholder: "Select",
                     allowClear: true,
                     width: '100%',
                 });
-                $('#property_items').on('change', function(e) {
+                $('#property_style_select').on('change', function(e) {
                     let selectedValues = $(this).val();
                     debouncedSet('property_items', selectedValues);
                 });
@@ -1423,6 +1445,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
@@ -1431,7 +1454,7 @@
             }
 
             if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
-                $('#appliances').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                $('#appliances').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             }
             if ($('#appliances').length) {
                 var savedAppliances = @this.get('appliances') || [];
@@ -1449,6 +1472,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 var savedExchangeItems = @this.get('exchange_item') || [];
                 if (savedExchangeItems.length > 0) {
@@ -1471,6 +1495,7 @@
                     placeholder: "Select included assets",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 var savedBusinessAssets = @this.get('business_assets') || [];
                 if (savedBusinessAssets.length > 0) {
@@ -1492,20 +1517,20 @@
 
             if ($('#offered_financing').length) {
                 if (!$('#offered_financing').hasClass('select2-hidden-accessible')) {
-                    $('#offered_financing').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                    $('#offered_financing').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                 }
                 applyFinancingVisibility();
             }
 
             if ($('#sale_provision').length) {
                 if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
-                    $('#sale_provision').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                    $('#sale_provision').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                 }
                 applyProvisionVisibility();
             }
 
             if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
-                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true, width: '100%' });
+                $('#association_fee_includes').select2({ placeholder: "Select what the fee includes", allowClear: true, width: '100%', closeOnSelect: false });
             }
             if ($('#association_fee_includes').length) {
                 var _fiInit = $('#association_fee_includes').val() || [];
@@ -1513,7 +1538,7 @@
             }
 
             if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
-                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true, width: '100%' });
+                $('#association_amenities').select2({ placeholder: "Select amenities", allowClear: true, width: '100%', closeOnSelect: false });
             }
             if ($('#association_amenities').length) {
                 var _amInit = $('#association_amenities').val() || [];
@@ -1687,6 +1712,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();
@@ -2338,9 +2364,17 @@
             setTimeout(addIconsToInputs, 800);
         });
 
-        // Re-inject icons after draft data loads
+        // Re-inject icons and re-bind wizard handlers after draft data loads
         window.addEventListener('draftLoaded', function() {
-            setTimeout(addIconsToInputs, 300);
+            removeWizardEventListeners();
+            setTimeout(function() {
+                if (currentServiceType === 'limited_service') {
+                    initializeLimitedService();
+                } else {
+                    initializeFullService();
+                }
+                addIconsToInputs();
+            }, 50);
         });
 
         document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {

@@ -2076,6 +2076,8 @@ class SellerOfferListingEdit extends Component
             ->first();
         if ($auction) {
 
+            $this->isDraft = (bool)($auction->is_draft);
+
             // Load all metadata fields
             $this->listing_title = $auction->title;
             $this->service_type = $auction->get->service_type;

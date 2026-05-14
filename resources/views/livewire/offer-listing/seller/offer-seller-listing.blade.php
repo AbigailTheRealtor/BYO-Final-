@@ -1648,7 +1648,7 @@
                 selectors.forEach(function(selector) {
                     var $el = $(selector);
                     if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: field.placeholder, allowClear: true, width: '100%' });
+                        $el.select2({ placeholder: field.placeholder, allowClear: true, width: '100%', closeOnSelect: false });
                     }
                     if ($el.length) {
                         var current = $el.val() || [];
@@ -1923,7 +1923,7 @@
             }
 
             if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
-                $('#association_fee_includes').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                $('#association_fee_includes').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             }
             if ($('#association_fee_includes').length) {
                 var fiDataInit = $('#association_fee_includes').val() || [];
@@ -1931,7 +1931,7 @@
             }
 
             if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
-                $('#association_amenities').select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                $('#association_amenities').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             }
             if ($('#association_amenities').length) {
                 var amDataInit = $('#association_amenities').val() || [];
@@ -1943,6 +1943,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1957,6 +1958,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                 }
                 var savedExchangeItems = [];
@@ -1980,7 +1982,7 @@
 
             var $appliances = $('#appliances');
             if ($appliances.length && !$appliances.hasClass('select2-hidden-accessible')) {
-                $appliances.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                $appliances.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             }
 
             _restoreOtherSelectVisibility();
@@ -2144,6 +2146,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
             }
 
