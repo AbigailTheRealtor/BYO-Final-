@@ -1,0 +1,56 @@
+We need a surgical audit/fix for Create Landlord Listing draft hydration icons disappearing.
+
+Issue:
+On /offer-listing/landlord/edit/{id}, when a saved draft is auto-populated, the field icons flash briefly and then disappear. Seller does not do this. Landlord create/draft should behave like Seller.
+
+Important:
+Do NOT make broad refactors.
+Do NOT touch Seller, Buyer, Tenant, Hire Agent, Direct Hire, database, routes, or migrations.
+Only inspect/fix Landlord Offer Listing create/edit Blade/JS files unless you prove another shared file is the direct cause.
+
+Primary files to inspect:
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+- resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php
+- landlord tab partials only if needed
+- compare against Seller create/edit icon behavior
+
+What to audit:
+1. Find every call to addIconsToInputs() in Landlord create and edit.
+2. Find any JS that removes/replaces input wrappers, icons, .input-icon-wrapper, .has-icon, data-icon, or Select2 containers after draft hydration.
+3. Check Livewire hooks:
+   - DOMContentLoaded
+   - livewire:load
+   - Livewire.hook('message.processed')
+   - draftLoaded/custom events
+   - shown.bs.tab
+   - Select2 init/reinit logic
+4. Compare with Seller edit/create to identify why Seller keeps icons after draft load but Landlord does not.
+5. Determine whether icons disappear because:
+   - Livewire morphs the DOM after icons are inserted,
+   - Select2 reinitialization replaces the field markup,
+   - initializeFullService()/initializeSelect2Fields() runs after icon injection,
+   - duplicate icon guard data-icon-rendered prevents re-injection,
+   - or a cleanup function removes wrapper/icon markup.
+
+Required fix:
+- Ensure icons are injected only AFTER draft hydration, Livewire DOM updates, tab activation, and Select2 initialization.
+- Ensure addIconsToInputs() is safely re-run after Livewire updates without duplicating icons.
+- If wrappers are removed/replaced, clear stale data-icon-rendered flags or make the function idempotent.
+- The final result must make icons stay visible on Landlord edit/draft load and after tab switching.
+
+QA required:
+Test /offer-listing/landlord/edit/24 or any real landlord draft.
+Confirm:
+1. Icons do not disappear after draft auto-populates.
+2. Icons remain after waiting 2 seconds.
+3. Icons remain after switching tabs and returning.
+4. Select2 placeholders still display correctly.
+5. Multi-select dropdown behavior is unchanged.
+6. No duplicate icons are created.
+7. Seller behavior is unchanged.
+
+Report back:
+- Exact root cause found.
+- Exact files changed.
+- Why Seller worked but Landlord failed.
+- QA proof for all 7 checks.

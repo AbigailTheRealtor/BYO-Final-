@@ -1649,10 +1649,11 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('property_items', selectedValues);
+                    @this.set('property_items', selectedValues, true);
                 });
             }
 
@@ -1661,10 +1662,11 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('non_negotiable_amenities', selectedValues);
+                    @this.set('non_negotiable_amenities', selectedValues, true);
                 });
             }
 
@@ -1832,10 +1834,11 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#view_preference').on('change', function() {
                         let selectedValues = $(this).val() || [];
-                        @this.set('view_preference', selectedValues);
+                        @this.set('view_preference', selectedValues, true);
                         if (selectedValues.includes('Other')) {
                             $('#other_preferences').show();
                         } else {
@@ -1875,10 +1878,10 @@
                 mlsMultiSelects.forEach(function(cfg) {
                     var $el = $('#' + cfg.id);
                     if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
-                        $el.select2({ placeholder: cfg.placeholder, allowClear: true, width: '100%' });
+                        $el.select2({ placeholder: cfg.placeholder, allowClear: true, width: '100%', closeOnSelect: false });
                         $el.on('change', function() {
                             var vals = $(this).val() || [];
-                            @this.set(cfg.field, vals);
+                            @this.set(cfg.field, vals, true);
                             if (cfg.otherId) {
                                 var $wrapper = $('#' + cfg.otherId);
                                 if ($wrapper.length) {
@@ -2146,10 +2149,11 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#appliances').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
-                        @this.set('appliances', selectedValues);
+                        @this.set('appliances', selectedValues, true);
                         @this.call('updateAppliances', selectedValues);
                         var _appEl = document.getElementById('other_appliances');
                         if (_appEl) _appEl.style.display = selectedValues.includes('Other') ? '' : 'none';
@@ -2169,10 +2173,11 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#rent_includes').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
-                        @this.set('rent_includes', selectedValues);
+                        @this.set('rent_includes', selectedValues, true);
                         @this.call('updateRentIncludes', selectedValues);
                         var $w = $('#other_rent_includes_wrapper');
                         if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
@@ -2189,10 +2194,11 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#terms_of_lease').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
-                        @this.set('terms_of_lease', selectedValues);
+                        @this.set('terms_of_lease', selectedValues, true);
                         var container = document.getElementById('otherLeaseContainer');
                         if (container) {
                             if (selectedValues.includes('Other')) {
@@ -2220,10 +2226,11 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#tenant_pays').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
-                        @this.set('tenant_pays', selectedValues);
+                        @this.set('tenant_pays', selectedValues, true);
                         @this.call('updateTenantPays', selectedValues);
                         var $w = $('#other_tenant_pays_wrapper');
                         if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
@@ -2240,10 +2247,11 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#owner_pays').on('change', function(e) {
                         let selectedValues = $(this).val() || [];
-                        @this.set('owner_pays', selectedValues);
+                        @this.set('owner_pays', selectedValues, true);
                         @this.call('updateOwnerPays', selectedValues);
                         var $w = $('#other_owner_pays_wrapper');
                         if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
@@ -2261,6 +2269,9 @@
                 var $dlt = $('.lease_term_options');
                 if (!$dlt.length) return;
                 if ($dlt.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($dlt.data('select2') && $dlt.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $dlt.select2('destroy');
                 }
                 $dlt.select2({
@@ -2271,7 +2282,7 @@
                 });
                 $dlt.off('change.ltsSync').on('change.ltsSync', function() {
                     var selectedValues = $(this).val() || [];
-                    @this.set('desired_lease_length', selectedValues);
+                    @this.set('desired_lease_length', selectedValues, true);
                     var otherWrapper = document.querySelector('.other_lease_term_wrapper');
                     if (otherWrapper) {
                         otherWrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';
@@ -2316,10 +2327,11 @@
                         placeholder: 'Select',
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#association_fee_includes').on('change', function() {
                         var vals = $(this).val() || [];
-                        @this.set('association_fee_includes', vals);
+                        @this.set('association_fee_includes', vals, true);
                         var otherSection = document.getElementById('hoa-fee-includes-other-section');
                         if (otherSection) {
                             otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
@@ -2332,10 +2344,11 @@
                         placeholder: 'Select',
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#association_amenities').on('change', function() {
                         var vals = $(this).val() || [];
-                        @this.set('association_amenities', vals);
+                        @this.set('association_amenities', vals, true);
                         var otherSection = document.getElementById('hoa-amenities-other-section');
                         if (otherSection) {
                             otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
@@ -3440,6 +3453,9 @@
                 var $el = $(this);
 
                 if ($el.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $el.select2('destroy');
                 }
 

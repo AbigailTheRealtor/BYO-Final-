@@ -2176,8 +2176,12 @@ $lease_types = [
         if (!isVisible && mode !== 'force') return;
 
         if (mode === 'force' && $exEl.hasClass('select2-hidden-accessible')) {
-            $exEl.select2('destroy');
-            $exEl.data('exchange-change-bound', false);
+            var _exOpen = false;
+            try { _exOpen = !!($exEl.data('select2') && $exEl.data('select2').isOpen()); } catch(e) {}
+            if (!_exOpen) {
+                $exEl.select2('destroy');
+                $exEl.data('exchange-change-bound', false);
+            }
         }
         if (!$exEl.hasClass('select2-hidden-accessible')) {
             $exEl.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
@@ -2192,7 +2196,7 @@ $lease_types = [
         }
         if (!$exEl.data('exchange-change-bound')) {
             $exEl.on('change', function(e) {
-                @this.set('exchange_item', $(this).val() || []);
+                debouncedSet('exchange_item', $(this).val() || []);
             });
             $exEl.data('exchange-change-bound', true);
         }
@@ -2589,6 +2593,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
             }).on('change', function() {
                 debouncedSet('sale_provision', $(this).val());
 
@@ -2617,6 +2622,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
             }).on('change', function() {
                 debouncedSet('offered_financing', $(this).val());
 
@@ -2640,10 +2646,11 @@ $lease_types = [
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $ia.off('change.includedAssets').on('change.includedAssets', function() {
                     let selectedValues = $(this).val() || [];
-                    @this.set('business_assets', selectedValues, false);
+                    @this.set('business_assets', selectedValues, true);
                     $('.other_assets').css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
             }
@@ -2686,6 +2693,9 @@ $lease_types = [
         function initConditionSelect2() {
             var $sel = $('.condition_prop_buyer');
             if ($sel.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($sel.data('select2') && $sel.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $sel.select2('destroy');
             }
 
@@ -2719,7 +2729,7 @@ $lease_types = [
             if ($sel.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $sel.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            $sel.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             $sel.off('change.garageLandlordSync').on('change.garageLandlordSync', function() {
                 let selectedValues = $sel.val() || [];
                 debouncedSet('garage_parking_spaces_option', selectedValues);
@@ -2738,6 +2748,9 @@ $lease_types = [
             $('.number_of_unit_type').each(function() {
                 var $el = $(this);
                 if ($el.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $el.select2('destroy');
                 }
                 $el.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
@@ -2786,6 +2799,9 @@ $lease_types = [
             var $pi = $('#property_items');
             if (!$pi.length) return;
             if ($pi.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($pi.data('select2') && $pi.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $pi.select2('destroy');
             }
             $pi.select2({
@@ -2976,6 +2992,9 @@ $lease_types = [
             var $assetSel = $('#assets');
             if (!$assetSel.length) return;
             if ($assetSel.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($assetSel.data('select2') && $assetSel.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $assetSel.select2('destroy');
             }
             $assetSel.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
@@ -3021,6 +3040,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
             });
 
             // Update Livewire property on change
@@ -3041,6 +3061,9 @@ $lease_types = [
                 $nn.prop('disabled', true);
             }
             if ($nn.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($nn.data('select2') && $nn.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $nn.select2('destroy');
             }
             $nn.select2({
@@ -3256,6 +3279,9 @@ $lease_types = [
             var $vp = $('#view_preference');
             if (!$vp.length) return;
             if ($vp.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($vp.data('select2') && $vp.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $vp.select2('destroy');
             }
             $vp.select2({
@@ -3295,7 +3321,7 @@ $lease_types = [
             if ($gps.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $gps.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            $gps.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             $gps.off('change.garageBuyer').on('change.garageBuyer', function() {
                 const vals = $(this).val() || [];
                 debouncedSet('garage_parking_spaces_option', vals);
@@ -3303,7 +3329,7 @@ $lease_types = [
                     $('#other_parking_space_wrapper').removeClass('d-none').show();
                 } else {
                     $('#other_parking_space_wrapper').addClass('d-none').hide();
-                    safeLivewireSet('other_parking_space_wrapper', null);
+                    debouncedSet('other_parking_space_wrapper', null);
                 }
             });
             rehydrateSelect2FromLivewire('#garage_parking_spaces_option', 'garage_parking_spaces_option');
@@ -3328,14 +3354,14 @@ $lease_types = [
             if ($app.hasClass('select2-hidden-accessible')) {
                 return;
             }
-            $app.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+            $app.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
             $app.off('change.appliancesSync').on('change.appliancesSync', function() {
                 let selectedValuesAppliances = $app.val() || [];
                 if (selectedValuesAppliances.includes('Other')) {
                     $('#other_appliances').show();
                 } else {
                     $('#other_appliances').hide();
-                    safeLivewireSet('other_appliances', null);
+                    debouncedSet('other_appliances', null);
                 }
                 debouncedSet('appliances', selectedValuesAppliances);
             });
@@ -3356,6 +3382,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
             });
 
             $('#leasing_spaces_tenant').on('change', function(e) {
@@ -3379,7 +3406,7 @@ $lease_types = [
             $('.tenant_pays').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                     $el.off('change.tenantPaysSync').on('change.tenantPaysSync', function() {
                         let selectedValues = $el.val() || [];
                         toggleOtherTenantField(selectedValues);
@@ -3398,14 +3425,14 @@ $lease_types = [
                 if ($el.hasClass('select2-hidden-accessible')) {
                     return;
                 }
-                $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                $el.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                 $el.off('change.leaseTermSync').on('change.leaseTermSync', function() {
                     let selectedValues = $el.val() || [];
                     if (selectedValues.includes('Other')) {
                         $('.other_lease_term').show();
                     } else {
                         $('.other_lease_term').hide();
-                        safeLivewireSet('other_lease_term', null);
+                        debouncedSet('other_lease_term', null);
                     }
                     debouncedSet('desired_lease_length', selectedValues);
                 });
@@ -3432,6 +3459,7 @@ $lease_types = [
                 placeholder: "Select",
                 allowClear: true,
                 width: '100%',
+                closeOnSelect: false,
                 dropdownParent: selectElement.parent()
             });
 
@@ -3482,14 +3510,14 @@ $lease_types = [
             $('.owner_pays').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                     $el.off('change.ownerPaysSync').on('change.ownerPaysSync', function() {
                         let selectedValues = $el.val() || [];
                         if (selectedValues.includes('Other')) {
                             $('.other_owner_pays').show();
                         } else {
                             $('.other_owner_pays').hide();
-                            safeLivewireSet('other_owner_pays', null);
+                            debouncedSet('other_owner_pays', null);
                         }
                         debouncedSet('owner_pays', selectedValues);
                     });
@@ -3516,6 +3544,9 @@ $lease_types = [
             var $sel = $('.lease_for');
             if (!$sel.length) return;
             if ($sel.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($sel.data('select2') && $sel.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $sel.select2('destroy');
             }
 
@@ -3544,7 +3575,7 @@ $lease_types = [
                         $sel.find(`option[value="${val}"]`).attr('selected', 'selected');
                     });
                 }
-                safeLivewireSet('lease_for', selectedLease, false);
+                debouncedSet('lease_for', selectedLease);
                 toggleLease(selectedLease);
             });
         }
@@ -3560,6 +3591,9 @@ $lease_types = [
                 setTimeout(function() {
                     var $lf = $('.lease_for');
                     if ($lf.hasClass('select2-hidden-accessible')) {
+                        var _lfOpen = false;
+                        try { _lfOpen = !!($lf.data('select2') && $lf.data('select2').isOpen()); } catch(e) {}
+                        if (_lfOpen) return;
                         $lf.select2('destroy');
                     }
                     initSelect2LeaseFor();
@@ -3589,12 +3623,16 @@ $lease_types = [
             var $sel = $('#leasing_spaces_tenant');
             if (!$sel.length) return;
             if ($sel.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($sel.data('select2') && $sel.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $sel.select2('destroy');
             }
             $sel.select2({
                 placeholder: 'Select',
                 allowClear: true,
-                width: '100%'
+                width: '100%',
+                closeOnSelect: false,
             });
             var lwValues = @this.get('leasing_spaces_tenant') || [];
             if (typeof lwValues === 'string') {
@@ -3605,7 +3643,7 @@ $lease_types = [
             }
             $sel.off('change.lsSync').on('change.lsSync', function() {
                 let selected = $(this).val() || [];
-                safeLivewireSet('leasing_spaces_tenant', selected, false);
+                debouncedSet('leasing_spaces_tenant', selected);
             });
         }
 
@@ -3647,14 +3685,14 @@ $lease_types = [
             $('.rent_includes').each(function() {
                 const $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%' });
+                    $el.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
                     $el.off('change.rentIncludesSync').on('change.rentIncludesSync', function() {
                         let selectedValues = $el.val() || [];
                         if (selectedValues.includes('Other')) {
                             $('.other_rent_input_wrapper').show();
                         } else {
                             $('.other_rent_input_wrapper').hide();
-                            safeLivewireSet('other_rent_include', null);
+                            debouncedSet('other_rent_include', null);
                         }
                         debouncedSet('rent_includes', selectedValues);
                     });
@@ -4335,9 +4373,15 @@ $lease_types = [
         let $el = $(selectorId.startsWith('#') ? selectorId : '#' + selectorId);
         if (!$el.length) return;
         if ($el.hasClass('select2-hidden-accessible')) {
+            var _s2Open = false;
+            try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+            if (_s2Open) return;
             $el.select2('destroy');
         }
-        $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+        var _isMulti = $el.prop('multiple') || $el.hasClass('select2-multiple');
+        var _s2Opts = { placeholder: 'Select', allowClear: true, width: '100%' };
+        if (_isMulti) { _s2Opts.closeOnSelect = false; }
+        $el.select2(_s2Opts);
         $el.off('change.s2sync').on('change.s2sync', function() {
             let data = $(this).val() || [];
             debouncedSet(wireModel, data);
@@ -6151,16 +6195,17 @@ $lease_types = [
             var $el = $(this);
 
             if ($el.hasClass('select2-hidden-accessible')) {
+                var _s2Open = false;
+                try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
                 $el.select2('destroy');
             }
 
             var placeholder = $el.attr('data-placeholder') || 'Select';
+            var _opts = { placeholder: placeholder, allowClear: true, width: '100%' };
+            if ($el.hasClass('select2-multiple')) { _opts.closeOnSelect = false; }
 
-            $el.select2({
-                placeholder: placeholder,
-                allowClear: true,
-                width: '100%'
-            });
+            $el.select2(_opts);
         });
     }
 

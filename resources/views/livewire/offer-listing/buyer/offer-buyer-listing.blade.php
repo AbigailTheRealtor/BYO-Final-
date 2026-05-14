@@ -1407,6 +1407,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#property_items').off('change.piSync').on('change.piSync', function(e) {
@@ -1429,6 +1430,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#non_negotiable_amenities').off('change.nnaSync').on('change.nnaSync', function(e) {
@@ -1450,6 +1452,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#condition_prop_buyer').off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -1465,6 +1468,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
@@ -1485,6 +1489,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
@@ -1502,6 +1507,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
 
                     $el.off('change.nutSync').on('change.nutSync', function(e) {
@@ -1631,6 +1637,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
                         let selectedValues = $(this).val() || [];
@@ -1697,6 +1704,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#view_preference').on('change', function() {
@@ -1751,6 +1759,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 // Initial visibility sync
                 window.updateAssignmentContractSection($('#sale_provision').val() || []);
@@ -1772,6 +1781,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 // Initial visibility sync
                 window.updateFinancingSections($('#offered_financing').val() || []);
@@ -3188,6 +3198,9 @@
                 var $el = $(this);
 
                 if ($el.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $el.select2('destroy');
                 }
 

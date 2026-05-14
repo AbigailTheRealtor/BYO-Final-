@@ -1978,7 +1978,7 @@
                 if (!$exEl.data('exchange-change-bound')) {
                     $exEl.on('change', function(e) {
                         var selectedValues = $(this).val() || [];
-                        @this.set('exchange_item', selectedValues);
+                        @this.set('exchange_item', selectedValues, true);
                     });
                     $exEl.data('exchange-change-bound', true);
                 }
@@ -2146,6 +2146,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
             }
 
@@ -2163,6 +2164,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
             }
 
@@ -2422,6 +2424,7 @@
                                 placeholder: "Select",
                                 allowClear: true,
                                 width: '100%',
+                                closeOnSelect: false,
                             });
                         }
                         var saved = [];
@@ -2434,7 +2437,7 @@
                         if (!$exEl.data('exchange-change-bound')) {
                             $exEl.on('change', function(e) {
                                 var selectedValues = $(this).val() || [];
-                                @this.set('exchange_item', selectedValues);
+                                @this.set('exchange_item', selectedValues, true);
                             });
                             $exEl.data('exchange-change-bound', true);
                         }

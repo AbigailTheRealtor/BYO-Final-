@@ -1423,6 +1423,9 @@ $tenantPays = [
             $('.select2-multiple').each(function () {
                 var $el = $(this);
                 if ($el.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $el.select2('destroy');
                 }
                 var placeholder = $el.attr('data-placeholder') || 'Select';
@@ -1453,10 +1456,11 @@ $tenantPays = [
                     placeholder: "Select property style",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
                 $('#property_items').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('property_items', selectedValues);
+                    @this.set('property_items', selectedValues, true);
                 });
             }
 
@@ -1469,7 +1473,7 @@ $tenantPays = [
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('non_negotiable_amenities', selectedValues);
+                    @this.set('non_negotiable_amenities', selectedValues, true);
                 });
             }
 
@@ -1825,7 +1829,7 @@ $tenantPays = [
                 });
                 $('#rent_includes').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('rent_includes', selectedValues);
+                    @this.set('rent_includes', selectedValues, true);
                 });
             }
 
@@ -1838,7 +1842,7 @@ $tenantPays = [
                 });
                 $('#terms_of_lease').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('terms_of_lease', selectedValues);
+                    @this.set('terms_of_lease', selectedValues, true);
                 });
             }
 
@@ -1851,7 +1855,7 @@ $tenantPays = [
                 });
                 $('#tenant_pays').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
-                    @this.set('tenant_pays', selectedValues);
+                    @this.set('tenant_pays', selectedValues, true);
                     @this.call('updateTenantPays', selectedValues);
                     var $w = $('#other_tenant_pays_wrapper');
                     if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
@@ -1872,7 +1876,7 @@ $tenantPays = [
                 });
                 $('#owner_pays').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
-                    @this.set('owner_pays', selectedValues);
+                    @this.set('owner_pays', selectedValues, true);
                     @this.call('updateOwnerPays', selectedValues);
                     var $w = $('#other_owner_pays_wrapper');
                     if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
@@ -1907,7 +1911,7 @@ $tenantPays = [
                 }
                 $dlt.off('change.ltsSync').on('change.ltsSync', function() {
                     var selectedValues = $(this).val() || [];
-                    @this.set('desired_lease_length', selectedValues);
+                    @this.set('desired_lease_length', selectedValues, true);
                     var wrapper = document.querySelector('.other_lease_term_wrapper');
                     if (wrapper) {
                         wrapper.style.display = selectedValues.includes('Other') ? 'block' : 'none';

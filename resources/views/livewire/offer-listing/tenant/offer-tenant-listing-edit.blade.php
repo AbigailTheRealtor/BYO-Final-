@@ -2137,8 +2137,12 @@
             if (!isVisible && mode !== 'force') return;
 
             if (mode === 'force' && $exEl.hasClass('select2-hidden-accessible')) {
-                $exEl.select2('destroy');
-                $exEl.data('exchange-change-bound', false);
+                var _exOpen = false;
+                try { _exOpen = !!($exEl.data('select2') && $exEl.data('select2').isOpen()); } catch(e) {}
+                if (!_exOpen) {
+                    $exEl.select2('destroy');
+                    $exEl.data('exchange-change-bound', false);
+                }
             }
             if (!$exEl.hasClass('select2-hidden-accessible')) {
                 $exEl.select2({ placeholder: "Select acceptable exchange items", allowClear: true, width: '100%', closeOnSelect: false });
@@ -2153,7 +2157,7 @@
             }
             if (!$exEl.data('exchange-change-bound')) {
                 $exEl.on('change', function(e) {
-                    @this.set('exchange_item', $(this).val() || []);
+                    @this.set('exchange_item', $(this).val() || [], true);
                 });
                 $exEl.data('exchange-change-bound', true);
             }
@@ -2518,6 +2522,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 }).on('change', function() {
                     debouncedSet('sale_provision', $(this).val());
 
@@ -2543,6 +2548,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 }).on('change', function() {
                     debouncedSet('offered_financing', $(this).val());
 
@@ -2592,6 +2598,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $sel.off('change.cpbSync').on('change.cpbSync', function(e) {
@@ -2622,6 +2629,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 selectEl.on('change', function() {
@@ -2648,6 +2656,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
 
                     $el.on('change', function(e) {
@@ -2696,6 +2705,9 @@
                 var $pi = $('#property_items');
                 if (!$pi.length) return;
                 if ($pi.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($pi.data('select2') && $pi.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $pi.select2('destroy');
                 }
                 $pi.select2({
@@ -2914,6 +2926,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $select.on('change', () => {
@@ -2929,17 +2942,23 @@
             const $sellerAssetsSelect = $('#included_assets');
             if ($sellerAssetsSelect.length) {
                 if ($sellerAssetsSelect.hasClass('select2-hidden-accessible')) {
-                    $sellerAssetsSelect.select2('destroy');
+                    var _saOpen = false;
+                    try { _saOpen = !!($sellerAssetsSelect.data('select2') && $sellerAssetsSelect.data('select2').isOpen()); } catch(e) {}
+                    if (!_saOpen) {
+                        $sellerAssetsSelect.select2('destroy');
+                    }
                 }
-                $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
-                const _sellerSavedAssets = @json(is_array($business_assets) ? $business_assets : []);
-                if (Array.isArray(_sellerSavedAssets) && _sellerSavedAssets.length > 0) {
-                    $sellerAssetsSelect.val(_sellerSavedAssets).trigger('change.select2');
+                if (!$sellerAssetsSelect.hasClass('select2-hidden-accessible')) {
+                    $sellerAssetsSelect.select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
+                    const _sellerSavedAssets = @json(is_array($business_assets) ? $business_assets : []);
+                    if (Array.isArray(_sellerSavedAssets) && _sellerSavedAssets.length > 0) {
+                        $sellerAssetsSelect.val(_sellerSavedAssets).trigger('change.select2');
+                    }
+                    $sellerAssetsSelect.on('change', function() {
+                        const vals = $(this).val() || [];
+                        Livewire.emit('assetsOption', vals);
+                    });
                 }
-                $sellerAssetsSelect.on('change', function() {
-                    const vals = $(this).val() || [];
-                    Livewire.emit('assetsOption', vals);
-                });
             }
 
             ///// Selected the business type other then
@@ -2967,11 +2986,12 @@
                     placeholder: "Select credit score rating(s)",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#credit_scroe_rating').on('change', function(e) {
                     let selectedValues = $(this).val();
-                    @this.set('credit_scroe_rating', selectedValues);
+                    @this.set('credit_scroe_rating', selectedValues, true);
                 });
             }
 
@@ -2985,6 +3005,9 @@
                     $nn.prop('disabled', true);
                 }
                 if ($nn.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($nn.data('select2') && $nn.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $nn.select2('destroy');
                 }
                 $nn.select2({
@@ -3153,6 +3176,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $gpsOpt.off('change.gpsSyncEdit').on('change.gpsSyncEdit', function() {
                         var selectedValues = $(this).val() || [];
@@ -3221,6 +3245,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
 
                     $('#view_preference').on('change', function() {
@@ -3253,6 +3278,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $sel.on('change', function() {
@@ -3264,7 +3290,7 @@
                         $('#other_parking_space_wrapper').show();
                     } else {
                         $('#other_parking_space_wrapper').hide();
-                        @this.set('other_parking_space_wrapper', null);
+                        debouncedSet('other_parking_space_wrapper', null);
                     }
                 });
 
@@ -3294,6 +3320,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
 
                     $('#appliances').on('change', function() {
@@ -3304,7 +3331,7 @@
                             $('#other_appliances').show();
                         } else {
                             $('#other_appliances').hide();
-                            @this.set('other_appliances', null);
+                            debouncedSet('other_appliances', null);
                         }
                     });
                 }
@@ -3325,6 +3352,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 });
 
                 $('#leasing_spaces_tenant').on('change', function(e) {
@@ -3350,6 +3378,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];
@@ -3380,6 +3409,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     var savedLtVals = @json($desired_lease_length ?? []);
                     if (savedLtVals && savedLtVals.length > 0) {
@@ -3391,9 +3421,9 @@
                             $('.other_lease_term').show();
                         } else {
                             $('.other_lease_term').hide();
-                            @this.set('other_lease_term', null);
+                            debouncedSet('other_lease_term', null);
                         }
-                        @this.set('desired_lease_length', selectedValues);
+                        debouncedSet('desired_lease_length', selectedValues);
                     });
                 }
             });
@@ -3411,11 +3441,12 @@
                     $(this).select2({
                         placeholder: "Select lease terms",
                         allowClear: true,
-                        width: '100%'
+                        width: '100%',
+                        closeOnSelect: false,
                     });
                     $(this).on('change', function(e) {
                         const selectedValues = $(this).val() || [];
-                        @this.set('terms_of_lease', selectedValues);
+                        debouncedSet('terms_of_lease', selectedValues);
                         toggleLeaseOther(selectedValues);
                     });
                 }
@@ -3452,6 +3483,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];
@@ -3460,9 +3492,9 @@
                             $('.other_owner_pays').show();
                         } else {
                             $('.other_owner_pays').hide();
-                            @this.set('other_owner_pays', null);
+                            @this.set('other_owner_pays', null, true);
                         }
-                        @this.set('owner_pays', selectedValues);
+                        @this.set('owner_pays', selectedValues, true);
                     });
                 }
             });
@@ -3485,6 +3517,9 @@
                 var $sel = $('.lease_for');
                 if (!$sel.length) return;
                 if ($sel.hasClass('select2-hidden-accessible')) {
+                    var _s2Open = false;
+                    try { _s2Open = !!($sel.data('select2') && $sel.data('select2').isOpen()); } catch(e) {}
+                    if (_s2Open) return;
                     $sel.select2('destroy');
                 }
 
@@ -3539,6 +3574,9 @@
                     setTimeout(function() {
                         var $lf = $('.lease_for');
                         if ($lf.hasClass('select2-hidden-accessible')) {
+                            var _lfOpen = false;
+                            try { _lfOpen = !!($lf.data('select2') && $lf.data('select2').isOpen()); } catch(e) {}
+                            if (_lfOpen) return;
                             $lf.select2('destroy');
                         }
                         initSelect2LeaseFor();
@@ -3579,6 +3617,7 @@
                         placeholder: "Select",
                         allowClear: true,
                         width: '100%',
+                        closeOnSelect: false,
                     });
                     $(this).on('change', function() {
                         let selectedValues = $(this).val() || [];
@@ -3587,9 +3626,9 @@
                             $('.other_rent_input_wrapper').show();
                         } else {
                             $('.other_rent_input_wrapper').hide();
-                            @this.set('other_rent_include', null);
+                            @this.set('other_rent_include', null, true);
                         }
-                        @this.set('rent_includes', selectedValues);
+                        @this.set('rent_includes', selectedValues, true);
                     });
                 }
             });

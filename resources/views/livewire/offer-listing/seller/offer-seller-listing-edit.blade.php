@@ -1485,7 +1485,7 @@
                 }
                 $('#exchange_item').on('change', function(e) {
                     var selectedValues = $(this).val() || [];
-                    @this.set('exchange_item', selectedValues);
+                    @this.set('exchange_item', selectedValues, true);
                 });
             } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
                 var savedExchangeItems = @this.get('exchange_item') || [];
