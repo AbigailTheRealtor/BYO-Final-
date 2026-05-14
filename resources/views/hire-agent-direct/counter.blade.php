@@ -1364,6 +1364,17 @@ function switchTab(tabBtnId) {
 function counterFormSubmit(form) {
     var btn = document.getElementById('counter-submit-btn');
     if (!btn || btn.disabled) return false;
+    // Strip commas from all $-prefixed currency text inputs before submission
+    document.querySelectorAll('#counter-form .input-group input[type="text"]').forEach(function(inp) {
+        var grp = inp.closest('.input-group');
+        if (!grp) return;
+        var hasDollar = Array.from(grp.querySelectorAll('.input-group-text')).some(function(span) {
+            return span.textContent.trim() === '$';
+        });
+        if (hasDollar) {
+            inp.value = inp.value.replace(/,/g, '');
+        }
+    });
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
     return true;
@@ -1509,7 +1520,15 @@ function populateReviewTab() {
             var el = document.querySelector('[name="' + f.name + '"]');
             var val = el ? el.value.trim() : '';
             if (val) {
-                rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(val) + '</dd></div>';
+                var displayVal = val;
+                if (f.name === 'target_purchase_price') {
+                    displayVal = '$' + val;
+                } else if (f.name === 'estimated_down_payment') {
+                    var dpTypeEl = document.querySelector('[name="down_payment_type"]');
+                    var dpMode = dpTypeEl ? dpTypeEl.value : 'percent';
+                    displayVal = (dpMode === 'dollar') ? '$' + val : val + '%';
+                }
+                rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(displayVal) + '</dd></div>';
             }
         });
         if (rows) {
@@ -1560,6 +1579,49 @@ document.addEventListener('DOMContentLoaded', function() {
         var selects = document.querySelectorAll('select[onchange*="' + parentId + '"]');
         selects.forEach(function(sel) {
             ccTrigger(sel, parentId);
+        });
+    });
+});
+
+// ── Comp Terms: comma formatting for all $-prefixed flat-fee text inputs ──────
+// Selector rule: input[type="text"] inside .input-group where a sibling
+// span.input-group-text has textContent === "$" exactly.
+// Percentage (%), calendar-day (#), and protection period inputs are naturally
+// excluded because their sibling spans contain different symbols.
+document.addEventListener('DOMContentLoaded', function() {
+    function ccFormatWithCommas(val) {
+        var raw = val.replace(/[^0-9.]/g, '');
+        var firstDot = raw.indexOf('.');
+        if (firstDot !== -1) {
+            raw = raw.substring(0, firstDot + 1) + raw.substring(firstDot + 1).replace(/\./g, '');
+        }
+        var parts = raw.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.length > 1 ? parts[0] + '.' + parts[1] : parts[0];
+    }
+
+    function isCcCurrencyInput(inp) {
+        if (inp.type !== 'text') return false;
+        var grp = inp.closest('.input-group');
+        if (!grp) return false;
+        return Array.from(grp.querySelectorAll(':scope > .input-group-text')).some(function(span) {
+            return span.textContent.trim() === '$';
+        });
+    }
+
+    document.querySelectorAll('#tab-comp input[type="text"]').forEach(function(inp) {
+        if (!isCcCurrencyInput(inp)) return;
+        // Format any pre-populated value on page load
+        if (inp.value !== '') {
+            inp.value = ccFormatWithCommas(inp.value);
+        }
+        // Format while typing, preserving cursor position
+        inp.addEventListener('input', function() {
+            var pos = this.selectionStart;
+            var oldLen = this.value.length;
+            this.value = ccFormatWithCommas(this.value);
+            var newLen = this.value.length;
+            this.selectionStart = this.selectionEnd = Math.max(0, pos + (newLen - oldLen));
         });
     });
 });
