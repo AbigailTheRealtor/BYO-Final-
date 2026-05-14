@@ -1,0 +1,73 @@
+Fix regression from #1040: icons disappeared across Create Offer Listing forms for all user types.
+
+Issue:
+After input box sizing cleanup, icons are missing on several fields across Create Offer Listing flows, not just Seller.
+
+Scope:
+- Create Offer Listing only:
+  - /offer-listing/seller
+  - /offer-listing/buyer
+  - /offer-listing/landlord
+  - /offer-listing/tenant
+- Include their edit/draft versions:
+  - /offer-listing/{role}/edit/{id}
+- Do not focus only on Seller.
+- Do not change Hire Agent unless the broken code is in a shared CSS/JS file used by both systems.
+
+Likely cause:
+The #1040 CSS consolidation changed/removes the markup/CSS/class pattern needed by the icon injector, especially for select/Select2 fields. Some fields still show icons, others do not, which means the fields no longer share the same wrapper/class/data-icon structure.
+
+Required audit:
+1. Compare Create Offer Listing fields where icons still work vs fields where icons disappeared.
+2. Audit all four Create Offer Listing roles:
+   - Buyer
+   - Seller
+   - Landlord
+   - Tenant
+3. Check regular inputs, selects, Select2 single, and Select2 multi fields.
+4. Find whether the problem is:
+   - missing data-icon attribute
+   - missing .has-icon wrapper
+   - missing .input-cover class
+   - Select2 replacing/hiding the original select
+   - addIconsToInputs() not re-running after Select2 initialization
+   - shared CSS hiding or mispositioning icons
+   - duplicate/old icon CSS overriding the new shared CSS
+
+Fix requirements:
+1. Restore icons globally for Create Offer Listing fields without undoing #1040 box sizing.
+2. Keep one canonical shared icon system.
+3. Do not reintroduce duplicate inline .has-icon / .input-icon CSS into individual blade partials.
+4. Ensure addIconsToInputs() runs after:
+   - DOMContentLoaded
+   - Select2 initialization
+   - Livewire message.processed
+   - tab changes
+   - draft hydration/load
+5. Ensure Select2 fields can display icons consistently.
+6. Ensure disabled/gray Select2 fields still show icons when they are supposed to.
+7. Preserve consistent input heights from #1040.
+8. Preserve textarea sizing and Select2 multi auto-expanding behavior.
+
+Safeguards:
+- Do not change field names, wire:model bindings, validation, routes, controllers, save logic, labels, placeholders, or tooltips.
+- Do not make landlord-only/seller-only fixes.
+- Do not patch just the visible screenshot fields.
+- Fix the shared pattern so all Create Offer Listing roles are corrected.
+- Stop and report if the icon system differs by role instead of guessing.
+
+Done looks like:
+- Icons display correctly across Create Offer Listing Seller, Buyer, Landlord, and Tenant forms.
+- Icons remain visible on create, edit, and loaded draft pages.
+- Icons do not flash and disappear.
+- Select2 fields keep correct sizing and show icons where intended.
+- Textareas and long-form fields remain unchanged.
+- No duplicate inline icon CSS is reintroduced.
+
+Before closing, provide:
+1. Root cause.
+2. Every file changed.
+3. Which roles/pages were checked.
+4. Which field types were checked.
+5. Confirmation that #1040 box sizing still works.
+6. Confirmation that no duplicate inline .has-icon / .input-icon CSS was reintroduced.
