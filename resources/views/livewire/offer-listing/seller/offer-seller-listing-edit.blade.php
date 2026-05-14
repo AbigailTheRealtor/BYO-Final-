@@ -1162,7 +1162,8 @@
                                 </button>
                                 @endif
 
-                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next"
+                                    onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="update">
@@ -2324,7 +2325,8 @@
         if (!window.__wizardNavBound) {
             window.__wizardNavBound = true;
             document.addEventListener('click', function(e) {
-                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                var nextBtn = e.target.closest('.wizard-step-next');
+                if (nextBtn && typeof window._wizardNextHandler === 'function' && !nextBtn.onclick) {
                     window._wizardNextHandler();
                 }
                 if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
