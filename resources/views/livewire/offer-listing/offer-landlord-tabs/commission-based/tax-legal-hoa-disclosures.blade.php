@@ -306,7 +306,7 @@
                 <div class="input-cover">
                     <textarea wire:model="special_assessment_description" class="form-control has-icon landlord-compact-textarea" rows="1"
                         data-icon="fa-solid fa-file-invoice"
-                        placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
+                        placeholder="Enter special assessment description (e.g., Road Resurfacing Assessment Through 2028 at $900/Year)"></textarea>
                 </div>
             </div>
         @endif
@@ -371,7 +371,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_type_other" class="form-control has-icon"
                             data-icon="fa-solid fa-sitemap"
-                            placeholder="Describe the association type">
+                            placeholder="Enter association type (e.g., Homeowners Association)">
                     </div>
                 </div>
             </div>
@@ -478,7 +478,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_approval_process" class="form-control has-icon"
                             data-icon="fa-solid fa-clipboard-check"
-                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)">
+                            placeholder="Enter approval process details (e.g., Application Required, Background Check, 30-Day Review Period)">
                     </div>
                 </div>
 
@@ -662,7 +662,7 @@
                     <div class="input-cover">
                         <textarea wire:model="additional_lease_restrictions" class="form-control has-icon landlord-compact-textarea" rows="2"
                             data-icon="fa-solid fa-ban"
-                            placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
+                            placeholder="Enter additional restrictions (e.g., No Airbnb/VRBO, Owner Must Occupy 1 Year Before Renting, Tenant Must Be HOA-Approved)"></textarea>
                     </div>
                 </div>
             @endif

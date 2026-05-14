@@ -1277,7 +1277,7 @@
     <div class="input-cover">
         <textarea wire:model="parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-car"
-            placeholder="Describe parking terms (e.g., 1 assigned covered space included, 2 guest spaces available)"></textarea>
+            placeholder="Enter parking terms (e.g., 1 Assigned Covered Space Included, 2 Guest Spaces Available)"></textarea>
     </div>
 </div>
 
@@ -1291,7 +1291,7 @@
     <div class="input-cover">
         <textarea wire:model="utility_responsibility" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-bolt"
-            placeholder="Describe utility responsibilities (e.g., Landlord pays water/trash, Tenant pays electric/gas)"></textarea>
+            placeholder="Enter utility responsibilities (e.g., Landlord Pays Water/Trash, Tenant Pays Electric/Gas)"></textarea>
     </div>
 </div>
 
@@ -1305,7 +1305,7 @@
     <div class="input-cover">
         <textarea wire:model="ll_maintenance_responsibility" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-screwdriver-wrench"
-            placeholder="Describe maintenance responsibilities (e.g., Landlord responsible for major repairs, Tenant responsible for lawn care)"></textarea>
+            placeholder="Enter maintenance responsibilities (e.g., Landlord Responsible for Major Repairs, Tenant Responsible for Lawn Care)"></textarea>
     </div>
 </div>
 
@@ -1338,7 +1338,7 @@
         <div class="input-cover">
             <textarea wire:model="renewal_option_details" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-file-signature"
-                placeholder="Describe renewal option terms (e.g., 1-year renewal at market rate, 60-day notice required)"></textarea>
+                placeholder="Enter renewal option terms (e.g., 1-Year Renewal at Market Rate, 60-Day Notice Required)"></textarea>
         </div>
     </div>
 @endif
@@ -1411,7 +1411,7 @@
         <div class="input-cover">
             <textarea wire:model="cam_nnn_additional_rent_charges" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-receipt"
-                placeholder="Describe CAM/NNN charges (e.g., estimated $3/sqft annually for taxes, insurance, and maintenance)"></textarea>
+                placeholder="Enter CAM/NNN charges (e.g., Estimated $3/SqFt Annually for Taxes, Insurance, and Maintenance)"></textarea>
         </div>
     </div>
 
@@ -1425,7 +1425,7 @@
         <div class="input-cover">
             <textarea wire:model="rent_escalation_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-arrow-trend-up"
-                placeholder="Describe rent escalation (e.g., 3% annual increase beginning year 2)"></textarea>
+                placeholder="Enter rent escalation (e.g., 3% Annual Increase Beginning Year 2)"></textarea>
         </div>
     </div>
 
@@ -1439,7 +1439,7 @@
         <div class="input-cover">
             <textarea wire:model="tenant_improvement_buildout_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-hammer"
-                placeholder="Describe TI/buildout terms (e.g., $20/sqft TI allowance, delivered in shell condition)"></textarea>
+                placeholder="Enter TI/buildout terms (e.g., $20/SqFt TI Allowance, Delivered in Shell Condition)"></textarea>
         </div>
     </div>
 
@@ -1453,7 +1453,7 @@
         <div class="input-cover">
             <textarea wire:model="permitted_use_restrictions" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-building-columns"
-                placeholder="Describe permitted uses and restrictions (e.g., General office use only, no retail or food service)"></textarea>
+                placeholder="Enter permitted uses and restrictions (e.g., General Office Use Only, No Retail or Food Service)"></textarea>
         </div>
     </div>
 
@@ -1467,7 +1467,7 @@
         <div class="input-cover">
             <textarea wire:model="signage_rights" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-sign-hanging"
-                placeholder="Describe signage rights (e.g., Tenant may install one suite sign and one directory listing)"></textarea>
+                placeholder="Enter signage rights (e.g., Tenant May Install One Suite Sign and One Directory Listing)"></textarea>
         </div>
     </div>
 
@@ -1481,7 +1481,7 @@
         <div class="input-cover">
             <textarea wire:model="commercial_parking_terms" class="form-control has-icon landlord-compact-textarea" rows="1"
                 data-icon="fa-solid fa-square-parking"
-                placeholder="Describe commercial parking terms (e.g., 4 spaces per 1,000 sqft, 2 reserved spaces included)"></textarea>
+                placeholder="Enter commercial parking terms (e.g., 4 Spaces per 1,000 SqFt, 2 Reserved Spaces Included)"></textarea>
         </div>
     </div>
 

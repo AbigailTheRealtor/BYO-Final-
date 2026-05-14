@@ -197,7 +197,7 @@
                 <div class="mb-3">
                     <div class="input-group">
                         <input type="text" wire:model.lazy="renewal_fee_custom" class="form-control"
-                            placeholder=" Describe commission fee (e.g., 50% of first month’s rent plus 3% of the net aggregate rent)">
+                            placeholder="Enter commission fee (e.g., 50% of First Month's Rent Plus 3% of the Net Aggregate Rent)">
                     </div>
                 </div>
             @endif

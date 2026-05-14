@@ -3435,7 +3435,7 @@
     </script>
     <script>
         function initSelect2Fields() {
-            $('.select2-multiple, .select2-single').each(function () {
+            $('.select2-multiple').each(function () {
                 var $el = $(this);
 
                 if ($el.hasClass('select2-hidden-accessible')) {
@@ -3443,17 +3443,25 @@
                 }
 
                 var placeholder = $el.attr('data-placeholder') || 'Select';
+                var isMultiple = $el.prop('multiple');
 
-                $el.select2({
+                var opts = {
                     placeholder: placeholder,
                     allowClear: true,
                     width: '100%'
-                });
+                };
+                if (isMultiple) {
+                    opts.closeOnSelect = false;
+                }
+
+                $el.select2(opts);
             });
+            addIconsToInputs();
         }
 
         $(document).ready(function () {
             initSelect2Fields();
+            addIconsToInputs();
         });
 
         document.addEventListener('livewire:load', function () {

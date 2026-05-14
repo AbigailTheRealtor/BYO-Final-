@@ -1413,6 +1413,27 @@ $tenantPays = [
             if (backBtn && backClone) backBtn.parentNode.replaceChild(backClone, backBtn);
         }
 
+        function initSelect2Fields() {
+            $('.select2-multiple').each(function () {
+                var $el = $(this);
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+                var placeholder = $el.attr('data-placeholder') || 'Select';
+                var isMultiple = $el.prop('multiple');
+                var opts = {
+                    placeholder: placeholder,
+                    allowClear: true,
+                    width: '100%'
+                };
+                if (isMultiple) {
+                    opts.closeOnSelect = false;
+                }
+                $el.select2(opts);
+            });
+            addIconsToInputs();
+        }
+
         function initializeFullService() {
 
             if (!document._landlordEditTabNavListenerAdded) {
@@ -1440,6 +1461,7 @@ $tenantPays = [
                 $('#non_negotiable_amenities').select2({
                     placeholder: "Select credit score rating(s)",
                     allowClear: true,
+                    closeOnSelect: false,
                     width: '100%',
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
@@ -1587,6 +1609,7 @@ $tenantPays = [
                 $('#view_preference').select2({
                     placeholder: "Select Preference",
                     allowClear: true,
+                    closeOnSelect: false,
                     width: '100%',
                 });
                 $('#view_preference').on('change', function() {
@@ -1794,6 +1817,7 @@ $tenantPays = [
                 $('#rent_includes').select2({
                     placeholder: "Select rent",
                     allowClear: true,
+                    closeOnSelect: false,
                     width: '100%',
                 });
                 $('#rent_includes').on('change', function(e) {
@@ -1806,6 +1830,7 @@ $tenantPays = [
                 $('#terms_of_lease').select2({
                     placeholder: "Select terms of lease",
                     allowClear: true,
+                    closeOnSelect: false,
                     width: '100%',
                 });
                 $('#terms_of_lease').on('change', function(e) {
@@ -1818,6 +1843,7 @@ $tenantPays = [
                 $('#tenant_pays').select2({
                     placeholder: "Select tenant pays",
                     allowClear: true,
+                    closeOnSelect: false,
                     width: '100%',
                 });
                 $('#tenant_pays').on('change', function(e) {
@@ -1838,6 +1864,7 @@ $tenantPays = [
                 $('#owner_pays').select2({
                     placeholder: "Select owner pays",
                     allowClear: true,
+                    closeOnSelect: false,
                     width: '100%',
                 });
                 $('#owner_pays').on('change', function(e) {
@@ -1862,6 +1889,7 @@ $tenantPays = [
                     $dlt.select2({
                         placeholder: "Select desired lease term",
                         allowClear: true,
+                        closeOnSelect: false,
                         width: '100%',
                     });
                 }
@@ -2206,6 +2234,9 @@ $tenantPays = [
                     setTimeout(checkFormValidity, 100);
                 });
             });
+
+            // Initialize any remaining select2-multiple fields not covered above
+            initSelect2Fields();
 
             // Re-inject icons after all Select2 instances are initialized
             addIconsToInputs();
