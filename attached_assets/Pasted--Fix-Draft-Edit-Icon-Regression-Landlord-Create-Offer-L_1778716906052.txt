@@ -1,0 +1,92 @@
+# Fix Draft/Edit Icon Regression — Landlord Create Offer Listing
+
+On the Landlord Create Offer Listing draft/edit page, many input icons are missing after loading a saved draft. This is visible at:
+
+/offer-listing/landlord/edit/{id}
+
+Example: /offer-listing/landlord/edit/24
+
+The draft/edit version should visually match the normal Create Offer Listing for Landlord flow. Icons, spacing, Select2 padding, and input-cover behavior should be applied the same way on create, draft resume, and edit.
+
+IMPORTANT SAFEGUARDS
+- This is a UI parity/icon initialization task only.
+- Do NOT change routes, migrations, database schema, validation, models, controllers, save logic, draft logic, or listing data.
+- Do NOT change Limited Service flows.
+- Do NOT remove or rename existing field names.
+- Do NOT alter stored meta keys.
+- Do NOT change tab structure.
+- Only touch the Landlord Offer Listing create/edit blade/JS/CSS files needed for icon parity.
+- Use the existing Create Landlord listing icon behavior as the source of truth.
+
+Problem
+On the saved draft/edit page, icons are missing on many fields even though the fields exist and display values correctly. This likely means the edit/draft blade is not applying the same `has-icon`, `data-icon`, `.input-cover`, icon injection, Select2 padding, or Livewire/draft-loaded reinjection logic used on the create page.
+
+Audit first
+Compare the Landlord Create Offer Listing create page against the Landlord draft/edit page for:
+- `.has-icon`
+- `data-icon`
+- `.input-cover`
+- `.data-icon-rendered` or equivalent duplicate-prevention class
+- `addIconsToInputs()` or equivalent icon injection function
+- DOMContentLoaded initialization
+- deferred initialization with `setTimeout`
+- Bootstrap tab `shown.bs.tab` reinjection
+- Livewire `message.processed` reinjection if applicable
+- draftLoaded/custom event reinjection if applicable
+- Select2 width/padding/icon spacing rules
+
+Files to inspect likely include:
+- resources/views/offer-listing/landlord/create*.blade.php
+- resources/views/offer-listing/landlord/edit*.blade.php
+- resources/views/offer-listing/landlord/partials/*.blade.php
+- any shared offer-listing JS/CSS partials used for icons/select2
+
+Required fix
+Make the Landlord saved draft/edit page use the exact same icon wrapper/initialization behavior as the Landlord create page.
+
+Specifically:
+1. Every field that has an icon on the normal Create Offer Listing for Landlord page must also have the same icon on the draft/edit page.
+2. Select2 fields must keep proper left padding so placeholder/selected text does not overlap icons.
+3. Icons must render immediately on page load, not only after switching tabs.
+4. Icons must re-render correctly after:
+   - tab changes
+   - Livewire updates
+   - draft-loaded events
+   - Select2 initialization
+5. Icon injection must be idempotent:
+   - no duplicate icons
+   - no stacked icons
+   - no repeated icons after tab switching
+6. Preserve existing form values and draft-loaded values.
+
+Implementation guidance
+- Prefer reusing the same shared helper/function from create instead of duplicating new logic.
+- If edit/draft lacks the same `data-icon` attributes as create, add them to the matching fields.
+- If edit/draft lacks the same JS hooks as create, add the same hooks.
+- If Select2 is initialized separately on edit/draft, ensure it also uses `width: '100%'` and the same icon spacing CSS.
+- Use a sentinel class such as `.data-icon-rendered` or the existing project convention to prevent duplicates.
+
+QA required
+Test:
+- Landlord Create Offer Listing new listing page
+- Landlord saved draft/edit page `/offer-listing/landlord/edit/{id}`
+- All tabs:
+  - Listing Details
+  - Property Details
+  - Leasing Terms
+  - Description
+  - Broker Compensation & Agency Agreement Terms
+  - Tax, Legal & HOA
+  - Documents & Disclosures
+  - Photos & Tours
+  - Agent Credentials & Contact Info
+  - AI Questions
+
+Confirm:
+- Icons match create page field-for-field.
+- No icons are missing on draft/edit.
+- No duplicate icons appear after switching tabs.
+- Select2 text alignment remains correct.
+- Saved values still display correctly.
+- Next/Back and Save Draft still work.
+- No console errors.

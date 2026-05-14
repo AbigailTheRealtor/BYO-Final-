@@ -1,0 +1,151 @@
+#999 - Audit + Fix Create Seller Offer Listing Draft/Edit Mode, Next Button, Select2 Multiselects, Placeholders, Field Heights, and Missing Icons
+
+Page:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller
+
+Example draft/edit URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/edit/37
+
+IMPORTANT SAFEGUARDS
+- Audit first before editing.
+- Seller Offer Listing only.
+- Do not change Buyer, Landlord, Tenant, or Hire Agent flows unless a shared helper is proven to be the root cause.
+- Do not change database schema, migrations, routes, validation rules, or controllers unless the audit proves the draft/edit mode bug requires a controller-level fix.
+- Do not touch Limited Service code.
+- Preserve all existing field names, wire:model bindings, IDs, saved-value hydration, and submit logic unless directly fixing the bug.
+- Make additive, minimal changes only.
+
+ISSUES TO AUDIT + FIX
+
+1. Draft vs Edit button state is wrong
+Problem:
+On Create Seller Listing, when loading a saved draft, the button says “Save Edit” even though it is still a draft. It should say “Save Draft.”
+Only after the listing is actually created/published should it say “Save Edit.”
+
+Expected:
+- /offer-listing/seller create mode = Save Draft
+- Loaded saved draft that has not been published = Save Draft
+- Existing created listing edit mode = Save Edit
+- Clicking Save Draft must not submit/publish the listing.
+- Clicking Save Edit should only update an already-created listing.
+
+Audit:
+Check how the blade determines edit mode. Do not rely only on URL /edit/{id} if the record is actually a draft. Check listing status/workflow flags if available.
+
+2. Next button not working on Create Seller Listing
+Problem:
+When a draft is loaded, the Next button stops working.
+
+Expected:
+- Next/Back works normally after loading a draft.
+- Tab validation still works.
+- No console errors.
+- Draft hydration should not break tab navigation.
+
+3. Select2 multiselects close after each selection
+Problem:
+The listed multiselect fields should allow selecting multiple options without the dropdown closing each time, like View already does.
+
+Audit and fix all Seller Offer Listing multiselects, including:
+- Appliances Included
+- Amenities and Property Features
+- Roof
+- Exterior Construction
+- Foundation
+- Heating and Fuel
+- Air Conditioning
+- Water
+- Sewer
+- Utilities
+- Special Sale Provision
+- Offered Financing/Currency
+- Acceptable Exchange Item
+- What Does the Association Fee Include?
+- Association Amenities
+- Building Features
+- Electrical Service
+- Road Surface Type
+- Road Frontage
+- Roof Type
+- Licenses
+- Sale Includes
+- Current Use
+- Current Adjacent Use
+- Fences
+- Vegetation
+- Buildable
+- Easements
+
+Expected:
+- These should use Select2 multiselect behavior consistent with View.
+- Use closeOnSelect: false for multiselect Select2 fields.
+- Do not break saved values or Livewire syncing.
+- Do not create duplicate Select2 containers after tab changes or Livewire updates.
+
+4. Placeholder wording cleanup
+Problem:
+Some “Other” placeholders still say “Describe...”
+
+Expected format:
+Enter title (e.g., Example)
+
+Examples:
+- Enter telecom availability (e.g., Satellite Only, Fiber Nearby)
+- Enter fence type (e.g., Electric, Invisible)
+- Enter vegetation type (e.g., Citrus Grove, Vineyard)
+- Enter easement type (e.g., Drainage, Mineral Rights)
+
+Rules:
+- Replace “Describe” with “Enter”
+- Keep field title lower-case unless the existing platform standard uses title case
+- Capitalize example words inside parentheses
+- Text-only change; do not alter logic.
+
+5. Inconsistent field box heights
+Problem:
+Some fields like Water and Sewer boxes appear shorter/smaller than fields like Total Acreage.
+
+Audit:
+Compare input/select/select2 wrapper classes and CSS for:
+- Water
+- Sewer
+- Utilities
+- Total Acreage
+- Other utility fields
+
+Expected:
+- All standard form controls should have consistent height, padding, icon alignment, and full width.
+- Fix with scoped CSS or class correction only.
+- Do not globally resize unrelated forms unless the issue is shared and safe.
+
+6. Business Property Type → Property Style placeholder missing
+Problem:
+When user selects Property Type = Business, the Property Style field appears but does not show “Select.”
+
+Expected:
+- Property Style shows “Select” before a choice is made.
+- Saved values still reload correctly.
+- No duplicate Select2 containers.
+- Conditional show/hide still works.
+
+7. Sewer Available to Site missing icon
+Problem:
+“Sewer Available to Site” is missing its icon.
+
+Expected:
+- Sewer Available to Site should show the correct icon consistently like Water, Electric, Gas, and Telecom.
+- Use existing icon pattern: .has-icon / data-icon / icon injection.
+- Do not hardcode duplicate icons.
+
+DONE LOOKS LIKE
+- Create Seller Listing shows Save Draft.
+- Loaded unpublished draft still shows Save Draft and does not publish when saving draft.
+- Existing created listing edit mode shows Save Edit.
+- Next/Back works after loading draft.
+- All listed multiselects allow selecting multiple values without closing each time.
+- Placeholder examples follow “Enter title (e.g., Example)” format.
+- Water/Sewer/Utility fields match normal field height and alignment.
+- Business → Property Style shows Select placeholder.
+- Sewer Available to Site icon displays.
+- No console errors.
+- Git diff is limited to Seller Offer Listing view/component/CSS files needed for this fix.
