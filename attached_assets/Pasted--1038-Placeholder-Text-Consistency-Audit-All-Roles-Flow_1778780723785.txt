@@ -1,0 +1,172 @@
+#1038 - Placeholder Text Consistency Audit — All Roles & Flows
+
+Critical safeguards before starting:
+
+- Audit only first. Do NOT change code during this task.
+- Focus only on active Full Service launch flows.
+- Do NOT touch Limited Service legacy flows.
+- Do NOT change labels, tooltips, validation, routes, controllers, Livewire properties, database schema, or business logic.
+- Do NOT refactor shared components during the audit phase.
+- This is a placeholder consistency and polish audit only.
+
+What & Why
+
+The platform has accumulated inconsistent placeholder text across all eight Full Service flows (four Hire Agent + four Offer Listing). Previous tasks fixed specific files in isolation, but no complete cross-role audit has been done.
+
+We also previously fixed many legacy placeholders that used inconsistent wording like:
+- Describe...
+- Specify...
+- Enter details...
+- Type here...
+- Other...
+- -- Select --
+
+This task performs a read-only audit pass across every relevant Blade file, producing a grouped report of every inconsistency before any changes are made.
+
+No code will be modified — the deliverable is the audit report only.
+
+Platform placeholder standards to audit against:
+
+1. Select / Select2 placeholders
+Must be exactly:
+
+Select
+
+Remove inconsistent versions like:
+- -- Select --
+- Select timeline
+- Select status
+- Choose one
+- Choose option
+- Select application
+
+2. Text / number / currency / percentage inputs
+Must follow:
+
+Enter [field title] (e.g., Example)
+
+Examples:
+- Enter desired sale price (e.g., 450000)
+- Enter lease term (e.g., 12 Months)
+- Enter property description (e.g., Recently Renovated Kitchen, Waterfront Views, Flexible Lease Terms)
+
+3. Textarea inputs
+Must follow the same structure:
+
+Enter [field title] (e.g., Example)
+
+4. “Other” companion inputs
+Must NOT include the word “other” in the placeholder.
+
+Use the actual field title only.
+
+Correct:
+- Enter appliance (e.g., Wine Refrigerator)
+- Enter amenity (e.g., Pickleball Court)
+- Enter property feature (e.g., Outdoor Kitchen)
+- Enter financing type (e.g., Seller-Held Second Mortgage)
+
+Incorrect:
+- Enter other appliance...
+- Enter other amenity...
+- Enter other property feature...
+
+5. Capitalization inside examples
+Use title-style capitalization:
+- Capitalize the first letter of each example phrase
+- Preserve acronyms like HOA, MLS, ADU, ZIP
+
+Incorrect:
+(e.g., recently renovated kitchen, waterfront views)
+
+Correct:
+(e.g., Recently Renovated Kitchen, Waterfront Views)
+
+6. Create/Edit parity
+Matching fields on create vs edit/draft pages must have identical placeholder text.
+
+7. Cross-role consistency
+If two fields represent the same user-facing concept across roles/workflows, they should use the same placeholder structure unless there is a legitimate role-specific reason not to.
+
+Examples:
+- Desired Sale Price
+- Desired Monthly Rent
+- Lease Term
+- Property Description
+- Square Footage
+- Year Built
+- Household Income
+- Financing Type
+- Amenities
+- Property Features
+
+The goal is a unified platform language and polished launch experience.
+
+Done looks like
+
+A written audit report is committed to:
+
+.local/tasks/placeholder-audit-report.md
+
+The report must include:
+
+A. Files audited
+List every Blade/Livewire/PHP file reviewed.
+
+B. Placeholder inconsistencies grouped by:
+- Hire Buyer Agent
+- Hire Seller Agent
+- Hire Landlord Agent
+- Hire Tenant Agent
+- Buyer Offer Listing
+- Seller Offer Listing
+- Landlord Offer Listing
+- Tenant Offer Listing
+- Shared partials/components
+
+For each issue include:
+- File path
+- Field label
+- Current placeholder
+- Recommended placeholder
+- Whether it affects Create / Edit / Both
+
+C. Shared standardization opportunities
+Identify repeated hardcoded patterns that could safely be standardized later without risky refactors.
+
+D. Safety confirmation
+Confirm:
+- No schema changes required
+- No route/controller changes required
+- No validation changes required
+- No Select2 behavior changes required
+- No Limited Service legacy flow modifications
+- Create/Edit parity checked
+
+Priority order during audit:
+
+1. Public-facing visible inconsistencies
+2. Create/Edit mismatches
+3. Cross-role inconsistencies
+4. Legacy “Describe...” placeholders
+5. Select placeholder inconsistencies
+6. Example capitalization inconsistencies
+7. “Other” companion placeholder inconsistencies
+
+Before delivering the report, perform one final duplicate review to ensure:
+- the same issue is not reported multiple times,
+- shared partial issues are grouped cleanly,
+- and recommendations follow one unified platform standard.
+
+Out of scope
+
+- Making any placeholder changes to the codebase
+- Limited Service flows
+- Label renames
+- Validation logic changes
+- Route/controller changes
+- Business logic changes
+- Bid counter tabs
+- Flat-fee tabs
+
+Focus is Full Service commission-based launch flows only.

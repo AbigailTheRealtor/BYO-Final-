@@ -1200,6 +1200,29 @@
                     }
                 }
 
+                var $nna = $('#non_negotiable_amenities');
+                if ($nna.length) {
+                    if (!$nna.hasClass('select2-hidden-accessible')) {
+                        window.initFullServiceSelect2Multiple($nna);
+                        if (!$nna.data('nna-change-bound')) {
+                            $nna.on('change', function() {
+                                var selectedValues = $(this).val() || [];
+                                @this.set('non_negotiable_amenities', selectedValues, false);
+                            });
+                            $nna.data('nna-change-bound', true);
+                        }
+                    }
+                    var nnaVals = $nna.val() || [];
+                    var $otherNna = document.querySelector('.other_non_negotiable_amenities');
+                    if ($otherNna) {
+                        if (nnaVals.includes('Other')) {
+                            $otherNna.classList.remove('d-none');
+                        } else {
+                            $otherNna.classList.add('d-none');
+                        }
+                    }
+                }
+
                 var $viewPref = $('#view_preference');
                 if ($viewPref.length && $viewPref.hasClass('select2-hidden-accessible')) {
                     var vData = $viewPref.val() || [];
@@ -1678,26 +1701,12 @@
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
                 }
             }
-            // Function to attach the event listener to the bathrooms dropdown
-            function attachAmenitiesDropdownListener() {
-                const bathroomsDropdown = document.getElementById('non_negotiable_amenities');
-                if (bathroomsDropdown) {
-                    bathroomsDropdown.addEventListener('change', function() {
-                        toggleOtherAmenities(this);
-                    });
-
-                    // Manually trigger the toggle function on page load or after Livewire re-renders
-                    toggleOtherAmenities(bathroomsDropdown);
-                }
-            }
-
-            // Attach the event listener initially
-            attachAmenitiesDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
+            // Delegate "Other" toggle for amenities — survives element replacement, no listener accumulation
+            $(document).on('change', '#non_negotiable_amenities', function() {
+                toggleOtherAmenities(this);
             });
+            var _initNnaEl = document.getElementById('non_negotiable_amenities');
+            if (_initNnaEl) { toggleOtherAmenities(_initNnaEl); }
 
             // Function to toggle "Other Bedrooms" input field
             function toggleOtherBedrooms(selectElement) {

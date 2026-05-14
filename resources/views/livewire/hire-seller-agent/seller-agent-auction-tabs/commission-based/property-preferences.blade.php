@@ -1296,7 +1296,7 @@
         <div class="input-cover" wire:ignore>
             <select id="non_negotiable_amenities"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-lock input-icon2"
-                data-placeholder="Select" @if (!$property_type) disabled @endif multiple>
+                data-placeholder="Select" multiple>
                 <option value=""></option>
                 @if (in_array($property_type, ['Residential', 'Income']))
                     @foreach ($non_negotialble_terms_landlord as $item)

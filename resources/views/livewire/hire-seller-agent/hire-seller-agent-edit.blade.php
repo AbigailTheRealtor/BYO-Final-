@@ -969,15 +969,15 @@
                 });
             }
 
-            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
-                $('#non_negotiable_amenities').select2({
-                    placeholder: "Select",
-                    allowClear: true,
-                });
-                $('#non_negotiable_amenities').on('change', function(e) {
-                    let selectedValues = $(this).val();
-                    debouncedSet('non_negotiable_amenities', selectedValues);
-                });
+            if ($('#non_negotiable_amenities').length) {
+                window.initFullServiceSelect2Multiple($('#non_negotiable_amenities'));
+                if (!$('#non_negotiable_amenities').data('nna-change-bound')) {
+                    $('#non_negotiable_amenities').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        debouncedSet('non_negotiable_amenities', selectedValues);
+                    });
+                    $('#non_negotiable_amenities').data('nna-change-bound', true);
+                }
             }
 
             if ($('#exchange_item').length && !$('#exchange_item').hasClass('select2-hidden-accessible')) {
@@ -985,6 +985,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
                 var savedExchangeItems = @this.get('exchange_item') || [];
                 if (savedExchangeItems.length > 0) {
@@ -1006,6 +1007,8 @@
                 $('#included_assets').select2({
                     placeholder: "Select",
                     allowClear: true,
+                    width: "100%",
+                    closeOnSelect: false,
                 });
                 var savedBusinessAssets = @this.get('business_assets') || [];
                 if (savedBusinessAssets.length > 0) {
@@ -1190,7 +1193,9 @@
             if ($('#view_preference').length && !$('#view_preference').hasClass('select2-hidden-accessible')) {
                 $('#view_preference').select2({
                     placeholder: "Select",
-                    allowClear: true
+                    allowClear: true,
+                    width: "100%",
+                    closeOnSelect: false,
                 });
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();
@@ -1208,6 +1213,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
                 $('#appliances').on('change', function(e) {
                     let selectedValues = $(this).val() || [];
@@ -1225,6 +1231,7 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: "100%",
+                    closeOnSelect: false,
                 });
                 $('#garage_parking_spaces_option_landlord').on('change', function() {
                     let selectedValues = $(this).val() || [];
@@ -1250,26 +1257,12 @@
                     otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
                 }
             }
-            // Function to attach the event listener to the bathrooms dropdown
-            function attachAmenitiesDropdownListener() {
-                const bathroomsDropdown = document.getElementById('non_negotiable_amenities');
-                if (bathroomsDropdown) {
-                    bathroomsDropdown.addEventListener('change', function() {
-                        toggleOtherAmenities(this);
-                    });
-
-                    // Manually trigger the toggle function on page load or after Livewire re-renders
-                    toggleOtherAmenities(bathroomsDropdown);
-                }
-            }
-
-            // Attach the event listener initially
-            attachAmenitiesDropdownListener();
-
-            // Re-attach the event listener after Livewire re-renders the DOM
-            Livewire.hook('message.processed', () => {
-                attachAmenitiesDropdownListener();
+            // Delegate "Other" toggle for amenities — survives element replacement, no listener accumulation
+            $(document).on('change', '#non_negotiable_amenities', function() {
+                toggleOtherAmenities(this);
             });
+            var _initNnaElEdit = document.getElementById('non_negotiable_amenities');
+            if (_initNnaElEdit) { toggleOtherAmenities(_initNnaElEdit); }
 
             // Function to toggle "Other Bedrooms" input field
             function toggleOtherBedrooms(selectElement) {

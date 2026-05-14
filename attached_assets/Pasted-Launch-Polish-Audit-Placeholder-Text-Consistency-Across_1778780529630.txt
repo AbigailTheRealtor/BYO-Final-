@@ -1,0 +1,154 @@
+Launch Polish Audit — Placeholder Text Consistency Across All Roles & Flows
+
+We previously fixed many legacy placeholders that used inconsistent wording like:
+- Describe...
+- Specify...
+- Enter details...
+- Type here...
+- Other...
+- -- Select --
+
+The platform standard is now:
+- Consistent placeholder formatting
+- Consistent capitalization
+- Consistent example formatting
+- Consistent “Select” placeholders
+- Consistent Create/Edit parity across all roles
+
+This task is an audit-first pass only. Do not mass-change code blindly before identifying all inconsistencies.
+
+Scope
+
+Audit ALL active Full Service flows for:
+
+1. Hire Agent Listings
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+2. Offer Listings (Create/Edit/Draft)
+- Buyer Criteria Listings
+- Seller Property Listings
+- Landlord Property Listings
+- Tenant Criteria Listings
+
+Audit:
+- Regular text inputs
+- Number inputs
+- Currency inputs
+- Percentage inputs
+- Textareas
+- Conditional fields
+- “Other” companion inputs
+- Select placeholders
+- Select2 placeholders
+- Create pages
+- Edit/draft pages
+- Shared partials/components
+
+Do NOT modify Limited Service legacy flows unless they are actively used by current launch flows.
+
+Platform Placeholder Standards
+
+1. Select placeholders
+All select/select2 placeholders should simply be:
+
+Select
+
+Remove inconsistent versions like:
+- -- Select --
+- Select timeline
+- Select status
+- Choose one
+- Choose option
+- Select application
+etc.
+
+2. Standard input placeholder format
+Use:
+
+Enter [field title] (e.g., Example)
+
+Examples:
+- Enter desired sale price (e.g., 450000)
+- Enter lease term (e.g., 12 Months)
+- Enter property description (e.g., Recently Renovated Kitchen, Waterfront Views, Flexible Lease Terms)
+
+3. “Other” companion input rule
+Do NOT use the word “other” inside placeholder text.
+
+Use only the actual field title.
+
+Correct:
+- Enter appliance (e.g., Wine Refrigerator)
+- Enter amenity (e.g., Pickleball Court)
+- Enter property feature (e.g., Outdoor Kitchen)
+- Enter financing type (e.g., Seller-Held Second Mortgage)
+
+Incorrect:
+- Enter other appliance...
+- Enter other amenity...
+- Enter other feature...
+
+4. Capitalization rules
+Inside all example text:
+- Capitalize the first letter of each example phrase
+- Use title-style capitalization
+- Preserve acronyms like HOA, MLS, ADU, ZIP
+
+Incorrect:
+(e.g., recently renovated kitchen, waterfront views)
+
+Correct:
+(e.g., Recently Renovated Kitchen, Waterfront Views)
+
+5. Consistency requirements
+- Same/similar fields across roles should use matching placeholder structure
+- Create and Edit/Draft flows must match
+- Shared fields between Hire Agent and Offer Listings should follow the same formatting style unless intentionally role-specific
+- Do not introduce legal wording changes
+- Do not rename labels
+- Do not alter validation or functionality
+
+Audit Deliverable
+
+Return a grouped audit report BEFORE making changes.
+
+Include:
+
+A. Files audited
+List every Blade/Livewire/PHP file reviewed.
+
+B. Placeholder inconsistencies found
+Group by:
+- Hire Buyer Agent
+- Hire Seller Agent
+- Hire Landlord Agent
+- Hire Tenant Agent
+- Buyer Offer Listing
+- Seller Offer Listing
+- Landlord Offer Listing
+- Tenant Offer Listing
+- Shared partials/components
+
+For each issue include:
+- File path
+- Field label
+- Current placeholder
+- Recommended placeholder
+- Create/Edit/Both impact
+
+C. Shared standardization opportunities
+Identify repeated hardcoded patterns that could safely be standardized without risky refactors.
+
+D. Safety confirmation
+Confirm:
+- No schema changes required
+- No route/controller logic changed
+- No validation changed
+- No Select2 behavior changed except placeholder text
+- No Limited Service legacy flow modifications
+- Create/Edit parity checked
+
+After the audit is reviewed, we will do a controlled fix pass.
