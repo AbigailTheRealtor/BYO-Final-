@@ -547,7 +547,7 @@
         <label class="fw-bold">City:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the cities where you’re interested in renting a property.">
+            title="Enter the cities where you’re interested in selling a property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -601,7 +601,7 @@
     <div class="form-group mb-3">
         <label class="fw-bold">ZIP Code:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the ZIP code(s) where you’re interested in renting a property.">
+            title="Enter the ZIP code(s) where you’re interested in selling a property.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 
@@ -656,7 +656,7 @@
         <label class="fw-bold">State:<span class="text-danger">*</span></label>
 
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the state where you’re looking to rent.">
+            title="Enter the state where you’re looking to sell.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
 

@@ -130,7 +130,7 @@
         <label class="fw-bold">
             Personal Video Link:
             <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-                title="Paste a YouTube or Vimeo link that explains what the Tenant is looking for in an Agent.">
+                title="Paste a YouTube or Vimeo link that explains what the Buyer is looking for in an Agent.">
                 {{-- 💬 --}}
                 <i class="fa-solid fa-circle-info"></i>
 

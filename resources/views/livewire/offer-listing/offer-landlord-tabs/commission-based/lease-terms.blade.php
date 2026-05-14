@@ -461,7 +461,7 @@
                 <label class="fw-bold">Shared Amenities Include:</label>
 
                 <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                    title="List any shared facilities available to tenants, such as conference rooms, break areas, restrooms, or common parking.">
+                    title="List any shared facilities available to Tenants, such as conference rooms, break areas, restrooms, or common parking.">
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
                 <div class="input-cover">

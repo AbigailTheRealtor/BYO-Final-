@@ -224,7 +224,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Lease Assignable to Buyer:</label>
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the existing lease can be assigned or transferred to the new buyer.">
+            title="Indicate whether the existing lease can be assigned or transferred to the new Buyer.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
         <div class="input-cover">
@@ -511,7 +511,7 @@
         <div class="form-group mt-3">
             <label class="fw-bold">Renewal Options Available:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Indicate whether the lease includes renewal options that a buyer could exercise after the current term.">
+                title="Indicate whether the lease includes renewal options that a Buyer could exercise after the current term.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
@@ -527,7 +527,7 @@
         <div class="form-group mt-3">
             <label class="fw-bold">Is the Lease Assignable to Buyer?</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Indicate whether the current lease can be transferred to a buyer as part of the business sale.">
+                title="Indicate whether the current lease can be transferred to a Buyer as part of the business sale.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">
@@ -544,7 +544,7 @@
         <div class="form-group mt-3">
             <label class="fw-bold">Additional Lease Terms:</label>
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Enter any other relevant lease details a buyer should know (e.g., renewal options, assignment requirements, landlord approval details).">
+                title="Enter any other relevant lease details a Buyer should know (e.g., renewal options, assignment requirements, landlord approval details).">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
             <div class="input-cover">

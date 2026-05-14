@@ -304,7 +304,7 @@
     <div class="form-group mt-3">
         <label class="fw-bold">Type of Loan:
             <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Assumable loans allow a buyer to take over the seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
+                title="Assumable loans allow a Buyer to take over the Seller's existing financing. FHA, VA, and USDA loans are the most common types that may be assumed, but lender approval is usually required. Conventional loans almost always have a due-on-sale clause and are not assumable.">
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>

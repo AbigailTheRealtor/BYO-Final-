@@ -277,7 +277,7 @@
 <div class="form-group">
     <label class="fw-bold">Security Deposit Budget:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the maximum security deposit the tenant is prepared to pay.">
+            title="Enter the maximum security deposit the Tenant is prepared to pay.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -293,7 +293,7 @@
 <div class="form-group">
     <label class="fw-bold">Move-In Funds Available:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the total move-in funds the tenant has available.">
+            title="Enter the total move-in funds the Tenant has available.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -309,7 +309,7 @@
 <div class="form-group">
     <label class="fw-bold">First Month Rent Available:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the tenant has the first month's rent available upfront.">
+            title="Indicate whether the Tenant has the first month's rent available upfront.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -328,7 +328,7 @@
 <div class="form-group">
     <label class="fw-bold">Last Month Rent Available:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the tenant has the last month's rent available upfront.">
+            title="Indicate whether the Tenant has the last month's rent available upfront.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -347,7 +347,7 @@
 <div class="form-group">
     <label class="fw-bold">Utility Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe the tenant's preferred utility arrangement.">
+            title="Describe the Tenant's preferred utility arrangement.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -361,7 +361,7 @@
 <div class="form-group">
     <label class="fw-bold">Maintenance Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe the tenant's preferred maintenance arrangement.">
+            title="Describe the Tenant's preferred maintenance arrangement.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -375,7 +375,7 @@
 <div class="form-group" x-data="{}">
     <label class="fw-bold">Renewal Option Requested:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the tenant wants the option to renew the lease.">
+            title="Indicate whether the Tenant wants the option to renew the lease.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -412,7 +412,7 @@
 <div class="form-group">
     <label class="fw-bold">Tenant Conditions:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="List any specific conditions the tenant requires before signing a lease.">
+            title="List any specific conditions the Tenant requires before signing a lease.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -428,7 +428,7 @@
 <div class="form-group">
     <label class="fw-bold">Additional Tenant Lease Terms:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any additional lease terms or requests from the tenant.">
+            title="Enter any additional lease terms or requests from the Tenant.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -468,7 +468,7 @@
 <div class="form-group">
     <label class="fw-bold">CAM / NNN Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe the tenant's preference for CAM or NNN expense responsibility.">
+            title="Describe the Tenant's preference for CAM or NNN expense responsibility.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -482,7 +482,7 @@
 <div class="form-group">
     <label class="fw-bold">Rent Escalation Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe how the tenant prefers rent escalations to be structured.">
+            title="Describe how the Tenant prefers rent escalations to be structured.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -496,7 +496,7 @@
 <div class="form-group">
     <label class="fw-bold">Buildout / Tenant Improvement Request:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe any buildout or tenant improvement allowance the tenant is requesting.">
+            title="Describe any buildout or Tenant Improvement allowance the Tenant is requesting.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -510,7 +510,7 @@
 <div class="form-group">
     <label class="fw-bold">Intended Business Use:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe how the tenant intends to use the commercial space.">
+            title="Describe how the Tenant intends to use the commercial space.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -524,7 +524,7 @@
 <div class="form-group">
     <label class="fw-bold">Signage Request:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Describe the tenant's signage requirements.">
+            title="Describe the Tenant's signage requirements.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -552,7 +552,7 @@
 <div class="form-group">
     <label class="fw-bold">Personal Guarantee Preference:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the tenant is willing to provide a personal guarantee.">
+            title="Indicate whether the Tenant is willing to provide a personal guarantee.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
@@ -571,7 +571,7 @@
 <div class="form-group">
     <label class="fw-bold">Commercial Approval Conditions:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="List any conditions that must be met for the tenant to approve the commercial lease.">
+            title="List any conditions that must be met for the Tenant to approve the commercial lease.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>

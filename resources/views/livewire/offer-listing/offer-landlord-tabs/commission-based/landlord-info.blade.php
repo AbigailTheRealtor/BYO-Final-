@@ -107,7 +107,7 @@
         <label class="fw-bold">
             Personal Video:
             <span class="tooltip-icon" data-bs-toggle="tooltip" data-bs-placement="top"
-                title="Upload a short video that explains what the Tenant is looking for in an Agent.">
+                title="Upload a short video that explains what the Landlord is looking for in an Agent.">
                 <i class="fa-solid fa-circle-info"></i>
 
             </span>

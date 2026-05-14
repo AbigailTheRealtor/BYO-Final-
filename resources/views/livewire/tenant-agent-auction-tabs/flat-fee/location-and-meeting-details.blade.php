@@ -136,7 +136,7 @@
             <h5 class="fw-bold mb-3">
                 In-Person Meeting Details:
                 <small class="text-muted" data-bs-toggle="tooltip"
-                    title="Specify the date and time for the in-person meeting related to the selected service(s). This will be visible to the agent before they accept the job.">
+                    title="Specify the date and time for the in-person meeting related to the selected service(s). This will be visible to the Agent before they accept the job.">
                     <i class="fa-solid fa-comment-dots text-primary"></i>
                 </small>
             </h5>
@@ -273,7 +273,7 @@
             <h5 class="fw-bold mb-3">
                 Deadline for Service Completion (if no in-person meeting is required):
                 <small class="text-muted" data-bs-toggle="tooltip"
-                    title="This is the date and time by which the agent should complete the selected service(s) if no in-person meeting is required.">
+                    title="This is the date and time by which the Agent should complete the selected service(s) if no in-person meeting is required.">
                     <i class="fa-solid fa-comment-dots text-primary"></i>
                 </small>
             </h5>
