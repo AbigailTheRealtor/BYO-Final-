@@ -471,3 +471,19 @@ button.btn.btn-success.wizard-step-finish:hover,
   pointer-events: auto !important;
   cursor: not-allowed !important;
 }
+
+/* Fix: Load Saved Draft modal — ensure draft title links and body text are readable.
+   Tailwind's preflight resets `a { color: inherit }` after Bootstrap loads, which can
+   leave .btn-link elements white-on-white in certain page compositions. */
+#draftModal .modal-body p {
+  color: #212529 !important;
+}
+
+#draftModal .list-group-item .btn-link {
+  color: #212529 !important;
+}
+
+#draftModal .list-group-item .btn-link:hover,
+#draftModal .list-group-item .btn-link:focus {
+  color: #000000 !important;
+}
