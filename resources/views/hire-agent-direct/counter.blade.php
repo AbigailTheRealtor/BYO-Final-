@@ -1095,7 +1095,7 @@
                         <div class="cc-conditional" data-cc-parent="cc_retainer_fee_option" data-cc-values="{{ $rtfYesVal }}">
                             <div class="input-group input-group-sm mb-2"><span class="input-group-text">$</span><input type="text" name="cc[retainer_fee_amount]" class="form-control" value="{{ $ccv('retainer_fee_amount') }}" placeholder="Enter retainer fee amount (e.g., 500)"></div>
                             <select name="cc[retainer_fee_application]" class="form-control form-control-sm">
-                                <option value="">Select application</option>
+                                <option value="">Select</option>
                                 @if($role === 'tenant')
                                     <option value="applied" {{ $ccv('retainer_fee_application') === 'applied' ? 'selected' : '' }}>Applied toward final compensation</option>
                                     <option value="additional" {{ $ccv('retainer_fee_application') === 'additional' ? 'selected' : '' }}>Charged in addition to final compensation</option>
@@ -1478,8 +1478,23 @@ function populateReviewTab() {
     // Contact Details
     var contactBody = document.getElementById('review-contact-body');
     if (contactBody) {
+        var rows = '';
+
+        // Name: prefer separate first/last, fall back to legacy client_name
+        var fnEl = document.querySelector('[name="client_first_name"]');
+        var lnEl = document.querySelector('[name="client_last_name"]');
+        var cnEl = document.querySelector('[name="client_name"]');
+        var fnVal = fnEl ? fnEl.value.trim() : '';
+        var lnVal = lnEl ? lnEl.value.trim() : '';
+        var cnVal = cnEl ? cnEl.value.trim() : '';
+        if (fnVal || lnVal) {
+            if (fnVal) rows += '<div><dt>' + escape('First Name') + '</dt><dd>' + escape(fnVal) + '</dd></div>';
+            if (lnVal) rows += '<div><dt>' + escape('Last Name') + '</dt><dd>' + escape(lnVal) + '</dd></div>';
+        } else if (cnVal) {
+            rows += '<div><dt>' + escape('Name') + '</dt><dd>' + escape(cnVal) + '</dd></div>';
+        }
+
         var fields = [
-            { label: 'Name', name: 'client_name' },
             { label: 'Phone', name: 'client_phone' },
             { label: 'Email', name: 'client_email' },
             { label: 'Property Address', name: 'client_property_address' },
@@ -1505,7 +1520,6 @@ function populateReviewTab() {
             { label: 'Number of Occupants', name: 'number_of_occupants' },
             { label: 'Household Monthly Income', name: 'household_monthly_income' },
         ];
-        var rows = '';
         fields.forEach(function(f) {
             var el = document.querySelector('[name="' + f.name + '"]');
             var val = el ? el.value.trim() : '';

@@ -172,14 +172,6 @@
         <div class="ack-section-header"><i class="fa-solid fa-address-card"></i> Your Submitted Information</div>
         <div class="ack-section-body">
             @php
-                // Name display: prefer first+last, fall back to legacy client_name
-                $submittedDisplayName = '';
-                if (!empty($contact['client_first_name']) || !empty($contact['client_last_name'])) {
-                    $submittedDisplayName = trim(($contact['client_first_name'] ?? '') . ' ' . ($contact['client_last_name'] ?? ''));
-                } elseif (!empty($contact['client_name'])) {
-                    $submittedDisplayName = $contact['client_name'];
-                }
-
                 // Currency formatter helper — returns '' only when the raw input is blank/null,
                 // so an explicit $0 value still renders as "$0" rather than being silently hidden.
                 $fmtCurrency = function($val) {
@@ -200,10 +192,23 @@
                 };
             @endphp
             <dl class="detail-grid">
-                @if(!empty($submittedDisplayName))
+                @if(!empty($contact['client_first_name']) || !empty($contact['client_last_name']))
+                @if(!empty($contact['client_first_name']))
+                <div>
+                    <dt>First Name</dt>
+                    <dd>{{ $contact['client_first_name'] }}</dd>
+                </div>
+                @endif
+                @if(!empty($contact['client_last_name']))
+                <div>
+                    <dt>Last Name</dt>
+                    <dd>{{ $contact['client_last_name'] }}</dd>
+                </div>
+                @endif
+                @elseif(!empty($contact['client_name']))
                 <div>
                     <dt>Name</dt>
-                    <dd>{{ $submittedDisplayName }}</dd>
+                    <dd>{{ $contact['client_name'] }}</dd>
                 </div>
                 @endif
                 @if(!empty($contact['client_phone']))
