@@ -1025,7 +1025,15 @@
                     $aatCustomVal = ($role === 'buyer') ? 'custom' : 'Other';
                 @endphp
                 <div class="cc-group">
-                    <label class="cc-label">Agreement Timeframe</label>
+                    @php
+                        $aaLabels = [
+                            'buyer'    => 'Buyer Agency Agreement Timeframe:',
+                            'seller'   => 'Seller Agency Agreement Timeframe:',
+                            'tenant'   => 'Tenant Agency Agreement Timeframe:',
+                            'landlord' => 'Landlord Agency Agreement Timeframe:',
+                        ];
+                    @endphp
+                    <label class="cc-label">{{ $aaLabels[$role] ?? 'Agency Agreement Timeframe:' }}</label>
                     <select name="cc[agency_agreement_timeframe]" class="form-control form-control-sm"
                             onchange="ccTrigger(this, 'cc_agency_agreement_timeframe')">
                         <option value="">Select</option>
@@ -1033,11 +1041,11 @@
                             <option value="{{ $optVal }}" {{ $ccv('agency_agreement_timeframe') === $optVal ? 'selected' : '' }}>{{ $optLabel }}</option>
                         @endforeach
                         {{-- Custom/Other option excluded from config (stored value differs by role) --}}
-                        <option value="{{ $aatCustomVal }}" {{ $ccv('agency_agreement_timeframe') === $aatCustomVal ? 'selected' : '' }}>{{ $role === 'buyer' ? 'Other (Custom)' : 'Other' }}</option>
+                        <option value="{{ $aatCustomVal }}" {{ $ccv('agency_agreement_timeframe') === $aatCustomVal ? 'selected' : '' }}>Other</option>
                     </select>
                     <div class="cc-sub mt-2">
                         <div class="cc-conditional" data-cc-parent="cc_agency_agreement_timeframe" data-cc-values="custom|Other">
-                            <input type="text" name="cc[agency_agreement_custom]" class="form-control form-control-sm" value="{{ $ccv('agency_agreement_custom') }}" placeholder="Specify timeframe (e.g. 45 days)">
+                            <input type="text" name="cc[agency_agreement_custom]" class="form-control form-control-sm" value="{{ $ccv('agency_agreement_custom') }}" placeholder="Enter agreement timeframe (e.g., 45 Days)">
                         </div>
                     </div>
                 </div>
@@ -1046,7 +1054,7 @@
                 <div class="cc-group">
                     <label class="cc-label">Protection Period (Days)</label>
                     <input type="number" name="cc[protection_period]" class="form-control form-control-sm"
-                           value="{{ $ccv('protection_period') }}" placeholder="e.g. 90">
+                           value="{{ $ccv('protection_period') }}" placeholder="Enter protection period (e.g., 90 Days)">
                 </div>
 
                 {{-- Early Termination Fee --}}
@@ -1064,7 +1072,7 @@
                     </select>
                     <div class="cc-sub mt-2">
                         <div class="cc-conditional" data-cc-parent="cc_early_termination_fee_option" data-cc-values="{{ $etfYesVal }}">
-                            <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[early_termination_fee_amount]" class="form-control" value="{{ $ccv('early_termination_fee_amount') }}" placeholder="Amount (e.g. 2000)"></div>
+                            <div class="input-group input-group-sm"><span class="input-group-text">$</span><input type="text" name="cc[early_termination_fee_amount]" class="form-control" value="{{ $ccv('early_termination_fee_amount') }}" placeholder="Enter early termination fee amount (e.g., 2000)"></div>
                         </div>
                     </div>
                 </div>
@@ -1085,7 +1093,7 @@
                     </select>
                     <div class="cc-sub mt-2">
                         <div class="cc-conditional" data-cc-parent="cc_retainer_fee_option" data-cc-values="{{ $rtfYesVal }}">
-                            <div class="input-group input-group-sm mb-2"><span class="input-group-text">$</span><input type="text" name="cc[retainer_fee_amount]" class="form-control" value="{{ $ccv('retainer_fee_amount') }}" placeholder="Amount (e.g. 500)"></div>
+                            <div class="input-group input-group-sm mb-2"><span class="input-group-text">$</span><input type="text" name="cc[retainer_fee_amount]" class="form-control" value="{{ $ccv('retainer_fee_amount') }}" placeholder="Enter retainer fee amount (e.g., 500)"></div>
                             <select name="cc[retainer_fee_application]" class="form-control form-control-sm">
                                 <option value="">Select application</option>
                                 @if($role === 'tenant')
@@ -1106,7 +1114,7 @@
                     <label class="cc-label">Additional Terms / Broker Notes</label>
                     <textarea name="cc[additional_details_broker]" rows="3"
                               class="form-control form-control-sm"
-                              placeholder="Any additional compensation terms or notes...">{{ $ccv('additional_details_broker') }}</textarea>
+                              placeholder="Enter any additional compensation terms or broker notes (e.g., Hourly consultation at $150/hr)">{{ $ccv('additional_details_broker') }}</textarea>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
