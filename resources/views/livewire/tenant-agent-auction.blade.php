@@ -3018,6 +3018,7 @@ $lease_types = [
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    closeOnSelect: false,
                 })
                 .on('select2:select select2:unselect', function(e) {
                     const vals = $(this).val() || [];
