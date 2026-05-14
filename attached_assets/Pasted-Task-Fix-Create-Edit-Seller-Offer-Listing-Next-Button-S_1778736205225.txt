@@ -1,0 +1,59 @@
+Task: Fix Create/Edit Seller Offer Listing Next Button Safely
+
+Issue:
+On Seller Offer Listing draft/edit pages, the Next button is not advancing tabs.
+
+Example affected URL:
+https://3ce01d2c-f79e-44c2-b048-2e8dc64316ef-00-tu7aronbf5wk.spock.replit.dev/offer-listing/seller/edit/48
+
+Important safeguards:
+- Audit first before editing.
+- Scope is strictly Seller Offer Listing create/edit/draft flow.
+- Do NOT touch Buyer, Tenant, Landlord, Hire Agent, Direct Hire, Limited Service, routes, controllers, models, migrations, schema, validation, save logic, or meta keys.
+- Do NOT rewrite the wizard system globally.
+- Make the smallest safe Blade/JS fix only.
+- Preserve draft loading, Save Draft, Save Edit, icons, Select2 behavior, and existing tab validation.
+
+Likely target files:
+- resources/views/livewire/offer-listing/seller/offer-seller-listing.blade.php
+- resources/views/livewire/offer-listing/seller/offer-seller-listing-edit.blade.php
+- resources/views/livewire/offer-listing/offer-seller-tabs/*
+
+Audit steps:
+1. Compare Seller create vs Seller edit wizard button markup.
+2. Find the rendered `.wizard-step-next` button on the affected edit page.
+3. Confirm whether:
+   - the button exists only once,
+   - the click handler is attached,
+   - any inline onclick fallback is missing,
+   - any delegated listener is blocked by `nextBtn.onclick`,
+   - any removed function/comment such as `removeWizardEventListeners` is still referenced,
+   - JavaScript console shows an error before the Next handler runs.
+4. Compare against the last known working role/page pattern.
+
+Fix requirements:
+- Ensure Seller edit/draft Next advances exactly one tab per click.
+- If Seller create uses an inline fallback, only add the same fallback to Seller edit if needed:
+  onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}"
+- Avoid double-firing:
+  - if inline onclick exists, delegated listener must not also fire for the same button.
+- Back button must continue working.
+- Save Draft / Save Edit must continue working.
+- Do not touch unrelated wizard buttons or shared helpers unless proven necessary.
+
+QA required:
+- Seller edit URL advances from current tab to next tab.
+- Seller create page Next still works.
+- Back works on both create and edit.
+- Next does not double-advance.
+- Save Draft and Save Edit still work.
+- No console errors.
+- grep confirms no active references to deleted/undefined wizard functions.
+- git diff is limited to Seller Offer Listing Blade/tab files only.
+
+Final response must include:
+- root cause found
+- files changed
+- exact button/listener fix
+- QA proof
+- confirmation no out-of-scope flows were touched

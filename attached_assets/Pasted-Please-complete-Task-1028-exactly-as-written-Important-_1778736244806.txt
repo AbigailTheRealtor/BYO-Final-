@@ -1,0 +1,97 @@
+Please complete Task #1028 exactly as written.
+
+Important safeguards:
+- Audit first before editing.
+- Scope is ONLY:
+  resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php
+- Do NOT touch:
+  - Seller edit blade
+  - Buyer/Tenant flows
+  - Landlord create blade
+  - Hire Agent / Direct Hire
+  - Limited Service
+  - routes/controllers/models/migrations/schema/validation/save logic
+- Do NOT rewrite the icon system globally.
+- Make the smallest safe timing/lifecycle fix only.
+- initializeLimitedService() is frozen legacy code — do not touch.
+
+Root cause has already been identified:
+1. Missing staggered addIconsToInputs() retries in livewire:load
+2. shown.bs.tab listener timing differs from Seller edit
+3. draftLoaded handler skips initializeFullService()
+
+Required fixes:
+
+1. livewire:load staggered retries
+In the Landlord edit blade livewire:load handler:
+- keep the existing immediate addIconsToInputs()
+- add retries at:
+  - 150ms
+  - 400ms
+  - 800ms
+- match Seller edit behavior exactly
+
+2. DOMContentLoaded deferred retry
+After the existing synchronous addIconsToInputs() call inside DOMContentLoaded:
+- add:
+  setTimeout(function () {
+      addIconsToInputs();
+  }, 0);
+
+3. shown.bs.tab listener parity
+Current landlord implementation:
+- listener lives inside initializeFullService()
+- guarded by _landlordEditTabNavListenerAdded
+- calls addIconsToInputs() synchronously
+
+Replace safely with Seller-style pattern:
+- bind outside initializeFullService()
+- iterate #myTab .nav-link directly
+- inside shown.bs.tab:
+  setTimeout(function () {
+      addIconsToInputs();
+  }, 0);
+
+Requirements:
+- no duplicate listeners
+- no duplicate icons
+- preserve existing tab functionality
+- preserve existing Select2 behavior
+
+4. draftLoaded parity fix
+Inside draftLoaded listener:
+Current:
+- syncSelectValues()
+- addIconsToInputs()
+- 100ms timeout
+
+Required:
+- syncSelectValues()
+- initializeFullService()
+- addIconsToInputs()
+- reduce timeout to 50ms to match Seller
+
+Requirements:
+- initializeFullService() must run BEFORE addIconsToInputs()
+- preserve draft hydration behavior
+- preserve Select2 values
+
+QA required:
+- Icons visible immediately on landlord edit load
+- Icons do not flash/disappear
+- Icons remain after:
+  - tab switches
+  - Select2 init
+  - Livewire updates
+  - draft hydration
+- No duplicate icons
+- No Select2 text overlap
+- Saved draft values still load
+- Next/Back still work
+- Save Draft still works
+- No console errors
+
+Final response must include:
+- exact lifecycle changes made
+- confirmation no out-of-scope files touched
+- QA proof

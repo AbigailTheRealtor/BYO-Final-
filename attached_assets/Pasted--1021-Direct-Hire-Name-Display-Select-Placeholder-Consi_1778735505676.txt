@@ -1,0 +1,123 @@
+#1021 - Direct Hire Name Display + Select Placeholder Consistency
+
+Audit first, then make the smallest safe changes only.
+
+Scope:
+- Direct Hire flow only:
+  /hire/agent/direct/{id}/{role}/{propertyType}/counter
+  /hire/agent/direct/{id}/{role}/{propertyType}/submitted
+  /hire/agent/direct/{id}/{role}/{propertyType}/acknowledge if it shares the same display partial
+- Apply to all four Direct Hire roles:
+  - Buyer
+  - Seller
+  - Landlord
+  - Tenant
+- Do NOT touch Marketplace Hire Agent flows, Offer Listing flows, Limited Service/legacy flows, routes, controllers, models, migrations, validation, or schema.
+- Prefer Blade/display-only fixes.
+
+==================================================
+PART 1 — FIRST NAME / LAST NAME DISPLAY
+==================================================
+
+Issue:
+Direct Hire forms collect:
+- First Name
+- Last Name
+
+But review/submitted sections still show a combined “Name” field or omit the name fields entirely.
+
+Required behavior:
+Every Direct Hire “Your Details,” “Your Submitted Information,” review, submitted, and acknowledge display must show:
+
+- First Name
+- Last Name
+
+Do NOT show a combined “Name” label when first_name and last_name are available.
+
+Apply to:
+- Buyer Direct Hire
+- Seller Direct Hire
+- Landlord Direct Hire
+- Tenant Direct Hire
+
+Requirements:
+1. Audit Direct Hire detail display logic/partials.
+2. Replace combined “Name” display with separate:
+   - First Name
+   - Last Name
+3. Ensure all four roles show First Name and Last Name in:
+   - counter Review / Your Details
+   - submitted / Your Submitted Information
+   - acknowledge page if applicable
+4. Preserve existing styling/layout/grid spacing.
+5. Do not rename database fields or change saved data structure.
+6. If old submissions only have a combined name fallback, keep a safe fallback only when first_name/last_name are unavailable — but do not show “Name” when separate values exist.
+
+==================================================
+PART 2 — SELECT PLACEHOLDER CONSISTENCY
+==================================================
+
+Issue:
+Some Direct Hire dropdown/select fields use inconsistent placeholder text such as:
+- -- Select --
+- -- Select option --
+- Select option
+- Choose
+- Choose one
+- Select flexibility
+- Select Desired Lease Term
+- role-specific placeholder wording
+
+Required behavior:
+All Direct Hire select/dropdown placeholders should match the listing creation standard:
+
+Select
+
+Requirements:
+1. Audit all select fields in Direct Hire Blade files for Buyer, Seller, Landlord, and Tenant.
+2. Update the visible placeholder option text to exactly:
+   Select
+3. Preserve existing option values unless they are purely placeholder values.
+4. Do not change real selectable options.
+5. Do not change labels, tooltips, names, IDs, bindings, validation, saved values, or conditional logic.
+6. If Select2 is used, ensure the Select2 placeholder also displays:
+   Select
+7. Do not apply this to text input placeholders — only select/dropdown placeholder text.
+
+==================================================
+LIKELY FILES
+==================================================
+
+- resources/views/hire-agent-direct/counter.blade.php
+- resources/views/hire-agent-direct/submitted.blade.php
+- resources/views/hire-agent-direct/acknowledge.blade.php
+- resources/views/hire-agent-direct/client-details/buyer.blade.php
+- resources/views/hire-agent-direct/client-details/seller.blade.php
+- resources/views/hire-agent-direct/client-details/landlord.blade.php
+- resources/views/hire-agent-direct/client-details/tenant.blade.php
+- any shared Direct Hire review/submitted/client detail partials
+
+==================================================
+REQUIRED VERIFICATION
+==================================================
+
+1. Show final git diff and confirm changed files are limited to Direct Hire Blade/display files.
+
+2. Confirm Buyer Direct Hire shows First Name and Last Name in review/submitted displays.
+
+3. Confirm Seller Direct Hire shows First Name and Last Name in review/submitted displays.
+
+4. Confirm Landlord Direct Hire shows First Name and Last Name in review/submitted displays.
+
+5. Confirm Tenant Direct Hire shows First Name and Last Name in review/submitted displays.
+
+6. Confirm no combined “Name” label appears when first_name and last_name exist.
+
+7. Confirm all Direct Hire select placeholder text now displays exactly:
+   Select
+
+8. Confirm no text input placeholders were changed as part of the select placeholder cleanup.
+
+9. Confirm no Marketplace, Offer Listing, Limited Service, route, controller, model, migration, validation, or schema files changed.
+
+10. Confirm browser console has no JS errors.

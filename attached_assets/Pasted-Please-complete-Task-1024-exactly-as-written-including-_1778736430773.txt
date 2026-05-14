@@ -1,0 +1,190 @@
+Please complete Task #1024 exactly as written, including the updated safeguards around Desired Lease Term stale values.
+
+Important safeguards:
+- Audit first before editing.
+- Scope is STRICTLY Landlord Direct Hire only:
+  - /hire/agent/direct/{id}/landlord/{propertyType}
+  - /hire/agent/direct/{id}/landlord/{propertyType}/counter
+  - /hire/agent/direct/{id}/landlord/{propertyType}/acknowledge
+- Do NOT touch Buyer, Seller, Tenant, marketplace Hire Agent, Offer Listing, or Limited Service flows.
+- Do NOT change routes, controllers, models, migrations, schema, validation, or save logic.
+- Blade/JS only unless a direct landlord-only config parity issue requires a minimal config addition.
+- initializeLimitedService() is frozen legacy code — do not touch.
+
+Target files:
+- resources/views/hire-agent-direct/client-details/landlord.blade.php
+- resources/views/hire-agent-direct/client-details/tenant.blade.php (READ-ONLY reference)
+- resources/views/hire-agent-direct/counter.blade.php
+- resources/views/hire-agent-direct/acknowledge.blade.php
+- config/agent_preset_compensation.php (ONLY if landlord retainer fee parity truly exists)
+
+Part 1 — Desired Monthly Rent formatting
+Requirements:
+- Apply the same comma-formatting pattern used in tenant.blade.php max_monthly_lease_price to:
+  input[name="desired_monthly_rent"]
+- Format while typing:
+  545555 → 545,555
+- Run formatter on prefilled values on load.
+- Preserve existing $ prefix UI.
+
+Before adding submit cleanup:
+- Verify counterFormSubmit() already strips commas for $-prefixed text inputs.
+- If desired_monthly_rent is already covered there, DO NOT add duplicate stripping.
+
+For acknowledge.blade.php:
+- Add desired_monthly_rent comma stripping inside ackSubmit()
+- Mirror seller_desired_sale_price stripping.
+
+Part 2 — Review formatting
+In populateReviewTab() inside counter.blade.php:
+
+Add desired_monthly_rent formatting:
+- strip commas
+- parse integer
+- prefix $
+- toLocaleString('en-US')
+
+Add availability_date formatting:
+- parse safely from YYYY-MM-DD
+- new Date(year, monthIndex, day)
+- display:
+  May 27, 2026
+
+Reuse existing move_in_date logic pattern.
+
+Do NOT alter unrelated review formatting logic.
+
+Part 3 — Replace Flexibility with Desired Lease Term
+In client-details/landlord.blade.php:
+
+Remove entirely:
+- Flexibility label
+- Flexibility select
+- Flexibility options
+- Flexibility @error block
+
+Replace with:
+Label:
+- Desired Lease Term
+
+Select:
+name="desired_lease_term"
+
+Options:
+- Month-to-Month
+- 3 Months
+- 6 Months
+- 9 Months
+- 1 Year
+- 2 Years
+- Other
+
+Requirements:
+- Preserve existing styling/icon conventions.
+- Use existing conditional reveal pattern already used in this partial.
+
+When "Other" is selected:
+- show ONLY a text input underneath
+- NO extra label
+- placeholder:
+  Enter desired lease term (e.g., 8 Months)
+
+Critical stale-value safeguard:
+- The "Other" text input must ONLY be visible when select value === "Other"
+- When user switches away from "Other":
+  - immediately hide the text field
+  - immediately clear its value
+- Prevent stale desired_lease_term_other values from appearing in:
+  - review tab
+  - acknowledge/submitted pages
+  - future draft reloads
+
+Important:
+- UI/form replacement only
+- DO NOT rename DB/meta fields
+- DO NOT add migrations
+- Existing saved flexibility values remain untouched historically
+
+Review tab updates:
+- remove flexibility entry
+- add desired_lease_term
+- append desired_lease_term_other ONLY when select value === "Other"
+
+Also remove any leftover flexibility display labels elsewhere.
+
+Part 4 — Interested in Selling conditional audit
+Audit landlord Comp Terms under:
+@if($role === 'landlord')
+
+Requirements:
+- Selecting:
+  Interested in Selling the Property = Yes
+  immediately reveals:
+  - Landlord’s Broker Purchase Fee select
+  - nested amount fields
+
+If nested conditional init order is broken:
+- fix ordering safely
+OR
+- add post-init conditional refresh pass
+
+Requirements:
+- preserve existing bindings/names
+- preserve existing conditional engine
+- confirm:
+  - % suffixes correct
+  - $ prefixes correct
+  - comma formatting still applies to flat-fee fields
+
+Do NOT rewrite the entire conditional system.
+
+Part 5 — Full landlord Comp Terms parity audit
+Compare landlord Direct Hire Comp Terms vs landlord preset editor.
+
+Verify parity for:
+- Lease compensation
+- Renewal fee
+- Tenant broker compensation (residential only)
+- Interested in Selling commission fields
+- Brokerage relationship
+- Agency agreement timeframe
+- Protection period
+- Early termination fee
+
+Retainer fee audit:
+- Check config/agent_preset_compensation.php
+- ONLY if landlord preset editor supports retainer fee:
+  - add landlord Retainer Fee block
+- OTHERWISE:
+  - leave exclusion unchanged
+
+Do NOT add marketplace/listing-only fields.
+
+QA required:
+- desired_monthly_rent formats while typing
+- desired_monthly_rent formats on prefilled load
+- commas stripped before acknowledge submit
+- Review shows:
+  $3,233,232
+- availability_date review shows:
+  May 27, 2026
+- Flexibility fully removed
+- Desired Lease Term appears correctly
+- Other text field:
+  - appears only when Other selected
+  - clears when switching away
+  - does not leak stale values into review/acknowledge
+- Interested in Selling reveals nested commission fields immediately
+- $ / % suffixes correct
+- comma formatting still works on flat-fee fields
+- no console errors
+- no Buyer/Seller/Tenant regressions
+- no marketplace/Offer Listing changes
+
+Final response must include:
+- files changed
+- whether landlord retainer fee parity existed
+- exact conditional-init fix used
+- stale-value clearing method used
+- QA proof
+- confirmation no out-of-scope flows/files touched
