@@ -1,0 +1,92 @@
+Task: Audit and fix Create/Edit Landlord Offer Listing issues with safeguards
+
+URL examples:
+Create: /offer-listing/landlord
+Edit/Draft: /offer-listing/landlord/edit/31
+
+Scope:
+Only audit/fix the Landlord Offer Listing create/edit/draft flow unless a shared helper is clearly responsible. Do not modify Hire Agent flows, Seller flows, routes, migrations, database schema, controllers unrelated to Offer Listing Landlord, Limited Service legacy paths, or public view pages unless required for verification.
+
+Issues to fix:
+
+1. Property Style options missing/inconsistent
+- Audit Landlord Offer Listing Residential Property Style options and compare against Hire Landlord listing residential property style options.
+- Add missing “Apartments” to the Residential Property Style list.
+- Audit both Residential and Commercial Property Style lists to ensure Landlord Offer Listing uses the correct complete option set.
+- Do not remove existing valid options unless clearly duplicated or wrong.
+- Confirm create and edit/draft load use the same option source.
+
+2. Full field audit after missing option bug
+- Audit all Landlord Offer Listing create/edit fields against the intended Landlord Listing structure.
+- Confirm no fields/options are missing due to conditional rendering, copied Seller logic, Residential/Commercial branch issues, or stale draft/edit templates.
+- Pay special attention to Property Details, Leasing Terms, Broker Compensation, Landlord Information, and all multi-select fields.
+- Report any discovered missing fields/options before changing broad logic.
+
+3. Icon corruption when clicking Total Acreage / nearby fields
+Bug shown in screenshot:
+- When clicking Total Acreage or interacting around Property Details fields, icons become displaced/stacked over labels and fields.
+- Audit the icon injection logic for Landlord Offer Listing create page.
+- Compare against Create Seller Listing edit/draft behavior, which works correctly.
+- Fix so icons stay inside their input/select/textarea wrappers and never duplicate, jump, stack, or render over labels.
+- Ensure addIconsToInputs() or equivalent uses a stable guard such as data-icon-rendered and does not reinject icons after Select2/Livewire updates.
+- Ensure icon wrapper CSS positioning matches Seller’s working implementation.
+
+4. Icons disappear on edit/draft load
+Edit/Draft example:
+- /offer-listing/landlord/edit/31
+Bug:
+- Icons flash briefly or appear, then disappear after draft/edit data loads.
+Required:
+- Audit why Landlord edit/draft differs from Seller edit/draft.
+- Fix Livewire/select2/tab re-render timing so icons remain visible after initial load, draft hydration, tab changes, Select2 initialization, and validation updates.
+- Do not create a loop that continuously reinjects icons or duplicates them.
+
+5. Next button broken on edit/draft
+Bug:
+- On Landlord Offer Listing edit/draft pages, the Next button does not work.
+Required:
+- Audit wizard JS event binding for create vs edit/draft.
+- Compare with Seller Offer Listing edit/draft because Seller works correctly.
+- Fix event binding so Next/Back work normally on edit/draft.
+- Avoid double-advance bugs.
+- Preserve existing Save Draft / Save Edit behavior.
+
+Safeguards:
+- Do not touch Hire Agent / TenantAgentAuction files.
+- Do not change Seller, Buyer, or Tenant listing behavior except for read-only comparison.
+- Do not change database schema or migrations.
+- Do not modify unrelated compiled CSS unless required by the build step.
+- If CSS build changes public/css/app.css, verify diff contains only intended compiled changes and no Tailwind utility churn.
+- Preserve all existing field labels, placeholders, tooltips, wire:model names, validation, and save logic unless directly required to fix the listed bugs.
+- Make the smallest targeted fix possible.
+
+Verification checklist:
+- /offer-listing/landlord create page:
+  - Residential Property Style includes Apartments.
+  - Residential and Commercial Property Style options are complete and correct.
+  - Clicking Total Acreage does not corrupt icons.
+  - Icons remain correctly positioned after clicking fields, changing tabs, and selecting dropdowns.
+  - Multi-select fields still work normally.
+  - Next/Back buttons work.
+
+- /offer-listing/landlord/edit/31 or any landlord draft/edit:
+  - Icons do not disappear after load.
+  - Icons do not duplicate.
+  - Icons remain after tab changes and Livewire updates.
+  - Next/Back buttons work.
+  - Existing saved values still load.
+  - Save Edit / draft behavior still works.
+
+- Regression check:
+  - Seller Offer Listing edit/draft still works and icons remain correct.
+  - No Hire Agent files changed.
+  - No schema, migration, unrelated route, or unrelated controller changes.
+
+Deliverables:
+- List exact files changed.
+- Explain root cause for:
+  1. missing Apartments option,
+  2. icon corruption,
+  3. icons disappearing on edit/draft,
+  4. edit/draft Next button failure.
+- Confirm each item in the verification checklist.

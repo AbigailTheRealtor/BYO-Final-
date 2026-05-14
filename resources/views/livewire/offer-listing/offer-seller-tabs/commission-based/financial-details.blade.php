@@ -549,8 +549,8 @@
             </span>
             <div class="input-cover">
                 <textarea wire:model.defer="business_lease_additional_terms" class="form-control has-icon"
-                    data-icon="fa-solid fa-note-sticky" rows="1"
-                    style="min-height: 44px; padding: 10px; font-size: 16px; resize: none;"
+                    data-icon="fa-solid fa-note-sticky" rows="3"
+                    style="min-height: 90px; padding: 10px; font-size: 16px; resize: vertical;"
                     placeholder="Enter additional lease terms (e.g., renewal options, assignment requirements, landlord approval details)"></textarea>
             </div>
         </div>

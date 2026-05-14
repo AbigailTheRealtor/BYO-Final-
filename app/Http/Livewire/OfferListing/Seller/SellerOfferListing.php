@@ -556,9 +556,11 @@ class SellerOfferListing extends Component
     public $virtual_showings_count = '';
 
     // Sale Terms Questions
+    public $initial_deposit_type = '$';
     public $initial_deposit_requested = '';
     public $initial_deposit_timeframe = '';
     public $initial_deposit_timeframe_other = '';
+    public $additional_deposit_type = '$';
     public $additional_deposit_requested = '';
     public $additional_deposit_timeframe = '';
     public $additional_deposit_timeframe_other = '';
@@ -2916,9 +2918,11 @@ class SellerOfferListing extends Component
             $this->virtual_showings_count = $auction->get->virtual_showings_count;
 
             // Sale Terms Questions
+            $this->initial_deposit_type = $auction->get->initial_deposit_type ?? '$';
             $this->initial_deposit_requested = $auction->get->initial_deposit_requested ?? '';
             $this->initial_deposit_timeframe = $auction->get->initial_deposit_timeframe ?? '';
             $this->initial_deposit_timeframe_other = $auction->get->initial_deposit_timeframe_other ?? '';
+            $this->additional_deposit_type = $auction->get->additional_deposit_type ?? '$';
             $this->additional_deposit_requested = $auction->get->additional_deposit_requested ?? '';
             $this->additional_deposit_timeframe = $auction->get->additional_deposit_timeframe ?? '';
             $this->additional_deposit_timeframe_other = $auction->get->additional_deposit_timeframe_other ?? '';
@@ -3469,9 +3473,11 @@ class SellerOfferListing extends Component
         $auction->saveMeta('virtual_showings_count', $this->virtual_showings_count);
 
         // Sale Terms Questions
+        $auction->saveMeta('initial_deposit_type', $this->initial_deposit_type);
         $auction->saveMeta('initial_deposit_requested', $this->initial_deposit_requested);
         $auction->saveMeta('initial_deposit_timeframe', $this->initial_deposit_timeframe);
         $auction->saveMeta('initial_deposit_timeframe_other', $this->initial_deposit_timeframe_other);
+        $auction->saveMeta('additional_deposit_type', $this->additional_deposit_type);
         $auction->saveMeta('additional_deposit_requested', $this->additional_deposit_requested);
         $auction->saveMeta('additional_deposit_timeframe', $this->additional_deposit_timeframe);
         $auction->saveMeta('additional_deposit_timeframe_other', $this->additional_deposit_timeframe_other);

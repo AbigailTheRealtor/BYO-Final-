@@ -77,10 +77,6 @@ return [
                 'label'       => 'Are you open to offering seller concessions or repair credits?',
                 'placeholder' => 'Enter concession flexibility (e.g., open to closing cost credits up to 2%; prefer as-is but will consider)',
             ],
-            'price_reduction_history' => [
-                'label'       => 'Has the listing price been adjusted since going to market, and if so, why?',
-                'placeholder' => 'Enter price history context (e.g., reduced $10K after first month to reflect updated comps)',
-            ],
         ],
 
         'Location & Lifestyle' => [

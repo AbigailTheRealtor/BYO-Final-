@@ -1366,9 +1366,11 @@
                 if (savedExchangeItems.length > 0) {
                     $('#exchange_item').val(savedExchangeItems).trigger('change.select2');
                 }
+                $('#other_exchange_item_wrapper').toggle((savedExchangeItems || []).includes('Other'));
                 $('#exchange_item').on('change', function(e) {
                     var selectedValues = $(this).val() || [];
-                    @this.set('exchange_item', selectedValues, true);
+                    @this.set('exchange_item', selectedValues, false);
+                    $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                 });
             } else if ($('#exchange_item').length && $('#exchange_item').hasClass('select2-hidden-accessible')) {
                 var savedExchangeItems = @this.get('exchange_item') || [];
@@ -1996,7 +1998,6 @@
                         '.nav-link');
                     if (nextTab) {
                         new bootstrap.Tab(nextTab).show();
-                        nextTab.click();
                     }
                 }
 
@@ -2011,7 +2012,6 @@
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
                     new bootstrap.Tab(prevTab).show();
-                    prevTab.click();
                 }
             };
 
@@ -2169,7 +2169,6 @@
                         '.nav-link');
                     if (nextTab) {
                         new bootstrap.Tab(nextTab).show();
-                        nextTab.click();
                     }
                 }
 
@@ -2184,7 +2183,6 @@
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
                     new bootstrap.Tab(prevTab).show();
-                    prevTab.click();
                 }
             };
 
@@ -2280,6 +2278,17 @@
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
             checkRepresentationStatus();
+            // Reformat all money inputs that are not currently focused
+            document.querySelectorAll('input[onblur="reformatNumber(this)"]').forEach(function(inp) {
+                if (inp === document.activeElement || !inp.value) return;
+                var v = inp.value.replace(/,/g, '');
+                var parts = v.split('.');
+                var intPart = parts[0] || '';
+                var decPart = parts[1] || '';
+                if (decPart) decPart = decPart.slice(0, 2);
+                intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                inp.value = decPart ? (intPart + '.' + decPart) : intPart;
+            });
 
             // Re-init #property_style_select Select2 when property_type changes so that
             // the correct option list and "Select" placeholder are shown (e.g. Business type)

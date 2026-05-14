@@ -607,7 +607,7 @@
                 <span class="input-group-text">$</span>
             @endif
             <input type="text" wire:model="assumable_fee_amount" class="form-control"
-                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 1,000)' }}"
+                placeholder="{{ ($assumable_fee_type ?? '$') === '%' ? 'Enter assumption fee percentage (e.g., 1)' : 'Enter assumption fee amount (e.g., 1000)' }}"
                 data-error-id="assumable_fee_amount_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             @if (($assumable_fee_type ?? '$') === '%')
@@ -815,7 +815,7 @@
         </div>
     </div>
 
-    @if (is_array($exchange_item) ? in_array('Other', $exchange_item) : $exchange_item === 'Other')
+    <div id="other_exchange_item_wrapper" style="display: {{ (is_array($exchange_item) ? in_array('Other', $exchange_item) : $exchange_item === 'Other') ? '' : 'none' }}">
         <div class="form-group">
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
@@ -823,7 +823,7 @@
                     placeholder="Enter exchange item (e.g., Private Jet, Yacht, Luxury RV)">
             </div>
         </div>
-    @endif
+    </div>
 
     <div class="form-group">
         <label class="fw-bold">Estimated Value of Exchange/Trade Item:</label>
@@ -1717,12 +1717,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
+    <div class="input-group">
+        <select wire:model="initial_deposit_type" class="form-select" style="max-width: 75px;">
+            <option value="$">$</option>
+            <option value="%">%</option>
+        </select>
         <input type="text" wire:model="initial_deposit_requested" class="form-control"
-            placeholder="Enter initial deposit amount (e.g., 5000)"
+            placeholder="{{ $initial_deposit_type === '%' ? 'Enter initial deposit % (e.g., 3)' : 'Enter initial deposit amount (e.g., 5000)' }}"
             data-error-id="initial_deposit_requested_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        @if ($initial_deposit_type === '%')
+            <span class="input-group-text">%</span>
+        @endif
     </div>
     <span class="error mt-2" id="initial_deposit_requested_error"></span>
 </div>
@@ -1768,12 +1774,18 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
-        <span class="input-group-text-seller">$</span>
+    <div class="input-group">
+        <select wire:model="additional_deposit_type" class="form-select" style="max-width: 75px;">
+            <option value="$">$</option>
+            <option value="%">%</option>
+        </select>
         <input type="text" wire:model="additional_deposit_requested" class="form-control"
-            placeholder="Enter additional deposit amount (e.g., 10000)"
+            placeholder="{{ $additional_deposit_type === '%' ? 'Enter additional deposit % (e.g., 2)' : 'Enter additional deposit amount (e.g., 10000)' }}"
             data-error-id="additional_deposit_requested_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        @if ($additional_deposit_type === '%')
+            <span class="input-group-text">%</span>
+        @endif
     </div>
     <span class="error mt-2" id="additional_deposit_requested_error"></span>
 </div>
@@ -2036,7 +2048,7 @@
     </label>
     <div class="input-cover">
         <input type="text" wire:model="hoa_condo_association_terms" class="form-control has-icon"
-            data-icon="fa-solid fa-building"
+            data-icon="fa-solid fa-building-user"
             placeholder="Enter any additional HOA notes (e.g., $200 transfer fee, pending special assessment, new rules effective Jan 2026)">
     </div>
 </div>

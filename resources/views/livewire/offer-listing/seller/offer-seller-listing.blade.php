@@ -1862,10 +1862,12 @@
                 if (!$exEl.data('exchange-change-bound')) {
                     $exEl.on('change', function(e) {
                         var selectedValues = $(this).val() || [];
-                        @this.set('exchange_item', selectedValues, true);
+                        @this.set('exchange_item', selectedValues, false);
+                        $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                     });
                     $exEl.data('exchange-change-bound', true);
                 }
+                $('#other_exchange_item_wrapper').toggle((savedExchangeItems || []).includes('Other'));
             }
 
             initializeMlsPropertyMultiSelects();
@@ -2321,10 +2323,12 @@
                         if (!$exEl.data('exchange-change-bound')) {
                             $exEl.on('change', function(e) {
                                 var selectedValues = $(this).val() || [];
-                                @this.set('exchange_item', selectedValues, true);
+                                @this.set('exchange_item', selectedValues, false);
+                                $('#other_exchange_item_wrapper').toggle(selectedValues.includes('Other'));
                             });
                             $exEl.data('exchange-change-bound', true);
                         }
+                        $('#other_exchange_item_wrapper').toggle(($exEl.val() || []).includes('Other'));
                     }
                     toggleGarageOptions();
                     toggleSpaceInput('carport-needed', 'other-carport-needed');
@@ -3143,11 +3147,22 @@
             if (leaseInput && leaseInput.value) {
                 formatWithCommas(leaseInput);
             }
-            // Format purchase_value input if it's a $ (flat) type  
+            // Format purchase_value input if it's a $ (flat) type
             const purchaseInput = document.querySelector('[wire\\:key^="purchase-value-input-flat"]');
             if (purchaseInput && purchaseInput.value) {
                 formatWithCommas(purchaseInput);
             }
+            // Reformat all money inputs that are not currently focused
+            document.querySelectorAll('input[onblur="reformatNumber(this)"]').forEach(function(inp) {
+                if (inp === document.activeElement || !inp.value) return;
+                var v = inp.value.replace(/,/g, '');
+                var parts = v.split('.');
+                var intPart = parts[0] || '';
+                var decPart = parts[1] || '';
+                if (decPart) decPart = decPart.slice(0, 2);
+                intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                inp.value = decPart ? (intPart + '.' + decPart) : intPart;
+            });
         }
 
         // Initialize on page load
