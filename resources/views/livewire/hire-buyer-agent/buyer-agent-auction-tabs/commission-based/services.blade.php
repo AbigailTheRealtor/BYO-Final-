@@ -770,7 +770,7 @@
                     Specify additional services requested:
                 </label>
                 <textarea class="form-control" id="other-services-input" wire:model="other_services" rows="3"
-                    placeholder="Please describe any additional services you require"></textarea>
+                    placeholder="Enter additional services not listed above (e.g., School Boundary Research, Builder Warranty Review, Investment Property Analysis)"></textarea>
             </div>
         @endif
 
@@ -809,7 +809,7 @@
                             id="other-services-input-{{ $i }}"
                             type="text"
                             class="form-control mb-2 @error("other_services.$i") is-invalid @enderror"
-                            placeholder="Specify any additional services requested"
+                            placeholder="Enter additional services not listed above (e.g., School Boundary Research, Builder Warranty Review, Investment Property Analysis)"
                             wire:model="other_services.{{ $i }}"
                         >
 

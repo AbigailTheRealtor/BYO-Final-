@@ -44,7 +44,7 @@
             <div class="input-cover">
                 <input wire:model="phone" type="text" id="phone_number"
                     class="form-control has-icon" required data-icon="fa-solid fa-phone" 
-                    placeholder="(XXX) XXX-XXXX" oninput="formatPhoneNumber(this)">
+                    placeholder="(555) 555-5555" oninput="formatPhoneNumber(this)">
             </div>
             <span class="error mt-2" id="phone_error"></span>
             @error('phone')

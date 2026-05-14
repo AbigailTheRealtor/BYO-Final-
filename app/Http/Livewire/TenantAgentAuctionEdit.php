@@ -3510,7 +3510,6 @@ class TenantAgentAuctionEdit extends Component
             $auction->saveMeta('unit_type_configurations', json_encode(array_values($cleanedConfigs)));
             $auction->saveMeta('screening_concerns', $this->screening_concerns);
             $auction->saveMeta('screening_concerns_explanation', $this->screening_concerns_explanation);
-            $auction->saveMeta('credit_scroe_rating', json_encode($this->credit_scroe_rating));
             $auction->saveMeta('preferance_details', $this->preferance_details);
 
             /// Buyer purchasing terms

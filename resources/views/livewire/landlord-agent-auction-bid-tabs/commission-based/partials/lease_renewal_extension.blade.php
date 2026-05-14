@@ -63,7 +63,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2000)"
+                            placeholder="Enter flat fee amount (e.g., 2,000)"
                             data-error-id="renewal_fee_percentage_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -113,7 +113,7 @@
                     {{-- <label class="form-label">Percentage of the Net Aggregate Rent</label> --}}
                     <div class="input-group">
                         <input type="number" wire:model.lazy="renewal_fee_percentage" class="form-control"
-                            placeholder="Enter percentage of the net aggregate rent (e.g., 5)">
+                            placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                         <span class="input-group-text">%</span>
                     </div>
 
@@ -178,7 +178,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="flat_fee_error"
+                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="flat_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                     <span class="error mt-2" id="flat_fee_error"></span>

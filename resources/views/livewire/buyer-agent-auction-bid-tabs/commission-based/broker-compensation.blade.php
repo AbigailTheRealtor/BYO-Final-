@@ -213,7 +213,7 @@
                     <div class="col-md-6">
                         <div class="input-group" x-data="moneyInput()">
                             <input type="number" wire:model="lease_fee_percentage_combo" class="form-control"
-                                placeholder="Enter percentage of the gross lease value (e.g., 7)">
+                                placeholder="Enter percentage of the gross lease value (e.g., 10)">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>

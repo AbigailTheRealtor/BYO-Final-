@@ -188,7 +188,7 @@
         </label>
         <div class="input-cover">
             <input type="url" wire:model="video_link" class="form-control has-icon"
-                data-icon="fa-solid fa-video" placeholder="Enter video link (e.g. YouTube, Vimeo)">
+                data-icon="fa-solid fa-video" placeholder="Enter video link (e.g., YouTube, Vimeo)">
                  <button class="btn btn-primary input-group-text-seller" type="button" wire:click="previewVideo">
             Enter
         </button>

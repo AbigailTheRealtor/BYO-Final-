@@ -129,7 +129,7 @@
                 <div class="col-md-6">
                     <div class="input-group">
                         <input type="number" wire:model="lease_fee_percentage_combo" class="form-control"
-                            placeholder="Enter percentage of the gross lease value (e.g., 7)">
+                            placeholder="Enter percentage of the gross lease value (e.g., 10)">
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
@@ -381,7 +381,7 @@
                 <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1500)' }}"
+                        : 'Enter flat fee amount (e.g., 1,500)' }}"
                     data-error-id="lease_value_error" 
                     oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}" 
                     onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
@@ -415,7 +415,7 @@
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5000)' }}"
+                        : 'Enter flat fee amount (e.g., 5,000)' }}"
                     data-error-id="purchase_value_error" 
                     oninput="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}" 
                     onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"

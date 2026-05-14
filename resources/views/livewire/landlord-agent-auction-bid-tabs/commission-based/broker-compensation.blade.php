@@ -42,7 +42,7 @@
 
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
+                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="purchase_fee_flat_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                         <!--
@@ -54,7 +54,7 @@
                 <input type="text" step="any" wire:model.lazy="purchase_fee_flat" class="form-control"
                     placeholder="{{ $purchase_fee_flat_type === '%'
                         ? 'Enter percentage of the total flat fee (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5000)' }}"
+                        : 'Enter flat fee amount (e.g., 5,000)' }}"
                          data-error-id="purchase_value_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
@@ -142,7 +142,7 @@
                     {{-- <label class="fw-bold">Percentage of Net Aggregate Rent</label> --}}
                     <div class="input-group">
                         <input type="number" wire:model.lazy="purchase_fee_net_aggregate" class="form-control"
-                            placeholder="Enter percentage of the net aggregate rent (e.g., 5)">
+                            placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
@@ -206,7 +206,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_commercial" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3000)"
+                            placeholder="Enter flat fee amount (e.g., 3,000)"
                             data-error-id="purchase_fee_flat_commercial_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -315,7 +315,7 @@
                     <div class="mb-3">
                         <div class="input-group">
                             <input type="number" wire:model.lazy="tenant_broker_gross_lease" class="form-control"
-                                placeholder="Enter percentage of the gross lease value (e.g., 5)">
+                                placeholder="Enter percentage of the gross lease value (e.g., 10)">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
@@ -334,7 +334,7 @@
                         <div class="input-group">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="tenant_broker_flat_fee" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1000)"
+                                placeholder="Enter flat fee amount (e.g., 1,000)"
                                 data-error-id="tenant_broker_flat_fee_error" oninput="validateInput(this)"
                                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
@@ -523,7 +523,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2000)"
+                            placeholder="Enter flat fee amount (e.g., 2,000)"
                             data-error-id="renewal_fee_percentage_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -573,7 +573,7 @@
                     {{-- <label class="form-label">Percentage of the Net Aggregate Rent</label> --}}
                     <div class="input-group">
                         <input type="number" wire:model.lazy="renewal_fee_percentage" class="form-control"
-                            placeholder="Enter percentage of the net aggregate rent (e.g., 5)">
+                            placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                         <span class="input-group-text">%</span>
                     </div>
 
@@ -638,7 +638,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="renewal_fee_flat_free" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="flat_fee_error"
+                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="flat_fee_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                     <span class="error mt-2" id="flat_fee_error"></span>
@@ -766,7 +766,7 @@
                     <span class="input-group-text">$</span>
 
                     <input type="text" wire:model.lazy="interested_in_property_management_fee_flate_free"
-                        class="form-control" placeholder="Enter flat fee amount (e.g., 1000)"
+                        class="form-control" placeholder="Enter flat fee amount (e.g., 1,000)"
                         data-error-id="interested_in_property_management_fee_flate_free_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 </div>
@@ -840,7 +840,7 @@
                 <input type="text" step="any" wire:model.lazy="lease_value" class="form-control"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1500)' }}"
+                        : 'Enter flat fee amount (e.g., 1,500)' }}"
                     data-error-id="lease_value_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
 
@@ -879,7 +879,7 @@
                 <input type="text" step="any" wire:model.lazy="purchase_value" class="form-control"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5000)' }}"
+                        : 'Enter flat fee amount (e.g., 5,000)' }}"
                     data-error-id="purchase_value_error" oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
 
@@ -954,7 +954,7 @@
                     <div class="col-md-6">
                         <div class="input-group">
                             <input type="number" wire:model.lazy="landlord_broker_percentage_price"
-                                class="form-control" placeholder="Enter percentage of purchase price  (e.g., 2)">
+                                class="form-control" placeholder="Enter percentage of purchase price (e.g., 2)">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
@@ -964,7 +964,7 @@
                         <div class="input-group">
                             <span class="input-group-text"> $</span>
                             <input type="text" wire:model.lazy="landlord_broker_dollar_price" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 2000) "
+                                placeholder="Enter flat fee amount (e.g., 2,000) "
                                 data-error-id="landlord_broker_dollar_price_error" oninput="validateInput(this)"
                                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
@@ -976,13 +976,13 @@
 
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 5000)"
+                        placeholder="Enter flat fee amount (e.g., 5,000)"
                         data-error-id="landlord_broker_flate_fee_error" oninput="validateInput(this)"
                         onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                     <!--
                     <input type="text" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 5000)"
+                        placeholder="Enter flat fee amount (e.g., 5,000)"
                          data-error-id="landlord_broker_flate_fee_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)"> --}}
 
@@ -997,7 +997,7 @@
                 <input type="text" step="any" wire:model.lazy="landlord_broker_flate_fee" class="form-control"
                     placeholder="{{ $lease_fee_flat_type === '%'
                         ? 'Enter percentage of the total flat fee (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5000)' }}"
+                        : 'Enter flat fee amount (e.g., 5,000)' }}"
                          data-error-id="purchase_value_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 

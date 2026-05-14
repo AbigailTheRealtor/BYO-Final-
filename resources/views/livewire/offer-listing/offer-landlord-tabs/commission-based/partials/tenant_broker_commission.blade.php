@@ -64,7 +64,7 @@
                     <div class="mb-3">
                         <div class="input-group">
                             <input type="number" wire:model.lazy="tenant_broker_gross_lease" class="form-control"
-                                placeholder="Enter percentage of the gross lease value (e.g., 5)">
+                                placeholder="Enter percentage of the gross lease value (e.g., 10)">
                             <span class="input-group-text">%</span>
                         </div>
                     </div>
@@ -83,7 +83,7 @@
                         <div class="input-group">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="tenant_broker_flat_fee" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1000)"
+                                placeholder="Enter flat fee amount (e.g., 1,000)"
                                 data-error-id="tenant_broker_flat_fee_error" oninput="validateInput(this)"
                                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>

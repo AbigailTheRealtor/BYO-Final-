@@ -5,7 +5,7 @@
            id="referral_fee_percent_landlord_counter"
            wire:model.live.debounce.300ms="referral_fee_percent"
            min="0" max="100" step="0.01"
-           placeholder="e.g. 25">
+           placeholder="Enter referral fee percentage (e.g., 25)">
     <div class="form-text text-muted mt-1" style="font-size:.85rem;">
         Enter the referral fee percentage offered for this Agent-to-Agent referral arrangement.
     </div>

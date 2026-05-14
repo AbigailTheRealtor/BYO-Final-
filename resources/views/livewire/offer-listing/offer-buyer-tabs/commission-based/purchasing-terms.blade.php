@@ -108,7 +108,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model="assignment_fee_amount" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2500)"
+                            placeholder="Enter flat fee amount (e.g., 2,500)"
                             data-error-id="assignment_fee_amount_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>

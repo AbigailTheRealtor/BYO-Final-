@@ -43,7 +43,7 @@
     <label class="fw-bold">Email Address:<span class="text-danger">*</span></label>
     <div class="input-cover">
         <input type="email" wire:model="email" class="form-control has-icon" data-icon="fa-solid fa-envelope"
-            placeholder="Enter email address " required>
+            placeholder="Enter email address" required>
     </div>
 </div>
 
@@ -140,7 +140,7 @@
         </label>
         <div class="input-cover">
             <input type="url" wire:model="video_link" class="form-control has-icon"
-                data-icon="fa-solid fa-video" placeholder="Enter video link (e.g. YouTube, Vimeo)">
+                data-icon="fa-solid fa-video" placeholder="Enter video link (e.g., YouTube, Vimeo)">
             <button class="btn btn-primary input-group-text-seller" type="button" wire:click="previewVideo">
                 Enter
             </button>

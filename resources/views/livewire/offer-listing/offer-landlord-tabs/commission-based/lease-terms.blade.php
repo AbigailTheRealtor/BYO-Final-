@@ -148,7 +148,7 @@
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
                 </div>
             </div>
 
@@ -265,7 +265,7 @@
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
                 </div>
             </div>
 
@@ -421,7 +421,7 @@
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
                 </div>
             </div>
 
@@ -628,7 +628,7 @@
 
                 <div class="input-cover">
                     <input type="text" wire:model="maintenance_response_time" class="form-control has-icon"
-                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 Hours)">
+                        data-icon="fa-solid fa-stopwatch" placeholder="Enter timeframe (e.g., 24 hours)">
                 </div>
             </div>
 

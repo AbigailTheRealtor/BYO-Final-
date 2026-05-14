@@ -30,7 +30,7 @@
 
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
+                            placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="purchase_fee_flat_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                         <!--
@@ -42,7 +42,7 @@
                 <input type="text" step="any" wire:model.lazy="purchase_fee_flat" class="form-control"
                     placeholder="{{ $purchase_fee_flat_type === '%'
                         ? 'Enter percentage of the total flat fee (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5000)' }}"
+                        : 'Enter flat fee amount (e.g., 5,000)' }}"
                          data-error-id="purchase_value_error"
                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
@@ -130,7 +130,7 @@
                     {{-- <label class="fw-bold">Percentage of Net Aggregate Rent</label> --}}
                     <div class="input-group">
                         <input type="number" wire:model.lazy="purchase_fee_net_aggregate" class="form-control"
-                            placeholder="Enter percentage of the net aggregate rent (e.g., 5)">
+                            placeholder="Enter percentage of the net aggregate rent (e.g., 6)">
                         <span class="input-group-text">%</span>
                     </div>
                 </div>
@@ -194,7 +194,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_commercial" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3000)"
+                            placeholder="Enter flat fee amount (e.g., 3,000)"
                             data-error-id="purchase_fee_flat_commercial_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
