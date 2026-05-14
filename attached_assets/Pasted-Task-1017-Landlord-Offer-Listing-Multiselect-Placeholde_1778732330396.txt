@@ -1,0 +1,69 @@
+Task #1017 – Landlord Offer Listing Multiselect, Placeholder & Icon Audit
+
+Audit first, then make the smallest safe changes only.
+
+Scope:
+- ONLY Landlord Offer Listing create/edit flow.
+- Target files:
+  - resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+  - resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php
+  - resources/views/livewire/offer-listing/offer-landlord-tabs/*
+- Do NOT touch Seller, Buyer, Tenant, Hire Agent, Limited Service, routes, controllers, models, migrations, validation, schema, or save/meta logic.
+
+Fixes required:
+
+1. Multi-select behavior
+Audit every true multiple Select2 field in the Landlord create/edit pages and Landlord tab partials.
+For each real multiselect:
+- Ensure Select2 uses closeOnSelect: false.
+- Preserve existing placeholder, binding, name, id, and saved-value logic.
+- Prevent duplicate Select2 containers on tab switch or Livewire re-render.
+- If reinitializing Select2, destroy only the existing Select2 instance for that field first, then reinitialize safely.
+
+2. Placeholder cleanup
+Search Landlord create/edit files and Landlord tab partials for placeholders starting with:
+- "Describe..."
+Replace with platform format:
+- "Enter [field title] (e.g., Example)"
+
+Do not change labels, tooltips, bindings, field names, validation, or logic.
+
+Also audit Description tab placeholders only:
+- Inside every `(e.g., ...)`, capitalize each example phrase in title-case style.
+Example:
+Before: `Enter property description (e.g., recently renovated kitchen, waterfront views, flexible lease terms, in-unit washer/dryer)`
+After: `Enter property description (e.g., Recently Renovated Kitchen, Waterfront Views, Flexible Lease Terms, In-Unit Washer/Dryer)`
+
+3. Icon create/edit audit
+Use the Landlord create page as the baseline and align the Landlord edit page to it.
+
+Confirm/add where missing:
+- `.input-cover`
+- `.has-icon`
+- `.has-select-icon` for Select2 fields
+- correct `data-icon` attributes
+- sentinel class guard such as `.data-icon-rendered` to prevent duplicate icon injection.
+
+Ensure `addIconsToInputs()` runs after Select2 initialization and also after:
+- DOMContentLoaded
+- livewire:load if present
+- Bootstrap `shown.bs.tab`
+- Livewire `message.processed`
+- `draftLoaded` if used
+
+Icons must:
+- show immediately on create and edit load,
+- remain after tab changes,
+- remain after draft/edit hydration,
+- not duplicate,
+- not overlap Select2 placeholder/selected text.
+
+Acceptance checks:
+- Landlord create page: all icons show on first load and after tab switches.
+- Landlord edit/draft page: icons do not flash/disappear.
+- True multiselects stay open while selecting multiple values.
+- Saved multiselect values reload correctly.
+- No duplicate Select2 containers.
+- No console errors.
+- Next/Back, Save Draft, and Save Edit still work.
+- Git diff only includes Landlord create/edit Blade files and Landlord tab partials unless a direct Landlord-only root cause proves otherwise.

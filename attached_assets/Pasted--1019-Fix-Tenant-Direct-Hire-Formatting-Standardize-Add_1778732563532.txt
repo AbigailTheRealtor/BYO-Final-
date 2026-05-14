@@ -1,0 +1,74 @@
+#1019 - Fix Tenant Direct Hire Formatting + Standardize Additional Terms Placeholders
+
+Audit first, then make the smallest safe changes only.
+
+Scope:
+- Direct Hire counter flow only.
+- Touch only:
+  1) resources/views/hire-agent-direct/client-details/tenant.blade.php
+  2) resources/views/hire-agent-direct/counter.blade.php
+  3) resources/views/hire-agent-direct/client-details/buyer.blade.php only as reference — do not modify unless absolutely necessary.
+- Do NOT modify Marketplace, Offer Listing, Limited Service, routes, controllers, models, migrations, validation, or database schema.
+
+Issues to fix:
+1. Tenant Direct Hire currency inputs do not format with commas while typing/loading:
+   - max_monthly_lease_price
+   - household_monthly_income
+   Mirror the Buyer helper behavior from buyer.blade.php.
+   Typing 453545 should show 453,545.
+   Existing $ prefix must remain visible.
+   Pre-filled values should load formatted.
+   Do not apply this to number_of_occupants, phone, or any non-currency field.
+
+2. Tenant Review tab in counter.blade.php shows raw values:
+   - Max Monthly Lease Price should display like $453,545
+   - Household Monthly Income should display like $555,555
+   - Move-In Date should display like May 27, 2026 instead of 2026-05-27
+   Update populateReviewTab() only.
+   For move_in_date, parse YYYY-MM-DD safely using local-safe date construction or UTC-safe formatting so the date does not shift by one day.
+
+3. Standardize Additional Terms placeholders across all four Direct Hire roles:
+   Replace BOTH placeholders with this exact text:
+   “Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.”
+
+   Update:
+   - cc[additional_details_broker] textarea in the Comp Terms tab
+   - additional_terms textarea in the Additional Terms tab
+
+   Remove/replace the role-specific match expression branches for seller, buyer, landlord, tenant, residential, commercial, and default so they all use one shared neutral placeholder constant/string.
+
+Implementation requirements:
+- In tenant.blade.php, add formatting JS inside the existing @push('scripts') block.
+- Reuse/mirror buyer.blade.php helpers:
+  - normalizeDecimal
+  - formatWithCommas
+  - input listener formatting
+  - page-load formatting for existing values
+- In counter.blade.php, confirm counterFormSubmit() already strips commas from $-prefixed input-group text inputs. Do not add duplicate submit stripping unless the existing global stripping does not cover these tenant fields.
+- Keep all changes surgical.
+
+Done looks like:
+- Tenant Direct Hire counter page formats Max Monthly Lease Price and Household Monthly Income while typing.
+- Pre-filled Tenant values load as 60,000 instead of 60000.
+- Submit still sends raw numeric values without commas.
+- Review tab displays Max Monthly Lease Price and Household Monthly Income with $ and commas.
+- Review tab displays Move-In Date as Month Day, Year.
+- Buyer, Seller, Landlord, and Tenant Direct Hire all show the same neutral placeholder in:
+  - Additional Terms / Broker Notes
+  - Your Additional Terms / Notes
+- No other flows are changed.
+
+Required verification:
+1. Show git diff limited to the approved files.
+2. Search to confirm no outdated placeholder phrases remain in counter.blade.php:
+   - hourly consultation
+   - listing agreement
+   - search agreement
+   - showing schedule
+   - application process
+3. Manually test or explain verified behavior for:
+   - Tenant max_monthly_lease_price typing 453545 → 453,545
+   - Tenant household_monthly_income typing 555555 → 555,555
+   - Review tab shows $453,545 and $555,555
+   - Move-In Date shows May 27, 2026
+4. Confirm no Marketplace, Offer Listing, Limited Service, route, controller, model, migration, validation, or schema files changed.

@@ -1,0 +1,143 @@
+Task: Fix Tenant Direct Hire counter formatting + standardize Additional Terms placeholders across all 4 Direct Hire user types
+
+Scope:
+Tenant Direct Hire:
+- /hire/agent/direct/{id}/tenant/{propertyType}/counter
+- /hire/agent/direct/{id}/tenant/{propertyType}/acknowledge
+
+Also standardize Additional Terms placeholder text across ALL Direct Hire user types:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+Do NOT touch:
+- Marketplace Hire Agent flows
+- Offer Listing flows
+- Limited Service / legacy flows
+- Routes
+- Controllers
+- Database schema
+- Migrations
+- Models
+- Validation rules
+
+==================================================
+PART 1 — TENANT CURRENCY INPUT FORMATTING
+==================================================
+
+Issues:
+
+1. Max Monthly Lease Price
+Current:
+453545
+
+Required:
+- Keep visible $ prefix
+- Format commas while typing/loading:
+  453545 → 453,545
+- Review/summary display:
+  $453,545
+
+2. Household Monthly Income
+Current:
+60000 / 555555
+
+Required:
+- Keep visible $ prefix
+- Format commas while typing/loading:
+  60000 → 60,000
+  555555 → 555,555
+- Review/summary display:
+  $555,555
+
+Requirements:
+- Reuse existing Buyer/Seller formatting helper if possible
+- Strip commas before submit if backend expects raw numeric values
+- Do NOT apply formatting to:
+  - Number of Occupants
+  - ZIP codes
+  - phone numbers
+  - dates
+  - percentages
+  - general numeric fields
+
+==================================================
+PART 2 — TENANT REVIEW DISPLAY FIXES
+==================================================
+
+Tenant “Your Details” review section currently shows raw values.
+
+Required:
+- Max Monthly Lease Price:
+  $444,444
+- Household Monthly Income:
+  $555,555
+
+Move-In Date currently shows:
+2026-05-27
+
+Required:
+May 27, 2026
+
+Reuse existing formatting helpers if available.
+
+==================================================
+PART 3 — STANDARDIZE ADDITIONAL TERMS PLACEHOLDERS
+==================================================
+
+Apply to ALL 4 Direct Hire user types:
+- Buyer
+- Seller
+- Landlord
+- Tenant
+
+Check all Direct Hire textarea sections labeled:
+- “Additional Terms / Broker Notes”
+- “Your Additional Terms / Notes”
+or similar Direct Hire additional terms fields.
+
+Remove ALL outdated/example placeholder text including:
+- “Hourly consultation at $150/hr”
+- “I’d prefer a 30-day listing agreement…”
+- “I have questions about the showing schedule…”
+- “I’d prefer a 30-day buyer representation agreement…”
+- “I’d prefer a 30-day search agreement…”
+- “I have questions about the application process…”
+- any other role-specific examples
+
+Replace ALL with this single neutral placeholder:
+
+“Enter any additional notes, clarifications, requested changes, or conditions you want the agent to review before accepting.”
+
+Requirements:
+- Only change placeholder text
+- Preserve existing styling/classes/layout
+- Prefer shared partial/constant if applicable
+
+==================================================
+ACCEPTANCE CHECKS
+==================================================
+
+Tenant:
+- Max Monthly Lease Price formats commas while typing/loading
+- Household Monthly Income formats commas while typing/loading
+- Review section displays both with $ and commas
+- Move-In Date displays as:
+  May 27, 2026
+
+All 4 Direct Hire user types:
+- No placeholders reference:
+  - hourly consultation
+  - $150/hr
+  - listing agreement examples
+  - showing schedule examples
+  - application process examples
+  - search agreement examples
+- All Direct Hire Additional Terms placeholders now use the same neutral wording
+
+Global:
+- No marketplace flows changed
+- No Offer Listing flows changed
+- No Limited Service flows changed
+- No schema/routes/controllers/model/validation changes

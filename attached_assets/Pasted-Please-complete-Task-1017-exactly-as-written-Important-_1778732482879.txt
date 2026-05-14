@@ -1,0 +1,68 @@
+Please complete Task #1017 exactly as written.
+
+Important safeguards:
+- Audit first before editing.
+- Full Service Landlord Offer Listing only.
+- Do NOT touch Seller, Buyer, Tenant, Hire Agent, or Limited Service flows.
+- Do NOT change routes, controllers, models, migrations, schema, validation, save logic, labels, tooltips, field names, bindings, or meta keys.
+- Keep the git diff limited to:
+  - resources/views/livewire/offer-listing/landlord/offer-landlord-listing.blade.php
+  - resources/views/livewire/offer-listing/landlord/offer-landlord-listing-edit.blade.php
+  - resources/views/livewire/offer-listing/offer-landlord-tabs/*
+- Only modify other files if you prove a direct Landlord-only root cause first.
+
+Scope:
+1. Audit every true multi-select Select2 field on Landlord create, edit, and Landlord tab partials.
+2. Set closeOnSelect: false for all true multi-selects.
+3. Preserve existing placeholder, id, name, wire/model binding, saved-value, and draft/edit reload logic.
+4. Prevent duplicate Select2 containers:
+   - Before reinitializing a field, destroy only that field’s existing Select2 instance if it is already initialized.
+   - Then initialize it safely with width: '100%' and the existing placeholder.
+5. Confirm saved multi-select values still reload correctly after draft/edit hydration, tab switches, and Livewire updates.
+
+Placeholder cleanup:
+1. Search only Landlord create/edit blades and Landlord tab partials for placeholders starting with “Describe”.
+2. Replace each with the standard format:
+   Enter [Field Title] (e.g., Example)
+3. Do not change labels, tooltips, bindings, names, validation, or logic.
+4. Audit all Description tab placeholders and title-case each example phrase inside “(e.g., ...)”.
+   Example:
+   Before: Enter property description (e.g., recently renovated kitchen, waterfront views, flexible lease terms, in-unit washer/dryer)
+   After: Enter property description (e.g., Recently Renovated Kitchen, Waterfront Views, Flexible Lease Terms, In-Unit Washer/Dryer)
+
+Icon audit/fix:
+1. Use the Landlord create blade as the baseline.
+2. Compare Landlord edit blade and Landlord tab partials field-by-field.
+3. Add only missing wrapper/icon attributes needed for parity:
+   - .input-cover
+   - .has-icon
+   - .has-select-icon where Select2 is used
+   - data-icon
+   - sentinel guard class such as .data-icon-rendered
+4. Ensure addIconsToInputs() runs after Select2 initialization and also after:
+   - DOMContentLoaded
+   - livewire:load if present
+   - Bootstrap shown.bs.tab
+   - Livewire message.processed
+   - draftLoaded if used
+5. Icons must appear immediately on create and edit page load, remain after tab changes/Livewire updates/draft hydration, and never duplicate.
+6. Ensure Select2 placeholder and selected text do not overlap icons.
+
+QA required:
+- Visit Landlord create page and confirm icons appear immediately across all tabs.
+- Visit Landlord edit/draft page and confirm icons do not flash/disappear.
+- Test all Landlord true multi-select fields: dropdown stays open after each selection.
+- Switch tabs and confirm no duplicate Select2 containers.
+- Reload draft/edit with saved multi-select values and confirm values persist.
+- Confirm all “Describe...” placeholders are gone in Landlord files only.
+- Confirm Description tab examples are title-cased.
+- Confirm Next/Back, Save Draft, and Save Edit still work.
+- Confirm browser console has no errors.
+
+Final response must include:
+- Files changed.
+- Exact multi-select fields fixed.
+- Placeholder examples changed.
+- Icon lifecycle events verified.
+- QA proof.
+- Confirmation that no out-of-scope files/flows were touched.
