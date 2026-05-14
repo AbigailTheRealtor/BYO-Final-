@@ -1511,7 +1511,10 @@ function populateReviewTab() {
             var val = el ? el.value.trim() : '';
             if (val) {
                 var displayVal = val;
-                if (f.name === 'target_purchase_price') {
+                if (f.name === 'desired_sale_price') {
+                    var dspRaw = val.replace(/,/g, '').replace(/[^\d]/g, '');
+                    displayVal = dspRaw ? '$' + parseInt(dspRaw, 10).toLocaleString('en-US') : val;
+                } else if (f.name === 'target_purchase_price') {
                     displayVal = '$' + val;
                 } else if (f.name === 'estimated_down_payment') {
                     var dpTypeEl = document.querySelector('[name="down_payment_type"]');

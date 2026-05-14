@@ -94,7 +94,7 @@
                     <label class="fw-bold form-label">Desired Sale Price <span class="text-muted fw-normal">(optional)</span></label>
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="text" name="desired_sale_price"
+                        <input type="text" name="desired_sale_price" id="seller_desired_sale_price"
                                class="form-control @error('desired_sale_price') is-invalid @enderror"
                                placeholder="Enter desired sale price (e.g., 450,000)"
                                value="{{ old('desired_sale_price') }}">
@@ -139,19 +139,33 @@
 
 @push('scripts')
 <script>
-(function() {
-    var phoneInput = document.getElementById('seller_client_phone');
-    if (!phoneInput) return;
-    phoneInput.addEventListener('input', function() {
-        var digits = this.value.replace(/\D/g, '').substring(0, 10);
-        var formatted = digits;
+(function () {
+    function formatPhone(input) {
+        var digits = input.value.replace(/\D/g, '').substring(0, 10);
         if (digits.length >= 7) {
-            formatted = digits.substring(0,3) + '-' + digits.substring(3,6) + '-' + digits.substring(6);
+            input.value = digits.substring(0, 3) + '-' + digits.substring(3, 6) + '-' + digits.substring(6);
         } else if (digits.length >= 4) {
-            formatted = digits.substring(0,3) + '-' + digits.substring(3);
+            input.value = digits.substring(0, 3) + '-' + digits.substring(3);
+        } else {
+            input.value = digits;
         }
-        this.value = formatted;
-    });
-})();
+    }
+
+    function formatSalePrice(input) {
+        var raw = input.value.replace(/,/g, '').replace(/[^\d]/g, '');
+        input.value = raw ? parseInt(raw, 10).toLocaleString('en-US') : '';
+    }
+
+    var phoneInput = document.getElementById('seller_client_phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function () { formatPhone(this); });
+    }
+
+    var salePriceInput = document.getElementById('seller_desired_sale_price');
+    if (salePriceInput) {
+        salePriceInput.addEventListener('input', function () { formatSalePrice(this); });
+        if (salePriceInput.value) { formatSalePrice(salePriceInput); }
+    }
+}());
 </script>
 @endpush

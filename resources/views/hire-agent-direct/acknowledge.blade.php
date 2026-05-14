@@ -317,6 +317,10 @@
 function ackSubmit(form) {
     var btn = document.getElementById('ack-submit-btn');
     if (!btn || btn.disabled) return false;
+    var salePriceInput = document.getElementById('seller_desired_sale_price');
+    if (salePriceInput) {
+        salePriceInput.value = salePriceInput.value.replace(/,/g, '');
+    }
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Sending\u2026';
     return true;
