@@ -12,104 +12,141 @@ return [
     | which property types trigger its display.
     |
     | Key naming convention: stored key = field name after stripping
-    | 'listing_ai_faq_' prefix (e.g. 'listing_ai_faq_buyer_active_now' → key is
-    | 'buyer_active_now'). Commercial add-on keys use 'com_' prefix.
+    | 'listing_ai_faq_' prefix. Commercial add-on keys use 'com_' prefix.
     | Business Opportunity add-on keys use 'biz_' prefix.
     | Vacant Land add-on keys use 'land_' prefix.
     |
-    | Compatible with listing-ai-knowledge-base.blade.php component.
-    | Source: buyer_criteria/add.blade.php lines 6607–6922
+    | Each question entry uses the array shape:
+    |   key => ['label' => '...', 'placeholder' => '...']
+    |
+    | Compatible with offer-listing/shared/ai-questions-input.blade.php
     |
     */
 
     'questions' => [
 
-        'Buyer Readiness & Motivation' => [
-            'buyer_active_now'        => 'Is the buyer actively looking to purchase now, or is this exploratory?',
-            'buyer_timeline'          => 'What is the buyer\'s target timeline to purchase?',
-            'buyer_motivation'        => 'What is the buyer\'s primary motivation for purchasing?',
-            'buyer_current_situation' => 'What is the buyer\'s current living or business situation (renting, owning, etc.)?',
-            'buyer_area_familiarity'  => 'How familiar is the buyer with the target area?',
-            'buyer_flexibility'       => 'How flexible is the buyer on location or timing?',
-            'buyer_deal_breakers'     => 'What are the buyer\'s absolute deal-breakers?',
-            'buyer_lost_deal'         => 'Has the buyer previously lost a deal? If so, what happened?',
+        'Buyer Intent & Lifestyle' => [
+            'buyer_motivation' => [
+                'label'       => 'What\'s driving your decision to buy right now?',
+                'placeholder' => 'Enter motivation (e.g., growing family needs more space; tired of renting; relocating for new job)',
+            ],
+            'buyer_lifestyle_goals' => [
+                'label'       => 'How do you envision using this property — quiet retreat, entertainers\' home, short-term rental, investment?',
+                'placeholder' => 'Enter lifestyle vision (e.g., want a home to entertain family; plan to use as primary residence long-term)',
+            ],
+            'buyer_deal_breakers' => [
+                'label'       => 'What are your absolute deal-breakers — things that would take a property off the list immediately?',
+                'placeholder' => 'Enter deal-breakers (e.g., no HOA; must have garage; cannot be near a busy road; must be in top school zone)',
+            ],
+            'buyer_renovation_tolerance' => [
+                'label'       => 'Would you consider a property that needs work, or are you looking for move-in ready?',
+                'placeholder' => 'Enter renovation stance (e.g., open to cosmetic updates but not major systems; must be fully move-in ready)',
+            ],
+            'buyer_wfh_needs' => [
+                'label'       => 'Do you work from home? If so, what does your ideal home office setup look like?',
+                'placeholder' => 'Enter WFH requirements (e.g., need a dedicated private office; work from home 3 days a week; not applicable)',
+            ],
+            'buyer_outdoor_space' => [
+                'label'       => 'How important is outdoor space, and what would you ideally have?',
+                'placeholder' => 'Enter outdoor priorities (e.g., need a fenced yard for dogs; pool is a strong preference; patio for entertaining)',
+            ],
+            'buyer_long_term_goals' => [
+                'label'       => 'Is this a forever home, a starter home, or an investment? What\'s your longer-term plan?',
+                'placeholder' => 'Enter long-term intent (e.g., planning to stay 10+ years; starter home, will move in 5 years; buy and hold rental)',
+            ],
+            'buyer_biggest_concern' => [
+                'label'       => 'What\'s your biggest concern or hesitation about this purchase right now?',
+                'placeholder' => 'Enter biggest concern (e.g., worried about overpaying in current market; concerned about condition; timing with current home sale)',
+            ],
         ],
 
-        'Budget' => [
-            'buyer_budget_confirmed'      => 'Has the buyer confirmed their total budget?',
-            'buyer_down_payment'          => 'How much is the buyer planning to put as a down payment?',
-            'buyer_cash_reserves'         => 'Does the buyer have cash reserves remaining after the down payment?',
-            'buyer_seller_concessions'    => 'Would the buyer consider seller concessions in lieu of a price reduction?',
-            'buyer_monthly_payment_limit' => 'What is the buyer\'s maximum acceptable monthly payment?',
-            'buyer_budget_other'          => 'Any other budget-related details?',
+        'Location & Community' => [
+            'buyer_neighborhood_preferences' => [
+                'label'       => 'What kind of neighborhood feel are you looking for — walkable, suburban, quiet, urban, rural?',
+                'placeholder' => 'Enter neighborhood preference (e.g., quiet suburban with good sidewalks; walkable to shops and restaurants; rural with land)',
+            ],
+            'buyer_school_district' => [
+                'label'       => 'Is a specific school district a hard requirement, or a preference?',
+                'placeholder' => 'Enter school district stance (e.g., hard requirement — must be in Hillsborough A-rated district; prefer but flexible)',
+            ],
+            'buyer_commute_requirements' => [
+                'label'       => 'Do you have commute distance or public transit requirements?',
+                'placeholder' => 'Enter commute needs (e.g., need to be within 30 min of downtown Tampa; must have Metrobus access)',
+            ],
+            'buyer_noise_tolerance' => [
+                'label'       => 'How sensitive are you to noise — would proximity to highways, airports, or schools be a concern?',
+                'placeholder' => 'Enter noise sensitivity (e.g., very sensitive — no busy roads; fine with moderate noise; not a concern)',
+            ],
+            'buyer_area_familiarity' => [
+                'label'       => 'How familiar are you with the neighborhoods you\'re considering?',
+                'placeholder' => 'Enter familiarity level (e.g., lived in area for 10 years; relocating and relying on agent guidance; visited twice)',
+            ],
+            'buyer_prefers_off_market' => [
+                'label'       => 'Are you open to off-market or pocket listings if the right property came along?',
+                'placeholder' => 'Enter off-market openness (e.g., absolutely — please share anything; prefer MLS only; open if priced fairly)',
+            ],
         ],
 
-        'Financing' => [
-            'buyer_preapproval_status'    => 'Has the buyer been pre-approved or pre-qualified for a loan?',
-            'buyer_preapproval_amount'    => 'What is the pre-approval amount?',
-            'buyer_lender_name'           => 'Who is the buyer\'s lender or bank?',
-            'buyer_loan_type'             => 'What type of loan is the buyer using (e.g., Conventional, FHA, VA, Cash)?',
-            'buyer_cash_buyer'            => 'Is the buyer a cash buyer? Do they have proof of funds?',
-            'buyer_financing_contingency' => 'Will the buyer include a financing contingency in the offer?',
-            'buyer_bridge_loan'           => 'Is the buyer using a bridge loan or any interim financing?',
-            'buyer_co_borrower'           => 'Is there a co-borrower on the loan?',
+        'Property Preferences' => [
+            'buyer_property_style' => [
+                'label'       => 'Do you have a preference for architectural style or the age/era of the home?',
+                'placeholder' => 'Enter style preference (e.g., love mid-century modern; prefer newer construction 2010+; no strong preference)',
+            ],
+            'buyer_must_have_features' => [
+                'label'       => 'What are your absolute must-have property features?',
+                'placeholder' => 'Enter must-haves (e.g., at least 3 beds, 2 baths, 2-car garage, pool; single-story only)',
+            ],
+            'buyer_nice_to_have' => [
+                'label'       => 'What features are on your wish list but not deal-breakers?',
+                'placeholder' => 'Enter nice-to-haves (e.g., open kitchen, updated master bath, bonus room, lake view)',
+            ],
+            'buyer_hoa_acceptable' => [
+                'label'       => 'Are you comfortable with an HOA community? Is there a maximum monthly fee you\'d consider?',
+                'placeholder' => 'Enter HOA stance (e.g., prefer no HOA; fine with HOA up to $250/mo; gated community preferred)',
+            ],
+            'buyer_accessibility' => [
+                'label'       => 'Do you need any accessibility features — single-story, ramps, wide doorways, roll-in shower?',
+                'placeholder' => 'Enter accessibility needs (e.g., must be single-story due to mobility; wheelchair-accessible entry required; none)',
+            ],
+            'buyer_privacy_requirements' => [
+                'label'       => 'Do you have specific privacy needs — fencing, larger lot, no rear neighbors?',
+                'placeholder' => 'Enter privacy requirements (e.g., need a fenced yard; prefer conservation or no rear neighbors; privacy not a priority)',
+            ],
+            'buyer_view_preference' => [
+                'label'       => 'Is a specific view important to you — water, golf course, nature, city?',
+                'placeholder' => 'Enter view preference (e.g., water view is a strong priority; golf course frontage preferred; no specific view required)',
+            ],
         ],
 
-        'Desired Property Criteria' => [
-            'buyer_property_style'     => 'What property style or architecture is preferred?',
-            'buyer_age_preference'     => 'Does the buyer prefer new construction, older homes, or no preference?',
-            'buyer_must_have_features' => 'What are the buyer\'s absolute must-have property features?',
-            'buyer_nice_to_have'       => 'What property features are nice-to-have but not required?',
-            'buyer_school_district'    => 'Is a specific school district required?',
-            'buyer_hoa_acceptable'     => 'Will the buyer consider HOA communities? What is the maximum monthly HOA fee?',
-            'buyer_accessibility'      => 'Does the buyer need any accessibility features?',
-            'buyer_home_office'        => 'Does the buyer require a dedicated home office or workspace?',
-        ],
-
-        'Offer Terms' => [
-            'buyer_earnest_money'          => 'How much earnest money deposit can the buyer offer?',
-            'buyer_inspection_contingency' => 'Will the buyer include an inspection contingency?',
-            'buyer_appraisal_contingency'  => 'Will the buyer waive or keep the appraisal contingency?',
-            'buyer_escalation_clause'      => 'Is the buyer willing to use an escalation clause in a competitive situation?',
-            'buyer_as_is'                  => 'Would the buyer consider purchasing a property as-is?',
-            'buyer_repairs_limit'          => 'What is the maximum repair credit the buyer would accept instead of repairs?',
-            'buyer_leaseback'              => 'Would the buyer allow a seller leaseback after closing?',
-            'buyer_multiple_offers'        => 'How does the buyer handle multiple-offer situations?',
-            'buyer_offer_expiration'       => 'How long will the buyer keep an offer open?',
-        ],
-
-        'Showing & Access' => [
-            'buyer_showing_availability' => 'What are the buyer\'s preferred showing hours and availability?',
-            'buyer_virtual_tour'         => 'Would the buyer consider making an offer based on a virtual tour only?',
-            'buyer_relocation'           => 'Is the buyer relocating from another city, state, or country?',
-            'buyer_relocation_timeline'  => 'If relocating, what is the buyer\'s relocation timeline?',
-            'buyer_agent_present'        => 'Does the buyer require their agent to be present at all showings?',
-            'buyer_travel_distance'      => 'How far is the buyer willing to travel to view properties?',
-        ],
-
-        'Closing Readiness' => [
-            'buyer_close_timeline'       => 'What is the buyer\'s ideal closing timeline?',
-            'buyer_flexible_close'       => 'Is the buyer flexible on the closing date if the seller needs more time?',
-            'buyer_simultaneous_close'   => 'Does the buyer need a simultaneous close on a property they are selling?',
-            'buyer_post_close_occupancy' => 'Does the buyer need post-close occupancy or early possession?',
-            'buyer_move_in_ready'        => 'Does the buyer require a move-in-ready property or can they handle renovations?',
-        ],
-
-        'Seller High-Intent' => [
-            'buyer_communication_preference' => 'How does the buyer prefer to communicate (phone, email, text)?',
-            'buyer_decision_makers'          => 'Who else is involved in the final buying decision?',
-            'buyer_ready_to_offer'           => 'Is the buyer ready to make an offer if the right property is found today?',
-            'buyer_agent_loyalty'            => 'Is the buyer working exclusively with one agent or interviewing multiple agents?',
-            'buyer_prefers_off_market'       => 'Is the buyer open to off-market or pocket listings?',
-            'buyer_additional_criteria'      => 'Any additional criteria or preferences the buyer wants sellers to know?',
-            'buyer_neighborhood_preferences' => 'Does the buyer have specific neighborhood or community preferences?',
-            'buyer_commute_requirements'     => 'Does the buyer have commute distance or public transit requirements?',
-            'buyer_noise_tolerance'          => 'What is the buyer\'s tolerance for noise (e.g., near highways, airports, schools)?',
-            'buyer_privacy_requirements'     => 'Does the buyer have specific privacy requirements (e.g., fencing, lot size)?',
-            'buyer_outdoor_space'            => 'What outdoor space requirements does the buyer have?',
-            'buyer_storage_needs'            => 'What storage needs does the buyer have (garage, basement, attic, etc.)?',
-            'buyer_parking_needs'            => 'What are the buyer\'s parking requirements?',
-            'buyer_view_preference'          => 'Does the buyer have a preference for a specific view (water, mountain, city, etc.)?',
+        'Buyer Situation & Flexibility' => [
+            'buyer_current_situation' => [
+                'label'       => 'What\'s your current living situation — renting, owning, or relocating?',
+                'placeholder' => 'Enter current situation (e.g., currently renting month-to-month; own a home that will be listed soon; relocating from Chicago)',
+            ],
+            'buyer_simultaneous_close' => [
+                'label'       => 'Do you need to sell a current property and close simultaneously?',
+                'placeholder' => 'Enter simultaneous close needs (e.g., yes — need proceeds from sale of current home; no — cash or pre-approved)',
+            ],
+            'buyer_leaseback' => [
+                'label'       => 'Would you allow the seller to stay on a short leaseback after closing if needed?',
+                'placeholder' => 'Enter leaseback flexibility (e.g., open to up to 30-day leaseback; prefer immediate possession; flexible)',
+            ],
+            'buyer_relocation' => [
+                'label'       => 'Are you relocating from another area? Will you be making decisions remotely?',
+                'placeholder' => 'Enter relocation details (e.g., relocating from Atlanta, may need to make offer sight unseen; local buyer)',
+            ],
+            'buyer_lost_deal' => [
+                'label'       => 'Have you made offers on other properties that didn\'t work out? What happened?',
+                'placeholder' => 'Enter prior deal history (e.g., lost two offers in multiple-offer situations; inspection issue killed last deal)',
+            ],
+            'buyer_seller_concessions' => [
+                'label'       => 'Would you consider asking for seller concessions toward closing costs rather than a price reduction?',
+                'placeholder' => 'Enter concession preference (e.g., yes — prefer concessions to help with closing costs; prefer clean lower price)',
+            ],
+            'buyer_flexibility' => [
+                'label'       => 'How flexible are you on location, timing, or property type if the right deal came along?',
+                'placeholder' => 'Enter flexibility level (e.g., very flexible on neighborhood, firm on school district; open to condos if priced right)',
+            ],
         ],
 
     ],
@@ -120,11 +157,6 @@ return [
     |--------------------------------------------------------------------------
     |
     | Shown only when listing property_type matches visible_for.
-    |
-    | Source IDs in buyer_criteria/add.blade.php:
-    |   #ai_faq_commercial_section  (display:none, shown via JS for Commercial + Business Opp)
-    |   #ai_faq_business_section    (display:none, shown via JS for Business Opportunity)
-    |   #ai_faq_vacant_section      (display:none, shown via JS for Vacant Land)
     |
     | NOTE: The legacy blade shows #ai_faq_commercial_section for both
     | "Commercial Property" and "Business Opportunity" property types.
@@ -139,19 +171,38 @@ return [
             'label'       => 'Commercial / Income Property Add-On Questions',
             'visible_for' => ['Commercial Property', 'Income Property', 'Business Opportunity'],
             'questions'   => [
-                'com_property_use'           => 'What is the intended use of the commercial property?',
-                'com_investment_type'        => 'Is this an investment or owner-occupied purchase?',
-                'com_cap_rate_target'        => 'What cap rate is the buyer targeting?',
-                'com_noi_required'           => 'What minimum Net Operating Income (NOI) is required?',
-                'com_occupancy_rate'         => 'What minimum occupancy rate is required?',
-                'com_lease_terms'            => 'What lease terms are preferred (NNN, gross, modified gross, etc.)?',
-                'com_tenant_type'            => 'What type of tenants are preferred?',
-                'com_zoning'                 => 'What zoning classifications are acceptable?',
-                'com_buildout_allowance'     => 'Is a tenant buildout allowance expected?',
-                'com_due_diligence_period'   => 'How long does the buyer need for due diligence?',
-                'com_environmental_concerns' => 'Does the buyer have environmental or Phase I/II study requirements?',
-                'com_parking_requirements'   => 'What are the parking requirements for the commercial property?',
-                'com_1031_exchange'          => 'Is the buyer doing a 1031 exchange?',
+                'com_property_use' => [
+                    'label'       => 'What is the intended use of the commercial or income property?',
+                    'placeholder' => 'Enter intended use (e.g., owner-occupied medical office; retail investment; mixed-use with 2 commercial units)',
+                ],
+                'com_investment_type' => [
+                    'label'       => 'Is this an investment purchase or owner-occupied?',
+                    'placeholder' => 'Enter investment type (e.g., pure investment — looking for cap rate; plan to operate business from space)',
+                ],
+                'com_cap_rate_target' => [
+                    'label'       => 'What cap rate is the buyer targeting?',
+                    'placeholder' => 'Enter target cap rate (e.g., minimum 6.5% cap rate; targeting 7%+ in this market)',
+                ],
+                'com_occupancy_rate' => [
+                    'label'       => 'What minimum occupancy rate is required at the time of purchase?',
+                    'placeholder' => 'Enter occupancy requirement (e.g., must be at least 80% occupied; prefer fully occupied but open to some vacancy)',
+                ],
+                'com_lease_terms' => [
+                    'label'       => 'What lease structure is preferred — NNN, gross, modified gross?',
+                    'placeholder' => 'Enter lease structure preference (e.g., prefer NNN to minimize management; open to gross if priced accordingly)',
+                ],
+                'com_1031_exchange' => [
+                    'label'       => 'Is the buyer completing a 1031 exchange with a timing requirement?',
+                    'placeholder' => 'Enter exchange details (e.g., yes — identified replacement property, need to close within 60 days; not a 1031)',
+                ],
+                'com_due_diligence_period' => [
+                    'label'       => 'How much due diligence time will the buyer need?',
+                    'placeholder' => 'Enter due diligence needs (e.g., need 30-day DD period for financials, environmental, and inspection)',
+                ],
+                'com_environmental_concerns' => [
+                    'label'       => 'Will the buyer require Phase I or Phase II environmental studies?',
+                    'placeholder' => 'Enter environmental study requirements (e.g., yes — Phase I required for lender; buyer will order at own cost)',
+                ],
             ],
         ],
 
@@ -159,15 +210,34 @@ return [
             'label'       => 'Business Opportunity Add-On Questions',
             'visible_for' => ['Business Opportunity'],
             'questions'   => [
-                'biz_type_seeking'       => 'What type of business is the buyer seeking?',
-                'biz_revenue_required'   => 'What minimum annual revenue is required?',
-                'biz_profit_required'    => 'What minimum net profit is required?',
-                'biz_staff_included'     => 'Will existing staff be retained as part of the purchase?',
-                'biz_training_expected'  => 'How much seller training or transition support is expected?',
-                'biz_lease_status'       => 'What is the status of the business lease (length remaining, assignable, etc.)?',
-                'biz_inventory_included' => 'Is inventory included in the purchase price?',
-                'biz_non_compete'        => 'Is a non-compete agreement required from the seller?',
-                'biz_sba_financing'      => 'Is the buyer considering SBA financing for the business purchase?',
+                'biz_type_seeking' => [
+                    'label'       => 'What type of business is the buyer seeking?',
+                    'placeholder' => 'Enter business type (e.g., restaurant or food service; retail with established customer base; service business with recurring revenue)',
+                ],
+                'biz_revenue_required' => [
+                    'label'       => 'What minimum annual revenue is required?',
+                    'placeholder' => 'Enter revenue floor (e.g., minimum $500K gross; at least $1M annual revenue)',
+                ],
+                'biz_profit_required' => [
+                    'label'       => 'What minimum net profit or owner\'s discretionary earnings (SDE) is required?',
+                    'placeholder' => 'Enter profit requirement (e.g., need at least $80K SDE; minimum $150K net)',
+                ],
+                'biz_training_expected' => [
+                    'label'       => 'How much seller training or transition support is expected?',
+                    'placeholder' => 'Enter training expectations (e.g., expect 90-day training; need seller to introduce to key accounts)',
+                ],
+                'biz_staff_included' => [
+                    'label'       => 'Will existing staff be retained as part of the purchase?',
+                    'placeholder' => 'Enter staff expectations (e.g., key employees expected to stay; open to running with smaller team)',
+                ],
+                'biz_non_compete' => [
+                    'label'       => 'Is a non-compete agreement required from the seller?',
+                    'placeholder' => 'Enter non-compete needs (e.g., yes — need 3-year non-compete in same market; standard non-compete expected)',
+                ],
+                'biz_sba_financing' => [
+                    'label'       => 'Is the buyer considering SBA financing for this acquisition?',
+                    'placeholder' => 'Enter financing approach (e.g., yes — pre-qualified for SBA 7(a); cash purchase; seeking seller financing)',
+                ],
             ],
         ],
 
@@ -175,15 +245,34 @@ return [
             'label'       => 'Vacant Land Add-On Questions',
             'visible_for' => ['Vacant Land'],
             'questions'   => [
-                'land_intended_use'        => 'What is the intended use of the vacant land (residential build, agricultural, commercial, etc.)?',
-                'land_zoning_required'     => 'What zoning classification is required for the land?',
-                'land_utilities_needed'    => 'What utilities need to be available or accessible at the land?',
-                'land_soil_testing'        => 'Will the buyer require soil or environmental testing as a contingency?',
-                'land_subdivision_plans'   => 'Does the buyer plan to subdivide the land?',
-                'land_build_timeline'      => 'What is the buyer\'s expected building or development timeline?',
-                'land_survey_required'     => 'Is a current survey required as part of the transaction?',
-                'land_access_requirements' => 'What road access or easement requirements does the buyer have?',
-                'land_topography'          => 'Are there topography, flood zone, or elevation requirements?',
+                'land_intended_use' => [
+                    'label'       => 'What is the intended use of the vacant land?',
+                    'placeholder' => 'Enter intended use (e.g., build primary residence; agricultural use; commercial development; subdivide and resell)',
+                ],
+                'land_zoning_required' => [
+                    'label'       => 'What zoning classification is required?',
+                    'placeholder' => 'Enter zoning requirement (e.g., residential R-1 or R-2; agricultural; commercial C-2 or higher)',
+                ],
+                'land_utilities_needed' => [
+                    'label'       => 'What utilities need to be available or accessible at the property?',
+                    'placeholder' => 'Enter utility requirements (e.g., need electric and water at road minimum; prefer municipal sewer; off-grid is acceptable)',
+                ],
+                'land_soil_testing' => [
+                    'label'       => 'Will the buyer require soil, perc, or environmental testing as a condition?',
+                    'placeholder' => 'Enter testing requirements (e.g., yes — perc test contingency for septic; Phase I environmental required)',
+                ],
+                'land_build_timeline' => [
+                    'label'       => 'What is the buyer\'s expected building or development timeline?',
+                    'placeholder' => 'Enter timeline (e.g., plan to break ground within 12 months; long-term investment, no immediate development plans)',
+                ],
+                'land_access_requirements' => [
+                    'label'       => 'What road access or easement requirements does the buyer have?',
+                    'placeholder' => 'Enter access needs (e.g., must have direct paved road frontage; recorded easement acceptable)',
+                ],
+                'land_topography' => [
+                    'label'       => 'Are there flood zone, elevation, or topography requirements?',
+                    'placeholder' => 'Enter topography requirements (e.g., must be high and dry, not in flood zone; flat and cleared preferred)',
+                ],
             ],
         ],
 

@@ -12,6 +12,7 @@
     ];
     $configKey = $configMap[$user_type] ?? null;
     $isTenant  = ($user_type === 'tenant');
+    $genericPlaceholder = 'Enter your answer here (e.g., provide as much detail as you\'d like — all fields are optional)';
 @endphp
 
 <div class="ai-questions-tab-content py-2">
@@ -20,7 +21,7 @@
     </p>
 
     @if ($isTenant)
-        {{-- Tenant: flat array with commercial_only filtering --}}
+        {{-- Tenant: flat array with commercial_only filtering and per-question placeholder --}}
         @php
             $allQ   = config('tenant_ai_faq.questions', []);
             $groups = [];
@@ -37,13 +38,13 @@
                     <label class="form-label">{{ $q['label'] }}</label>
                     <textarea class="form-control ai-faq-textarea" rows="2"
                         wire:model.defer="listing_ai_faq.{{ $q['key'] }}"
-                        placeholder="Optional — enter your answer here"></textarea>
+                        placeholder="{{ $q['placeholder'] ?? $genericPlaceholder }}"></textarea>
                 </div>
             @endforeach
         @endforeach
 
     @elseif ($configKey)
-        {{-- Seller / Buyer / Landlord: nested category → [key => label] + addons --}}
+        {{-- Seller / Buyer / Landlord: nested category → questions (array shape or legacy string shape) + addons --}}
         @php
             $baseGroups  = config($configKey . '.questions', []);
             $addonGroups = config($configKey . '.addons', []);
@@ -51,12 +52,21 @@
 
         @foreach ($baseGroups as $category => $questions)
             <h6 class="mt-4 mb-2 fw-bold border-bottom pb-1">{{ $category }}</h6>
-            @foreach ($questions as $key => $label)
+            @foreach ($questions as $key => $entry)
+                @php
+                    if (is_array($entry)) {
+                        $label       = $entry['label'] ?? '';
+                        $placeholder = $entry['placeholder'] ?? $genericPlaceholder;
+                    } else {
+                        $label       = $entry;
+                        $placeholder = $genericPlaceholder;
+                    }
+                @endphp
                 <div class="form-group mb-3">
                     <label class="form-label">{{ $label }}</label>
                     <textarea class="form-control ai-faq-textarea" rows="2"
                         wire:model.defer="listing_ai_faq.{{ $key }}"
-                        placeholder="Optional — enter your answer here"></textarea>
+                        placeholder="{{ $placeholder }}"></textarea>
                 </div>
             @endforeach
         @endforeach
@@ -65,12 +75,21 @@
             @if (in_array($propertyType, $addon['visible_for'] ?? []))
                 <div class="ai-faq-addon-group mt-4 pt-2 border-top">
                     <h6 class="mb-3 fw-bold text-primary">{{ $addon['label'] }}</h6>
-                    @foreach ($addon['questions'] as $key => $label)
+                    @foreach ($addon['questions'] as $key => $entry)
+                        @php
+                            if (is_array($entry)) {
+                                $label       = $entry['label'] ?? '';
+                                $placeholder = $entry['placeholder'] ?? $genericPlaceholder;
+                            } else {
+                                $label       = $entry;
+                                $placeholder = $genericPlaceholder;
+                            }
+                        @endphp
                         <div class="form-group mb-3">
                             <label class="form-label">{{ $label }}</label>
                             <textarea class="form-control ai-faq-textarea" rows="2"
                                 wire:model.defer="listing_ai_faq.{{ $key }}"
-                                placeholder="Optional — enter your answer here"></textarea>
+                                placeholder="{{ $placeholder }}"></textarea>
                         </div>
                     @endforeach
                 </div>
