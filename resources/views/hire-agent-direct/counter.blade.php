@@ -1497,13 +1497,39 @@ function populateReviewTab() {
             rows += '<div><dt>' + escape('Name') + '</dt><dd>' + escape(cnVal) + '</dd></div>';
         }
 
-        var fields = [
+        var fieldsTop = [
             { label: 'Phone', name: 'client_phone' },
             { label: 'Email', name: 'client_email' },
+        ];
+        fieldsTop.forEach(function(f) {
+            var el = document.querySelector('[name="' + f.name + '"]');
+            var val = el ? el.value.trim() : '';
+            if (val) {
+                rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(val) + '</dd></div>';
+            }
+        });
+@if($role === 'seller' || $role === 'landlord')
+        var addrParts = ['client_property_address', 'client_property_city', 'client_property_state', 'client_property_zip']
+            .map(function(n) { var el = document.querySelector('[name="' + n + '"]'); return el ? el.value.trim() : ''; })
+            .filter(Boolean);
+        if (addrParts.length) {
+            rows += '<div><dt>' + escape('Property Address') + '</dt><dd>' + escape(addrParts.join(', ')) + '</dd></div>';
+        }
+@else
+        [
             { label: 'Property Address', name: 'client_property_address' },
             { label: 'City', name: 'client_property_city' },
             { label: 'State', name: 'client_property_state' },
             { label: 'ZIP', name: 'client_property_zip' },
+        ].forEach(function(f) {
+            var el = document.querySelector('[name="' + f.name + '"]');
+            var val = el ? el.value.trim() : '';
+            if (val) {
+                rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(val) + '</dd></div>';
+            }
+        });
+@endif
+        var fields = [
             { label: 'Areas of Interest', name: 'areas_of_interest' },
             { label: 'Desired Sale Price', name: 'desired_sale_price' },
             { label: 'Timeline to Sell', name: 'timeline_to_sell' },
