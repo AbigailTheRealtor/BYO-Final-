@@ -1,0 +1,477 @@
+Task: Phase 1A — Add Seller “Representation Preferences & Compatibility” tab to Hire Agent flow
+
+Goal:
+Add the first compatibility questionnaire tab to the Hire Seller’s Agent flow only. This is the foundation for future Buyer/Landlord/Tenant compatibility tabs, so build it cleanly and reusable.
+
+Scope:
+ONLY touch the Hire Agent Seller flow served by the shared BidYourAgent Hire Agent system.
+
+Likely files:
+- app/Http/Livewire/TenantAgentAuction.php
+- resources/views/livewire/tenant-agent-auction.blade.php
+- related hire-agent seller tab partials only if already used by this component
+
+Do NOT touch:
+- Offer Listing flows
+- BidYourOffer flows
+- Direct Hire preset/counter/submitted flows
+- Buyer/Landlord/Tenant Hire Agent flows yet
+- Limited Service / Flat Fee legacy flows
+- routes
+- migrations unless absolutely unavoidable
+- unrelated CSS/JS
+- existing fields, labels, tooltips, save logic, draft logic, bid/counter logic
+
+This must be additive-only.
+
+New Tab:
+Add a new tab named:
+
+Representation Preferences & Compatibility
+
+Apply it ONLY when user_type = seller.
+
+Tab Placement:
+Insert the tab BEFORE:
+Broker Compensation & Agency Agreement Terms
+
+Preserve:
+- existing tab order
+- Next/Back buttons
+- Save Draft
+- Save Edit
+- Submit/Finish logic
+- correction mode
+- edit/draft load
+- mobile wizard behavior
+- validation behavior
+- existing JavaScript tab logic
+
+Storage:
+Do NOT create many new columns.
+
+Store answers in the existing JSON/meta/additional_details pattern used by TenantAgentAuction.
+
+Use this structure if possible:
+
+compatibility_preferences = {
+  communication_style: "",
+  communication_frequency: "",
+  preferred_contact_method: [],
+  responsiveness_importance: "",
+  negotiation_style: "",
+  negotiation_priority: "",
+  aggressive_negotiation_comfort: "",
+  decision_making_style: "",
+  involvement_level: "",
+  primary_transaction_goal: "",
+  representation_priorities: [],
+  negotiation_risk_tolerance: "",
+  biggest_concern: "",
+  preferred_agent_working_style: [],
+  desired_support_level: "",
+  technology_ai_importance: "",
+  seller_specific: {
+    seller_representation_focus: [],
+    seller_decision_style: "",
+    pricing_strategy_preference: "",
+    marketing_expectation: "",
+    sale_priority_balance: ""
+  }
+}
+
+UI Standards:
+All new fields must match the existing Hire Agent form design.
+
+Required:
+- Same input/select box height as existing standardized fields
+- Same Select2 styling
+- Same spacing/margins/card layout as existing tabs
+- Same icon pattern if the current tab system uses icons
+- Multi-select dropdowns must stay open after selecting items
+- Select placeholders must be: Select
+- Text input/textarea placeholders must follow:
+  Enter [Field Title] (e.g., Example)
+- Add a tooltip for every new field
+- Tooltip should explain the field, not duplicate the placeholder
+- Use neutral language that works whether the Seller or an Agent is filling it out
+- Capitalize Seller, Buyer, Landlord, Tenant, Agent, Broker when used as role titles
+
+Important:
+Do NOT add AI scoring, match percentages, ranking, “best Agent” language, or recommendation logic yet.
+
+This phase is data collection only.
+
+NEW SELLER TAB CONTENT:
+
+SECTION 1: Communication Preferences
+
+Field: How would you prefer your Agent to communicate?
+Key: communication_style
+Type: single select
+Placeholder: Select
+Options:
+- Direct & Concise
+- Detailed & Educational
+- Strategic & Advisory
+- Friendly & Conversational
+- Fast-Paced & Efficient
+Tooltip:
+Helps identify the communication style the Seller prefers from the Agent throughout the representation process.
+
+Field: How often would you like updates during the transaction?
+Key: communication_frequency
+Type: single select
+Placeholder: Select
+Options:
+- Only for Major Updates
+- Once Per Week
+- Several Times Per Week
+- Daily if Needed
+- As Frequently as Possible
+Tooltip:
+Sets expectations for how frequently the Agent should provide updates during the listing and transaction process.
+
+Field: Which communication methods do you prefer?
+Key: preferred_contact_method
+Type: multi-select
+Placeholder: Select
+Options:
+- Text
+- Phone
+- Email
+- Video Calls
+- In-Person Meetings
+Tooltip:
+Identifies the preferred communication channels for updates, questions, and important decisions.
+
+Field: How important is quick responsiveness from your Agent?
+Key: responsiveness_importance
+Type: single select
+Placeholder: Select
+Options:
+- Not Important
+- Slightly Important
+- Moderately Important
+- Very Important
+- Extremely Important
+Tooltip:
+Helps the Agent understand how important response speed is to the Seller.
+
+SECTION 2: Negotiation Preferences
+
+Field: What negotiation style do you prefer from your Agent?
+Key: negotiation_style
+Type: single select
+Placeholder: Select
+Options:
+- Aggressive & Competitive
+- Calm & Strategic
+- Analytical & Data-Driven
+- Relationship-Focused
+- Protective & Risk-Aware
+- Creative Problem Solver
+Tooltip:
+Describes the negotiation approach the Seller prefers the Agent to use when handling offers, counters, and deal terms.
+
+Field: During negotiations, what matters most to you?
+Key: negotiation_priority
+Type: single select
+Placeholder: Select
+Options:
+- Getting the Best Financial Terms
+- Keeping the Deal Together
+- Reducing Risk
+- Moving Quickly
+- Maintaining Flexibility
+- Winning Competitive Situations
+Tooltip:
+Clarifies the Seller’s top priority when the Agent is negotiating on their behalf.
+
+Field: How comfortable are you with aggressive negotiation tactics?
+Key: aggressive_negotiation_comfort
+Type: single select
+Placeholder: Select
+Options:
+- Very Uncomfortable
+- Somewhat Uncomfortable
+- Neutral
+- Comfortable
+- Very Comfortable
+Tooltip:
+Helps the Agent understand how assertive the Seller wants the negotiation strategy to be.
+
+SECTION 3: Decision-Making Style
+
+Field: How do you prefer to make important transaction decisions?
+Key: decision_making_style
+Type: single select
+Placeholder: Select
+Options:
+- I Prefer Strong Agent Recommendations
+- I Prefer Detailed Options Before Deciding
+- I Prefer Reviewing Data and Analysis
+- I Prefer Collaborative Decision-Making
+- I Prefer Minimal Guidance and Fast Execution
+Tooltip:
+Helps the Agent understand how the Seller prefers to evaluate options and make decisions.
+
+Field: How involved do you want to be during the transaction?
+Key: involvement_level
+Type: single select
+Placeholder: Select
+Options:
+- Very Hands-On
+- Moderately Involved
+- Mostly Delegated to the Agent
+- Fully Delegated When Possible
+Tooltip:
+Clarifies how much day-to-day involvement the Seller expects during the listing and transaction process.
+
+SECTION 4: Seller Transaction Priorities
+
+Field: What is your primary goal as a Seller?
+Key: primary_transaction_goal
+Type: single select
+Placeholder: Select
+Options:
+- Maximize Price
+- Sell Quickly
+- Reduce Stress
+- Highest Certainty
+- Preserve Privacy
+- Minimize Disruptions
+Tooltip:
+Identifies the main outcome the Seller wants the Agent to prioritize.
+
+Field: Which representation qualities matter most to you?
+Key: representation_priorities
+Type: multi-select
+Placeholder: Select
+Options:
+- Strong Negotiation Skills
+- Fast Communication
+- Local Market Expertise
+- Marketing Expertise
+- Pricing Strategy
+- Luxury Experience
+- Investor Experience
+- Availability & Accessibility
+- Technology & AI Tools
+- Relationship & Personality Fit
+- Problem-Solving Ability
+- Transaction Experience
+Tooltip:
+Allows the Seller to identify which Agent qualities matter most when comparing representation proposals.
+
+Field: How comfortable are you with negotiation risk?
+Key: negotiation_risk_tolerance
+Type: single select
+Placeholder: Select
+Options:
+- Very Risk-Averse
+- Somewhat Cautious
+- Balanced
+- Comfortable Taking Risks
+- Highly Aggressive
+Tooltip:
+Helps the Agent understand the Seller’s comfort level with risk, tradeoffs, and negotiation pressure.
+
+Field: What concerns you most about this transaction?
+Key: biggest_concern
+Type: single select
+Placeholder: Select
+Options:
+- Underselling
+- Poor Communication
+- Delays
+- Losing a Strong Buyer
+- Legal or Contract Issues
+- Choosing the Wrong Agent
+- Market Timing
+- Hidden Problems
+Tooltip:
+Identifies the Seller’s biggest concern so the Agent can address it clearly in their proposal and representation strategy.
+
+SECTION 5: Working Style Compatibility
+
+Field: I prefer an Agent who is:
+Key: preferred_agent_working_style
+Type: multi-select
+Placeholder: Select
+Options:
+- Highly Proactive
+- Calm & Patient
+- Analytical
+- Assertive
+- Friendly & Relationship-Oriented
+- Highly Organized
+- Hands-On
+- Independent & Efficient
+Tooltip:
+Identifies the working style and personality traits the Seller prefers in an Agent.
+
+Field: What level of support are you looking for?
+Key: desired_support_level
+Type: single select
+Placeholder: Select
+Options:
+- Full Concierge-Level Guidance
+- Moderate Guidance
+- Independent With Support When Needed
+Tooltip:
+Clarifies how much hands-on support the Seller expects from the Agent.
+
+Field: How important are technology tools and AI-assisted communication?
+Key: technology_ai_importance
+Type: single select
+Placeholder: Select
+Options:
+- Not Important
+- Slightly Important
+- Moderately Important
+- Very Important
+- Extremely Important
+Tooltip:
+Indicates whether the Seller values digital tools, AI-assisted communication, smart listing insights, and platform-based support.
+
+SECTION 6: Seller-Specific Representation Intelligence
+
+Field: What should your Seller’s Agent focus on most?
+Key: seller_representation_focus
+Type: multi-select
+Placeholder: Select
+Options:
+- Pricing Strategy
+- Property Marketing
+- Strong Offer Negotiation
+- Fast Sale Timeline
+- Net Proceeds Maximization
+- Screening Serious Buyers
+- Managing Multiple Offers
+- Reducing Seller Stress
+Tooltip:
+Identifies which parts of the selling process matter most to the Seller.
+
+Field: What best describes your Seller decision style?
+Key: seller_decision_style
+Type: single select
+Placeholder: Select
+Options:
+- I Want Clear Recommendations
+- I Want Detailed Options Before Deciding
+- I Prefer Data Before Making Decisions
+- I Want the Agent to Handle Most Details
+Tooltip:
+Helps the Agent understand how the Seller prefers to receive guidance before making important decisions.
+
+Field: What pricing strategy approach do you prefer?
+Key: pricing_strategy_preference
+Type: single select
+Placeholder: Select
+Options:
+- Price Aggressively to Attract Activity
+- Price Near Market Value
+- Test a Higher Price First
+- Let the Agent Recommend the Strategy
+Tooltip:
+Helps the Agent understand the Seller’s expectations around pricing strategy and market positioning.
+
+Field: What level of marketing do you expect?
+Key: marketing_expectation
+Type: single select
+Placeholder: Select
+Options:
+- Basic MLS and Online Exposure
+- Strong Digital Marketing
+- Premium Listing Presentation
+- Advanced Targeted Marketing
+- Agent Recommendation Preferred
+Tooltip:
+Clarifies how much marketing strategy and listing promotion the Seller expects from the Agent.
+
+Field: Which balance matters most?
+Key: sale_priority_balance
+Type: single select
+Placeholder: Select
+Options:
+- Highest Price Even if It Takes Longer
+- Balanced Price and Timeline
+- Fast Sale Even With Some Flexibility
+- Certainty and Low Stress Matter Most
+Tooltip:
+Helps the Agent understand the Seller’s preferred balance between price, timeline, certainty, and stress.
+
+Validation:
+Do not make every field required.
+
+Required fields for Seller Phase 1A:
+- communication_style
+- negotiation_style
+- primary_transaction_goal
+- representation_priorities
+- preferred_agent_working_style
+
+All other fields optional for now.
+
+Review / Display:
+Add a clean section wherever the Hire Seller Agent review/summary page displays submitted user information:
+
+Section title:
+Representation Preferences & Compatibility
+
+Rules:
+- Display only non-empty fields
+- Multi-select values should display as comma-separated values or existing badge/list format used elsewhere
+- Do not display raw JSON
+- Do not display empty fields
+- Keep formatting consistent with the rest of the review/summary page
+
+Draft/Edit Persistence:
+New fields must:
+- save in drafts
+- reload on draft load
+- save in edit mode
+- reload in edit mode
+- not erase existing listing data
+- not overwrite unrelated meta values
+
+JavaScript / Select2:
+Ensure:
+- multi-selects use closeOnSelect: false
+- placeholders show Select
+- icons do not overlap Select2 text
+- new tab is included in any required field scanning logic
+- final Submit/Finish button still appears only on the correct final tab
+- correction mode does not jump to the wrong tab
+
+QA Checklist:
+After implementing, verify:
+
+1. Hire Seller Agent create page loads.
+2. New tab appears only for Seller.
+3. New tab is before Broker Compensation & Agency Agreement Terms.
+4. Next/Back works before and after the new tab.
+5. Submit/Finish appears only on the true final tab.
+6. Required validation works for the required compatibility fields.
+7. Save Draft works.
+8. Draft reload restores all new fields.
+9. Edit/Save Edit works.
+10. Edit reload restores all new fields.
+11. Multi-select dropdowns stay open after selecting items.
+12. Input/select sizes match existing standardized form fields.
+13. Select placeholders show Select.
+14. Every new field has a tooltip.
+15. No Buyer/Landlord/Tenant Hire Agent tabs changed yet.
+16. No Offer Listing files changed.
+17. No Direct Hire files changed.
+18. No Limited Service files changed.
+19. No routes changed.
+20. No unrelated CSS/JS changed.
+
+Final response:
+When finished, provide:
+- list of changed files
+- confirmation of storage location/key
+- confirmation Seller only was changed
+- QA results for create, draft, edit, review, Next/Back, Select2, tooltips, and placeholders
