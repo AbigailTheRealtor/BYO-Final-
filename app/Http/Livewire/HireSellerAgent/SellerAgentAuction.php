@@ -452,6 +452,34 @@ class SellerAgentAuction extends Component
     public $retained_deposits = '';
     public $additional_details_broker = '';
 
+    // Representation Preferences & Compatibility (seller full service)
+    public $compatibility_preferences = [
+        'seller_specific' => [
+            'communication_style'            => '',
+            'preferred_contact_method'       => [],
+            'response_time_expectation'      => '',
+            'negotiation_style'              => '',
+            'willing_to_negotiate_on'        => [],
+            'firm_on_price'                  => '',
+            'primary_transaction_goal'       => '',
+            'primary_transaction_goal_other' => '',
+            'target_sale_timeline'           => '',
+            'flexibility_on_timeline'        => '',
+            'post_sale_plan'                 => '',
+            'representation_priorities'      => [],
+            'qualities_most_important'       => [],
+            'past_agent_experience'          => '',
+            'what_did_not_work_before'       => '',
+            'decision_making_style'          => '',
+            'involvement_level'              => '',
+            'additional_decision_makers'     => '',
+            'preferred_agent_working_style'  => '',
+            'showing_availability'           => [],
+            'open_house_preference'          => '',
+            'additional_compatibility_notes' => '',
+        ],
+    ];
+
     // Personal information
     public $first_name = '';
     public $last_name = '';
@@ -2276,6 +2304,21 @@ class SellerAgentAuction extends Component
             //     }
             // }
             
+            // Representation Preferences & Compatibility
+            $rawCompat = $auction->get->compatibility_preferences ?? null;
+            if ($rawCompat) {
+                $decoded = is_array($rawCompat) ? $rawCompat : json_decode($rawCompat, true);
+                if (is_array($decoded)) {
+                    $defaultCompat = $this->compatibility_preferences;
+                    $this->compatibility_preferences = [
+                        'seller_specific' => array_merge(
+                            $defaultCompat['seller_specific'],
+                            $decoded['seller_specific'] ?? []
+                        ),
+                    ];
+                }
+            }
+
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('draftLoaded');
         }
@@ -2761,6 +2804,11 @@ class SellerAgentAuction extends Component
             $auction->saveMeta('photo', $this->photo);
         }
 
+        // Representation Preferences & Compatibility (seller full service only)
+        if ($this->service_type === 'full_service' && $this->user_type === 'seller') {
+            $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+        }
+
         // Save video - only process if it's a new upload (UploadedFile), not an existing string path
         if ($this->video && !is_string($this->video)) {
             $extensionVideo = $this->video->getClientOriginalExtension(); // Get file extension
@@ -2931,6 +2979,15 @@ class SellerAgentAuction extends Component
             }
         }
 
+        // Representation Preferences & Compatibility — required for seller full-service full-submit
+        if ($this->service_type === 'full_service' && $this->user_type === 'seller') {
+            $rules['compatibility_preferences.seller_specific.communication_style']           = 'required|string';
+            $rules['compatibility_preferences.seller_specific.negotiation_style']             = 'required|string';
+            $rules['compatibility_preferences.seller_specific.primary_transaction_goal']      = 'required|string';
+            $rules['compatibility_preferences.seller_specific.representation_priorities']     = 'required|array|min:1';
+            $rules['compatibility_preferences.seller_specific.preferred_agent_working_style'] = 'required|string';
+        }
+
         // Seller Purchase Terms dropdown validation (all optional / nullable)
         $rules['initial_deposit_timeframe'] = 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other';
         $rules['additional_deposit_timeframe'] = 'nullable|in:,Within 1 Day,Within 3 Days,Within 5 Days,Within 7 Days,Within 10 Days,Within 14 Days,At Closing,Other';
@@ -2973,6 +3030,12 @@ class SellerAgentAuction extends Component
             'purchase_fee_percentage_combo.required' => 'Seller\'s Broker Purchase Fee (percentage) is required',
             'purchase_fee_flat_combo.required' => 'Seller\'s Broker Purchase Fee (flat fee) is required',
             'purchase_fee_other.required' => 'Custom purchase fee structure is required',
+            'compatibility_preferences.seller_specific.communication_style.required'           => 'Communication Style is required',
+            'compatibility_preferences.seller_specific.negotiation_style.required'             => 'Negotiation Style is required',
+            'compatibility_preferences.seller_specific.primary_transaction_goal.required'      => 'Primary Transaction Goal is required',
+            'compatibility_preferences.seller_specific.representation_priorities.required'     => 'Please select at least one Representation Priority',
+            'compatibility_preferences.seller_specific.representation_priorities.min'          => 'Please select at least one Representation Priority',
+            'compatibility_preferences.seller_specific.preferred_agent_working_style.required' => 'Preferred Agent Working Style is required',
         ];
     }
 

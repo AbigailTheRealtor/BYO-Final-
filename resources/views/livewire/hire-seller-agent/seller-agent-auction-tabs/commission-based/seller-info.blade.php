@@ -162,6 +162,78 @@
     </div>
 @endif
 
+@if ($service_type === 'full_service' && $user_type === 'seller')
+    @php
+        $ss = $compatibility_preferences['seller_specific'] ?? [];
+        $hasCompatData = !empty(array_filter($ss, fn($v) => is_array($v) ? count($v) > 0 : ($v !== '' && $v !== null)));
+    @endphp
+    @if ($hasCompatData)
+        <hr class="mt-4">
+        <div class="card border-info mt-3 mb-3">
+            <div class="card-header bg-info text-white fw-bold">
+                <i class="fa-solid fa-handshake me-2"></i> Representation Preferences &amp; Compatibility — Summary
+            </div>
+            <div class="card-body p-3">
+                @php
+                    $compatFields = [
+                        // Section 1 — Communication
+                        'communication_style'            => ['label' => 'Communication Style',          'type' => 'string'],
+                        'preferred_contact_method'       => ['label' => 'Preferred Contact Method(s)',   'type' => 'array'],
+                        'response_time_expectation'      => ['label' => 'Expected Response Time',        'type' => 'string'],
+                        // Section 2 — Negotiation
+                        'negotiation_style'              => ['label' => 'Negotiation Style',             'type' => 'string'],
+                        'willing_to_negotiate_on'        => ['label' => 'Willing to Negotiate On',       'type' => 'array'],
+                        'firm_on_price'                  => ['label' => 'Firm on Asking Price',          'type' => 'string'],
+                        // Section 3 — Transaction Goal
+                        'primary_transaction_goal'       => ['label' => 'Primary Transaction Goal',      'type' => 'string', 'other_key' => 'primary_transaction_goal_other'],
+                        'target_sale_timeline'           => ['label' => 'Target Sale Timeline',          'type' => 'string'],
+                        'flexibility_on_timeline'        => ['label' => 'Timeline Flexibility',          'type' => 'string'],
+                        'post_sale_plan'                 => ['label' => 'Post-Sale Plans',               'type' => 'string'],
+                        // Section 4 — Representation Priorities
+                        'representation_priorities'      => ['label' => 'Representation Priorities',     'type' => 'array'],
+                        'qualities_most_important'       => ['label' => 'Agent Qualities Most Important','type' => 'array'],
+                        'past_agent_experience'          => ['label' => 'Past Agent Experience',         'type' => 'string'],
+                        'what_did_not_work_before'       => ['label' => 'What Did Not Work Before',      'type' => 'string'],
+                        // Section 5 — Decision-Making
+                        'decision_making_style'          => ['label' => 'Decision-Making Style',         'type' => 'string'],
+                        'involvement_level'              => ['label' => 'Involvement Level',              'type' => 'string'],
+                        'additional_decision_makers'     => ['label' => 'Other Decision Makers',         'type' => 'string'],
+                        // Section 6 — Working Style
+                        'preferred_agent_working_style'  => ['label' => 'Preferred Agent Working Style', 'type' => 'string'],
+                        'showing_availability'           => ['label' => 'Showing Availability',          'type' => 'array'],
+                        'open_house_preference'          => ['label' => 'Open House Preference',         'type' => 'string'],
+                        'additional_compatibility_notes' => ['label' => 'Additional Notes',              'type' => 'string'],
+                    ];
+                @endphp
+                <div class="row g-2 small">
+                    @foreach ($compatFields as $key => $meta)
+                        @php
+                            $val = $ss[$key] ?? null;
+                            // Resolve "Other" to companion text — never display literal "Other"
+                            if (isset($meta['other_key']) && $val === 'Other') {
+                                $val = ($ss[$meta['other_key']] ?? '') ?: '';
+                            }
+                            $hasVal = $meta['type'] === 'array'
+                                ? (!empty($val) && is_array($val) && count($val) > 0)
+                                : ($val !== '' && $val !== null);
+                        @endphp
+                        @if ($hasVal)
+                            <div class="{{ $meta['type'] === 'string' ? 'col-md-6' : 'col-12' }}">
+                                <span class="fw-bold text-muted">{{ $meta['label'] }}:</span>
+                                @if ($meta['type'] === 'array')
+                                    <span class="ms-1">{{ implode(', ', (array)$val) }}</span>
+                                @else
+                                    <span class="ms-1">{{ $val }}</span>
+                                @endif
+                            </div>
+                        @endif
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    @endif
+@endif
+
 <script>
 function formatSellerPhone(input) {
     let value = input.value.replace(/\D/g, '');

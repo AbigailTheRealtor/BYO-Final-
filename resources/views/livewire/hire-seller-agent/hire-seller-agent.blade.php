@@ -741,7 +741,7 @@
                     </div>
                 @endif
 
-                <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}">
+                <div id="wizard-form-container" class="container pt-5 pb-5" data-service-type="{{ $service_type }}" data-user-type="{{ $user_type }}">
 
                     <form id="create-auction-form" wire:submit.prevent="store" novalidate>
                         <div id="submit-error-banner" class="alert alert-danger d-none" role="alert" style="position: sticky; top: 0; z-index: 1050;">
@@ -753,8 +753,17 @@
                         @if ($service_type === 'full_service')
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
+                            @php
+                                // Sequential counter: tabs 0-4 come from the foreach loop.
+                                // Insert any new seller-only tabs here; $brokerCompIndex and
+                                // $sellerInfoIndex auto-adjust without touching other values.
+                                $nextTabIdx      = 5;
+                                $compatIndex     = ($user_type === 'seller') ? $nextTabIdx++ : null;
+                                $brokerCompIndex = $nextTabIdx++;
+                                $sellerInfoIndex = $nextTabIdx;
+                            @endphp
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'sale Terms', 'Services', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -767,14 +776,38 @@
                                         </button>
                                     </li>
                                 @endforeach
+                                @if ($user_type === 'seller')
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $compatIndex ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $compatIndex }})"
+                                            id="representation-compatibility-tab" data-bs-toggle="tab"
+                                            data-bs-target="#representation-compatibility"
+                                            type="button" role="tab"
+                                            aria-controls="representation-compatibility"
+                                            aria-selected="{{ $activeTab === $compatIndex ? 'true' : 'false' }}">
+                                            Representation Preferences &amp; Compatibility
+                                        </button>
+                                    </li>
+                                @endif
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
+                                    <button class="nav-link {{ $activeTab === $brokerCompIndex ? 'active' : '' }}"
+                                        wire:click="setActiveTab({{ $brokerCompIndex }})"
+                                        id="broker-compensation-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation"
+                                        type="button" role="tab"
+                                        aria-controls="broker-compensation"
+                                        aria-selected="{{ $activeTab === $brokerCompIndex ? 'true' : 'false' }}">
+                                        Broker Compensation
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === $sellerInfoIndex ? 'active' : '' }}"
+                                        wire:click="setActiveTab({{ $sellerInfoIndex }})"
                                         id="seller-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#seller-information"
                                         type="button" role="tab"
                                         aria-controls="seller-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === $sellerInfoIndex ? 'true' : 'false' }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Seller Information' }}
                                     </button>
                                 </li>
@@ -898,8 +931,17 @@
                                     @endif
                                 </div>
 
+                                @if ($user_type === 'seller')
+                                    {{-- Representation Preferences & Compatibility Tab (seller full service only) --}}
+                                    <div class="tab-pane fade {{ $activeTab === $compatIndex ? 'show active' : '' }}"
+                                        id="representation-compatibility" role="tabpanel"
+                                        aria-labelledby="representation-compatibility-tab">
+                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.representation-compatibility')
+                                    </div>
+                                @endif
+
                                 <!-- Broker Compensation Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === $brokerCompIndex ? 'show active' : '' }}"
                                     id="broker-compensation" role="tabpanel" aria-labelledby="broker-compensation-tab">
 
                                     @if ($user_type === 'tenant')
@@ -914,7 +956,7 @@
                                 </div>
 
                                 <!-- Seller Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="seller-information"
+                                <div class="tab-pane fade {{ $activeTab === $sellerInfoIndex ? 'show active' : '' }}" id="seller-information"
                                     role="tabpanel" aria-labelledby="seller-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -991,7 +1033,110 @@
                     @this.set(field, el.val() || []);
                 }
             });
+            // Representation Preferences & Compatibility (seller full service only)
+            var _syncCompatContainer = document.getElementById('wizard-form-container');
+            if (_syncCompatContainer && _syncCompatContainer.getAttribute('data-service-type') === 'full_service') {
+                var compatFields = {
+                    '#compat_preferred_contact_method': 'compatibility_preferences.seller_specific.preferred_contact_method',
+                    '#compat_willing_to_negotiate_on':  'compatibility_preferences.seller_specific.willing_to_negotiate_on',
+                    '#compat_representation_priorities': 'compatibility_preferences.seller_specific.representation_priorities',
+                    '#compat_qualities_most_important': 'compatibility_preferences.seller_specific.qualities_most_important',
+                    '#compat_showing_availability':     'compatibility_preferences.seller_specific.showing_availability',
+                };
+                Object.entries(compatFields).forEach(function([selector, prop]) {
+                    var el = $(selector);
+                    if (el.length && el.hasClass('select2-hidden-accessible')) {
+                        @this.set(prop, el.val() || []);
+                    }
+                });
+                var compatSingleFields = [
+                    { selector: '#compat_communication_style',           prop: 'compatibility_preferences.seller_specific.communication_style' },
+                    { selector: '#compat_response_time_expectation',     prop: 'compatibility_preferences.seller_specific.response_time_expectation' },
+                    { selector: '#compat_negotiation_style',             prop: 'compatibility_preferences.seller_specific.negotiation_style' },
+                    { selector: '#compat_firm_on_price',                 prop: 'compatibility_preferences.seller_specific.firm_on_price' },
+                    { selector: '#compat_primary_transaction_goal',      prop: 'compatibility_preferences.seller_specific.primary_transaction_goal' },
+                    { selector: '#compat_flexibility_on_timeline',       prop: 'compatibility_preferences.seller_specific.flexibility_on_timeline' },
+                    { selector: '#compat_post_sale_plan',                prop: 'compatibility_preferences.seller_specific.post_sale_plan' },
+                    { selector: '#compat_past_agent_experience',         prop: 'compatibility_preferences.seller_specific.past_agent_experience' },
+                    { selector: '#compat_decision_making_style',         prop: 'compatibility_preferences.seller_specific.decision_making_style' },
+                    { selector: '#compat_involvement_level',             prop: 'compatibility_preferences.seller_specific.involvement_level' },
+                    { selector: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.seller_specific.preferred_agent_working_style' },
+                    { selector: '#compat_open_house_preference',         prop: 'compatibility_preferences.seller_specific.open_house_preference' },
+                ];
+                compatSingleFields.forEach(function(item) {
+                    var el = $(item.selector);
+                    if (el.length && el.hasClass('select2-hidden-accessible')) {
+                        @this.set(item.prop, el.val() || '', false);
+                    }
+                });
+            }
         }
+
+        // Centralized, idempotent initializer for all Representation Preferences & Compatibility
+        // Select2 fields. Safe to call from any lifecycle hook (initial load, message.processed,
+        // draftLoaded) — duplicate initialization and duplicate listeners are prevented via
+        // hasClass('select2-hidden-accessible') and jQuery data flags.
+        window.initCompatSelect2Fields = function() {
+            var compatMultis = [
+                { id: '#compat_preferred_contact_method',  prop: 'compatibility_preferences.seller_specific.preferred_contact_method',  flag: 'compat-pcm-bound' },
+                { id: '#compat_willing_to_negotiate_on',   prop: 'compatibility_preferences.seller_specific.willing_to_negotiate_on',   flag: 'compat-wtn-bound' },
+                { id: '#compat_representation_priorities', prop: 'compatibility_preferences.seller_specific.representation_priorities',  flag: 'compat-rp-bound' },
+                { id: '#compat_qualities_most_important',  prop: 'compatibility_preferences.seller_specific.qualities_most_important',   flag: 'compat-qmi-bound' },
+                { id: '#compat_showing_availability',      prop: 'compatibility_preferences.seller_specific.showing_availability',      flag: 'compat-sa-bound' },
+            ];
+            compatMultis.forEach(function(item) {
+                var $el = $(item.id);
+                if (!$el.length) return;
+                if (!$el.hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($el);
+                }
+                $el.off('change.' + item.flag).on('change.' + item.flag, (function(p) { return function() { @this.set(p, $(this).val() || [], false); }; })(item.prop));
+                var saved = @this.get(item.prop) || [];
+                $el.val(saved).trigger('change.select2');
+            });
+
+            // otherCompanion: DOM id of a wrapper div to show/hide when value === 'Other'.
+            // null = no companion. To add Other support to a future field, set otherCompanion
+            // to the wrapper id and add the companion input to the partial — no loop changes needed.
+            var compatSingles = [
+                { id: '#compat_communication_style',           prop: 'compatibility_preferences.seller_specific.communication_style',           flag: 'compat-cs-bound',   otherCompanion: null },
+                { id: '#compat_response_time_expectation',     prop: 'compatibility_preferences.seller_specific.response_time_expectation',     flag: 'compat-rte-bound',  otherCompanion: null },
+                { id: '#compat_negotiation_style',             prop: 'compatibility_preferences.seller_specific.negotiation_style',             flag: 'compat-ns-bound',   otherCompanion: null },
+                { id: '#compat_firm_on_price',                 prop: 'compatibility_preferences.seller_specific.firm_on_price',                 flag: 'compat-fop-bound',  otherCompanion: null },
+                { id: '#compat_primary_transaction_goal',      prop: 'compatibility_preferences.seller_specific.primary_transaction_goal',      flag: 'compat-ptg-bound',  otherCompanion: 'compat_ptg_other_wrapper' },
+                { id: '#compat_flexibility_on_timeline',       prop: 'compatibility_preferences.seller_specific.flexibility_on_timeline',       flag: 'compat-fot-bound',  otherCompanion: null },
+                { id: '#compat_post_sale_plan',                prop: 'compatibility_preferences.seller_specific.post_sale_plan',                flag: 'compat-psp-bound',  otherCompanion: null },
+                { id: '#compat_past_agent_experience',         prop: 'compatibility_preferences.seller_specific.past_agent_experience',         flag: 'compat-pae-bound',  otherCompanion: null },
+                { id: '#compat_decision_making_style',         prop: 'compatibility_preferences.seller_specific.decision_making_style',         flag: 'compat-dms-bound',  otherCompanion: null },
+                { id: '#compat_involvement_level',             prop: 'compatibility_preferences.seller_specific.involvement_level',             flag: 'compat-il-bound',   otherCompanion: null },
+                { id: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.seller_specific.preferred_agent_working_style', flag: 'compat-paws-bound', otherCompanion: null },
+                { id: '#compat_open_house_preference',         prop: 'compatibility_preferences.seller_specific.open_house_preference',         flag: 'compat-ohp-bound',  otherCompanion: null },
+            ];
+            compatSingles.forEach(function(item) {
+                var $el = $(item.id);
+                if (!$el.length) return;
+                if (!$el.hasClass('select2-hidden-accessible')) {
+                    $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                }
+                // Closure captures both prop and companion id for the change handler
+                $el.off('change.' + item.flag).on('change.' + item.flag, (function(prop, companionId) {
+                    return function() {
+                        @this.set(prop, $(this).val() || '', false);
+                        if (companionId) {
+                            var companion = document.getElementById(companionId);
+                            if (companion) companion.style.display = ($(this).val() === 'Other') ? '' : 'none';
+                        }
+                    };
+                })(item.prop, item.otherCompanion || null));
+                var saved = @this.get(item.prop) || '';
+                $el.val(saved).trigger('change.select2');
+                // Apply Other-companion visibility immediately after rehydration
+                if (item.otherCompanion) {
+                    var companion = document.getElementById(item.otherCompanion);
+                    if (companion) companion.style.display = (saved === 'Other') ? '' : 'none';
+                }
+            });
+        };
 
         // Initialize Bootstrap tooltips and handle Livewire re-renders
         function initializeTooltips() {
@@ -1157,6 +1302,12 @@
                         $('#other_preferences').hide();
                     }
                 }
+
+                // Compatibility Select2 fields — seller full service only
+                var _mpCompatContainer = document.getElementById('wizard-form-container');
+                if (_mpCompatContainer && _mpCompatContainer.getAttribute('data-service-type') === 'full_service' && typeof window.initCompatSelect2Fields === 'function') {
+                    window.initCompatSelect2Fields();
+                }
             });
         });
 
@@ -1263,6 +1414,11 @@
                     }
                 }
             });
+            // Compatibility Select2 fields — seller full service only
+            var _rhCompatContainer = document.getElementById('wizard-form-container');
+            if (_rhCompatContainer && _rhCompatContainer.getAttribute('data-service-type') === 'full_service') {
+                window.initCompatSelect2Fields();
+            }
         }
 
         // Listen for force-redirect event to ensure redirect works after submit
@@ -1393,6 +1549,9 @@
                     $exEl.data('exchange-change-bound', true);
                 }
             }
+
+            // Compatibility Select2 fields (single + multi) — centralized idempotent helper
+            window.initCompatSelect2Fields();
 
             // Function to toggle "auction time" input field
             function toggleAuctionTime(selectElement) {
@@ -2450,33 +2609,43 @@
             const saveButton = document.getElementById('save-button');
             const formContainer = document.getElementById('wizard-form-container');
 
-            // Get all required fields from only active tabs depending on service type
+            // Get all required fields using explicit ordered tab ID arrays — ensures correct
+            // validation order and prevents accidental inclusion of non-wizard tab panes
+            // (modals, other components). Inserts #representation-compatibility before
+            // #broker-compensation for seller full_service flows.
             function getAllRequiredFields() {
                 const requiredFields = [];
                 const serviceType = formContainer.getAttribute('data-service-type');
-
-                const tabSelector = serviceType === 'full_service' ? [
-                    '#listing-details',
-                    '#property-preferences',
-                    '#sale-terms',
-                    '#services',
-                    '#additional-details',
-                    '#broker-compensation',
-                    '#tenant-info'
-                ] : [
-                    '#listing-details',
-                    '#location-and-meeting-details',
-                    '#service-selection-and-pricing',
-                    '#tenant-info'
-                ];
-
-                tabSelector.forEach(selector => {
-                    const tab = document.querySelector(selector);
+                const userType = formContainer.getAttribute('data-user-type') || '';
+                let tabIds;
+                if (serviceType === 'full_service') {
+                    tabIds = [
+                        '#listing-details',
+                        '#property-preferences',
+                        '#sale-terms',
+                        '#services',
+                        '#additional-details',
+                    ];
+                    if (userType === 'seller') {
+                        tabIds.push('#representation-compatibility');
+                    }
+                    tabIds.push('#broker-compensation');
+                    tabIds.push('#seller-information');
+                } else {
+                    tabIds = [
+                        '#listing-details',
+                        '#location-and-meeting-details',
+                        '#service-selection-and-pricing',
+                        '#information',
+                    ];
+                }
+                tabIds.forEach(function(id) {
+                    const tab = document.querySelector(id);
                     if (!tab) return;
-                    const fields = tab.querySelectorAll('[required]');
-                    fields.forEach(field => requiredFields.push(field));
+                    tab.querySelectorAll('[required]').forEach(function(field) {
+                        requiredFields.push(field);
+                    });
                 });
-
                 return requiredFields;
             }
 
