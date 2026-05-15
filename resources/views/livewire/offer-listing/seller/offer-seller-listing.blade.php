@@ -797,8 +797,8 @@
                                     $taxLegalIdx         = $hasFinancialTab ? 6 : 5;
                                     $docsIdx             = $hasFinancialTab ? 7 : 6;
                                     $photosIdx           = $hasFinancialTab ? 8 : 7;
-                                    $sellerInfoIdx       = $hasFinancialTab ? 9 : 8;
-                                    $aiIdx               = $hasFinancialTab ? 10 : 9;
+                                    $sellerInfoIdx       = $hasFinancialTab ? 10 : 9;
+                                    $aiIdx               = $hasFinancialTab ? 9 : 8;
                                 } else {
                                     // Non-seller flows retain the Services tab
                                     $saleTermsIdx        = 2;
@@ -808,8 +808,8 @@
                                     $taxLegalIdx         = 6;
                                     $docsIdx             = 7;
                                     $photosIdx           = 8;
-                                    $sellerInfoIdx       = 9;
-                                    $aiIdx               = 10;
+                                    $sellerInfoIdx       = 10;
+                                    $aiIdx               = 9;
                                 }
                             @endphp
 
@@ -923,19 +923,6 @@
                                         </button>
                                     </li>
 
-                                    {{-- Seller Information --}}
-                                    <li class="nav-item" role="presentation">
-                                        <button class="nav-link {{ $activeTab === $sellerInfoIdx ? 'active' : '' }}"
-                                            wire:click="setActiveTab({{ $sellerInfoIdx }})"
-                                            id="seller-information-tab" data-bs-toggle="tab"
-                                            data-bs-target="#seller-information"
-                                            type="button" role="tab"
-                                            aria-controls="seller-information"
-                                            aria-selected="{{ $activeTab === $sellerInfoIdx ? 'true' : 'false' }}">
-                                            Agent Credentials & Contact Info
-                                        </button>
-                                    </li>
-
                                     {{-- AI Questions --}}
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $aiIdx ? 'active' : '' }}"
@@ -946,6 +933,19 @@
                                             aria-controls="ai-questions"
                                             aria-selected="{{ $activeTab === $aiIdx ? 'true' : 'false' }}">
                                             AI Questions
+                                        </button>
+                                    </li>
+
+                                    {{-- Seller Information --}}
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link {{ $activeTab === $sellerInfoIdx ? 'active' : '' }}"
+                                            wire:click="setActiveTab({{ $sellerInfoIdx }})"
+                                            id="seller-information-tab" data-bs-toggle="tab"
+                                            data-bs-target="#seller-information"
+                                            type="button" role="tab"
+                                            aria-controls="seller-information"
+                                            aria-selected="{{ $activeTab === $sellerInfoIdx ? 'true' : 'false' }}">
+                                            Agent Credentials & Contact Info
                                         </button>
                                     </li>
                                 @else
@@ -1211,6 +1211,12 @@
                                     @include('livewire.offer-listing.offer-seller-tabs.commission-based.photos-tours-documents')
                                 </div>
 
+                                <!-- AI Questions Tab (seller full_service) -->
+                                <div class="tab-pane fade {{ $activeTab === $aiIdx ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
+
                                 <!-- Seller Info Tab (seller full_service) -->
                                 <div class="tab-pane fade {{ $activeTab === $sellerInfoIdx ? 'show active' : '' }}" id="seller-information"
                                     role="tabpanel" aria-labelledby="seller-information-tab">
@@ -1219,12 +1225,6 @@
                                     @else
                                         @include('livewire.offer-listing.offer-seller-tabs.commission-based.seller-info')
                                     @endif
-                                </div>
-
-                                <!-- AI Questions Tab (seller full_service) -->
-                                <div class="tab-pane fade {{ $activeTab === $aiIdx ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                                 @else
                                 <!-- Photos, Tours & Documents Tab (non-seller full_service: index 6) -->
@@ -2887,13 +2887,15 @@
                 const tabSelector = serviceType === 'full_service' ? [
                     '#listing-details',
                     '#property-details',
+                    '#financial-details',
                     '#sale-terms',
                     '#additional-details',
+                    '#broker-compensation-agency-agreement-terms',
                     '#tax-legal-hoa-disclosures',
+                    '#documents-disclosures',
                     '#photos-tours-documents',
-                    '#seller-information',
                     '#ai-questions',
-                    '#financial-details',
+                    '#seller-information',
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
@@ -3182,13 +3184,14 @@
     <script>
         (function () {
             function syncWizardButtons() {
-                var aiPane = document.getElementById('ai-questions');
+                var allPanes = document.querySelectorAll('#myTabContent > .tab-pane');
+                var lastPane = allPanes[allPanes.length - 1];
                 var nextBtn = document.querySelector('.wizard-step-next');
                 var finishBtn = document.querySelector('.wizard-step-finish');
                 if (!nextBtn || !finishBtn) return;
-                var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
-                nextBtn.style.display = onAI ? 'none' : '';
-                finishBtn.style.display = onAI ? '' : 'none';
+                var onLast = !!lastPane && lastPane.classList.contains('show') && lastPane.classList.contains('active');
+                nextBtn.style.display = onLast ? 'none' : '';
+                finishBtn.style.display = onLast ? '' : 'none';
             }
             document.addEventListener('shown.bs.tab', syncWizardButtons);
             document.addEventListener('DOMContentLoaded', syncWizardButtons);

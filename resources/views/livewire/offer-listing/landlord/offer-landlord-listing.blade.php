@@ -1059,23 +1059,23 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 8 ? 'active' : '' }}"
                                         wire:click="setActiveTab(8)"
-                                        id="landlord-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#landlord-information"
+                                        id="ai-questions-tab" data-bs-toggle="tab"
+                                        data-bs-target="#ai-questions"
                                         type="button" role="tab"
-                                        aria-controls="landlord-information"
+                                        aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 8 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
+                                        AI Questions
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 9 ? 'active' : '' }}"
                                         wire:click="setActiveTab(9)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
+                                        id="landlord-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#landlord-information"
                                         type="button" role="tab"
-                                        aria-controls="ai-questions"
+                                        aria-controls="landlord-information"
                                         aria-selected="{{ $activeTab === 9 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                             </ul>
@@ -1227,8 +1227,14 @@
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.photos-tours-documents')
                                 </div>
 
-                                <!-- Landlord Info Tab (full_service: index 8) -->
-                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}"
+                                <!-- AI Questions Tab (full_service: index 8) -->
+                                <div class="tab-pane fade {{ $activeTab === 8 ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
+
+                                <!-- Landlord Info Tab (full_service: index 9) -->
+                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1241,12 +1247,6 @@
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.landlord-info')
                                     @endif
-                                </div>
-
-                                <!-- AI Questions Tab (full_service: index 9) -->
-                                <div class="tab-pane fade {{ $activeTab === 9 ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                             @elseif($service_type === 'limited_service')
                                 <!-- Photos, Tours & Documents Tab (limited_service: index 4) -->
@@ -2831,8 +2831,8 @@
                     '#tax-legal-hoa-disclosures',
                     '#documents-disclosures',
                     '#photos-tours-documents',
-                    '#landlord-information',
-                    '#ai-questions'
+                    '#ai-questions',
+                    '#landlord-information'
                 ] : [
                     '#listing-details',
                     '#location-and-meeting-details',
@@ -3141,7 +3141,9 @@
                     );
                     if (_submitTrigger) {
                         new bootstrap.Tab(_submitTrigger).show();
-                        try { @this.call('setActiveTab', 8); } catch(exExit) {}
+                        var _exitWc = _submitTrigger.getAttribute('wire:click') || '';
+                        var _exitM  = _exitWc.match(/setActiveTab\((\d+)\)/);
+                        try { @this.call('setActiveTab', _exitM ? parseInt(_exitM[1]) : 9); } catch(exExit) {}
                     }
                     return;
                 }
@@ -3296,13 +3298,14 @@
     <script>
         (function () {
             function syncWizardButtons() {
-                var aiPane = document.getElementById('ai-questions');
+                var allPanes = document.querySelectorAll('#myTabContent > .tab-pane');
+                var lastPane = allPanes[allPanes.length - 1];
                 var nextBtn = document.querySelector('.wizard-step-next');
                 var finishBtn = document.querySelector('.wizard-step-finish');
                 if (!nextBtn || !finishBtn) return;
-                var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
-                nextBtn.style.display = onAI ? 'none' : '';
-                finishBtn.style.display = onAI ? '' : 'none';
+                var onLast = !!lastPane && lastPane.classList.contains('show') && lastPane.classList.contains('active');
+                nextBtn.style.display = onLast ? 'none' : '';
+                finishBtn.style.display = onLast ? '' : 'none';
             }
             document.addEventListener('shown.bs.tab', syncWizardButtons);
             document.addEventListener('DOMContentLoaded', syncWizardButtons);

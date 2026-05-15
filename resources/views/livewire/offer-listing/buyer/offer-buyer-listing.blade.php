@@ -802,8 +802,8 @@
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @php
                                     $fullServiceTabs = ['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Description'];
-                                    $agentCredentialsIndex = 5;
-                                    $aiQuestionsIndex = 6;
+                                    $agentCredentialsIndex = 6;
+                                    $aiQuestionsIndex = 5;
                                 @endphp
                                 @foreach ($fullServiceTabs as $index => $tab)
                                     <li class="nav-item" role="presentation">
@@ -830,17 +830,6 @@
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === $agentCredentialsIndex ? 'active' : '' }}"
-                                        wire:click="setActiveTab({{ $agentCredentialsIndex }})"
-                                        id="buyer-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#buyer-information"
-                                        type="button" role="tab"
-                                        aria-controls="buyer-information"
-                                        aria-selected="{{ $activeTab === $agentCredentialsIndex ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === $aiQuestionsIndex ? 'active' : '' }}"
                                         wire:click="setActiveTab({{ $aiQuestionsIndex }})"
                                         id="ai-questions-tab" data-bs-toggle="tab"
@@ -849,6 +838,17 @@
                                         aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === $aiQuestionsIndex ? 'true' : 'false' }}">
                                         AI Questions
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === $agentCredentialsIndex ? 'active' : '' }}"
+                                        wire:click="setActiveTab({{ $agentCredentialsIndex }})"
+                                        id="buyer-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#buyer-information"
+                                        type="button" role="tab"
+                                        aria-controls="buyer-information"
+                                        aria-selected="{{ $activeTab === $agentCredentialsIndex ? 'true' : 'false' }}">
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                             </ul>
@@ -969,8 +969,15 @@
                                     @endif
                                 </div>
 
+                                <!-- AI Questions Tab (full_service: index 5) -->
+                                @php $aiQuestionsTabIndex = 5; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
+
                                 <!-- Buyer Info Tab -->
-                                @php $buyerInfoIndex = 5; @endphp
+                                @php $buyerInfoIndex = 6; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $buyerInfoIndex ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
@@ -984,13 +991,6 @@
                                     @elseif($user_type === 'landlord')
                                         @include('livewire.offer-listing.offer-landlord-tabs.commission-based.landlord-info')
                                     @endif
-                                </div>
-
-                                <!-- AI Questions Tab (full_service: index 6) -->
-                                @php $aiQuestionsTabIndex = 6; @endphp
-                                <div class="tab-pane fade {{ $activeTab === $aiQuestionsTabIndex ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                             @elseif($service_type === 'limited_service')
                                 <!-- AI Questions Tab (limited_service: index 5) -->
@@ -2595,6 +2595,7 @@
                     '#purchasing-terms',
                     '#additional-details',
                     '#broker-compensation-agency-agreement-terms',
+                    '#ai-questions',
                     '#buyer-information'
                 ] : [
                     '#listing-details',
@@ -3089,13 +3090,14 @@
     <script>
         (function () {
             function syncWizardButtons() {
-                var aiPane = document.getElementById('ai-questions');
+                var allPanes = document.querySelectorAll('#myTabContent > .tab-pane');
+                var lastPane = allPanes[allPanes.length - 1];
                 var nextBtn = document.querySelector('.wizard-step-next');
                 var finishBtn = document.querySelector('.wizard-step-finish');
                 if (!nextBtn || !finishBtn) return;
-                var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
-                nextBtn.style.display = onAI ? 'none' : '';
-                finishBtn.style.display = onAI ? '' : 'none';
+                var onLast = !!lastPane && lastPane.classList.contains('show') && lastPane.classList.contains('active');
+                nextBtn.style.display = onLast ? 'none' : '';
+                finishBtn.style.display = onLast ? '' : 'none';
             }
             document.addEventListener('shown.bs.tab', syncWizardButtons);
             document.addEventListener('DOMContentLoaded', syncWizardButtons);
