@@ -135,10 +135,84 @@
             </div>
         </div>
     </div>
+
+    {{-- Preferred Communication & Top Priority --}}
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Preferences</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Preferred Communication Method</label>
+                    <select name="preferred_comm_method" class="form-control @error('preferred_comm_method') is-invalid @enderror"
+                            onchange="sellerTogglePreferredComm(this.value)">
+                        <option value="">Select</option>
+                        <option value="Call" {{ old('preferred_comm_method') === 'Call' ? 'selected' : '' }}>Call</option>
+                        <option value="Text" {{ old('preferred_comm_method') === 'Text' ? 'selected' : '' }}>Text</option>
+                        <option value="Email" {{ old('preferred_comm_method') === 'Email' ? 'selected' : '' }}>Email</option>
+                        <option value="Video Call" {{ old('preferred_comm_method') === 'Video Call' ? 'selected' : '' }}>Video Call</option>
+                        <option value="Any" {{ old('preferred_comm_method') === 'Any' ? 'selected' : '' }}>Any</option>
+                        <option value="Other" {{ old('preferred_comm_method') === 'Other' ? 'selected' : '' }}>Other</option>
+                    </select>
+                    @error('preferred_comm_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="seller_preferred_comm_method_other_wrap" class="mt-2"
+                         style="{{ old('preferred_comm_method') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="preferred_comm_method_other" id="seller_preferred_comm_method_other"
+                               class="form-control"
+                               placeholder="Enter preferred method (e.g., In-Person Meeting)"
+                               value="{{ old('preferred_comm_method_other') }}">
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Top Priority</label>
+                    <select name="top_priority" class="form-control @error('top_priority') is-invalid @enderror"
+                            onchange="sellerToggleTopPriority(this.value)">
+                        <option value="">Select</option>
+                        <option value="Getting the highest sale price" {{ old('top_priority') === 'Getting the highest sale price' ? 'selected' : '' }}>Getting the highest sale price</option>
+                        <option value="Selling quickly" {{ old('top_priority') === 'Selling quickly' ? 'selected' : '' }}>Selling quickly</option>
+                        <option value="Minimal showings / hassle" {{ old('top_priority') === 'Minimal showings / hassle' ? 'selected' : '' }}>Minimal showings / hassle</option>
+                        <option value="Finding the right buyer" {{ old('top_priority') === 'Finding the right buyer' ? 'selected' : '' }}>Finding the right buyer</option>
+                        <option value="Other" {{ old('top_priority') === 'Other' ? 'selected' : '' }}>Other</option>
+                    </select>
+                    @error('top_priority')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="seller_top_priority_other_wrap" class="mt-2"
+                         style="{{ old('top_priority') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="top_priority_other" id="seller_top_priority_other"
+                               class="form-control"
+                               placeholder="Enter your top priority (e.g., Sell before summer)"
+                               value="{{ old('top_priority_other') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @push('scripts')
 <script>
+function sellerTogglePreferredComm(val) {
+    var wrap = document.getElementById('seller_preferred_comm_method_other_wrap');
+    var inp  = document.getElementById('seller_preferred_comm_method_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
+function sellerToggleTopPriority(val) {
+    var wrap = document.getElementById('seller_top_priority_other_wrap');
+    var inp  = document.getElementById('seller_top_priority_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
 (function () {
     function formatPhone(input) {
         var digits = input.value.replace(/\D/g, '').substring(0, 10);
@@ -166,6 +240,11 @@
         salePriceInput.addEventListener('input', function () { formatSalePrice(this); });
         if (salePriceInput.value) { formatSalePrice(salePriceInput); }
     }
+
+    var commSel = document.querySelector('select[name="preferred_comm_method"]');
+    if (commSel) { sellerTogglePreferredComm(commSel.value); }
+    var priSel = document.querySelector('select[name="top_priority"]');
+    if (priSel) { sellerToggleTopPriority(priSel.value); }
 }());
 </script>
 @endpush

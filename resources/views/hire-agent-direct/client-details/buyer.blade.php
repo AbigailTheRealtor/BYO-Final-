@@ -92,30 +92,82 @@
         </div>
     </div>
 
-    {{-- Qualification Signals --}}
+    {{-- Preferred Communication & Top Priority --}}
     <div class="card mb-4">
-        <div class="card-header"><h5 class="mb-0">Qualification Signals</h5></div>
+        <div class="card-header"><h5 class="mb-0">Preferences</h5></div>
         <div class="card-body">
             <div class="row">
                 <div class="col-md-6 mb-3">
-                    <label class="fw-bold form-label">Pre-Approval Status</label>
-                    <select name="pre_approval_status" class="form-control @error('pre_approval_status') is-invalid @enderror">
+                    <label class="fw-bold form-label">Preferred Communication Method</label>
+                    <select name="preferred_comm_method" class="form-control @error('preferred_comm_method') is-invalid @enderror"
+                            onchange="buyerTogglePreferredComm(this.value)">
                         <option value="">Select</option>
-                        <option value="Pre-approved" {{ old('pre_approval_status') === 'Pre-approved' ? 'selected' : '' }}>Pre-approved</option>
-                        <option value="Pre-qualified" {{ old('pre_approval_status') === 'Pre-qualified' ? 'selected' : '' }}>Pre-qualified</option>
-                        <option value="In process" {{ old('pre_approval_status') === 'In process' ? 'selected' : '' }}>In process</option>
-                        <option value="Not yet started" {{ old('pre_approval_status') === 'Not yet started' ? 'selected' : '' }}>Not yet started</option>
+                        <option value="Call" {{ old('preferred_comm_method') === 'Call' ? 'selected' : '' }}>Call</option>
+                        <option value="Text" {{ old('preferred_comm_method') === 'Text' ? 'selected' : '' }}>Text</option>
+                        <option value="Email" {{ old('preferred_comm_method') === 'Email' ? 'selected' : '' }}>Email</option>
+                        <option value="Video Call" {{ old('preferred_comm_method') === 'Video Call' ? 'selected' : '' }}>Video Call</option>
+                        <option value="Any" {{ old('preferred_comm_method') === 'Any' ? 'selected' : '' }}>Any</option>
+                        <option value="Other" {{ old('preferred_comm_method') === 'Other' ? 'selected' : '' }}>Other</option>
                     </select>
-                    @error('pre_approval_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('preferred_comm_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="buyer_preferred_comm_method_other_wrap" class="mt-2"
+                         style="{{ old('preferred_comm_method') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="preferred_comm_method_other" id="buyer_preferred_comm_method_other"
+                               class="form-control"
+                               placeholder="Enter preferred method (e.g., In-Person Meeting)"
+                               value="{{ old('preferred_comm_method_other') }}">
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label class="fw-bold form-label">Cash Buyer?</label>
-                    <select name="cash_buyer" class="form-control @error('cash_buyer') is-invalid @enderror">
+                    <label class="fw-bold form-label">Top Priority</label>
+                    <select name="top_priority" class="form-control @error('top_priority') is-invalid @enderror"
+                            onchange="buyerToggleTopPriority(this.value)">
                         <option value="">Select</option>
-                        <option value="Yes" {{ old('cash_buyer') === 'Yes' ? 'selected' : '' }}>Yes</option>
-                        <option value="No" {{ old('cash_buyer') === 'No' ? 'selected' : '' }}>No</option>
+                        <option value="Finding the right property" {{ old('top_priority') === 'Finding the right property' ? 'selected' : '' }}>Finding the right property</option>
+                        <option value="Getting the best purchase price" {{ old('top_priority') === 'Getting the best purchase price' ? 'selected' : '' }}>Getting the best purchase price</option>
+                        <option value="Moving quickly" {{ old('top_priority') === 'Moving quickly' ? 'selected' : '' }}>Moving quickly</option>
+                        <option value="Securing financing" {{ old('top_priority') === 'Securing financing' ? 'selected' : '' }}>Securing financing</option>
+                        <option value="Other" {{ old('top_priority') === 'Other' ? 'selected' : '' }}>Other</option>
                     </select>
-                    @error('cash_buyer')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('top_priority')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="buyer_top_priority_other_wrap" class="mt-2"
+                         style="{{ old('top_priority') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="top_priority_other" id="buyer_top_priority_other"
+                               class="form-control"
+                               placeholder="Enter your top priority (e.g., Specific school district)"
+                               value="{{ old('top_priority_other') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Financing Details --}}
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Financing Details</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Financing Status</label>
+                    <select name="financing_status" class="form-control @error('financing_status') is-invalid @enderror"
+                            onchange="buyerToggleFinancingStatus(this.value)">
+                        <option value="">Select</option>
+                        <option value="Cash Buyer" {{ old('financing_status') === 'Cash Buyer' ? 'selected' : '' }}>Cash Buyer</option>
+                        <option value="Pre-Approved" {{ old('financing_status') === 'Pre-Approved' ? 'selected' : '' }}>Pre-Approved</option>
+                        <option value="Pre-Qualified" {{ old('financing_status') === 'Pre-Qualified' ? 'selected' : '' }}>Pre-Qualified</option>
+                        <option value="Working With Lender" {{ old('financing_status') === 'Working With Lender' ? 'selected' : '' }}>Working With Lender</option>
+                        <option value="Financing Needed" {{ old('financing_status') === 'Financing Needed' ? 'selected' : '' }}>Financing Needed</option>
+                        <option value="Not Sure Yet" {{ old('financing_status') === 'Not Sure Yet' ? 'selected' : '' }}>Not Sure Yet</option>
+                        <option value="Other" {{ old('financing_status') === 'Other' ? 'selected' : '' }}>Other</option>
+                    </select>
+                    @error('financing_status')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="buyer_financing_status_other_wrap" class="mt-2"
+                         style="{{ old('financing_status') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="financing_status_other" id="buyer_financing_status_other"
+                               class="form-control"
+                               placeholder="Enter financing status (e.g., FHA loan in process)"
+                               value="{{ old('financing_status_other') }}">
+                    </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="fw-bold form-label">Estimated Down Payment <span class="text-muted fw-normal">(optional)</span></label>
@@ -141,6 +193,42 @@
 
 @push('scripts')
 <script>
+function buyerTogglePreferredComm(val) {
+    var wrap = document.getElementById('buyer_preferred_comm_method_other_wrap');
+    var inp  = document.getElementById('buyer_preferred_comm_method_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
+function buyerToggleTopPriority(val) {
+    var wrap = document.getElementById('buyer_top_priority_other_wrap');
+    var inp  = document.getElementById('buyer_top_priority_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
+function buyerToggleFinancingStatus(val) {
+    var wrap = document.getElementById('buyer_financing_status_other_wrap');
+    var inp  = document.getElementById('buyer_financing_status_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
 (function() {
     var phoneInput = document.getElementById('buyer_client_phone');
     if (phoneInput) {
@@ -236,6 +324,13 @@
             }
         });
     }
+
+    var commSel = document.querySelector('select[name="preferred_comm_method"]');
+    if (commSel) { buyerTogglePreferredComm(commSel.value); }
+    var priSel = document.querySelector('select[name="top_priority"]');
+    if (priSel) { buyerToggleTopPriority(priSel.value); }
+    var finSel = document.querySelector('select[name="financing_status"]');
+    if (finSel) { buyerToggleFinancingStatus(finSel.value); }
 })();
 </script>
 @endpush

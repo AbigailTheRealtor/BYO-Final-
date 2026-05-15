@@ -109,6 +109,56 @@
         </div>
     </div>
 
+    {{-- Preferred Communication & Top Priority --}}
+    <div class="card mb-4">
+        <div class="card-header"><h5 class="mb-0">Preferences</h5></div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Preferred Communication Method</label>
+                    <select name="preferred_comm_method" class="form-control @error('preferred_comm_method') is-invalid @enderror"
+                            onchange="tenantTogglePreferredComm(this.value)">
+                        <option value="">Select</option>
+                        <option value="Call" {{ old('preferred_comm_method') === 'Call' ? 'selected' : '' }}>Call</option>
+                        <option value="Text" {{ old('preferred_comm_method') === 'Text' ? 'selected' : '' }}>Text</option>
+                        <option value="Email" {{ old('preferred_comm_method') === 'Email' ? 'selected' : '' }}>Email</option>
+                        <option value="Video Call" {{ old('preferred_comm_method') === 'Video Call' ? 'selected' : '' }}>Video Call</option>
+                        <option value="Any" {{ old('preferred_comm_method') === 'Any' ? 'selected' : '' }}>Any</option>
+                        <option value="Other" {{ old('preferred_comm_method') === 'Other' ? 'selected' : '' }}>Other</option>
+                    </select>
+                    @error('preferred_comm_method')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="tenant_preferred_comm_method_other_wrap" class="mt-2"
+                         style="{{ old('preferred_comm_method') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="preferred_comm_method_other" id="tenant_preferred_comm_method_other"
+                               class="form-control"
+                               placeholder="Enter preferred method (e.g., In-Person Meeting)"
+                               value="{{ old('preferred_comm_method_other') }}">
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="fw-bold form-label">Top Priority</label>
+                    <select name="top_priority" class="form-control @error('top_priority') is-invalid @enderror"
+                            onchange="tenantToggleTopPriority(this.value)">
+                        <option value="">Select</option>
+                        <option value="Finding a home within budget" {{ old('top_priority') === 'Finding a home within budget' ? 'selected' : '' }}>Finding a home within budget</option>
+                        <option value="Moving quickly" {{ old('top_priority') === 'Moving quickly' ? 'selected' : '' }}>Moving quickly</option>
+                        <option value="Finding the right neighborhood" {{ old('top_priority') === 'Finding the right neighborhood' ? 'selected' : '' }}>Finding the right neighborhood</option>
+                        <option value="Securing a long-term lease" {{ old('top_priority') === 'Securing a long-term lease' ? 'selected' : '' }}>Securing a long-term lease</option>
+                        <option value="Other" {{ old('top_priority') === 'Other' ? 'selected' : '' }}>Other</option>
+                    </select>
+                    @error('top_priority')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    <div id="tenant_top_priority_other_wrap" class="mt-2"
+                         style="{{ old('top_priority') === 'Other' ? '' : 'display:none;' }}">
+                        <input type="text" name="top_priority_other" id="tenant_top_priority_other"
+                               class="form-control"
+                               placeholder="Enter your top priority (e.g., Pet-friendly, first floor)"
+                               value="{{ old('top_priority_other') }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Qualification Signals --}}
     <div class="card mb-4">
         <div class="card-header"><h5 class="mb-0">Qualification Signals</h5></div>
@@ -140,6 +190,41 @@
 
 @push('scripts')
 <script>
+function tenantTogglePreferredComm(val) {
+    var wrap = document.getElementById('tenant_preferred_comm_method_other_wrap');
+    var inp  = document.getElementById('tenant_preferred_comm_method_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
+function tenantToggleTopPriority(val) {
+    var wrap = document.getElementById('tenant_top_priority_other_wrap');
+    var inp  = document.getElementById('tenant_top_priority_other');
+    if (!wrap) return;
+    if (val === 'Other') {
+        wrap.style.display = '';
+    } else {
+        wrap.style.display = 'none';
+        if (inp) inp.value = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var commSel = document.querySelector('select[name="preferred_comm_method"]');
+    if (commSel) tenantTogglePreferredComm(commSel.value);
+    var priSel = document.querySelector('select[name="top_priority"]');
+    if (priSel) tenantToggleTopPriority(priSel.value);
+    var sel = document.getElementById('desired_lease_length');
+    if (sel) {
+        tenantToggleLeaseLength(sel.value);
+    }
+});
+
 (function () {
     // ── Phone formatting ─────────────────────────────────────────────────────
     var phoneInput = document.getElementById('tenant_client_phone');
@@ -209,13 +294,5 @@ function tenantToggleLeaseLength(val) {
     }
 }
 
-// On page load: initialize the Desired Lease Length show/hide state and clear any
-// stale desired_lease_length_other value if the saved select value is not "Other".
-document.addEventListener('DOMContentLoaded', function () {
-    var sel = document.getElementById('desired_lease_length');
-    if (sel) {
-        tenantToggleLeaseLength(sel.value);
-    }
-});
 </script>
 @endpush

@@ -1510,8 +1510,8 @@ function populateReviewTab() {
             { label: 'Motivation Level', name: 'motivation_level' },
             { label: 'Target Purchase Price', name: 'target_purchase_price' },
             { label: 'Timeline to Purchase', name: 'timeline_to_purchase' },
-            { label: 'Pre-Approval Status', name: 'pre_approval_status' },
-            { label: 'Cash Buyer', name: 'cash_buyer' },
+            { label: 'Financing Status', name: 'financing_status' },
+            { label: 'Financing Status (Other)', name: 'financing_status_other' },
             { label: 'Estimated Down Payment', name: 'estimated_down_payment' },
             { label: 'Desired Monthly Rent', name: 'desired_monthly_rent' },
             { label: 'Availability Date', name: 'availability_date' },
@@ -1522,6 +1522,10 @@ function populateReviewTab() {
             { label: 'Move-In Date', name: 'move_in_date' },
             { label: 'Number of Occupants', name: 'number_of_occupants' },
             { label: 'Household Monthly Income', name: 'household_monthly_income' },
+            { label: 'Preferred Communication Method', name: 'preferred_comm_method' },
+            { label: 'Preferred Communication (Other)', name: 'preferred_comm_method_other' },
+            { label: 'Top Priority', name: 'top_priority' },
+            { label: 'Top Priority (Other)', name: 'top_priority_other' },
         ];
         fields.forEach(function(f) {
             var el = document.querySelector('[name="' + f.name + '"]');

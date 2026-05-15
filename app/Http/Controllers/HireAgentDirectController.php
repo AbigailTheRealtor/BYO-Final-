@@ -597,41 +597,57 @@ class HireAgentDirectController extends Controller
     {
         return match ($role) {
             'seller' => [
-                'client_property_address' => 'required|string|max:500',
-                'client_property_city'    => 'required|string|max:255',
-                'client_property_state'   => 'required|string|max:100',
-                'client_property_zip'     => 'required|string|max:20',
-                'desired_sale_price'      => 'nullable|string|max:100',
-                'timeline_to_sell'        => 'nullable|string|max:100',
-                'motivation_level'        => 'nullable|string|max:255',
+                'client_property_address'  => 'required|string|max:500',
+                'client_property_city'     => 'required|string|max:255',
+                'client_property_state'    => 'required|string|max:100',
+                'client_property_zip'      => 'required|string|max:20',
+                'desired_sale_price'       => 'nullable|string|max:100',
+                'timeline_to_sell'         => 'nullable|string|max:100',
+                'motivation_level'         => 'nullable|string|max:255',
+                'preferred_comm_method'    => 'nullable|string|max:255',
+                'preferred_comm_method_other' => 'nullable|string|max:255',
+                'top_priority'             => 'nullable|string|max:255',
+                'top_priority_other'       => 'nullable|string|max:255',
             ],
             'buyer' => [
-                'areas_of_interest'      => 'required|string|max:500',
-                'target_purchase_price'  => 'nullable|string|max:100',
-                'timeline_to_purchase'   => 'nullable|string|max:100',
-                'pre_approval_status'    => 'nullable|string|max:100',
-                'cash_buyer'             => 'nullable|string|max:10',
-                'estimated_down_payment' => 'nullable|string|max:100',
-                'down_payment_type'      => 'nullable|string|in:percent,dollar',
+                'areas_of_interest'           => 'required|string|max:500',
+                'target_purchase_price'       => 'nullable|string|max:100',
+                'timeline_to_purchase'        => 'nullable|string|max:100',
+                'financing_status'            => 'nullable|string|max:100',
+                'financing_status_other'      => 'nullable|string|max:255',
+                'estimated_down_payment'      => 'nullable|string|max:100',
+                'down_payment_type'           => 'nullable|string|in:percent,dollar',
+                'preferred_comm_method'       => 'nullable|string|max:255',
+                'preferred_comm_method_other' => 'nullable|string|max:255',
+                'top_priority'                => 'nullable|string|max:255',
+                'top_priority_other'          => 'nullable|string|max:255',
             ],
             'landlord' => [
-                'client_property_address' => 'required|string|max:500',
-                'client_property_city'    => 'required|string|max:255',
-                'client_property_state'   => 'required|string|max:100',
-                'client_property_zip'     => 'required|string|max:20',
-                'desired_monthly_rent'    => 'nullable|string|max:100',
-                'availability_date'       => 'nullable|date',
-                'occupancy_status'        => 'nullable|string|max:100',
-                'flexibility'             => 'nullable|string|max:100',
+                'client_property_address'     => 'required|string|max:500',
+                'client_property_city'        => 'required|string|max:255',
+                'client_property_state'       => 'required|string|max:100',
+                'client_property_zip'         => 'required|string|max:20',
+                'desired_monthly_rent'        => 'nullable|string|max:100',
+                'availability_date'           => 'nullable|date',
+                'occupancy_status'            => 'nullable|string|max:100',
+                'flexibility'                 => 'nullable|string|max:100',
+                'preferred_comm_method'       => 'nullable|string|max:255',
+                'preferred_comm_method_other' => 'nullable|string|max:255',
+                'top_priority'                => 'nullable|string|max:255',
+                'top_priority_other'          => 'nullable|string|max:255',
             ],
             'tenant' => [
-                'areas_of_interest'          => 'required|string|max:500',
-                'max_monthly_lease_price'    => 'nullable|string|max:100',
-                'desired_lease_length'       => 'nullable|string|max:100',
-                'desired_lease_length_other' => 'nullable|string|max:200',
-                'move_in_date'               => 'nullable|date',
-                'number_of_occupants'        => 'nullable|string|max:100',
-                'household_monthly_income'   => 'nullable|string|max:100',
+                'areas_of_interest'           => 'required|string|max:500',
+                'max_monthly_lease_price'     => 'nullable|string|max:100',
+                'desired_lease_length'        => 'nullable|string|max:100',
+                'desired_lease_length_other'  => 'nullable|string|max:200',
+                'move_in_date'                => 'nullable|date',
+                'number_of_occupants'         => 'nullable|string|max:100',
+                'household_monthly_income'    => 'nullable|string|max:100',
+                'preferred_comm_method'       => 'nullable|string|max:255',
+                'preferred_comm_method_other' => 'nullable|string|max:255',
+                'top_priority'                => 'nullable|string|max:255',
+                'top_priority_other'          => 'nullable|string|max:255',
             ],
             default => [],
         };
@@ -1030,11 +1046,11 @@ class HireAgentDirectController extends Controller
                 if (!empty($contactInfo['timeline_to_purchase'])) {
                     $listing->saveMeta('client_timeline_to_purchase', $contactInfo['timeline_to_purchase']);
                 }
-                if (!empty($contactInfo['pre_approval_status'])) {
-                    $listing->saveMeta('client_pre_approval_status', $contactInfo['pre_approval_status']);
+                if (!empty($contactInfo['financing_status'])) {
+                    $listing->saveMeta('client_financing_status', $contactInfo['financing_status']);
                 }
-                if (!empty($contactInfo['cash_buyer'])) {
-                    $listing->saveMeta('client_cash_buyer', $contactInfo['cash_buyer']);
+                if (!empty($contactInfo['financing_status_other'])) {
+                    $listing->saveMeta('client_financing_status_other', $contactInfo['financing_status_other']);
                 }
                 if (!empty($contactInfo['estimated_down_payment'])) {
                     $listing->saveMeta('client_estimated_down_payment', $contactInfo['estimated_down_payment']);
@@ -1071,6 +1087,20 @@ class HireAgentDirectController extends Controller
                 if (!empty($contactInfo['household_monthly_income'])) {
                     $listing->saveMeta('client_household_monthly_income', $contactInfo['household_monthly_income']);
                 }
+            }
+
+            // All roles: Preferred Communication Method and Top Priority
+            if (!empty($contactInfo['preferred_comm_method'])) {
+                $listing->saveMeta('client_preferred_comm_method', $contactInfo['preferred_comm_method']);
+            }
+            if (!empty($contactInfo['preferred_comm_method_other'])) {
+                $listing->saveMeta('client_preferred_comm_method_other', $contactInfo['preferred_comm_method_other']);
+            }
+            if (!empty($contactInfo['top_priority'])) {
+                $listing->saveMeta('client_top_priority', $contactInfo['top_priority']);
+            }
+            if (!empty($contactInfo['top_priority_other'])) {
+                $listing->saveMeta('client_top_priority_other', $contactInfo['top_priority_other']);
             }
 
             // ── 3. Create the bid ────────────────────────────────────────
@@ -1150,11 +1180,11 @@ class HireAgentDirectController extends Controller
                 if (!empty($contactInfo['timeline_to_purchase'])) {
                     $bid->saveMeta('counter_timeline_to_purchase', $contactInfo['timeline_to_purchase']);
                 }
-                if (!empty($contactInfo['pre_approval_status'])) {
-                    $bid->saveMeta('counter_pre_approval_status', $contactInfo['pre_approval_status']);
+                if (!empty($contactInfo['financing_status'])) {
+                    $bid->saveMeta('counter_financing_status', $contactInfo['financing_status']);
                 }
-                if (!empty($contactInfo['cash_buyer'])) {
-                    $bid->saveMeta('counter_cash_buyer', $contactInfo['cash_buyer']);
+                if (!empty($contactInfo['financing_status_other'])) {
+                    $bid->saveMeta('counter_financing_status_other', $contactInfo['financing_status_other']);
                 }
                 if (!empty($contactInfo['estimated_down_payment'])) {
                     $bid->saveMeta('counter_estimated_down_payment', $contactInfo['estimated_down_payment']);
@@ -1191,6 +1221,20 @@ class HireAgentDirectController extends Controller
                 if (!empty($contactInfo['household_monthly_income'])) {
                     $bid->saveMeta('counter_household_monthly_income', $contactInfo['household_monthly_income']);
                 }
+            }
+
+            // All roles: Preferred Communication Method and Top Priority
+            if (!empty($contactInfo['preferred_comm_method'])) {
+                $bid->saveMeta('counter_preferred_comm_method', $contactInfo['preferred_comm_method']);
+            }
+            if (!empty($contactInfo['preferred_comm_method_other'])) {
+                $bid->saveMeta('counter_preferred_comm_method_other', $contactInfo['preferred_comm_method_other']);
+            }
+            if (!empty($contactInfo['top_priority'])) {
+                $bid->saveMeta('counter_top_priority', $contactInfo['top_priority']);
+            }
+            if (!empty($contactInfo['top_priority_other'])) {
+                $bid->saveMeta('counter_top_priority_other', $contactInfo['top_priority_other']);
             }
 
             DB::commit();

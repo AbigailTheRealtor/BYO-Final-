@@ -273,6 +273,20 @@
                     @endif
                 @endif
 
+                {{-- Preferred Communication & Top Priority (all roles) --}}
+                @if(!empty($contact['preferred_comm_method']))
+                <div>
+                    <dt>Preferred Communication Method</dt>
+                    <dd>{{ ($contact['preferred_comm_method'] === 'Other' && !empty($contact['preferred_comm_method_other'])) ? $contact['preferred_comm_method_other'] : $contact['preferred_comm_method'] }}</dd>
+                </div>
+                @endif
+                @if(!empty($contact['top_priority']))
+                <div>
+                    <dt>Top Priority</dt>
+                    <dd>{{ ($contact['top_priority'] === 'Other' && !empty($contact['top_priority_other'])) ? $contact['top_priority_other'] : $contact['top_priority'] }}</dd>
+                </div>
+                @endif
+
                 {{-- Buyer-specific fields --}}
                 @if($role === 'buyer')
                     @php $buyerPrice = $fmtCurrency($contact['target_purchase_price'] ?? ''); @endphp
@@ -288,16 +302,10 @@
                         <dd>{{ $contact['timeline_to_purchase'] }}</dd>
                     </div>
                     @endif
-                    @if(!empty($contact['pre_approval_status']))
+                    @if(!empty($contact['financing_status']))
                     <div>
-                        <dt>Pre-Approval Status</dt>
-                        <dd>{{ $contact['pre_approval_status'] }}</dd>
-                    </div>
-                    @endif
-                    @if(!empty($contact['cash_buyer']))
-                    <div>
-                        <dt>Cash Buyer</dt>
-                        <dd>{{ $contact['cash_buyer'] }}</dd>
+                        <dt>Financing Status</dt>
+                        <dd>{{ ($contact['financing_status'] === 'Other' && !empty($contact['financing_status_other'])) ? $contact['financing_status_other'] : $contact['financing_status'] }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['estimated_down_payment']))
