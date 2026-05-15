@@ -497,6 +497,7 @@
         ['name' => '½ Duplex', 'class' => 'residential-length'],
         ['name' => '1/3 Triplex', 'class' => 'residential-length'],
         ['name' => '1/4 Quadplex', 'class' => 'residential-length'],
+        ['name' => 'Apartments', 'class' => 'residential-length'],
         ['name' => 'Condo-Hotel', 'class' => 'residential-length'],
         ['name' => 'Condominium', 'class' => 'residential-length'],
         ['name' => 'Dock-Rackominium', 'class' => 'residential-length'],
@@ -1522,7 +1523,7 @@
                     var _tgt = e.target.getAttribute('data-bs-target');
                     if (_tgt && e.target.closest('#myTab')) {
                         sessionStorage.setItem('landlord_create_active_tab', _tgt);
-                        addIconsToInputs();
+                        setTimeout(function() { addIconsToInputs(); }, 0);
                         var _pane = document.querySelector(_tgt);
                         if (_pane) {
                             _pane.querySelectorAll('.is-invalid').forEach(function(el) {
@@ -2745,7 +2746,8 @@
         if (!window.__wizardNavBound) {
             window.__wizardNavBound = true;
             document.addEventListener('click', function(e) {
-                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                var nextBtn = e.target.closest('.wizard-step-next');
+                if (nextBtn && typeof window._wizardNextHandler === 'function' && !nextBtn.onclick) {
                     window._wizardNextHandler();
                 }
                 if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {

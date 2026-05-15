@@ -473,6 +473,7 @@
         ['name' => '½ Duplex', 'class' => 'residential-length'],
         ['name' => '1/3 Triplex', 'class' => 'residential-length'],
         ['name' => '1/4 Quadplex', 'class' => 'residential-length'],
+        ['name' => 'Apartments', 'class' => 'residential-length'],
         ['name' => 'Condo-Hotel', 'class' => 'residential-length'],
         ['name' => 'Condominium', 'class' => 'residential-length'],
         ['name' => 'Dock-Rackominium', 'class' => 'residential-length'],
@@ -2090,7 +2091,7 @@ $tenantPays = [
                         const _nextTab = _allTabs[_curIdx + 1];
                         var _nId = _nextTab.getAttribute('data-bs-target');
                         if (_nId) {
-                            window._manualTabSwitch(_nId);
+                            new bootstrap.Tab(_nextTab).show();
                             sessionStorage.setItem('landlord_edit_active_tab', _nId);
                         }
                     }
@@ -2350,31 +2351,12 @@ $tenantPays = [
 
 
 
-        // Direct DOM tab switch — bypasses Bootstrap Tab API entirely
-        if (!window._manualTabSwitch) {
-            window._manualTabSwitch = function(targetId) {
-                var _links = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                _links.forEach(function(link) {
-                    var _lt = link.getAttribute('data-bs-target');
-                    var _hit = (_lt === targetId);
-                    link.classList.toggle('active', _hit);
-                    link.setAttribute('aria-selected', _hit ? 'true' : 'false');
-                    if (_lt) {
-                        var _pane = document.querySelector(_lt);
-                        if (_pane) {
-                            _pane.classList.toggle('show', _hit);
-                            _pane.classList.toggle('active', _hit);
-                        }
-                    }
-                });
-            };
-        }
-
         // Delegated wizard nav — bound once, survives Livewire DOM morphing
         if (!window.__wizardNavBound) {
             window.__wizardNavBound = true;
             document.addEventListener('click', function(e) {
-                if (e.target.closest('.wizard-step-next') && typeof window._wizardNextHandler === 'function') {
+                var nextBtn = e.target.closest('.wizard-step-next');
+                if (nextBtn && typeof window._wizardNextHandler === 'function' && !nextBtn.onclick) {
                     window._wizardNextHandler();
                 }
                 if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
@@ -2438,10 +2420,10 @@ $tenantPays = [
             if (!__tabRestoreGuard) {
                 __tabRestoreGuard = true;
                 var savedTabId = sessionStorage.getItem('landlord_edit_active_tab');
-                if (savedTabId && typeof window._manualTabSwitch === 'function') {
-                    var _activePane = document.querySelector(savedTabId);
-                    if (_activePane && !_activePane.classList.contains('active')) {
-                        window._manualTabSwitch(savedTabId);
+                if (savedTabId) {
+                    var tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + savedTabId + '"]');
+                    if (tabTrigger && !tabTrigger.classList.contains('active')) {
+                        new bootstrap.Tab(tabTrigger).show();
                     }
                 }
                 setTimeout(function() { __tabRestoreGuard = false; }, 200);
