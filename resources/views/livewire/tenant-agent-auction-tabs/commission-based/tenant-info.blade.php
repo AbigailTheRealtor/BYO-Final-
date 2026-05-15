@@ -251,3 +251,42 @@ document.addEventListener('livewire:init', function() {
     });
 });
 </script>
+
+{{-- ─── Representation Preferences & Compatibility Review (tenant full_service only, Task #1094) ─────────────────── --}}
+@if($service_type === 'full_service' && !empty(array_filter($compatibility_preferences['tenant_specific'] ?? [], fn($v) => !empty($v))))
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-light fw-bold">
+        Representation Preferences &amp; Compatibility Summary
+    </div>
+    <div class="card-body">
+        @php
+            $ts = $compatibility_preferences['tenant_specific'] ?? [];
+            $compatRows = [
+                'Primary Rental Goal'        => $ts['primary_rental_goal'] ?? '',
+                'Other Primary Goal'         => $ts['other_primary_rental_goal'] ?? '',
+                'Representation Priorities'  => is_array($ts['representation_priorities'] ?? null) ? implode(', ', array_filter($ts['representation_priorities'])) : '',
+                'Other Priorities'           => $ts['other_representation_priorities'] ?? '',
+                'Move-In Timeline Urgency'   => $ts['timeline_urgency'] ?? '',
+                'Budget Flexibility'         => $ts['budget_flexibility'] ?? '',
+                'Communication Style'        => $ts['communication_style'] ?? '',
+                'Other Communication Style'  => $ts['other_communication_style'] ?? '',
+                'Contact Frequency'          => $ts['contact_frequency'] ?? '',
+                'Preferred Contact Time'     => $ts['preferred_contact_method'] ?? '',
+                'Preferred Agent Style'      => $ts['preferred_agent_working_style'] ?? '',
+                'Negotiation Style'          => $ts['negotiation_style'] ?? '',
+                'Decision-Making Style'      => $ts['decision_making_style'] ?? '',
+                'Concerns or Barriers'       => $ts['concerns_or_barriers'] ?? '',
+                'Additional Notes'           => $ts['additional_compatibility_notes'] ?? '',
+            ];
+        @endphp
+        <dl class="row mb-0">
+            @foreach($compatRows as $label => $value)
+                @if(!empty($value))
+                <dt class="col-sm-4 text-muted">{{ $label }}</dt>
+                <dd class="col-sm-8">{{ $value }}</dd>
+                @endif
+            @endforeach
+        </dl>
+    </div>
+</div>
+@endif

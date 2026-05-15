@@ -1612,6 +1612,13 @@ $lease_types = [
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
+                    if ($user_type === 'tenant' && $service_type === 'full_service') {
+                    // Insert Representation Preferences & Compatibility before Broker Compensation (Task #1094)
+                    $bcIdx = array_search('Broker Compensation & Agency Agreement Terms', $restTabs);
+                    if ($bcIdx !== false) {
+                        array_splice($restTabs, $bcIdx, 0, ['Representation Preferences & Compatibility']);
+                    }
+                    }
                     if ($isAgentUser) {
                     $restTabs[] = 'Referral & Cooperation Terms';
                     }
@@ -1797,9 +1804,18 @@ $lease_types = [
                                     @endif
                                 </div>
 
+                                <!-- Representation Preferences & Compatibility Tab - tenant full_service only (Task #1094) -->
+                                @if ($user_type === 'tenant' && $service_type === 'full_service')
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                    id="representation-preferences-compatibility" role="tabpanel"
+                                    aria-labelledby="representation-preferences-compatibility-tab">
+                                    @include('livewire.tenant-agent-auction-tabs.commission-based.representation-compatibility')
+                                </div>
+                                @endif
+
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 7) ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1815,7 +1831,7 @@ $lease_types = [
 
                                 <!-- Referral & Cooperation Terms Tab - Agent only -->
                                 @if ($isAgentUser)
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 7) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 8) ? 'show active' : '' }}"
                                     id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
                                     <div class="p-3">
                                         <h5 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h5>
@@ -1847,7 +1863,7 @@ $lease_types = [
                                     };
                                     $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller'])
                                         ? ($isAgentUser ? 7 : 6)
-                                        : ($isAgentUser ? 8 : 7);
+                                        : ($isAgentUser ? 9 : 8);
                                 @endphp
                                 <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
                                     id="{{ $infoTabId }}" role="tabpanel" aria-labelledby="{{ $infoTabId }}-tab">
@@ -2107,6 +2123,8 @@ $lease_types = [
             { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
             { sel: '.lease_for', field: 'lease_for', multi: true },
             { sel: '#non_negotiable_amenities', field: 'non_negotiable_amenities', multi: true },
+            // Representation Preferences & Compatibility (Task #1094)
+            { sel: '#compat_representation_priorities', field: 'compatibility_preferences.tenant_specific.representation_priorities', multi: true },
         ];
         fields.forEach(function(f) {
             var $el = $(f.sel);
@@ -2284,6 +2302,8 @@ $lease_types = [
             { id: '#tenant_require', prop: 'tenant_require' },
             { id: '#garage_parking_spaces_option_buyer', prop: 'garage_parking_spaces_option_buyer' },
             { id: '#assets', prop: 'assets' },
+            // Representation Preferences & Compatibility (Task #1094) — multi-select only
+            { id: '#compat_representation_priorities', prop: 'compatibility_preferences.tenant_specific.representation_priorities' },
         ];
 
         select2Fields.forEach(function(field) {
@@ -3690,6 +3710,69 @@ $lease_types = [
             videoInput.addEventListener("change", handleVideoUpload);
         }
 
+        // ─── Representation Preferences & Compatibility Select2 (Task #1094) ───────
+        function initCompatibilitySelect2() {
+            var compatSingles = [
+                { id: '#compat_primary_rental_goal',           prop: 'compatibility_preferences.tenant_specific.primary_rental_goal' },
+                { id: '#compat_timeline_urgency',              prop: 'compatibility_preferences.tenant_specific.timeline_urgency' },
+                { id: '#compat_budget_flexibility',            prop: 'compatibility_preferences.tenant_specific.budget_flexibility' },
+                { id: '#compat_communication_style',           prop: 'compatibility_preferences.tenant_specific.communication_style' },
+                { id: '#compat_contact_frequency',             prop: 'compatibility_preferences.tenant_specific.contact_frequency' },
+                { id: '#compat_preferred_contact_method',      prop: 'compatibility_preferences.tenant_specific.preferred_contact_method' },
+                { id: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.tenant_specific.preferred_agent_working_style' },
+                { id: '#compat_negotiation_style',             prop: 'compatibility_preferences.tenant_specific.negotiation_style' },
+                { id: '#compat_decision_making_style',         prop: 'compatibility_preferences.tenant_specific.decision_making_style' },
+            ];
+
+            compatSingles.forEach(function(f) {
+                var $el = $(f.id);
+                if (!$el.length) return;
+                if (!$el.hasClass('select2-hidden-accessible')) {
+                    $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                }
+                var saved = $el.data('selected') || '';
+                if (saved) { $el.val(saved).trigger('change.select2'); }
+                $el.off('change.compatSync').on('change.compatSync', function() {
+                    var val = $(this).val() || '';
+                    safeLivewireSet(f.prop, val);
+                    if (f.id === '#compat_primary_rental_goal') {
+                        var pgWrapper = document.getElementById('compat-other-primary-rental-goal-wrapper');
+                        if (pgWrapper) pgWrapper.style.display = (val === 'Other') ? 'block' : 'none';
+                    }
+                    if (f.id === '#compat_communication_style') {
+                        var wrapper = document.getElementById('compat-other-communication-style-wrapper');
+                        if (wrapper) wrapper.style.display = (val === 'Other') ? 'block' : 'none';
+                    }
+                });
+            });
+
+            // Multi-select: representation_priorities
+            var $rp = $('#compat_representation_priorities');
+            if ($rp.length) {
+                if (!$rp.hasClass('select2-hidden-accessible')) {
+                    $rp.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                }
+                var savedRp = [];
+                try { savedRp = JSON.parse($rp.data('selected') || '[]') || []; } catch(e) {}
+                if (savedRp.length) {
+                    $rp.val(savedRp).trigger('change.select2');
+                    var rpOther = document.getElementById('compat-other-representation-priorities-wrapper');
+                    if (rpOther) rpOther.style.display = savedRp.includes('Other') ? 'block' : 'none';
+                }
+                $rp.off('change.compatRpSync').on('change.compatRpSync', function() {
+                    var vals = $(this).val() || [];
+                    safeLivewireSet('compatibility_preferences.tenant_specific.representation_priorities', vals);
+                    var rpOtherW = document.getElementById('compat-other-representation-priorities-wrapper');
+                    if (rpOtherW) rpOtherW.style.display = vals.includes('Other') ? 'block' : 'none';
+                });
+            }
+        }
+
+        if ($('#compat_primary_rental_goal').length) { initCompatibilitySelect2(); }
+        Livewire.hook('message.processed', () => {
+            if ($('#compat_primary_rental_goal').length) { initCompatibilitySelect2(); }
+        });
+        // ─── End Representation Preferences & Compatibility ───────────────────────
 
         // Function to check if all required fields are filled
         function checkFormValidity() {

@@ -1,0 +1,115 @@
+This is MUCH better and most of the earlier architectural issues were properly addressed. The Full Service scoping, tab insertion order, required-field ordering, and Select2 event cleanup are significantly improved. :contentReference[oaicite:0]{index=0}
+
+However, there are still several important issues that need cleanup before approval.
+
+1. CRITICAL — validateOnlyFilledFields() still appears unsafe for Save Draft
+You still added REQUIRED compatibility rules inside:
+validateOnlyFilledFields()
+
+Example:
+$rules['compatibility_preferences.tenant_specific.communication_style'] = 'required|string';
+
+This is still risky because the original spec explicitly required:
+- required on Submit / Save Edit
+- NOT required on Save Draft
+
+You added a comment saying:
+“draft path skips these via dot-notation null fallback”
+
+But comments are NOT enough.
+
+You must explicitly confirm:
+- whether validateOnlyFilledFields() executes during Save Draft
+- whether these required rules are bypassed during Save Draft
+- whether Save Draft can still succeed with zero compatibility fields filled
+
+This requires actual execution-path QA, not assumptions.
+
+2. Placeholder normalization is still inconsistent
+Several placeholders still violate platform standards.
+
+Examples:
+- "e.g., Previous rental disputes..."
+- "e.g., I prefer an Agent with commercial leasing experience..."
+- "Please specify your primary rental goal"
+
+Platform standard:
+"Enter [Field Title] (e.g., Example)"
+
+Please normalize ALL:
+- textarea placeholders
+- companion Other fields
+- text inputs
+
+Examples:
+- Enter Concerns or Barriers (e.g., Tight Move-In Timeline or Credit Concerns)
+- Enter Additional Compatibility Notes (e.g., Prefer Weekend Showings and Fast Responses)
+
+3. tenant-info.blade.php review block needs layout QA
+The new compatibility summary block looks much cleaner now, but verify:
+- inserted INSIDE intended review structure
+- no spacing/card duplication
+- no typography regressions
+- mobile layout still clean
+- existing Tenant Information review formatting preserved outside compatibility section
+
+4. Hardcoded indexes still require inline documentation
+You are still using:
+6 / 7 / 8 / 9
+
+This is acceptable IF documented.
+
+Please add inline comments explaining:
+- compatibility tab insertion shifted indexes
+- why tenant full_service differs from other user types
+- why agent/non-agent paths differ
+
+This will reduce future regression risk.
+
+5. Select2 duplicate-init QA still required
+You improved cleanup substantially using:
+.off('change.compatSync')
+.off('change.compatRpSync')
+
+Good.
+
+But full QA is still required for:
+- repeated Livewire renders
+- repeated tab switching
+- correction-mode jumps
+- draft reloads
+- Save Edit reloads
+
+Please verify:
+- no duplicate Select2 containers
+- no stale dropdown DOM
+- no flashing
+- no placeholder corruption
+- no memory leak behavior
+- no console warnings/errors
+
+6. Save Draft / correction-mode interaction still needs explicit QA
+Please verify:
+- Save Draft does NOT trigger correction-mode redirect
+- Save Draft does NOT mark compatibility fields invalid
+- Save Draft does NOT block saving when compatibility fields are empty
+- correction-mode only triggers on Submit / Save Edit validation failures
+
+7. Naming consistency audit still recommended
+Current naming still differs from earlier shared architecture terminology:
+- timeline_urgency
+- contact_frequency
+
+Not necessarily blocking, but please confirm naming strategy intentionally differs for tenant flow and will not conflict with future shared compatibility scoring logic.
+
+8. Final QA confirmation still required
+Please confirm:
+- exact changed files
+- no Offer Listing files changed
+- no Seller/Buyer/Landlord regressions
+- no Flat Fee regressions
+- initializeLimitedService() untouched
+- older listings without compatibility_preferences load/save cleanly
+- no AlpineJS console errors
+- no Select2 initialization warnings
+- no Livewire property warnings

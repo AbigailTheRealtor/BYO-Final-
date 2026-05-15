@@ -239,6 +239,28 @@ class TenantAgentAuctionEdit extends Component
     public $common_areas_cleaning = '';
     public $lease_fee_percentage_combo_net = '';
     public $preferance_details = '';
+
+    // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+    public $compatibility_preferences = [
+        'tenant_specific' => [
+            'primary_rental_goal'              => '',
+            'other_primary_rental_goal'        => '',
+            'representation_priorities'        => [],
+            'other_representation_priorities'  => '',
+            'timeline_urgency'                 => '',
+            'budget_flexibility'               => '',
+            'communication_style'              => '',
+            'other_communication_style'        => '',
+            'contact_frequency'                => '',
+            'preferred_contact_method'         => '',
+            'preferred_agent_working_style'    => '',
+            'negotiation_style'                => '',
+            'decision_making_style'            => '',
+            'concerns_or_barriers'             => '',
+            'additional_compatibility_notes'   => '',
+        ],
+    ];
+
     // Lease terms
     public $lease_for = [];
     public $other_lease_for = '';
@@ -2727,6 +2749,30 @@ class TenantAgentAuctionEdit extends Component
         $this->sale_provision = json_decode($auction->info('sale_provision'), true) ?? [];
         $this->offered_financing = json_decode($auction->info('offered_financing'), true) ?? [];
         $this->leasing_spaces_tenant = json_decode($auction->info('leasing_spaces_tenant'), true) ?? [];
+
+        // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+        $rawCompat = $auction->info('compatibility_preferences');
+        $loadedCompat = ($rawCompat !== null && $rawCompat !== '') ? (json_decode($rawCompat, true) ?? []) : [];
+        $this->compatibility_preferences = [
+            'tenant_specific' => array_merge([
+                'primary_rental_goal'              => '',
+                'other_primary_rental_goal'        => '',
+                'representation_priorities'        => [],
+                'other_representation_priorities'  => '',
+                'timeline_urgency'                 => '',
+                'budget_flexibility'               => '',
+                'communication_style'              => '',
+                'other_communication_style'        => '',
+                'contact_frequency'                => '',
+                'preferred_contact_method'         => '',
+                'preferred_agent_working_style'    => '',
+                'negotiation_style'                => '',
+                'decision_making_style'            => '',
+                'concerns_or_barriers'             => '',
+                'additional_compatibility_notes'   => '',
+            ], $loadedCompat['tenant_specific'] ?? []),
+        ];
+
         $this->prior_eviction = $auction->info('prior_eviction');
         $this->eviction_explanation = $auction->info('eviction_explanation');
         $this->prior_felony_explanation = $auction->info('prior_felony_explanation');
@@ -3198,6 +3244,15 @@ class TenantAgentAuctionEdit extends Component
                 if (empty(trim($this->last_name ?? ''))) $_svErrors[] = 'Last Name';
                 if (empty(trim($this->phone_number ?? ''))) $_svErrors[] = 'Phone Number';
                 if (empty(trim($this->email ?? ''))) $_svErrors[] = 'Email Address';
+                // Representation Preferences & Compatibility required fields (tenant full_service only — Task #1094)
+                if ($this->user_type === 'tenant' && $this->service_type === 'full_service') {
+                    $ts = $this->compatibility_preferences['tenant_specific'] ?? [];
+                    if (empty($ts['communication_style']))       $_svErrors[] = 'Communication Style (Representation Preferences tab)';
+                    if (empty($ts['negotiation_style']))         $_svErrors[] = 'Negotiation Style (Representation Preferences tab)';
+                    if (empty($ts['primary_rental_goal']))       $_svErrors[] = 'Primary Rental Goal (Representation Preferences tab)';
+                    if (empty($ts['representation_priorities'])) $_svErrors[] = 'Representation Priorities (Representation Preferences tab)';
+                    if (empty($ts['preferred_agent_working_style'])) $_svErrors[] = 'Preferred Agent Working Style (Representation Preferences tab)';
+                }
                 // Seller: when Property Style is "Other", the custom input is required
                 if ($this->user_type === 'seller'
                     && is_string($this->property_items) && $this->property_items === 'Other'
@@ -3648,6 +3703,12 @@ class TenantAgentAuctionEdit extends Component
             );
             $auction->saveMeta('services_snapshot', json_encode($servicesSnapshot));
             $auction->saveMeta('additional_details', $this->additional_details);
+
+            // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+            if ($this->user_type === 'tenant') {
+                $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+            }
+
             $auction->saveMeta('desired_lease_length', json_encode($this->desired_lease_length));
             $auction->saveMeta('other_lease_term', $this->other_lease_term);
 

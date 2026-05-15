@@ -233,6 +233,28 @@ class TenantAgentAuction extends Component
     public $common_areas_cleaning = '';
     public $lease_fee_percentage_combo_net = '';
     public $preferance_details = '';
+
+    // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+    public $compatibility_preferences = [
+        'tenant_specific' => [
+            'primary_rental_goal'              => '',
+            'other_primary_rental_goal'        => '',
+            'representation_priorities'        => [],
+            'other_representation_priorities'  => '',
+            'timeline_urgency'                 => '',
+            'budget_flexibility'               => '',
+            'communication_style'              => '',
+            'other_communication_style'        => '',
+            'contact_frequency'                => '',
+            'preferred_contact_method'         => '',
+            'preferred_agent_working_style'    => '',
+            'negotiation_style'                => '',
+            'decision_making_style'            => '',
+            'concerns_or_barriers'             => '',
+            'additional_compatibility_notes'   => '',
+        ],
+    ];
+
     // Lease terms
     public $lease_for = [];
     public $other_lease_for = '';
@@ -3654,6 +3676,29 @@ class TenantAgentAuction extends Component
                 $this->showCustomEnhancement = in_array('Other', $this->photo_enhancements);
             }
 
+            // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+            $rawCompat = $auction->info('compatibility_preferences');
+            $loadedCompat = ($rawCompat !== null && $rawCompat !== '') ? (json_decode($rawCompat, true) ?? []) : [];
+            $this->compatibility_preferences = [
+                'tenant_specific' => array_merge([
+                    'primary_rental_goal'              => '',
+                    'other_primary_rental_goal'        => '',
+                    'representation_priorities'        => [],
+                    'other_representation_priorities'  => '',
+                    'timeline_urgency'                 => '',
+                    'budget_flexibility'               => '',
+                    'communication_style'              => '',
+                    'other_communication_style'        => '',
+                    'contact_frequency'                => '',
+                    'preferred_contact_method'         => '',
+                    'preferred_agent_working_style'    => '',
+                    'negotiation_style'                => '',
+                    'decision_making_style'            => '',
+                    'concerns_or_barriers'             => '',
+                    'additional_compatibility_notes'   => '',
+                ], $loadedCompat['tenant_specific'] ?? []),
+            ];
+
             // Dispatch browser event to sync select values after draft loads
             $this->dispatchBrowserEvent('draftLoaded');
         }
@@ -3704,6 +3749,25 @@ class TenantAgentAuction extends Component
             $rules['lease_for']             = 'required|array|min:1';
             $rules['lease_date']            = 'required|date';
             $rules['leasing_spaces_tenant'] = 'required|array|min:1';
+
+            // Tab 6 – Representation Preferences & Compatibility (Task #1094)
+            // Required on Submit / Save Edit only; draft path skips these via dot-notation null fallback.
+            $rules['compatibility_preferences.tenant_specific.communication_style']         = 'required|string';
+            $rules['compatibility_preferences.tenant_specific.negotiation_style']           = 'required|string';
+            $rules['compatibility_preferences.tenant_specific.primary_rental_goal']         = 'required|string';
+            $rules['compatibility_preferences.tenant_specific.representation_priorities']   = 'required|array|min:1';
+            $rules['compatibility_preferences.tenant_specific.preferred_agent_working_style'] = 'required|string';
+            // Optional compatibility fields
+            $rules['compatibility_preferences.tenant_specific.other_primary_rental_goal']       = 'nullable|string|max:500';
+            $rules['compatibility_preferences.tenant_specific.other_representation_priorities'] = 'nullable|string|max:500';
+            $rules['compatibility_preferences.tenant_specific.timeline_urgency']                = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.budget_flexibility']              = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.other_communication_style']       = 'nullable|string|max:500';
+            $rules['compatibility_preferences.tenant_specific.contact_frequency']               = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.preferred_contact_method']        = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.decision_making_style']           = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.concerns_or_barriers']            = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.additional_compatibility_notes']  = 'nullable|string';
 
             // Tab 3 – Tenant Leasing Terms: new optional fields
             $rules['tenant_desired_lease_length']        = 'nullable|string|max:255';
@@ -4382,6 +4446,11 @@ class TenantAgentAuction extends Component
         );
         $auction->saveMeta('services_snapshot', json_encode($servicesSnapshot));
         $auction->saveMeta('additional_details', $this->additional_details);
+
+        // Representation Preferences & Compatibility (tenant full_service only — Task #1094)
+        if ($this->user_type === 'tenant') {
+            $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+        }
 
         // Broker Compensation
         $auction->saveMeta('commission_structure', $this->commission_structure);
