@@ -1,0 +1,200 @@
+Task: Direct Hire Client Details — Add Priority + Preferred Communication Fields + Buyer Financing Cleanup
+
+Affected flow:
+Direct Hire Agent / Agent Preset client-details flows only.
+
+Scope:
+Apply to:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+- all property types
+
+Do NOT touch:
+- Offer Listing flows
+- Hire Agent auction/listing flows
+- Desired Lease Length task (handled separately)
+- routes
+- migrations/schema unless absolutely required
+- unrelated labels/tooltips
+- existing formatting logic
+- existing save/counter/acknowledge architecture beyond adding these optional fields
+
+Files to inspect first:
+- resources/views/hire-agent-direct/client-details/seller.blade.php
+- resources/views/hire-agent-direct/client-details/buyer.blade.php
+- resources/views/hire-agent-direct/client-details/landlord.blade.php
+- resources/views/hire-agent-direct/client-details/tenant.blade.php
+- resources/views/hire-agent-direct/counter.blade.php
+- any Direct Hire save/store/review logic that persists client details
+
+CRITICAL SAFEGUARDS:
+- Use existing Direct Hire patterns for select fields and “Other” companion inputs.
+- Do not introduce new JS libraries or broad refactors.
+- Preserve existing styling, spacing, layout, and section structure.
+- Do not rename existing fields/keys unless replacing the Buyer financing fields explicitly listed below.
+- Prefer minimal targeted additions.
+- If a migration/schema change becomes necessary, stop and report before editing.
+- Do not change Desired Lease Length in this task.
+
+1. Add Preferred Communication Method (all roles)
+
+Add field:
+Preferred Communication Method
+
+Options:
+- Select
+- Call
+- Text
+- Email
+- Video Call
+- Any
+- Other
+
+If Other selected:
+- show companion input immediately
+- placeholder:
+  Enter preferred communication method (e.g., WhatsApp, FaceTime, Evening Text Only)
+
+Apply to:
+- Seller
+- Buyer
+- Landlord
+- Tenant
+- all property types
+
+2. Add Seller Top Priority
+
+Label:
+Top Priority
+
+Options:
+- Select
+- Highest Price
+- Fast Sale
+- Flexible Timeline
+- As-Is Convenience
+- Maximum Exposure
+- Other
+
+If Other selected:
+- show companion input immediately
+- placeholder:
+  Enter top priority (e.g., Minimize Showings, Sell Before Buying, Avoid Repairs)
+
+3. Add Buyer Top Priority
+
+Label:
+Top Priority
+
+Options:
+- Select
+- Lowest Price
+- Best Location
+- Fast Closing
+- Move-In Ready
+- Investment Potential
+- School District
+- Other
+
+If Other selected:
+- show companion input immediately
+- placeholder:
+  Enter top priority (e.g., Larger Yard, Low HOA, New Construction)
+
+4. Add Tenant Top Priority
+
+Label:
+Top Priority
+
+Options:
+- Select
+- Lowest Monthly Payment
+- Location
+- Pet Friendly
+- Flexible Lease
+- Move-In Speed
+- Amenities
+- Other
+
+If Other selected:
+- show companion input immediately
+- placeholder:
+  Enter top priority (e.g., Fenced Yard, Short Commute, First-Floor Unit)
+
+5. Add Landlord Top Priority
+
+Label:
+Top Priority
+
+Options:
+- Select
+- Qualified Tenant
+- Fast Occupancy
+- Long-Term Tenant
+- Higher Rent
+- Low Maintenance
+- Flexible Lease Terms
+- Other
+
+If Other selected:
+- show companion input immediately
+- placeholder:
+  Enter top priority (e.g., No Pets, Corporate Tenant, Minimal Turnover)
+
+6. Buyer Financing Status cleanup
+
+Replace the separate Buyer fields:
+- Pre-Approval Status
+- Cash Buyer?
+
+With ONE combined field:
+
+Label:
+Financing Status
+
+Options:
+- Select
+- Cash Buyer
+- Pre-Approved
+- Pre-Qualified
+- Working With Lender
+- Financing Needed
+- Not Sure Yet
+- Other
+
+If Other selected:
+- show companion input immediately
+- placeholder:
+  Enter financing status (e.g., Bridge Loan, Hard Money, Seller Financing)
+
+Behavior:
+- remove/hide separate Cash Buyer? field
+- remove/hide separate Pre-Approval Status field
+- Estimated Down Payment remains optional and stays in the form
+- preserve existing buyer flow behavior as safely as possible
+- if old saved values exist, map them cleanly where possible
+- do not break counter/review/acknowledge flows
+
+Persistence/display requirements:
+- Save all new fields in the existing Direct Hire flow.
+- Save custom Other text values.
+- Review/counter/acknowledge displays should show custom Other text instead of only “Other” where applicable.
+- Use clearly named new keys for new fields.
+- Preserve existing styling and formatting behavior.
+
+QA REQUIRED:
+- Seller Direct Hire: Preferred Communication Method + Top Priority appear, save, and display.
+- Buyer Direct Hire: Preferred Communication Method + Financing Status + Top Priority appear, save, and display.
+- Landlord Direct Hire: Preferred Communication Method + Top Priority appear, save, and display.
+- Tenant Direct Hire: Preferred Communication Method + Top Priority appear, save, and display.
+- For all roles, selecting Other immediately opens companion input.
+- For all roles, custom Other values persist through counter/review/acknowledge flow.
+- Buyer form no longer shows separate Cash Buyer? or Pre-Approval Status fields.
+- Estimated Down Payment still works.
+- Desired Lease Length was NOT modified in this task.
+- No Offer Listing files changed.
+- No Hire Agent auction/listing files changed.
+- No routes/migrations changed unless explicitly documented and approved.
+- Report exact files changed.

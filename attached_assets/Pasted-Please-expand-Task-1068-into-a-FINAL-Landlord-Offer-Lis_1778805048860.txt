@@ -1,0 +1,58 @@
+Please expand Task #1068 into a FINAL Landlord Offer Listing Edit/Draft lifecycle fix.
+
+The issue is not only icons. On this draft/edit page:
+
+/offer-listing/landlord/edit/31
+
+the Next, Back, and Submit buttons still do not work correctly. I have asked for this multiple times, so please do a full root-cause audit and final fix, not another partial icon-only patch.
+
+Required scope:
+- Landlord Offer Listing edit/draft only, unless create has the exact same root cause.
+- Do not touch Seller except read-only comparison.
+- Do not touch Hire Agent.
+- Do not touch routes, migrations, schema, controllers, or global helpers unless conclusively proven necessary.
+
+Audit and fix together:
+1. Icon flashing/deleting after load, tab change, Livewire update, or clicking fields.
+2. Next button not working correctly on draft/edit.
+3. Back button not working correctly on draft/edit.
+4. Submit button not appearing/working correctly on final tab.
+5. Button state not syncing correctly after draft hydration or tab restore.
+
+Root-cause areas to inspect:
+- duplicate Livewire.hook('message.processed') handlers
+- initEditLeaseTermSelect2()
+- any @this.set() inside or after message.processed
+- .trigger('change') causing extra Livewire round-trips
+- addIconsToInputs() timing/order
+- _wizardNextHandler
+- _wizardBackHandler
+- syncWizardButtons()
+- shown.bs.tab listeners
+- draftLoaded listener
+- tab restore after Livewire update
+- any use of _manualTabSwitch instead of bootstrap.Tab(...).show()
+- duplicate click binding on .wizard-step-next / .wizard-step-back
+- inline onclick plus delegated listeners firing together
+
+Use Seller edit as the working reference, but do not modify Seller.
+
+Expected final behavior on /offer-listing/landlord/edit/31:
+- Icons stay visible and do not duplicate.
+- Next advances exactly one tab.
+- Back goes back exactly one tab.
+- Submit appears on the final tab.
+- Next hides on the final tab.
+- Button state stays correct after draft load, tab switches, Livewire hydration, Select2 changes, and saved-value loading.
+- No double-advance.
+- No stale Bootstrap tab state.
+- No manual DOM-only tab switching that bypasses shown.bs.tab.
+- No polling loops, MutationObservers, or setInterval fixes.
+
+Verification required:
+- Test /offer-listing/landlord/edit/31 manually.
+- Test refresh/load, tab switching, Next, Back, final Submit visibility, Save Edit/Save Draft behavior, and clicking Select2 fields.
+- Confirm create landlord still works.
+- Confirm seller create/edit untouched.
+- Confirm no Hire Agent files changed.
+- Provide changed file list, root cause, exact fix, and manual QA result.
