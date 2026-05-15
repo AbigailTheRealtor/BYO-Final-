@@ -105,7 +105,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon" rows="2"
+                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon seller-compact-textarea" rows="2"
                         data-icon="fa-solid fa-hashtag"
                         placeholder="Enter each additional parcel ID on a new line (e.g., 12-34-56-789-0002)"></textarea>
                 </div>
@@ -121,7 +121,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <textarea wire:model="legal_description" class="form-control has-icon" rows="2"
+                <textarea wire:model="legal_description" class="form-control has-icon seller-compact-textarea" rows="2"
                     data-icon="fa-solid fa-scroll"
                     placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
             </div>
@@ -306,7 +306,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="special_assessment_description" class="form-control has-icon" rows="2"
+                    <textarea wire:model="special_assessment_description" class="form-control has-icon seller-compact-textarea" rows="2"
                         data-icon="fa-solid fa-file-invoice"
                         placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
                 </div>
@@ -353,8 +353,9 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <select wire:model="association_type" class="form-control has-icon"
-                        data-icon="fa-solid fa-sitemap">
+                    <select wire:model="association_type" id="association_type" class="form-control has-icon"
+                        data-icon="fa-solid fa-sitemap"
+                        onchange="document.getElementById('association-type-other-section').style.display = (this.value === 'Other') ? 'block' : 'none'">
                         <option value="">Select</option>
                         <option value="Homeowners Association (HOA)">Homeowners Association (HOA)</option>
                         <option value="Condominium Association">Condominium Association</option>
@@ -368,7 +369,7 @@
                 </div>
             </div>
 
-            @if ($association_type === 'Other')
+            <div id="association-type-other-section" wire:ignore.self style="display: {{ $association_type === 'Other' ? 'block' : 'none' }}">
                 <div class="form-group mt-2 mb-3">
                     <div class="input-cover">
                         <input type="text" wire:model="association_type_other" class="form-control has-icon"
@@ -376,7 +377,7 @@
                             placeholder="Specify association type (e.g., Master Community Association)">
                     </div>
                 </div>
-            @endif
+            </div>
 
             {{-- Association Name --}}
             <div class="form-group mt-3">
@@ -478,7 +479,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control has-icon" rows="2"
+                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="2"
                             data-icon="fa-solid fa-stamp"
                             placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
@@ -664,7 +665,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon" rows="2"
+                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon seller-compact-textarea" rows="2"
                             data-icon="fa-solid fa-ban"
                             placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
                     </div>

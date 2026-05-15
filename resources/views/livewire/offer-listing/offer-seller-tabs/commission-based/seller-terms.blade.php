@@ -2062,7 +2062,7 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon" rows="2"
+        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon seller-compact-textarea" rows="2"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional sale terms or special conditions the Seller requires"></textarea>
     </div>
