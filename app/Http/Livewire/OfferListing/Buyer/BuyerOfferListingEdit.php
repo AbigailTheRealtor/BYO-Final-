@@ -571,6 +571,32 @@ class BuyerOfferListingEdit extends Component
         $this->gap_payment_amount = '';
     }
 
+    public function setType(string $which, string $type): void
+    {
+        if ($which === 'lease') {
+            $this->lease_type = $type ?: 'percent';
+            $this->lease_value = '';
+        } elseif ($which === 'purchase') {
+            $this->purchase_type = $type ?: 'percent';
+            $this->purchase_value = '';
+        }
+
+        if ($which === 'gap_payment_type') {
+            $this->gap_payment_type = $type;
+            $this->gap_payment_amount = '';
+        }
+
+        if ($which === 'down_payment_type') {
+            $this->down_payment_type = $type;
+            $this->down_payment_amount = '';
+        }
+
+        if ($which === 'seller_financing_type') {
+            $this->seller_financing_type = $type;
+            $this->seller_financing_amount = '';
+        }
+    }
+
     public function updatedOfferedFinancing($value)
     {
         // Get current financing types as array
