@@ -1195,9 +1195,9 @@ $tenantPays = [
             var tabList = document.querySelector('#myTab');
             if (tabList) {
                 tabList.addEventListener('shown.bs.tab', function(e) {
-                    var tabId = e.target.getAttribute('id');
-                    if (tabId) {
-                        sessionStorage.setItem('landlord_edit_active_tab', tabId);
+                    var tabTarget = e.target.getAttribute('data-bs-target');
+                    if (tabTarget) {
+                        sessionStorage.setItem('landlord_edit_active_tab', tabTarget);
                     }
                     var _tgt = e.target.getAttribute('data-bs-target');
                     if (_tgt) {
@@ -2106,6 +2106,9 @@ $tenantPays = [
                         if (_nId) {
                             new bootstrap.Tab(_nextTab).show();
                             sessionStorage.setItem('landlord_edit_active_tab', _nId);
+                            var _wcNext = _nextTab.getAttribute('wire:click') || '';
+                            var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
+                            if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
                         }
                     }
                 }
@@ -2125,6 +2128,9 @@ $tenantPays = [
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
                     new bootstrap.Tab(prevTabEl).show();
+                    var _wcBack = prevTabEl.getAttribute('wire:click') || '';
+                    var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
+                    if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
                 }
             };
 
@@ -2320,6 +2326,9 @@ $tenantPays = [
                         '.nav-link');
                     if (nextTabEl) {
                         new bootstrap.Tab(nextTabEl).show();
+                        var _wcNext = nextTabEl.getAttribute('wire:click') || '';
+                        var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
+                        if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
                     }
                 }
 
@@ -2338,6 +2347,9 @@ $tenantPays = [
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
                     new bootstrap.Tab(prevTabEl).show();
+                    var _wcBack = prevTabEl.getAttribute('wire:click') || '';
+                    var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
+                    if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
                 }
             };
 
