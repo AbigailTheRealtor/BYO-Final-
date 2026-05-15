@@ -1,0 +1,247 @@
+Use these exact Replit instructions with safeguards:
+
+---
+
+# Fix “Other” Summary Duplication in Direct Hire Counter Review Pages
+
+## Problem
+
+In all Direct Hire counter review summaries, when a user selects:
+
+* `Preferred Communication Method = Other`
+* `Top Priority = Other`
+* (and any similar “Other + custom text” fields)
+
+the summary currently shows BOTH:
+
+* the literal value `Other`
+* AND the custom text field underneath
+
+Example (bad):
+
+* Preferred Communication Method: Other
+* Preferred Communication (Other): In Person
+
+Desired behavior:
+
+* Preferred Communication Method: In Person
+
+and DO NOT show:
+
+* “Other”
+* “(Other)” labels
+* duplicate rows
+
+This issue exists in:
+
+* Seller Direct Hire Counter
+* Buyer Direct Hire Counter
+* Tenant Direct Hire Counter
+* Landlord Direct Hire Counter
+
+---
+
+# Required Behavior
+
+## If dropdown value !== "Other"
+
+Show normal summary row.
+
+Example:
+
+* Preferred Communication Method: Phone
+
+---
+
+## If dropdown value === "Other"
+
+DO NOT display:
+
+* the word `Other`
+* separate `(Other)` summary rows
+
+Instead:
+
+* replace the primary field value with the custom text input value
+
+Example:
+
+BAD:
+
+* Preferred Communication Method: Other
+* Preferred Communication (Other): In Person
+
+GOOD:
+
+* Preferred Communication Method: In Person
+
+---
+
+# Fields To Fix
+
+Apply this logic to ALL Direct Hire review/summary tabs for:
+
+## Seller
+
+* preferred_communication_method
+* top_priority
+
+## Buyer
+
+* financing_status
+* preferred_communication_method
+* top_priority
+
+## Tenant
+
+* preferred_communication_method
+* top_priority
+
+## Landlord
+
+* preferred_communication_method
+* top_priority
+
+AND audit for any additional:
+
+* *_other
+* “Other” companion fields
+  inside Direct Hire review summaries.
+
+---
+
+# Important
+
+This fix is ONLY for:
+
+* Direct Hire review/summary rendering
+
+DO NOT change:
+
+* database structure
+* form fields
+* saved values
+* edit/create logic
+* validation
+* placeholders
+* offer listing flows
+* hire marketplace flows
+
+---
+
+# Implementation Guidance
+
+Find the review-tab rendering logic used by:
+
+* direct hire seller counter
+* direct hire buyer counter
+* direct hire tenant counter
+* direct hire landlord counter
+
+Likely areas:
+
+* populateReviewTab()
+* summary field arrays
+* review rendering helper functions
+* Blade conditional rendering
+
+---
+
+# Required Logic Pattern
+
+Use this pattern everywhere:
+
+```js
+if (value === 'Other' && otherValue) {
+    displayValue = otherValue;
+} else {
+    displayValue = value;
+}
+```
+
+AND skip rendering the separate `(Other)` row entirely.
+
+---
+
+# QA Requirements
+
+Verify all 4 flows:
+
+## Seller
+
+/hire/agent/direct/{id}/seller/residential/counter
+
+## Buyer
+
+/hire/agent/direct/{id}/buyer/residential/counter
+
+## Tenant
+
+/hire/agent/direct/{id}/tenant/residential/counter
+
+## Landlord
+
+/hire/agent/direct/{id}/landlord/residential/counter
+
+---
+
+# Confirm These Cases
+
+## Preferred Communication Method
+
+Input:
+
+* Other
+* Custom text = “In Person”
+
+Expected summary:
+
+* Preferred Communication Method: In Person
+
+No:
+
+* “Other”
+* “Preferred Communication (Other)”
+
+---
+
+## Top Priority
+
+Input:
+
+* Other
+* Custom text = “Pet Friendly”
+
+Expected:
+
+* Top Priority: Pet Friendly
+
+No duplicate rows.
+
+---
+
+# Safeguards
+
+* Do NOT modify Offer Listing files
+* Do NOT modify Hire Marketplace files
+* Do NOT change save payloads
+* Do NOT rename database columns
+* Do NOT alter tooltips/placeholders
+* Do NOT affect non-review tabs
+* Preserve all existing formatting/styles/layout
+* Preserve two-column review layout
+
+---
+
+# Final Audit
+
+After fixes:
+
+Run grep to confirm no review templates still render:
+
+* `(Other)`
+* `Preferred Communication (Other)`
+* `Top Priority (Other)`
+  inside Direct Hire summary/review sections.
+
+Then test all 4 flows manually.

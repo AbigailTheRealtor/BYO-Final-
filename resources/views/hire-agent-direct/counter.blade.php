@@ -1511,7 +1511,6 @@ function populateReviewTab() {
             { label: 'Target Purchase Price', name: 'target_purchase_price' },
             { label: 'Timeline to Purchase', name: 'timeline_to_purchase' },
             { label: 'Financing Status', name: 'financing_status' },
-            { label: 'Financing Status (Other)', name: 'financing_status_other' },
             { label: 'Estimated Down Payment', name: 'estimated_down_payment' },
             { label: 'Desired Monthly Rent', name: 'desired_monthly_rent' },
             { label: 'Availability Date', name: 'availability_date' },
@@ -1523,9 +1522,7 @@ function populateReviewTab() {
             { label: 'Number of Occupants', name: 'number_of_occupants' },
             { label: 'Household Monthly Income', name: 'household_monthly_income' },
             { label: 'Preferred Communication Method', name: 'preferred_comm_method' },
-            { label: 'Preferred Communication (Other)', name: 'preferred_comm_method_other' },
             { label: 'Top Priority', name: 'top_priority' },
-            { label: 'Top Priority (Other)', name: 'top_priority_other' },
         ];
         fields.forEach(function(f) {
             var el = document.querySelector('[name="' + f.name + '"]');
@@ -1563,6 +1560,24 @@ function populateReviewTab() {
                     var dllOtherVal = dllOtherEl ? dllOtherEl.value.trim() : '';
                     if (dllOtherVal) {
                         displayVal = dllOtherVal;
+                    }
+                } else if (f.name === 'financing_status' && val === 'Other') {
+                    var fsOtherEl = document.querySelector('[name="financing_status_other"]');
+                    var fsOtherVal = fsOtherEl ? fsOtherEl.value.trim() : '';
+                    if (fsOtherVal) {
+                        displayVal = fsOtherVal;
+                    }
+                } else if (f.name === 'preferred_comm_method' && val === 'Other') {
+                    var pcmOtherEl = document.querySelector('[name="preferred_comm_method_other"]');
+                    var pcmOtherVal = pcmOtherEl ? pcmOtherEl.value.trim() : '';
+                    if (pcmOtherVal) {
+                        displayVal = pcmOtherVal;
+                    }
+                } else if (f.name === 'top_priority' && val === 'Other') {
+                    var tpOtherEl = document.querySelector('[name="top_priority_other"]');
+                    var tpOtherVal = tpOtherEl ? tpOtherEl.value.trim() : '';
+                    if (tpOtherVal) {
+                        displayVal = tpOtherVal;
                     }
                 }
                 rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(displayVal) + '</dd></div>';

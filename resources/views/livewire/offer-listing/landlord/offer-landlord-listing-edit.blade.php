@@ -1187,33 +1187,6 @@ $tenantPays = [
         var __tabNavLock = false;
         var __tabRestoreGuard = false;
 
-        /* ── TEMP DIAGNOSTICS (landlord edit only) ── */
-        var _llSeq = 0;
-        function _llLog(event, data) {
-            try {
-                var activeTab = document.querySelector('.nav-tabs .nav-link.active');
-                var activeIdx = activeTab ? Array.from(document.querySelectorAll('.nav-tabs .nav-link')).indexOf(activeTab) : -1;
-                var activeTarget = activeTab ? activeTab.getAttribute('data-bs-target') : 'none';
-                var lwActiveTab = '?';
-                try { lwActiveTab = @this.get('activeTab'); } catch(e2) { lwActiveTab = '(err)'; }
-                var nextBtn = document.querySelector('.wizard-step-next');
-                var finishBtn = document.querySelector('.wizard-step-finish');
-                var iconCount = document.querySelectorAll('.data-icon-rendered').length;
-                var seq = ++_llSeq;
-                console.log('[LL#' + seq + '] ' + event, Object.assign({
-                    activeTabIdx: activeIdx,
-                    activeTabTarget: activeTarget,
-                    lwActiveTab: lwActiveTab,
-                    icons: iconCount,
-                    nextDisplay: nextBtn ? (nextBtn.style.display || 'visible') : 'missing',
-                    finishDisplay: finishBtn ? (finishBtn.style.display || 'visible') : 'missing',
-                }, data || {}));
-            } catch(e) {
-                console.warn('[LL:ERR]', event, e && e.message);
-            }
-        }
-        /* ── END TEMP DIAGNOSTICS ── */
-
         window.addEventListener('force-redirect', function(event) {
             if (event.detail && event.detail.url) {
                 window.location.href = event.detail.url;
@@ -1225,7 +1198,6 @@ $tenantPays = [
             if (tabList) {
                 tabList.addEventListener('shown.bs.tab', function(e) {
                     var tabTarget = e.target.getAttribute('data-bs-target');
-                    _llLog('shown.bs.tab', { tabTarget: tabTarget });
                     if (tabTarget) {
                         sessionStorage.setItem('landlord_edit_active_tab', tabTarget);
                     }
@@ -1305,12 +1277,10 @@ $tenantPays = [
                         if (select.multiple) {
                             const values = Array.isArray(lwValue) ? lwValue : [lwValue];
                             if (values.length > 0) {
-                                console.log('[SyncSelect] Syncing multi-select ' + wireModel + ' with ' + values.length + ' values');
                                 $(select).val(values).trigger('change');
                             }
                         } else {
                             if (lwValue && select.value !== lwValue) {
-                                console.log('[SyncSelect] Syncing ' + wireModel + ': DOM="' + select.value + '" -> LW="' + lwValue + '"');
                                 select.value = lwValue;
                             }
                         }
@@ -1320,7 +1290,6 @@ $tenantPays = [
         }
 
         window.addEventListener('draftLoaded', function() {
-            console.log('[DraftLoaded] Edit event received - syncing select values');
             setTimeout(function() {
                 if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
@@ -2138,7 +2107,6 @@ $tenantPays = [
                             sessionStorage.setItem('landlord_edit_active_tab', _nId);
                             var _wcNext = _nextTab.getAttribute('wire:click') || '';
                             var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
-                            _llLog('FS:Next:ADVANCE', { targetId: _nId, wireClick: _wcNext, lwIndex: _mNext ? parseInt(_mNext[1]) : null });
                             if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
                         }
                     }
@@ -2167,7 +2135,6 @@ $tenantPays = [
                         sessionStorage.setItem('landlord_edit_active_tab', _bId);
                         var _wcBack = prevTabEl.getAttribute('wire:click') || '';
                         var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
-                        _llLog('FS:Back:ADVANCE', { targetId: _bId, wireClick: _wcBack, lwIndex: _mBack ? parseInt(_mBack[1]) : null });
                         if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
                     }
                 }
@@ -2367,7 +2334,6 @@ $tenantPays = [
                         new bootstrap.Tab(nextTabEl).show();
                         var _wcNext = nextTabEl.getAttribute('wire:click') || '';
                         var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
-                        _llLog('LS:Next:ADVANCE', { targetId: nextTabEl.getAttribute('data-bs-target'), wireClick: _wcNext, lwIndex: _mNext ? parseInt(_mNext[1]) : null });
                         if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
                     }
                 }
@@ -2389,7 +2355,6 @@ $tenantPays = [
                     new bootstrap.Tab(prevTabEl).show();
                     var _wcBack = prevTabEl.getAttribute('wire:click') || '';
                     var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
-                    _llLog('LS:Back:ADVANCE', { targetId: prevTabEl.getAttribute('data-bs-target'), wireClick: _wcBack, lwIndex: _mBack ? parseInt(_mBack[1]) : null });
                     if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
                 }
             };
@@ -2420,18 +2385,18 @@ $tenantPays = [
             document.addEventListener('click', function(e) {
                 var nextBtn = e.target.closest('.wizard-step-next');
                 if (nextBtn && typeof window._wizardNextHandler === 'function' && !nextBtn.onclick) {
-                    _llLog('CLICK:Next', { hasOnclick: !!nextBtn.onclick });
                     window._wizardNextHandler();
                 }
-                if (e.target.closest('.wizard-step-back') && typeof window._wizardBackHandler === 'function') {
-                    _llLog('CLICK:Back', {});
-                    window._wizardBackHandler();
+                var backBtn = e.target.closest('.wizard-step-back');
+                if (backBtn) {
+                    if (typeof window._wizardBackHandler === 'function') {
+                        window._wizardBackHandler();
+                    }
                 }
             });
         }
 
         function addIconsToInputs() {
-            var _before = document.querySelectorAll('.data-icon-rendered').length;
             document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
                 if (!iconClass) return;
@@ -2443,8 +2408,6 @@ $tenantPays = [
                 icon.className = `input-icon ${iconClass} data-icon-rendered`;
                 wrapper.insertBefore(icon, wrapper.firstChild);
             });
-            var _after = document.querySelectorAll('.data-icon-rendered').length;
-            if (_after !== _before) _llLog('addIconsToInputs', { before: _before, after: _after });
         }
 
         function checkRepresentationStatus() {
@@ -2470,12 +2433,10 @@ $tenantPays = [
 
         Livewire.hook('message.processed', () => {
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-            _llLog('message.processed:START', { sinceLastInit: Date.now() - _lastInitTime, restoreGuard: __tabRestoreGuard });
 
             var now = Date.now();
             if (now - _lastInitTime > 400) {
                 _lastInitTime = now;
-                _llLog('message.processed:RE-INIT', { serviceType: currentServiceType });
                 if (currentServiceType === 'full_service') {
                     initializeFullService();
                 } else if (currentServiceType === 'limited_service') {
@@ -2489,7 +2450,6 @@ $tenantPays = [
                 __tabRestoreGuard = true;
                 var savedTabId = sessionStorage.getItem('landlord_edit_active_tab');
                 var tabTrigger = savedTabId ? document.querySelector('#myTab .nav-link[data-bs-target="' + savedTabId + '"]') : null;
-                _llLog('message.processed:RESTORE', { savedTabId: savedTabId, triggerFound: !!tabTrigger, alreadyActive: tabTrigger ? tabTrigger.classList.contains('active') : null });
                 if (tabTrigger && !tabTrigger.classList.contains('active')) {
                     new bootstrap.Tab(tabTrigger).show();
                 }
@@ -2665,7 +2625,6 @@ $tenantPays = [
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
                 finishBtn.style.display = onAI ? '' : 'none';
-                _llLog('syncWizardButtons', { onAI: onAI, nextDisplay: onAI ? 'none' : 'visible', finishDisplay: onAI ? 'visible' : 'none' });
             }
             window._landlordSyncWizardButtons = syncWizardButtons;
             document.addEventListener('shown.bs.tab', syncWizardButtons);
