@@ -1,0 +1,241 @@
+# Phase 1A — Buyer Representation Preferences & Compatibility Tab
+
+What & Why
+Add a new "Representation Preferences & Compatibility" tab to the Hire Buyer’s Agent wizard (Full Service flow only). This is a structured compatibility questionnaire that lets Buyers describe their communication preferences, negotiation style, decision-making approach, risk tolerance, support expectations, and ideal Agent working style.
+
+This supports BidYourAgent’s premium representation marketplace direction by helping Agents better understand the Buyer’s goals and working preferences before submitting representation proposals.
+
+This task is additive-only. No existing tabs, fields, logic, routes, migrations, or unrelated flows may be modified.
+
+Done looks like
+- A new "Representation Preferences & Compatibility" tab appears in the Full Service Hire Buyer Agent wizard.
+- The tab is positioned immediately before the existing "Broker Compensation & Agency Agreement Terms" tab.
+- The tab only appears when user_type = buyer (or equivalent condition in the component).
+- All fields render correctly with matching platform styles, spacing, icons, placeholders, and tooltips.
+- Multi-select fields use Select2 with closeOnSelect: false and placeholder "Select".
+- Single-select fields use Select2 with placeholder "Select".
+- Required fields validate on Submit / Save Edit only, not Save Draft.
+- All fields persist on Save Draft and reload correctly when drafts are reopened.
+- All fields persist on Save Edit and reload correctly in edit mode.
+- Older drafts/listings without compatibility_preferences still open and save normally.
+- Existing fields are not erased; unrelated meta values are not overwritten.
+- Next/Back buttons, correction mode, mobile wizard behavior, and Submit/Finish placement remain correct.
+- The Buyer Information / Review tab shows a "Representation Preferences & Compatibility" section displaying only non-empty values.
+- No Seller, Landlord, Tenant, Offer Listing, Direct Hire, or Limited Service files are changed.
+
+Out of scope
+- AI scoring
+- match percentages
+- ranking/recommendation logic
+- Offer Listing flows
+- Direct Hire flows
+- Limited Service / Flat Fee flows
+- schema migrations
+- route changes
+
+Steps
+
+1. Add compatibility_preferences property and storage
+- Add public $compatibility_preferences = [];
+- Save using existing JSON/meta storage only.
+- Do not create migrations.
+- Save under key: compatibility_preferences
+- Use role-specific structure with buyer_specific sub-array for future scalability.
+- Do not overwrite unrelated meta values.
+- Ensure older drafts/listings without compatibility_preferences still load/save safely.
+
+2. Add validation rules
+Required fields:
+- communication_style
+- negotiation_style
+- primary_transaction_goal
+- representation_priorities
+- preferred_agent_working_style
+
+Validate on:
+- Submit
+- Save Edit
+
+Do NOT validate on:
+- Save Draft
+
+3. Create the tab partial
+Create:
+resources/views/livewire/hire-buyer-agent/buyer-agent-auction-tabs/commission-based/representation-compatibility.blade.php
+
+Use existing card/layout/input/icon conventions from neighboring Hire Buyer tabs.
+
+Fields:
+
+Section: Buyer Goals & Priorities
+
+1. Primary Transaction Goal:
+Select:
+- Primary Residence
+- Investment Property
+- Vacation Home
+- Relocation
+- Downsizing
+- Upsizing
+- First-Time Purchase
+- Other
+
+2. Top Purchase Priority:
+Select:
+- Best Value
+- Lowest Price
+- Best Location
+- Fast Closing
+- Investment Potential
+- Lifestyle Fit
+- Negotiation Advantage
+- Other
+
+3. Budget Flexibility:
+Select:
+- Very Firm
+- Somewhat Flexible
+- Flexible for the Right Property
+- Unsure
+
+4. Timeline Urgency:
+Select:
+- Immediately
+- Within 30 Days
+- 1–3 Months
+- 3–6 Months
+- Flexible
+- Other
+
+Section: Communication & Working Style
+
+5. Communication Style:
+Select:
+- Quick Text Updates
+- Detailed Email Updates
+- Phone Calls
+- Scheduled Check-Ins
+- Video Calls
+- Flexible
+- Other
+
+6. Desired Update Frequency:
+Select:
+- Daily
+- Several Times Per Week
+- Weekly
+- Only When Activity Occurs
+- As Needed
+- Other
+
+7. Decision-Making Style:
+Select:
+- Fast and Decisive
+- Needs Time to Compare
+- Data-Driven
+- Lifestyle-Driven
+- Collaborative
+- Unsure
+
+8. Preferred Agent Working Style:
+Select:
+- Direct and Strategic
+- Patient and Educational
+- Detail-Oriented
+- Strong Negotiator
+- Calm and Reassuring
+- High-Energy and Proactive
+- Flexible
+- Other
+
+Section: Negotiation & Representation
+
+9. Negotiation Style:
+Select:
+- Aggressive Negotiation
+- Balanced Negotiation
+- Relationship-Based
+- Data-Driven
+- Creative Strategy
+- Unsure
+
+10. Risk Tolerance:
+Select:
+- Very Conservative
+- Somewhat Conservative
+- Moderate
+- Comfortable With Risk
+- High Risk Tolerance
+- Unsure
+
+11. Representation Priorities:
+Multi-select:
+- Property Search Guidance
+- Offer Strategy
+- Financing Coordination
+- Negotiation Support
+- Contract Explanation
+- Inspection Guidance
+- Investment Analysis
+- Market Education
+- Closing Coordination
+- Other
+
+12. Biggest Buying Concern:
+Textarea
+
+13. Dealbreakers:
+Textarea
+
+14. Ideal Agent Qualities:
+Textarea
+
+4. UI standards
+- Labels end with colons.
+- Select placeholder: Select
+- Text placeholder format:
+  Enter [Field Title] (e.g., Example)
+- Add “?” tooltip to every field.
+- Preserve icon behavior.
+- No duplicate/disappearing/flashing icons.
+- All Other selections reveal companion inputs.
+- Multi-selects stay open while selecting.
+
+5. Insert the tab
+Insert the new tab immediately before:
+"Broker Compensation & Agency Agreement Terms"
+
+Full Service Hire Buyer Agent only.
+
+6. Navigation logic
+Safely audit/update:
+- Next/Back
+- correction mode
+- mobile wizard behavior
+- Submit/Finish detection
+- required-field validation
+
+Prefer dynamic selectors over fragile hardcoded indexes.
+
+7. Review display
+Add:
+"Representation Preferences & Compatibility"
+
+Display only non-empty values.
+
+8. QA
+Verify:
+- create
+- draft save/load
+- edit save/load
+- correction mode
+- Submit/Finish
+- Next/Back
+- mobile wizard
+- Select2 rehydration
+- Livewire re-render stability
+
+Confirm:
+- no Offer Listing files changed
+- no Seller/Landlord/Tenant Hire Agent files changed
+- no Limited Service changes
