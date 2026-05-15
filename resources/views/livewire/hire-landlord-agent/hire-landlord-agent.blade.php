@@ -997,7 +997,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Leasing Terms', 'Services', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -1010,14 +1010,38 @@
                                         </button>
                                     </li>
                                 @endforeach
+                                @if ($service_type === 'full_service')
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(5)"
+                                        id="representation-preferences-compatibility-tab" data-bs-toggle="tab"
+                                        data-bs-target="#representation-preferences-compatibility"
+                                        type="button" role="tab"
+                                        aria-controls="representation-preferences-compatibility"
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        Representation Preferences &amp; Compatibility
+                                    </button>
+                                </li>
+                                @endif
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         wire:click="setActiveTab(6)"
+                                        id="broker-compensation-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation"
+                                        type="button" role="tab"
+                                        aria-controls="broker-compensation"
+                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        Broker Compensation
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ $activeTab === 7 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(7)"
                                         id="landlord-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#landlord-information"
                                         type="button" role="tab"
                                         aria-controls="landlord-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ $activeTab === 7 ? 'true' : 'false' }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'LandLord Information' }}
                                     </button>
                                 </li>
@@ -1139,8 +1163,17 @@
 
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
+                                <!-- Representation Preferences & Compatibility Tab -->
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                    id="representation-preferences-compatibility" role="tabpanel"
+                                    aria-labelledby="representation-preferences-compatibility-tab">
+                                    @if ($user_type === 'landlord' && $service_type === 'full_service')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.representation-compatibility')
+                                    @endif
+                                </div>
+
+                                <!-- Broker Compensation Tab -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="broker-compensation" role="tabpanel"
                                     aria-labelledby="broker-compensation-tab">
 
@@ -1157,7 +1190,7 @@
                                 </div>
 
                                 <!-- Landlord Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === 7 ? 'show active' : '' }}"
                                     id="landlord-information" role="tabpanel" aria-labelledby="landlord-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1276,6 +1309,7 @@
                     'photo_enhancements': data.photo_enhancements || [],
                     'property_items': data.property_items || [],
                     'tenant_require': data.tenant_require || [],
+                    'representation_priorities': data.representation_priorities || [],
                 };
                 Object.keys(select2Fields).forEach(function(fieldName) {
                     var values = select2Fields[fieldName];
@@ -1283,6 +1317,8 @@
                         var selectEl;
                         if (fieldName === 'desired_lease_length') {
                             selectEl = document.querySelector('.lease_term_options');
+                        } else if (fieldName === 'representation_priorities') {
+                            selectEl = document.getElementById('representation_priorities');
                         } else {
                             selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
                         }
@@ -1368,6 +1404,18 @@
                     let selectedValues = $(this).val();
                     @this.set('non_negotiable_amenities', selectedValues);
                 });
+            }
+
+            if (@json($service_type) === 'full_service') {
+                if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#representation_priorities'));
+                    $('#representation_priorities')
+                        .off('change.rpSync')
+                        .on('change.rpSync', function() {
+                            let selectedValues = $(this).val() || [];
+                            @this.set('compatibility_preferences.landlord_specific.representation_priorities', selectedValues);
+                        });
+                }
             }
 
             // Function to toggle "auction time" input field
@@ -1880,6 +1928,12 @@
                 var $dlt = $('.lease_term_options');
                 if ($dlt.length && $dlt.hasClass('select2-hidden-accessible')) {
                     @this.set('desired_lease_length', $dlt.val() || []);
+                }
+                if (@json($service_type) === 'full_service') {
+                    var $rp = $('#representation_priorities');
+                    if ($rp.length && $rp.hasClass('select2-hidden-accessible')) {
+                        @this.set('compatibility_preferences.landlord_specific.representation_priorities', $rp.val() || []);
+                    }
                 }
             };
 
@@ -2585,6 +2639,7 @@
                     '#leasing-terms',
                     '#services',
                     '#additional-details',
+                    '#representation-preferences-compatibility',
                     '#broker-compensation',
                     '#landlord-information'
                 ] : [
@@ -2824,6 +2879,28 @@
                                 });
                             }
                         }
+
+                        // Livewire property fallback: representation_priorities (Select2 multi-select, Full Service only)
+                        if (@json($service_type) === 'full_service') {
+                            try {
+                                var _rp = _comp2.get('compatibility_preferences.landlord_specific.representation_priorities');
+                                if (!Array.isArray(_rp) || _rp.length === 0) {
+                                    if (!seen.has('representation_priorities')) {
+                                        seen.add('representation_priorities');
+                                        var _rpEl  = document.getElementById('representation_priorities');
+                                        var _rpTab = _rpEl
+                                            ? _rpEl.closest('.tab-pane')
+                                            : document.querySelector('#representation-preferences-compatibility');
+                                        items.push({
+                                            field:     _rpEl || null,
+                                            tab:       _rpTab,
+                                            fieldName: 'Representation Priorities',
+                                            key:       'representation_priorities',
+                                        });
+                                    }
+                                }
+                            } catch(exRp) {}
+                        }
                     }
                 } catch(exLl) {}
 
@@ -2896,7 +2973,7 @@
                     );
                     if (_submitTrigger) {
                         new bootstrap.Tab(_submitTrigger).show();
-                        try { @this.call('setActiveTab', 6); } catch(exExit) {}
+                        try { @this.call('setActiveTab', 7); } catch(exExit) {}
                     }
                     return;
                 }

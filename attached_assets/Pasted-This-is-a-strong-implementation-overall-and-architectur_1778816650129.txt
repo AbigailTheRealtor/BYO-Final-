@@ -1,0 +1,161 @@
+This is a strong implementation overall and architecturally much cleaner than the earlier Tenant version. The Full Service insertion order, review integration, required-field ordering, and representation_priorities synchronization are moving in the right direction. :contentReference[oaicite:0]{index=0}
+
+However, there are still several important issues that must be fixed before approval.
+
+1. CRITICAL — compatibility tab is NOT scoped to Full Service only
+The task explicitly required:
+“Full Service Hire Landlord Agent only.”
+
+Current implementation inserts:
+- nav tab
+- tab pane
+- validation logic
+- review block
+- Select2 initialization
+
+based only on:
+@if ($user_type === 'landlord')
+
+This must ALSO gate by:
+&& $service_type === 'full_service'
+
+Otherwise compatibility UI and logic leak into Flat Fee / Limited Service flows.
+
+Audit ALL related conditions and ensure compatibility functionality ONLY loads for:
+landlord + full_service
+
+This includes:
+- nav tab
+- tab pane
+- review section
+- validation
+- Select2 init
+- sync logic
+- correction-mode invalid detection
+
+2. CRITICAL — compatibility_preferences saveMeta is unconditional
+Current:
+$auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+
+This runs for ALL landlord flows.
+
+Must be scoped to:
+$user_type === 'landlord' && $service_type === 'full_service'
+
+Otherwise:
+- limited_service records store unnecessary compatibility payloads
+- stale compatibility data may persist between flow switches
+- future regressions become more likely
+
+3. Placeholder normalization still violates platform standards
+Current placeholders still use:
+- "Please describe your primary leasing goal"
+- "Please describe preferred tenant type"
+- "Enter any additional representation preferences or context"
+
+Platform standard required:
+"Enter [Field Title] (e.g., Example)"
+
+Please normalize ALL:
+- text inputs
+- textareas
+- Other companion fields
+
+Examples:
+- Enter Primary Leasing Goal (e.g., Minimize Vacancy Before Summer)
+- Enter Preferred Tenant Type (e.g., Long-Term Professional Tenant)
+- Enter Additional Representation Notes (e.g., Prefer Weekly Leasing Updates and Strong Tenant Screening)
+
+4. Select2 duplicate-init cleanup still required
+Current:
+$('#representation_priorities').on('change', function(e) {
+
+No:
+.off('change...')
+
+This WILL duplicate handlers after repeated Livewire renders.
+
+Buyer implementation already fixed this properly using:
+.off('change.rpSync')
+
+Landlord must match that pattern.
+
+Required:
+.off('change.rpSync')
+.on('change.rpSync', function() { ... })
+
+5. Select2 initialization QA still required
+Please verify:
+- repeated Livewire renders
+- repeated tab switching
+- draft reloads
+- correction-mode jumps
+- Save Edit reloads
+
+Confirm:
+- no duplicate Select2 containers
+- no stale dropdown DOM
+- no flashing
+- no placeholder corruption
+- no console warnings/errors
+- no memory leak behavior
+
+6. landlord-information activeTab shift looks correct but needs full correction-mode QA
+You changed:
+activeTab 6 → 7
+
+Good.
+
+Now verify:
+- correction-mode lands correctly
+- invalid-field scrolling works
+- mobile wizard still works
+- Submit/Finish placement still works
+- tab order survives role switching
+
+7. Review section formatting QA still required
+The new compatibility review block looks structurally cleaner.
+
+Verify:
+- inserted INSIDE intended review structure
+- no spacing/card duplication
+- no typography regressions
+- mobile layout still clean
+- existing Landlord Information formatting preserved outside compatibility block
+
+8. Save Draft bypass behavior still requires explicit QA
+Need confirmation:
+- Save Draft does NOT trigger compatibility required validation
+- Save Draft does NOT redirect correction-mode
+- Save Draft does NOT mark compatibility fields invalid
+- Save Draft still works with all compatibility fields empty
+
+9. Representation Priorities synchronization still needs final audit
+You added:
+representation_priorities syncSelectValues()
+and Livewire invalid detection fallback.
+
+Good.
+
+Still verify:
+- correction-mode highlighting
+- required-field detection
+- invalid scrolling
+- draft hydration
+- edit hydration
+- Select2 rehydration
+
+all consistently resolve:
+representation_priorities
+
+10. Final QA confirmation still required
+Please confirm:
+- exact changed files
+- no Offer Listing files changed
+- no Seller/Buyer/Tenant regressions
+- no Direct Hire regressions
+- no initializeLimitedService() regressions
+- older listings without compatibility_preferences load/save cleanly
+- no AlpineJS console errors
+- no Livewire property warnings
+- no Select2 initialization warnings

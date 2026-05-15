@@ -435,6 +435,28 @@ class LandLordAgentAuction extends Component
     public $expansion_flat_fee = null;
     public $expansion_custom_commission = null;
 
+    // Representation Preferences & Compatibility
+    public $compatibility_preferences = [
+        'landlord_specific' => [
+            'primary_leasing_goal'             => '',
+            'primary_leasing_goal_other'       => '',
+            'tenant_type_preference'           => '',
+            'tenant_type_preference_other'     => '',
+            'lease_duration_preference'        => '',
+            'property_management_involvement'  => '',
+            'communication_style'              => '',
+            'preferred_contact_method'         => '',
+            'response_time_expectation'        => '',
+            'preferred_agent_working_style'    => '',
+            'negotiation_style'                => '',
+            'representation_priorities'        => [],
+            'risk_tolerance'                   => '',
+            'concessions_willingness'          => '',
+            'lease_terms_flexibility'          => '',
+            'additional_representation_notes'  => '',
+        ],
+    ];
+
     // Landlord Leasing Terms — 24 new fields
     public $lease_available_date = '';
     public $security_deposit_required = '';
@@ -2118,6 +2140,31 @@ class LandLordAgentAuction extends Component
             // Landlord
             $this->virtual_showings_count = $auction->get->virtual_showings_count ?? null;
 
+            // Representation Preferences & Compatibility
+            $rawCompat = $auction->get->compatibility_preferences ?? null;
+            $loadedCompat = $rawCompat ? (json_decode($rawCompat, true) ?? []) : [];
+            $defaultCompat = [
+                'landlord_specific' => [
+                    'primary_leasing_goal'             => '',
+                    'primary_leasing_goal_other'       => '',
+                    'tenant_type_preference'           => '',
+                    'tenant_type_preference_other'     => '',
+                    'lease_duration_preference'        => '',
+                    'property_management_involvement'  => '',
+                    'communication_style'              => '',
+                    'preferred_contact_method'         => '',
+                    'response_time_expectation'        => '',
+                    'preferred_agent_working_style'    => '',
+                    'negotiation_style'                => '',
+                    'representation_priorities'        => [],
+                    'risk_tolerance'                   => '',
+                    'concessions_willingness'          => '',
+                    'lease_terms_flexibility'          => '',
+                    'additional_representation_notes'  => '',
+                ],
+            ];
+            $this->compatibility_preferences = array_replace_recursive($defaultCompat, $loadedCompat);
+
             // Load enable checkboxes
             // $enableFields = json_decode($auction->get->enable);
             // foreach ($enableFields as $field => $value) {
@@ -2157,6 +2204,7 @@ class LandLordAgentAuction extends Component
                 'building_features' => $this->ensureArray($this->building_features),
                 'space_type' => $this->ensureArray($this->space_type),
                 'space_classification' => $this->ensureArray($this->space_classification),
+                'representation_priorities' => $this->ensureArray($this->compatibility_preferences['landlord_specific']['representation_priorities'] ?? []),
             ]);
         }
     }
@@ -2661,6 +2709,11 @@ class LandLordAgentAuction extends Component
 
 
 
+        // Representation Preferences & Compatibility — Full Service only
+        if ($this->service_type === 'full_service') {
+            $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+        }
+
         $auction->saveMeta('custom_services', json_encode($this->ensureArray($this->custom_services)));
         $auction->saveMeta('total_marketing_fee', $this->total_marketing_fee);
         $auction->saveMeta('total_flat_fee', $this->total_flat_fee);
@@ -2727,7 +2780,7 @@ class LandLordAgentAuction extends Component
 
     public function store()
     {
-        $this->validate([
+        $storeRules = [
             'first_name'           => 'required|string',
             'last_name'            => 'required|string',
             'phone_number'         => 'required|string',
@@ -2758,7 +2811,9 @@ class LandLordAgentAuction extends Component
             'commercial_parking_terms'            => 'nullable|string',
             'personal_guarantee_requirement'      => 'nullable|string|in:Required,Not Required,Negotiable',
             'commercial_approval_conditions'      => 'nullable|string',
-        ], [
+        ];
+
+        $storeMessages = [
             'first_name.required'           => 'First Name is required.',
             'last_name.required'            => 'Last Name is required.',
             'phone_number.required'         => 'Phone Number is required.',
@@ -2766,7 +2821,27 @@ class LandLordAgentAuction extends Component
             'email.email'                   => 'Please enter a valid email address.',
             'desired_lease_length.required' => 'Desired Lease Term is required.',
             'desired_lease_length.min'      => 'Please select at least one Desired Lease Term.',
-        ]);
+        ];
+
+        if ($this->service_type === 'full_service') {
+            $storeRules = array_merge($storeRules, [
+                'compatibility_preferences.landlord_specific.communication_style'          => 'required|string',
+                'compatibility_preferences.landlord_specific.negotiation_style'             => 'required|string',
+                'compatibility_preferences.landlord_specific.primary_leasing_goal'          => 'required|string',
+                'compatibility_preferences.landlord_specific.representation_priorities'     => 'required|array|min:1',
+                'compatibility_preferences.landlord_specific.preferred_agent_working_style' => 'required|string',
+            ]);
+            $storeMessages = array_merge($storeMessages, [
+                'compatibility_preferences.landlord_specific.communication_style.required'          => 'Communication Style is required.',
+                'compatibility_preferences.landlord_specific.negotiation_style.required'             => 'Negotiation Style is required.',
+                'compatibility_preferences.landlord_specific.primary_leasing_goal.required'          => 'Primary Leasing Goal is required.',
+                'compatibility_preferences.landlord_specific.representation_priorities.required'     => 'Representation Priorities are required.',
+                'compatibility_preferences.landlord_specific.representation_priorities.min'          => 'Please select at least one Representation Priority.',
+                'compatibility_preferences.landlord_specific.preferred_agent_working_style.required' => 'Preferred Agent Working Style is required.',
+            ]);
+        }
+
+        $this->validate($storeRules, $storeMessages);
 
         try {
             $this->isDraft = 0;
