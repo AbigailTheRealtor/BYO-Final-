@@ -1554,6 +1554,12 @@ function populateReviewTab() {
                     if (dltOtherVal) {
                         displayVal = dltOtherVal;
                     }
+                } else if (f.name === 'desired_lease_length' && val === 'Other') {
+                    var dllOtherEl = document.querySelector('[name="desired_lease_length_other"]');
+                    var dllOtherVal = dllOtherEl ? dllOtherEl.value.trim() : '';
+                    if (dllOtherVal) {
+                        displayVal = dllOtherVal;
+                    }
                 }
                 rows += '<div><dt>' + escape(f.label) + '</dt><dd>' + escape(displayVal) + '</dd></div>';
             }

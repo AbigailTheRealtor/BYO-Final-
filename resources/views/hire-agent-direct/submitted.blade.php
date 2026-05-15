@@ -367,7 +367,7 @@
                     @if(!empty($contact['desired_lease_length']))
                     <div>
                         <dt>Desired Lease Length</dt>
-                        <dd>{{ $contact['desired_lease_length'] }}</dd>
+                        <dd>{{ ($contact['desired_lease_length'] === 'Other' && !empty($contact['desired_lease_length_other'])) ? $contact['desired_lease_length_other'] : $contact['desired_lease_length'] }}</dd>
                     </div>
                     @endif
                     @if(!empty($contact['move_in_date']))
