@@ -1429,6 +1429,12 @@ $tenantPays = [
 
             attachBathroomsDropdownListener();
 
+            // Expose these scoped functions globally so the consolidated
+            // Livewire.hook('message.processed') handler can call them after
+            // initializeFullService() has returned.
+            window._landlordLeaseTermSelect2 = initEditLeaseTermSelect2;
+            window._landlordBathroomsListener = attachBathroomsDropdownListener;
+
 
 
 
@@ -1793,7 +1799,14 @@ $tenantPays = [
                 }
                 var savedValues = @json($desired_lease_length ?? []);
                 if (savedValues && savedValues.length) {
-                    $dlt.val(savedValues).trigger('change');
+                    var _currentVals = $dlt.val() || [];
+                    var _alreadySet = _currentVals.length === savedValues.length &&
+                        savedValues.every(function(v) { return _currentVals.indexOf(v) !== -1; });
+                    if (!_alreadySet) {
+                        $dlt.val(savedValues).trigger('change');
+                    } else {
+                        $dlt.val(savedValues);
+                    }
                 }
                 var otherWrapper = document.querySelector('.other_lease_term_wrapper');
                 if (otherWrapper) {
@@ -2112,7 +2125,6 @@ $tenantPays = [
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
                     new bootstrap.Tab(prevTabEl).show();
-                    prevTabEl.click();
                 }
             };
 
@@ -2308,7 +2320,6 @@ $tenantPays = [
                         '.nav-link');
                     if (nextTabEl) {
                         new bootstrap.Tab(nextTabEl).show();
-                        nextTabEl.click();
                     }
                 }
 
@@ -2327,7 +2338,6 @@ $tenantPays = [
                 const prevTabEl = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTabEl) {
                     new bootstrap.Tab(prevTabEl).show();
-                    prevTabEl.click();
                 }
             };
 
@@ -2428,6 +2438,30 @@ $tenantPays = [
                 }
                 setTimeout(function() { __tabRestoreGuard = false; }, 200);
             }
+
+            // Merged from second message.processed hook (previously in a separate
+            // DOMContentLoaded block). Runs 300ms after each Livewire morph to
+            // refresh save-button state, re-init Select2, and re-check visibility.
+            setTimeout(function() {
+                var _fContainer = document.getElementById('wizard-form-container');
+                var _updST = _fContainer && document.querySelector('[data-service-type]');
+                if (_updST && _fContainer) {
+                    _fContainer.setAttribute('data-service-type', _updST.getAttribute('data-service-type'));
+                }
+                if (typeof window._landlordSetupListeners === 'function') window._landlordSetupListeners();
+                if (typeof window._landlordUpdateSaveBtn === 'function') window._landlordUpdateSaveBtn();
+                if (typeof window._landlordLeaseTermSelect2 === 'function') window._landlordLeaseTermSelect2();
+                if (typeof window._landlordBathroomsListener === 'function') window._landlordBathroomsListener();
+                var _carportSel = document.getElementById('carport-needed');
+                var _carportIn = document.getElementById('other-carport-needed');
+                if (_carportSel && _carportIn && _carportSel.value === 'Yes') {
+                    _carportIn.classList.remove('d-none');
+                }
+                // Staggered icon injection — runs after initEditLeaseTermSelect2's
+                // @this.set() round-trip (if any) has settled.
+                setTimeout(addIconsToInputs, 350);
+                setTimeout(addIconsToInputs, 700);
+            }, 300);
 
             requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
         });
@@ -2546,38 +2580,11 @@ $tenantPays = [
             setupGlobalListeners();
             updateSaveButton();
 
-            // Livewire reactivity hook
-            if (typeof Livewire !== 'undefined') {
-                Livewire.hook('message.processed', () => {
-                    setTimeout(() => {
-                        // Refresh listeners and service type
-                        const updatedServiceType = document.querySelector('[data-service-type]');
-                        if (updatedServiceType) {
-                            formContainer.setAttribute('data-service-type', updatedServiceType
-                                .getAttribute('data-service-type'));
-                        }
-
-                        setupGlobalListeners();
-                        updateSaveButton();
-
-                        // Re-init Desired Lease Term Select2 after Livewire re-render
-                        initEditLeaseTermSelect2();
-                        addIconsToInputs();
-
-                        // Re-attach Bathrooms Other listener after Livewire re-render
-                        attachBathroomsDropdownListener();
-
-                        // Re-check Carport spaces input visibility after Livewire re-render
-                        var carportSelect = document.getElementById('carport-needed');
-                        var carportInput = document.getElementById('other-carport-needed');
-                        if (carportSelect && carportInput) {
-                            if (carportSelect.value === 'Yes') {
-                                carportInput.classList.remove('d-none');
-                            }
-                        }
-                    }, 300);
-                });
-            }
+            // Expose these functions globally so the canonical Livewire
+            // message.processed hook (first script block) can call them after
+            // each Livewire morph without a second hook registration.
+            window._landlordSetupListeners = setupGlobalListeners;
+            window._landlordUpdateSaveBtn = updateSaveButton;
         });
     </script>
     <script>
