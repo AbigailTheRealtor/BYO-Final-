@@ -28,7 +28,7 @@
                     <label class="fw-bold form-label">Phone Number <span class="text-danger">*</span></label>
                     <input type="text" name="client_phone" id="seller_client_phone"
                            class="form-control @error('client_phone') is-invalid @enderror"
-                           placeholder="(555) 555-5555"
+                           placeholder="Enter phone number"
                            value="{{ old('client_phone') }}" required>
                     @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -61,7 +61,7 @@
                     <label class="fw-bold form-label">City <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_city"
                            class="form-control @error('client_property_city') is-invalid @enderror"
-                           placeholder="Enter city"
+                           placeholder="Enter city (e.g., Tampa)"
                            value="{{ old('client_property_city') }}" required>
                     @error('client_property_city')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -77,7 +77,7 @@
                     <label class="fw-bold form-label">ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_zip"
                            class="form-control @error('client_property_zip') is-invalid @enderror"
-                           placeholder="Enter ZIP (e.g., 33701)"
+                           placeholder="Enter ZIP code (e.g., 33602)"
                            value="{{ old('client_property_zip') }}" required>
                     @error('client_property_zip')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -96,7 +96,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="desired_sale_price" id="seller_desired_sale_price"
                                class="form-control @error('desired_sale_price') is-invalid @enderror"
-                               placeholder="Enter desired sale price (e.g., 450,000)"
+                               placeholder="Enter desired sale price (e.g., 450000)"
                                value="{{ old('desired_sale_price') }}">
                         @error('desired_sale_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>

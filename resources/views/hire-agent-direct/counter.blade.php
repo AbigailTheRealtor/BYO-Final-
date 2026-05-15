@@ -382,14 +382,14 @@
                             : '';
                         $isCommercialSvc = $propertyType !== 'residential';
                         $addlServicesPlaceholder = match(true) {
-                            $role === 'seller' && !$isCommercialSvc => 'e.g., Custom Neighborhood Mailer, Seller Video Script, Pre-Listing Strategy Call, Relocation Buyer Outreach',
-                            $role === 'seller' && $isCommercialSvc  => 'e.g., Investor Prospect List, Property Offering Memorandum Outline, Broker Outreach Script, Tenant Mix Strategy Notes',
-                            $role === 'buyer'  && !$isCommercialSvc => 'e.g., Off-Market Outreach Letter, Neighborhood Comparison Summary, School Zone Research Summary, Commute Area Shortlist',
-                            $role === 'buyer'  && $isCommercialSvc  => 'e.g., Site Selection Matrix, Trade Area Snapshot, Parking Demand Review, Business Use Fit Summary',
+                            $role === 'seller' && !$isCommercialSvc => 'Enter additional services requested (e.g., Custom Neighborhood Mailer, Seller Video Script, Pre-Listing Strategy Call, Relocation Buyer Outreach)',
+                            $role === 'seller' && $isCommercialSvc  => 'Enter additional services requested (e.g., Investor Prospect List, Property Offering Memorandum Outline, Broker Outreach Script, Tenant Mix Strategy Notes)',
+                            $role === 'buyer'  && !$isCommercialSvc => 'Enter additional services requested (e.g., Off-Market Outreach Letter, Neighborhood Comparison Summary, School Zone Research Summary, Commute Area Shortlist)',
+                            $role === 'buyer'  && $isCommercialSvc  => 'Enter additional services requested (e.g., Site Selection Matrix, Trade Area Snapshot, Parking Demand Review, Business Use Fit Summary)',
                             $role === 'landlord' && !$isCommercialSvc => 'Enter additional services requested (e.g., Rental Pricing Snapshot, Tenant Persona Summary, Local Employer Outreach List, Move-In Readiness Checklist)',
                             $role === 'landlord' && $isCommercialSvc  => 'Enter additional services requested (e.g., Tenant Prospect List, Use Compatibility Notes, Broker Outreach Script, Leasing Flyer Outline)',
-                            $role === 'tenant' && !$isCommercialSvc => 'e.g., Rental Application Strategy, Neighborhood Fit Summary, Commute Zone Shortlist, Pet-Friendly Housing Notes',
-                            default => 'e.g., Space Requirement Summary, Trade Area Snapshot, LOI Question List, Business Use Fit Notes',
+                            $role === 'tenant' && !$isCommercialSvc => 'Enter additional services requested (e.g., Rental Application Strategy, Neighborhood Fit Summary, Commute Zone Shortlist, Pet-Friendly Housing Notes)',
+                            default => 'Enter additional services requested (e.g., Space Requirement Summary, Trade Area Snapshot, LOI Question List, Business Use Fit Notes)',
                         };
                     @endphp
                     <textarea name="client_requested_services"

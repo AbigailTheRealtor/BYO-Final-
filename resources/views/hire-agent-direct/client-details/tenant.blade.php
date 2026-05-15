@@ -28,7 +28,7 @@
                     <label class="fw-bold form-label">Phone Number <span class="text-danger">*</span></label>
                     <input type="text" name="client_phone" id="tenant_client_phone"
                            class="form-control @error('client_phone') is-invalid @enderror"
-                           placeholder="(555) 555-5555"
+                           placeholder="Enter phone number"
                            value="{{ old('client_phone') }}" required>
                     @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -70,7 +70,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="max_monthly_lease_price"
                                class="form-control @error('max_monthly_lease_price') is-invalid @enderror"
-                               placeholder="Enter max monthly lease price (e.g., 2,500)"
+                               placeholder="Enter max monthly lease price (e.g., 2500)"
                                value="{{ old('max_monthly_lease_price') }}">
                         @error('max_monthly_lease_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -118,7 +118,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="household_monthly_income"
                                class="form-control @error('household_monthly_income') is-invalid @enderror"
-                               placeholder="Enter household monthly income (e.g., 7,500)"
+                               placeholder="Enter household monthly income (e.g., 7500)"
                                value="{{ old('household_monthly_income') }}">
                         @error('household_monthly_income')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>

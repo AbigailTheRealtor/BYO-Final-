@@ -28,7 +28,7 @@
                     <label class="fw-bold form-label">Phone Number <span class="text-danger">*</span></label>
                     <input type="text" name="client_phone" id="buyer_client_phone"
                            class="form-control @error('client_phone') is-invalid @enderror"
-                           placeholder="(555) 555-5555"
+                           placeholder="Enter phone number"
                            value="{{ old('client_phone') }}" required>
                     @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -70,7 +70,7 @@
                         <span class="input-group-text">$</span>
                         <input type="text" name="target_purchase_price"
                                class="form-control @error('target_purchase_price') is-invalid @enderror"
-                               placeholder="Enter target purchase price (e.g., 350,000)"
+                               placeholder="Enter target purchase price (e.g., 350000)"
                                value="{{ old('target_purchase_price') }}">
                         @error('target_purchase_price')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
@@ -190,7 +190,7 @@
         if (mode === 'dollar') {
             dpToggleBtn.textContent = '$';
             dpTypeInput.value = 'dollar';
-            dpAmtInput.placeholder = 'Enter estimated down payment (e.g., 70,000)';
+            dpAmtInput.placeholder = 'Enter estimated down payment (e.g., 70000)';
             if (dpAmtInput.value !== '') {
                 dpAmtInput.value = formatWithCommas(dpAmtInput.value);
             }

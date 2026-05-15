@@ -28,7 +28,7 @@
                     <label class="fw-bold form-label">Phone Number <span class="text-danger">*</span></label>
                     <input type="text" name="client_phone" id="landlord_client_phone"
                            class="form-control @error('client_phone') is-invalid @enderror"
-                           placeholder="(555) 555-5555"
+                           placeholder="Enter phone number"
                            value="{{ old('client_phone') }}" required>
                     @error('client_phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
@@ -77,7 +77,7 @@
                     <label class="fw-bold form-label">ZIP Code <span class="text-danger">*</span></label>
                     <input type="text" name="client_property_zip"
                            class="form-control @error('client_property_zip') is-invalid @enderror"
-                           placeholder="Enter ZIP Code (e.g., 33602)"
+                           placeholder="Enter ZIP code (e.g., 33602)"
                            value="{{ old('client_property_zip') }}" required>
                     @error('client_property_zip')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
