@@ -1511,6 +1511,9 @@
             @this.set('association_amenities', selectedValues, false);
             $('#hoa-amenities-other-section').toggle(selectedValues.includes('Other'));
         });
+        $(document).on('change', '#association_fee_frequency', function() {
+            $('#association-fee-frequency-other-section').toggle($(this).val() === 'Other');
+        });
         Object.entries(_mlsFieldSelectors).forEach(function([fieldId, selectors]) {
             selectors.forEach(function(selector) {
                 $(document).on('change', selector, function() {
@@ -1826,6 +1829,10 @@
             if ($('#association_amenities').length) {
                 var amDataInit = $('#association_amenities').val() || [];
                 $('#hoa-amenities-other-section').toggle(amDataInit.includes('Other'));
+            }
+
+            if ($('#association_fee_frequency').length) {
+                $('#association-fee-frequency-other-section').toggle($('#association_fee_frequency').val() === 'Other');
             }
 
             if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {

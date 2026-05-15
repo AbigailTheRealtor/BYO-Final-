@@ -927,7 +927,7 @@
             </span>
         </label>
         <div class="input-cover">
-            <select wire:model="exchange_liens" class="form-control has-icon"
+            <select wire:model="exchange_liens_disclosure" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract">
                 <option value="">Select</option>
                 <option value="Yes">Yes</option>
@@ -936,7 +936,7 @@
         </div>
     </div>
 
-    @if (($exchange_liens ?? '') === 'Yes')
+    @if (($exchange_liens_disclosure ?? '') === 'Yes')
     <div class="form-group mt-2">
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
@@ -2062,7 +2062,7 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon seller-compact-textarea" rows="2"
+        <textarea wire:model="additional_seller_sale_terms" class="form-control has-icon" rows="2"
             data-icon="fa-solid fa-file-lines"
             placeholder="Enter any additional sale terms or special conditions the Seller requires"></textarea>
     </div>

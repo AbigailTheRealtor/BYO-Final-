@@ -3111,6 +3111,7 @@ class SellerOfferListing extends Component
         $auction->saveMeta('preferance_details', $this->preferance_details);
         $configs = is_array($this->unit_type_configurations) ? $this->unit_type_configurations : [];
         $auction->saveMeta('unit_type_configurations', json_encode(array_values($configs)));
+        $auction->saveMeta('sqft_heated_source', $this->sqft_heated_source);
 
         // MLS property detail fields
         $auction->saveMeta('year_built', $this->year_built);
@@ -3197,6 +3198,10 @@ class SellerOfferListing extends Component
         $auction->saveMeta('down_payment_amount', $this->stripCommas($this->down_payment_amount));
         $auction->saveMeta('seller_financing_type', $this->seller_financing_type);
         $auction->saveMeta('seller_financing_amount', $this->stripCommas($this->seller_financing_amount));
+        $auction->saveMeta('seller_amortization_type', $this->seller_amortization_type);
+        $auction->saveMeta('seller_amortization_other', $this->seller_amortization_other);
+        $auction->saveMeta('seller_payment_frequency', $this->seller_payment_frequency);
+        $auction->saveMeta('seller_payment_frequency_other', $this->seller_payment_frequency_other);
         $auction->saveMeta('interest_rate', $this->interest_rate);
         $auction->saveMeta('loan_duration', $this->loan_duration);
         $auction->saveMeta('prepayment_penalty', $this->prepayment_penalty);
@@ -3204,6 +3209,7 @@ class SellerOfferListing extends Component
         $auction->saveMeta('balloon_payment_amount', $this->stripCommas($this->balloon_payment_amount));
         $auction->saveMeta('balloon_payment_date', $this->balloon_payment_date);
         $auction->saveMeta('assumable_terms', $this->assumable_terms);
+        $auction->saveMeta('assumable_loan_type', $this->assumable_loan_type);
         $auction->saveMeta('max_assumable_rate', $this->stripCommas($this->max_assumable_rate));
         $auction->saveMeta('assumable_monthly_escrow', $this->stripCommas($this->assumable_monthly_escrow));
         $auction->saveMeta('assumable_loan_term_remaining', $this->assumable_loan_term_remaining);
@@ -3264,6 +3270,11 @@ class SellerOfferListing extends Component
         $auction->saveMeta('cryptocurrency_type', $this->cryptocurrency_type);
         $auction->saveMeta('crypto_percentage', $this->stripCommas($this->crypto_percentage));
         $auction->saveMeta('cash_percentage_crypto', $this->stripCommas($this->cash_percentage_crypto));
+        $auction->saveMeta('crypto_transfer_timing', $this->crypto_transfer_timing);
+        $auction->saveMeta('crypto_transfer_timing_other', $this->crypto_transfer_timing_other);
+        $auction->saveMeta('crypto_exchange_method', $this->crypto_exchange_method);
+        $auction->saveMeta('crypto_custodian_wallet', $this->crypto_custodian_wallet);
+        $auction->saveMeta('crypto_transaction_fees', $this->crypto_transaction_fees);
 
         // NFT
         $auction->saveMeta('nft_description', $this->nft_description);

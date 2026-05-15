@@ -105,7 +105,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon seller-compact-textarea" rows="2"
+                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon" rows="2"
                         data-icon="fa-solid fa-hashtag"
                         placeholder="Enter each additional parcel ID on a new line (e.g., 12-34-56-789-0002)"></textarea>
                 </div>
@@ -121,7 +121,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <textarea wire:model="legal_description" class="form-control has-icon seller-compact-textarea" rows="2"
+                <textarea wire:model="legal_description" class="form-control has-icon" rows="2"
                     data-icon="fa-solid fa-scroll"
                     placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
             </div>
@@ -306,7 +306,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="special_assessment_description" class="form-control has-icon seller-compact-textarea" rows="2"
+                    <textarea wire:model="special_assessment_description" class="form-control has-icon" rows="2"
                         data-icon="fa-solid fa-file-invoice"
                         placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
                 </div>
@@ -424,7 +424,7 @@
                             </span>
                         </label>
                         <div class="input-cover">
-                            <select wire:model="association_fee_frequency" class="form-control has-icon"
+                            <select id="association_fee_frequency" wire:model="association_fee_frequency" class="form-control has-icon"
                                 data-icon="fa-regular fa-calendar-days">
                                 <option value="">Select</option>
                                 <option value="Monthly">Monthly</option>
@@ -440,7 +440,7 @@
                 </div>
             </div>
 
-            @if ($association_fee_frequency === 'Other')
+            <div id="association-fee-frequency-other-section" wire:ignore.self style="display: {{ $association_fee_frequency === 'Other' ? 'block' : 'none' }}">
                 <div class="form-group mt-2 mb-3">
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
@@ -448,7 +448,7 @@
                             placeholder="Specify fee frequency (e.g., Weekly, Bi-Weekly)">
                     </div>
                 </div>
-            @endif
+            </div>
 
             {{-- Approval Required --}}
             <div id="association-approval-required-group" class="form-group mt-3">
@@ -478,7 +478,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="2"
+                        <textarea wire:model="association_approval_process" class="form-control has-icon" rows="2"
                             data-icon="fa-solid fa-stamp"
                             placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
@@ -651,7 +651,7 @@
                         <div class="input-cover">
                             <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
                                 data-icon="fa-regular fa-clock"
-                                placeholder="Specify minimum lease period (e.g., 90 Days)">
+                                placeholder="Enter minimum lease period (e.g., 6 Months, 12 Months, Seasonal Lease)">
                         </div>
                     </div>
                 @endif
@@ -664,7 +664,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon seller-compact-textarea" rows="2"
+                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon" rows="2"
                             data-icon="fa-solid fa-ban"
                             placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
                     </div>

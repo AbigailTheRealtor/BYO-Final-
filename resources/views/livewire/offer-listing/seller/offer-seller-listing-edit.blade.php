@@ -1212,6 +1212,9 @@
             @this.set('association_amenities', selectedValues, false);
             $('#hoa-amenities-other-section').toggle(selectedValues.includes('Other'));
         });
+        $(document).on('change', '#association_fee_frequency', function() {
+            $('#association-fee-frequency-other-section').toggle($(this).val() === 'Other');
+        });
 
         function initializeMlsPropertyMultiSelects() {
             var _mlsFields = [
@@ -1433,6 +1436,10 @@
             if ($('#association_amenities').length) {
                 var _amInit = $('#association_amenities').val() || [];
                 $('#hoa-amenities-other-section').toggle(_amInit.includes('Other'));
+            }
+
+            if ($('#association_fee_frequency').length) {
+                $('#association-fee-frequency-other-section').toggle($('#association_fee_frequency').val() === 'Other');
             }
 
             // Function to toggle "auction time" input field
