@@ -1,0 +1,89 @@
+Paste this to Replit:
+
+Fix **Create Seller Offer Listing + Seller draft/edit autopopulation** with strict safeguards.
+
+URLs:
+
+* Create: `/offer-listing/seller`
+* Draft/edit: `/offer-listing/seller/edit/{id}`
+
+Scope:
+
+* Seller Offer Listing only.
+* Full Service only unless the affected field is shared.
+* Do not touch Buyer, Tenant, Landlord, Hire Agent, routes, controllers, models, migrations, or DB schema unless absolutely required and confirmed first.
+
+Files to audit first:
+
+* Seller create Blade
+* Seller edit/draft Blade
+* Seller Livewire/component/controller save/load logic
+* Seller relevant partials only
+
+Issues to fix:
+
+### 1. Input box sizing audit
+
+These fields are rendering larger than normal inputs and should match standard input height/width styling like **Tax Year** and **Parcel ID / Folio Number** unless intentionally long-form:
+
+* Additional Parcel IDs
+* Legal Description
+* Special Assessment Description
+* Application Approval Process
+* Additional Leasing Restriction
+* Additional Seller Sale Terms
+
+Audit all Seller Offer Listing input boxes for inconsistent sizing.
+
+Rules:
+
+* Standard short/medium text fields should use normal input sizing.
+* True long-form description/narrative fields may remain textarea/larger.
+* Do not shrink actual Description-style fields that need multi-line space.
+* Icons must remain visible and aligned after sizing changes.
+
+### 2. Association Type “Other” icon issue
+
+When user selects **Other** under Association Type, the companion input appears but causes an icon formatting issue underneath/near **Association Name**.
+
+Fix:
+
+* “Other” companion field should display cleanly.
+* Icon should appear inside the correct input only.
+* It must not duplicate, stack, shift, or appear under Association Name.
+* Preserve normal Association Name icon behavior.
+
+### 3. Draft/edit autopopulation issues
+
+On Seller draft/edit load, these fields are not autopopulating correctly:
+
+* Listing Type
+* Special Sale Provision → if user selected Other, the custom Other input should also populate and display correctly.
+* Seller Under Contract Assignment
+
+Audit nearby Seller draft/edit fields too to make sure no similar saved values are missing.
+
+Requirements:
+
+* Save/create must still store values correctly.
+* Draft/edit must load saved values correctly.
+* “Other” selections must reveal the companion input and populate the saved custom value.
+* Summary/review should show the custom value, not just “Other,” where applicable.
+
+### Safeguards
+
+* Do not alter unrelated labels, placeholders, tooltips, tabs, validation, or field order.
+* Do not rename DB columns.
+* Do not remove existing saved data support.
+* Do not break icons after Livewire updates, tab changes, Select2 initialization, or draft load.
+* Avoid broad CSS changes. Use the narrowest Seller-specific selector possible.
+* If a field needs textarea behavior for legal/description-style content, preserve it and explain why.
+
+### Done means browser QA confirms:
+
+* All listed fields visually match platform sizing rules.
+* Description/long-form fields remain appropriately larger.
+* Icons stay aligned on load, tab change, and after selecting Other.
+* Association Type → Other no longer breaks icon placement.
+* Seller edit/draft autopopulates Listing Type, Special Sale Provision Other value, and Seller Under Contract Assignment.
+* Final report lists exact files changed and confirms Buyer/Tenant/Landlord/Hire Agent were untouched.
