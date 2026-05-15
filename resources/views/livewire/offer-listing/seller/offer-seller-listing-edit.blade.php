@@ -1998,6 +1998,9 @@
                         '.nav-link');
                     if (nextTab) {
                         new bootstrap.Tab(nextTab).show();
+                        var _wcNext = nextTab.getAttribute('wire:click') || '';
+                        var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
+                        if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
                     }
                 }
 
@@ -2012,6 +2015,9 @@
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
                     new bootstrap.Tab(prevTab).show();
+                    var _wcBack = prevTab.getAttribute('wire:click') || '';
+                    var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
+                    if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
                 }
             };
 
@@ -2169,6 +2175,9 @@
                         '.nav-link');
                     if (nextTab) {
                         new bootstrap.Tab(nextTab).show();
+                        var _wcNext = nextTab.getAttribute('wire:click') || '';
+                        var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
+                        if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
                     }
                 }
 
@@ -2183,6 +2192,9 @@
                 const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
                     new bootstrap.Tab(prevTab).show();
+                    var _wcBack = prevTab.getAttribute('wire:click') || '';
+                    var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
+                    if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
                 }
             };
 

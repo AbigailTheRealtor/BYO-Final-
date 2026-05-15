@@ -104,8 +104,11 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <textarea wire:model="additional_parcel_ids" class="form-control seller-compact-textarea" rows="2"
-                    placeholder="Enter each additional parcel ID on a new line"></textarea>
+                <div class="input-cover">
+                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon seller-compact-textarea" rows="2"
+                        data-icon="fa-solid fa-hashtag"
+                        placeholder="Enter each additional parcel ID on a new line (e.g., 12-34-56-789-0002)"></textarea>
+                </div>
             </div>
         @endif
 
@@ -117,8 +120,11 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <textarea wire:model="legal_description" class="form-control seller-compact-textarea" rows="2"
-                placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
+            <div class="input-cover">
+                <textarea wire:model="legal_description" class="form-control has-icon seller-compact-textarea" rows="2"
+                    data-icon="fa-solid fa-scroll"
+                    placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
+            </div>
         </div>
 
     </div>
@@ -299,8 +305,11 @@
                         <i class="fa-solid fa-circle-info"></i>
                     </span>
                 </label>
-                <textarea wire:model="special_assessment_description" class="form-control seller-compact-textarea" rows="2"
-                    placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
+                <div class="input-cover">
+                    <textarea wire:model="special_assessment_description" class="form-control has-icon seller-compact-textarea" rows="2"
+                        data-icon="fa-solid fa-file-invoice"
+                        placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
+                </div>
             </div>
         @endif
 
@@ -364,7 +373,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_type_other" class="form-control has-icon"
                             data-icon="fa-solid fa-sitemap"
-                            placeholder="Describe the association type">
+                            placeholder="Specify association type (e.g., Master Community Association)">
                     </div>
                 </div>
             @endif
@@ -436,7 +445,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
                             data-icon="fa-regular fa-calendar-days"
-                            placeholder="Describe the fee frequency">
+                            placeholder="Specify fee frequency (e.g., Weekly, Bi-Weekly)">
                     </div>
                 </div>
             @endif
@@ -469,7 +478,8 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control seller-compact-textarea" rows="2"
+                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="2"
+                            data-icon="fa-solid fa-stamp"
                             placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
                 </div>
@@ -641,7 +651,7 @@
                         <div class="input-cover">
                             <input type="text" wire:model="min_lease_period_other" class="form-control has-icon"
                                 data-icon="fa-regular fa-clock"
-                                placeholder="Specify minimum lease period">
+                                placeholder="Specify minimum lease period (e.g., 90 Days)">
                         </div>
                     </div>
                 @endif
@@ -653,8 +663,11 @@
                             <i class="fa-solid fa-circle-info"></i>
                         </span>
                     </label>
-                    <textarea wire:model="additional_lease_restrictions" class="form-control seller-compact-textarea" rows="2"
-                        placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
+                    <div class="input-cover">
+                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon seller-compact-textarea" rows="2"
+                            data-icon="fa-solid fa-ban"
+                            placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
+                    </div>
                 </div>
             @endif
 

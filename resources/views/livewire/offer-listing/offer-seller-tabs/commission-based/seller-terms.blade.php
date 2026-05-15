@@ -780,7 +780,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-solid fa-clock"
-                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+                placeholder="Enter Timing of Transfer (e.g., Within 48 Hours of Contract Acceptance)">
         </div>
     </div>
     @endif
