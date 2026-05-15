@@ -239,6 +239,9 @@ class BuyerAgentAuction extends Component
     public $flat_fee_services = [];
 
     public $additional_details = '';
+    public $compatibility_preferences = [
+        'buyer_specific' => []
+    ];
     public $preferance_details = '';
 
     // Broker compensation
@@ -1614,6 +1617,18 @@ class BuyerAgentAuction extends Component
             $this->flat_fee_services = $flatFeeServicesRaw ? (is_string($flatFeeServicesRaw) ? json_decode($flatFeeServicesRaw, true) ?? [] : (array)$flatFeeServicesRaw) : [];
             $this->additional_details = $auction->get->additional_details ?? '';
 
+            // Representation Preferences & Compatibility
+            $compatRaw = $auction->get->compatibility_preferences ?? null;
+            $decodedCompat = $compatRaw ? (is_string($compatRaw) ? json_decode($compatRaw, true) ?? [] : (is_array($compatRaw) ? $compatRaw : [])) : [];
+            $this->compatibility_preferences = !empty($decodedCompat) ? $decodedCompat : ['buyer_specific' => []];
+            if (!isset($this->compatibility_preferences['buyer_specific'])) {
+                $this->compatibility_preferences['buyer_specific'] = [];
+            }
+            if (isset($this->compatibility_preferences['buyer_specific']['representation_priorities']) &&
+                !is_array($this->compatibility_preferences['buyer_specific']['representation_priorities'])) {
+                $this->compatibility_preferences['buyer_specific']['representation_priorities'] = [];
+            }
+
             // Broker compensation
             $this->commission_structure = $auction->get->commission_structure ?? '';
             $this->lease_fee_type = $auction->get->lease_fee_type ?? '';
@@ -1950,6 +1965,7 @@ class BuyerAgentAuction extends Component
         $auction->saveMeta('property_exclusions', $this->property_exclusions);
         $auction->saveMeta('closing_cost_responsibility', $this->closing_cost_responsibility);
         $auction->saveMeta('additional_purchase_terms', $this->additional_purchase_terms);
+        $auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
 
         // Seller Financing Additional Fields - DEBUG LOG
         \Log::info('[FINANCING FOLLOWUPS - VALUES AT SAVE TIME]', [
@@ -2322,6 +2338,14 @@ class BuyerAgentAuction extends Component
                 'closing_cost_responsibility'     => 'nullable|string|in:,Buyer Pays All,Seller Pays All,Standard Split,Negotiable',
                 'additional_purchase_terms'       => 'nullable|string|max:5000',
             ];
+            // Representation Preferences & Compatibility required only for full_service buyer flow
+            if ($this->service_type === 'full_service') {
+                $validationRules['compatibility_preferences.buyer_specific.communication_style']           = 'required|string';
+                $validationRules['compatibility_preferences.buyer_specific.negotiation_style']             = 'required|string';
+                $validationRules['compatibility_preferences.buyer_specific.primary_transaction_goal']      = 'required|string';
+                $validationRules['compatibility_preferences.buyer_specific.representation_priorities']     = 'required|array|min:1';
+                $validationRules['compatibility_preferences.buyer_specific.preferred_agent_working_style'] = 'required|string';
+            }
             
             // Add Bidding Period specific validation
             if ($this->auction_type === 'Bidding Period') {
@@ -2333,6 +2357,12 @@ class BuyerAgentAuction extends Component
                 'counties.min' => 'At least one county is required.',
                 'state.required' => 'State is required.',
                 'auction_time.required' => 'Bidding Period Length is required.',
+                'compatibility_preferences.buyer_specific.communication_style.required'           => 'Communication Style is required.',
+                'compatibility_preferences.buyer_specific.negotiation_style.required'             => 'Negotiation Style is required.',
+                'compatibility_preferences.buyer_specific.primary_transaction_goal.required'      => 'Primary Transaction Goal is required.',
+                'compatibility_preferences.buyer_specific.representation_priorities.required'     => 'Representation Priorities is required.',
+                'compatibility_preferences.buyer_specific.representation_priorities.min'          => 'Please select at least one Representation Priority.',
+                'compatibility_preferences.buyer_specific.preferred_agent_working_style.required' => 'Preferred Agent Working Style is required.',
             ]);
             
             $this->isDraft = 0;

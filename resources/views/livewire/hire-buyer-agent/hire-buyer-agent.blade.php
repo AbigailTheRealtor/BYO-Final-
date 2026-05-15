@@ -790,7 +790,7 @@
                             @php $isAgentUser = auth()->user() && auth()->user()->user_type === 'agent'; @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
-                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details', 'Broker Compensation'] as $index => $tab)
+                                @foreach (['Listing Details', 'Property Preferences', 'Purchasing Terms', 'Services', 'Additional Details'] as $index => $tab)
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                             wire:click="setActiveTab({{ $index }})"
@@ -803,14 +803,46 @@
                                         </button>
                                     </li>
                                 @endforeach
+                                {{-- Tab index 5 (buyer + full_service only): Representation Preferences & Compatibility
+                                     Inserted between Additional Details (index 4) and Broker Compensation.
+                                     This shifts Broker Compensation and Buyer Information by +1 for this flow only.
+                                     All other flows (limited_service, non-buyer types) keep Broker at 5, Buyer Info at 6. --}}
+                                @if ($user_type === 'buyer' && $service_type === 'full_service')
                                 <li class="nav-item" role="presentation">
-                                    <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
-                                        wire:click="setActiveTab(6)"
+                                    <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
+                                        wire:click="setActiveTab(5)"
+                                        id="representation-compatibility-tab" data-bs-toggle="tab"
+                                        data-bs-target="#representation-compatibility"
+                                        type="button" role="tab"
+                                        aria-controls="representation-compatibility"
+                                        aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
+                                        Representation Preferences &amp; Compatibility
+                                    </button>
+                                </li>
+                                @endif
+                                {{-- Broker Compensation: index 6 (buyer+full_service — compat tab occupies 5),
+                                     index 5 for all other flows. --}}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 6 ? 'active' : '') : ($activeTab === 5 ? 'active' : '') }}"
+                                        wire:click="setActiveTab({{ ($user_type === 'buyer' && $service_type === 'full_service') ? 6 : 5 }})"
+                                        id="broker-compensation-tab" data-bs-toggle="tab"
+                                        data-bs-target="#broker-compensation"
+                                        type="button" role="tab"
+                                        aria-controls="broker-compensation"
+                                        aria-selected="{{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 6 ? 'true' : 'false') : ($activeTab === 5 ? 'true' : 'false') }}">
+                                        Broker Compensation
+                                    </button>
+                                </li>
+                                {{-- Buyer Information: index 7 (buyer+full_service — compat tab occupies 5),
+                                     index 6 for all other flows. --}}
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link {{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 7 ? 'active' : '') : ($activeTab === 6 ? 'active' : '') }}"
+                                        wire:click="setActiveTab({{ ($user_type === 'buyer' && $service_type === 'full_service') ? 7 : 6 }})"
                                         id="buyer-information-tab" data-bs-toggle="tab"
                                         data-bs-target="#buyer-information"
                                         type="button" role="tab"
                                         aria-controls="buyer-information"
-                                        aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
+                                        aria-selected="{{ ($user_type === 'buyer' && $service_type === 'full_service') ? ($activeTab === 7 ? 'true' : 'false') : ($activeTab === 6 ? 'true' : 'false') }}">
                                         {{ $isAgentUser ? 'Agent Credentials & Contact Info' : 'Buyer Information' }}
                                     </button>
                                 </li>
@@ -930,8 +962,20 @@
                                     @endif
                                 </div>
 
-                                <!-- Broker Compensation Tab -->
+                                <!-- Representation Preferences & Compatibility Tab (buyer full_service only) -->
+                                @if ($user_type === 'buyer' && $service_type === 'full_service')
                                 <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                    id="representation-compatibility" role="tabpanel"
+                                    aria-labelledby="representation-compatibility-tab">
+                                    @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.representation-compatibility')
+                                </div>
+                                @endif
+
+                                <!-- Broker Compensation Tab -->
+                                {{-- $brokerTabIndex: 6 for buyer+full_service (compat tab at 5 shifts this +1),
+                                     5 for all other flows. --}}
+                                @php $brokerTabIndex = ($user_type === 'buyer' && $service_type === 'full_service') ? 6 : 5; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $brokerTabIndex ? 'show active' : '' }}"
                                     id="broker-compensation" role="tabpanel"
                                     aria-labelledby="broker-compensation-tab">
 
@@ -947,7 +991,10 @@
                                 </div>
 
                                 <!-- Buyer Info Tab -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                {{-- $buyerInfoTabIndex: 7 for buyer+full_service (compat tab at 5 shifts this +2),
+                                     6 for all other flows. --}}
+                                @php $buyerInfoTabIndex = ($user_type === 'buyer' && $service_type === 'full_service') ? 7 : 6; @endphp
+                                <div class="tab-pane fade {{ $activeTab === $buyerInfoTabIndex ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
@@ -1068,6 +1115,7 @@
                     '#assets': 'assets',
                 };
                 Object.entries(multiFields).forEach(function([selector, prop]) {
+
                     var $el = $(selector);
                     if ($el.length && $el.hasClass('select2-hidden-accessible')) {
                         var saved = @this.get(prop) || [];
@@ -1077,6 +1125,33 @@
                         }
                     }
                 });
+                // Rehydrate representation_priorities (nested in compatibility_preferences)
+                try {
+                    var $rpDl = $('#representation_priorities');
+                    if ($rpDl.length && $rpDl.hasClass('select2-hidden-accessible')) {
+                        var _cpDl = @this.get('compatibility_preferences');
+                        var _rpDlSaved = (_cpDl && _cpDl.buyer_specific && _cpDl.buyer_specific.representation_priorities) ? _cpDl.buyer_specific.representation_priorities : [];
+                        if (_rpDlSaved.length > 0) {
+                            $rpDl.val(_rpDlSaved).trigger('change.select2');
+                            window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: _rpDlSaved.includes('Other') } }));
+                            console.log('[DraftLoaded] Rehydrated representation_priorities:', _rpDlSaved);
+                        }
+                    }
+                } catch(eRpDl) { console.log('[DraftLoaded] rp error', eRpDl); }
+                // Rehydrate compatibility single-select fields from Livewire state
+                try {
+                    var _cpDlSingle = @this.get('compatibility_preferences');
+                    var _bsDlSingle = (_cpDlSingle && _cpDlSingle.buyer_specific) ? _cpDlSingle.buyer_specific : {};
+                    $('[data-compat-field]').each(function() {
+                        var $elDl = $(this);
+                        var fldDl = $elDl.data('compat-field');
+                        if (!$elDl.prop('multiple') && $elDl.hasClass('select2-hidden-accessible') && _bsDlSingle[fldDl]) {
+                            $elDl.val(_bsDlSingle[fldDl]).trigger('change.select2');
+                        }
+                    });
+                    window.dispatchEvent(new CustomEvent('update-ptg-other', { detail: { showOther: _bsDlSingle.primary_transaction_goal === 'Other' } }));
+                    window.dispatchEvent(new CustomEvent('update-paws-other', { detail: { showOther: _bsDlSingle.preferred_agent_working_style === 'Other' } }));
+                } catch(_eDlSingle) { console.log('[DraftLoaded] compat single sync error', _eDlSingle); }
                 jsonRestoreSelect2();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
@@ -1197,9 +1272,55 @@
             @this.set('garage_parking_spaces_option', gps);
             @this.set('assets', ass);
 
+            // Sync all compatibility_preferences fields (single-selects + rp) in one batch
+            if ($('[data-compat-field]').length || $('#representation_priorities').length) {
+                try {
+                    var _compatSave = JSON.parse(JSON.stringify(@this.get('compatibility_preferences') || { buyer_specific: {} }));
+                    if (!_compatSave.buyer_specific) _compatSave.buyer_specific = {};
+                    $('[data-compat-field]').each(function() {
+                        var $cs = $(this);
+                        if (!$cs.prop('multiple') && $cs.hasClass('select2-hidden-accessible')) {
+                            _compatSave.buyer_specific[$cs.data('compat-field')] = $cs.val() || '';
+                        }
+                    });
+                    var _rpSave = $('#representation_priorities').hasClass('select2-hidden-accessible') ? ($('#representation_priorities').val() || []) : [];
+                    _compatSave.buyer_specific.representation_priorities = [...new Set(_rpSave)];
+                    @this.set('compatibility_preferences', _compatSave);
+                } catch(_eCs) { console.log('[syncBSS] compat sync error', _eCs); }
+            }
+
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
+        }
+
+        function syncCompatSingleFromLW($el, field) {
+            try {
+                var _cp = @this.get('compatibility_preferences');
+                var _val = (_cp && _cp.buyer_specific) ? (_cp.buyer_specific[field] || '') : '';
+                if (_val) { $el.val(_val).trigger('change.select2'); }
+            } catch(_eScl) {}
+        }
+
+        function initCompatibilitySelects() {
+            $('[data-compat-field]').each(function() {
+                var $el = $(this);
+                var field = $el.data('compat-field');
+                if ($el.prop('multiple')) return;
+                if (!$el.hasClass('select2-hidden-accessible')) {
+                    $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                    $el.off('change.compatSync').on('change.compatSync', function() {
+                        var val = $(this).val() || '';
+                        debouncedSet('compatibility_preferences.buyer_specific.' + field, val);
+                        if (field === 'primary_transaction_goal') {
+                            window.dispatchEvent(new CustomEvent('update-ptg-other', { detail: { showOther: val === 'Other' } }));
+                        } else if (field === 'preferred_agent_working_style') {
+                            window.dispatchEvent(new CustomEvent('update-paws-other', { detail: { showOther: val === 'Other' } }));
+                        }
+                    });
+                }
+                syncCompatSingleFromLW($el, field);
+            });
         }
 
         function initializeFullService() {
@@ -1413,6 +1534,15 @@
                         debouncedSet('garage_parking_spaces_option', selectedValues);
                     });
                 }
+                if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#representation_priorities'));
+                    $('#representation_priorities').off('change.rpSync').on('change.rpSync', function() {
+                        var selectedValues = $(this).val() || [];
+                        selectedValues = [...new Set(selectedValues)];
+                        debouncedSet('compatibility_preferences.buyer_specific.representation_priorities', selectedValues);
+                        window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: selectedValues.includes('Other') } }));
+                    });
+                }
             });
 
             // Add event listeners
@@ -1489,6 +1619,35 @@
                     }
                 });
             }
+
+            // Initialize Select2 for representation_priorities (Compatibility tab)
+            if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
+                window.initFullServiceSelect2Multiple($('#representation_priorities'));
+
+                $('#representation_priorities').off('change.rpSync').on('change.rpSync', function() {
+                    var selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('compatibility_preferences.buyer_specific.representation_priorities', selectedValues);
+                    window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: selectedValues.includes('Other') } }));
+                });
+            }
+
+            // Initialize Select2 for all compatibility single-select fields
+            initCompatibilitySelects();
+
+            // Re-sync compat selects + dispatch "Other" state on every Livewire round-trip
+            Livewire.hook('message.processed', () => {
+                if ($('[data-compat-field]').length) {
+                    initCompatibilitySelects();
+                    try {
+                        var _cpMp = @this.get('compatibility_preferences');
+                        var _bsMp = (_cpMp && _cpMp.buyer_specific) ? _cpMp.buyer_specific : {};
+                        window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: (_bsMp.representation_priorities || []).includes('Other') } }));
+                        window.dispatchEvent(new CustomEvent('update-ptg-other', { detail: { showOther: _bsMp.primary_transaction_goal === 'Other' } }));
+                        window.dispatchEvent(new CustomEvent('update-paws-other', { detail: { showOther: _bsMp.preferred_agent_working_style === 'Other' } }));
+                    } catch(_eCmMp) {}
+                }
+            });
 
             // Global Helpers: immediately update section visibility via Alpine events
             window.updateAssignmentContractSection = function(selectedValues) {
@@ -2513,6 +2672,7 @@
                     '#purchasing-terms',
                     '#services',
                     '#additional-details',
+                    '#representation-compatibility',
                     '#broker-compensation',
                     '#buyer-information'
                 ] : [
@@ -2647,6 +2807,14 @@
                     'last_name':               'Last Name',
                     'phone_number':            'Phone Number',
                     'email':                   'Email Address',
+                    // Representation Preferences & Compatibility
+                    // Keys use element IDs (compat_* prefix) because resolveBuyerFieldKey()
+                    // falls back to field.id for wire:ignore Select2 selects (no wire:model attr).
+                    'compat_communication_style':           'Communication Style',
+                    'compat_negotiation_style':             'Negotiation Style',
+                    'compat_primary_transaction_goal':      'Primary Transaction Goal',
+                    'compat_preferred_agent_working_style': 'Preferred Agent Working Style',
+                    'representation_priorities':            'Representation Priorities', // ID matches element id="representation_priorities"
                 };
 
                 // Returns the canonical property key for a field: wire:model value first,
@@ -2769,6 +2937,24 @@
                                     var _ofEl = document.getElementById('offered_financing');
                                     var _ofTab = _ofEl ? _ofEl.closest('.tab-pane') : null;
                                     items.push({ field: _ofEl || document.body, tab: _ofTab, fieldName: BUYER_FIELD_LABELS['offered_financing'] || 'Offered Financing', key: 'offered_financing' });
+                                }
+
+                                // representation_priorities: required multi-select in compatibility tab
+                                var _compatBgi = _comp.get('compatibility_preferences');
+                                var _rpValBgi2 = (_compatBgi && _compatBgi.buyer_specific) ? _compatBgi.buyer_specific.representation_priorities : [];
+                                if (typeof _rpValBgi2 === 'string') { try { _rpValBgi2 = JSON.parse(_rpValBgi2); } catch(exRp2) {} }
+                                var _rpEmptyBgi = !_rpValBgi2 || (Array.isArray(_rpValBgi2) && _rpValBgi2.length === 0) || _rpValBgi2 === '[]';
+                                if (_rpEmptyBgi) {
+                                    var $rpDomBgi = $('#representation_priorities');
+                                    if ($rpDomBgi.length) {
+                                        var _rpDomValBgi = $rpDomBgi.val();
+                                        if (_rpDomValBgi && Array.isArray(_rpDomValBgi) && _rpDomValBgi.length > 0) _rpEmptyBgi = false;
+                                    }
+                                }
+                                if (_rpEmptyBgi && !items.some(function(i) { return i.key === 'representation_priorities'; })) {
+                                    var _rpElBgi = document.getElementById('representation_priorities');
+                                    var _rpTabBgi = _rpElBgi ? _rpElBgi.closest('.tab-pane') : null;
+                                    items.push({ field: _rpElBgi || document.body, tab: _rpTabBgi, fieldName: BUYER_FIELD_LABELS['representation_priorities'] || 'Representation Priorities', key: 'representation_priorities' });
                                 }
                             }
                         }

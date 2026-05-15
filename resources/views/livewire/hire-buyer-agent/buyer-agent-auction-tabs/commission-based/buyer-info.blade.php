@@ -69,6 +69,47 @@
 
 @if ($service_type === 'full_service')
 
+    <!-- Representation Preferences & Compatibility Review Summary -->
+    @php
+        $bs = $compatibility_preferences['buyer_specific'] ?? [];
+        $rpArr = isset($bs['representation_priorities']) && is_array($bs['representation_priorities']) ? $bs['representation_priorities'] : [];
+        $compatReviewFields = [
+            'Primary Transaction Goal'       => $bs['primary_transaction_goal'] ?? '',
+            'Risk Tolerance'                 => $bs['risk_tolerance'] ?? '',
+            'Decision-Making Style'          => $bs['decision_making_style'] ?? '',
+            'Timeline Flexibility'           => $bs['timeline_flexibility'] ?? '',
+            'Communication Style'            => $bs['communication_style'] ?? '',
+            'Preferred Contact Method'       => $bs['preferred_contact_method'] ?? '',
+            'Meeting / Showing Preference'   => $bs['communication_frequency'] ?? '',
+            'Availability / Best Times'      => $bs['availability_windows'] ?? '',
+            'Negotiation Style'              => $bs['negotiation_style'] ?? '',
+            'Preferred Agent Working Style'  => $bs['preferred_agent_working_style'] ?? '',
+            'Expected Level of Support'      => $bs['support_level'] ?? '',
+            'Non-Negotiable / Deal Breakers' => $bs['deal_breakers'] ?? '',
+            'Additional Notes'               => $bs['additional_compatibility_notes'] ?? '',
+        ];
+        $compatHasValues = !empty($rpArr) || collect($compatReviewFields)->filter()->isNotEmpty();
+    @endphp
+    @if ($compatHasValues)
+    <div class="card mb-4">
+        <div class="card-header fw-bold bg-light">
+            <i class="fa-solid fa-handshake me-2"></i>Representation Preferences &amp; Compatibility
+        </div>
+        <div class="card-body small">
+            <ul class="list-unstyled mb-0">
+                @if (!empty($rpArr))
+                    <li class="mb-1"><strong>Representation Priorities:</strong> {{ implode(', ', $rpArr) }}</li>
+                @endif
+                @foreach ($compatReviewFields as $label => $val)
+                    @if ($val)
+                        <li class="mb-1"><strong>{{ $label }}:</strong> {{ $val }}</li>
+                    @endif
+                @endforeach
+            </ul>
+        </div>
+    </div>
+    @endif
+
     <!-- Photo Upload -->
     <div class="form-group">
         <label class="fw-bold">

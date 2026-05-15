@@ -1,0 +1,127 @@
+This is very close now and most of the major architectural concerns were handled correctly. The Buyer implementation is substantially cleaner than the earlier Tenant version. The Full Service scoping, required-field ordering, correction-mode integration, and compatibility tab insertion are all much improved. :contentReference[oaicite:0]{index=0}
+
+However, there are still several important issues that must be cleaned up before approval.
+
+1. CRITICAL — compatibility_preferences saveMeta is NOT scoped to full_service
+Current:
+$auction->saveMeta('compatibility_preferences', json_encode($this->compatibility_preferences));
+
+This executes unconditionally.
+
+The task required:
+Buyer + full_service only.
+
+Please scope compatibility_preferences persistence to:
+$user_type === 'buyer' && $service_type === 'full_service'
+
+Otherwise:
+- limited_service records unnecessarily store compatibility payloads
+- future regressions become more likely
+- stale compatibility data may persist between mode switches
+
+2. buyer-info.blade.php review section placement still needs QA
+The compatibility review block looks structurally cleaner now.
+
+However, verify:
+- inserted INSIDE intended review structure
+- no spacing/card duplication
+- no typography regressions
+- mobile layout still clean
+- existing Buyer Information formatting unchanged outside compatibility block
+
+3. Select2 duplicate-init QA still required
+You improved cleanup substantially using:
+.off('change.compatSync')
+.off('change.rpSync')
+
+Good.
+
+But full QA is still required for:
+- repeated Livewire renders
+- repeated tab switching
+- draft reloads
+- correction-mode jumps
+- Save Edit reloads
+
+Verify:
+- no duplicate Select2 containers
+- no stale dropdown DOM
+- no flashing
+- no placeholder corruption
+- no duplicate dropdown wrappers
+- no console warnings/errors
+- no memory leak behavior
+
+4. Livewire.hook('message.processed') duplication audit required
+You now initialize compatibility syncing inside:
+- initializeFullService()
+- message.processed hooks
+- draftLoaded rehydration
+- initCompatibilitySelects()
+
+Please verify:
+- hooks are not stacking
+- handlers are not duplicating after repeated renders
+- compatibility fields do not progressively slow down after many tab changes
+
+5. Save Draft bypass QA still required
+Need explicit confirmation:
+- Save Draft does NOT trigger compatibility required validation
+- Save Draft does NOT redirect correction-mode
+- Save Draft does NOT mark compatibility fields invalid
+- Save Draft still works with all compatibility fields empty
+
+This requires actual execution-path QA confirmation.
+
+6. Hardcoded index documentation is much better — but verify correction-mode thoroughly
+Good improvement with comments like:
+“compat tab occupies 5 shifts this +1”
+
+Now verify:
+- correction-mode lands on correct tab
+- invalid field scrolling lands correctly
+- mobile wizard still works
+- Submit/Finish logic still works
+- tab order survives future role switching
+
+7. Representation Priorities field consistency looks better, but final audit still recommended
+You corrected much of the mismatch by documenting:
+“Keys use element IDs...”
+
+Good.
+
+Still verify:
+- BUYER_FIELD_LABELS
+- resolveBuyerFieldKey()
+- correction-mode invalid detection
+- required-field highlighting
+- scroll-to-invalid logic
+
+all consistently resolve:
+representation_priorities
+
+without fallback mismatches.
+
+8. Placeholder normalization is MUCH better, but one category still needs cleanup
+Most placeholders now match platform standards correctly.
+
+However, review all helper labels like:
+“Please describe your goal”
+“Please describe your additional priorities”
+
+Platform-wide preference is still:
+“Enter [Field Title] (e.g., Example)”
+
+This is minor now, but perform one final consistency sweep.
+
+9. Final QA confirmation still required
+Please confirm:
+- exact changed files
+- no Offer Listing files changed
+- no Seller/Landlord/Tenant regressions
+- no initializeLimitedService() regressions
+- no Flat Fee regressions
+- older drafts without compatibility_preferences still load/save cleanly
+- no AlpineJS console errors
+- no Livewire property warnings
+- no Select2 initialization warnings
