@@ -1447,18 +1447,18 @@ $tenantPays = [
                 // First check the main garage/parking spaces selection
                 if (garageSelect) {
                     if (garageSelect.value === "Yes") {
-                        optionsWrapper.classList.remove('d-none'); // Show options dropdown
+                        if (optionsWrapper) optionsWrapper.classList.remove('d-none');
                     } else {
-                        optionsWrapper.classList.add('d-none'); // Hide options dropdown
-                        otherInputWrapper.classList.add('d-none'); // Also hide other input
+                        if (optionsWrapper) optionsWrapper.classList.add('d-none');
+                        if (otherInputWrapper) otherInputWrapper.classList.add('d-none');
                     }
                 }
 
                 // Then check if "Other" is selected in the options dropdown
-                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
-                    otherInputWrapper.classList.remove('d-none'); // Show input field
+                if (garageSelect && garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
+                    if (otherInputWrapper) otherInputWrapper.classList.remove('d-none');
                 } else {
-                    otherInputWrapper.classList.add('d-none'); // Hide input field
+                    if (otherInputWrapper) otherInputWrapper.classList.add('d-none');
                 }
             }
 
