@@ -1791,6 +1791,9 @@ class BuyerAgentAuction extends Component
                 'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
             ]);
             
+            // Dispatch browser event to sync compat Select2 values after draft loads
+            $this->dispatchBrowserEvent('draftLoaded');
+
             // Clear the loading flag after all data is loaded
             // This ensures updated* hooks will function normally after initial load
             $this->isLoadingData = false;

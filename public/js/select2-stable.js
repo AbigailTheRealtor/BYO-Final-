@@ -70,11 +70,11 @@
 
     function initUninitialized(container) {
         var $root = container ? $(container) : $(document);
-        $root.find('select.select2-multiple, select.select2').each(function() {
+        $root.find('select.select2-multiple, select.select2, select[data-select2="true"]').each(function() {
             var $el = $(this);
             if ($el.hasClass('select2-hidden-accessible')) return;
             if ($el.closest('[style*="display: none"], [style*="display:none"], .d-none').length && !container) return;
-            $el.select2({ placeholder: $el.data('placeholder') || 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+            window.initFullServiceSelect2Multiple($el);
             var wireModel = $el.attr('wire:model');
             if (wireModel && !$el.attr('wire:model.defer') && !$el.attr('wire:model.lazy')) {
                 $el.off('change.s2stable').on('change.s2stable', function() {
@@ -117,6 +117,10 @@
     window.initFullServiceSelect2Multiple = function($el) {
         if (!$el || !$el.length) return;
         if ($el.hasClass('select2-hidden-accessible')) return;
+        if ($el.data('select2')) {
+            try { $el.select2('destroy'); } catch(e) {}
+            $el.removeData('select2');
+        }
         var placeholder = $el.data('placeholder') || 'Select';
         $el.select2({ placeholder: placeholder, allowClear: true, width: '100%', closeOnSelect: false });
     };

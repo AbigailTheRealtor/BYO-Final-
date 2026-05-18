@@ -73,8 +73,15 @@
     @php
         $bs = $compatibility_preferences['buyer_specific'] ?? [];
         $rpArr = isset($bs['representation_priorities']) && is_array($bs['representation_priorities']) ? $bs['representation_priorities'] : [];
+        // Resolve "Other" companion text — never display literal "Other" in summary
+        $ptgVal  = ($bs['primary_transaction_goal'] ?? '') === 'Other'
+            ? (($bs['primary_transaction_goal_other'] ?? '') ?: 'Other')
+            : ($bs['primary_transaction_goal'] ?? '');
+        $pawsVal = ($bs['preferred_agent_working_style'] ?? '') === 'Other'
+            ? (($bs['preferred_agent_working_style_other'] ?? '') ?: 'Other')
+            : ($bs['preferred_agent_working_style'] ?? '');
         $compatReviewFields = [
-            'Primary Transaction Goal'       => $bs['primary_transaction_goal'] ?? '',
+            'Primary Transaction Goal'       => $ptgVal,
             'Risk Tolerance'                 => $bs['risk_tolerance'] ?? '',
             'Decision-Making Style'          => $bs['decision_making_style'] ?? '',
             'Timeline Flexibility'           => $bs['timeline_flexibility'] ?? '',
@@ -83,7 +90,7 @@
             'Meeting / Showing Preference'   => $bs['communication_frequency'] ?? '',
             'Availability / Best Times'      => $bs['availability_windows'] ?? '',
             'Negotiation Style'              => $bs['negotiation_style'] ?? '',
-            'Preferred Agent Working Style'  => $bs['preferred_agent_working_style'] ?? '',
+            'Preferred Agent Working Style'  => $pawsVal,
             'Expected Level of Support'      => $bs['support_level'] ?? '',
             'Non-Negotiable / Deal Breakers' => $bs['deal_breakers'] ?? '',
             'Additional Notes'               => $bs['additional_compatibility_notes'] ?? '',

@@ -1309,7 +1309,6 @@
                     'photo_enhancements': data.photo_enhancements || [],
                     'property_items': data.property_items || [],
                     'tenant_require': data.tenant_require || [],
-                    'representation_priorities': data.representation_priorities || [],
                 };
                 Object.keys(select2Fields).forEach(function(fieldName) {
                     var values = select2Fields[fieldName];
@@ -1317,8 +1316,6 @@
                         var selectEl;
                         if (fieldName === 'desired_lease_length') {
                             selectEl = document.querySelector('.lease_term_options');
-                        } else if (fieldName === 'representation_priorities') {
-                            selectEl = document.getElementById('representation_priorities');
                         } else {
                             selectEl = document.querySelector('select[wire\\:model="' + fieldName + '"]');
                         }
@@ -1328,6 +1325,19 @@
                         }
                     }
                 });
+                // Rehydrate representation_priorities from nested Livewire state
+                try {
+                    var $rpDl = $('#representation_priorities');
+                    if ($rpDl.length && $rpDl.hasClass('select2-hidden-accessible')) {
+                        var _compatDl = @this.get('compatibility_preferences');
+                        var _rpDlVals = (_compatDl && _compatDl.landlord_specific && _compatDl.landlord_specific.representation_priorities)
+                            ? _compatDl.landlord_specific.representation_priorities : [];
+                        if (_rpDlVals.length > 0) {
+                            $rpDl.val(_rpDlVals).trigger('change.select2');
+                            console.log('[DraftLoaded] Rehydrated representation_priorities:', _rpDlVals);
+                        }
+                    }
+                } catch(eRpDl) { console.log('[DraftLoaded] rp rehydration error', eRpDl); }
                 syncSelectValues();
                 if (typeof window.updateSaveButton === 'function') {
                     window.updateSaveButton();
@@ -1905,6 +1915,16 @@
 
             Livewire.hook('message.processed', () => {
                 initLeaseTermSelect2();
+                // Re-initialize representation_priorities Select2 after any Livewire re-render
+                if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#representation_priorities'));
+                    $('#representation_priorities')
+                        .off('change.rpSync')
+                        .on('change.rpSync', function() {
+                            var selectedValues = $(this).val() || [];
+                            @this.set('compatibility_preferences.landlord_specific.representation_priorities', selectedValues);
+                        });
+                }
             });
 
 

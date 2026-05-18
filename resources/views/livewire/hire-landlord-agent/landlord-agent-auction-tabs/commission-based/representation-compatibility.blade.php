@@ -261,7 +261,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover" wire:ignore>
+    <div class="input-cover" wire:ignore wire:key="compat-rp-landlord-s2">
         @php
             $rpSelected = $compatibility_preferences['landlord_specific']['representation_priorities'] ?? [];
             $rpOptions = [

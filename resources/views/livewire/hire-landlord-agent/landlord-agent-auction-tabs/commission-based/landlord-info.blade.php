@@ -67,9 +67,7 @@
         $compatLS = $compatibility_preferences['landlord_specific'] ?? [];
         $compatLabels = [
             'primary_leasing_goal'            => 'Primary Leasing Goal',
-            'primary_leasing_goal_other'      => 'Primary Leasing Goal (Other)',
             'tenant_type_preference'          => 'Preferred Tenant Type',
-            'tenant_type_preference_other'    => 'Preferred Tenant Type (Other)',
             'lease_duration_preference'       => 'Preferred Lease Duration',
             'property_management_involvement' => 'Level of Management Involvement',
             'communication_style'             => 'Preferred Communication Style',
@@ -104,6 +102,12 @@
                                     <li>{{ $priority }}</li>
                                 @endforeach
                             </ul>
+                        @elseif ($key === 'primary_leasing_goal' && $val === 'Other')
+                            @php $otherText = $compatLS['primary_leasing_goal_other'] ?? null; @endphp
+                            <span>{{ !empty($otherText) ? $otherText : 'Other' }}</span>
+                        @elseif ($key === 'tenant_type_preference' && $val === 'Other')
+                            @php $otherText = $compatLS['tenant_type_preference_other'] ?? null; @endphp
+                            <span>{{ !empty($otherText) ? $otherText : 'Other' }}</span>
                         @else
                             <span>{{ is_array($val) ? implode(', ', $val) : $val }}</span>
                         @endif
