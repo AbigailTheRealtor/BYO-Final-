@@ -258,6 +258,11 @@ class TenantAgentAuctionEdit extends Component
             'decision_making_style'            => '',
             'concerns_or_barriers'             => '',
             'additional_compatibility_notes'   => '',
+            'most_important_agent_traits'               => [],
+            'other_most_important_agent_traits'         => '',
+            'desired_level_of_agent_involvement'        => '',
+            'other_desired_level_of_agent_involvement'  => '',
+            'other_timeline_urgency'                    => '',
         ],
     ];
 
@@ -2770,6 +2775,11 @@ class TenantAgentAuctionEdit extends Component
                 'decision_making_style'            => '',
                 'concerns_or_barriers'             => '',
                 'additional_compatibility_notes'   => '',
+                'most_important_agent_traits'               => [],
+                'other_most_important_agent_traits'         => '',
+                'desired_level_of_agent_involvement'        => '',
+                'other_desired_level_of_agent_involvement'  => '',
+                'other_timeline_urgency'                    => '',
             ], $loadedCompat['tenant_specific'] ?? []),
         ];
 

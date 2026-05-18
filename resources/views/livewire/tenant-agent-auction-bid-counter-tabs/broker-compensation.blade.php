@@ -75,7 +75,7 @@
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="lease_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5,000)"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
                     data-error-id="lease_fee_flat_error" oninput="formatWithCommas(this)" onblur="formatWithCommas(this)"
                     onpaste="handlePaste(event)">
                 <span class="error mt-2" id="lease_fee_flat_error"></span>
@@ -118,7 +118,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="lease_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,000)"
+                            placeholder="Enter flat fee amount (e.g., 1000)"
                             oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
@@ -143,7 +143,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="lease_fee_flat_combo_net" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,500)"
+                            placeholder="Enter flat fee amount (e.g., 1500)"
                             oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
@@ -158,7 +158,7 @@
             </div>
         @elseif($lease_fee_type === 'other')
             <input type="text" wire:model="lease_fee_other" class="form-control mt-2"
-                placeholder="Enter the total lease fee amount and payment structure for the Tenant’s Broker (e.g., $1,500 upfront, $2,000 at lease execution)">
+                placeholder="Enter the total lease fee amount and payment structure for the Tenant’s Broker (e.g., $1500 upfront, $2000 at lease execution)">
         @endif
     </div>
     @error('lease_fee_*')
@@ -294,7 +294,7 @@
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5,000)"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
                     data-error-id="purchase_fee_flat_error" oninput="formatWithCommas(this)"
                     onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                 <span class="error mt-2" id="purchase_fee_flat_error"></span>
@@ -320,14 +320,14 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3,000)"
+                            placeholder="Enter flat fee amount (e.g., 3000)"
                             oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
             </div>
         @elseif($purchase_fee_type === 'other')
             <input type="text" wire:model.lazy="purchase_fee_other" class="form-control mt-2"
-                placeholder="Enter purchase fee amount (e.g., $1,000 upfront + 2% at closing)">
+                placeholder="Enter purchase fee amount (e.g., $1000 upfront + 2% at closing)">
         @endif
     </div>
     @error('purchase_fee_*')
@@ -467,7 +467,7 @@
                 <div class="input-group">
                     <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1,000)"
+                    placeholder="Enter early termination fee amount (e.g., 1000)"
                     oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')

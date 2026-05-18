@@ -22,8 +22,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-primary-rental-goal-s2">
-        <select id="compat_primary_rental_goal" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-primary-rental-goal-s2">
+        <select id="compat_primary_rental_goal" class="form-control has-icon"
+            data-icon="fa-solid fa-bullseye"
             data-selected="{{ $compatibility_preferences['tenant_specific']['primary_rental_goal'] ?? '' }}"
             required>
             <option value="">Select</option>
@@ -45,7 +46,6 @@
 <div id="compat-other-primary-rental-goal-wrapper"
     style="display: {{ (($compatibility_preferences['tenant_specific']['primary_rental_goal'] ?? '') === 'Other') ? 'block' : 'none' }};">
     <div class="form-group">
-        <label class="fw-bold">Please specify your primary rental goal:</label>
         <div class="input-cover">
             <input type="text"
                 wire:model.defer="compatibility_preferences.tenant_specific.other_primary_rental_goal"
@@ -66,8 +66,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-representation-priorities-s2">
-        <select id="compat_representation_priorities" class="form-control" multiple
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-representation-priorities-s2">
+        <select id="compat_representation_priorities" class="form-control has-icon" multiple
+            data-icon="fa-solid fa-list-check"
             data-selected="{{ json_encode($compatibility_preferences['tenant_specific']['representation_priorities'] ?? []) }}"
             required>
             <option value="Neighborhood / location">Neighborhood / location</option>
@@ -86,17 +87,16 @@
     @enderror
 </div>
 
-{{-- 3. Other Representation Priorities (companion input) --}}
+{{-- Companion "Other" input for representation_priorities --}}
 <div id="compat-other-representation-priorities-wrapper"
     style="display: {{ in_array('Other', $compatibility_preferences['tenant_specific']['representation_priorities'] ?? []) ? 'block' : 'none' }};">
     <div class="form-group">
-        <label class="fw-bold">Please specify other representation priority:</label>
         <div class="input-cover">
             <input type="text"
                 wire:model.defer="compatibility_preferences.tenant_specific.other_representation_priorities"
                 class="form-control has-icon"
                 data-icon="fa-solid fa-pen"
-                placeholder="Enter other representation priority (e.g., Proximity to public transit)"
+                placeholder="Enter representation priority (e.g., Proximity to public transit)"
                 maxlength="500">
         </div>
     </div>
@@ -111,20 +111,40 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-timeline-urgency-s2">
-        <select id="compat_timeline_urgency" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-timeline-urgency-s2">
+        <select id="compat_timeline_urgency" class="form-control has-icon"
+            data-icon="fa-solid fa-clock"
             data-selected="{{ $compatibility_preferences['tenant_specific']['timeline_urgency'] ?? '' }}">
             <option value="">Select</option>
-            <option value="Immediately (within 2 weeks)">Immediately (within 2 weeks)</option>
-            <option value="1–3 months">1–3 months</option>
-            <option value="3–6 months">3–6 months</option>
-            <option value="6+ months">6+ months</option>
-            <option value="Flexible">Flexible</option>
+            <option value="Immediate (Within 2 Weeks)">Immediate (Within 2 Weeks)</option>
+            <option value="Within 30 Days">Within 30 Days</option>
+            <option value="1–2 Months">1–2 Months</option>
+            <option value="2–3 Months">2–3 Months</option>
+            <option value="3–6 Months">3–6 Months</option>
+            <option value="6+ Months">6+ Months</option>
+            <option value="Exploring Options Only">Exploring Options Only</option>
+            <option value="Other">Other</option>
         </select>
     </div>
     @error('compatibility_preferences.tenant_specific.timeline_urgency')
         <div class="text-danger small mt-1">{{ $message }}</div>
     @enderror
+</div>
+
+{{-- Companion "Other" input for timeline_urgency --}}
+<div id="compat-other-timeline-urgency-wrapper"
+    style="display: {{ (($compatibility_preferences['tenant_specific']['timeline_urgency'] ?? '') === 'Other') ? 'block' : 'none' }};">
+    <div class="form-group">
+        <label class="form-label mt-1 mb-1" style="font-size: 13px; font-weight: 600;">Other Timeline Details:</label>
+        <div class="input-cover">
+            <input type="text"
+                wire:model.defer="compatibility_preferences.tenant_specific.other_timeline_urgency"
+                class="form-control has-icon"
+                data-icon="fa-solid fa-pen"
+                placeholder="Enter move-in timeline details (e.g., Need to be settled before the school year starts)"
+                maxlength="500">
+        </div>
+    </div>
 </div>
 
 {{-- 5. Budget Flexibility (optional, single-select) --}}
@@ -136,8 +156,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-budget-flexibility-s2">
-        <select id="compat_budget_flexibility" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-budget-flexibility-s2">
+        <select id="compat_budget_flexibility" class="form-control has-icon"
+            data-icon="fa-solid fa-wallet"
             data-selected="{{ $compatibility_preferences['tenant_specific']['budget_flexibility'] ?? '' }}">
             <option value="">Select</option>
             <option value="Fixed – no flexibility">Fixed – no flexibility</option>
@@ -163,8 +184,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-communication-style-s2">
-        <select id="compat_communication_style" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-communication-style-s2">
+        <select id="compat_communication_style" class="form-control has-icon"
+            data-icon="fa-solid fa-comments"
             data-selected="{{ $compatibility_preferences['tenant_specific']['communication_style'] ?? '' }}"
             required>
             <option value="">Select</option>
@@ -181,11 +203,10 @@
     @enderror
 </div>
 
-{{-- 7. Other Communication Style (companion input) --}}
+{{-- Companion "Other" input for communication_style --}}
 <div id="compat-other-communication-style-wrapper"
     style="display: {{ (($compatibility_preferences['tenant_specific']['communication_style'] ?? '') === 'Other') ? 'block' : 'none' }};">
     <div class="form-group">
-        <label class="fw-bold">Please specify other communication style:</label>
         <div class="input-cover">
             <input type="text"
                 wire:model.defer="compatibility_preferences.tenant_specific.other_communication_style"
@@ -206,8 +227,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-contact-frequency-s2">
-        <select id="compat_contact_frequency" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-contact-frequency-s2">
+        <select id="compat_contact_frequency" class="form-control has-icon"
+            data-icon="fa-solid fa-calendar-check"
             data-selected="{{ $compatibility_preferences['tenant_specific']['contact_frequency'] ?? '' }}">
             <option value="">Select</option>
             <option value="Daily">Daily</option>
@@ -231,8 +253,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-preferred-contact-method-s2">
-        <select id="compat_preferred_contact_method" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-preferred-contact-method-s2">
+        <select id="compat_preferred_contact_method" class="form-control has-icon"
+            data-icon="fa-solid fa-sun"
             data-selected="{{ $compatibility_preferences['tenant_specific']['preferred_contact_method'] ?? '' }}">
             <option value="">Select</option>
             <option value="Morning">Morning</option>
@@ -255,8 +278,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-preferred-agent-working-style-s2">
-        <select id="compat_preferred_agent_working_style" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-preferred-agent-working-style-s2">
+        <select id="compat_preferred_agent_working_style" class="form-control has-icon"
+            data-icon="fa-solid fa-briefcase"
             data-selected="{{ $compatibility_preferences['tenant_specific']['preferred_agent_working_style'] ?? '' }}"
             required>
             <option value="">Select</option>
@@ -271,6 +295,94 @@
     @enderror
 </div>
 
+{{-- NEW: Most Important Agent Traits (optional, multi-select) --}}
+<div class="form-group">
+    <label class="fw-bold">
+        Most Important Agent Traits:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select the qualities that matter most to you when choosing an Agent to represent your rental search.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-most-important-agent-traits-s2">
+        <select id="compat_most_important_agent_traits" class="form-control has-icon" multiple
+            data-icon="fa-solid fa-star"
+            data-selected="{{ json_encode($compatibility_preferences['tenant_specific']['most_important_agent_traits'] ?? []) }}">
+            <option value="Honesty and Transparency">Honesty and Transparency</option>
+            <option value="Strong Communication">Strong Communication</option>
+            <option value="Market Knowledge">Market Knowledge</option>
+            <option value="Negotiation Skills">Negotiation Skills</option>
+            <option value="Responsiveness">Responsiveness</option>
+            <option value="Local Expertise">Local Expertise</option>
+            <option value="Client-Focused Approach">Client-Focused Approach</option>
+            <option value="Technology-Savvy">Technology-Savvy</option>
+            <option value="Attention to Detail">Attention to Detail</option>
+            <option value="Problem-Solving Ability">Problem-Solving Ability</option>
+            <option value="Professional Network">Professional Network</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+    @error('compatibility_preferences.tenant_specific.most_important_agent_traits')
+        <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
+</div>
+
+{{-- Companion "Other" input for most_important_agent_traits --}}
+<div id="compat-other-most-important-agent-traits-wrapper"
+    style="display: {{ in_array('Other', $compatibility_preferences['tenant_specific']['most_important_agent_traits'] ?? []) ? 'block' : 'none' }};">
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text"
+                wire:model.defer="compatibility_preferences.tenant_specific.other_most_important_agent_traits"
+                class="form-control has-icon"
+                data-icon="fa-solid fa-pen"
+                placeholder="Enter agent trait (e.g., Multilingual or Specialized in commercial properties)"
+                maxlength="500">
+        </div>
+    </div>
+</div>
+
+{{-- NEW: Desired Level of Agent Involvement (optional, single-select) --}}
+<div class="form-group">
+    <label class="fw-bold">
+        Desired Level of Agent Involvement:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="How much day-to-day involvement would you like your Agent to have in your property search and rental process?">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-desired-level-of-agent-involvement-s2">
+        <select id="compat_desired_level_of_agent_involvement" class="form-control has-icon"
+            data-icon="fa-solid fa-sliders"
+            data-selected="{{ $compatibility_preferences['tenant_specific']['desired_level_of_agent_involvement'] ?? '' }}">
+            <option value="">Select</option>
+            <option value="Fully Delegated – Agent manages everything, minimal input needed">Fully Delegated – Agent manages everything, minimal input needed</option>
+            <option value="Mostly Delegated – Agent leads, I approve key decisions">Mostly Delegated – Agent leads, I approve key decisions</option>
+            <option value="Collaborative – We work together equally throughout">Collaborative – We work together equally throughout</option>
+            <option value="Mostly Hands-On – I lead, Agent supports and advises">Mostly Hands-On – I lead, Agent supports and advises</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+    @error('compatibility_preferences.tenant_specific.desired_level_of_agent_involvement')
+        <div class="text-danger small mt-1">{{ $message }}</div>
+    @enderror
+</div>
+
+{{-- Companion "Other" input for desired_level_of_agent_involvement --}}
+<div id="compat-other-desired-level-of-agent-involvement-wrapper"
+    style="display: {{ (($compatibility_preferences['tenant_specific']['desired_level_of_agent_involvement'] ?? '') === 'Other') ? 'block' : 'none' }};">
+    <div class="form-group">
+        <div class="input-cover">
+            <input type="text"
+                wire:model.defer="compatibility_preferences.tenant_specific.other_desired_level_of_agent_involvement"
+                class="form-control has-icon"
+                data-icon="fa-solid fa-pen"
+                placeholder="Enter desired involvement level (e.g., Available only for final negotiations)"
+                maxlength="500">
+        </div>
+    </div>
+</div>
+
 {{-- ─── Section 3: Negotiation & Representation ─────────────────────────────── --}}
 <h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Negotiation &amp; Representation</h5>
 
@@ -283,8 +395,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-negotiation-style-s2">
-        <select id="compat_negotiation_style" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-negotiation-style-s2">
+        <select id="compat_negotiation_style" class="form-control has-icon"
+            data-icon="fa-solid fa-handshake"
             data-selected="{{ $compatibility_preferences['tenant_specific']['negotiation_style'] ?? '' }}"
             required>
             <option value="">Select</option>
@@ -308,8 +421,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div wire:ignore wire:key="compat-decision-making-style-s2">
-        <select id="compat_decision_making_style" class="form-control"
+    <div class="input-cover mt-2" wire:ignore wire:key="compat-decision-making-style-s2">
+        <select id="compat_decision_making_style" class="form-control has-icon"
+            data-icon="fa-solid fa-brain"
             data-selected="{{ $compatibility_preferences['tenant_specific']['decision_making_style'] ?? '' }}">
             <option value="">Select</option>
             <option value="Quick – ready to commit fast">Quick – ready to commit fast</option>
@@ -335,7 +449,8 @@
     <div class="input-cover">
         <textarea wire:model.defer="compatibility_preferences.tenant_specific.concerns_or_barriers"
             class="form-control"
-            rows="3"
+            rows="1"
+            style="resize: none; overflow: hidden; min-height: 38px;"
             placeholder="e.g., Previous rental disputes, credit concerns, tight timeline, specific landlord requirements..."
             maxlength="2000"></textarea>
     </div>
@@ -356,7 +471,8 @@
     <div class="input-cover">
         <textarea wire:model.defer="compatibility_preferences.tenant_specific.additional_compatibility_notes"
             class="form-control"
-            rows="3"
+            rows="1"
+            style="resize: none; overflow: hidden; min-height: 38px;"
             placeholder="e.g., I prefer an Agent with commercial leasing experience, or I have a strict move-in date..."
             maxlength="2000"></textarea>
     </div>

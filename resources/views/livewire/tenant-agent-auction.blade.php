@@ -2124,7 +2124,8 @@ $lease_types = [
             { sel: '.lease_for', field: 'lease_for', multi: true },
             { sel: '#non_negotiable_amenities', field: 'non_negotiable_amenities', multi: true },
             // Representation Preferences & Compatibility (Task #1094)
-            { sel: '#compat_representation_priorities', field: 'compatibility_preferences.tenant_specific.representation_priorities', multi: true },
+            { sel: '#compat_representation_priorities',   field: 'compatibility_preferences.tenant_specific.representation_priorities', multi: true },
+            { sel: '#compat_most_important_agent_traits', field: 'compatibility_preferences.tenant_specific.most_important_agent_traits', multi: true },
         ];
         fields.forEach(function(f) {
             var $el = $(f.sel);
@@ -2303,7 +2304,8 @@ $lease_types = [
             { id: '#garage_parking_spaces_option_buyer', prop: 'garage_parking_spaces_option_buyer' },
             { id: '#assets', prop: 'assets' },
             // Representation Preferences & Compatibility (Task #1094) — multi-select only
-            { id: '#compat_representation_priorities', prop: 'compatibility_preferences.tenant_specific.representation_priorities' },
+            { id: '#compat_representation_priorities',       prop: 'compatibility_preferences.tenant_specific.representation_priorities' },
+            { id: '#compat_most_important_agent_traits',     prop: 'compatibility_preferences.tenant_specific.most_important_agent_traits' },
         ];
 
         select2Fields.forEach(function(field) {
@@ -3713,15 +3715,16 @@ $lease_types = [
         // ─── Representation Preferences & Compatibility Select2 (Task #1094) ───────
         function initCompatibilitySelect2() {
             var compatSingles = [
-                { id: '#compat_primary_rental_goal',           prop: 'compatibility_preferences.tenant_specific.primary_rental_goal' },
-                { id: '#compat_timeline_urgency',              prop: 'compatibility_preferences.tenant_specific.timeline_urgency' },
-                { id: '#compat_budget_flexibility',            prop: 'compatibility_preferences.tenant_specific.budget_flexibility' },
-                { id: '#compat_communication_style',           prop: 'compatibility_preferences.tenant_specific.communication_style' },
-                { id: '#compat_contact_frequency',             prop: 'compatibility_preferences.tenant_specific.contact_frequency' },
-                { id: '#compat_preferred_contact_method',      prop: 'compatibility_preferences.tenant_specific.preferred_contact_method' },
-                { id: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.tenant_specific.preferred_agent_working_style' },
-                { id: '#compat_negotiation_style',             prop: 'compatibility_preferences.tenant_specific.negotiation_style' },
-                { id: '#compat_decision_making_style',         prop: 'compatibility_preferences.tenant_specific.decision_making_style' },
+                { id: '#compat_primary_rental_goal',                    prop: 'compatibility_preferences.tenant_specific.primary_rental_goal' },
+                { id: '#compat_timeline_urgency',                       prop: 'compatibility_preferences.tenant_specific.timeline_urgency' },
+                { id: '#compat_budget_flexibility',                     prop: 'compatibility_preferences.tenant_specific.budget_flexibility' },
+                { id: '#compat_communication_style',                    prop: 'compatibility_preferences.tenant_specific.communication_style' },
+                { id: '#compat_contact_frequency',                      prop: 'compatibility_preferences.tenant_specific.contact_frequency' },
+                { id: '#compat_preferred_contact_method',               prop: 'compatibility_preferences.tenant_specific.preferred_contact_method' },
+                { id: '#compat_preferred_agent_working_style',          prop: 'compatibility_preferences.tenant_specific.preferred_agent_working_style' },
+                { id: '#compat_negotiation_style',                      prop: 'compatibility_preferences.tenant_specific.negotiation_style' },
+                { id: '#compat_decision_making_style',                  prop: 'compatibility_preferences.tenant_specific.decision_making_style' },
+                { id: '#compat_desired_level_of_agent_involvement',     prop: 'compatibility_preferences.tenant_specific.desired_level_of_agent_involvement' },
             ];
 
             compatSingles.forEach(function(f) {
@@ -3729,9 +3732,27 @@ $lease_types = [
                 if (!$el.length) return;
                 if (!$el.hasClass('select2-hidden-accessible')) {
                     $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                    // Only restore saved value on first initialization to prevent ghost-box re-render
+                    var saved = $el.data('selected') || '';
+                    if (saved) { $el.val(saved).trigger('change.select2'); }
+                    // Restore "Other" companion visibility on first init
+                    if (f.id === '#compat_primary_rental_goal' && saved === 'Other') {
+                        var _pgW = document.getElementById('compat-other-primary-rental-goal-wrapper');
+                        if (_pgW) _pgW.style.display = 'block';
+                    }
+                    if (f.id === '#compat_communication_style' && saved === 'Other') {
+                        var _csW = document.getElementById('compat-other-communication-style-wrapper');
+                        if (_csW) _csW.style.display = 'block';
+                    }
+                    if (f.id === '#compat_timeline_urgency' && saved === 'Other') {
+                        var _tuW = document.getElementById('compat-other-timeline-urgency-wrapper');
+                        if (_tuW) _tuW.style.display = 'block';
+                    }
+                    if (f.id === '#compat_desired_level_of_agent_involvement' && saved === 'Other') {
+                        var _dlW = document.getElementById('compat-other-desired-level-of-agent-involvement-wrapper');
+                        if (_dlW) _dlW.style.display = 'block';
+                    }
                 }
-                var saved = $el.data('selected') || '';
-                if (saved) { $el.val(saved).trigger('change.select2'); }
                 $el.off('change.compatSync').on('change.compatSync', function() {
                     var val = $(this).val() || '';
                     safeLivewireSet(f.prop, val);
@@ -3740,8 +3761,16 @@ $lease_types = [
                         if (pgWrapper) pgWrapper.style.display = (val === 'Other') ? 'block' : 'none';
                     }
                     if (f.id === '#compat_communication_style') {
-                        var wrapper = document.getElementById('compat-other-communication-style-wrapper');
-                        if (wrapper) wrapper.style.display = (val === 'Other') ? 'block' : 'none';
+                        var csWrapper = document.getElementById('compat-other-communication-style-wrapper');
+                        if (csWrapper) csWrapper.style.display = (val === 'Other') ? 'block' : 'none';
+                    }
+                    if (f.id === '#compat_timeline_urgency') {
+                        var tuWrapper = document.getElementById('compat-other-timeline-urgency-wrapper');
+                        if (tuWrapper) tuWrapper.style.display = (val === 'Other') ? 'block' : 'none';
+                    }
+                    if (f.id === '#compat_desired_level_of_agent_involvement') {
+                        var dlWrapper = document.getElementById('compat-other-desired-level-of-agent-involvement-wrapper');
+                        if (dlWrapper) dlWrapper.style.display = (val === 'Other') ? 'block' : 'none';
                     }
                 });
             });
@@ -3751,19 +3780,40 @@ $lease_types = [
             if ($rp.length) {
                 if (!$rp.hasClass('select2-hidden-accessible')) {
                     $rp.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
-                }
-                var savedRp = [];
-                try { savedRp = JSON.parse($rp.data('selected') || '[]') || []; } catch(e) {}
-                if (savedRp.length) {
-                    $rp.val(savedRp).trigger('change.select2');
-                    var rpOther = document.getElementById('compat-other-representation-priorities-wrapper');
-                    if (rpOther) rpOther.style.display = savedRp.includes('Other') ? 'block' : 'none';
+                    var savedRp = [];
+                    try { savedRp = JSON.parse($rp.data('selected') || '[]') || []; } catch(e) {}
+                    if (savedRp.length) {
+                        $rp.val(savedRp).trigger('change.select2');
+                        var rpOther = document.getElementById('compat-other-representation-priorities-wrapper');
+                        if (rpOther) rpOther.style.display = savedRp.includes('Other') ? 'block' : 'none';
+                    }
                 }
                 $rp.off('change.compatRpSync').on('change.compatRpSync', function() {
                     var vals = $(this).val() || [];
                     safeLivewireSet('compatibility_preferences.tenant_specific.representation_priorities', vals);
                     var rpOtherW = document.getElementById('compat-other-representation-priorities-wrapper');
                     if (rpOtherW) rpOtherW.style.display = vals.includes('Other') ? 'block' : 'none';
+                });
+            }
+
+            // Multi-select: most_important_agent_traits
+            var $mat = $('#compat_most_important_agent_traits');
+            if ($mat.length) {
+                if (!$mat.hasClass('select2-hidden-accessible')) {
+                    $mat.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                    var savedMat = [];
+                    try { savedMat = JSON.parse($mat.data('selected') || '[]') || []; } catch(e) {}
+                    if (savedMat.length) {
+                        $mat.val(savedMat).trigger('change.select2');
+                        var matOther = document.getElementById('compat-other-most-important-agent-traits-wrapper');
+                        if (matOther) matOther.style.display = savedMat.includes('Other') ? 'block' : 'none';
+                    }
+                }
+                $mat.off('change.compatMatSync').on('change.compatMatSync', function() {
+                    var vals = $(this).val() || [];
+                    safeLivewireSet('compatibility_preferences.tenant_specific.most_important_agent_traits', vals);
+                    var matOtherW = document.getElementById('compat-other-most-important-agent-traits-wrapper');
+                    if (matOtherW) matOtherW.style.display = vals.includes('Other') ? 'block' : 'none';
                 });
             }
         }

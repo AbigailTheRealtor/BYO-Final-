@@ -894,6 +894,95 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
                 @endif
 
                 @php
+                    // ── Representation Preferences & Compatibility display (Task #1128) ──────
+                    $rawCompatView = $auction->info('compatibility_preferences');
+                    $compatView    = ($rawCompatView !== null && $rawCompatView !== '')
+                        ? (json_decode($rawCompatView, true) ?? [])
+                        : [];
+                    $tsView = $compatView['tenant_specific'] ?? [];
+
+                    // Helper: resolve a single "Other" select value to its companion text.
+                    // If the stored value is "Other" and a companion string exists, the companion
+                    // text is returned instead, so the literal word "Other" never renders alone.
+                    $resolveOther = function(string $val, string $otherVal): string {
+                        if ($val === 'Other' && !empty($otherVal)) {
+                            return $otherVal;
+                        }
+                        return $val;
+                    };
+
+                    // Helper: resolve an array of values — if "Other" is in the list,
+                    // replace it with the companion text; filter empties.
+                    $resolveOtherArray = function(array $vals, string $otherVal): array {
+                        return array_values(array_filter(array_map(function($v) use ($otherVal) {
+                            return ($v === 'Other' && !empty($otherVal)) ? $otherVal : $v;
+                        }, $vals)));
+                    };
+
+                    // Build resolved display rows. Only include rows with a non-empty value.
+                    $compatRows = [];
+                    $addRow = function(string $label, $raw, string $otherVal = '') use (&$compatRows, $resolveOther, $resolveOtherArray) {
+                        if (empty($raw) || $raw === '' || $raw === [] || $raw === '[]') return;
+                        if (is_array($raw)) {
+                            $display = implode(', ', $resolveOtherArray($raw, $otherVal));
+                        } else {
+                            $display = $resolveOther((string)$raw, $otherVal);
+                        }
+                        if (!empty($display)) {
+                            $compatRows[] = ['label' => $label, 'value' => $display];
+                        }
+                    };
+
+                    $addRow('Primary Rental Goal',
+                        $tsView['primary_rental_goal'] ?? '',
+                        $tsView['other_primary_rental_goal'] ?? '');
+                    $addRow('Representation Priorities',
+                        $tsView['representation_priorities'] ?? [],
+                        $tsView['other_representation_priorities'] ?? '');
+                    $addRow('Move-In Timeline Urgency',
+                        $tsView['timeline_urgency'] ?? '',
+                        $tsView['other_timeline_urgency'] ?? '');
+                    $addRow('Budget Flexibility',
+                        $tsView['budget_flexibility'] ?? '', '');
+                    $addRow('Preferred Communication Style',
+                        $tsView['communication_style'] ?? '',
+                        $tsView['other_communication_style'] ?? '');
+                    $addRow('Preferred Contact Frequency',
+                        $tsView['contact_frequency'] ?? '', '');
+                    $addRow('Preferred Contact Time of Day',
+                        $tsView['preferred_contact_method'] ?? '', '');
+                    $addRow('Preferred Agent Working Style',
+                        $tsView['preferred_agent_working_style'] ?? '', '');
+                    $addRow('Most Important Agent Traits',
+                        $tsView['most_important_agent_traits'] ?? [],
+                        $tsView['other_most_important_agent_traits'] ?? '');
+                    $addRow('Desired Level of Agent Involvement',
+                        $tsView['desired_level_of_agent_involvement'] ?? '',
+                        $tsView['other_desired_level_of_agent_involvement'] ?? '');
+                    $addRow('Negotiation Style',
+                        $tsView['negotiation_style'] ?? '', '');
+                    $addRow('Decision-Making Style',
+                        $tsView['decision_making_style'] ?? '', '');
+                    $addRow('Concerns or Barriers',
+                        $tsView['concerns_or_barriers'] ?? '', '');
+                    $addRow('Additional Compatibility Notes',
+                        $tsView['additional_compatibility_notes'] ?? '', '');
+                @endphp
+
+                @if (!empty($compatRows))
+                <hr />
+                <div class="card-header section-header">
+                    <h4 class="section-title">Representation Preferences &amp; Compatibility:</h4>
+                </div>
+                @foreach ($compatRows as $compatRow)
+                <div class="col-md-12 col-12 pt-2 fw-bold">
+                    {{ $compatRow['label'] }}:
+                    <span class="removeBold">{{ $compatRow['value'] }}</span>
+                </div>
+                @endforeach
+                @endif
+
+                @php
                     $brokerSectionHasData = (
                         !empty(@$auction->get->commission_structure) ||
                         !empty(@$auction->get->lease_fee_type) ||

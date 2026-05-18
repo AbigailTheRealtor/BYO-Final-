@@ -252,6 +252,11 @@ class TenantAgentAuction extends Component
             'decision_making_style'            => '',
             'concerns_or_barriers'             => '',
             'additional_compatibility_notes'   => '',
+            'most_important_agent_traits'               => [],
+            'other_most_important_agent_traits'         => '',
+            'desired_level_of_agent_involvement'        => '',
+            'other_desired_level_of_agent_involvement'  => '',
+            'other_timeline_urgency'                    => '',
         ],
     ];
 
@@ -3691,11 +3696,16 @@ class TenantAgentAuction extends Component
                     'other_communication_style'        => '',
                     'contact_frequency'                => '',
                     'preferred_contact_method'         => '',
-                    'preferred_agent_working_style'    => '',
-                    'negotiation_style'                => '',
-                    'decision_making_style'            => '',
-                    'concerns_or_barriers'             => '',
-                    'additional_compatibility_notes'   => '',
+                    'preferred_agent_working_style'             => '',
+                    'negotiation_style'                         => '',
+                    'decision_making_style'                     => '',
+                    'concerns_or_barriers'                      => '',
+                    'additional_compatibility_notes'            => '',
+                    'most_important_agent_traits'               => [],
+                    'other_most_important_agent_traits'         => '',
+                    'desired_level_of_agent_involvement'        => '',
+                    'other_desired_level_of_agent_involvement'  => '',
+                    'other_timeline_urgency'                    => '',
                 ], $loadedCompat['tenant_specific'] ?? []),
             ];
 
@@ -3768,6 +3778,11 @@ class TenantAgentAuction extends Component
             $rules['compatibility_preferences.tenant_specific.decision_making_style']           = 'nullable|string';
             $rules['compatibility_preferences.tenant_specific.concerns_or_barriers']            = 'nullable|string';
             $rules['compatibility_preferences.tenant_specific.additional_compatibility_notes']  = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.most_important_agent_traits']               = 'nullable|array';
+            $rules['compatibility_preferences.tenant_specific.other_most_important_agent_traits']         = 'nullable|string|max:500';
+            $rules['compatibility_preferences.tenant_specific.desired_level_of_agent_involvement']        = 'nullable|string';
+            $rules['compatibility_preferences.tenant_specific.other_desired_level_of_agent_involvement']  = 'nullable|string|max:500';
+            $rules['compatibility_preferences.tenant_specific.other_timeline_urgency']                    = 'nullable|string|max:500';
 
             // Tab 3 – Tenant Leasing Terms: new optional fields
             $rules['tenant_desired_lease_length']        = 'nullable|string|max:255';
