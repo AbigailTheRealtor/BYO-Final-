@@ -135,13 +135,12 @@
 <div id="compat-other-timeline-urgency-wrapper"
     style="display: {{ (($compatibility_preferences['tenant_specific']['timeline_urgency'] ?? '') === 'Other') ? 'block' : 'none' }};">
     <div class="form-group">
-        <label class="form-label mt-1 mb-1" style="font-size: 13px; font-weight: 600;">Other Timeline Details:</label>
         <div class="input-cover">
             <input type="text"
                 wire:model.defer="compatibility_preferences.tenant_specific.other_timeline_urgency"
                 class="form-control has-icon"
                 data-icon="fa-solid fa-pen"
-                placeholder="Enter move-in timeline details (e.g., Need to be settled before the school year starts)"
+                placeholder="Enter timeline details (e.g., Waiting for home sale, Relocating after school year, Flexible after lease ends)"
                 maxlength="500">
         </div>
     </div>

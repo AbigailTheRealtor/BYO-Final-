@@ -3714,6 +3714,7 @@ $lease_types = [
 
         // ─── Representation Preferences & Compatibility Select2 (Task #1094) ───────
         function initCompatibilitySelect2() {
+            var $wire = @this;
             var compatSingles = [
                 { id: '#compat_primary_rental_goal',                    prop: 'compatibility_preferences.tenant_specific.primary_rental_goal' },
                 { id: '#compat_timeline_urgency',                       prop: 'compatibility_preferences.tenant_specific.timeline_urgency' },
@@ -3730,28 +3731,32 @@ $lease_types = [
             compatSingles.forEach(function(f) {
                 var $el = $(f.id);
                 if (!$el.length) return;
-                if (!$el.hasClass('select2-hidden-accessible')) {
-                    $el.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
-                    // Only restore saved value on first initialization to prevent ghost-box re-render
-                    var saved = $el.data('selected') || '';
-                    if (saved) { $el.val(saved).trigger('change.select2'); }
-                    // Restore "Other" companion visibility on first init
-                    if (f.id === '#compat_primary_rental_goal' && saved === 'Other') {
-                        var _pgW = document.getElementById('compat-other-primary-rental-goal-wrapper');
-                        if (_pgW) _pgW.style.display = 'block';
-                    }
-                    if (f.id === '#compat_communication_style' && saved === 'Other') {
-                        var _csW = document.getElementById('compat-other-communication-style-wrapper');
-                        if (_csW) _csW.style.display = 'block';
-                    }
-                    if (f.id === '#compat_timeline_urgency' && saved === 'Other') {
-                        var _tuW = document.getElementById('compat-other-timeline-urgency-wrapper');
-                        if (_tuW) _tuW.style.display = 'block';
-                    }
-                    if (f.id === '#compat_desired_level_of_agent_involvement' && saved === 'Other') {
-                        var _dlW = document.getElementById('compat-other-desired-level-of-agent-involvement-wrapper');
-                        if (_dlW) _dlW.style.display = 'block';
-                    }
+                var _s2Open = false;
+                try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                if (_s2Open) return;
+                if ($el.hasClass('select2-hidden-accessible')) {
+                    $el.select2('destroy');
+                }
+                $el.select2({ placeholder: 'Select', allowClear: true, width: '100%', minimumResultsForSearch: Infinity });
+                // Always read from live Livewire state so user changes are never overwritten
+                var lwVal = '';
+                try { lwVal = $wire.get(f.prop) || ''; } catch(e) {}
+                if (lwVal) { $el.val(lwVal).trigger('change.select2'); }
+                if (f.id === '#compat_primary_rental_goal' && lwVal === 'Other') {
+                    var _pgW = document.getElementById('compat-other-primary-rental-goal-wrapper');
+                    if (_pgW) _pgW.style.display = 'block';
+                }
+                if (f.id === '#compat_communication_style' && lwVal === 'Other') {
+                    var _csW = document.getElementById('compat-other-communication-style-wrapper');
+                    if (_csW) _csW.style.display = 'block';
+                }
+                if (f.id === '#compat_timeline_urgency' && lwVal === 'Other') {
+                    var _tuW = document.getElementById('compat-other-timeline-urgency-wrapper');
+                    if (_tuW) _tuW.style.display = 'block';
+                }
+                if (f.id === '#compat_desired_level_of_agent_involvement' && lwVal === 'Other') {
+                    var _dlW = document.getElementById('compat-other-desired-level-of-agent-involvement-wrapper');
+                    if (_dlW) _dlW.style.display = 'block';
                 }
                 $el.off('change.compatSync').on('change.compatSync', function() {
                     var val = $(this).val() || '';
@@ -3778,14 +3783,22 @@ $lease_types = [
             // Multi-select: representation_priorities
             var $rp = $('#compat_representation_priorities');
             if ($rp.length) {
-                if (!$rp.hasClass('select2-hidden-accessible')) {
+                var _rpOpen = false;
+                try { _rpOpen = !!($rp.data('select2') && $rp.data('select2').isOpen()); } catch(e) {}
+                if (!_rpOpen) {
+                    if ($rp.hasClass('select2-hidden-accessible')) {
+                        $rp.select2('destroy');
+                    }
                     $rp.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
-                    var savedRp = [];
-                    try { savedRp = JSON.parse($rp.data('selected') || '[]') || []; } catch(e) {}
-                    if (savedRp.length) {
-                        $rp.val(savedRp).trigger('change.select2');
+                    var lwRp = [];
+                    try {
+                        lwRp = $wire.get('compatibility_preferences.tenant_specific.representation_priorities') || [];
+                        if (typeof lwRp === 'string') { lwRp = JSON.parse(lwRp) || []; }
+                    } catch(e) {}
+                    if (lwRp.length) {
+                        $rp.val(lwRp).trigger('change.select2');
                         var rpOther = document.getElementById('compat-other-representation-priorities-wrapper');
-                        if (rpOther) rpOther.style.display = savedRp.includes('Other') ? 'block' : 'none';
+                        if (rpOther) rpOther.style.display = lwRp.includes('Other') ? 'block' : 'none';
                     }
                 }
                 $rp.off('change.compatRpSync').on('change.compatRpSync', function() {
@@ -3799,14 +3812,22 @@ $lease_types = [
             // Multi-select: most_important_agent_traits
             var $mat = $('#compat_most_important_agent_traits');
             if ($mat.length) {
-                if (!$mat.hasClass('select2-hidden-accessible')) {
+                var _matOpen = false;
+                try { _matOpen = !!($mat.data('select2') && $mat.data('select2').isOpen()); } catch(e) {}
+                if (!_matOpen) {
+                    if ($mat.hasClass('select2-hidden-accessible')) {
+                        $mat.select2('destroy');
+                    }
                     $mat.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
-                    var savedMat = [];
-                    try { savedMat = JSON.parse($mat.data('selected') || '[]') || []; } catch(e) {}
-                    if (savedMat.length) {
-                        $mat.val(savedMat).trigger('change.select2');
+                    var lwMat = [];
+                    try {
+                        lwMat = $wire.get('compatibility_preferences.tenant_specific.most_important_agent_traits') || [];
+                        if (typeof lwMat === 'string') { lwMat = JSON.parse(lwMat) || []; }
+                    } catch(e) {}
+                    if (lwMat.length) {
+                        $mat.val(lwMat).trigger('change.select2');
                         var matOther = document.getElementById('compat-other-most-important-agent-traits-wrapper');
-                        if (matOther) matOther.style.display = savedMat.includes('Other') ? 'block' : 'none';
+                        if (matOther) matOther.style.display = lwMat.includes('Other') ? 'block' : 'none';
                     }
                 }
                 $mat.off('change.compatMatSync').on('change.compatMatSync', function() {
@@ -3816,6 +3837,8 @@ $lease_types = [
                     if (matOtherW) matOtherW.style.display = vals.includes('Other') ? 'block' : 'none';
                 });
             }
+
+            addIconsToInputs();
         }
 
         if ($('#compat_primary_rental_goal').length) { initCompatibilitySelect2(); }
@@ -4199,7 +4222,15 @@ $lease_types = [
     function addIconsToInputs() {
         document.querySelectorAll('.has-icon').forEach(input => {
             const iconClass = input.getAttribute('data-icon');
-            if (iconClass && !input.previousElementSibling?.classList.contains('input-icon')) {
+            if (!iconClass) return;
+            const cover = input.closest('.input-cover');
+            if (cover) {
+                if (!cover.querySelector('.input-icon')) {
+                    const icon = document.createElement('i');
+                    icon.className = `input-icon ${iconClass}`;
+                    input.parentNode.insertBefore(icon, input);
+                }
+            } else if (!input.previousElementSibling?.classList.contains('input-icon')) {
                 const icon = document.createElement('i');
                 icon.className = `input-icon ${iconClass}`;
                 input.parentNode.insertBefore(icon, input);
