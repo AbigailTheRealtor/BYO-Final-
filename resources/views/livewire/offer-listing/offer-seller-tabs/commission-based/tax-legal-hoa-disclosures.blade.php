@@ -105,7 +105,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon seller-compact-textarea" rows="2"
+                    <textarea wire:model="additional_parcel_ids" class="form-control has-icon seller-compact-textarea" rows="1"
                         data-icon="fa-solid fa-hashtag"
                         placeholder="Enter each additional parcel ID on a new line (e.g., 12-34-56-789-0002)"></textarea>
                 </div>
@@ -121,7 +121,7 @@
                 </span>
             </label>
             <div class="input-cover">
-                <textarea wire:model="legal_description" class="form-control has-icon seller-compact-textarea" rows="2"
+                <textarea wire:model="legal_description" class="form-control has-icon seller-compact-textarea" rows="1"
                     data-icon="fa-solid fa-scroll"
                     placeholder="Enter legal description (e.g., Lot 12, Block 4, SUNSET HILLS SUBDIVISION, as recorded in Plat Book 25, Page 17)"></textarea>
             </div>
@@ -306,7 +306,7 @@
                     </span>
                 </label>
                 <div class="input-cover">
-                    <textarea wire:model="special_assessment_description" class="form-control has-icon seller-compact-textarea" rows="2"
+                    <textarea wire:model="special_assessment_description" class="form-control has-icon seller-compact-textarea" rows="1"
                         data-icon="fa-solid fa-file-invoice"
                         placeholder="Describe the special assessment (e.g., Road resurfacing assessment through 2028 at $900/year)"></textarea>
                 </div>
@@ -479,7 +479,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="2"
+                        <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="1"
                             data-icon="fa-solid fa-stamp"
                             placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
                     </div>
@@ -665,7 +665,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon seller-compact-textarea" rows="2"
+                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon seller-compact-textarea" rows="1"
                             data-icon="fa-solid fa-ban"
                             placeholder="Describe additional restrictions (e.g., No Airbnb/VRBO, owner must occupy 1 year before renting, tenant must be HOA-approved)"></textarea>
                     </div>

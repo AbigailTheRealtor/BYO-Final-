@@ -925,7 +925,7 @@
                             <!-- Listing Details Tab -->
                             <div class="tab-pane fade {{ $activeTab === 0 ? 'show active' : '' }}" id="listing-details"
                                 role="tabpanel" aria-labelledby="listing-details-tab">
-                                @include('livewire.offer-listing.offer-seller-tabs.commission-based.listing-details')
+                                @include('livewire.offer-listing.offer-seller-tabs.commission-based.listing-details', ['isEditMode' => true])
 
                             </div>
                             @if ($service_type === 'full_service')
@@ -1418,6 +1418,13 @@
             if ($('#sale_provision').length) {
                 if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
                     $('#sale_provision').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
+                }
+                var _savedProvision = @json($sale_provision ?? []);
+                if (_savedProvision && _savedProvision.length > 0) {
+                    var _curProv = $('#sale_provision').val() || [];
+                    if (!_curProv || _curProv.length === 0) {
+                        $('#sale_provision').val(_savedProvision).trigger('change.select2');
+                    }
                 }
                 applyProvisionVisibility();
             }
@@ -2001,13 +2008,21 @@
                 }
 
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
-                    if (nextTab) {
-                        new bootstrap.Tab(nextTab).show();
-                        var _wcNext = nextTab.getAttribute('wire:click') || '';
-                        var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
-                        if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
+                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                    const _curIdx = _allTabs.indexOf(currentTab);
+                    if (_curIdx < _allTabs.length - 1) {
+                        const _nextTabEl = _allTabs[_curIdx + 1];
+                        var _nId = _nextTabEl.getAttribute('data-bs-target');
+                        if (_nId) {
+                            window._manualTabSwitch(_nId);
+                            sessionStorage.setItem('seller_edit_active_tab', _nId);
+                            if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
+                            var _we = document.querySelector('[wire\\:id]');
+                            if (_we && window.Livewire) {
+                                var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
+                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
+                            }
+                        }
                     }
                 }
 
@@ -2018,14 +2033,17 @@
             };
 
             window._wizardBackHandler = function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    new bootstrap.Tab(prevTab).show();
-                    var _wcBack = prevTab.getAttribute('wire:click') || '';
-                    var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
-                    if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
-                }
+                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                const _curTab = _allTabs.find(t => t.classList.contains('active'));
+                if (!_curTab) return;
+                const _curIdx = _allTabs.indexOf(_curTab);
+                if (_curIdx <= 0) return;
+                const _prevTabEl = _allTabs[_curIdx - 1];
+                var _pId = _prevTabEl.getAttribute('data-bs-target');
+                if (!_pId) return;
+                window._manualTabSwitch(_pId);
+                sessionStorage.setItem('seller_edit_active_tab', _pId);
+                if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
             };
 
             document.addEventListener('DOMContentLoaded', function() {
@@ -2235,6 +2253,25 @@
             });
         }
 
+        // Direct DOM tab switch — bypasses Bootstrap Tab API entirely, preventing
+        // double-advance caused by show.bs.tab/shown.bs.tab side-effects.
+        window._manualTabSwitch = function(targetId) {
+            var _links = Array.from(document.querySelectorAll('#myTab .nav-link'));
+            _links.forEach(function(link) {
+                var _lt = link.getAttribute('data-bs-target');
+                var _hit = (_lt === targetId);
+                link.classList.toggle('active', _hit);
+                link.setAttribute('aria-selected', _hit ? 'true' : 'false');
+                if (_lt) {
+                    var _pane = document.querySelector(_lt);
+                    if (_pane) {
+                        _pane.classList.toggle('show', _hit);
+                        _pane.classList.toggle('active', _hit);
+                    }
+                }
+            });
+        };
+
         function addIconsToInputs() {
             document.querySelectorAll('.has-icon[data-icon]').forEach(input => {
                 const iconClass = input.getAttribute('data-icon');
@@ -2284,15 +2321,19 @@
             }, 50);
         });
 
-        document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
-            tabEl.addEventListener('shown.bs.tab', function(e) {
+        // Single delegated listener for direct nav-link clicks (Bootstrap Tab fires shown.bs.tab).
+        // Guarded so it is never registered more than once regardless of Livewire rerenders.
+        if (!window.__sellerEditTabShownBound) {
+            window.__sellerEditTabShownBound = true;
+            document.addEventListener('shown.bs.tab', function(e) {
+                if (!e.target.closest('#myTab')) return;
                 var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
                 if (targetId) {
                     sessionStorage.setItem('seller_edit_active_tab', targetId);
                 }
                 setTimeout(function() { addIconsToInputs(); }, 0);
             });
-        });
+        }
 
         Livewire.hook('message.processed', () => {
             addIconsToInputs();
@@ -2360,22 +2401,10 @@
             if (savedTab) {
                 var tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + savedTab + '"]');
                 if (tabTrigger && !tabTrigger.classList.contains('active')) {
-                    new bootstrap.Tab(tabTrigger).show();
+                    window._manualTabSwitch(savedTab);
+                    if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
                 }
             }
-
-            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
-                tabEl.removeEventListener('shown.bs.tab', window.__sellerTabPersist);
-            });
-            window.__sellerTabPersist = function(e) {
-                var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
-                if (targetId) {
-                    sessionStorage.setItem('seller_edit_active_tab', targetId);
-                }
-            };
-            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
-                tabEl.addEventListener('shown.bs.tab', window.__sellerTabPersist);
-            });
         });
     </script>
 
@@ -2499,7 +2528,7 @@
     </script>
     <script>
         (function () {
-            function syncWizardButtons() {
+            window._syncWizardButtons = function() {
                 var aiPane = document.getElementById('ai-questions');
                 var nextBtn = document.querySelector('.wizard-step-next');
                 var finishBtn = document.querySelector('.wizard-step-finish');
@@ -2507,9 +2536,11 @@
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
                 finishBtn.style.display = onAI ? '' : 'none';
-            }
-            document.addEventListener('shown.bs.tab', syncWizardButtons);
-            document.addEventListener('DOMContentLoaded', syncWizardButtons);
+            };
+            // Fires for direct nav-link clicks (Bootstrap Tab API raises shown.bs.tab).
+            // _manualTabSwitch calls window._syncWizardButtons() directly for Next/Back.
+            document.addEventListener('shown.bs.tab', window._syncWizardButtons);
+            document.addEventListener('DOMContentLoaded', window._syncWizardButtons);
         })();
     </script>
   
