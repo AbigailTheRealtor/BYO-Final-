@@ -1186,6 +1186,7 @@ $tenantPays = [
         let _lastInitTime = 0;
         var __tabNavLock = false;
         var __tabRestoreGuard = false;
+        var _leaseTermDone = false;
 
         window.addEventListener('force-redirect', function(event) {
             if (event.detail && event.detail.url) {
@@ -1784,7 +1785,9 @@ $tenantPays = [
                 if ($opW.length) $opW.css('display', _opVals.includes('Other') ? 'block' : 'none');
             }
 
-            // Initialize Desired Lease Term Select2 for edit mode
+            // Initialize Desired Lease Term Select2 for edit mode.
+            // _leaseTermDone guards the page-load-frozen savedValues block so re-calls
+            // after morphdom never revert a value the user already changed in this session.
             function initEditLeaseTermSelect2() {
                 var $dlt = $('.lease_term_options');
                 if (!$dlt.length) return;
@@ -1796,15 +1799,18 @@ $tenantPays = [
                         width: '100%',
                     });
                 }
-                var savedValues = @json($desired_lease_length ?? []);
-                if (savedValues && savedValues.length) {
-                    var _currentVals = $dlt.val() || [];
-                    var _alreadySet = _currentVals.length === savedValues.length &&
-                        savedValues.every(function(v) { return _currentVals.indexOf(v) !== -1; });
-                    if (!_alreadySet) {
-                        $dlt.val(savedValues).trigger('change');
-                    } else {
-                        $dlt.val(savedValues);
+                if (!_leaseTermDone) {
+                    _leaseTermDone = true;
+                    var savedValues = @json($desired_lease_length ?? []);
+                    if (savedValues && savedValues.length) {
+                        var _currentVals = $dlt.val() || [];
+                        var _alreadySet = _currentVals.length === savedValues.length &&
+                            savedValues.every(function(v) { return _currentVals.indexOf(v) !== -1; });
+                        if (!_alreadySet) {
+                            $dlt.val(savedValues).trigger('change');
+                        } else {
+                            $dlt.val(savedValues);
+                        }
                     }
                 }
                 var otherWrapper = document.querySelector('.other_lease_term_wrapper');
@@ -2494,10 +2500,6 @@ $tenantPays = [
                 if (_carportSel && _carportIn && _carportSel.value === 'Yes') {
                     _carportIn.classList.remove('d-none');
                 }
-                // Staggered icon injection — runs after initEditLeaseTermSelect2's
-                // @this.set() round-trip (if any) has settled.
-                setTimeout(addIconsToInputs, 350);
-                setTimeout(addIconsToInputs, 700);
             }, 300);
 
             requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
