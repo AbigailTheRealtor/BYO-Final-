@@ -2434,6 +2434,8 @@ $tenantPays = [
         Livewire.hook('message.processed', () => {
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
+            addIconsToInputs();
+
             var now = Date.now();
             if (now - _lastInitTime > 400) {
                 _lastInitTime = now;
@@ -2443,7 +2445,21 @@ $tenantPays = [
                     initializeLimitedService();
                 }
             }
-            addIconsToInputs();
+
+            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+                tabEl.removeEventListener('shown.bs.tab', window.__landlordTabShownHandler);
+            });
+            window.__landlordTabShownHandler = function(e) {
+                var targetId = e.target.getAttribute('data-bs-target') || e.target.getAttribute('id');
+                if (targetId) {
+                    sessionStorage.setItem('landlord_edit_active_tab', targetId);
+                }
+                setTimeout(addIconsToInputs, 0);
+            };
+            document.querySelectorAll('#myTab .nav-link').forEach(function(tabEl) {
+                tabEl.addEventListener('shown.bs.tab', window.__landlordTabShownHandler);
+            });
+
             checkRepresentationStatus();
 
             if (!__tabRestoreGuard) {
