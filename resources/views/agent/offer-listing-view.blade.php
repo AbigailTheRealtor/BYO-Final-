@@ -412,7 +412,19 @@
     @php $ofv::row('Maximum Budget', $d['maximum_budget'] ? '$' . number_format((float)str_replace(',', '', $d['maximum_budget'])) : null); @endphp
     @php $ofv::row('Purchase Price', $d['purchase_price'] ? '$' . number_format((float)str_replace(',', '', $d['purchase_price'])) : null); @endphp
     @php $ofv::row('Target Closing Date', $fmt($d['target_closing_date'])); @endphp
-    @php $ofv::row('Earnest Money', $d['earnest_money_amount'] ? '$' . number_format((float)str_replace(',', '', $d['earnest_money_amount'])) : null); @endphp
+    @php
+        $emdType = $getMeta('earnest_money_type') ?: '$';
+        $emdAmt = $d['earnest_money_amount'] ?? null;
+        if ($emdAmt) {
+            $emdVal = (float)str_replace(',', '', $emdAmt);
+            $emdDisplay = ($emdType === '%')
+                ? number_format($emdVal, 2, '.', ',') . '%'
+                : '$' . number_format($emdVal);
+        } else {
+            $emdDisplay = null;
+        }
+        $ofv::row('Earnest Money', $emdDisplay);
+    @endphp
     @php $ofv::row('Earnest Money Timing', $fmt($d['earnest_money_timing'])); @endphp
     @php $ofv::row('Inspection Period', $d['inspection_period_days'] ? $d['inspection_period_days'] . ' days' : null); @endphp
     @php $ofv::badge('Inspection Contingency', $fmtBool($d['inspection_contingency_buyer'])); @endphp
@@ -421,7 +433,12 @@
     @php $ofv::row('Financing Contingency Days', $d['financing_contingency_days_buyer'] ? $d['financing_contingency_days_buyer'] . ' days' : null); @endphp
     @php $ofv::badge('Seller Contribution', $fmtBool($d['seller_contribution'])); @endphp
     @php $ofv::row('Seller Contribution Details', $fmt($d['seller_contribution_details'])); @endphp
-    @php $ofv::row('Possession Preference', $fmt($d['possession_preference'])); @endphp
+    @php
+        $possessionDisplay = ($d['possession_preference'] === 'Other')
+            ? ($getMeta('possession_preference_other') ?: null)
+            : $d['possession_preference'];
+        $ofv::row('Possession Preference', $fmt($possessionDisplay));
+    @endphp
     @php $ofv::row('Possession Details', $fmt($d['possession_details'])); @endphp
     @php $ofv::badge('Home Warranty Requested', $fmtBool($d['home_warranty_requested'])); @endphp
     @php $ofv::row('Home Warranty Details', $fmt($d['home_warranty_details'])); @endphp

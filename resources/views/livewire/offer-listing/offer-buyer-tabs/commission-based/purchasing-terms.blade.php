@@ -108,7 +108,7 @@
                     <div class="input-group">
                         <span class="input-group-text">$</span>
                         <input type="text" wire:model="assignment_fee_amount" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2,500)"
+                            placeholder="Enter flat fee amount (e.g., 2500)"
                             data-error-id="assignment_fee_amount_error"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -214,7 +214,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_financing" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter type of financing or currency offered">
+                placeholder="Enter Other Financing/Currency (e.g., Example)">
         </div>
     </div>
 </div>
@@ -583,7 +583,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter timing of transfer (e.g., within 48 hours of contract acceptance, partial transfer at inspection period)">
+                placeholder="Enter Timing of Transfer (e.g., Within 48 Hours of Contract Acceptance)">
         </div>
     </div>
     @endif
@@ -743,7 +743,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract"
-                placeholder="Enter lien/encumbrance details (e.g., auto loan balance, UCC filing)">
+                placeholder="Enter Liens / Encumbrances (e.g., Auto loan balance, UCC filing)">
         </div>
     </div>
     @endif
@@ -941,7 +941,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_option_extension_terms" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar-plus"
-                placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5,000 fee)">
+                placeholder="Enter extension terms (e.g., Tenant-Buyer may extend for 6 months with additional $5000 fee)">
         </div>
     </div>
 </div>
@@ -1603,11 +1603,21 @@
         </span>
     </label>
     <div class="input-group">
+        <select wire:change="setEarnestMoneyType($event.target.value)"
+            class="form-select" style="max-width: 80px;">
+            <option value="$" @selected($earnest_money_type === '$')>$</option>
+            <option value="%" @selected($earnest_money_type === '%')>%</option>
+        </select>
+        @if ($earnest_money_type === '$')
         <span class="input-group-text">$</span>
+        @endif
         <input type="text" wire:model="earnest_money_amount" class="form-control"
-            placeholder="Enter earnest money deposit amount (e.g., 5000)"
+            placeholder="{{ $earnest_money_type === '$' ? 'Enter earnest money deposit amount (e.g., 5000)' : 'Enter earnest money deposit percentage (e.g., 1)' }}"
             data-error-id="earnest_money_amount_error"
             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+        @if ($earnest_money_type === '%')
+        <span class="input-group-text">%</span>
+        @endif
     </div>
     <span class="error mt-2" id="earnest_money_amount_error"></span>
 </div>
@@ -1639,13 +1649,31 @@
 <div class="form-group mt-3">
     <label class="fw-bold">Due Diligence / Inspection Period:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer is requesting a due diligence and property inspection period after contract acceptance.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="due_diligence_yn" class="form-control has-icon"
+            data-icon="fa-solid fa-magnifying-glass">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+@if ($due_diligence_yn === 'Yes')
+<div class="form-group mt-3">
+    <label class="fw-bold">Inspection Period Duration:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the number of days the Buyer requests for due diligence and property inspections after contract acceptance.">
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
     <div class="input-cover">
         <select wire:model="inspection_period_days" class="form-control has-icon"
-            data-icon="fa-solid fa-magnifying-glass">
+            data-icon="fa-regular fa-calendar-days">
             <option value="">Select</option>
             <option value="5 Days">5 Days</option>
             <option value="7 Days">7 Days</option>
@@ -1654,30 +1682,22 @@
             <option value="15 Days">15 Days</option>
             <option value="21 Days">21 Days</option>
             <option value="30 Days">30 Days</option>
-            <option value="Waived">Waived</option>
             <option value="Negotiable">Negotiable</option>
+            <option value="Other">Other</option>
         </select>
     </div>
 </div>
 
-<!-- 4. Home Inspection Contingency -->
-<div class="form-group mt-3">
-    <label class="fw-bold">Home Inspection Contingency:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Buyer's offer will include a home inspection contingency. If waived, the Buyer accepts the property in its current condition.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
+@if ($inspection_period_days === 'Other')
+<div class="form-group mt-2">
     <div class="input-cover">
-        <select wire:model="inspection_contingency_buyer" class="form-control has-icon"
-            data-icon="fa-solid fa-house-chimney-crack">
-            <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-            <option value="Waived">Waived</option>
-        </select>
+        <input type="text" wire:model="inspection_period_other" class="form-control has-icon"
+            data-icon="fa-solid fa-magnifying-glass"
+            placeholder="Enter Other Due Diligence / Inspection Term (e.g., 45 Days)">
     </div>
 </div>
+@endif
+@endif
 
 <!-- 5. Appraisal Contingency -->
 <div class="form-group mt-3">
@@ -1693,10 +1713,28 @@
             <option value="">Select</option>
             <option value="Yes">Yes</option>
             <option value="No">No</option>
+            @if ($appraisal_contingency_buyer === 'Waived')
             <option value="Waived">Waived</option>
+            @endif
         </select>
     </div>
 </div>
+
+@if ($appraisal_contingency_buyer === 'Yes')
+<div class="form-group mt-3">
+    <label class="fw-bold">Appraisal Contingency Period (Days):
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the number of days the Buyer requires for the appraisal contingency period (e.g., 21).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="number" wire:model="appraisal_contingency_days" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days" min="1" max="365"
+            placeholder="Enter number of days for appraisal contingency (e.g., 21)">
+    </div>
+</div>
+@endif
 
 <!-- 6. Financing Contingency -->
 <div class="form-group mt-3">
@@ -1728,9 +1766,88 @@
         </span>
     </label>
     <div class="input-cover">
-        <input type="number" wire:model="financing_contingency_days_buyer" class="form-control has-icon"
+        <input type="number" wire:model="financing_contingency_period" class="form-control has-icon"
             data-icon="fa-regular fa-calendar-days" min="1" max="365"
             placeholder="Enter number of days for financing contingency (e.g., 21)">
+    </div>
+</div>
+@endif
+
+<!-- Home Sale Contingency -->
+<div class="form-group mt-3">
+    <label class="fw-bold">Home Sale Contingency:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Select whether the Buyer's offer is contingent on the sale of their current home.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="home_sale_contingency" class="form-control has-icon"
+            data-icon="fa-solid fa-house-circle-exclamation">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+@if ($home_sale_contingency === 'Yes')
+<div class="form-group mt-3">
+    <label class="fw-bold">Buyer Property Address or Description:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the address or a brief description of the property that must sell before the Buyer can close on this purchase.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="text" wire:model="home_sale_contingency_address" class="form-control has-icon"
+            data-icon="fa-solid fa-location-dot"
+            placeholder="Enter address or description (e.g., 123 Main St, Orlando, FL 32801)">
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Expected Sale / Closing Date:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter the date by which the Buyer expects their current property to sell or close.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <input type="date" wire:model="home_sale_contingency_date" class="form-control has-icon"
+            data-icon="fa-regular fa-calendar-days">
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Is the property currently under contract?
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Indicate whether the Buyer's current home already has an accepted offer or is under contract.">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <select wire:model="home_sale_contingency_under_contract" class="form-control has-icon"
+            data-icon="fa-solid fa-file-contract">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+        </select>
+    </div>
+</div>
+
+<div class="form-group mt-3">
+    <label class="fw-bold">Additional Home Sale Contingency Details:
+        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
+            title="Enter any other relevant details about the home sale contingency (e.g., asking price, days on market, anticipated closing timeline).">
+            <i class="fa-solid fa-circle-info"></i>
+        </span>
+    </label>
+    <div class="input-cover">
+        <textarea wire:model="home_sale_contingency_details" class="form-control has-icon"
+            data-icon="fa-solid fa-file-lines" rows="1"
+            style="min-height: 44px; padding: 10px; font-size: 16px; resize: none;"
+            placeholder="Enter Additional Home Sale Contingency Details (e.g., listed at $350K, accepted offer pending inspection, expected to close within 30 days)"></textarea>
     </div>
 </div>
 @endif
@@ -1768,10 +1885,9 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="seller_contribution_details" class="form-control has-icon"
-            data-icon="fa-solid fa-hand-holding-dollar" rows="3"
-            style="min-height: 100px; padding: 10px; font-size: 16px;"
-            placeholder="Enter seller contribution details (e.g., $5,000 toward closing costs, credit for roof repair)"></textarea>
+        <input type="text" wire:model="seller_contribution_details" class="form-control has-icon"
+            data-icon="fa-solid fa-hand-holding-dollar"
+            placeholder="Enter Seller Contribution Details (e.g., $5000 toward closing costs, credit for roof repair)">
     </div>
 </div>
 @endif
@@ -1795,12 +1911,23 @@
             <option value="30+ Days After Closing">30+ Days After Closing</option>
             <option value="Seller Leaseback">Seller Leaseback</option>
             <option value="Negotiable">Negotiable</option>
+            <option value="Other">Other</option>
         </select>
     </div>
 </div>
 
+@if ($possession_preference === 'Other')
+<div class="form-group mt-2">
+    <div class="input-cover">
+        <input type="text" wire:model="possession_preference_other" class="form-control has-icon"
+            data-icon="fa-solid fa-key"
+            placeholder="Enter Other Possession Preference (e.g., 45 days after closing)">
+    </div>
+</div>
+@endif
+
 <!-- 11. Possession Details (conditional) -->
-@if ($possession_preference !== '' && $possession_preference !== 'At Closing')
+@if ($possession_preference !== '' && $possession_preference !== 'At Closing' && $possession_preference !== 'Other')
 <div class="form-group mt-3">
     <label class="fw-bold">Possession Details:
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
@@ -1883,7 +2010,7 @@
     <div class="input-cover">
         <input type="text" wire:model="property_inclusions" class="form-control has-icon"
             data-icon="fa-solid fa-list-check"
-            placeholder="List items expected to be included (e.g., refrigerator, washer/dryer, outdoor furniture, shed)">
+            placeholder="Enter Property Inclusions (e.g., Refrigerator, Washer, Dryer, Window Treatments)">
     </div>
 </div>
 
@@ -1898,7 +2025,7 @@
     <div class="input-cover">
         <input type="text" wire:model="property_exclusions" class="form-control has-icon"
             data-icon="fa-solid fa-list-ul"
-            placeholder="List items expected to be excluded (e.g., chandelier in dining room, heirloom fixtures)">
+            placeholder="Enter Property Exclusions (e.g., Chandelier, Security Cameras, Patio Furniture)">
     </div>
 </div>
 
@@ -1922,85 +2049,6 @@
     </div>
 </div>
 
-<!-- 18. Home Sale Contingency -->
-<div class="form-group mt-3">
-    <label class="fw-bold">Home Sale Contingency:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Select whether the Buyer's offer is contingent on the sale of their current home.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <select wire:model="home_sale_contingency" class="form-control has-icon"
-            data-icon="fa-solid fa-house-circle-exclamation">
-            <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-        </select>
-    </div>
-</div>
-
-@if ($home_sale_contingency === 'Yes')
-<div class="form-group mt-3">
-    <label class="fw-bold">Buyer Property Address or Description:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the address or a brief description of the property that must sell before the Buyer can close on this purchase.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <input type="text" wire:model="home_sale_contingency_address" class="form-control has-icon"
-            data-icon="fa-solid fa-location-dot"
-            placeholder="Enter address or description (e.g., 123 Main St, Orlando, FL 32801)">
-    </div>
-</div>
-
-<div class="form-group mt-3">
-    <label class="fw-bold">Expected Sale / Closing Date:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter the date by which the Buyer expects their current property to sell or close.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <input type="date" wire:model="home_sale_contingency_date" class="form-control has-icon"
-            data-icon="fa-regular fa-calendar-days">
-    </div>
-</div>
-
-<div class="form-group mt-3">
-    <label class="fw-bold">Is the property currently under contract?
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Indicate whether the Buyer's current home already has an accepted offer or is under contract.">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <select wire:model="home_sale_contingency_under_contract" class="form-control has-icon"
-            data-icon="fa-solid fa-file-contract">
-            <option value="">Select</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
-        </select>
-    </div>
-</div>
-
-<div class="form-group mt-3">
-    <label class="fw-bold">Additional Home Sale Contingency Details:
-        <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-            title="Enter any other relevant details about the home sale contingency (e.g., asking price, days on market, anticipated closing timeline).">
-            <i class="fa-solid fa-circle-info"></i>
-        </span>
-    </label>
-    <div class="input-cover">
-        <textarea wire:model="home_sale_contingency_details" class="form-control has-icon"
-            data-icon="fa-solid fa-note-sticky" rows="1"
-            style="min-height: 44px; padding: 10px; font-size: 16px; resize: none;"
-            placeholder="Enter additional details (e.g., listed at $350K, accepted offer pending inspection, expected to close within 30 days)"></textarea>
-    </div>
-</div>
-@endif
-
 <!-- 19. Additional Purchase Terms / Notes -->
 <div class="form-group mt-3">
     <label class="fw-bold">Additional Purchase Terms / Notes:
@@ -2012,6 +2060,6 @@
     <div class="input-cover">
         <input type="text" wire:model="additional_purchase_terms" class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
-            placeholder="Enter any additional terms, conditions, or notes (e.g., subject to sale of current home, specific contract addendums required)">
+            placeholder="Enter Additional Purchase Terms / Notes (e.g., Subject to sale of current home, specific contract addendums required)">
     </div>
 </div>

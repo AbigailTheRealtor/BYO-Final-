@@ -771,23 +771,23 @@
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 5 ? 'active' : '' }}"
                                         wire:click="setActiveTab(5)"
-                                        id="buyer-information-tab" data-bs-toggle="tab"
-                                        data-bs-target="#buyer-information"
+                                        id="ai-questions-tab" data-bs-toggle="tab"
+                                        data-bs-target="#ai-questions"
                                         type="button" role="tab"
-                                        aria-controls="buyer-information"
+                                        aria-controls="ai-questions"
                                         aria-selected="{{ $activeTab === 5 ? 'true' : 'false' }}">
-                                        Agent Credentials & Contact Info
+                                        AI Questions
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link {{ $activeTab === 6 ? 'active' : '' }}"
                                         wire:click="setActiveTab(6)"
-                                        id="ai-questions-tab" data-bs-toggle="tab"
-                                        data-bs-target="#ai-questions"
+                                        id="buyer-information-tab" data-bs-toggle="tab"
+                                        data-bs-target="#buyer-information"
                                         type="button" role="tab"
-                                        aria-controls="ai-questions"
+                                        aria-controls="buyer-information"
                                         aria-selected="{{ $activeTab === 6 ? 'true' : 'false' }}">
-                                        AI Questions
+                                        Agent Credentials & Contact Info
                                     </button>
                                 </li>
                             </ul>
@@ -873,20 +873,20 @@
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.broker-compensation')
                                 </div>
 
-                                <!-- Buyer Info Tab (index 5) -->
-                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}"
+                                <!-- AI Questions Tab (full_service: index 5) -->
+                                <div class="tab-pane fade {{ $activeTab === 5 ? 'show active' : '' }}" id="ai-questions"
+                                    role="tabpanel" aria-labelledby="ai-questions-tab">
+                                    @include('livewire.offer-listing.shared.ai-questions-input')
+                                </div>
+
+                                <!-- Buyer Info Tab (index 6) -->
+                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
                                     id="buyer-information" role="tabpanel" aria-labelledby="buyer-information-tab">
                                     @if($isAgentUser ?? (auth()->user() && auth()->user()->user_type === 'agent'))
                                         @include('livewire.partials.agent-credentials')
                                     @else
                                         @include('livewire.offer-listing.offer-buyer-tabs.commission-based.buyer-info')
                                     @endif
-                                </div>
-
-                                <!-- AI Questions Tab (full_service: index 6) -->
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}" id="ai-questions"
-                                    role="tabpanel" aria-labelledby="ai-questions-tab">
-                                    @include('livewire.offer-listing.shared.ai-questions-input')
                                 </div>
                             @elseif($service_type === 'limited_service')
 
@@ -1183,6 +1183,41 @@
         // Uses window.addEventListener because the component calls dispatchBrowserEvent (not emit).
         window.addEventListener('buyer-agent-select2-sync', function() {
             setTimeout(function() {
+                // Rehydrate all Select2 multi-select fields from Livewire state
+                var multiFields = {
+                    '#sale_provision': 'sale_provision',
+                    '#offered_financing': 'offered_financing',
+                    '#non_negotiable_amenities': 'non_negotiable_amenities',
+                    '#view_preference': 'view_preference',
+                    '#condition_prop_buyer': 'condition_prop_buyer',
+                    '#garage_parking_spaces_option': 'garage_parking_spaces_option',
+                    '#assets': 'assets',
+                };
+                Object.entries(multiFields).forEach(function([selector, prop]) {
+                    var $el = $(selector);
+                    if ($el.length && $el.hasClass('select2-hidden-accessible')) {
+                        var saved = @this.get(prop) || [];
+                        if (saved.length > 0) {
+                            $el.val(saved).trigger('change.select2');
+                            console.log('[BuyerEdit S2 Sync] Rehydrated ' + prop + ':', saved);
+                        }
+                    }
+                });
+
+                // Show/hide Other view preference input based on loaded state
+                var vpVal = @this.get('view_preference') || [];
+                if (vpVal.includes('Other')) {
+                    $('#other_preferences').show();
+                } else {
+                    $('#other_preferences').hide();
+                }
+
+                // Restore JSON-bridge-backed Select2 fields
+                if (typeof jsonRestoreSelect2 === 'function') {
+                    jsonRestoreSelect2();
+                }
+
+                // Dispatch financing sub-section visibility events
                 var ofVal = @this.get('offered_financing') || [];
                 var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
                 var allFinancingTypes = [
@@ -2345,6 +2380,7 @@
                     '#purchasing-terms',
                     '#additional-details',
                     '#broker-compensation-agency-agreement-terms',
+                    '#ai-questions',
                     '#buyer-information'
                 ] : [
                     '#listing-details',

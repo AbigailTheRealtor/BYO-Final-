@@ -349,15 +349,21 @@ class BuyerOfferListing extends Component
 
     // Purchase Terms Questions
     public $earnest_money_amount = '';
+    public $earnest_money_type = '$';
     public $earnest_money_timing = '';
+    public $due_diligence_yn = '';
     public $inspection_period_days = '';
+    public $inspection_period_other = '';
     public $inspection_contingency_buyer = '';
     public $appraisal_contingency_buyer = '';
+    public $appraisal_contingency_days = '';
     public $financing_contingency_buyer = '';
     public $financing_contingency_days_buyer = '';
+    public $financing_contingency_period = '';
     public $seller_contribution = '';
     public $seller_contribution_details = '';
     public $possession_preference = '';
+    public $possession_preference_other = '';
     public $possession_details = '';
     public $home_warranty_requested = '';
     public $home_warranty_details = '';
@@ -568,6 +574,12 @@ class BuyerOfferListing extends Component
     {
         $this->gap_payment_type = $type;
         $this->gap_payment_amount = '';
+    }
+
+    public function setEarnestMoneyType($type)
+    {
+        $this->earnest_money_type = $type;
+        $this->earnest_money_amount = '';
     }
 
     public function updatedOfferedFinancing($value)
@@ -1641,15 +1653,21 @@ class BuyerOfferListing extends Component
             'open_house_count'                => $this->open_house_count,
             'virtual_showings_count'          => $this->virtual_showings_count,
             'earnest_money_amount'            => $this->earnest_money_amount,
+            'earnest_money_type'              => $this->earnest_money_type,
             'earnest_money_timing'            => $this->earnest_money_timing,
+            'due_diligence_yn'                => $this->due_diligence_yn,
             'inspection_period_days'          => $this->inspection_period_days,
+            'inspection_period_other'         => $this->inspection_period_other,
             'inspection_contingency_buyer'    => $this->inspection_contingency_buyer,
             'appraisal_contingency_buyer'     => $this->appraisal_contingency_buyer,
+            'appraisal_contingency_days'      => $this->appraisal_contingency_days,
             'financing_contingency_buyer'     => $this->financing_contingency_buyer,
             'financing_contingency_days_buyer' => $this->financing_contingency_days_buyer,
+            'financing_contingency_period'    => $this->financing_contingency_period,
             'seller_contribution'             => $this->seller_contribution,
             'seller_contribution_details'     => $this->seller_contribution_details,
             'possession_preference'           => $this->possession_preference,
+            'possession_preference_other'     => $this->possession_preference_other,
             'possession_details'              => $this->possession_details,
             'home_warranty_requested'         => $this->home_warranty_requested,
             'home_warranty_details'           => $this->home_warranty_details,
@@ -2130,15 +2148,29 @@ class BuyerOfferListing extends Component
 
             // Purchase Terms Questions
             $this->earnest_money_amount = $auction->get->earnest_money_amount ?? '';
+            $this->earnest_money_type = $auction->get->earnest_money_type ?? '$';
             $this->earnest_money_timing = $auction->get->earnest_money_timing ?? '';
+            $this->due_diligence_yn = $auction->get->due_diligence_yn ?? '';
             $this->inspection_period_days = $auction->get->inspection_period_days ?? '';
+            // Backward compat: if due_diligence_yn was never saved but inspection_period_days was, infer Yes
+            if ($this->due_diligence_yn === '' && $this->inspection_period_days !== '') {
+                $this->due_diligence_yn = 'Yes';
+            }
+            $this->inspection_period_other = $auction->get->inspection_period_other ?? '';
             $this->inspection_contingency_buyer = $auction->get->inspection_contingency_buyer ?? '';
             $this->appraisal_contingency_buyer = $auction->get->appraisal_contingency_buyer ?? '';
+            // Note: legacy "Waived" value is preserved as-is; blade renders a conditional
+            // fallback option so existing records remain editable without data loss.
+            $this->appraisal_contingency_days = $auction->get->appraisal_contingency_days ?? '';
             $this->financing_contingency_buyer = $auction->get->financing_contingency_buyer ?? '';
             $this->financing_contingency_days_buyer = $auction->get->financing_contingency_days_buyer ?? '';
+            $this->financing_contingency_period = $auction->get->financing_contingency_period
+                ?? $auction->get->financing_contingency_days_buyer
+                ?? '';
             $this->seller_contribution = $auction->get->seller_contribution ?? '';
             $this->seller_contribution_details = $auction->get->seller_contribution_details ?? '';
             $this->possession_preference = $auction->get->possession_preference ?? '';
+            $this->possession_preference_other = $auction->get->possession_preference_other ?? '';
             $this->possession_details = $auction->get->possession_details ?? '';
             $this->home_warranty_requested = $auction->get->home_warranty_requested ?? '';
             $this->home_warranty_details = $auction->get->home_warranty_details ?? '';
@@ -2633,15 +2665,21 @@ class BuyerOfferListing extends Component
 
         // Purchase Terms Questions
         $auction->saveMeta('earnest_money_amount', $this->earnest_money_amount);
+        $auction->saveMeta('earnest_money_type', $this->earnest_money_type);
         $auction->saveMeta('earnest_money_timing', $this->earnest_money_timing);
+        $auction->saveMeta('due_diligence_yn', $this->due_diligence_yn);
         $auction->saveMeta('inspection_period_days', $this->inspection_period_days);
+        $auction->saveMeta('inspection_period_other', $this->inspection_period_other);
         $auction->saveMeta('inspection_contingency_buyer', $this->inspection_contingency_buyer);
         $auction->saveMeta('appraisal_contingency_buyer', $this->appraisal_contingency_buyer);
+        $auction->saveMeta('appraisal_contingency_days', $this->appraisal_contingency_days);
         $auction->saveMeta('financing_contingency_buyer', $this->financing_contingency_buyer);
-        $auction->saveMeta('financing_contingency_days_buyer', $this->financing_contingency_days_buyer);
+        $auction->saveMeta('financing_contingency_days_buyer', $this->financing_contingency_period ?: $this->financing_contingency_days_buyer);
+        $auction->saveMeta('financing_contingency_period', $this->financing_contingency_period);
         $auction->saveMeta('seller_contribution', $this->seller_contribution);
         $auction->saveMeta('seller_contribution_details', $this->seller_contribution_details);
         $auction->saveMeta('possession_preference', $this->possession_preference);
+        $auction->saveMeta('possession_preference_other', $this->possession_preference_other);
         $auction->saveMeta('possession_details', $this->possession_details);
         $auction->saveMeta('home_warranty_requested', $this->home_warranty_requested);
         $auction->saveMeta('home_warranty_details', $this->home_warranty_details);

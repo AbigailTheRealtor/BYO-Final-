@@ -65,7 +65,7 @@ $safeKey = function(...$parts) {
             <div class="input-group" x-data="moneyInput()">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="purchase_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5,000)"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
                     data-error-id="purchase_fee_flat_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                 <span class="error mt-2" id="purchase_fee_flat_error"></span>
@@ -91,14 +91,14 @@ $safeKey = function(...$parts) {
                     <div class="input-group" x-data="moneyInput()">
                         <span class="input-group-text"> $</span>
                         <input type="text" wire:model.lazy="purchase_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 3,000)"
+                            placeholder="Enter flat fee amount (e.g., 3000)"
                             oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
             </div>
         @elseif($purchase_fee_type === 'other')
             <input type="text" wire:model="purchase_fee_other" class="form-control mt-2"
-                placeholder="Enter purchase fee structure (e.g., 1,000 upfront + 2% at Closing)">
+                placeholder="Enter purchase fee structure (e.g., 1000 upfront + 2% at Closing)">
         @endif
     </div>
     @error('purchase_fee_*')
@@ -106,6 +106,8 @@ $safeKey = function(...$parts) {
     @enderror
 </div>
 
+{{-- Lease Agreement and Lease-Option Agreement sections are not applicable for Buyer offer listings --}}
+{{--
 <!-- Interested in Offering a Lease-Option Agreement -->
 <div class="form-group mb-4">
     <label class="fw-bold">Interested in a Lease Agreement:
@@ -169,7 +171,7 @@ $safeKey = function(...$parts) {
                 <div class="input-group" x-data="moneyInput()">
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model.lazy="lease_fee_flat" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 2,500)"
+                        placeholder="Enter flat fee amount (e.g., 2500)"
                         data-error-id="lease_fee_flat_error"
                         oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     <span class="error mt-2" id="lease_fee_flat_error"></span>
@@ -212,7 +214,7 @@ $safeKey = function(...$parts) {
                         <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="lease_fee_flat_combo" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1,000)"
+                                placeholder="Enter flat fee amount (e.g., 1000)"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
@@ -237,7 +239,7 @@ $safeKey = function(...$parts) {
                         <div class="input-group" x-data="moneyInput()">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="lease_fee_flat_combo_net" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1,500)"
+                                placeholder="Enter flat fee amount (e.g., 1500)"
                                 oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
@@ -306,7 +308,7 @@ $safeKey = function(...$parts) {
                     wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1,500)' }}"
+                        : 'Enter flat fee amount (e.g., 1500)' }}"
                     data-error-id="lease_value_error"
                     oninput="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
                     onblur="{{ $lease_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
@@ -344,7 +346,7 @@ $safeKey = function(...$parts) {
                     wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5,000)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                     data-error-id="purchase_value_error"
                     oninput="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'validateInput(this)' }}"
                     onblur="{{ $purchase_type === 'flat' ? 'formatWithCommas(this)' : 'reformatNumber(this)' }}"
@@ -358,6 +360,7 @@ $safeKey = function(...$parts) {
         </div>
     </div>
 @endif
+--}}
 
 {{-- Fields below are intentionally hidden from the Buyer offer listing UI. Data persists via EAV meta. --}}
 
@@ -404,7 +407,7 @@ $safeKey = function(...$parts) {
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model.lazy="early_termination_fee_amount" class="form-control"
-                    placeholder="Enter early termination fee amount (e.g., 1,000)"
+                    placeholder="Enter early termination fee amount (e.g., 1000)"
                     oninput="formatWithCommas(this)" onblur="formatWithCommas(this)" onpaste="handlePaste(event)">
             </div>
             @error('early_termination_fee_amount')
