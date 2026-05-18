@@ -1217,8 +1217,23 @@
                     jsonRestoreSelect2();
                 }
 
-                // Dispatch financing sub-section visibility events
+                // Restore wrapper div visibility for Other financing input and dispatch sub-section events
                 var ofVal = @this.get('offered_financing') || [];
+                if (ofVal.includes('Other')) {
+                    $('.other_financing_wrapper').show();
+                } else {
+                    $('.other_financing_wrapper').hide();
+                }
+
+                // Restore wrapper visibility for Other sale provision input
+                var spVal = @this.get('sale_provision') || [];
+                if (spVal.includes('Other')) {
+                    $('.sale_provision_other_wrapper').show();
+                } else {
+                    $('.sale_provision_other_wrapper').hide();
+                }
+
+                // Dispatch financing sub-section visibility events
                 var traditionalTypes = ['Conventional', 'FHA', 'Jumbo', 'VA', 'No-Doc', 'Non-QM', 'USDA'];
                 var allFinancingTypes = [
                     'Assumable', 'Cash', 'Cryptocurrency', 'Exchange/Trade',
@@ -1230,6 +1245,22 @@
                     window.dispatchEvent(new CustomEvent('update-financing-visibility', { detail: { type: type, visible: ofVal.includes(type) } }));
                 });
                 console.log('[EditFinancing] Dispatched visibility events for:', ofVal);
+
+                // Explicitly restore plain (non-Select2) input values inside
+                // server-side conditional wrappers — Livewire re-renders them correctly,
+                // but restoring here ensures values persist even on partial renders.
+                var fcPeriod = @this.get('financing_contingency_period');
+                if (fcPeriod) {
+                    var fcInput = document.querySelector('[wire\\:model="financing_contingency_period"]');
+                    if (fcInput && !fcInput.value) { fcInput.value = fcPeriod; }
+                }
+
+                // Restore assignment contract section visibility (Alpine x-show driven)
+                var assignmentVisible = spVal.includes('Assignment Contract');
+                window.dispatchEvent(new CustomEvent('update-assignment-visibility', {
+                    detail: { visible: assignmentVisible }
+                }));
+                console.log('[BuyerEdit S2 Sync] Assignment section visible:', assignmentVisible);
             }, 150);
         });
 

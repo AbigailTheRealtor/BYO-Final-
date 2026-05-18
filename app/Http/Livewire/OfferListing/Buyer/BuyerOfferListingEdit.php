@@ -2173,19 +2173,30 @@ class BuyerOfferListingEdit extends Component
             // All data loaded; clear the flag so subsequent updated* hooks run normally
             $this->isLoadingData = false;
 
-            // Dispatch browser event to sync Select2 elements after loading
+            // Dispatch browser event to sync Select2 elements after loading.
+            // The JS handler uses @this.get() directly; payload is included for
+            // clarity and to ensure the event fires with the correct data snapshot.
             $this->dispatchBrowserEvent('buyer-agent-select2-sync', [
-                'view_preference' => $this->view_preference,
-                'non_negotiable_amenities' => $this->non_negotiable_amenities,
-                'offered_financing' => $this->offered_financing,
-                'services' => $this->services,
-                'property_items' => $this->property_items,
-                'condition_prop_buyer' => $this->condition_prop_buyer,
-                'pool_type' => $this->pool_type,
-                'lease_for' => $this->lease_for,
-                'credit_scroe_rating' => $this->credit_scroe_rating,
-                'flat_fee_services' => $this->flat_fee_services,
-                'number_of_unit_type' => $this->number_of_unit_type,
+                'view_preference'           => $this->view_preference,
+                'non_negotiable_amenities'  => $this->non_negotiable_amenities,
+                'offered_financing'         => $this->offered_financing,
+                'sale_provision'            => $this->sale_provision,
+                'garage_parking_spaces_option' => $this->garage_parking_spaces_option,
+                'assets'                    => $this->assets,
+                'services'                  => $this->services,
+                'property_items'            => $this->property_items,
+                'condition_prop_buyer'      => $this->condition_prop_buyer,
+                'pool_type'                 => $this->pool_type,
+                'lease_for'                 => $this->lease_for,
+                'credit_scroe_rating'       => $this->credit_scroe_rating,
+                'flat_fee_services'         => $this->flat_fee_services,
+                'number_of_unit_type'       => $this->number_of_unit_type,
+                // New fields — not Select2, but included so JS can restore wrapper visibility
+                'earnest_money_type'        => $this->earnest_money_type,
+                'due_diligence_yn'          => $this->due_diligence_yn,
+                'appraisal_contingency_days' => $this->appraisal_contingency_days,
+                'possession_preference_other' => $this->possession_preference_other,
+                'financing_contingency_period' => $this->financing_contingency_period,
             ]);
             
             // Note: isLoadingData flag will be cleared by updatedOfferedFinancing() 

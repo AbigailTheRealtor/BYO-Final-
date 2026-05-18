@@ -426,9 +426,34 @@
         $ofv::row('Earnest Money', $emdDisplay);
     @endphp
     @php $ofv::row('Earnest Money Timing', $fmt($d['earnest_money_timing'])); @endphp
-    @php $ofv::row('Inspection Period', $d['inspection_period_days'] ? $d['inspection_period_days'] . ' days' : null); @endphp
+    @php
+        // Due Diligence / Inspection — primary: due_diligence_yn meta key (new flow).
+        // Legacy fallback: infer "Yes" from inspection_period_days for older records.
+        $dueDiligenceYN = $getMeta('due_diligence_yn') ?: ($d['inspection_period_days'] ? 'Yes' : null);
+        $ofv::row('Due Diligence / Inspection', $fmt($dueDiligenceYN));
+
+        // Inspection Period Duration — primary: inspection_period_other (custom text from new flow).
+        // Secondary: inspection_period_days numeric value (new flow native column).
+        // Legacy: inspection_period_days is also the legacy column used by old records.
+        $inspPeriodOther = $getMeta('inspection_period_other') ?: null;
+        $inspPeriodDays  = $d['inspection_period_days'] ?: null;
+        // Only append " days" when the stored value is purely numeric (legacy integer column).
+        // New-flow dropdown values like "5 Days" or "Negotiable" are stored as text and rendered as-is.
+        $inspDisplay = $inspPeriodOther ?: ($inspPeriodDays
+            ? (is_numeric($inspPeriodDays) ? $inspPeriodDays . ' days' : $inspPeriodDays)
+            : null);
+        if ($inspDisplay) { $ofv::row('Inspection Period Duration', $fmt($inspDisplay)); }
+    @endphp
     @php $ofv::badge('Inspection Contingency', $fmtBool($d['inspection_contingency_buyer'])); @endphp
-    @php $ofv::badge('Appraisal Contingency', $fmtBool($d['appraisal_contingency_buyer'])); @endphp
+    @php
+        // Appraisal Contingency — new Yes/No field; render days when Yes
+        $appraisalVal = $d['appraisal_contingency_buyer'] ?? null;
+        $ofv::badge('Appraisal Contingency', $fmtBool($appraisalVal));
+        $appraisalDays = $getMeta('appraisal_contingency_days') ?: null;
+        if ($appraisalVal === 'Yes' && $appraisalDays) {
+            $ofv::row('Appraisal Contingency Period', $appraisalDays . ' days');
+        }
+    @endphp
     @php $ofv::badge('Financing Contingency', $fmtBool($d['financing_contingency_buyer'])); @endphp
     @php $ofv::row('Financing Contingency Days', $d['financing_contingency_days_buyer'] ? $d['financing_contingency_days_buyer'] . ' days' : null); @endphp
     @php $ofv::badge('Seller Contribution', $fmtBool($d['seller_contribution'])); @endphp

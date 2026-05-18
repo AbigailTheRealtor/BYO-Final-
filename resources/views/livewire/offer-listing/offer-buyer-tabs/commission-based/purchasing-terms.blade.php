@@ -214,7 +214,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_financing" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter Other Financing/Currency (e.g., Example)">
+                placeholder="Enter Other Financing / Currency (e.g., $1000 Seller Credit, Private Financing, Trade, Crypto)">
         </div>
     </div>
 </div>
@@ -743,7 +743,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract"
-                placeholder="Enter Liens / Encumbrances (e.g., Auto loan balance, UCC filing)">
+                placeholder="Enter Lien / Encumbrance Details">
         </div>
     </div>
     @endif
@@ -1693,7 +1693,7 @@
     <div class="input-cover">
         <input type="text" wire:model="inspection_period_other" class="form-control has-icon"
             data-icon="fa-solid fa-magnifying-glass"
-            placeholder="Enter Other Due Diligence / Inspection Term (e.g., 45 Days)">
+            placeholder="Enter Other Due Diligence / Inspection Term (e.g., 10 Days After Effective Date)">
     </div>
 </div>
 @endif
@@ -1731,7 +1731,7 @@
     <div class="input-cover">
         <input type="number" wire:model="appraisal_contingency_days" class="form-control has-icon"
             data-icon="fa-regular fa-calendar-days" min="1" max="365"
-            placeholder="Enter number of days for appraisal contingency (e.g., 21)">
+            placeholder="Enter Number of Days for Appraisal Contingency (e.g., 21)">
     </div>
 </div>
 @endif
@@ -1844,10 +1844,9 @@
         </span>
     </label>
     <div class="input-cover">
-        <textarea wire:model="home_sale_contingency_details" class="form-control has-icon"
-            data-icon="fa-solid fa-file-lines" rows="1"
-            style="min-height: 44px; padding: 10px; font-size: 16px; resize: none;"
-            placeholder="Enter Additional Home Sale Contingency Details (e.g., listed at $350K, accepted offer pending inspection, expected to close within 30 days)"></textarea>
+        <input type="text" wire:model="home_sale_contingency_details" class="form-control has-icon"
+            data-icon="fa-solid fa-file-lines"
+            placeholder="Enter Additional Home Sale Contingency Details (e.g., Listed at $350K, Accepted Offer Pending Inspection, Expected to Close Within 30 Days)">
     </div>
 </div>
 @endif
@@ -1921,7 +1920,7 @@
     <div class="input-cover">
         <input type="text" wire:model="possession_preference_other" class="form-control has-icon"
             data-icon="fa-solid fa-key"
-            placeholder="Enter Other Possession Preference (e.g., 45 days after closing)">
+            placeholder="Enter Possession Preference (e.g., Post-Closing Occupancy, Flexible Timeline)">
     </div>
 </div>
 @endif
