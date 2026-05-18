@@ -2500,6 +2500,7 @@ $tenantPays = [
                 if (_carportSel && _carportIn && _carportSel.value === 'Yes') {
                     _carportIn.classList.remove('d-none');
                 }
+                requestAnimationFrame(addIconsToInputs);
             }, 300);
 
             requestAnimationFrame(() => { window.scrollTo(0, _scrollY); });
