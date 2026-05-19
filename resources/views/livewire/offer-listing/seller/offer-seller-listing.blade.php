@@ -235,8 +235,8 @@
         }
 
         .seller-compact-textarea {
-            min-height: 42px !important;
-            height: 42px;
+            min-height: calc(1.5em + 0.75rem + 2px) !important;
+            height: calc(1.5em + 0.75rem + 2px);
             resize: vertical;
         }
 

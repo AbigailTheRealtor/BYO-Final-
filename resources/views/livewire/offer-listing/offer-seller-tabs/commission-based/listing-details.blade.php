@@ -289,12 +289,9 @@ $auction_lengths_seller = [
             </span>
         </label>
         @if (!empty($isEditMode))
-            <div class="input-cover locked-field-wrapper position-relative" data-lock-msg="Listing Type cannot be edited once the listing is created.">
-                <i class="input-icon fa-solid fa-lock data-icon-rendered"></i>
-                <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-                <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
+            <div class="input-cover">
+                <input type="text" class="form-control has-icon" data-icon="fa-solid fa-file-lines" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
             </div>
-            <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
         @else
             <div class="input-cover">
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"

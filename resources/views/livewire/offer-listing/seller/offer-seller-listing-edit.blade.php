@@ -218,8 +218,8 @@
         }
 
         .seller-compact-textarea {
-            min-height: 42px !important;
-            height: 42px;
+            min-height: calc(1.5em + 0.75rem + 2px) !important;
+            height: calc(1.5em + 0.75rem + 2px);
             resize: vertical;
         }
 
@@ -1045,10 +1045,10 @@
                                 </button>
                                 @endif
 
-                                <button type="button" class="btn btn-primary wizard-step-next"
+                                <button wire:ignore type="button" class="btn btn-primary wizard-step-next"
                                     onclick="if(typeof window._wizardNextHandler==='function'){window._wizardNextHandler();}">Next</button>
 
-                                <button type="submit" class="btn btn-success wizard-step-finish disabled"
+                                <button wire:ignore type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update">Submit</span>
                                     <span wire:loading wire:target="update">Submitting...</span>
@@ -1416,13 +1416,11 @@
             }
 
             if ($('#sale_provision').length) {
-                if (!$('#sale_provision').hasClass('select2-hidden-accessible')) {
+                var _spNewInit = !$('#sale_provision').hasClass('select2-hidden-accessible');
+                if (_spNewInit) {
                     $('#sale_provision').select2({ placeholder: "Select", allowClear: true, width: '100%', closeOnSelect: false });
-                }
-                var _savedProvision = @json($sale_provision ?? []);
-                if (_savedProvision && _savedProvision.length > 0) {
-                    var _curProv = $('#sale_provision').val() || [];
-                    if (!_curProv || _curProv.length === 0) {
+                    var _savedProvision = @json($sale_provision ?? []);
+                    if (_savedProvision && _savedProvision.length > 0) {
                         $('#sale_provision').val(_savedProvision).trigger('change.select2');
                     }
                 }
@@ -1920,132 +1918,6 @@
                 return allValid;
             }
 
-            window._wizardNextHandler = function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                if (!currentTab) return;
-
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
-                let isValid = true;
-
-                // Validate all required fields in the current tab (your existing code)
-                const requiredFields = currentTabContent.querySelectorAll(
-                    'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
-
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Validate cities array (your existing code)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // Validate counties array (your existing code)
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                if (isValid) {
-                    const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                    const _curIdx = _allTabs.indexOf(currentTab);
-                    if (_curIdx < _allTabs.length - 1) {
-                        const _nextTabEl = _allTabs[_curIdx + 1];
-                        var _nId = _nextTabEl.getAttribute('data-bs-target');
-                        if (_nId) {
-                            window._manualTabSwitch(_nId);
-                            sessionStorage.setItem('seller_edit_active_tab', _nId);
-                            if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
-                            var _we = document.querySelector('[wire\\:id]');
-                            if (_we && window.Livewire) {
-                                var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
-                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
-                            }
-                        }
-                    }
-                }
-
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !isValid;
-                }
-            };
-
-            window._wizardBackHandler = function() {
-                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
-                const _curTab = _allTabs.find(t => t.classList.contains('active'));
-                if (!_curTab) return;
-                const _curIdx = _allTabs.indexOf(_curTab);
-                if (_curIdx <= 0) return;
-                const _prevTabEl = _allTabs[_curIdx - 1];
-                var _pId = _prevTabEl.getAttribute('data-bs-target');
-                if (!_pId) return;
-                window._manualTabSwitch(_pId);
-                sessionStorage.setItem('seller_edit_active_tab', _pId);
-                if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
-            };
-
             document.addEventListener('DOMContentLoaded', function() {
                 checkFormValidity();
 
@@ -2086,143 +1958,6 @@
                 return allValid;
             }
 
-            window._wizardNextHandler = function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                if (!currentTab) return;
-
-                const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
-                if (!currentTabContent) return;
-
-                let isValid = true;
-
-                // Validate all required fields in the current tab (your existing code)
-                const requiredFields = currentTabContent.querySelectorAll(
-                    'input[required], select[required], textarea[required]');
-                if (requiredFields) {
-                    requiredFields.forEach(function(input) {
-                        if (!input.value) {
-                            isValid = false;
-                            input.classList.add('is-invalid');
-
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (!errorMessageContainer) {
-                                    const errorMessage = document.createElement('div');
-                                    errorMessage.className = 'error mt-2';
-                                    errorMessage.textContent = 'This field is required.';
-                                    formGroup.appendChild(errorMessage);
-                                } else {
-                                    errorMessageContainer.textContent = 'This field is required.';
-                                }
-                            }
-                        } else {
-                            input.classList.remove('is-invalid');
-                            const formGroup = input.closest('.form-group');
-                            if (formGroup) {
-                                const errorMessageContainer = formGroup.querySelector('.error');
-                                if (errorMessageContainer) {
-                                    errorMessageContainer.remove();
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Validate cities array (your existing code)
-                const citiesContainer = currentTabContent.querySelector('.cities-container');
-                if (citiesContainer) {
-                    const cityBadges = citiesContainer.querySelectorAll('.badge');
-                    if (!cityBadges || cityBadges.length === 0) {
-                        isValid = false;
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const citiesError = document.createElement('div');
-                            citiesError.className = 'error';
-                            citiesError.textContent = 'At least one city is required.';
-                            citiesContainer.parentNode.insertBefore(citiesError, citiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = citiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // Validate counties array (your existing code)
-                const countiesContainer = currentTabContent.querySelector('.counties-container');
-                if (countiesContainer) {
-                    const countyBadges = countiesContainer.querySelectorAll('.badge');
-                    if (!countyBadges || countyBadges.length === 0) {
-                        isValid = false;
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const countiesError = document.createElement('div');
-                            countiesError.className = 'error';
-                            countiesError.textContent = 'At least one county is required.';
-                            countiesContainer.parentNode.insertBefore(countiesError, countiesContainer
-                                .nextSibling);
-                        }
-                    } else {
-                        const existingError = countiesContainer.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-                if (currentTabContent.id === 'service-selection-and-pricing') {
-                    const understandTerms = currentTabContent.querySelector('#understandTerms');
-                    if (understandTerms && !understandTerms.checked) {
-                        isValid = false;
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (!existingError) {
-                            const termsError = document.createElement('div');
-                            termsError.className = 'error text-danger mt-2';
-                            termsError.textContent = 'You must accept the terms to continue';
-                            understandTerms.parentNode.appendChild(termsError);
-                        }
-                    } else {
-                        const existingError = understandTerms.parentNode.querySelector('.error');
-                        if (existingError) {
-                            existingError.remove();
-                        }
-                    }
-                }
-
-                // In your validation function
-
-
-
-                if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector(
-                        '.nav-link');
-                    if (nextTab) {
-                        new bootstrap.Tab(nextTab).show();
-                        var _wcNext = nextTab.getAttribute('wire:click') || '';
-                        var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
-                        if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
-                    }
-                }
-
-                const saveButton = document.querySelector('.wizard-step-finish');
-                if (saveButton) {
-                    saveButton.disabled = !isValid;
-                }
-            };
-
-            window._wizardBackHandler = function() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab.parentElement.previousElementSibling?.querySelector('.nav-link');
-                if (prevTab) {
-                    new bootstrap.Tab(prevTab).show();
-                    var _wcBack = prevTab.getAttribute('wire:click') || '';
-                    var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
-                    if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
-                }
-            };
-
             document.addEventListener('DOMContentLoaded', function() {
                 checkFormValidity();
 
@@ -2237,7 +1972,137 @@
             });
         }
 
+        // Wizard Next/Back handlers — defined once at module level, shared by both service types.
+        // Uses _manualTabSwitch to avoid bootstrap.Tab event side-effects (double-advance).
+        window._wizardNextHandler = function() {
+            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            if (!currentTab) return;
 
+            const currentTabContent = document.querySelector(currentTab.getAttribute('data-bs-target'));
+            if (!currentTabContent) return;
+
+            let isValid = true;
+
+            const requiredFields = currentTabContent.querySelectorAll(
+                'input[required], select[required], textarea[required]');
+            if (requiredFields) {
+                requiredFields.forEach(function(input) {
+                    if (!input.value) {
+                        isValid = false;
+                        input.classList.add('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (!errorMessageContainer) {
+                                const errorMessage = document.createElement('div');
+                                errorMessage.className = 'error mt-2';
+                                errorMessage.textContent = 'This field is required.';
+                                formGroup.appendChild(errorMessage);
+                            } else {
+                                errorMessageContainer.textContent = 'This field is required.';
+                            }
+                        }
+                    } else {
+                        input.classList.remove('is-invalid');
+                        const formGroup = input.closest('.form-group');
+                        if (formGroup) {
+                            const errorMessageContainer = formGroup.querySelector('.error');
+                            if (errorMessageContainer) { errorMessageContainer.remove(); }
+                        }
+                    }
+                });
+            }
+
+            const citiesContainer = currentTabContent.querySelector('.cities-container');
+            if (citiesContainer) {
+                const cityBadges = citiesContainer.querySelectorAll('.badge');
+                if (!cityBadges || cityBadges.length === 0) {
+                    isValid = false;
+                    const existingError = citiesContainer.parentNode.querySelector('.error');
+                    if (!existingError) {
+                        const citiesError = document.createElement('div');
+                        citiesError.className = 'error';
+                        citiesError.textContent = 'At least one city is required.';
+                        citiesContainer.parentNode.insertBefore(citiesError, citiesContainer.nextSibling);
+                    }
+                } else {
+                    const existingError = citiesContainer.parentNode.querySelector('.error');
+                    if (existingError) { existingError.remove(); }
+                }
+            }
+
+            const countiesContainer = currentTabContent.querySelector('.counties-container');
+            if (countiesContainer) {
+                const countyBadges = countiesContainer.querySelectorAll('.badge');
+                if (!countyBadges || countyBadges.length === 0) {
+                    isValid = false;
+                    const existingError = countiesContainer.parentNode.querySelector('.error');
+                    if (!existingError) {
+                        const countiesError = document.createElement('div');
+                        countiesError.className = 'error';
+                        countiesError.textContent = 'At least one county is required.';
+                        countiesContainer.parentNode.insertBefore(countiesError, countiesContainer.nextSibling);
+                    }
+                } else {
+                    const existingError = countiesContainer.parentNode.querySelector('.error');
+                    if (existingError) { existingError.remove(); }
+                }
+            }
+
+            if (currentTabContent.id === 'service-selection-and-pricing') {
+                const understandTerms = currentTabContent.querySelector('#understandTerms');
+                if (understandTerms && !understandTerms.checked) {
+                    isValid = false;
+                    const existingError = understandTerms.parentNode.querySelector('.error');
+                    if (!existingError) {
+                        const termsError = document.createElement('div');
+                        termsError.className = 'error text-danger mt-2';
+                        termsError.textContent = 'You must accept the terms to continue';
+                        understandTerms.parentNode.appendChild(termsError);
+                    }
+                } else if (understandTerms) {
+                    const existingError = understandTerms.parentNode.querySelector('.error');
+                    if (existingError) { existingError.remove(); }
+                }
+            }
+
+            if (isValid) {
+                const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+                const _curIdx = _allTabs.indexOf(currentTab);
+                if (_curIdx < _allTabs.length - 1) {
+                    const _nextTabEl = _allTabs[_curIdx + 1];
+                    var _nId = _nextTabEl.getAttribute('data-bs-target');
+                    if (_nId) {
+                        window._manualTabSwitch(_nId);
+                        sessionStorage.setItem('seller_edit_active_tab', _nId);
+                        if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
+                        var _wcNext = _nextTabEl.getAttribute('wire:click') || '';
+                        var _mNext = _wcNext.match(/setActiveTab\((\d+)\)/);
+                        if (_mNext) { @this.call('setActiveTab', parseInt(_mNext[1])); }
+                    }
+                }
+            }
+
+            const saveButton = document.querySelector('.wizard-step-finish');
+            if (saveButton) { saveButton.disabled = !isValid; }
+        };
+
+        window._wizardBackHandler = function() {
+            const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
+            const _curTab = _allTabs.find(t => t.classList.contains('active'));
+            if (!_curTab) return;
+            const _curIdx = _allTabs.indexOf(_curTab);
+            if (_curIdx <= 0) return;
+            const _prevTabEl = _allTabs[_curIdx - 1];
+            var _pId = _prevTabEl.getAttribute('data-bs-target');
+            if (!_pId) return;
+            window._manualTabSwitch(_pId);
+            sessionStorage.setItem('seller_edit_active_tab', _pId);
+            if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
+            var _wcBack = _prevTabEl.getAttribute('wire:click') || '';
+            var _mBack = _wcBack.match(/setActiveTab\((\d+)\)/);
+            if (_mBack) { @this.call('setActiveTab', parseInt(_mBack[1])); }
+        };
 
         // Delegated wizard nav — bound once, survives Livewire DOM morphing
         if (!window.__wizardNavBound) {
@@ -2402,9 +2267,9 @@
                 var tabTrigger = document.querySelector('#myTab .nav-link[data-bs-target="' + savedTab + '"]');
                 if (tabTrigger && !tabTrigger.classList.contains('active')) {
                     window._manualTabSwitch(savedTab);
-                    if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
                 }
             }
+            if (typeof window._syncWizardButtons === 'function') window._syncWizardButtons();
         });
     </script>
 
