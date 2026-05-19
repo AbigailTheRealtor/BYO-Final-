@@ -22,7 +22,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-primary-rental-goal-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-primary-rental-goal-s2">
         <select id="compat_primary_rental_goal" class="form-control has-icon"
             data-icon="fa-solid fa-bullseye"
             data-selected="{{ $compatibility_preferences['tenant_specific']['primary_rental_goal'] ?? '' }}"
@@ -66,7 +66,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-representation-priorities-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-representation-priorities-s2">
         <select id="compat_representation_priorities" class="form-control has-icon" multiple
             data-icon="fa-solid fa-list-check"
             data-selected="{{ json_encode($compatibility_preferences['tenant_specific']['representation_priorities'] ?? []) }}"
@@ -111,7 +111,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-timeline-urgency-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-timeline-urgency-s2">
         <select id="compat_timeline_urgency" class="form-control has-icon"
             data-icon="fa-solid fa-clock"
             data-selected="{{ $compatibility_preferences['tenant_specific']['timeline_urgency'] ?? '' }}">
@@ -155,7 +155,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-budget-flexibility-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-budget-flexibility-s2">
         <select id="compat_budget_flexibility" class="form-control has-icon"
             data-icon="fa-solid fa-wallet"
             data-selected="{{ $compatibility_preferences['tenant_specific']['budget_flexibility'] ?? '' }}">
@@ -183,7 +183,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-communication-style-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-communication-style-s2">
         <select id="compat_communication_style" class="form-control has-icon"
             data-icon="fa-solid fa-comments"
             data-selected="{{ $compatibility_preferences['tenant_specific']['communication_style'] ?? '' }}"
@@ -226,7 +226,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-contact-frequency-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-contact-frequency-s2">
         <select id="compat_contact_frequency" class="form-control has-icon"
             data-icon="fa-solid fa-calendar-check"
             data-selected="{{ $compatibility_preferences['tenant_specific']['contact_frequency'] ?? '' }}">
@@ -252,7 +252,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-preferred-contact-method-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-preferred-contact-method-s2">
         <select id="compat_preferred_contact_method" class="form-control has-icon"
             data-icon="fa-solid fa-sun"
             data-selected="{{ $compatibility_preferences['tenant_specific']['preferred_contact_method'] ?? '' }}">
@@ -277,7 +277,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-preferred-agent-working-style-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-preferred-agent-working-style-s2">
         <select id="compat_preferred_agent_working_style" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
             data-selected="{{ $compatibility_preferences['tenant_specific']['preferred_agent_working_style'] ?? '' }}"
@@ -303,7 +303,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-most-important-agent-traits-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-most-important-agent-traits-s2">
         <select id="compat_most_important_agent_traits" class="form-control has-icon" multiple
             data-icon="fa-solid fa-star"
             data-selected="{{ json_encode($compatibility_preferences['tenant_specific']['most_important_agent_traits'] ?? []) }}">
@@ -350,7 +350,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-desired-level-of-agent-involvement-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-desired-level-of-agent-involvement-s2">
         <select id="compat_desired_level_of_agent_involvement" class="form-control has-icon"
             data-icon="fa-solid fa-sliders"
             data-selected="{{ $compatibility_preferences['tenant_specific']['desired_level_of_agent_involvement'] ?? '' }}">
@@ -394,7 +394,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-negotiation-style-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-negotiation-style-s2">
         <select id="compat_negotiation_style" class="form-control has-icon"
             data-icon="fa-solid fa-handshake"
             data-selected="{{ $compatibility_preferences['tenant_specific']['negotiation_style'] ?? '' }}"
@@ -420,7 +420,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover mt-2" wire:ignore wire:key="compat-decision-making-style-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-decision-making-style-s2">
         <select id="compat_decision_making_style" class="form-control has-icon"
             data-icon="fa-solid fa-brain"
             data-selected="{{ $compatibility_preferences['tenant_specific']['decision_making_style'] ?? '' }}">
@@ -447,7 +447,8 @@
     </label>
     <div class="input-cover">
         <textarea wire:model.defer="compatibility_preferences.tenant_specific.concerns_or_barriers"
-            class="form-control"
+            class="form-control has-icon"
+            data-icon="fa-solid fa-comment-dots"
             rows="1"
             style="resize: none; overflow: hidden; min-height: 38px;"
             placeholder="e.g., Previous rental disputes, credit concerns, tight timeline, specific landlord requirements..."
@@ -469,7 +470,8 @@
     </label>
     <div class="input-cover">
         <textarea wire:model.defer="compatibility_preferences.tenant_specific.additional_compatibility_notes"
-            class="form-control"
+            class="form-control has-icon"
+            data-icon="fa-solid fa-note-sticky"
             rows="1"
             style="resize: none; overflow: hidden; min-height: 38px;"
             placeholder="e.g., I prefer an Agent with commercial leasing experience, or I have a strict move-in date..."
