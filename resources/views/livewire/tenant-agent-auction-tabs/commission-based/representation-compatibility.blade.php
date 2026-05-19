@@ -25,7 +25,6 @@
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-primary-rental-goal-s2">
         <select id="compat_primary_rental_goal" class="form-control has-icon"
             data-icon="fa-solid fa-bullseye"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['primary_rental_goal'] ?? '' }}"
             required>
             <option value="">Select</option>
             <option value="Find a long-term home">Find a long-term home</option>
@@ -113,8 +112,7 @@
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-timeline-urgency-s2">
         <select id="compat_timeline_urgency" class="form-control has-icon"
-            data-icon="fa-solid fa-clock"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['timeline_urgency'] ?? '' }}">
+            data-icon="fa-solid fa-clock">
             <option value="">Select</option>
             <option value="Immediate (Within 2 Weeks)">Immediate (Within 2 Weeks)</option>
             <option value="Within 30 Days">Within 30 Days</option>
@@ -157,8 +155,7 @@
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-budget-flexibility-s2">
         <select id="compat_budget_flexibility" class="form-control has-icon"
-            data-icon="fa-solid fa-wallet"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['budget_flexibility'] ?? '' }}">
+            data-icon="fa-solid fa-wallet">
             <option value="">Select</option>
             <option value="Fixed – no flexibility">Fixed – no flexibility</option>
             <option value="Slightly flexible (±5%)">Slightly flexible (±5%)</option>
@@ -186,7 +183,6 @@
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-communication-style-s2">
         <select id="compat_communication_style" class="form-control has-icon"
             data-icon="fa-solid fa-comments"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['communication_style'] ?? '' }}"
             required>
             <option value="">Select</option>
             <option value="Email">Email</option>
@@ -228,8 +224,7 @@
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-contact-frequency-s2">
         <select id="compat_contact_frequency" class="form-control has-icon"
-            data-icon="fa-solid fa-calendar-check"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['contact_frequency'] ?? '' }}">
+            data-icon="fa-solid fa-calendar-check">
             <option value="">Select</option>
             <option value="Daily">Daily</option>
             <option value="Every few days">Every few days</option>
@@ -254,8 +249,7 @@
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-preferred-contact-method-s2">
         <select id="compat_preferred_contact_method" class="form-control has-icon"
-            data-icon="fa-solid fa-sun"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['preferred_contact_method'] ?? '' }}">
+            data-icon="fa-solid fa-sun">
             <option value="">Select</option>
             <option value="Morning">Morning</option>
             <option value="Afternoon">Afternoon</option>
@@ -280,7 +274,6 @@
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-preferred-agent-working-style-s2">
         <select id="compat_preferred_agent_working_style" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['preferred_agent_working_style'] ?? '' }}"
             required>
             <option value="">Select</option>
             <option value="Highly proactive – send regular updates without prompting">Highly proactive – send regular updates without prompting</option>
@@ -352,8 +345,7 @@
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-desired-level-of-agent-involvement-s2">
         <select id="compat_desired_level_of_agent_involvement" class="form-control has-icon"
-            data-icon="fa-solid fa-sliders"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['desired_level_of_agent_involvement'] ?? '' }}">
+            data-icon="fa-solid fa-sliders">
             <option value="">Select</option>
             <option value="Fully Delegated – Agent manages everything, minimal input needed">Fully Delegated – Agent manages everything, minimal input needed</option>
             <option value="Mostly Delegated – Agent leads, I approve key decisions">Mostly Delegated – Agent leads, I approve key decisions</option>
@@ -397,7 +389,6 @@
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-negotiation-style-s2">
         <select id="compat_negotiation_style" class="form-control has-icon"
             data-icon="fa-solid fa-handshake"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['negotiation_style'] ?? '' }}"
             required>
             <option value="">Select</option>
             <option value="Aggressive – push hard for the best deal">Aggressive – push hard for the best deal</option>
@@ -422,8 +413,7 @@
     </label>
     <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-decision-making-style-s2">
         <select id="compat_decision_making_style" class="form-control has-icon"
-            data-icon="fa-solid fa-brain"
-            data-selected="{{ $compatibility_preferences['tenant_specific']['decision_making_style'] ?? '' }}">
+            data-icon="fa-solid fa-brain">
             <option value="">Select</option>
             <option value="Quick – ready to commit fast">Quick – ready to commit fast</option>
             <option value="Deliberate – need time to consider options">Deliberate – need time to consider options</option>

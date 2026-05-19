@@ -3732,56 +3732,41 @@ $lease_types = [
                 { id: '#compat_desired_level_of_agent_involvement',     prop: 'compatibility_preferences.tenant_specific.desired_level_of_agent_involvement' },
             ];
 
+            var compatOtherMap = {
+                '#compat_primary_rental_goal':                'compat-other-primary-rental-goal-wrapper',
+                '#compat_communication_style':                'compat-other-communication-style-wrapper',
+                '#compat_timeline_urgency':                   'compat-other-timeline-urgency-wrapper',
+                '#compat_desired_level_of_agent_involvement': 'compat-other-desired-level-of-agent-involvement-wrapper',
+            };
+
             compatSingles.forEach(function(f) {
-                var $el = $(f.id);
-                if (!$el.length) return;
-                var _s2Open = false;
-                try { _s2Open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
-                if (_s2Open) return;
-                if ($el.hasClass('select2-hidden-accessible')) {
-                    $el.select2('destroy');
-                }
-                $el.select2({ placeholder: 'Select', allowClear: true, width: '100%', minimumResultsForSearch: Infinity });
-                // Always read from live Livewire state so user changes are never overwritten
+                var el = document.querySelector(f.id);
+                if (!el) return;
+
+                // Sync value from live Livewire state so re-renders and draft loads are reflected
                 var lwVal = '';
                 try { lwVal = $wire.get(f.prop) || ''; } catch(e) {}
-                if (lwVal) { $el.val(lwVal).trigger('change.select2'); }
-                if (f.id === '#compat_primary_rental_goal' && lwVal === 'Other') {
-                    var _pgW = document.getElementById('compat-other-primary-rental-goal-wrapper');
-                    if (_pgW) _pgW.style.display = 'block';
+                el.value = lwVal;
+
+                // "Other" companion wrapper initial visibility
+                var otherWrapperId = compatOtherMap[f.id];
+                if (otherWrapperId) {
+                    var ow = document.getElementById(otherWrapperId);
+                    if (ow) ow.style.display = (lwVal === 'Other') ? 'block' : 'none';
                 }
-                if (f.id === '#compat_communication_style' && lwVal === 'Other') {
-                    var _csW = document.getElementById('compat-other-communication-style-wrapper');
-                    if (_csW) _csW.style.display = 'block';
+
+                // Attach native change listener once (flag prevents duplicates across re-renders)
+                if (!el._compatSyncBound) {
+                    el._compatSyncBound = true;
+                    el.addEventListener('change', function() {
+                        var val = el.value || '';
+                        safeLivewireSet(f.prop, val);
+                        if (otherWrapperId) {
+                            var ow2 = document.getElementById(otherWrapperId);
+                            if (ow2) ow2.style.display = (val === 'Other') ? 'block' : 'none';
+                        }
+                    });
                 }
-                if (f.id === '#compat_timeline_urgency' && lwVal === 'Other') {
-                    var _tuW = document.getElementById('compat-other-timeline-urgency-wrapper');
-                    if (_tuW) _tuW.style.display = 'block';
-                }
-                if (f.id === '#compat_desired_level_of_agent_involvement' && lwVal === 'Other') {
-                    var _dlW = document.getElementById('compat-other-desired-level-of-agent-involvement-wrapper');
-                    if (_dlW) _dlW.style.display = 'block';
-                }
-                $el.off('change.compatSync').on('change.compatSync', function() {
-                    var val = $(this).val() || '';
-                    safeLivewireSet(f.prop, val);
-                    if (f.id === '#compat_primary_rental_goal') {
-                        var pgWrapper = document.getElementById('compat-other-primary-rental-goal-wrapper');
-                        if (pgWrapper) pgWrapper.style.display = (val === 'Other') ? 'block' : 'none';
-                    }
-                    if (f.id === '#compat_communication_style') {
-                        var csWrapper = document.getElementById('compat-other-communication-style-wrapper');
-                        if (csWrapper) csWrapper.style.display = (val === 'Other') ? 'block' : 'none';
-                    }
-                    if (f.id === '#compat_timeline_urgency') {
-                        var tuWrapper = document.getElementById('compat-other-timeline-urgency-wrapper');
-                        if (tuWrapper) tuWrapper.style.display = (val === 'Other') ? 'block' : 'none';
-                    }
-                    if (f.id === '#compat_desired_level_of_agent_involvement') {
-                        var dlWrapper = document.getElementById('compat-other-desired-level-of-agent-involvement-wrapper');
-                        if (dlWrapper) dlWrapper.style.display = (val === 'Other') ? 'block' : 'none';
-                    }
-                });
             });
 
             // Multi-select: representation_priorities
