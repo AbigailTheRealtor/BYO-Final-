@@ -743,7 +743,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract"
-                placeholder="Enter Lien / Encumbrance Details">
+                placeholder="Enter title details (e.g., Existing Mortgage, Solar Panel Lien, HOA Assessment)">
         </div>
     </div>
     @endif
@@ -1693,7 +1693,7 @@
     <div class="input-cover">
         <input type="text" wire:model="inspection_period_other" class="form-control has-icon"
             data-icon="fa-solid fa-magnifying-glass"
-            placeholder="Enter Other Due Diligence / Inspection Term (e.g., 10 Days After Effective Date)">
+            placeholder="Enter inspection period duration (e.g., 3 Days)">
     </div>
 </div>
 @endif
@@ -1886,7 +1886,7 @@
     <div class="input-cover">
         <input type="text" wire:model="seller_contribution_details" class="form-control has-icon"
             data-icon="fa-solid fa-hand-holding-dollar"
-            placeholder="Enter Seller Contribution Details (e.g., $5000 toward closing costs, credit for roof repair)">
+            placeholder="Enter seller contribution details (e.g., $5,000 Toward Closing Costs, Credit for Roof Repair)">
     </div>
 </div>
 @endif
@@ -2059,6 +2059,6 @@
     <div class="input-cover">
         <input type="text" wire:model="additional_purchase_terms" class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
-            placeholder="Enter Additional Purchase Terms / Notes (e.g., Subject to sale of current home, specific contract addendums required)">
+            placeholder="Enter Additional Purchase Terms / Notes (e.g., Subject to sale of current home, Specific contract addendums required)">
     </div>
 </div>

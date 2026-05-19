@@ -1346,6 +1346,9 @@
         });
     });
 
+    // Epoch counter — incremented on every sync event so stale retry chains self-cancel
+    window._buyerVpSyncEpoch = window._buyerVpSyncEpoch || 0;
+
     // Listen for Select2 sync event from draft load
     window.addEventListener('buyer-agent-select2-sync', function(event) {
         const data = event.detail;
@@ -1353,7 +1356,7 @@
         // Set global flag to prevent Livewire sync during Select2 hydration
         window.financingSyncInProgress = true;
         
-        // Helper function to sync Select2 values 
+        // Helper function to sync Select2 values (non-view_preference fields)
         function syncSelect2(selector, values) {
             const $select = $(selector);
             if ($select.length && values && Array.isArray(values)) {
@@ -1361,8 +1364,7 @@
             }
         }
         
-        // Sync all Select2 multiselects with draft data
-        syncSelect2('#view_preference', data.view_preference);
+        // Sync all Select2 multiselects except #view_preference (handled with retry below)
         syncSelect2('#non_negotiable_amenities', data.non_negotiable_amenities);
         syncSelect2('.pool_type', data.pool_type);
         syncSelect2('#offered_financing', data.offered_financing);
@@ -1379,10 +1381,30 @@
             window.financingSyncInProgress = false;
         }, 100);
         
-        // Update visibility of "Other" text fields based on synced values
-        if (data.view_preference && data.view_preference.includes('Other')) {
-            $('#other_preferences').show();
+        // Sync #view_preference with retry in case Select2 hasn't initialized yet.
+        // An epoch counter ensures only the most-recent sync event's chain survives;
+        // any retry chain started by an earlier event self-cancels when it finds its
+        // epoch no longer matches the current one.
+        var myEpoch = ++window._buyerVpSyncEpoch;
+        function syncViewPreference(values, attemptsLeft) {
+            if (window._buyerVpSyncEpoch !== myEpoch) return; // stale chain — cancel
+            if (attemptsLeft === undefined) attemptsLeft = 15;
+            var $vp = $('#view_preference');
+            if (!$vp.length || attemptsLeft === 0) return;
+            if (!$vp.hasClass('select2-hidden-accessible')) {
+                setTimeout(function() { syncViewPreference(values, attemptsLeft - 1); }, 100);
+                return;
+            }
+            if (values && Array.isArray(values) && values.length > 0) {
+                $vp.val(values).trigger('change');
+            }
+            if (values && values.includes('Other')) {
+                $('#other_preferences').show();
+            }
         }
+        syncViewPreference(data.view_preference);
+        
+        // Update visibility of "Other" text fields based on synced values
         if (data.non_negotiable_amenities && data.non_negotiable_amenities.includes('Other')) {
             $('#other_non_negotiable_amenities_wrapper').show();
         }

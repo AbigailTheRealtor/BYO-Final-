@@ -98,7 +98,7 @@ $safeKey = function(...$parts) {
             </div>
         @elseif($purchase_fee_type === 'other')
             <input type="text" wire:model="purchase_fee_other" class="form-control mt-2"
-                placeholder="Enter purchase fee structure (e.g., 1000 upfront + 2% at Closing)">
+                placeholder="Enter purchase fee structure (e.g., $1,000 upfront + 2% at Closing)">
         @endif
     </div>
     @error('purchase_fee_*')
