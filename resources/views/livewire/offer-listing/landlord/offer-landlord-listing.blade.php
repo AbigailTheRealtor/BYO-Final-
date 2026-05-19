@@ -1559,8 +1559,12 @@
                     closeOnSelect: false,
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('non_negotiable_amenities', selectedValues, true);
+                    var _nnaOther = document.querySelector('.other_non_negotiable_amenities');
+                    if (_nnaOther) {
+                        selectedValues.includes('Other') ? _nnaOther.classList.remove('d-none') : _nnaOther.classList.add('d-none');
+                    }
                 });
             }
 

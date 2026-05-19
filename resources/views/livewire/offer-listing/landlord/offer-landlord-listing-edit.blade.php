@@ -310,13 +310,16 @@
     ];
     $preferences = [
         ['name' => 'Beach'],
-        ['name' => 'Furniture, Fixtures, and Equipment (as per attached inventory)'],
-        ['name' => 'Advertising Materials'],
-        ['name' => 'Contract Rights'],
-        ['name' => 'Leases'],
-        ['name' => 'Licenses'],
-        ['name' => 'Rights under any Agreement for Interests'],
-
+        ['name' => 'City'],
+        ['name' => 'Garden'],
+        ['name' => 'Golf Course'],
+        ['name' => 'Greenbelt'],
+        ['name' => 'Mountain(s)'],
+        ['name' => 'Park'],
+        ['name' => 'Pool'],
+        ['name' => 'Tennis Court'],
+        ['name' => 'Trees/Woods'],
+        ['name' => 'Water'],
         ['name' => 'Other'],
     ];
 
@@ -1363,9 +1366,16 @@ $tenantPays = [
                     width: '100%',
                 });
                 $('#non_negotiable_amenities').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('non_negotiable_amenities', selectedValues, true);
+                    var _nnaOtherEl = document.querySelector('.other_non_negotiable_amenities');
+                    if (_nnaOtherEl) {
+                        selectedValues.includes('Other') ? _nnaOtherEl.classList.remove('d-none') : _nnaOtherEl.classList.add('d-none');
+                    }
                 });
+                var _nnaSaved = @json($this->non_negotiable_amenities ?? []);
+                if (!Array.isArray(_nnaSaved)) _nnaSaved = [];
+                if (_nnaSaved.length) { $('#non_negotiable_amenities').val(_nnaSaved).trigger('change'); }
             }
 
             // Function to toggle "auction time" input field
@@ -1610,11 +1620,9 @@ $tenantPays = [
                         var otherSection = document.getElementById('hoa-fee-includes-other-section');
                         if (otherSection) otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
                     });
-                }
-                if ($('#association_fee_includes').length) {
-                    var _afiVals = $('#association_fee_includes').val() || [];
-                    var _afiSection = document.getElementById('hoa-fee-includes-other-section');
-                    if (_afiSection) _afiSection.style.display = _afiVals.includes('Other') ? 'block' : 'none';
+                    var _afiSaved = @json($this->association_fee_includes ?? []);
+                    if (!Array.isArray(_afiSaved)) _afiSaved = [];
+                    if (_afiSaved.length) { $('#association_fee_includes').val(_afiSaved).trigger('change'); }
                 }
 
                 if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
@@ -1630,11 +1638,9 @@ $tenantPays = [
                         var otherSection = document.getElementById('hoa-amenities-other-section');
                         if (otherSection) otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
                     });
-                }
-                if ($('#association_amenities').length) {
-                    var _aaVals = $('#association_amenities').val() || [];
-                    var _aaSection = document.getElementById('hoa-amenities-other-section');
-                    if (_aaSection) _aaSection.style.display = _aaVals.includes('Other') ? 'block' : 'none';
+                    var _aaSaved = @json($this->association_amenities ?? []);
+                    if (!Array.isArray(_aaSaved)) _aaSaved = [];
+                    if (_aaSaved.length) { $('#association_amenities').val(_aaSaved).trigger('change'); }
                 }
             }
             initTaxLegalEditSelect2();
@@ -1648,10 +1654,11 @@ $tenantPays = [
                 if (!otherAmenitiesDiv) {
                     return;
                 }
-                if (selectElement.value === 'Other') {
-                    otherAmenitiesDiv.classList.remove('d-none'); // Show the "Other" input field
+                var _nnaVals = $(selectElement).val() || [];
+                if (_nnaVals.includes('Other')) {
+                    otherAmenitiesDiv.classList.remove('d-none');
                 } else {
-                    otherAmenitiesDiv.classList.add('d-none'); // Hide the "Other" input field
+                    otherAmenitiesDiv.classList.add('d-none');
                 }
             }
             // Function to attach the event listener to the bathrooms dropdown
@@ -1843,11 +1850,9 @@ $tenantPays = [
                     var $riW = $('#other_rent_includes_wrapper');
                     if ($riW.length) $riW.css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
-            }
-            if ($('#rent_includes').length) {
-                var _riVals = $('#rent_includes').val() || [];
-                var $riW = $('#other_rent_includes_wrapper');
-                if ($riW.length) $riW.css('display', _riVals.includes('Other') ? 'block' : 'none');
+                var _riSaved = @json($this->rent_includes ?? []);
+                if (!Array.isArray(_riSaved)) _riSaved = [];
+                if (_riSaved.length) { $('#rent_includes').val(_riSaved).trigger('change'); }
             }
 
             if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
@@ -1865,13 +1870,9 @@ $tenantPays = [
                         selectedValues.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
                     }
                 });
-            }
-            if ($('#terms_of_lease').length) {
-                var _tolVals = $('#terms_of_lease').val() || [];
-                var _tolContainer = document.getElementById('otherLeaseContainer');
-                if (_tolContainer) {
-                    _tolVals.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
-                }
+                var _tolSaved = @json($this->terms_of_lease ?? []);
+                if (!Array.isArray(_tolSaved)) _tolSaved = [];
+                if (_tolSaved.length) { $('#terms_of_lease').val(_tolSaved).trigger('change'); }
             }
 
             if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
@@ -1888,11 +1889,9 @@ $tenantPays = [
                     var $w = $('#other_tenant_pays_wrapper');
                     if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
-            }
-            if ($('#tenant_pays').length) {
-                var _tpVals = $('#tenant_pays').val() || [];
-                var $tpW = $('#other_tenant_pays_wrapper');
-                if ($tpW.length) $tpW.css('display', _tpVals.includes('Other') ? 'block' : 'none');
+                var _tpSaved = @json($this->tenant_pays ?? []);
+                if (!Array.isArray(_tpSaved)) _tpSaved = [];
+                if (_tpSaved.length) { $('#tenant_pays').val(_tpSaved).trigger('change'); }
             }
 
             if ($('#owner_pays').length && !$('#owner_pays').hasClass('select2-hidden-accessible')) {
@@ -1909,11 +1908,9 @@ $tenantPays = [
                     var $w = $('#other_owner_pays_wrapper');
                     if ($w.length) $w.css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
-            }
-            if ($('#owner_pays').length) {
-                var _opVals = $('#owner_pays').val() || [];
-                var $opW = $('#other_owner_pays_wrapper');
-                if ($opW.length) $opW.css('display', _opVals.includes('Other') ? 'block' : 'none');
+                var _opSaved = @json($this->owner_pays ?? []);
+                if (!Array.isArray(_opSaved)) _opSaved = [];
+                if (_opSaved.length) { $('#owner_pays').val(_opSaved).trigger('change'); }
             }
 
             // Initialize Desired Lease Term Select2 for edit mode.
@@ -2866,15 +2863,11 @@ $tenantPays = [
                     _tolVals.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
                 }
             }
-            var nnaEl = document.getElementById('non_negotiable_amenities');
-            if (nnaEl) {
-                var nnaCompanion = document.querySelector('.other_non_negotiable_amenities');
-                if (nnaCompanion) nnaCompanion.classList.toggle('d-none', nnaEl.value !== 'Other');
-                if (!nnaEl.dataset.otherInit) {
-                    nnaEl.dataset.otherInit = '1';
-                    nnaEl.addEventListener('change', function() {
-                        if (nnaCompanion) nnaCompanion.classList.toggle('d-none', this.value !== 'Other');
-                    });
+            if ($('#non_negotiable_amenities').length) {
+                var _nnaValsOc = $('#non_negotiable_amenities').val() || [];
+                var _nnaOtherOc = document.querySelector('.other_non_negotiable_amenities');
+                if (_nnaOtherOc) {
+                    _nnaValsOc.includes('Other') ? _nnaOtherOc.classList.remove('d-none') : _nnaOtherOc.classList.add('d-none');
                 }
             }
             var singleSelectPairs = [

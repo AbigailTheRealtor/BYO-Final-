@@ -2117,7 +2117,16 @@ class LandlordOfferListingEdit extends Component
             $this->auction_time = $auction->get->auction_time ?? null;
 
             $this->state = $auction->get->state ?? null;
-            $this->property_type = $auction->get->property_type ?? null;
+            $rawPt = $auction->get->property_type ?? null;
+            if ($rawPt !== null) {
+                $ptLower = strtolower((string)$rawPt);
+                if (str_contains($ptLower, 'commercial')) {
+                    $rawPt = 'Commercial Property';
+                } elseif (str_contains($ptLower, 'residential')) {
+                    $rawPt = 'Residential Property';
+                }
+            }
+            $this->property_type = $rawPt;
             $raw = $auction->get->cities ?? null;
             $this->cities = is_string($raw) ? json_decode($raw, true) ?? [] : ($raw ? (array)$raw : []);
 
@@ -2855,7 +2864,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('property_criteria', $this->property_criteria);
         $auction->saveMeta('unit_size', $this->unit_size);
         $auction->saveMeta('unit_size_other', $this->unit_size_other);
-        $auction->saveMeta('appliances', $this->appliances);
+        $auction->saveMeta('appliances', json_encode($this->ensureArray($this->appliances)));
         $auction->saveMeta('appliances_other', $this->appliances_other);
         $auction->saveMeta('preferance_details', $this->preferance_details);
         $auction->saveMeta('other_appliances', $this->other_appliances);
@@ -2945,12 +2954,12 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('reserve_rent', $this->stripCommas($this->reserve_rent));
         $auction->saveMeta('lease_now_price', $this->stripCommas($this->lease_now_price));
         $auction->saveMeta('desired_rental_amount_tenant', $this->desired_rental_amount_tenant);
-        $auction->saveMeta('rent_includes', json_encode($this->rent_includes));
-        $auction->saveMeta('terms_of_lease', json_encode($this->terms_of_lease));
+        $auction->saveMeta('rent_includes', json_encode($this->ensureArray($this->rent_includes)));
+        $auction->saveMeta('terms_of_lease', json_encode($this->ensureArray($this->terms_of_lease)));
 
 
-        $auction->saveMeta('tenant_pays', json_encode($this->tenant_pays));
-        $auction->saveMeta('owner_pays', json_encode($this->owner_pays));
+        $auction->saveMeta('tenant_pays', json_encode($this->ensureArray($this->tenant_pays)));
+        $auction->saveMeta('owner_pays', json_encode($this->ensureArray($this->owner_pays)));
         $auction->saveMeta('other_tenant_pays', $this->other_tenant_pays);
         $auction->saveMeta('other_owner_pays', $this->other_owner_pays);
         $auction->saveMeta('tenant_pays_other', $this->tenant_pays_other);
@@ -2967,7 +2976,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
         $auction->saveMeta('pool_needed', $this->pool_needed);
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
-        $auction->saveMeta('view_preference', json_encode($this->view_preference));
+        $auction->saveMeta('view_preference', json_encode($this->ensureArray($this->view_preference)));
         $auction->saveMeta('other_preferences', $this->other_preferences);
         $auction->saveMeta('real_estate_purchase', $this->real_estate_purchase);
         $auction->saveMeta('number_of_unit', $this->number_of_unit);
@@ -3005,7 +3014,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('storage_space', $this->storage_space);
 
         // Requirements
-        $auction->saveMeta('non_negotiable_amenities', json_encode($this->non_negotiable_amenities));
+        $auction->saveMeta('non_negotiable_amenities', json_encode($this->ensureArray($this->non_negotiable_amenities)));
         $auction->saveMeta('other_non_negotiable_amenities', $this->other_non_negotiable_amenities);
         $auction->saveMeta('budget', $this->budget);
 
