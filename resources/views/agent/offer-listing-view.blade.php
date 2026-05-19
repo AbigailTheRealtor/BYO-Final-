@@ -508,7 +508,6 @@
     @php $ofv::row('Max Occupants Allowed', $fmt($d['number_of_occupants_allowed'])); @endphp
     @php $ofv::row('Parking Terms', $fmt($d['parking_terms'])); @endphp
     @php $ofv::row('Other Parking', $fmt($d['other_parking_space_wrapper'])); @endphp
-    @php $ofv::row('Utility Responsibility', $fmt($d['utility_responsibility'])); @endphp
     @php $ofv::row('Maintenance Responsibility', $fmt($d['ll_maintenance_responsibility'])); @endphp
     @php $ofv::row('Maintenance Handler', $fmt($d['maintenance_handler'])); @endphp
     @php $ofv::row('Maintenance Response Time', $fmt($d['maintenance_response_time'])); @endphp

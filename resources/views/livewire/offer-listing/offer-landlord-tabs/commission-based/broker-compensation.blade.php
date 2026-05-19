@@ -102,7 +102,7 @@ $safeKey = function(...$parts) {
                         <div class="input-group">
                             <span class="input-group-text">$</span>
                             <input type="text" wire:model.lazy="tenant_broker_flat_fee" class="form-control"
-                                placeholder="Enter flat fee amount (e.g., 1,000)"
+                                placeholder="Enter flat fee amount (e.g., 1000)"
                                 data-error-id="tenant_broker_flat_fee_error" oninput="validateInput(this)"
                                 onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>

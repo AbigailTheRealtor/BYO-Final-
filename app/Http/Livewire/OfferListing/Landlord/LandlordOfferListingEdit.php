@@ -303,7 +303,6 @@ class LandlordOfferListingEdit extends Component
     public $pet_deposit_fee_rent = '';
     public $number_of_occupants_allowed = '';
     public $parking_terms = '';
-    public $utility_responsibility = '';
     public $ll_maintenance_responsibility = '';
     public $renewal_option_offered = '';
     public $renewal_option_details = '';
@@ -1646,10 +1645,10 @@ class LandlordOfferListingEdit extends Component
             'leasing_space_property'          => $this->leasing_space_property,
             'lease_amount_frequency'          => $this->lease_amount_frequency,
             'desired_lease_length'            => json_encode($this->ensureArray($this->desired_lease_length)),
-            'desired_rental_amount'           => $this->desired_rental_amount,
-            'starting_rent'                   => $this->starting_rent,
-            'reserve_rent'                    => $this->reserve_rent,
-            'lease_now_price'                 => $this->lease_now_price,
+            'desired_rental_amount'           => $this->stripCommas($this->desired_rental_amount),
+            'starting_rent'                   => $this->stripCommas($this->starting_rent),
+            'reserve_rent'                    => $this->stripCommas($this->reserve_rent),
+            'lease_now_price'                 => $this->stripCommas($this->lease_now_price),
             'desired_rental_amount_tenant'    => $this->desired_rental_amount_tenant,
             'rent_includes'                   => json_encode($this->ensureArray($this->rent_includes)),
             'terms_of_lease'                  => json_encode($this->ensureArray($this->terms_of_lease)),
@@ -1665,7 +1664,7 @@ class LandlordOfferListingEdit extends Component
             'garage_needed'                   => $this->garage_needed,
             'other_garage_needed'             => $this->other_garage_needed,
             'garage_parking_spaces'           => $this->garage_parking_spaces,
-            'garage_parking_spaces_option'    => $this->garage_parking_spaces_option,
+            'garage_parking_spaces_option'    => json_encode($this->ensureArray($this->garage_parking_spaces_option)),
             'other_parking_space_wrapper'     => $this->other_parking_space_wrapper,
             'pool_needed'                     => $this->pool_needed,
             'pool_type'                       => json_encode($this->ensureArray($this->pool_type)),
@@ -1918,7 +1917,7 @@ class LandlordOfferListingEdit extends Component
             'tenant_broker_commission_percentage' => $this->tenant_broker_commission_percentage,
             'tenant_broker_fee_structure'     => $this->tenant_broker_fee_structure,
             'tenant_broker_percentage'        => $this->tenant_broker_percentage,
-            'tenant_broker_flat_fee'          => $this->tenant_broker_flat_fee,
+            'tenant_broker_flat_fee'          => $this->stripCommas($this->tenant_broker_flat_fee),
             'expansion_commission_type'       => $this->expansion_commission_type,
             'expansion_gross_percentage'      => $this->expansion_gross_percentage,
             'expansion_first_month_percentage' => $this->expansion_first_month_percentage,
@@ -1945,15 +1944,14 @@ class LandlordOfferListingEdit extends Component
             'open_house_count'                => $this->open_house_count,
             'virtual_showings_count'          => $this->virtual_showings_count,
             'lease_available_date'            => $this->lease_available_date,
-            'security_deposit_required'       => $this->security_deposit_required,
+            'security_deposit_required'       => $this->stripCommas($this->security_deposit_required),
             'first_month_rent_required'       => $this->first_month_rent_required,
             'last_month_rent_required'        => $this->last_month_rent_required,
-            'total_move_in_funds_required'    => $this->total_move_in_funds_required,
+            'total_move_in_funds_required'    => $this->stripCommas($this->total_move_in_funds_required),
             'pet_policy'                      => $this->pet_policy,
             'pet_deposit_fee_rent'            => $this->pet_deposit_fee_rent,
             'number_of_occupants_allowed'     => $this->number_of_occupants_allowed,
             'parking_terms'                   => $this->parking_terms,
-            'utility_responsibility'          => $this->utility_responsibility,
             'll_maintenance_responsibility'   => $this->ll_maintenance_responsibility,
             'renewal_option_offered'          => $this->renewal_option_offered,
             'renewal_option_details'          => $this->renewal_option_details,
@@ -2108,8 +2106,8 @@ class LandlordOfferListingEdit extends Component
 
             // Load all metadata fields
             $this->listing_title = $auction->get->title ?? '';
-            $this->service_type = $auction->get->service_type ?? null;
-            $this->user_type = $auction->get->user_type ?? null;
+            $this->service_type = $auction->get->service_type ?? 'full_service';
+            $this->user_type = $auction->get->user_type ?? 'landlord';
             $this->listing_status = $auction->get->listing_status ?? null;
             $this->auction_type = $auction->get->auction_type ?? null;
             $this->working_with_agent = $auction->get->working_with_agent ?? null;
@@ -2288,7 +2286,7 @@ class LandlordOfferListingEdit extends Component
             $this->garage_needed = $auction->get->garage_needed ?? null;
             $this->other_garage_needed = $auction->get->other_garage_needed ?? null;
             $this->garage_parking_spaces = $auction->get->garage_parking_spaces ?? null;
-            $this->garage_parking_spaces_option = $auction->get->garage_parking_spaces_option ?? null;
+            $this->garage_parking_spaces_option = $this->ensureArray($auction->get->garage_parking_spaces_option ?? null);
             $this->other_parking_space_wrapper = $auction->get->other_parking_space_wrapper ?? null;
             $this->pool_needed = $auction->get->pool_needed ?? null;
 
@@ -2761,7 +2759,6 @@ class LandlordOfferListingEdit extends Component
             $this->pet_deposit_fee_rent = $auction->get->pet_deposit_fee_rent ?? '';
             $this->number_of_occupants_allowed = $auction->get->number_of_occupants_allowed ?? '';
             $this->parking_terms = $auction->get->parking_terms ?? '';
-            $this->utility_responsibility = $auction->get->utility_responsibility ?? '';
             $this->ll_maintenance_responsibility = $auction->get->ll_maintenance_responsibility ?? '';
             $this->renewal_option_offered = $auction->get->renewal_option_offered ?? '';
             $this->renewal_option_details = $auction->get->renewal_option_details ?? '';
@@ -2943,10 +2940,10 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('lease_amount_frequency', $this->lease_amount_frequency);
         $auction->saveMeta('desired_lease_length', $this->desired_lease_length);
 
-        $auction->saveMeta('desired_rental_amount', $this->desired_rental_amount);
-        $auction->saveMeta('starting_rent', $this->starting_rent);
-        $auction->saveMeta('reserve_rent', $this->reserve_rent);
-        $auction->saveMeta('lease_now_price', $this->lease_now_price);
+        $auction->saveMeta('desired_rental_amount', $this->stripCommas($this->desired_rental_amount));
+        $auction->saveMeta('starting_rent', $this->stripCommas($this->starting_rent));
+        $auction->saveMeta('reserve_rent', $this->stripCommas($this->reserve_rent));
+        $auction->saveMeta('lease_now_price', $this->stripCommas($this->lease_now_price));
         $auction->saveMeta('desired_rental_amount_tenant', $this->desired_rental_amount_tenant);
         $auction->saveMeta('rent_includes', json_encode($this->rent_includes));
         $auction->saveMeta('terms_of_lease', json_encode($this->terms_of_lease));
@@ -2966,7 +2963,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('garage_needed', $this->garage_needed);
         $auction->saveMeta('other_garage_needed', $this->other_garage_needed);
         $auction->saveMeta('garage_parking_spaces', $this->garage_parking_spaces);
-        $auction->saveMeta('garage_parking_spaces_option', $this->garage_parking_spaces_option);
+        $auction->saveMeta('garage_parking_spaces_option', json_encode($this->ensureArray($this->garage_parking_spaces_option)));
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
         $auction->saveMeta('pool_needed', $this->pool_needed);
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
@@ -3216,7 +3213,7 @@ class LandlordOfferListingEdit extends Component
         $auction->saveMeta('tenant_broker_commission_percentage', $this->tenant_broker_commission_percentage);
         $auction->saveMeta('tenant_broker_fee_structure', $this->tenant_broker_fee_structure);
         $auction->saveMeta('tenant_broker_percentage', $this->tenant_broker_percentage);
-        $auction->saveMeta('tenant_broker_flat_fee', $this->tenant_broker_flat_fee);
+        $auction->saveMeta('tenant_broker_flat_fee', $this->stripCommas($this->tenant_broker_flat_fee));
         $auction->saveMeta('expansion_commission_type', $this->expansion_commission_type);
         $auction->saveMeta('expansion_gross_percentage', $this->expansion_gross_percentage);
         $auction->saveMeta('expansion_first_month_percentage', $this->expansion_first_month_percentage);
@@ -3263,15 +3260,14 @@ class LandlordOfferListingEdit extends Component
 
         // Landlord Lease Terms Questions
         $auction->saveMeta('lease_available_date', $this->lease_available_date);
-        $auction->saveMeta('security_deposit_required', $this->security_deposit_required);
+        $auction->saveMeta('security_deposit_required', $this->stripCommas($this->security_deposit_required));
         $auction->saveMeta('first_month_rent_required', $this->first_month_rent_required);
         $auction->saveMeta('last_month_rent_required', $this->last_month_rent_required);
-        $auction->saveMeta('total_move_in_funds_required', $this->total_move_in_funds_required);
+        $auction->saveMeta('total_move_in_funds_required', $this->stripCommas($this->total_move_in_funds_required));
         $auction->saveMeta('pet_policy', $this->pet_policy);
         $auction->saveMeta('pet_deposit_fee_rent', $this->pet_deposit_fee_rent);
         $auction->saveMeta('number_of_occupants_allowed', $this->number_of_occupants_allowed);
         $auction->saveMeta('parking_terms', $this->parking_terms);
-        $auction->saveMeta('utility_responsibility', $this->utility_responsibility);
         $auction->saveMeta('ll_maintenance_responsibility', $this->ll_maintenance_responsibility);
         $auction->saveMeta('renewal_option_offered', $this->renewal_option_offered);
         $auction->saveMeta('renewal_option_details', $this->renewal_option_details);

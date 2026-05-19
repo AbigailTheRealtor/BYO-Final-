@@ -2259,6 +2259,7 @@
                 initTaxLegalSelect2();
                 initLeaseMetaSelect2();
                 initSingleSelectOtherToggles();
+                if (typeof reformatAllMoneyFields === 'function') reformatAllMoneyFields();
             });
 
             window.syncLandlordSelect2BeforeSave = function() {
@@ -3252,6 +3253,23 @@
             parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
         }
+
+        function reformatAllMoneyFields() {
+            var moneyFields = [
+                'desired_rental_amount', 'starting_rent', 'reserve_rent', 'lease_now_price',
+                'security_deposit_required', 'total_move_in_funds_required',
+                'annual_property_taxes', 'annual_cdd_fee', 'special_assessment_amount',
+                'association_fee_amount', 'association_application_fee', 'lease_fee_flat',
+                'tenant_broker_flat_fee'
+            ];
+            moneyFields.forEach(function(field) {
+                var el = document.querySelector('[wire\\:model="' + field + '"]')
+                      || document.querySelector('[wire\\:model\\.lazy="' + field + '"]')
+                      || document.getElementById(field);
+                if (el && el.value) { reformatNumber(el); }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', reformatAllMoneyFields);
 
         function validateInput(input) {
             let v = input.value;

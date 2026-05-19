@@ -654,7 +654,9 @@
             <select id="garage_parking_spaces_option_landlord"
                 class="form-control has-icon select2-multiple" data-icon="fa-solid fa-warehouse" data-placeholder="Select" multiple>
                 @foreach ($garage_parking_spaces as $row_pt)
-                    <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
+                    <option value="{{ $row_pt['name'] }}"
+                        {{ in_array($row_pt['name'], $garage_parking_spaces_option ?? []) ? 'selected' : '' }}>
+                        {{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
         </div>
@@ -695,8 +697,8 @@
     </div>
 @endif
 
-@if ($pool_needed === 'Yes')
-    <!-- Pool Type Selection (Shows only if "Yes" is selected) -->
+@if ($property_type !== 'Commercial Property' && $pool_needed === 'Yes')
+    <!-- Pool Type Selection (Shows only if "Yes" is selected and not Commercial) -->
     <div class="form-group" id="pool_type_wrapper">
         <label class="fw-bold">Select Pool Type:</label>
         <div class="form-check">

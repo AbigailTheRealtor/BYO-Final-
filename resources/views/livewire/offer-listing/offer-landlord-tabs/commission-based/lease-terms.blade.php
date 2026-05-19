@@ -1281,20 +1281,6 @@
     </div>
 </div>
 
-{{-- Utility Responsibility --}}
-<div class="form-group">
-    <label class="fw-bold">Utility Responsibility:</label>
-    <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-        title="Describe which utilities the Landlord covers and which are the Tenant's responsibility.">
-        <i class="fa-solid fa-circle-info"></i>
-    </span>
-    <div class="input-cover">
-        <textarea wire:model="utility_responsibility" class="form-control has-icon landlord-compact-textarea" rows="1"
-            data-icon="fa-solid fa-bolt"
-            placeholder="Enter utility responsibilities (e.g., Landlord Pays Water/Trash, Tenant Pays Electric/Gas)"></textarea>
-    </div>
-</div>
-
 {{-- Maintenance Responsibility --}}
 <div class="form-group">
     <label class="fw-bold">Maintenance Responsibility:</label>

@@ -660,7 +660,7 @@
                         </span>
                     </label>
                     <div class="input-cover">
-                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon landlord-compact-textarea" rows="2"
+                        <textarea wire:model="additional_lease_restrictions" class="form-control has-icon landlord-compact-textarea" rows="1"
                             data-icon="fa-solid fa-ban"
                             placeholder="Enter additional restrictions (e.g., No Airbnb/VRBO, Owner Must Occupy 1 Year Before Renting, Tenant Must Be HOA-Approved)"></textarea>
                     </div>

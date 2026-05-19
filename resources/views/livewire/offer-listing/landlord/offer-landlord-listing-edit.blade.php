@@ -1527,6 +1527,119 @@ $tenantPays = [
                 });
             }
 
+            var _mlsEditCfgs = [
+                { id: 'heating_fuel',      field: 'heating_fuel',      placeholder: 'Select', otherId: 'other_heating_fuel_wrapper' },
+                { id: 'air_conditioning',  field: 'air_conditioning',  placeholder: 'Select', otherId: 'other_air_conditioning_wrapper' },
+                { id: 'water',             field: 'water',             placeholder: 'Select', otherId: 'other_water_wrapper' },
+                { id: 'sewer',             field: 'sewer',             placeholder: 'Select', otherId: 'other_sewer_wrapper' },
+                { id: 'property_utilities',field: 'property_utilities',placeholder: 'Select', otherId: 'other_property_utilities_wrapper' },
+                { id: 'laundry_features',  field: 'laundry_features',  placeholder: 'Select', otherId: 'other_laundry_features_wrapper' },
+                { id: 'floor_covering',    field: 'floor_covering',    placeholder: 'Select', otherId: 'other_floor_covering_wrapper' },
+                { id: 'security_features', field: 'security_features', placeholder: 'Select', otherId: 'other_security_features_wrapper' },
+                { id: 'road_surface_type', field: 'road_surface_type', placeholder: 'Select', otherId: 'other_road_surface_type_wrapper' },
+                { id: 'electrical_service',field: 'electrical_service',placeholder: 'Select', otherId: 'other_electrical_service_wrapper' },
+                { id: 'building_features', field: 'building_features', placeholder: 'Select', otherId: 'other_building_features_wrapper' },
+                { id: 'space_type',           field: 'space_type',           placeholder: 'Select' },
+                { id: 'space_classification', field: 'space_classification', placeholder: 'Select' },
+                { id: 'garage_parking_spaces_option_landlord', field: 'garage_parking_spaces_option', placeholder: 'Select', otherId: 'other_garage_parking_spaces_option_landlord' },
+            ];
+            function initMlsEditMultiSelects() {
+                _mlsEditCfgs.forEach(function(cfg) {
+                    var $el = $('#' + cfg.id);
+                    if ($el.length && !$el.hasClass('select2-hidden-accessible')) {
+                        $el.select2({ placeholder: cfg.placeholder, allowClear: true, width: '100%', closeOnSelect: false });
+                        $el.on('change', function() {
+                            var vals = $(this).val() || [];
+                            @this.set(cfg.field, vals, true);
+                            if (cfg.otherId) {
+                                var $wrapper = $('#' + cfg.otherId);
+                                if ($wrapper.length) {
+                                    $wrapper.css('display', vals.includes('Other') ? 'block' : 'none');
+                                }
+                            }
+                        });
+                    }
+                    if ($el.length && cfg.otherId) {
+                        var _currentVals = $el.val() || [];
+                        var $wrapper = $('#' + cfg.otherId);
+                        if ($wrapper.length) {
+                            $wrapper.css('display', _currentVals.includes('Other') ? 'block' : 'none');
+                        }
+                    }
+                });
+            }
+            initMlsEditMultiSelects();
+            window._landlordInitMlsMultiSelects = initMlsEditMultiSelects;
+
+            function initAppliancesEditSelect2() {
+                if ($('#appliances').length && !$('#appliances').hasClass('select2-hidden-accessible')) {
+                    $('#appliances').select2({
+                        placeholder: 'Select',
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false,
+                    });
+                    $('#appliances').on('change', function(e) {
+                        let selectedValues = $(this).val() || [];
+                        @this.set('appliances', selectedValues, true);
+                        @this.call('updateAppliances', selectedValues);
+                        var _appEl = document.getElementById('other_appliances');
+                        if (_appEl) _appEl.style.display = selectedValues.includes('Other') ? '' : 'none';
+                    });
+                }
+                if ($('#appliances').length) {
+                    var _appVals = $('#appliances').val() || [];
+                    var _appEl = document.getElementById('other_appliances');
+                    if (_appEl) _appEl.style.display = _appVals.includes('Other') ? '' : 'none';
+                }
+            }
+            initAppliancesEditSelect2();
+            window._landlordInitAppliancesSelect2 = initAppliancesEditSelect2;
+
+            function initTaxLegalEditSelect2() {
+                if ($('#association_fee_includes').length && !$('#association_fee_includes').hasClass('select2-hidden-accessible')) {
+                    $('#association_fee_includes').select2({
+                        placeholder: 'Select',
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false,
+                    });
+                    $('#association_fee_includes').on('change', function() {
+                        var vals = $(this).val() || [];
+                        @this.set('association_fee_includes', vals, true);
+                        var otherSection = document.getElementById('hoa-fee-includes-other-section');
+                        if (otherSection) otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
+                    });
+                }
+                if ($('#association_fee_includes').length) {
+                    var _afiVals = $('#association_fee_includes').val() || [];
+                    var _afiSection = document.getElementById('hoa-fee-includes-other-section');
+                    if (_afiSection) _afiSection.style.display = _afiVals.includes('Other') ? 'block' : 'none';
+                }
+
+                if ($('#association_amenities').length && !$('#association_amenities').hasClass('select2-hidden-accessible')) {
+                    $('#association_amenities').select2({
+                        placeholder: 'Select',
+                        allowClear: true,
+                        width: '100%',
+                        closeOnSelect: false,
+                    });
+                    $('#association_amenities').on('change', function() {
+                        var vals = $(this).val() || [];
+                        @this.set('association_amenities', vals, true);
+                        var otherSection = document.getElementById('hoa-amenities-other-section');
+                        if (otherSection) otherSection.style.display = vals.includes('Other') ? 'block' : 'none';
+                    });
+                }
+                if ($('#association_amenities').length) {
+                    var _aaVals = $('#association_amenities').val() || [];
+                    var _aaSection = document.getElementById('hoa-amenities-other-section');
+                    if (_aaSection) _aaSection.style.display = _aaVals.includes('Other') ? 'block' : 'none';
+                }
+            }
+            initTaxLegalEditSelect2();
+            window._landlordInitTaxLegalSelect2 = initTaxLegalEditSelect2;
+
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
             function toggleOtherAmenities(selectElement) {
@@ -1725,9 +1838,16 @@ $tenantPays = [
                     width: '100%',
                 });
                 $('#rent_includes').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('rent_includes', selectedValues, true);
+                    var $riW = $('#other_rent_includes_wrapper');
+                    if ($riW.length) $riW.css('display', selectedValues.includes('Other') ? 'block' : 'none');
                 });
+            }
+            if ($('#rent_includes').length) {
+                var _riVals = $('#rent_includes').val() || [];
+                var $riW = $('#other_rent_includes_wrapper');
+                if ($riW.length) $riW.css('display', _riVals.includes('Other') ? 'block' : 'none');
             }
 
             if ($('#terms_of_lease').length && !$('#terms_of_lease').hasClass('select2-hidden-accessible')) {
@@ -1738,9 +1858,20 @@ $tenantPays = [
                     width: '100%',
                 });
                 $('#terms_of_lease').on('change', function(e) {
-                    let selectedValues = $(this).val();
+                    let selectedValues = $(this).val() || [];
                     @this.set('terms_of_lease', selectedValues, true);
+                    var _tolContainer = document.getElementById('otherLeaseContainer');
+                    if (_tolContainer) {
+                        selectedValues.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
+                    }
                 });
+            }
+            if ($('#terms_of_lease').length) {
+                var _tolVals = $('#terms_of_lease').val() || [];
+                var _tolContainer = document.getElementById('otherLeaseContainer');
+                if (_tolContainer) {
+                    _tolVals.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
+                }
             }
 
             if ($('#tenant_pays').length && !$('#tenant_pays').hasClass('select2-hidden-accessible')) {
@@ -2500,6 +2631,11 @@ $tenantPays = [
                 if (_carportSel && _carportIn && _carportSel.value === 'Yes') {
                     _carportIn.classList.remove('d-none');
                 }
+                if (typeof window._landlordInitMlsMultiSelects === 'function') window._landlordInitMlsMultiSelects();
+                if (typeof window._landlordInitAppliancesSelect2 === 'function') window._landlordInitAppliancesSelect2();
+                if (typeof window._landlordInitTaxLegalSelect2 === 'function') window._landlordInitTaxLegalSelect2();
+                if (typeof window._landlordInitOtherCompanions === 'function') window._landlordInitOtherCompanions();
+                if (typeof window._landlordReformatMoneyFields === 'function') window._landlordReformatMoneyFields();
                 requestAnimationFrame(addIconsToInputs);
             }, 300);
 
@@ -2632,6 +2768,145 @@ $tenantPays = [
             const draftModal = new bootstrap.Modal(document.getElementById('draftModal'));
             draftModal.show();
 
+        });
+    </script>
+    <script>
+        function getErrorEl(input) {
+            const errorId = input.getAttribute('data-error-id');
+            return errorId ? document.getElementById(errorId) : null;
+        }
+
+        function validateInput(input) {
+            let v = input.value;
+            v = v.replace(/[^0-9.,]/g, '');
+            const firstDot = v.indexOf('.');
+            if (firstDot !== -1) {
+                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+            }
+            input.value = v;
+        }
+
+        function reformatNumber(input) {
+            const errorEl = getErrorEl(input);
+            let v = input.value.replace(/,/g, '');
+            const parts = v.split('.');
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            input.value = decPart ? `${intPart}.${decPart}` : intPart;
+            errorEl && (errorEl.innerText = '');
+        }
+
+        function handlePaste(event) {
+            event.preventDefault();
+            const paste = (event.clipboardData || window.clipboardData).getData('text');
+            let clean = paste.replace(/[^0-9.]/g, '');
+            const parts = clean.split('.');
+            if (parts.length > 2) {
+                clean = parts[0] + '.' + parts.slice(1).join('');
+            }
+            let intPart = parts[0] || '';
+            let decPart = parts[1] || '';
+            if (decPart) decPart = decPart.slice(0, 2);
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            event.target.value = decPart ? `${intPart}.${decPart}` : intPart;
+            event.target.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        function reformatAllMoneyFields() {
+            var moneyFields = [
+                'desired_rental_amount', 'starting_rent', 'reserve_rent', 'lease_now_price',
+                'security_deposit_required', 'total_move_in_funds_required',
+                'annual_property_taxes', 'annual_cdd_fee', 'special_assessment_amount',
+                'association_fee_amount', 'association_application_fee', 'lease_fee_flat',
+                'tenant_broker_flat_fee'
+            ];
+            moneyFields.forEach(function(field) {
+                var el = document.querySelector('[wire\\:model="' + field + '"]')
+                      || document.querySelector('[wire\\:model\\.lazy="' + field + '"]')
+                      || document.getElementById(field);
+                if (el && el.value) { reformatNumber(el); }
+            });
+        }
+
+        function initLandlordEditOtherCompanions() {
+            var multiSelectPairs = [
+                { selectId: 'appliances',                            companionId: 'other_appliances',                           block: false },
+                { selectId: 'heating_fuel',                          companionId: 'other_heating_fuel_wrapper',                  block: true },
+                { selectId: 'air_conditioning',                      companionId: 'other_air_conditioning_wrapper',              block: true },
+                { selectId: 'water',                                 companionId: 'other_water_wrapper',                         block: true },
+                { selectId: 'sewer',                                 companionId: 'other_sewer_wrapper',                         block: true },
+                { selectId: 'property_utilities',                    companionId: 'other_property_utilities_wrapper',             block: true },
+                { selectId: 'laundry_features',                      companionId: 'other_laundry_features_wrapper',              block: true },
+                { selectId: 'floor_covering',                        companionId: 'other_floor_covering_wrapper',                block: true },
+                { selectId: 'security_features',                     companionId: 'other_security_features_wrapper',             block: true },
+                { selectId: 'road_surface_type',                     companionId: 'other_road_surface_type_wrapper',             block: true },
+                { selectId: 'electrical_service',                    companionId: 'other_electrical_service_wrapper',            block: true },
+                { selectId: 'building_features',                     companionId: 'other_building_features_wrapper',             block: true },
+                { selectId: 'garage_parking_spaces_option_landlord', companionId: 'other_garage_parking_spaces_option_landlord', block: true },
+                { selectId: 'rent_includes',                         companionId: 'other_rent_includes_wrapper',                 block: true },
+                { selectId: 'tenant_pays',                           companionId: 'other_tenant_pays_wrapper',                   block: true },
+                { selectId: 'owner_pays',                            companionId: 'other_owner_pays_wrapper',                    block: true },
+                { selectId: 'association_fee_includes',              companionId: 'hoa-fee-includes-other-section',              block: true },
+                { selectId: 'association_amenities',                 companionId: 'hoa-amenities-other-section',                 block: true },
+            ];
+            multiSelectPairs.forEach(function(pair) {
+                var $el = $('#' + pair.selectId);
+                if (!$el.length) return;
+                var vals = $el.val() || [];
+                var $companion = $('#' + pair.companionId);
+                if (!$companion.length) return;
+                $companion.css('display', vals.includes('Other') ? (pair.block ? 'block' : '') : 'none');
+            });
+            if ($('#terms_of_lease').length) {
+                var _tolVals = $('#terms_of_lease').val() || [];
+                var _tolContainer = document.getElementById('otherLeaseContainer');
+                if (_tolContainer) {
+                    _tolVals.includes('Other') ? _tolContainer.classList.remove('d-none') : _tolContainer.classList.add('d-none');
+                }
+            }
+            var nnaEl = document.getElementById('non_negotiable_amenities');
+            if (nnaEl) {
+                var nnaCompanion = document.querySelector('.other_non_negotiable_amenities');
+                if (nnaCompanion) nnaCompanion.classList.toggle('d-none', nnaEl.value !== 'Other');
+                if (!nnaEl.dataset.otherInit) {
+                    nnaEl.dataset.otherInit = '1';
+                    nnaEl.addEventListener('change', function() {
+                        if (nnaCompanion) nnaCompanion.classList.toggle('d-none', this.value !== 'Other');
+                    });
+                }
+            }
+            var singleSelectPairs = [
+                { selectId: 'flood_zone_code',           companionId: 'flood_zone_code_other_wrapper' },
+                { selectId: 'association_type',          companionId: 'association_type_other_wrapper' },
+                { selectId: 'association_fee_frequency', companionId: 'association_fee_frequency_other_wrapper' },
+                { selectId: 'min_lease_period',          companionId: 'min_lease_period_other_wrapper' },
+                { selectId: 'commercial_lease_type',     companionId: 'commercial_lease_type_other_wrapper' },
+            ];
+            singleSelectPairs.forEach(function(pair) {
+                var $select = $('#' + pair.selectId);
+                var $companion = $('#' + pair.companionId);
+                if (!$select.length || !$companion.length) return;
+                var isOther = $select.val() === 'Other';
+                isOther ? $companion.show() : $companion.hide();
+                var nativeEl = $select[0];
+                if (!nativeEl.dataset.otherInit) {
+                    nativeEl.dataset.otherInit = '1';
+                    $select.off('change.otherToggle').on('change.otherToggle', function() {
+                        var val = $(this).val();
+                        var show = Array.isArray(val) ? val.includes('Other') : val === 'Other';
+                        show ? $companion.show() : $companion.hide();
+                    });
+                }
+            });
+        }
+
+        window._landlordReformatMoneyFields = reformatAllMoneyFields;
+        window._landlordInitOtherCompanions = initLandlordEditOtherCompanions;
+        document.addEventListener('DOMContentLoaded', function() {
+            reformatAllMoneyFields();
+            initLandlordEditOtherCompanions();
         });
     </script>
     <script>
