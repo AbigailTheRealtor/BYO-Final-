@@ -2077,6 +2077,10 @@ $lease_types = [
                 setTimeout(function() { initExchangeItemSelect2('force'); }, 150);
                 setTimeout(syncSelect2MultiSelects, 200);
                 setTimeout(window._updateNextSubmitButtons, 50);
+                var target = this.getAttribute('data-bs-target') || this.getAttribute('href') || '';
+                if (target === '#representation-preferences-compatibility') {
+                    setTimeout(initCompatibilitySelect2, 250);
+                }
             });
         });
     });
