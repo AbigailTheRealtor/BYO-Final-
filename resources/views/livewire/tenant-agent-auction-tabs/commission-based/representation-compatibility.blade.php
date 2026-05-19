@@ -435,12 +435,12 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
+    <div class="input-cover mt-2">
         <textarea wire:model.defer="compatibility_preferences.tenant_specific.concerns_or_barriers"
             class="form-control has-icon"
             data-icon="fa-solid fa-comment-dots"
             rows="1"
-            style="resize: none; overflow: hidden; min-height: 38px;"
+            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             placeholder="e.g., Previous rental disputes, credit concerns, tight timeline, specific landlord requirements..."
             maxlength="2000"></textarea>
     </div>
@@ -458,12 +458,12 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
+    <div class="input-cover mt-2">
         <textarea wire:model.defer="compatibility_preferences.tenant_specific.additional_compatibility_notes"
             class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
             rows="1"
-            style="resize: none; overflow: hidden; min-height: 38px;"
+            style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             placeholder="e.g., I prefer an Agent with commercial leasing experience, or I have a strict move-in date..."
             maxlength="2000"></textarea>
     </div>
