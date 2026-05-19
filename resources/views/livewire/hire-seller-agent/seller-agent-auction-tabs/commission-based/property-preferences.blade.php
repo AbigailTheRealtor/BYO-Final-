@@ -1647,8 +1647,9 @@
             </span>
             <div class="input-cover">
                 <span class="input-group-text-seller">$</span>
-                <input type="number" wire:model="expected_rent" class="form-control has-icon"
-                    placeholder="Enter expected monthly rent (e.g., 1500)">
+                <input type="text" wire:model="expected_rent" class="form-control has-icon"
+                    placeholder="Enter expected monthly rent (e.g., 1500)"
+                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
             <span class="error mt-2" id="expected_rent_error"></span>
         </div>

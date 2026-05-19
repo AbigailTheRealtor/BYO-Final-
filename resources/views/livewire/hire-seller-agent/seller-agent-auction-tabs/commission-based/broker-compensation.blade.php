@@ -68,7 +68,7 @@ $safeKey = function(...$parts) {
             <div class="input-group">
                 <span class="input-group-text">$</span>
                 <input type="text" wire:model="purchase_fee_flat" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5,000)" data-error-id="purchase_fee_flat_error"
+                    placeholder="Enter flat fee amount (e.g., 5000)" data-error-id="purchase_fee_flat_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
                 <span class="error mt-2" id="purchase_fee_flat_error"></span>
@@ -95,7 +95,7 @@ $safeKey = function(...$parts) {
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
                         <input type="text" wire:model="purchase_fee_flat_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 2,000)"
+                            placeholder="Enter flat fee amount (e.g., 2000)"
                             data-error-id="purchase_fee_flat_combo_error" oninput="validateInput(this)"
                             onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
@@ -191,7 +191,7 @@ $safeKey = function(...$parts) {
                 <div class="input-group">
                     <span class="input-group-text">$</span>
                     <input type="text" wire:model="commission_structure_type_fee_flat" class="form-control"
-                        placeholder="Enter flat fee amount (e.g., 4,000)"
+                        placeholder="Enter flat fee amount (e.g., 4000)"
                         data-error-id="commission_structure_type_fee_flat_error" oninput="validateInput(this)"
                         onblur="reformatNumber(this)" onpaste="handlePaste(event)">
 
@@ -218,8 +218,9 @@ $safeKey = function(...$parts) {
                     <div class="col-md-5">
                         <div class="input-group">
                             <span class="input-group-text"> $</span>
-                            <input type="number" wire:model="commission_structure_type_fee_flat_combo"
-                                class="form-control" placeholder="Enter flat fee amount (e.g., 2,000)">
+                            <input type="text" wire:model="commission_structure_type_fee_flat_combo"
+                                class="form-control" placeholder="Enter flat fee amount (e.g., 2000)"
+                                oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                         </div>
                     </div>
                 </div>
@@ -404,8 +405,9 @@ $safeKey = function(...$parts) {
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
-                        <input type="number" wire:model="seller_leasing_gross_flat_combo" class="form-control"
-                            placeholder="Enter percentage of the gross lease value (e.g., 10)">
+                        <input type="text" wire:model="seller_leasing_gross_flat_combo" class="form-control"
+                            placeholder="Enter percentage of the gross lease value (e.g., 10)"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
                 <div class="col-md-1 text-center pt-2">+</div>
@@ -422,8 +424,9 @@ $safeKey = function(...$parts) {
                 <div class="col-md-5">
                     <div class="input-group">
                         <span class="input-group-text"> $</span>
-                        <input type="number" wire:model="seller_leasing_gross_flat_net_combo" class="form-control"
-                            placeholder="Enter flat fee amount (e.g., 1,500)">
+                        <input type="text" wire:model="seller_leasing_gross_flat_net_combo" class="form-control"
+                            placeholder="Enter flat fee amount (e.g., 1500)"
+                            oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
                     </div>
                 </div>
                 <div class="col-md-1 text-center pt-2">+</div>
@@ -479,7 +482,7 @@ $safeKey = function(...$parts) {
             <div class="input-group mt-3">
                 <span class="input-group-text"> $</span>
                 <input type="text" wire:model="seller_leasing_gross_purchase_fee_flat_amount" class="form-control"
-                    placeholder="Enter flat fee amount (e.g., 5,000)"
+                    placeholder="Enter flat fee amount (e.g., 5000)"
                     data-error-id="seller_leasing_gross_purchase_fee_flat_amount_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
@@ -544,7 +547,7 @@ $safeKey = function(...$parts) {
                     wire:key="lease-value-input-{{ $lease_type }}"
                     placeholder="{{ $lease_type === 'percent'
                         ? 'Enter percentage of option consideration (e.g., 5)'
-                        : 'Enter flat fee amount (e.g., 1,500)' }}"
+                        : 'Enter flat fee amount (e.g., 1500)' }}"
                     data-error-id="lease_value_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">
@@ -581,7 +584,7 @@ $safeKey = function(...$parts) {
                     wire:key="purchase-value-input-{{ $purchase_type }}"
                     placeholder="{{ $purchase_type === 'percent'
                         ? 'Enter percentage of the total purchase price (e.g., 6)'
-                        : 'Enter flat fee amount (e.g., 5,000)' }}"
+                        : 'Enter flat fee amount (e.g., 5000)' }}"
                     data-error-id="purchase_value_error"
                     oninput="validateInput(this)" onblur="reformatNumber(this)"
                     onpaste="handlePaste(event)">

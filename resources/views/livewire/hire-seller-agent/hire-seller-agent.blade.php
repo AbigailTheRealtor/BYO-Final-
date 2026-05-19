@@ -1723,6 +1723,11 @@
                         $('.other_assets').hide();
                     }
                 });
+                // Repopulate Select2 with any saved values from Livewire (edit/draft load)
+                var _savedAssets = @this.get('business_assets') || [];
+                if (_savedAssets.length > 0) {
+                    $('#included_assets').val(_savedAssets).trigger('change.select2');
+                }
                 // Apply initial state if "Other" was already selected (e.g., on load)
                 let _initAssets = $('#included_assets').val() || [];
                 if (_initAssets.includes('Other')) {
@@ -2569,6 +2574,7 @@
         }
 
         Livewire.hook('message.processed', () => {
+            initializeMoneyInputs();
             addIconsToInputs();
             checkRepresentationStatus();
 
@@ -2600,6 +2606,14 @@
                 } else if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
                 }
+            }
+
+            // Re-sync any already-initialized Select2 multi-selects that Livewire
+            // may have re-hydrated with different values (e.g., after draft load or
+            // property-type change). rehydrateSelect2MultiFields() is idempotent —
+            // it only acts on elements already marked select2-hidden-accessible.
+            if (currentServiceType === 'full_service' && typeof rehydrateSelect2MultiFields === 'function') {
+                rehydrateSelect2MultiFields();
             }
         });
     </script>
@@ -2836,13 +2850,20 @@
         }
 
         function validateInput(input) {
-            let v = input.value;
-            v = v.replace(/[^0-9.,]/g, '');
-            const firstDot = v.indexOf('.');
-            if (firstDot !== -1) {
-                v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
-            }
-            input.value = v;
+            var el = input;
+            var start  = el.selectionStart;
+            var oldLen = el.value.length;
+            var raw    = el.value.replace(/[^\d.]/g, '');
+            var parts  = raw.split('.');
+            var intPart = parts[0] || '';
+            var decPart = parts.length > 1 ? parts[1] : null;
+            if (intPart === '' && decPart === null) { el.value = ''; return; }
+            intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            var formatted = (decPart !== null) ? intPart + '.' + decPart.substring(0, 2) : intPart;
+            el.value = formatted;
+            var newLen = el.value.length;
+            var newPos = Math.max(0, start + (newLen - oldLen));
+            try { el.setSelectionRange(newPos, newPos); } catch(e) {}
         }
 
         function reformatNumber(input) {
@@ -2876,18 +2897,129 @@
             event.target.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        // Re-initialize money formatting after Livewire updates
+        // Re-initialize money formatting after Livewire updates.
+        // Safe to call repeatedly — uses data-money-initialized guard to prevent
+        // duplicate listener binding while always re-formatting the displayed value.
         function initializeMoneyInputs() {
-            // Format lease_value input if it's a $ (flat) type
-            const leaseInput = document.querySelector('[wire\\:key^="lease-value-input-flat"]');
-            if (leaseInput && leaseInput.value) {
-                formatWithCommas(leaseInput);
-            }
-            // Format purchase_value input if it's a $ (flat) type  
-            const purchaseInput = document.querySelector('[wire\\:key^="purchase-value-input-flat"]');
-            if (purchaseInput && purchaseInput.value) {
-                formatWithCommas(purchaseInput);
-            }
+            // All currency/money Livewire property names that need comma formatting.
+            // Does NOT include percentage, phone, ZIP, year, or non-money fields.
+            var moneyProps = [
+                // Desired sale price
+                'maximum_budget',
+                // Sale / Financing terms
+                'purchase_price',
+                'down_payment_amount',
+                'seller_down_payment_amount',
+                'seller_financing_amount',
+                'seller_late_fee_amount',
+                'prepayment_penalty_amount',
+                'balloon_payment_amount',
+                'outstanding_balance',
+                'assumable_monthly_escrow',
+                'assumable_fee_amount',
+                'max_monthly_payment',
+                'gap_payment_amount',
+                // Exchange / Trade
+                'exchange_item_value',
+                'additional_cash',
+                // Lease Option / Lease Purchase
+                'lease_option_price',
+                'lease_option_payment',
+                'option_fee_amount',
+                'lease_purchase_price',
+                'lease_purchase_payment',
+                'lease_purchase_option_fee_amount',
+                'lease_purchase_rent_credit_amount',
+                'lease_purchase_deposit',
+                // Seller Purchase Terms deposits
+                'initial_deposit_requested',
+                'additional_deposit_requested',
+                // Assignment / contract terms
+                'assignment_fee_amount',
+                // Rental income (multi-family / unit-type)
+                'expected_rent',
+                // Broker compensation flat-fee fields
+                // (these also carry inline oninput=validateInput for live typing;
+                //  we still format them on load/re-render via initializeMoneyInputs)
+                'purchase_fee_flat',
+                'purchase_fee_flat_combo',
+                'commission_structure_type_fee_flat',
+                'commission_structure_type_fee_flat_combo',
+                'nominal',
+                'seller_leasing_gross_purchase_fee_flat_amount',
+                'seller_leasing_gross_flat_combo',
+                'seller_leasing_gross_flat_net_combo',
+                'early_termination_fee_amount',
+                'retainer_fee_amount',
+            ];
+
+            moneyProps.forEach(function(prop) {
+                // Collect all visible inputs bound to this property (handles wire:model variants)
+                var inputs = Array.from(document.querySelectorAll('input:not([type="hidden"])'))
+                    .filter(function(el) {
+                        var m = el.getAttribute('wire:model') ||
+                                el.getAttribute('wire:model.lazy') ||
+                                el.getAttribute('wire:model.defer') ||
+                                el.getAttribute('wire:model.live') ||
+                                el.getAttribute('wire:model.debounce');
+                        return m === prop;
+                    });
+
+                inputs.forEach(function(input) {
+                    // Always re-format on each call (formatWithCommas strips then re-adds
+                    // commas so it is idempotent; empty values are left untouched)
+                    if (input.value !== '') {
+                        formatWithCommas(input);
+                    }
+
+                    // Guard: only bind the live input listener once per element instance
+                    if (input.getAttribute('data-money-initialized')) return;
+                    input.setAttribute('data-money-initialized', '1');
+
+                    // If the field already has an inline oninput handler (e.g., validateInput)
+                    // it handles live formatting itself — skip binding a second listener
+                    if (input.getAttribute('oninput')) return;
+
+                    input.addEventListener('input', function() {
+                        var el = this;
+                        var start  = el.selectionStart;
+                        var oldLen = el.value.length;
+
+                        // Strip everything except digits and a single decimal point
+                        var raw = el.value.replace(/[^\d.]/g, '');
+                        var parts = raw.split('.');
+                        var intPart = parts[0] || '';
+                        var decPart = parts.length > 1 ? parts[1] : null;
+
+                        // Leave empty fields blank — never substitute 0
+                        if (intPart === '' && decPart === null) {
+                            el.value = '';
+                            return;
+                        }
+
+                        // Insert thousand-separator commas
+                        intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                        var formatted = (decPart !== null)
+                            ? intPart + '.' + decPart.substring(0, 2)
+                            : intPart;
+
+                        el.value = formatted;
+
+                        // Restore caret, offset by the net change in string length
+                        var newLen = el.value.length;
+                        var newPos = Math.max(0, start + (newLen - oldLen));
+                        try { el.setSelectionRange(newPos, newPos); } catch(e) {}
+                    });
+                });
+            });
+
+            // lease_value and purchase_value — identified by wire:key since they are
+            // rendered conditionally with a dynamic key suffix ("-flat" / "-percent")
+            var leaseInput = document.querySelector('[wire\\:key^="lease-value-input-flat"]');
+            if (leaseInput && leaseInput.value) formatWithCommas(leaseInput);
+
+            var purchaseInput = document.querySelector('[wire\\:key^="purchase-value-input-flat"]');
+            if (purchaseInput && purchaseInput.value) formatWithCommas(purchaseInput);
         }
 
         // Initialize on page load
@@ -2895,13 +3027,5 @@
             initializeMoneyInputs();
         });
 
-        // Re-initialize after Livewire updates (Livewire v2)
-        if (typeof Livewire !== 'undefined') {
-            document.addEventListener('livewire:load', function() {
-                Livewire.hook('message.processed', function() {
-                    initializeMoneyInputs();
-                });
-            });
-        }
     </script>
 @endpush
