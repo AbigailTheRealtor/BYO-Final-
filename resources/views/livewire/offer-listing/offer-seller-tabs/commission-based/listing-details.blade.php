@@ -288,21 +288,15 @@ $auction_lengths_seller = [
                 <i class="fa-solid fa-circle-info"></i>
             </span>
         </label>
-        @if (!empty($isEditMode))
-            <div class="input-cover">
-                <input type="text" class="form-control has-icon" data-icon="fa-solid fa-file-lines" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
-            </div>
-        @else
-            <div class="input-cover">
-                <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
-                    data-icon="fa-solid fa-file-lines" required>
-                    <option value="">Select</option>
-                    <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
-                    <option value="Traditional">Traditional</option>
-                </select>
-            </div>
-            <span class="error mt-2" id="auction_type_error"></span>
-        @endif
+        <div class="input-cover">
+            <select wire:model="auction_type" id="auction_type" class="form-control has-icon"
+                data-icon="fa-solid fa-file-lines" required>
+                <option value="">Select</option>
+                <option value="Bidding Period" title="Agents may submit bids until the bidding deadline expires. The timer creates a structured window to encourage competitive offers. You may review, accept, counter, or reject bids at any time.">Bidding Period</option>
+                <option value="Traditional">Traditional</option>
+            </select>
+        </div>
+        <span class="error mt-2" id="auction_type_error"></span>
     </div>
 
 
