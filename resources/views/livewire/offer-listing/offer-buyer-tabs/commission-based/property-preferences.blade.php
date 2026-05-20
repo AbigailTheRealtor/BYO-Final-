@@ -361,7 +361,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter other land use (e.g., Solar Farm, RV Park, Conservation Easement)">
+            placeholder="Enter other land use (e.g., Solar farm, RV park, conservation easement)">
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
@@ -390,7 +390,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
-            placeholder="Enter other business type (e.g., Recording Studio, Event Venue, Repair Shop)">
+            placeholder="Enter other business type (e.g., Recording studio, event venue, repair shop)">
     </div>
 </div>
 @endif
@@ -693,7 +693,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_parking_space_wrapper" id="other_parking_space"
             class="form-control has-icon" data-icon="fa-solid fa-warehouse"
-            placeholder="Enter garage/parking features needed (e.g., Tandem Parking, Gated Entry, Shared Driveway) ">
+            placeholder="Enter garage/parking features needed (e.g., Tandem parking, gated entry, shared driveway)">
     </div>
 </div>
 @endif
@@ -766,7 +766,7 @@
 <div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
-            data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, Desert, Courtyard)">
+            data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, desert, courtyard)">
     </div>
     <span class="error mt-2" id="other_preferences_error"></span>
 </div>
@@ -839,11 +839,11 @@
         @if ($property_type === 'Residential' or $property_type === 'Income')
             <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
-                placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV Charger, Outdoor Kitchen)">
+                placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV charger, outdoor kitchen)">
         @elseif ($property_type === 'Commercial' or $property_type === 'Business')
             <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
-                placeholder="Enter non-negotiable amenities or features (e.g., Rooftop Access, Backup Generator, Freight Elevator) ">
+                placeholder="Enter non-negotiable amenities or features (e.g., Rooftop access, backup generator, freight elevator)">
         @endif
 
     </div>
@@ -896,7 +896,7 @@
             </label>
                 <div class="input-cover">
                     <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
-                        data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
+                        data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, cat)">
                 </div>
                 <span class="error mt-2" id="type_of_pets_error"></span>
             </div>
@@ -1043,7 +1043,7 @@
 <div class="form-group other_assets {{ in_array('Other', $assets ?? []) ? '' : 'd-none' }}" wire:key="other-assets-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fa-solid fa-building"
-            placeholder="Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+            placeholder="Enter any included assets (e.g., Inventory, customer lists, trademarks, software rights)">
     </div>
     <span class="error mt-2" id="assets_other_error"></span>
 </div>
@@ -1075,7 +1075,7 @@
         <div class="form-group" wire:key="unit-size-other-wrapper">
             <div class="input-cover">
                 <input type="text" wire:model.defer="unit_size_other" class="form-control has-icon"
-                    data-icon="fa-solid fa-building" placeholder="Enter acceptable number of units (e.g., 15 Units)">
+                    data-icon="fa-solid fa-building" placeholder="Enter acceptable number of units (e.g., 15 units)">
             </div>
         </div>
     @endif
@@ -1188,7 +1188,7 @@
 
             <div class="input-cover">
                 <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
-                    data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
+                    data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, cat)">
             </div>
             <span class="error mt-2" id="type_of_pets_error"></span>
         </div>
@@ -1321,7 +1321,7 @@
 
     <div class="input-cover">
         <textarea wire:model.defer="preferance_details" class="form-control" rows="4"
-            style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences "></textarea>
+            style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences (e.g., prefer open floor plan, no HOA, near public transit)"></textarea>
     </div>
 </div>
 @endif

@@ -65,7 +65,7 @@
     <div class="input-cover">
         <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
             data-icon="fa-solid fa-screwdriver-wrench"
-            placeholder="Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)">
+            placeholder="Enter special sale provision (e.g., Divorce sale, third-party approval)">
     </div>
 </div>
 
@@ -214,7 +214,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_financing" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter Other Financing / Currency (e.g., $1000 Seller Credit, Private Financing, Trade, Crypto)">
+                placeholder="Enter other financing / currency (e.g., $1,000 seller credit, private financing, trade, crypto)">
         </div>
     </div>
 </div>
@@ -536,7 +536,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, escrow wallet, Propy Title)">
         </div>
     </div>
 
@@ -583,7 +583,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter Timing of Transfer (e.g., Within 48 Hours of Contract Acceptance)">
+                placeholder="Enter timing of transfer (e.g., Within 48 hours of contract acceptance)">
         </div>
     </div>
     @endif
@@ -621,7 +621,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
                     data-icon="fa-solid fa-right-left"
-                    placeholder="Enter exchange item (e.g., Private Jet, Yacht, Luxury RV)">
+                    placeholder="Enter exchange item (e.g., Private jet, yacht, luxury RV)">
             </div>
         </div>
     @endif
@@ -701,7 +701,7 @@
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
                 data-icon="fa-solid fa-right-left"
-                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)">
+                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed appraisal, online valuation, mutual agreement)">
         </div>
     </div>
 
@@ -716,7 +716,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-truck"
-                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of Sale, Delivery at closing)">
+                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, bill of sale, delivery at closing)">
         </div>
     </div>
 
@@ -743,7 +743,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_liens_details" class="form-control has-icon"
                 data-icon="fa-solid fa-file-contract"
-                placeholder="Enter title details (e.g., Existing Mortgage, Solar Panel Lien, HOA Assessment)">
+                placeholder="Enter title details (e.g., existing mortgage, solar panel lien, HOA assessment)">
         </div>
     </div>
     @endif
@@ -893,7 +893,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_option_conditions" class="form-control has-icon"
                 data-icon="fa-solid fa-file-lines"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, Property must pass inspection)">
+                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may exercise option after 12 months, property must pass inspection)">
         </div>
     </div>
 
@@ -907,7 +907,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_option_terms" class="form-control has-icon"
                 data-icon="fa-solid fa-file-lines"
-                placeholder="Enter any conditions or requirements for the lease option (e.g., Buyer may conduct inspections during lease term, Seller to maintain property)">
+                placeholder="Enter specific terms proposed for the lease option (e.g., Buyer may conduct inspections during lease term, seller to maintain property)">
         </div>
     </div>
 
@@ -1069,7 +1069,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_conditions" class="form-control has-icon"
                 data-icon="fa-solid fa-file-lines"
-                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, Seller to cover closing costs)">
+                placeholder="Enter any conditions or requirements (e.g., Property must appraise at agreed value, seller to cover closing costs)">
         </div>
     </div>
 
@@ -1083,7 +1083,7 @@
         <div class="input-cover">
             <input type="text" wire:model="lease_purchase_terms" class="form-control has-icon"
                 data-icon="fa-solid fa-file-lines"
-                placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, Option to buy after 12 months)">
+                placeholder="Enter specific terms proposed (e.g., Rent credits apply toward purchase, option to buy after 12 months)">
         </div>
     </div>
 
@@ -1139,7 +1139,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_description" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter NFT type (e.g., Tokenized Real Estate, Digital Artwork)">
+                placeholder="Enter NFT type (e.g., Tokenized real estate, digital artwork)">
         </div>
     </div>
 
@@ -1190,7 +1190,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_valuation_method" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)">
+                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, independent appraisal, mutual agreement)">
         </div>
     </div>
 
@@ -1205,7 +1205,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)">
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)">
         </div>
     </div>
 
@@ -1433,7 +1433,7 @@
         </span>
         <div class="input-cover">
             <input type="text" wire:model.defer="loan_duration" class="form-control has-icon"
-                data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration (e.g., 30 Years)">
+                data-icon="fa-regular fa-calendar-days" placeholder="Enter loan duration (e.g., 30 years)">
 
         </div>
     </div>
@@ -1503,7 +1503,7 @@
             <label class="fw-bold">Balloon Payment Due Date:</label>
             <div class="input-cover">
                 <input type="text" wire:model="balloon_payment_date" class="form-control has-icon"
-                    data-icon="fa-regular fa-calendar-days" placeholder="Enter balloon payment date (e.g., 5 Years)">
+                    data-icon="fa-regular fa-calendar-days" placeholder="Enter balloon payment date (e.g., 5 years)">
 
             </div>
         </div>
@@ -1533,7 +1533,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)">
+                placeholder="Enter custom amortization type (e.g., Hybrid, graduated payments, step-up structure)">
         </div>
     </div>
     @endif
@@ -1564,7 +1564,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar-check"
-                placeholder="Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)">
+                placeholder="Enter custom payment schedule (e.g., Semi-annual, lump sum at harvest)">
         </div>
     </div>
     @endif
@@ -1693,7 +1693,7 @@
     <div class="input-cover">
         <input type="text" wire:model="inspection_period_other" class="form-control has-icon"
             data-icon="fa-solid fa-magnifying-glass"
-            placeholder="Enter inspection period duration (e.g., 3 Days)">
+            placeholder="Enter inspection period duration (e.g., 3 days)">
     </div>
 </div>
 @endif
@@ -1731,7 +1731,7 @@
     <div class="input-cover">
         <input type="number" wire:model="appraisal_contingency_days" class="form-control has-icon"
             data-icon="fa-regular fa-calendar-days" min="1" max="365"
-            placeholder="Enter Number of Days for Appraisal Contingency (e.g., 21)">
+            placeholder="Enter number of days for appraisal contingency (e.g., 21)">
     </div>
 </div>
 @endif
@@ -1846,7 +1846,7 @@
     <div class="input-cover">
         <input type="text" wire:model="home_sale_contingency_details" class="form-control has-icon"
             data-icon="fa-solid fa-file-lines"
-            placeholder="Enter Additional Home Sale Contingency Details (e.g., Listed at $350K, Accepted Offer Pending Inspection, Expected to Close Within 30 Days)">
+            placeholder="Enter additional home sale contingency details (e.g., Listed at $350K, accepted offer pending inspection, expected to close within 30 days)">
     </div>
 </div>
 @endif
@@ -1886,7 +1886,7 @@
     <div class="input-cover">
         <input type="text" wire:model="seller_contribution_details" class="form-control has-icon"
             data-icon="fa-solid fa-hand-holding-dollar"
-            placeholder="Enter seller contribution details (e.g., $5,000 Toward Closing Costs, Credit for Roof Repair)">
+            placeholder="Enter seller contribution details (e.g., $5,000 toward closing costs, credit for roof repair)">
     </div>
 </div>
 @endif
@@ -1920,7 +1920,7 @@
     <div class="input-cover">
         <input type="text" wire:model="possession_preference_other" class="form-control has-icon"
             data-icon="fa-solid fa-key"
-            placeholder="Enter Possession Preference (e.g., Post-Closing Occupancy, Flexible Timeline)">
+            placeholder="Enter possession preference (e.g., Post-closing occupancy, flexible timeline)">
     </div>
 </div>
 @endif
@@ -2009,7 +2009,7 @@
     <div class="input-cover">
         <input type="text" wire:model="property_inclusions" class="form-control has-icon"
             data-icon="fa-solid fa-list-check"
-            placeholder="Enter Property Inclusions (e.g., Refrigerator, Washer, Dryer, Window Treatments)">
+            placeholder="Enter property inclusions (e.g., Refrigerator, washer, dryer, window treatments)">
     </div>
 </div>
 
@@ -2024,7 +2024,7 @@
     <div class="input-cover">
         <input type="text" wire:model="property_exclusions" class="form-control has-icon"
             data-icon="fa-solid fa-list-ul"
-            placeholder="Enter Property Exclusions (e.g., Chandelier, Security Cameras, Patio Furniture)">
+            placeholder="Enter property exclusions (e.g., Chandelier, security cameras, patio furniture)">
     </div>
 </div>
 
@@ -2059,6 +2059,6 @@
     <div class="input-cover">
         <input type="text" wire:model="additional_purchase_terms" class="form-control has-icon"
             data-icon="fa-solid fa-note-sticky"
-            placeholder="Enter Additional Purchase Terms / Notes (e.g., Subject to sale of current home, Specific contract addendums required)">
+            placeholder="Enter additional purchase terms / notes (e.g., Subject to sale of current home, specific contract addendums required)">
     </div>
 </div>
