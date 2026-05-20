@@ -980,13 +980,17 @@ class SellerOfferListingEdit extends Component
     public function updatedSaleProvision()
     {
         if ($this->isLoadingData) return;
-        // Reset all dependent fields when main selection changes
-        $this->reset([
-            'sale_provision_other',
-            'sale_provision_assignment',
-            'assignment_fee_amount',
-            'buyer_sell_contract'
-        ]);
+        // Only clear companion fields when their governing provision is no longer selected.
+        // A blanket reset would wipe user-entered values whenever any other provision is
+        // added or removed — which is what caused the empty-on-save bug.
+        if (!in_array('Other', $this->sale_provision ?? [])) {
+            $this->sale_provision_other = '';
+        }
+        if (!in_array('Assignment Contract', $this->sale_provision ?? [])) {
+            $this->sale_provision_assignment = '';
+            $this->assignment_fee_amount    = '';
+            $this->buyer_sell_contract      = '';
+        }
     }
 
     public function updatedSaleProvisionAssignment()
