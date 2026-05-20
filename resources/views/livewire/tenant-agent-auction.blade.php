@@ -1612,8 +1612,8 @@ $lease_types = [
                     if ($user_type !== 'landlord' and $user_type !== 'buyer' and $user_type !== 'seller') {
                     array_splice($restTabs, 1, 0, 'Pre-Screening');
                     }
-                    if ($user_type === 'tenant' && $service_type === 'full_service') {
-                    // Insert Representation Preferences & Compatibility before Broker Compensation (Task #1094)
+                    if ($service_type === 'full_service') {
+                    // Insert Representation Preferences & Compatibility before Broker Compensation (Task #1169)
                     $bcIdx = array_search('Broker Compensation & Agency Agreement Terms', $restTabs);
                     if ($bcIdx !== false) {
                         array_splice($restTabs, $bcIdx, 0, ['Representation Preferences & Compatibility']);
@@ -1804,18 +1804,26 @@ $lease_types = [
                                     @endif
                                 </div>
 
-                                <!-- Representation Preferences & Compatibility Tab - tenant full_service only (Task #1094) -->
-                                @if ($user_type === 'tenant' && $service_type === 'full_service')
-                                <div class="tab-pane fade {{ $activeTab === 6 ? 'show active' : '' }}"
+                                <!-- Representation Preferences & Compatibility Tab — all full_service roles (Task #1169) -->
+                                @if ($service_type === 'full_service')
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 6) ? 'show active' : '' }}"
                                     id="representation-preferences-compatibility" role="tabpanel"
                                     aria-labelledby="representation-preferences-compatibility-tab">
-                                    @include('livewire.tenant-agent-auction-tabs.commission-based.representation-compatibility')
+                                    @if ($user_type === 'tenant')
+                                        @include('livewire.tenant-agent-auction-tabs.commission-based.representation-compatibility')
+                                    @elseif ($user_type === 'seller')
+                                        @include('livewire.hire-seller-agent.seller-agent-auction-tabs.commission-based.representation-compatibility')
+                                    @elseif ($user_type === 'buyer')
+                                        @include('livewire.hire-buyer-agent.buyer-agent-auction-tabs.commission-based.representation-compatibility')
+                                    @elseif ($user_type === 'landlord')
+                                        @include('livewire.hire-landlord-agent.landlord-agent-auction-tabs.commission-based.representation-compatibility')
+                                    @endif
                                 </div>
                                 @endif
 
                                 <!-- Broker Compensation Tab - Adjust index based on user_type -->
 
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 5 : 7) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? ($service_type === 'full_service' ? 6 : 5) : 7) ? 'show active' : '' }}"
                                     id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
                                     @if ($user_type === 'tenant')
@@ -1831,7 +1839,7 @@ $lease_types = [
 
                                 <!-- Referral & Cooperation Terms Tab - Agent only -->
                                 @if ($isAgentUser)
-                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? 6 : 8) ? 'show active' : '' }}"
+                                <div class="tab-pane fade {{ $activeTab === (in_array($user_type, ['landlord', 'buyer', 'seller']) ? ($service_type === 'full_service' ? 7 : 6) : 8) ? 'show active' : '' }}"
                                     id="referral-cooperation-terms" role="tabpanel" aria-labelledby="referral-cooperation-terms-tab">
                                     <div class="p-3">
                                         <h5 class="fw-bold mb-3">Referral &amp; Cooperation Terms</h5>
@@ -1862,7 +1870,7 @@ $lease_types = [
                                         default => 'tenant-information'
                                     };
                                     $infoTabIndex = in_array($user_type, ['landlord', 'buyer', 'seller'])
-                                        ? ($isAgentUser ? 7 : 6)
+                                        ? ($service_type === 'full_service' ? ($isAgentUser ? 8 : 7) : ($isAgentUser ? 7 : 6))
                                         : ($isAgentUser ? 9 : 8);
                                 @endphp
                                 <div class="tab-pane fade {{ $activeTab === $infoTabIndex ? 'show active' : '' }}"
@@ -2127,9 +2135,16 @@ $lease_types = [
             { sel: '.lease_term_options', field: 'desired_lease_length', multi: true },
             { sel: '.lease_for', field: 'lease_for', multi: true },
             { sel: '#non_negotiable_amenities', field: 'non_negotiable_amenities', multi: true },
-            // Representation Preferences & Compatibility (Task #1094)
-            { sel: '#compat_representation_priorities',   field: 'compatibility_preferences.tenant_specific.representation_priorities', multi: true },
+            // Representation Preferences & Compatibility — tenant/seller share #compat_representation_priorities (Task #1094 / #1169)
+            { sel: '#compat_representation_priorities',   field: 'compatibility_preferences.{{ $user_type }}_specific.representation_priorities', multi: true },
             { sel: '#compat_most_important_agent_traits', field: 'compatibility_preferences.tenant_specific.most_important_agent_traits', multi: true },
+            // Representation Preferences & Compatibility — seller (Task #1169)
+            { sel: '#compat_preferred_contact_method',    field: 'compatibility_preferences.seller_specific.preferred_contact_method', multi: true },
+            { sel: '#compat_willing_to_negotiate_on',     field: 'compatibility_preferences.seller_specific.willing_to_negotiate_on', multi: true },
+            { sel: '#compat_qualities_most_important',    field: 'compatibility_preferences.seller_specific.qualities_most_important', multi: true },
+            { sel: '#compat_showing_availability',        field: 'compatibility_preferences.seller_specific.showing_availability', multi: true },
+            // Representation Preferences & Compatibility — buyer/landlord (Task #1169)
+            { sel: '#representation_priorities',          field: 'compatibility_preferences.{{ $user_type }}_specific.representation_priorities', multi: true },
         ];
         fields.forEach(function(f) {
             var $el = $(f.sel);
@@ -2307,9 +2322,16 @@ $lease_types = [
             { id: '#tenant_require', prop: 'tenant_require' },
             { id: '#garage_parking_spaces_option_buyer', prop: 'garage_parking_spaces_option_buyer' },
             { id: '#assets', prop: 'assets' },
-            // Representation Preferences & Compatibility (Task #1094) — multi-select only
-            { id: '#compat_representation_priorities',       prop: 'compatibility_preferences.tenant_specific.representation_priorities' },
+            // Representation Preferences & Compatibility — tenant/seller share #compat_representation_priorities (Task #1094 / #1169)
+            { id: '#compat_representation_priorities',       prop: 'compatibility_preferences.{{ $user_type }}_specific.representation_priorities' },
             { id: '#compat_most_important_agent_traits',     prop: 'compatibility_preferences.tenant_specific.most_important_agent_traits' },
+            // Representation Preferences & Compatibility — seller (Task #1169)
+            { id: '#compat_preferred_contact_method',        prop: 'compatibility_preferences.seller_specific.preferred_contact_method' },
+            { id: '#compat_willing_to_negotiate_on',         prop: 'compatibility_preferences.seller_specific.willing_to_negotiate_on' },
+            { id: '#compat_qualities_most_important',        prop: 'compatibility_preferences.seller_specific.qualities_most_important' },
+            { id: '#compat_showing_availability',            prop: 'compatibility_preferences.seller_specific.showing_availability' },
+            // Representation Preferences & Compatibility — buyer/landlord (Task #1169)
+            { id: '#representation_priorities',              prop: 'compatibility_preferences.{{ $user_type }}_specific.representation_priorities' },
         ];
 
         select2Fields.forEach(function(field) {
@@ -3830,10 +3852,161 @@ $lease_types = [
             addIconsToInputs();
         }
 
-        if ($('#compat_primary_rental_goal').length) { initCompatibilitySelect2(); }
-        Livewire.hook('message.processed', () => {
-            if ($('#compat_primary_rental_goal').length) { initCompatibilitySelect2(); }
-        });
+        // ─── Seller Representation Preferences & Compatibility Select2 (Task #1169) ──
+        function initSellerCompatSelect2Fields() {
+            var $wire = @this;
+            var sellerSingles = [
+                { id: '#compat_communication_style',           prop: 'compatibility_preferences.seller_specific.communication_style' },
+                { id: '#compat_negotiation_style',             prop: 'compatibility_preferences.seller_specific.negotiation_style' },
+                { id: '#compat_primary_transaction_goal',      prop: 'compatibility_preferences.seller_specific.primary_transaction_goal' },
+                { id: '#compat_preferred_agent_working_style', prop: 'compatibility_preferences.seller_specific.preferred_agent_working_style' },
+                { id: '#compat_response_time_expectation',     prop: 'compatibility_preferences.seller_specific.response_time_expectation' },
+                { id: '#compat_firm_on_price',                 prop: 'compatibility_preferences.seller_specific.firm_on_price' },
+                { id: '#compat_flexibility_on_timeline',       prop: 'compatibility_preferences.seller_specific.flexibility_on_timeline' },
+                { id: '#compat_post_sale_plan',                prop: 'compatibility_preferences.seller_specific.post_sale_plan' },
+                { id: '#compat_past_agent_experience',         prop: 'compatibility_preferences.seller_specific.past_agent_experience' },
+                { id: '#compat_decision_making_style',         prop: 'compatibility_preferences.seller_specific.decision_making_style' },
+                { id: '#compat_involvement_level',             prop: 'compatibility_preferences.seller_specific.involvement_level' },
+                { id: '#compat_open_house_preference',         prop: 'compatibility_preferences.seller_specific.open_house_preference' },
+            ];
+            sellerSingles.forEach(function(f) {
+                var el = document.querySelector(f.id);
+                if (!el) return;
+                var lwVal = '';
+                try { lwVal = $wire.get(f.prop) || ''; } catch(e) {}
+                el.value = lwVal;
+                if (f.id === '#compat_primary_transaction_goal') {
+                    var ptgOw = document.getElementById('compat_ptg_other_wrapper');
+                    if (ptgOw) ptgOw.style.display = (lwVal === 'Other') ? '' : 'none';
+                }
+                if (!el._sellerCompatSyncBound) {
+                    el._sellerCompatSyncBound = true;
+                    el.addEventListener('change', function() {
+                        var val = el.value || '';
+                        safeLivewireSet(f.prop, val);
+                        if (f.id === '#compat_primary_transaction_goal') {
+                            var ptgOw2 = document.getElementById('compat_ptg_other_wrapper');
+                            if (ptgOw2) ptgOw2.style.display = (val === 'Other') ? '' : 'none';
+                        }
+                    });
+                }
+            });
+            var sellerMultis = [
+                { id: '#compat_preferred_contact_method',  prop: 'compatibility_preferences.seller_specific.preferred_contact_method' },
+                { id: '#compat_willing_to_negotiate_on',   prop: 'compatibility_preferences.seller_specific.willing_to_negotiate_on' },
+                { id: '#compat_representation_priorities', prop: 'compatibility_preferences.seller_specific.representation_priorities' },
+                { id: '#compat_qualities_most_important',  prop: 'compatibility_preferences.seller_specific.qualities_most_important' },
+                { id: '#compat_showing_availability',      prop: 'compatibility_preferences.seller_specific.showing_availability' },
+            ];
+            sellerMultis.forEach(function(f) {
+                var $el = $(f.id);
+                if (!$el.length) return;
+                var _open = false;
+                try { _open = !!($el.data('select2') && $el.data('select2').isOpen()); } catch(e) {}
+                if (!_open) {
+                    if ($el.hasClass('select2-hidden-accessible')) { $el.select2('destroy'); }
+                    $el.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                    var lwVals = [];
+                    try {
+                        lwVals = $wire.get(f.prop) || [];
+                        if (typeof lwVals === 'string') { lwVals = JSON.parse(lwVals) || []; }
+                    } catch(e) {}
+                    if (lwVals.length) { $el.val(lwVals).trigger('change.select2'); }
+                }
+                $el.off('change.sellerCompatSync' + f.id).on('change.sellerCompatSync' + f.id, function() {
+                    safeLivewireSet(f.prop, $(this).val() || []);
+                });
+            });
+            addIconsToInputs();
+        }
+
+        // ─── Buyer Representation Preferences & Compatibility Select2 (Task #1169) ───
+        function initBuyerCompatSelect2Fields() {
+            var $wire = @this;
+            document.querySelectorAll('[data-compat-field]').forEach(function(el) {
+                var compatField = el.getAttribute('data-compat-field');
+                var prop = 'compatibility_preferences.buyer_specific.' + compatField;
+                var lwVal = '';
+                try { lwVal = $wire.get(prop) || ''; } catch(e) {}
+                el.value = lwVal;
+                if (compatField === 'primary_transaction_goal') {
+                    window.dispatchEvent(new CustomEvent('update-ptg-other', { detail: { showOther: lwVal === 'Other' } }));
+                }
+                if (compatField === 'preferred_agent_working_style') {
+                    window.dispatchEvent(new CustomEvent('update-paws-other', { detail: { showOther: lwVal === 'Other' } }));
+                }
+                if (!el._buyerCompatSyncBound) {
+                    el._buyerCompatSyncBound = true;
+                    el.addEventListener('change', function() {
+                        var val = el.value || '';
+                        safeLivewireSet(prop, val);
+                        if (compatField === 'primary_transaction_goal') {
+                            window.dispatchEvent(new CustomEvent('update-ptg-other', { detail: { showOther: val === 'Other' } }));
+                        }
+                        if (compatField === 'preferred_agent_working_style') {
+                            window.dispatchEvent(new CustomEvent('update-paws-other', { detail: { showOther: val === 'Other' } }));
+                        }
+                    });
+                }
+            });
+            // Buyer representation_priorities multi-select (no data-select2 attribute)
+            var $buyerRp = $('#representation_priorities:not([data-select2])');
+            if ($buyerRp.length) {
+                var _rpOpen = false;
+                try { _rpOpen = !!($buyerRp.data('select2') && $buyerRp.data('select2').isOpen()); } catch(e) {}
+                if (!_rpOpen) {
+                    if ($buyerRp.hasClass('select2-hidden-accessible')) { $buyerRp.select2('destroy'); }
+                    $buyerRp.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                    var lwBuyerRp = [];
+                    try {
+                        lwBuyerRp = $wire.get('compatibility_preferences.buyer_specific.representation_priorities') || [];
+                        if (typeof lwBuyerRp === 'string') { lwBuyerRp = JSON.parse(lwBuyerRp) || []; }
+                    } catch(e) {}
+                    if (lwBuyerRp.length) {
+                        $buyerRp.val(lwBuyerRp).trigger('change.select2');
+                        window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: lwBuyerRp.includes('Other') } }));
+                    }
+                }
+                $buyerRp.off('change.buyerCompatRpSync').on('change.buyerCompatRpSync', function() {
+                    var vals = $(this).val() || [];
+                    safeLivewireSet('compatibility_preferences.buyer_specific.representation_priorities', vals);
+                    window.dispatchEvent(new CustomEvent('update-rp-other', { detail: { hasOther: vals.includes('Other') } }));
+                });
+            }
+            addIconsToInputs();
+        }
+
+        // ─── Landlord Representation Preferences & Compatibility Select2 (Task #1169) ─
+        function initLandlordCompatSelect2Fields() {
+            var $wire = @this;
+            var $landlordRp = $('#representation_priorities[data-select2]');
+            if (!$landlordRp.length) return;
+            var _rpOpen = false;
+            try { _rpOpen = !!($landlordRp.data('select2') && $landlordRp.data('select2').isOpen()); } catch(e) {}
+            if (!_rpOpen) {
+                if ($landlordRp.hasClass('select2-hidden-accessible')) { $landlordRp.select2('destroy'); }
+                $landlordRp.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                var lwLandlordRp = [];
+                try {
+                    lwLandlordRp = $wire.get('compatibility_preferences.landlord_specific.representation_priorities') || [];
+                    if (typeof lwLandlordRp === 'string') { lwLandlordRp = JSON.parse(lwLandlordRp) || []; }
+                } catch(e) {}
+                if (lwLandlordRp.length) { $landlordRp.val(lwLandlordRp).trigger('change.select2'); }
+            }
+            $landlordRp.off('change.landlordCompatRpSync').on('change.landlordCompatRpSync', function() {
+                safeLivewireSet('compatibility_preferences.landlord_specific.representation_priorities', $(this).val() || []);
+            });
+            addIconsToInputs();
+        }
+
+        function _initAllCompatSelect2() {
+            if ($('#compat_primary_rental_goal').length)                      { initCompatibilitySelect2(); }
+            if ($('#compat_ptg_other_wrapper').length)                        { initSellerCompatSelect2Fields(); }
+            if ($('[data-compat-field="primary_transaction_goal"]').length)   { initBuyerCompatSelect2Fields(); }
+            if ($('#representation_priorities[data-select2]').length)         { initLandlordCompatSelect2Fields(); }
+        }
+        _initAllCompatSelect2();
+        Livewire.hook('message.processed', () => { _initAllCompatSelect2(); });
         // ─── End Representation Preferences & Compatibility ───────────────────────
 
         // Function to check if all required fields are filled
