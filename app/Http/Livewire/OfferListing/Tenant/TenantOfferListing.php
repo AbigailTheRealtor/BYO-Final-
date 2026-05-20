@@ -26,6 +26,7 @@ class TenantOfferListing extends Component
 {
     use WithFileUploads;
 
+    // TODO: set to false before production launch
     const SAVE_AS_NEW_DRAFT = true;
 
     // Livewire properties for form fields
