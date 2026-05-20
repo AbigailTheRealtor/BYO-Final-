@@ -6,3 +6,9 @@ id = "nghOoT6lVqdi1A6LlG702"
 uri = "file://attached_assets/qa_sale_terms_icons.jpeg"
 type = "image"
 title = "Seller — Sale Terms tab: icon visible on Special Sale Provision multi-select"
+
+[[outputs]]
+id = "gMtsdQ6zMnsztuxltTGb0"
+uri = "file://storage/app/qa-tenant-compat.jpeg"
+type = "image"
+title = "Tenant — Compatibility Tab render (after draft save + reload)"

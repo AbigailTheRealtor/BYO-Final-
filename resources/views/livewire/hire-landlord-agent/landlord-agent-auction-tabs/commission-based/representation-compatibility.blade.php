@@ -261,7 +261,7 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover" wire:ignore wire:key="compat-rp-landlord-s2">
+    <div class="input-cover mt-2 has-select-icon" wire:ignore wire:key="compat-rp-landlord-s2">
         @php
             $rpSelected = $compatibility_preferences['landlord_specific']['representation_priorities'] ?? [];
             $rpOptions = [
@@ -277,8 +277,7 @@
         @endphp
         <select id="representation_priorities" name="representation_priorities" multiple
                 data-select2="true"
-                class="form-control"
-                style="width: 100%;">
+                class="form-control has-icon" data-icon="fa-solid fa-list-check">
             @foreach ($rpOptions as $rpOpt)
                 <option value="{{ $rpOpt }}" {{ in_array($rpOpt, $rpSelected) ? 'selected' : '' }}>
                     {{ $rpOpt }}

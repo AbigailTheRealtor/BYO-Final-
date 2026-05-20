@@ -55,8 +55,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-pcm-s2" wire:ignore class="mt-2">
-        <select id="compat_preferred_contact_method" multiple class="form-control">
+    <div wire:key="compat-pcm-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_preferred_contact_method" multiple class="form-control has-icon" data-icon="fa-solid fa-phone">
             <option value="Phone Call">Phone Call</option>
             <option value="Text/SMS">Text / SMS</option>
             <option value="Email">Email</option>
@@ -125,8 +125,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-wtn-s2" wire:ignore class="mt-2">
-        <select id="compat_willing_to_negotiate_on" multiple class="form-control">
+    <div wire:key="compat-wtn-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_willing_to_negotiate_on" multiple class="form-control has-icon" data-icon="fa-solid fa-handshake">
             <option value="Price Reductions">Price Reductions</option>
             <option value="Closing Costs">Closing Costs</option>
             <option value="Repairs / Credits">Repairs / Credits</option>
@@ -282,8 +282,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-rp-s2" wire:ignore class="mt-2">
-        <select id="compat_representation_priorities" multiple class="form-control" required>
+    <div wire:key="compat-rp-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_representation_priorities" multiple class="form-control has-icon" data-icon="fa-solid fa-list-check" required>
             <option value="Market Expertise">Market Expertise</option>
             <option value="Strong Negotiator">Strong Negotiator</option>
             <option value="High Communication">High Communication &amp; Responsiveness</option>
@@ -309,8 +309,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-qmi-s2" wire:ignore class="mt-2">
-        <select id="compat_qualities_most_important" multiple class="form-control">
+    <div wire:key="compat-qmi-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_qualities_most_important" multiple class="form-control has-icon" data-icon="fa-solid fa-star">
             <option value="Honesty & Transparency">Honesty &amp; Transparency</option>
             <option value="Patience">Patience</option>
             <option value="Assertiveness">Assertiveness</option>
@@ -460,8 +460,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-sa-s2" wire:ignore class="mt-2">
-        <select id="compat_showing_availability" multiple class="form-control">
+    <div wire:key="compat-sa-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_showing_availability" multiple class="form-control has-icon" data-icon="fa-solid fa-calendar-days">
             <option value="Weekday Mornings">Weekday Mornings</option>
             <option value="Weekday Afternoons">Weekday Afternoons</option>
             <option value="Weekday Evenings">Weekday Evenings</option>

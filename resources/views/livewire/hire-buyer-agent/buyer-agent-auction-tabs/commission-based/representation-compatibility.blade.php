@@ -64,7 +64,7 @@
                     <i class="fa-solid fa-circle-info"></i>
                 </span>
             </label>
-            <div wire:ignore wire:key="compat-rep-priorities-select">
+            <div wire:ignore wire:key="compat-rep-priorities-select" class="input-cover mt-2 has-select-icon">
                 <select id="representation_priorities" name="representation_priorities[]"
                         multiple class="form-control has-icon" data-icon="fa-solid fa-list-check"
                         required>

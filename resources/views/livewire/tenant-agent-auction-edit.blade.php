@@ -3791,6 +3791,26 @@
                         if (rpOtherW) rpOtherW.style.display = vals.includes('Other') ? 'block' : 'none';
                     });
                 }
+
+                var $mat = $('#compat_most_important_agent_traits');
+                if ($mat.length) {
+                    if (!$mat.hasClass('select2-hidden-accessible')) {
+                        $mat.select2({ placeholder: 'Select', allowClear: true, width: '100%', closeOnSelect: false });
+                    }
+                    var savedMat = [];
+                    try { savedMat = JSON.parse($mat.data('selected') || '[]') || []; } catch(e) {}
+                    if (savedMat.length) {
+                        $mat.val(savedMat).trigger('change.select2');
+                        var matOther = document.getElementById('compat-other-most-important-agent-traits-wrapper');
+                        if (matOther) matOther.style.display = savedMat.includes('Other') ? 'block' : 'none';
+                    }
+                    $mat.off('change.compatMatEditSync').on('change.compatMatEditSync', function() {
+                        var vals = $(this).val() || [];
+                        @this.set('compatibility_preferences.tenant_specific.most_important_agent_traits', vals, true);
+                        var matOtherW = document.getElementById('compat-other-most-important-agent-traits-wrapper');
+                        if (matOtherW) matOtherW.style.display = vals.includes('Other') ? 'block' : 'none';
+                    });
+                }
             }
 
             // ─── Seller Representation Preferences & Compatibility Select2 (Task #1169) ─
