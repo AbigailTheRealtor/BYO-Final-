@@ -360,7 +360,6 @@
                 <input type="text" class="form-control has-icon" value="{{ $auction_type }}" disabled style="background:#f8f9fa; cursor:not-allowed;">
                 <div class="locked-field-overlay" style="position:absolute;inset:0;cursor:not-allowed;z-index:2;"></div>
             </div>
-            <p class="text-danger small mt-2 mb-0"><i class="fa-solid fa-lock me-1"></i> Listing Type cannot be changed after the listing has been created.</p>
         @else
             <div class="input-cover">
                 <select wire:model="auction_type" id="auction_type" class="form-control has-icon"

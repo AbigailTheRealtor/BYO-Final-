@@ -1613,12 +1613,25 @@
                                 $servicesTabIndex     = array_search('Services', $allTabs);
                                 $referralTabIndex     = array_search('Referral & Cooperation Terms', $allTabs);
                                 $preScreeningTabIndex = array_search('Pre-Screening', $allTabs);
+
+                                // Map tab labels to their actual pane IDs where the auto-slug doesn't match
+                                $infoTabId = match($user_type) {
+                                    'tenant'   => 'tenant-information',
+                                    'seller'   => 'seller-information',
+                                    'buyer'    => 'buyer-information',
+                                    'landlord' => 'landlord-information',
+                                    default    => 'tenant-information',
+                                };
+                                $tabPaneIdOverrides = [
+                                    ($infoTabs[$user_type] ?? '') => $infoTabId,
+                                    'Description'                 => 'additional-details',
+                                ];
                             @endphp
 
                             <ul class="nav nav-tabs" id="myTab" role="tablist">
                                 @foreach ($allTabs as $index => $tab)
                                     @if ($tab)
-                                        @php $tabSlug = $safeSlug($tab); @endphp
+                                        @php $tabSlug = $tabPaneIdOverrides[$tab] ?? $safeSlug($tab); @endphp
                                         <li class="nav-item" role="presentation">
                                             <button class="nav-link {{ $activeTab === $index ? 'active' : '' }}"
                                                 wire:click="setActiveTab({{ $index }})"
@@ -1801,7 +1814,7 @@
                             id="broker-compensation-agency-agreement-terms" role="tabpanel" aria-labelledby="broker-compensation-agency-agreement-terms-tab">
 
                             @if ($user_type === 'tenant')
-                                @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                                @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation', ['isTenantOfferListing' => true])
                             @elseif ($user_type === 'seller')
                                 @include('livewire.offer-listing.offer-seller-tabs.commission-based.broker-compensation')
                             @elseif($user_type === 'buyer')

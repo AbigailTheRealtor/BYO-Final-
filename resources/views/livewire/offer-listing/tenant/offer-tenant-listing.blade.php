@@ -1838,7 +1838,7 @@ $lease_types = [
                                     @elseif($user_type === 'landlord')
                                     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.broker-compensation')
                                     @elseif($user_type === 'tenant')
-                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation')
+                                    @include('livewire.offer-listing.offer-tenant-tabs.commission-based.broker-compensation', ['isTenantOfferListing' => true])
                                     @endif
                                 </div>
 

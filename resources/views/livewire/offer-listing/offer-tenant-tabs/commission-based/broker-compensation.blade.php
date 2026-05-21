@@ -166,6 +166,7 @@ $safeKey = function(...$parts) {
     @enderror
 </div>
 
+@if(empty($isTenantOfferListing))
 @if ($property_type === 'Residential Property')
     <!-- Payment Timing for Broker Fees -->
     <div class="form-group mb-4">
@@ -247,7 +248,9 @@ $safeKey = function(...$parts) {
         @endif
     </div>
 @endif
+@endif {{-- empty($isTenantOfferListing) --}}
 
+@if(empty($isTenantOfferListing))
 <!-- Tenant's Broker Purchase Fee -->
 <div class="form-group mb-4">
     <label class="fw-bold ">
@@ -337,7 +340,9 @@ $safeKey = function(...$parts) {
         @enderror
     </div>
 @endif
+@endif {{-- empty($isTenantOfferListing) --}}
 
+@if(empty($isTenantOfferListing))
 <div class="form-group mb-2">
     <label class="fw-bold ">
         Interested in a Lease-Option Agreement:
@@ -358,6 +363,7 @@ $safeKey = function(...$parts) {
 </div>
 
 @if ($interested_lease_option_agreement === 'Yes')
+    @if(empty($isTenantOfferListing)) {{-- Compensation for Creating must not render for Tenant Offer Listing --}}
     <div id="tab1" class="tab-content mt-3" wire:key="{{ $safeKey('lease-option-section', $interested_lease_option_agreement) }}">
         <div class="form-group">
             <label class="fw-bold">
@@ -396,7 +402,9 @@ $safeKey = function(...$parts) {
             <span class="error mt-2" id="lease_value_error"></span>
         </div>
     </div>
+    @endif {{-- empty($isTenantOfferListing): Compensation for Creating --}}
 
+    @if(empty($isTenantOfferListing)) {{-- Compensation if Purchase Option must not render for Tenant Offer Listing --}}
     <div id="tab2" class="tab-content mt-3">
         <div class="form-group">
             <label class="fw-bold">
@@ -435,7 +443,9 @@ $safeKey = function(...$parts) {
             <span class="error mt-2" id="purchase_value_error"></span>
         </div>
     </div>
+    @endif {{-- empty($isTenantOfferListing): Compensation if Purchase Option --}}
 @endif
+@endif {{-- empty($isTenantOfferListing) --}}
 
 @if($user_type !== 'tenant') {{-- hidden: Protection Period Timeframe --}}
 <!-- Protection Period Timeframe -->
