@@ -754,7 +754,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter land use (e.g., Solar Farm, RV Park, Conservation Easement)"
+            placeholder="Enter land use (e.g., Solar Farm, RV park, conservation easement)"
             @if ($property_items === 'Other') required @endif>
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
@@ -777,7 +777,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter business type (e.g., Recording Studio, Event Venue, Repair Shop)">
+            placeholder="Enter business type (e.g., Recording Studio, event venue, repair shop)">
     </div>
 </div>
 
@@ -995,7 +995,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_appliances" class="form-control has-icon"
             data-icon="fa-solid fa-plug"
-            placeholder="Enter appliances (e.g., Air Fryer Oven, Induction Cooktop, Double Oven)"
+            placeholder="Enter appliances (e.g., Air Fryer Oven, induction cooktop, double oven)"
             @if (is_array($appliances) && in_array('Other', $appliances)) required @endif>
     </div>
     <span class="error mt-2" id="other_appliances_error"></span>
@@ -1131,7 +1131,7 @@
         <div class="input-cover">
             <input type="text" wire:model="other_parking_space_wrapper" id="other_parking_space"
                 class="form-control has-icon" data-icon="fa-solid fa-warehouse"
-                placeholder="Enter garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+                placeholder="Enter garage/parking features (e.g., Tandem Parking, gated entry, shared driveway)">
         </div>
     </div> --}}
 
@@ -1158,7 +1158,7 @@
         <div class="input-cover">
             <input type="text" wire:model.defer="other_parking_space_wrapper" class="form-control has-icon"
                 data-icon="fa-solid fa-warehouse"
-                placeholder="Enter garage/parking features (e.g., Tandem Parking, Gated Entry, Shared Driveway)">
+                placeholder="Enter garage/parking features (e.g., Tandem Parking, gated entry, shared driveway)">
         </div>
     </div>
 
@@ -1227,7 +1227,7 @@
 <div class="form-group" id="other_preferences" style="display: {{ is_array($view_preference) && in_array('Other', $view_preference) ? 'block' : 'none' }}">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
-            data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, Desert, Courtyard)">
+            data-icon="fa-solid fa-tree" placeholder="Enter view (e.g., Lake, desert, courtyard)">
     </div>
     <span class="error mt-2" id="other_preferences_error"></span>
 </div>
@@ -1295,11 +1295,11 @@
             @if (in_array($property_type, ['Residential', 'Income']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter amenities or property features (e.g., Sauna, EV Charger, Outdoor Kitchen)">
+                    placeholder="Enter amenities or property features (e.g., Sauna, EV charger, outdoor kitchen)">
             @elseif(in_array($property_type, ['Business', 'Commercial']))
                 <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                     data-icon="fa-solid fa-lock"
-                    placeholder="Enter amenities or property features (e.g., Rooftop Access, Backup Generator, Freight Elevator)">
+                    placeholder="Enter amenities or property features (e.g., Rooftop Access, backup generator, freight elevator)">
             @endif
         </div>
         <span class="error mt-2" id="other_non_negotiable_amenities_error"></span>
@@ -1351,7 +1351,7 @@
             </span>
             <div class="input-cover">
                 <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
-                    data-icon="fa-solid fa-cat" placeholder="Enter acceptable pet types (e.g., Dog, Cat)">
+                    data-icon="fa-solid fa-cat" placeholder="Enter acceptable pet types (e.g., Dog, cat)">
             </div>
             <span class="error mt-2" id="type_of_pets_error"></span>
         </div>
@@ -1444,7 +1444,7 @@
         <div class="input-cover">
             <input type="text" wire:model.defer="assets_other" class="form-control has-icon"
                 data-icon="fa-solid fa-building"
-                placeholder=" Enter any included assets (e.g., Inventory, Customer Lists, Trademarks, Software Rights)">
+                placeholder=" Enter any included assets (e.g., Inventory, customer lists, trademarks, software rights)">
         </div>
     </div>
 @endif
@@ -1878,7 +1878,7 @@
     <div class="form-group" id="other_foundation_residential_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical Pier, Pressure-Treated Wood)">
+                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical Pier, pressure-treated wood)">
         </div>
     </div>
 
@@ -1900,7 +1900,7 @@
     <div class="form-group" id="other_heating_and_fuel_residential_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_heating_and_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter heating/fuel type (e.g., Wood Pellet, geothermal)">
         </div>
     </div>
 
@@ -1922,7 +1922,7 @@
     <div class="form-group" id="other_air_conditioning_residential_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, geo-thermal)">
         </div>
     </div>
 
@@ -1944,7 +1944,7 @@
     <div class="form-group" id="other_water_residential_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
+                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, shared well)">
         </div>
     </div>
 
@@ -1966,7 +1966,7 @@
     <div class="form-group" id="other_sewer_residential_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
+                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, composting)">
         </div>
     </div>
 
@@ -1988,7 +1988,7 @@
     <div class="form-group" id="other_utilities_residential_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, geothermal)">
         </div>
     </div>
 
@@ -2114,7 +2114,7 @@
     <div class="form-group" id="other_foundation_commercial_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical Pier, Pressure-Treated Wood)">
+                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical Pier, pressure-treated wood)">
         </div>
     </div>
 
@@ -2136,7 +2136,7 @@
     <div class="form-group" id="other_road_frontage_commercial_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_frontage" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter road frontage type (e.g., Cul-de-Sac, Service Road)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road frontage type (e.g., Cul-de-Sac, service road)">
         </div>
     </div>
 
@@ -2158,7 +2158,7 @@
     <div class="form-group" id="other_road_surface_type_commercial_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter road surface type (e.g., Cobblestone, Shell)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road surface type (e.g., Cobblestone, shell)">
         </div>
     </div>
 
@@ -2180,7 +2180,7 @@
     <div class="form-group" id="other_utilities_commercial_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, geothermal)">
         </div>
     </div>
 
@@ -2202,7 +2202,7 @@
     <div class="form-group" id="other_water_commercial_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
+                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, shared well)">
         </div>
     </div>
 
@@ -2224,7 +2224,7 @@
     <div class="form-group" id="other_sewer_commercial_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
+                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, composting)">
         </div>
     </div>
 
@@ -2246,7 +2246,7 @@
     <div class="form-group" id="other_heating_and_fuel_commercial_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_heating_and_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter heating/fuel type (e.g., Wood Pellet, geothermal)">
         </div>
     </div>
 
@@ -2268,7 +2268,7 @@
     <div class="form-group" id="other_air_conditioning_commercial_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, geo-thermal)">
         </div>
     </div>
 
@@ -2290,7 +2290,7 @@
     <div class="form-group" id="other_electrical_service_commercial_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter electrical service (e.g., 600 Volts, DC Power)">
+                data-icon="fa-solid fa-pen" placeholder="Enter electrical service (e.g., 600 volts, DC power)">
         </div>
     </div>
 
@@ -2329,7 +2329,7 @@
     <div class="form-group" id="other_building_features_wrapper" style="{{ is_array($building_features) && in_array('Other', $building_features) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_building_features" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter building features (e.g., Skylight, Automated Gate)">
+                data-icon="fa-solid fa-pen" placeholder="Enter building features (e.g., Skylight, automated gate)">
         </div>
     </div>
 
@@ -2381,7 +2381,7 @@
     <div class="form-group" id="other_licenses_wrapper" style="{{ is_array($licenses) && in_array('Other', $licenses) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_licenses" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter license (e.g., Catering, Entertainment)">
+                data-icon="fa-solid fa-pen" placeholder="Enter license (e.g., Catering, entertainment)">
         </div>
     </div>
 
@@ -2403,7 +2403,7 @@
     <div class="form-group" id="other_sale_includes_wrapper" style="{{ is_array($sale_includes) && in_array('Other', $sale_includes) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sale_includes" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter items included in sale (e.g., Domain Name, Social Media Accounts)">
+                data-icon="fa-solid fa-pen" placeholder="Enter items included in sale (e.g., Domain Name, social media accounts)">
         </div>
     </div>
 
@@ -2495,7 +2495,7 @@
     <div class="form-group" id="other_foundation_business_wrapper" style="{{ is_array($foundation) && in_array('Other', $foundation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_foundation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical Pier, Pressure-Treated Wood)">
+                data-icon="fa-solid fa-pen" placeholder="Enter foundation type (e.g., Helical Pier, pressure-treated wood)">
         </div>
     </div>
 
@@ -2517,7 +2517,7 @@
     <div class="form-group" id="other_utilities_business_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, geothermal)">
         </div>
     </div>
 
@@ -2539,7 +2539,7 @@
     <div class="form-group" id="other_water_business_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
+                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, shared well)">
         </div>
     </div>
 
@@ -2561,7 +2561,7 @@
     <div class="form-group" id="other_sewer_business_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
+                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, composting)">
         </div>
     </div>
 
@@ -2583,7 +2583,7 @@
     <div class="form-group" id="other_heating_and_fuel_business_wrapper" style="{{ is_array($heating_and_fuel) && in_array('Other', $heating_and_fuel) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_heating_and_fuel" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter heating/fuel type (e.g., Wood Pellet, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter heating/fuel type (e.g., Wood Pellet, geothermal)">
         </div>
     </div>
 
@@ -2605,7 +2605,7 @@
     <div class="form-group" id="other_air_conditioning_business_wrapper" style="{{ is_array($air_conditioning) && in_array('Other', $air_conditioning) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_air_conditioning" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, Geo-Thermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter air conditioning type (e.g., Evaporative Cooler, geo-thermal)">
         </div>
     </div>
 
@@ -2627,7 +2627,7 @@
     <div class="form-group" id="other_electrical_service_business_wrapper" style="{{ is_array($electrical_service) && in_array('Other', $electrical_service) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_electrical_service" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter electrical service (e.g., 600 Volts, DC Power)">
+                data-icon="fa-solid fa-pen" placeholder="Enter electrical service (e.g., 600 volts, DC power)">
         </div>
     </div>
 
@@ -2653,7 +2653,7 @@
     <div class="form-group" id="other_current_use_wrapper" style="{{ is_array($current_use) && in_array('Other', $current_use) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_current_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter current use (e.g., Hunting, Camping)">
+                data-icon="fa-solid fa-pen" placeholder="Enter current use (e.g., Hunting, camping)">
         </div>
     </div>
 
@@ -2691,7 +2691,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="water_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter water availability (e.g., Well Required, Utility Nearby, Extension Needed)">
+                data-icon="fa-solid fa-pen" placeholder="Enter water availability (e.g., Well Required, utility nearby, extension needed)">
         </div>
     </div>
     @endif
@@ -2717,7 +2717,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="sewer_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter sewer availability (e.g., Septic Required, City Sewer Nearby)">
+                data-icon="fa-solid fa-pen" placeholder="Enter sewer availability (e.g., Septic Required, city sewer nearby)">
         </div>
     </div>
     @endif
@@ -2743,7 +2743,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="electric_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter electric availability (e.g., Solar Only, Generator Required)">
+                data-icon="fa-solid fa-pen" placeholder="Enter electric availability (e.g., Solar Only, generator required)">
         </div>
     </div>
     @endif
@@ -2769,7 +2769,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="gas_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter gas availability (e.g., Propane Only, Not Available)">
+                data-icon="fa-solid fa-pen" placeholder="Enter gas availability (e.g., Propane Only, not available)">
         </div>
     </div>
     @endif
@@ -2795,7 +2795,7 @@
     <div class="form-group">
         <div class="input-cover">
             <input type="text" wire:model.defer="telecom_available_other" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter telecom availability (e.g., Satellite Only, Fiber Nearby)">
+                data-icon="fa-solid fa-pen" placeholder="Enter telecom availability (e.g., Satellite Only, fiber nearby)">
         </div>
     </div>
     @endif
@@ -2844,7 +2844,7 @@
     <div class="form-group" id="other_road_frontage_vacant_land_wrapper" style="{{ is_array($road_frontage) && in_array('Other', $road_frontage) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_frontage" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter road frontage type (e.g., Cul-de-Sac, Service Road)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road frontage type (e.g., Cul-de-Sac, service road)">
         </div>
     </div>
 
@@ -2866,7 +2866,7 @@
     <div class="form-group" id="other_road_surface_type_vacant_land_wrapper" style="{{ is_array($road_surface_type) && in_array('Other', $road_surface_type) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_road_surface_type" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter road surface type (e.g., Cobblestone, Shell)">
+                data-icon="fa-solid fa-pen" placeholder="Enter road surface type (e.g., Cobblestone, shell)">
         </div>
     </div>
 
@@ -2888,7 +2888,7 @@
     <div class="form-group" id="other_utilities_vacant_land_wrapper" style="{{ is_array($utilities) && in_array('Other', $utilities) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_utilities" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, Geothermal)">
+                data-icon="fa-solid fa-pen" placeholder="Enter utility (e.g., Steam, geothermal)">
         </div>
     </div>
 
@@ -2910,7 +2910,7 @@
     <div class="form-group" id="other_water_vacant_land_wrapper" style="{{ is_array($water) && in_array('Other', $water) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_water" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, Shared Well)">
+                data-icon="fa-solid fa-pen" placeholder="Enter water source (e.g., Rainwater Collection, shared well)">
         </div>
     </div>
 
@@ -2932,7 +2932,7 @@
     <div class="form-group" id="other_sewer_vacant_land_wrapper" style="{{ is_array($sewer) && in_array('Other', $sewer) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_sewer" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, Composting)">
+                data-icon="fa-solid fa-pen" placeholder="Enter sewer type (e.g., Cesspool, composting)">
         </div>
     </div>
 
@@ -2980,7 +2980,7 @@
     <div class="form-group" id="other_current_adjacent_use_wrapper" style="{{ is_array($current_adjacent_use) && in_array('Other', $current_adjacent_use) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_current_adjacent_use" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter adjacent use (e.g., Conservation Land, Nature Preserve)">
+                data-icon="fa-solid fa-pen" placeholder="Enter adjacent use (e.g., Conservation Land, nature preserve)">
         </div>
     </div>
 
@@ -3002,7 +3002,7 @@
     <div class="form-group" id="other_fences_wrapper" style="{{ is_array($fences) && in_array('Other', $fences) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_fences" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter fence type (e.g., Electric, Invisible)">
+                data-icon="fa-solid fa-pen" placeholder="Enter fence type (e.g., Electric, invisible)">
         </div>
     </div>
 
@@ -3024,7 +3024,7 @@
     <div class="form-group" id="other_vegetation_wrapper" style="{{ is_array($vegetation) && in_array('Other', $vegetation) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_vegetation" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter vegetation type (e.g., Citrus Grove, Vineyard)">
+                data-icon="fa-solid fa-pen" placeholder="Enter vegetation type (e.g., Citrus Grove, vineyard)">
         </div>
     </div>
 
@@ -3062,7 +3062,7 @@
     <div class="form-group" id="other_easements_wrapper" style="{{ is_array($easements) && in_array('Other', $easements) ? '' : 'display:none;' }}">
         <div class="input-cover">
             <input type="text" wire:model.defer="other_easements" class="form-control has-icon"
-                data-icon="fa-solid fa-pen" placeholder="Enter easement type (e.g., Drainage, Mineral Rights)">
+                data-icon="fa-solid fa-pen" placeholder="Enter easement type (e.g., Drainage, mineral rights)">
         </div>
     </div>
 

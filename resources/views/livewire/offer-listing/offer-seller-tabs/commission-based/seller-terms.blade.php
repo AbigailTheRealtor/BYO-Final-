@@ -79,7 +79,7 @@
         <div class="input-cover">
             <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
                 data-icon="fa-solid fa-screwdriver-wrench"
-                placeholder="Enter special sale provision (e.g., Divorce Sale, Third-Party Approval)">
+                placeholder="Enter special sale provision (e.g., Divorce Sale, third-party approval)">
         </div>
     </div>
 </div>
@@ -372,7 +372,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_financing" class="form-control has-icon"
                     data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, Stock Transfer, Private Investment Agreement)">
+                    placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, stock transfer, private investment agreement)">
             </div>
         </div>
     </div>
@@ -556,7 +556,7 @@
         <div class="input-cover">
             <input type="text" wire:model="assumable_loan_term_remaining" class="form-control has-icon"
                 data-icon="fa-regular fa-calendar-days"
-                placeholder="Enter remaining loan term (e.g., 25 Years)">
+                placeholder="Enter remaining loan term (e.g., 25 years)">
         </div>
     </div>
 
@@ -733,7 +733,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_custodian_wallet" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, Escrow Wallet, Propy Title)">
+                placeholder="Enter wallet, exchange, or escrow service (e.g., Coinbase, escrow wallet, Propy Title)">
         </div>
     </div>
 
@@ -780,7 +780,7 @@
         <div class="input-cover">
             <input type="text" wire:model="crypto_transfer_timing_other" class="form-control has-icon"
                 data-icon="fa-solid fa-clock"
-                placeholder="Enter Timing of Transfer (e.g., Within 48 Hours of Contract Acceptance)">
+                placeholder="Enter Timing of Transfer (e.g., Within 48 hours of contract acceptance)">
         </div>
     </div>
     @endif
@@ -820,7 +820,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_exchange_item" class="form-control has-icon"
                     data-icon="fa-solid fa-right-left"
-                    placeholder="Enter exchange item (e.g., Private Jet, Yacht, Luxury RV)">
+                    placeholder="Enter exchange item (e.g., Private Jet, yacht, luxury RV)">
             </div>
         </div>
     </div>
@@ -899,7 +899,7 @@
         <div class="input-cover">
             <input type="text" wire:model="value_determination" class="form-control has-icon"
                 data-icon="fa-solid fa-right-left"
-                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, Online Valuation, Mutual Agreement)">
+                placeholder="Enter how the value of the exchange/trade item should be determined (e.g., Licensed Appraisal, online valuation, mutual agreement)">
         </div>
     </div>
 
@@ -914,7 +914,7 @@
         <div class="input-cover">
             <input type="text" wire:model="exchange_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-truck"
-                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, Bill of Sale, Delivery at closing)">
+                placeholder="Enter how the exchange/trade item will be delivered or transferred (e.g., Title transfer, bill of sale, delivery at closing)">
         </div>
     </div>
 
@@ -1337,7 +1337,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_description" class="form-control has-icon"
                 data-icon="fa-solid fa-money-bill-wave"
-                placeholder="Enter the type of NFT the Seller is willing to accept (e.g., Tokenized Real Estate, Digital Artwork)">
+                placeholder="Enter the type of NFT the Seller is willing to accept (e.g., Tokenized Real Estate, digital artwork)">
         </div>
     </div>
 
@@ -1384,7 +1384,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_valuation_method" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, Independent appraisal, Mutual agreement)">
+                placeholder="Enter how NFT value will be determined (e.g., Floor price on OpenSea, independent appraisal, mutual agreement)">
         </div>
     </div>
 
@@ -1399,7 +1399,7 @@
         <div class="input-cover">
             <input type="text" wire:model="nft_transfer_method" class="form-control has-icon"
                 data-icon="fa-solid fa-wallet"
-                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, Escrow Smart Contract)">
+                placeholder="Enter wallet, marketplace, or escrow service for transfer (e.g., MetaMask, OpenSea, Propy Title, escrow smart contract)">
         </div>
     </div>
 
@@ -1616,7 +1616,7 @@
             </label>
             <div class="input-cover">
                 <input type="text" wire:model="balloon_payment_date" class="form-control has-icon"
-                    data-icon="fa-regular fa-calendar-days" placeholder="Enter balloon payment date (e.g., 5 Years)">
+                    data-icon="fa-regular fa-calendar-days" placeholder="Enter balloon payment date (e.g., 5 years)">
 
             </div>
         </div>
@@ -1646,7 +1646,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_amortization_other" class="form-control has-icon"
                 data-icon="fa-solid fa-chart-line"
-                placeholder="Enter custom amortization type (e.g., Hybrid, Graduated Payments, Step-Up Structure)">
+                placeholder="Enter custom amortization type (e.g., Hybrid, graduated payments, step-up structure)">
         </div>
     </div>
     @endif
@@ -1677,7 +1677,7 @@
         <div class="input-cover">
             <input type="text" wire:model="seller_payment_frequency_other" class="form-control has-icon"
                 data-icon="fa-solid fa-calendar-check"
-                placeholder="Enter custom payment schedule (e.g., Semi-Annual, Lump Sum at Harvest)">
+                placeholder="Enter custom payment schedule (e.g., Semi-Annual, lump sum at harvest)">
         </div>
     </div>
     @endif
@@ -1834,7 +1834,7 @@
     <div class="input-cover">
         <input type="text" wire:model="escrow_agent_preference" class="form-control has-icon"
             data-icon="fa-solid fa-building-columns"
-            placeholder="Enter preferred escrow agent or company name (e.g., First American Title, Local Attorney)">
+            placeholder="Enter preferred escrow agent or company name (e.g., First American Title, local attorney)">
     </div>
 </div>
 

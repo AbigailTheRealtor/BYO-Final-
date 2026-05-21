@@ -15,7 +15,7 @@
                                         @if ($user_type === 'seller')
                                             @if ($property_type === 'Residential')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
-                                                    placeholder="Enter a description of this residential property, including key features, recent renovations, amenities, and standout highlights (e.g., newly renovated kitchen, hardwood floors, large backyard)."></textarea>
+                                                    placeholder="Enter a description of this residential property, including key features, recent renovations, amenities, and standout highlights (e.g., Newly renovated kitchen, hardwood floors, large backyard)."></textarea>
                                             @elseif ($property_type === 'Commercial')
                                                 <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
                                                     placeholder="Enter a description of this commercial property, including property class, recent improvements, layout, zoning, and key highlights (e.g., Class A office space, recent HVAC upgrade, high-traffic location)."></textarea>
@@ -28,7 +28,7 @@
                                             @endif
                                         @else
                                             <textarea wire:model="additional_details" class="form-control" rows="4" style="min-height: 140px; padding: 10px; font-size: 16px;"
-                                                placeholder="Enter property description (e.g., recently renovated kitchen, waterfront views, flexible lease terms)"></textarea>
+                                                placeholder="Enter property description (e.g., Recently renovated kitchen, waterfront views, flexible lease terms)"></textarea>
                                         @endif
                                     </div>
                                 </div>

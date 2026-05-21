@@ -2135,8 +2135,8 @@ class SellerOfferListingEdit extends Component
             $this->sale_provision = is_string($auction->get->sale_provision) ? json_decode($auction->get->sale_provision, true) ?? [] : (array)($auction->get->sale_provision ?? []);
             $this->sale_provision_other = $auction->get->sale_provision_other ?? '';
             $this->sale_provision_assignment = $auction->get->sale_provision_assignment ?? '';
-            $this->assignment_fee_type = $auction->get->assignment_fee_type;
-            $this->assignment_fee_amount = $auction->get->assignment_fee_amount;
+            $this->assignment_fee_type = $auction->get->assignment_fee_type ?: '$';
+            $this->assignment_fee_amount = $auction->get->assignment_fee_amount ?? '';
             $this->buyer_sell_contract = $auction->get->buyer_sell_contract;
 
             // Budget & Financing
