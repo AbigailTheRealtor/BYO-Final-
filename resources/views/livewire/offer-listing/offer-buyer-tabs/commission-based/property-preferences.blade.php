@@ -361,7 +361,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_property_items" class="form-control has-icon"
             data-icon="fa-solid fa-home"
-            placeholder="Enter other land use (e.g., Solar farm, RV park, conservation easement)">
+            placeholder="Enter other land use (e.g., Solar farm, RV park, Conservation easement)">
     </div>
     <span class="error mt-2" id="other_property_items_error"></span>
 </div>
@@ -389,7 +389,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
             data-icon="fa-solid fa-briefcase"
-            placeholder="Enter other business type (e.g., Recording studio, event venue, repair shop)">
+            placeholder="Enter other business type (e.g., Recording studio, Event venue, Repair shop)">
     </div>
 </div>
 @endif
@@ -692,7 +692,7 @@
     <div class="input-cover">
         <input type="text" wire:model.defer="other_parking_space_wrapper" id="other_parking_space"
             class="form-control has-icon" data-icon="fa-solid fa-warehouse"
-            placeholder="Enter garage/parking features needed (e.g., Tandem parking, gated entry, shared driveway)">
+            placeholder="Enter garage/parking features needed (e.g., Tandem parking, Gated entry, Shared driveway)">
     </div>
 </div>
 @endif
@@ -721,8 +721,8 @@
     </div>
 @endif
 
-@if ($pool_needed === 'Yes')
-    <!-- Pool Type Selection (Shows only if "Yes" is selected) -->
+@if (in_array($property_type, ['Residential', 'Income']) && $pool_needed === 'Yes')
+    <!-- Pool Type Selection (Shows only if "Yes" is selected and property type supports pools) -->
     <div class="form-group" id="pool_type_wrapper">
         <label class="fw-bold">Select Pool Type:</label>
         <div class="form-check">
@@ -765,7 +765,7 @@
 <div class="form-group" id="other_preferences" style="display: {{ $this->is_other_visible ? 'block' : 'none' }}">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_preferences" class="form-control has-icon"
-            data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, desert, courtyard)">
+            data-icon="fa-solid fa-tree" placeholder="Enter view preference (e.g., Lake, Desert, Courtyard)">
     </div>
     <span class="error mt-2" id="other_preferences_error"></span>
 </div>
@@ -838,11 +838,11 @@
         @if ($property_type === 'Residential' or $property_type === 'Income')
             <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
-                placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV charger, outdoor kitchen)">
+                placeholder="Enter non-negotiable amenities or features (e.g., Sauna, EV charger, Outdoor kitchen)">
         @elseif ($property_type === 'Commercial' or $property_type === 'Business')
             <input type="text" wire:model.defer="other_non_negotiable_amenities" class="form-control has-icon"
                 data-icon="fa-solid fa-lock"
-                placeholder="Enter non-negotiable amenities or features (e.g., Rooftop access, backup generator, freight elevator)">
+                placeholder="Enter non-negotiable amenities or features (e.g., Rooftop access, Backup generator, Freight elevator)">
         @endif
 
     </div>
@@ -895,7 +895,7 @@
             </label>
                 <div class="input-cover">
                     <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
-                        data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, cat)">
+                        data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
                 </div>
                 <span class="error mt-2" id="type_of_pets_error"></span>
             </div>
@@ -1042,7 +1042,7 @@
 <div class="form-group other_assets {{ in_array('Other', $assets ?? []) ? '' : 'd-none' }}" wire:key="other-assets-wrapper">
     <div class="input-cover">
         <input type="text" wire:model.defer="assets_other" class="form-control has-icon" data-icon="fa-solid fa-building"
-            placeholder="Enter any included assets (e.g., Inventory, customer lists, trademarks, software rights)">
+            placeholder="Enter any included assets (e.g., Inventory, Customer lists, Trademarks, Software rights)">
     </div>
     <span class="error mt-2" id="assets_other_error"></span>
 </div>
@@ -1194,7 +1194,7 @@
 
             <div class="input-cover">
                 <input type="text" wire:model.defer="type_of_pets" class="form-control has-icon"
-                    data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, cat)">
+                    data-icon="fa-solid fa-cat" placeholder="Enter types of pets (e.g., Dog, Cat)">
             </div>
             <span class="error mt-2" id="type_of_pets_error"></span>
         </div>
@@ -1327,7 +1327,7 @@
 
     <div class="input-cover">
         <textarea wire:model.defer="preferance_details" class="form-control" rows="4"
-            style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences (e.g., prefer open floor plan, no HOA, near public transit)"></textarea>
+            style="padding: 10px; font-size: 16px;" placeholder="Enter any additional preferences (e.g., Prefer open floor plan, No HOA, Near public transit)"></textarea>
     </div>
 </div>
 @endif
@@ -1394,11 +1394,11 @@
         var myEpoch = ++window._buyerVpSyncEpoch;
         function syncViewPreference(values, attemptsLeft) {
             if (window._buyerVpSyncEpoch !== myEpoch) return; // stale chain — cancel
-            if (attemptsLeft === undefined) attemptsLeft = 15;
+            if (attemptsLeft === undefined) attemptsLeft = 30;
             var $vp = $('#view_preference');
             if (!$vp.length || attemptsLeft === 0) return;
             if (!$vp.hasClass('select2-hidden-accessible')) {
-                setTimeout(function() { syncViewPreference(values, attemptsLeft - 1); }, 100);
+                setTimeout(function() { syncViewPreference(values, attemptsLeft - 1); }, 200);
                 return;
             }
             if (values && Array.isArray(values) && values.length > 0) {
