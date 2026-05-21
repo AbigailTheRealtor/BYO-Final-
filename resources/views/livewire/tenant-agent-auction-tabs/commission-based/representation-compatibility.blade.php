@@ -442,7 +442,7 @@
             data-icon="fa-solid fa-comment-dots"
             rows="1"
             style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
-            placeholder="e.g., Previous rental disputes, credit concerns, tight timeline, specific landlord requirements..."
+            placeholder="Enter concerns or barriers (e.g., Prior eviction concern, Limited rental history)"
             maxlength="2000"></textarea>
     </div>
     @error('compatibility_preferences.tenant_specific.concerns_or_barriers')
@@ -465,7 +465,7 @@
             data-icon="fa-solid fa-note-sticky"
             rows="1"
             style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
-            placeholder="e.g., I prefer an Agent with commercial leasing experience, or I have a strict move-in date..."
+            placeholder="Enter additional compatibility notes (e.g., I prefer an agent with commercial leasing experience, I have a strict move-in date)"
             maxlength="2000"></textarea>
     </div>
     @error('compatibility_preferences.tenant_specific.additional_compatibility_notes')

@@ -40,7 +40,7 @@
             <input type="text"
                    wire:model="compatibility_preferences.landlord_specific.primary_leasing_goal_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter primary leasing goal (e.g., minimize vacancy before summer)">
+                   placeholder="Enter primary leasing goal (e.g., Minimize vacancy before summer)">
         </div>
     </div>
     @error('compatibility_preferences.landlord_specific.primary_leasing_goal')
@@ -81,7 +81,7 @@
             <input type="text"
                    wire:model="compatibility_preferences.landlord_specific.tenant_type_preference_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter preferred tenant type (e.g., long-term professional tenant)">
+                   placeholder="Enter preferred tenant type (e.g., Long-term professional tenant)">
         </div>
     </div>
 </div>
@@ -365,6 +365,6 @@
                   rows="1"
                   style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
                   maxlength="2000"
-                  placeholder="Enter additional representation notes (e.g., prefer weekly leasing updates and strong tenant screening)"></textarea>
+                  placeholder="Enter additional representation notes (e.g., Prefer weekly leasing updates and strong tenant screening)"></textarea>
     </div>
 </div>

@@ -38,7 +38,6 @@
     </div>
     <span class="error mt-2">@error('compatibility_preferences.buyer_specific.primary_transaction_goal') {{ $message }} @enderror</span>
     <div x-show="showPtgOther" class="mt-2" x-cloak>
-        <label class="fw-bold small">Please describe your goal:</label>
         <div class="input-cover">
             <input type="text"
                    wire:model.defer="compatibility_preferences.buyer_specific.primary_transaction_goal_other"
@@ -78,12 +77,11 @@
     </div>
     <span class="error mt-2">@error('compatibility_preferences.buyer_specific.representation_priorities') {{ $message }} @enderror</span>
     <div x-show="hasRpOther" class="mt-2" x-cloak>
-        <label class="fw-bold small">Please describe your additional priorities:</label>
         <div class="input-cover">
             <input type="text"
                    wire:model.defer="compatibility_preferences.buyer_specific.representation_priorities_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter representation priorities (e.g., investment analysis and off-market opportunities)">
+                   placeholder="Enter representation priorities (e.g., Investment analysis and off-market opportunities)">
         </div>
     </div>
 </div>
@@ -226,7 +224,7 @@
         <input type="text"
                wire:model.defer="compatibility_preferences.buyer_specific.availability_windows"
                class="form-control has-icon" data-icon="fa-solid fa-clock"
-               placeholder="Enter availability / best times (e.g., weekday evenings after 6pm, weekend mornings)">
+               placeholder="Enter availability / best times (e.g., Weekday evenings after 6pm, Weekend mornings)">
     </div>
 </div>
 
@@ -310,12 +308,11 @@
     </div>
     <span class="error mt-2">@error('compatibility_preferences.buyer_specific.preferred_agent_working_style') {{ $message }} @enderror</span>
     <div x-show="showPawsOther" class="mt-2" x-cloak>
-        <label class="fw-bold small">Please describe your preferred agent style:</label>
         <div class="input-cover">
             <input type="text"
                    wire:model.defer="compatibility_preferences.buyer_specific.preferred_agent_working_style_other"
                    class="form-control has-icon" data-icon="fa-solid fa-pen"
-                   placeholder="Enter preferred agent working style (e.g., proactive communicator with strong negotiation skills)">
+                   placeholder="Enter preferred agent working style (e.g., Proactive communicator with strong negotiation skills)">
         </div>
     </div>
 </div>
@@ -356,7 +353,7 @@
         <input type="text"
                wire:model.defer="compatibility_preferences.buyer_specific.deal_breakers"
                class="form-control has-icon" data-icon="fa-solid fa-ban"
-               placeholder="Enter non-negotiable requirements (e.g., must have 3+ bedrooms, no HOA, available on weekends)">
+               placeholder="Enter non-negotiable requirements (e.g., Must have 3+ bedrooms, No HOA, Available on weekends)">
     </div>
 </div>
 
@@ -376,6 +373,6 @@
                   rows="1"
                   style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
                   maxlength="2000"
-                  placeholder="Enter additional notes for agent (e.g., prefer weekend showings and fast responses)"></textarea>
+                  placeholder="Enter additional notes for agent (e.g., Prefer weekend showings and fast responses)"></textarea>
     </div>
 </div>

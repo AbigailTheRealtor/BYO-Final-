@@ -23,7 +23,7 @@
 {{-- Communication Style (required, Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        How would you describe your preferred communication style?
+        Preferred Communication Style:
         <span class="text-danger ms-1">*</span>
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="This helps agents understand how often and through what channel you prefer to communicate."
@@ -93,7 +93,7 @@
 {{-- Negotiation Style (required, Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        How would you describe your negotiation style?
+        Negotiation Style:
         <span class="text-danger ms-1">*</span>
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="This helps the agent align their negotiation approach with your expectations."
@@ -141,7 +141,7 @@
 {{-- Firm on Price (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Are You Firm on Your Asking Price?
+        Firm on Asking Price:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Helps the agent understand how firm your listing price expectations are."
             class="ms-2 cursor-pointer">
@@ -164,7 +164,7 @@
 {{-- Primary Goal (required, Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        What is your primary goal for this sale?
+        Primary Transaction Goal:
         <span class="text-danger ms-1">*</span>
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Knowing your primary goal helps the agent prioritize the right strategies."
@@ -190,21 +190,12 @@
 {{-- Other: Primary Transaction Goal — companion input, shown only when "Other" is selected --}}
 <div class="form-group mb-4" id="compat_ptg_other_wrapper"
     style="display: {{ ($compatibility_preferences['seller_specific']['primary_transaction_goal'] ?? '') === 'Other' ? '' : 'none' }}">
-    <label class="fw-bold d-flex align-items-center">
-        Please Describe Your Primary Goal
-        <span class="text-danger ms-1">*</span>
-        <span data-bs-toggle="tooltip" data-bs-html="true"
-            title="Since you selected Other, please briefly describe your primary goal for this sale."
-            class="ms-2 cursor-pointer">
-            <i class="fa-solid fa-circle-info text-muted"></i>
-        </span>
-    </label>
     <div class="input-cover mt-2">
         <input type="text"
             wire:model="compatibility_preferences.seller_specific.primary_transaction_goal_other"
             id="compat_primary_transaction_goal_other"
             class="form-control has-icon" data-icon="fa-solid fa-bullseye"
-            placeholder="Enter primary goal (e.g., sell quickly to relocate)">
+            placeholder="Enter primary goal (e.g., Sell quickly to relocate)">
     </div>
 </div>
 
@@ -229,7 +220,7 @@
 {{-- Flexibility on Timeline (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        How Flexible Are You on the Timeline?
+        Timeline Flexibility:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Lets the agent know how strictly you need to adhere to your target timeline."
             class="ms-2 cursor-pointer">
@@ -274,7 +265,7 @@
 {{-- Representation Priorities (required, multi-select) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        What matters most in an agent?
+        Representation Priorities:
         <span class="text-danger ms-1">*</span>
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Select the qualities that are most important to you when choosing an agent to represent you."
@@ -346,7 +337,7 @@
 {{-- What Did Not Work Before --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        What did not work well with past agents?
+        What Did Not Work Well with Past Agents:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Briefly describe what went wrong so future agents can avoid it."
             class="ms-2 cursor-pointer">
@@ -360,7 +351,7 @@
             rows="1"
             style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             maxlength="2000"
-            placeholder="Enter what did not work well with past agents (e.g., poor communication, overpriced listing)"></textarea>
+            placeholder="Enter what did not work well with past agents (e.g., Poor communication, Overpriced listing)"></textarea>
     </div>
 </div>
 
@@ -370,7 +361,7 @@
 {{-- Decision Making Style (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        How do you typically make decisions?
+        Decision-Making Style:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="This helps agents understand your pace and style when reviewing offers or making decisions."
             class="ms-2 cursor-pointer">
@@ -391,7 +382,7 @@
 {{-- Involvement Level (Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        How involved do you want to be in the process?
+        Involvement Level:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Helps agents calibrate how frequently to loop you in on decisions."
             class="ms-2 cursor-pointer">
@@ -411,7 +402,7 @@
 {{-- Additional Decision Makers --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        Other Decision Makers Involved:
+        Decision Makers Involved:
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="List anyone else involved in the final selling decision (e.g., co-owner, spouse, financial advisor)."
             class="ms-2 cursor-pointer">
@@ -422,7 +413,7 @@
         <input type="text"
             wire:model="compatibility_preferences.seller_specific.additional_decision_makers"
             class="form-control has-icon" data-icon="fa-solid fa-users"
-            placeholder="Enter decision makers involved (e.g., spouse, co-owner, financial advisor)">
+            placeholder="Enter decision makers involved (e.g., Spouse, Co-owner, Financial advisor)">
     </div>
 </div>
 
@@ -432,7 +423,7 @@
 {{-- Preferred Agent Working Style (required, Select2 single) --}}
 <div class="form-group mb-4">
     <label class="fw-bold d-flex align-items-center">
-        What working style do you prefer in an agent?
+        Preferred Agent Working Style:
         <span class="text-danger ms-1">*</span>
         <span data-bs-toggle="tooltip" data-bs-html="true"
             title="Choose the approach that best matches how you like to work with your agent."
@@ -515,6 +506,6 @@
             rows="1"
             style="min-height: 48px; resize: vertical; padding-top: 10px; padding-bottom: 10px;"
             maxlength="2000"
-            placeholder="Enter additional compatibility notes (e.g., prefer a bilingual agent, need flexible scheduling)"></textarea>
+            placeholder="Enter additional compatibility notes (e.g., Prefer a bilingual agent, Need flexible scheduling)"></textarea>
     </div>
 </div>
