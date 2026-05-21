@@ -2109,7 +2109,7 @@ class LandlordOfferListingEdit extends Component
             $this->service_type = $auction->get->service_type ?? 'full_service';
             $this->user_type = $auction->get->user_type ?? 'landlord';
             $this->listing_status = $auction->get->listing_status ?? null;
-            $this->auction_type = $auction->get->auction_type ?? null;
+            $this->auction_type = $auction->get->auction_type ?? $auction->auction_type ?? null;
             $this->working_with_agent = $auction->get->working_with_agent ?? null;
             $this->listing_date = $auction->get->listing_date ?? null;
             $this->desired_agent_hire_date = $auction->get->desired_agent_hire_date ?? null;

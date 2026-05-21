@@ -1339,7 +1339,7 @@
     <div class="input-cover">
         <textarea wire:model="landlord_approval_conditions" class="form-control has-icon landlord-compact-textarea" rows="1"
             data-icon="fa-solid fa-clipboard-check"
-            placeholder="Enter approval conditions (e.g., Credit score 650+, income 3x monthly rent, no prior evictions)"></textarea>
+            placeholder="Enter approval conditions (e.g., Credit score 650+, Income 3x monthly rent, No prior evictions)"></textarea>
     </div>
 </div>
 

@@ -1163,12 +1163,10 @@ $tenantPays = [
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
 
-                                <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled" wire:target="saveDraft,update"
-                                    style="{{ ($service_type === 'full_service' ? $activeTab === 9 : $activeTab === 6) ? 'display:none' : '' }}">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next" wire:loading.attr="disabled" wire:target="saveDraft,update">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
-                                    id="save-button" wire:loading.attr="disabled" wire:target="update"
-                                    style="{{ ($service_type === 'full_service' ? $activeTab === 9 : $activeTab === 6) ? '' : 'display:none' }}">
+                                    id="save-button" wire:loading.attr="disabled" wire:target="update">
                                     <span wire:loading.remove wire:target="update">Submit</span>
                                     <span wire:loading wire:target="update">Submitting...</span>
                                 </button>
@@ -1544,9 +1542,6 @@ $tenantPays = [
                     closeOnSelect: false,
                     width: '100%',
                 });
-                var _preVPEdit = @json($this->view_preference ?? []);
-                if (!Array.isArray(_preVPEdit)) _preVPEdit = [];
-                if (_preVPEdit.length) { $('#view_preference').val(_preVPEdit).trigger('change'); }
                 $('#view_preference').on('change', function() {
                     let selectedValues = $(this).val();
                     Livewire.emit('updatePreference', selectedValues);
@@ -1556,6 +1551,12 @@ $tenantPays = [
                         $('#other_preferences').hide();
                     }
                 });
+            }
+            // Always re-sync value after Select2 is initialized (covers initial load and Livewire re-renders)
+            if ($('#view_preference').length && $('#view_preference').hasClass('select2-hidden-accessible')) {
+                var _preVPEdit = @json($this->view_preference ?? []);
+                if (!Array.isArray(_preVPEdit)) _preVPEdit = [];
+                if (_preVPEdit.length) { $('#view_preference').val(_preVPEdit).trigger('change'); }
             }
 
             var _mlsEditCfgs = [
@@ -2941,7 +2942,7 @@ $tenantPays = [
                 if (!nextBtn || !finishBtn) return;
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
-                finishBtn.style.display = onAI ? '' : 'none';
+                // Submit button is always visible in edit mode
             }
             window._landlordSyncWizardButtons = syncWizardButtons;
             document.addEventListener('shown.bs.tab', syncWizardButtons);

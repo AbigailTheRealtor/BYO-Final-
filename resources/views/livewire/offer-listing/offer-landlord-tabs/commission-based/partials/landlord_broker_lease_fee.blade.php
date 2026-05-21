@@ -103,14 +103,6 @@
 
 @if ($property_type === 'Commercial Property')
     <div class="form-group mb-4">
-        <label class="fw-bold d-flex align-items-center">
-            Landlord’s Broker Lease Fee:
-            <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
-                title="Choose how the Landlord’s Broker will be compensated if the property is leased. Options include: a percentage of the net aggregate rent, a percentage of the gross rent, a percentage of the month’s rent, a flat fee, or select “Other” to define a custom payment structure. Then, enter the appropriate amount based on your selection.">
-                <i class="fa-solid fa-circle-info"></i>
-            </span>
-        </label>
-
         <div class="input-cover mt-2">
             <select wire:model.lazy="purchase_fee_type" class="form-control has-icon"
                 data-icon="fa-solid fa-file-invoice-dollar">
