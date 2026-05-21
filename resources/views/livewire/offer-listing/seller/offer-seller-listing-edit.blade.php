@@ -1326,6 +1326,7 @@
                     width: '100%',
                     minimumResultsForSearch: Infinity,
                 });
+                $('#property_style_select').data('last-prop-type', @this.get('property_type') || '');
                 var _pssInit = @this.get('property_items') || [];
                 if (_pssInit.length > 0) {
                     $('#property_style_select').val(_pssInit).trigger('change.select2');
@@ -2404,6 +2405,45 @@
                 let parts = value.split('.');
                 parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
+            }
+        }
+        if (typeof validateInput !== 'function') {
+            function validateInput(input) {
+                let v = input.value;
+                v = v.replace(/[^0-9.,]/g, '');
+                const firstDot = v.indexOf('.');
+                if (firstDot !== -1) {
+                    v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+                }
+                input.value = v;
+            }
+        }
+        if (typeof reformatNumber !== 'function') {
+            function reformatNumber(input) {
+                let v = input.value.replace(/,/g, '');
+                const parts = v.split('.');
+                let intPart = parts[0] || '';
+                let decPart = parts[1] || '';
+                if (decPart) decPart = decPart.slice(0, 2);
+                intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                input.value = decPart ? (intPart + '.' + decPart) : intPart;
+            }
+        }
+        if (typeof handlePaste !== 'function') {
+            function handlePaste(event) {
+                event.preventDefault();
+                const paste = (event.clipboardData || window.clipboardData).getData('text');
+                let clean = paste.replace(/[^0-9.]/g, '');
+                const parts = clean.split('.');
+                if (parts.length > 2) {
+                    clean = parts[0] + '.' + parts.slice(1).join('');
+                }
+                let intPart = parts[0] || '';
+                let decPart = parts[1] || '';
+                if (decPart) decPart = decPart.slice(0, 2);
+                intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                event.target.value = decPart ? (intPart + '.' + decPart) : intPart;
+                event.target.dispatchEvent(new Event('input', { bubbles: true }));
             }
         }
         document.addEventListener('DOMContentLoaded', function() {
