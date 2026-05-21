@@ -550,7 +550,7 @@
             <div class="input-cover">
                 <input type="text" wire:model.defer="business_lease_additional_terms" class="form-control has-icon"
                     data-icon="fa-solid fa-note-sticky"
-                    placeholder="Enter additional lease terms (e.g., Renewal options, assignment requirements, landlord approval details)">
+                    placeholder="Enter additional lease terms (e.g., Renewal options, Assignment requirements, Landlord approval details)">
             </div>
         </div>
     @endif

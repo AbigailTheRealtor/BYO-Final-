@@ -79,7 +79,7 @@
         <div class="input-cover">
             <input type="text" wire:model="sale_provision_other" class="form-control has-icon"
                 data-icon="fa-solid fa-screwdriver-wrench"
-                placeholder="Enter special sale provision (e.g., Divorce Sale, third-party approval)">
+                placeholder="Enter special sale provision (e.g., Divorce Sale, Third-party approval)">
         </div>
     </div>
 </div>
@@ -372,7 +372,7 @@
             <div class="input-cover">
                 <input type="text" wire:model="other_financing" class="form-control has-icon"
                     data-icon="fa-solid fa-money-bill-wave"
-                    placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, stock transfer, private investment agreement)">
+                    placeholder="Enter type of financing or currency offered (e.g., Gold Bullion, Stock transfer, Private investment agreement)">
             </div>
         </div>
     </div>

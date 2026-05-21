@@ -440,7 +440,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_frequency_other" class="form-control has-icon"
                             data-icon="fa-regular fa-calendar-days"
-                            placeholder="Specify fee frequency (e.g., Weekly, bi-weekly)">
+                            placeholder="Specify fee frequency (e.g., Weekly, Bi-weekly)">
                     </div>
                 </div>
             </div>
@@ -475,7 +475,7 @@
                     <div class="input-cover">
                         <textarea wire:model="association_approval_process" class="form-control has-icon seller-compact-textarea" rows="1"
                             data-icon="fa-solid fa-stamp"
-                            placeholder="Describe the approval process (e.g., Application required, background check, 30-day review period)"></textarea>
+                            placeholder="Describe the approval process (e.g., Application required, Background check, 30-day review period)"></textarea>
                     </div>
                 </div>
 
@@ -530,7 +530,7 @@
                     <div class="input-cover">
                         <input type="text" wire:model="association_fee_includes_other" class="form-control has-icon"
                             data-icon="fa-solid fa-list-check"
-                            placeholder="Enter what else is included (e.g., Roof Maintenance, building reserves)">
+                            placeholder="Enter what else is included (e.g., Roof Maintenance, Building reserves)">
                     </div>
                 </div>
             </div>
