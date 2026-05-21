@@ -1939,6 +1939,7 @@ class BuyerOfferListingEdit extends Component
             $businessTypeRaw = $auction->get->business_type_selected ?? null;
             $this->business_type_selected = $businessTypeRaw ? (is_string($businessTypeRaw) ? json_decode($businessTypeRaw, true) ?? [] : (array)$businessTypeRaw) : [];
             $this->business_type_selected_json = json_encode($this->business_type_selected ?? []);
+            $this->other_business_type = $auction->get->other_business_type ?? '';
             $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? '';
             $this->leasing_55_plus = $auction->get->leasing_55_plus ?? '';
 
@@ -2239,8 +2240,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('user_type', $this->user_type);
         $auction->saveMeta('listing_status', $this->listing_status);
         $auction->saveMeta('meeting_Preference', $this->meeting_Preference);
-        // LOCKED: auction_type cannot be changed after listing creation — read-only in edit flow
-        // $auction->saveMeta('auction_type', $this->auction_type);
+        $auction->saveMeta('auction_type', $this->auction_type);
         $auction->saveMeta('working_with_agent', $this->working_with_agent);
         $auction->saveMeta('listing_date', $this->listing_date);
         $auction->saveMeta('desired_agent_hire_date', $this->desired_agent_hire_date);
@@ -2395,6 +2395,7 @@ class BuyerOfferListingEdit extends Component
         $auction->saveMeta('number_of_unit_type', json_encode($this->number_of_unit_type));
         $auction->saveMeta('number_of_unit_type_other', $this->number_of_unit_type_other);
         $auction->saveMeta('business_type_selected', json_encode($this->business_type_selected ?? []));
+        $auction->saveMeta('other_business_type', $this->other_business_type ?? '');
         $auction->saveMeta('minimum_annual_net_income', $this->stripCommas($this->minimum_annual_net_income));
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
 

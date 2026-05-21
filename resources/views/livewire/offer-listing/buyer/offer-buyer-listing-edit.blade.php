@@ -858,9 +858,9 @@
 
 
 
-                                <!-- Additional Details Tab (index 3) -->
+                                <!-- Description Tab (index 3) -->
                                 <div class="tab-pane fade {{ $activeTab === 3 ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+                                    id="description" role="tabpanel" aria-labelledby="description-tab">
 
                                     @include('livewire.offer-listing.offer-buyer-tabs.commission-based.additional-details')
 
@@ -958,7 +958,7 @@
             });
 
             function handleNextClick() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+                const currentTab = document.querySelector('#myTab .nav-link.active');
                 if (!currentTab) return;
 
                 const targetSelector = currentTab.getAttribute('data-bs-target');
@@ -993,23 +993,33 @@
                 });
 
                 if (isValid) {
-                    const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
+                    let nextLi = currentTab.parentElement?.nextElementSibling;
+                    while (nextLi && nextLi.classList.contains('d-none')) {
+                        nextLi = nextLi.nextElementSibling;
+                    }
+                    const nextTab = nextLi?.querySelector('.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('#myTab .nav-link');
-                        const tabIndex = Array.from(tabs).indexOf(nextTab);
-                        if (tabIndex !== -1) {
-                            Livewire.emit('setActiveTab', tabIndex);
-                            nextTab.click();
-                        }
+                        var _wc = nextTab.getAttribute('wire:click') || '';
+                        var _wm = _wc.match(/setActiveTab\((\d+)\)/);
+                        var serverIdx = _wm ? parseInt(_wm[1]) : Array.from(document.querySelectorAll('#myTab .nav-link')).indexOf(nextTab);
+                        Livewire.emit('setActiveTab', serverIdx);
+                        nextTab.click();
                     }
                 }
             }
 
             function handleBackClick() {
-                const currentTab = document.querySelector('.nav-tabs .nav-link.active');
-                const prevTab = currentTab?.parentElement?.previousElementSibling?.querySelector('.nav-link');
+                const currentTab = document.querySelector('#myTab .nav-link.active');
+                let prevLi = currentTab?.parentElement?.previousElementSibling;
+                while (prevLi && prevLi.classList.contains('d-none')) {
+                    prevLi = prevLi.previousElementSibling;
+                }
+                const prevTab = prevLi?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('#myTab .nav-link')).indexOf(prevTab));
+                    var _wc = prevTab.getAttribute('wire:click') || '';
+                    var _wm = _wc.match(/setActiveTab\((\d+)\)/);
+                    var serverIdx = _wm ? parseInt(_wm[1]) : Array.from(document.querySelectorAll('#myTab .nav-link')).indexOf(prevTab);
+                    Livewire.emit('setActiveTab', serverIdx);
                     prevTab.click();
                 }
             }
@@ -1018,7 +1028,7 @@
         // Global next step function
         window.buyerEditWizardNextStep = function() {
             console.log('[WIZARD] NextStep start');
-            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            const currentTab = document.querySelector('#myTab .nav-link.active');
             console.log('[WIZARD] currentTab:', currentTab?.textContent?.trim());
             if (!currentTab) {
                 console.warn('[WIZARD] No active tab found, returning');
@@ -1115,7 +1125,7 @@
 
         // Global prev step function
         window.buyerEditWizardPrevStep = function() {
-            const currentTab = document.querySelector('.nav-tabs .nav-link.active');
+            const currentTab = document.querySelector('#myTab .nav-link.active');
             const prevTab = currentTab?.parentElement.previousElementSibling?.querySelector('.nav-link');
             if (prevTab) {
                 Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('#myTab .nav-link'))
@@ -1204,6 +1214,11 @@
                         }
                     }
                 });
+
+                // Show/hide Other business type companion input based on loaded state
+                var btsRestoreVal = @this.get('business_type_selected') || [];
+                var btsOtherWrap = document.querySelector('[wire\\:key="business-type-other"]');
+                if (btsOtherWrap) btsOtherWrap.classList.toggle('d-none', !Array.isArray(btsRestoreVal) || !btsRestoreVal.includes('Other'));
 
                 // Show/hide Other view preference input based on loaded state
                 var vpVal = @this.get('view_preference') || [];
@@ -1336,6 +1351,8 @@
                 var bts = JSON.parse(@this.get('business_type_selected_json') || '[]');
                 if (bts.length && $('#business_type_inline').hasClass('select2-hidden-accessible')) {
                     $('#business_type_inline').val(bts).trigger('change.select2');
+                    var _btsOtherW = document.querySelector('[wire\\:key="business-type-other"]');
+                    if (_btsOtherW) _btsOtherW.classList.toggle('d-none', !bts.includes('Other'));
                 }
 
                 var ut = @this.get('number_of_unit_type') || [];
@@ -1752,6 +1769,15 @@
                         $('#other_preferences').hide(); // Hide the "Other" input field
                     }
                 });
+
+                // Restore view_preference after Select2 init (fixes direct edit URL load autopopulation)
+                setTimeout(function() {
+                    var vp = @this.get('view_preference') || [];
+                    if (Array.isArray(vp) && vp.length && $('#view_preference').hasClass('select2-hidden-accessible')) {
+                        $('#view_preference').val(vp).trigger('change.select2');
+                        if (vp.includes('Other')) { $('#other_preferences').show(); } else { $('#other_preferences').hide(); }
+                    }
+                }, 50);
             }
 
             // Initialize Select2 for sale_provision (Purchasing Terms tab)
@@ -2481,6 +2507,7 @@
 
                 if (currentServiceType === 'full_service') {
                     initializeFullService();
+                    if (typeof jsonRestoreSelect2 === 'function') { setTimeout(jsonRestoreSelect2, 100); }
                 } else if (currentServiceType === 'limited_service') {
                     initializeLimitedService();
                 }

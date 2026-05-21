@@ -939,10 +939,10 @@
                                     @endif
                                 </div>
 
-                                <!-- Additional Details Tab -->
+                                <!-- Description Tab -->
                                 @php $additionalDetailsIndex = 3; @endphp
                                 <div class="tab-pane fade {{ $activeTab === $additionalDetailsIndex ? 'show active' : '' }}"
-                                    id="additional-details" role="tabpanel" aria-labelledby="additional-details-tab">
+                                    id="description" role="tabpanel" aria-labelledby="description-tab">
 
                                     @if ($user_type === 'tenant')
                                         @include('livewire.offer-listing.offer-tenant-tabs.commission-based.additional-details')
@@ -1012,7 +1012,7 @@
                                     <span wire:loading wire:target="saveDraft">Saving...</span>
                                 </button>
 
-                                <button type="button" class="btn btn-primary wizard-step-next" onclick="if(typeof window._wizardNextHandler==='function')window._wizardNextHandler();">Next</button>
+                                <button type="button" class="btn btn-primary wizard-step-next">Next</button>
 
                                 <button type="submit" class="btn btn-success wizard-step-finish disabled"
                                     id="save-button" wire:loading.attr="disabled" wire:target="store">
@@ -2272,8 +2272,12 @@
                 if (isValid) {
                     const _allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
                     const _curIdx = _allTabs.indexOf(currentTab);
-                    if (_curIdx < _allTabs.length - 1) {
-                        const _nextTab = _allTabs[_curIdx + 1];
+                    var _nextIdx = _curIdx + 1;
+                    while (_nextIdx < _allTabs.length && _allTabs[_nextIdx].closest('li')?.classList.contains('d-none')) {
+                        _nextIdx++;
+                    }
+                    if (_nextIdx < _allTabs.length) {
+                        const _nextTab = _allTabs[_nextIdx];
                         var _nId = _nextTab.getAttribute('data-bs-target');
                         if (_nId) {
                             window._manualTabSwitch(_nId);
@@ -2281,7 +2285,11 @@
                             var _we = document.querySelector('[wire\\:id]');
                             if (_we && window.Livewire) {
                                 var _nComp = window.Livewire.find(_we.getAttribute('wire:id'));
-                                if (_nComp) _nComp.call('setActiveTab', _curIdx + 1);
+                                if (_nComp) {
+                                    var _wc = _nextTab.getAttribute('wire:click') || '';
+                                    var _wm = _wc.match(/setActiveTab\((\d+)\)/);
+                                    _nComp.call('setActiveTab', _wm ? parseInt(_wm[1]) : _nextIdx);
+                                }
                             }
                         }
                     }
@@ -2324,7 +2332,11 @@
                 if (!_curTab) return;
                 const _curIdx = _allTabs.indexOf(_curTab);
                 if (_curIdx <= 0) return;
-                const _prevTab = _allTabs[_curIdx - 1];
+                var _prevIdx = _curIdx - 1;
+                while (_prevIdx > 0 && _allTabs[_prevIdx].closest('li')?.classList.contains('d-none')) {
+                    _prevIdx--;
+                }
+                const _prevTab = _allTabs[_prevIdx];
                 var _pId = _prevTab.getAttribute('data-bs-target');
                 if (!_pId) return;
                 window._manualTabSwitch(_pId);
