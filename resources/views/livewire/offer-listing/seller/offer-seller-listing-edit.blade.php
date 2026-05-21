@@ -1324,8 +1324,13 @@
                     placeholder: "Select",
                     allowClear: true,
                     width: '100%',
+                    minimumResultsForSearch: Infinity,
                 });
-                $('#property_style_select').on('change', function(e) {
+                var _pssInit = @this.get('property_items') || [];
+                if (_pssInit.length > 0) {
+                    $('#property_style_select').val(_pssInit).trigger('change.select2');
+                }
+                $('#property_style_select').off('change.pss').on('change.pss', function(e) {
                     let selectedValues = $(this).val();
                     debouncedSet('property_items', selectedValues);
                 });
@@ -1526,49 +1531,19 @@
 
 
 
-            function toggleGarageOptions() {
-                let garageSelect = document.getElementById('garage_parking_spaces');
-                let optionsWrapper = document.getElementById('garage_parking_spaces_option_wrapper');
-                let otherInputWrapper = document.getElementById('other_parking_space_wrapper');
-                let garageOptions = document.getElementById('garage_parking_spaces_option');
-
-                // First check the main garage/parking spaces selection
-                if (garageSelect) {
-                    if (garageSelect.value === "Yes") {
-                        optionsWrapper.classList.remove('d-none'); // Show options dropdown
-                    } else {
-                        optionsWrapper.classList.add('d-none'); // Hide options dropdown
-                        otherInputWrapper.classList.add('d-none'); // Also hide other input
-                    }
-                }
-
-                // Then check if "Other" is selected in the options dropdown
-                if (garageOptions && garageOptions.value === "Other" && garageSelect.value === "Yes") {
-                    otherInputWrapper.classList.remove('d-none'); // Show input field
-                } else {
-                    otherInputWrapper.classList.add('d-none'); // Hide input field
-                }
+            // Garage/Parking Features "Other" companion visibility.
+            // #garage_parking_spaces_option_landlord is the active Select2 multi-select.
+            // The old single-select #garage_parking_spaces_option is commented out in the partial.
+            function toggleGarageOtherCompanion() {
+                var vals = $('#garage_parking_spaces_option_landlord').val() || [];
+                $('#other_garage_parking_spaces_option_landlord').toggle(vals.includes('Other'));
             }
 
-            // Initialize on page load
-            toggleGarageOptions();
+            toggleGarageOtherCompanion();
 
-            // Listen for Livewire updates
             Livewire.hook('message.processed', () => {
-                toggleGarageOptions();
+                toggleGarageOtherCompanion();
             });
-
-            // Add event listeners
-            let garageSelect = document.getElementById('garage_parking_spaces');
-            let garageOptions = document.getElementById('garage_parking_spaces_option');
-
-            if (garageSelect) {
-                garageSelect.addEventListener('change', toggleGarageOptions);
-            }
-
-            if (garageOptions) {
-                garageOptions.addEventListener('change', toggleGarageOptions);
-            }
 
 
 
@@ -1626,6 +1601,21 @@
                     }
                 });
             }
+
+            // Garage/Parking Features Select2 — multi-select, wire:ignore
+            if ($('#garage_parking_spaces_option_landlord').length && !$('#garage_parking_spaces_option_landlord').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option_landlord').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
+                });
+            }
+            $('#garage_parking_spaces_option_landlord').off('change.garage').on('change.garage', function() {
+                var vals = $(this).val() || [];
+                @this.set('garage_parking_spaces_option', vals, false);
+                toggleGarageOtherCompanion();
+            });
 
             // Function to toggle Non-Negotiable Amenities and Property Features:" input field
 
@@ -2226,7 +2216,7 @@
                     $pss.select2('destroy');
                 }
                 $pss.data('last-prop-type', _pssType);
-                $pss.select2({ placeholder: 'Select', allowClear: true, width: '100%' });
+                $pss.select2({ placeholder: 'Select', allowClear: true, width: '100%', minimumResultsForSearch: Infinity });
                 var _savedItems = @this.get('property_items') || [];
                 if (_savedItems.length > 0) {
                     $pss.val(_savedItems).trigger('change.select2');
@@ -2400,13 +2390,34 @@
                 if (!nextBtn || !finishBtn) return;
                 var onAI = !!aiPane && aiPane.classList.contains('show') && aiPane.classList.contains('active');
                 nextBtn.style.display = onAI ? 'none' : '';
-                finishBtn.style.display = onAI ? '' : 'none';
             };
             // Fires for direct nav-link clicks (Bootstrap Tab API raises shown.bs.tab).
             // _manualTabSwitch calls window._syncWizardButtons() directly for Next/Back.
             document.addEventListener('shown.bs.tab', window._syncWizardButtons);
             document.addEventListener('DOMContentLoaded', window._syncWizardButtons);
         })();
+    </script>
+    <script>
+        if (typeof formatWithCommas !== 'function') {
+            function formatWithCommas(input) {
+                let value = input.value.replace(/[^\d.]/g, '');
+                let parts = value.split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                input.value = parts.length > 1 ? parts[0] + '.' + parts[1].substring(0, 2) : parts[0];
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('input[onblur="reformatNumber(this)"]').forEach(function(inp) {
+                if (!inp.value) return;
+                var v = inp.value.replace(/,/g, '');
+                var parts = v.split('.');
+                var intPart = parts[0] || '';
+                var decPart = parts[1] || '';
+                if (decPart) decPart = decPart.slice(0, 2);
+                intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                inp.value = decPart ? (intPart + '.' + decPart) : intPart;
+            });
+        });
     </script>
   
 @endpush

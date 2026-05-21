@@ -165,12 +165,6 @@
 
         @if ($flood_zone_code === 'Other')
             <div class="form-group mt-3">
-                <label class="fw-bold">Other Flood Zone Code:
-                    <span class="ms-2" data-bs-toggle="tooltip" data-bs-placement="top"
-                        title="Enter the FEMA flood zone code exactly as shown on the official flood zone determination or FEMA Flood Map Service Center record.">
-                        <i class="fa-solid fa-circle-info"></i>
-                    </span>
-                </label>
                 <div class="input-cover">
                     <input type="text" wire:model="flood_zone_code_other" class="form-control has-icon"
                         data-icon="fa-solid fa-water"

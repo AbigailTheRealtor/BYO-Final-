@@ -494,7 +494,7 @@
                 <span class="input-group-text-seller">$</span>
                 <input type="text" wire:model.defer="business_lease_monthly_rent" class="form-control"
                     placeholder="Enter monthly rent (e.g., 3500)"
-                    oninput="validateInput(this)" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
+                    oninput="validateInput(this); formatWithCommas(this);" onblur="reformatNumber(this)" onpaste="handlePaste(event)">
             </div>
         </div>
         <div class="form-group mt-3">
