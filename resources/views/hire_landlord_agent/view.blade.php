@@ -1634,6 +1634,41 @@ $auth_id = auth()->user() ? auth()->user()->id : 0;
         <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
         @endif
 
+        <!-- Tenant's Broker Compensation Sub-section (Commercial Only) -->
+        @if (!$isResidential && @$auction->get->tenant_broker_commission_structure != null)
+        <h5 class="mt-3 mb-2"><strong>Tenant's Broker Compensation:</strong></h5>
+
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Tenant's Broker Commission Structure:
+            <span class="removeBold">{{ $auction->get->tenant_broker_commission_structure ?? '' }}</span>
+        </div>
+
+        @if (@$auction->get->tenant_broker_commission_structure != "No Compensation Offered to the Tenant's Broker")
+        @php
+            $commFeeType = $canon(@$auction->get->tenant_broker_fee_structure ?? '');
+            $commFeeCombined = null;
+
+            if ($commFeeType === 'Percentage of the Net Aggregate Rent' && @$auction->get->tenant_broker_percentage) {
+                $commFeeCombined = $fmtPercent(@$auction->get->tenant_broker_percentage) . ' of Net Aggregate Rent';
+            } elseif ($commFeeType === 'Percentage of the Gross Rent' && @$auction->get->tenant_broker_gross_lease) {
+                $commFeeCombined = $fmtPercent(@$auction->get->tenant_broker_gross_lease) . ' of Gross Rent';
+            } elseif (strtolower($commFeeType) === 'flat fee' && @$auction->get->tenant_broker_flat_fee) {
+                $commFeeCombined = $fmtMoney(@$auction->get->tenant_broker_flat_fee);
+            } elseif (strtolower($commFeeType) === 'other' && @$auction->get->tenant_broker_other) {
+                $commFeeCombined = @$auction->get->tenant_broker_other;
+            }
+        @endphp
+        @if ($commFeeCombined !== null)
+        <div class="col-md-12 col-12 pt-2 fw-bold">
+            Tenant's Broker Commission Fee:
+            <span class="removeBold">{{ $commFeeCombined }}</span>
+        </div>
+        @endif
+        @endif
+
+        <div class="col-12 my-3"><hr style="border-top: 1px solid #ccc;"></div>
+        @endif
+
         <!-- Payment Timing & Renewal Terms Sub-section -->
         @if (@$auction->get->broker_fee_timing != null || @$auction->get->renewal_fee_type != null || @$auction->get->expansion_commission_percentage != null)
         <h5 class="mt-3 mb-2"><strong>Payment Timing & Renewal Terms:</strong></h5>

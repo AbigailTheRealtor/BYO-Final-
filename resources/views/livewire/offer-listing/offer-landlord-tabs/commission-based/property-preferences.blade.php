@@ -766,7 +766,7 @@
     </div>
 @endif
 <!-- Non-Negotiable Amenities and Property Features -->
-<div class="form-group" wire:ignore wire:key="landlord-nna-{{ $property_type }}">
+<div class="form-group" wire:key="landlord-nna-{{ $property_type }}">
     <label class="fw-bold"> Amenities and Property Features:</label>
 
     <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"

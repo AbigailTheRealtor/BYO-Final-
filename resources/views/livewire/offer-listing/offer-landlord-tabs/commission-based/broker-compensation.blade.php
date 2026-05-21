@@ -130,9 +130,5 @@ $_isCommercial  = str_contains(strtolower($property_type ?? ''), 'commercial');
 @elseif ($_isCommercial)
     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.landlord_broker_lease_fee')
     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.tenant_broker_commission')
-    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.lease_renewal_extension')
-    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.expansion_commission')
-    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.protection_period')
     @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.early_termination')
-    @include('livewire.offer-listing.offer-landlord-tabs.commission-based.partials.payment_timing')
 @endif

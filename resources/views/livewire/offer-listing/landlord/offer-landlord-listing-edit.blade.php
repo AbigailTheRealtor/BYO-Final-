@@ -1302,6 +1302,24 @@ $tenantPays = [
                 }
                 syncSelectValues();
                 addIconsToInputs();
+
+                // Re-sync view_preference Select2 from Livewire state (wire:ignore blocks DOM morph)
+                var _wireEl = document.querySelector('[wire\\:id]');
+                if (_wireEl && typeof Livewire !== 'undefined') {
+                    var _comp = Livewire.find(_wireEl.getAttribute('wire:id'));
+                    if (_comp) {
+                        try {
+                            var _vpVals = _comp.get('view_preference');
+                            if (Array.isArray(_vpVals) && _vpVals.length && $('#view_preference').hasClass('select2-hidden-accessible')) {
+                                $('#view_preference').val(_vpVals).trigger('change');
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                if (typeof window._landlordUpdateSaveBtn === 'function') {
+                    window._landlordUpdateSaveBtn();
+                }
             }, 50);
         });
 
@@ -2575,6 +2593,12 @@ $tenantPays = [
             var _scrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
             addIconsToInputs();
+
+            // Bypass throttle when #non_negotiable_amenities was freshly recreated by wire:key
+            // (wire:key re-creates the element when property_type changes; it will have no select2-hidden-accessible)
+            if ($('#non_negotiable_amenities').length && !$('#non_negotiable_amenities').hasClass('select2-hidden-accessible')) {
+                _lastInitTime = 0;
+            }
 
             var now = Date.now();
             if (now - _lastInitTime > 400) {
