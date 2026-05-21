@@ -995,7 +995,7 @@
                 if (isValid) {
                     const nextTab = currentTab.parentElement?.nextElementSibling?.querySelector('.nav-link');
                     if (nextTab) {
-                        const tabs = document.querySelectorAll('.nav-link');
+                        const tabs = document.querySelectorAll('#myTab .nav-link');
                         const tabIndex = Array.from(tabs).indexOf(nextTab);
                         if (tabIndex !== -1) {
                             Livewire.emit('setActiveTab', tabIndex);
@@ -1009,7 +1009,7 @@
                 const currentTab = document.querySelector('.nav-tabs .nav-link.active');
                 const prevTab = currentTab?.parentElement?.previousElementSibling?.querySelector('.nav-link');
                 if (prevTab) {
-                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link')).indexOf(prevTab));
+                    Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('#myTab .nav-link')).indexOf(prevTab));
                     prevTab.click();
                 }
             }
@@ -1090,7 +1090,7 @@
             const nextTab = currentTab.parentElement.nextElementSibling?.querySelector('.nav-link');
             console.log('[WIZARD] nextTab found:', nextTab?.textContent?.trim());
             if (nextTab) {
-                const allTabs = Array.from(document.querySelectorAll('.nav-link'));
+                const allTabs = Array.from(document.querySelectorAll('#myTab .nav-link'));
                 const nextIndex = allTabs.indexOf(nextTab);
                 console.log('[WIZARD] Emitting setActiveTab with index:', nextIndex);
                 Livewire.emit('setActiveTab', nextIndex);
@@ -1118,7 +1118,7 @@
             const currentTab = document.querySelector('.nav-tabs .nav-link.active');
             const prevTab = currentTab?.parentElement.previousElementSibling?.querySelector('.nav-link');
             if (prevTab) {
-                Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('.nav-link'))
+                Livewire.emit('setActiveTab', Array.from(document.querySelectorAll('#myTab .nav-link'))
                     .indexOf(prevTab));
                 prevTab.click();
             }
@@ -1192,6 +1192,7 @@
                     '#condition_prop_buyer': 'condition_prop_buyer',
                     '#garage_parking_spaces_option': 'garage_parking_spaces_option',
                     '#assets': 'assets',
+                    '#business_type_inline': 'business_type_selected',
                 };
                 Object.entries(multiFields).forEach(function([selector, prop]) {
                     var $el = $(selector);
@@ -1316,6 +1317,31 @@
                 var items = JSON.parse(@this.get('property_items_json') || '[]');
                 if (items.length) $('#property_items').val(items).trigger('change.select2');
 
+                var vp = @this.get('view_preference') || [];
+                if (Array.isArray(vp) && vp.length && $('#view_preference').hasClass('select2-hidden-accessible')) {
+                    $('#view_preference').val(vp).trigger('change.select2');
+                }
+                if (Array.isArray(vp) && vp.includes('Other')) { $('#other_preferences').show(); }
+
+                var gps = @this.get('garage_parking_spaces_option') || [];
+                if (Array.isArray(gps) && gps.length && $('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                    $('#garage_parking_spaces_option').val(gps).trigger('change.select2');
+                }
+
+                var ass = @this.get('assets') || [];
+                if (Array.isArray(ass) && ass.length && $('#assets').hasClass('select2-hidden-accessible')) {
+                    $('#assets').val(ass).trigger('change.select2');
+                }
+
+                var bts = JSON.parse(@this.get('business_type_selected_json') || '[]');
+                if (bts.length && $('#business_type_inline').hasClass('select2-hidden-accessible')) {
+                    $('#business_type_inline').val(bts).trigger('change.select2');
+                }
+
+                var ut = @this.get('number_of_unit_type') || [];
+                var utOther = document.querySelector('.number_of_unit_type_other_wrapper');
+                if (utOther) utOther.classList.toggle('d-none', !Array.isArray(ut) || !ut.includes('Other'));
+
                 console.log('[JSON RESTORE OK]', {cond: cond, units: units, items: items});
             } catch(e) {
                 console.log('[JSON RESTORE ERROR]', e);
@@ -1326,15 +1352,18 @@
             var cpb = $('#condition_prop_buyer').val() || [];
             var nut = $('.number_of_unit_type').val() || [];
             var pi = $('#property_items').val() || [];
+            var bts = $('#business_type_inline').val() || [];
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
             pi = [...new Set(pi)];
+            bts = [...new Set(bts)];
             @this.set('condition_prop_buyer', cpb, true);
             @this.set('number_of_unit_type', nut, true);
             @this.set('property_items', pi, true);
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
+            setJsonModel('business_type_selected_json', bts);
         }
 
         function syncAllSelect2BeforeSave() {
@@ -1347,6 +1376,10 @@
             var nna = $('#non_negotiable_amenities').val() || [];
             var sp = $('#sale_provision').val() || [];
             var of = $('#offered_financing').val() || [];
+            var vp = $('#view_preference').val() || [];
+            var gps = $('#garage_parking_spaces_option').val() || [];
+            var ass = $('#assets').val() || [];
+            var bts = $('#business_type_inline').val() || [];
 
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
@@ -1354,6 +1387,10 @@
             nna = [...new Set(nna)];
             sp = [...new Set(sp)];
             of = [...new Set(of)];
+            vp = [...new Set(vp)];
+            gps = [...new Set(gps)];
+            ass = [...new Set(ass)];
+            bts = [...new Set(bts)];
 
             @this.set('condition_prop_buyer', cpb, true);
             @this.set('number_of_unit_type', nut, true);
@@ -1361,10 +1398,14 @@
             @this.set('non_negotiable_amenities', nna, true);
             @this.set('sale_provision', sp, true);
             @this.set('offered_financing', of, true);
+            @this.set('view_preference', vp, true);
+            @this.set('garage_parking_spaces_option', gps, true);
+            @this.set('assets', ass, true);
 
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
+            setJsonModel('business_type_selected_json', bts);
         }
 
         document.addEventListener('submit', function(e) {
@@ -1454,9 +1495,62 @@
                         selectedValues = [...new Set(selectedValues)];
                         debouncedSet('number_of_unit_type', selectedValues);
                         setJsonModel('number_of_unit_type_json', selectedValues);
+                        var _utOther = document.querySelector('.number_of_unit_type_other_wrapper');
+                        if (_utOther) _utOther.classList.toggle('d-none', !selectedValues.includes('Other'));
                     });
                 }
             });
+
+            if ($('#garage_parking_spaces_option').length && !$('#garage_parking_spaces_option').hasClass('select2-hidden-accessible')) {
+                $('#garage_parking_spaces_option').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
+                });
+                $('#garage_parking_spaces_option').off('change.gpsSync').on('change.gpsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('garage_parking_spaces_option', selectedValues);
+                    var hasOther = selectedValues.includes('Other');
+                    var otherWrapper = document.getElementById('other_parking_space_wrapper');
+                    var garageMainSelect = document.getElementById('garage_parking_spaces');
+                    if (otherWrapper && garageMainSelect && garageMainSelect.value === 'Yes') {
+                        otherWrapper.classList.toggle('d-none', !hasOther);
+                    }
+                });
+            }
+
+            if ($('#assets').length && !$('#assets').hasClass('select2-hidden-accessible')) {
+                $('#assets').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
+                });
+                $('#assets').off('change.assetsSync').on('change.assetsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    debouncedSet('assets', selectedValues);
+                });
+            }
+
+            if ($('#business_type_inline').length && !$('#business_type_inline').hasClass('select2-hidden-accessible')) {
+                $('#business_type_inline').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
+                });
+                $('#business_type_inline').off('change.btsSync').on('change.btsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    setJsonModel('business_type_selected_json', selectedValues);
+                    var hasOther = selectedValues.includes('Other');
+                    var otherWrapper = document.querySelector('[wire\\:key="business-type-other"]');
+                    if (otherWrapper) otherWrapper.classList.toggle('d-none', !hasOther);
+                });
+            }
 
             jsonRestoreSelect2();
 

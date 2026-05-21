@@ -1759,7 +1759,7 @@
 <!-- 7. Financing Contingency Period -->
 @if ($financing_contingency_buyer === 'Yes')
 <div class="form-group mt-3">
-    <label class="fw-bold">Financing Contingency Period:
+    <label class="fw-bold">Financing Contingency Period (Days):
         <span class="ms-2" data-bs-toggle="tooltip" data-bs-html="true"
             title="Enter the number of days the Buyer requires to secure financing approval (e.g., 21).">
             <i class="fa-solid fa-circle-info"></i>

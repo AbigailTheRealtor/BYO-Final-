@@ -1226,6 +1226,7 @@
             var vp = $('#view_preference').val() || [];
             var gps = $('#garage_parking_spaces_option').val() || [];
             var ass = $('#assets').val() || [];
+            var bts = $('#business_type_inline').val() || [];
 
             cpb = [...new Set(cpb)];
             nut = [...new Set(nut)];
@@ -1236,6 +1237,7 @@
             vp = [...new Set(vp)];
             gps = [...new Set(gps)];
             ass = [...new Set(ass)];
+            bts = [...new Set(bts)];
 
             @this.set('condition_prop_buyer', cpb);
             @this.set('number_of_unit_type', nut);
@@ -1250,6 +1252,7 @@
             setJsonModel('condition_prop_buyer_json', cpb);
             setJsonModel('number_of_unit_type_json', nut);
             setJsonModel('property_items_json', pi);
+            setJsonModel('business_type_selected_json', bts);
         }
 
         // Shared visibility helper — used across all validation functions in this file
@@ -1408,6 +1411,23 @@
                 });
             }
 
+            if ($('#business_type_inline').length && !$('#business_type_inline').hasClass('select2-hidden-accessible')) {
+                $('#business_type_inline').select2({
+                    placeholder: "Select",
+                    allowClear: true,
+                    width: '100%',
+                    closeOnSelect: false,
+                });
+                $('#business_type_inline').off('change.btsSync').on('change.btsSync', function() {
+                    let selectedValues = $(this).val() || [];
+                    selectedValues = [...new Set(selectedValues)];
+                    setJsonModel('business_type_selected_json', selectedValues);
+                    var hasOther = selectedValues.includes('Other');
+                    var otherWrapper = document.querySelector('[wire\\:key="business-type-other"]');
+                    if (otherWrapper) otherWrapper.classList.toggle('d-none', !hasOther);
+                });
+            }
+
             $('.number_of_unit_type').each(function() {
                 var $el = $(this);
                 if (!$el.hasClass('select2-hidden-accessible')) {
@@ -1424,6 +1444,8 @@
                         selectedValues = [...new Set(selectedValues)];
                         debouncedSet('number_of_unit_type', selectedValues);
                         setJsonModel('number_of_unit_type_json', selectedValues);
+                        var _utOther = document.querySelector('.number_of_unit_type_other_wrapper');
+                        if (_utOther) _utOther.classList.toggle('d-none', !selectedValues.includes('Other'));
                     });
                 }
             });

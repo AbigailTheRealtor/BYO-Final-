@@ -191,7 +191,8 @@ class BuyerOfferListing extends Component
     public $unit_size_other = '';
     public $number_of_unit_type = [];
     public $number_of_unit_type_other = '';
-    public $business_type_selected = '';
+    public $business_type_selected = [];
+    public $business_type_selected_json = '[]';
     public $other_business_type = '';
 
     public $leasing_55_plus = '';
@@ -611,6 +612,11 @@ class BuyerOfferListing extends Component
             $this->earnest_money_type = $type;
             $this->earnest_money_amount = '';
         }
+    }
+
+    public function updatedBusinessTypeSelectedJson($value)
+    {
+        $this->business_type_selected = json_decode($value, true) ?? [];
     }
 
     public function updatedOfferedFinancing($value)
@@ -1541,6 +1547,7 @@ class BuyerOfferListing extends Component
             'number_of_unit_other'            => $this->number_of_unit_other,
             'number_of_unit_type'             => json_encode($numberOfUnitType),
             'number_of_unit_type_other'       => $this->number_of_unit_type_other,
+            'business_type_selected'          => json_encode($this->business_type_selected ?? []),
             'minimum_annual_net_income'       => $this->stripCommas($this->minimum_annual_net_income),
             'leasing_55_plus'                 => $this->leasing_55_plus,
             'non_negotiable_amenities'        => json_encode($this->non_negotiable_amenities),
@@ -1984,12 +1991,15 @@ class BuyerOfferListing extends Component
             $numberUnitTypeRaw = $auction->get->number_of_unit_type ?? null;
             $this->number_of_unit_type = $numberUnitTypeRaw ? (is_string($numberUnitTypeRaw) ? json_decode($numberUnitTypeRaw, true) ?? [] : (array)$numberUnitTypeRaw) : [];
             $this->number_of_unit_type_other = $auction->get->number_of_unit_type_other ?? '';
+            $businessTypeRaw = $auction->get->business_type_selected ?? null;
+            $this->business_type_selected = $businessTypeRaw ? (is_string($businessTypeRaw) ? json_decode($businessTypeRaw, true) ?? [] : (array)$businessTypeRaw) : [];
             $this->minimum_annual_net_income = $auction->get->minimum_annual_net_income ?? '';
             $this->leasing_55_plus = $auction->get->leasing_55_plus ?? '';
 
             $this->condition_prop_buyer_json = $this->encodeJsonArray($this->condition_prop_buyer ?? []);
             $this->number_of_unit_type_json = $this->encodeJsonArray($this->number_of_unit_type ?? []);
             $this->property_items_json = $this->encodeJsonArray($this->property_items ?? []);
+            $this->business_type_selected_json = $this->encodeJsonArray($this->business_type_selected ?? []);
 
             $nonNegotiableRaw = $auction->get->non_negotiable_amenities ?? null;
             $this->non_negotiable_amenities = $nonNegotiableRaw ? (is_string($nonNegotiableRaw) ? json_decode($nonNegotiableRaw, true) ?? [] : (array)$nonNegotiableRaw) : [];
@@ -2359,7 +2369,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('min_acreage', $this->stripCommas($this->min_acreage));
         $auction->saveMeta('total_acreage', $this->total_acreage);
         $auction->saveMeta('minimum_cap_rate', $this->stripCommas($this->minimum_cap_rate));
-        $auction->saveMeta('assets', $this->assets);
+        $auction->saveMeta('assets', json_encode($this->assets ?? []));
         $auction->saveMeta('assets_other', $this->assets_other);
         $auction->saveMeta('property_criteria', $this->property_criteria);
         $auction->saveMeta('unit_size', $this->unit_size);
@@ -2490,7 +2500,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('garage_needed', $this->garage_needed);
         $auction->saveMeta('other_garage_needed', $this->other_garage_needed);
         $auction->saveMeta('garage_parking_spaces', $this->garage_parking_spaces);
-        $auction->saveMeta('garage_parking_spaces_option', $this->garage_parking_spaces_option);
+        $auction->saveMeta('garage_parking_spaces_option', json_encode($this->garage_parking_spaces_option ?? []));
         $auction->saveMeta('other_parking_space_wrapper', $this->other_parking_space_wrapper);
         $auction->saveMeta('pool_needed', $this->pool_needed);
         $auction->saveMeta('pool_type', json_encode($this->pool_type));
@@ -2501,6 +2511,7 @@ class BuyerOfferListing extends Component
         $auction->saveMeta('number_of_unit_other', $this->number_of_unit_other);
         $auction->saveMeta('number_of_unit_type', json_encode($this->number_of_unit_type));
         $auction->saveMeta('number_of_unit_type_other', $this->number_of_unit_type_other);
+        $auction->saveMeta('business_type_selected', json_encode($this->business_type_selected ?? []));
         $auction->saveMeta('minimum_annual_net_income', $this->stripCommas($this->minimum_annual_net_income));
         $auction->saveMeta('leasing_55_plus', $this->leasing_55_plus);
 

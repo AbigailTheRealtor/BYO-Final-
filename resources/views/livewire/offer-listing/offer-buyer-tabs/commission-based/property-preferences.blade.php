@@ -375,17 +375,16 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
-        <select wire:model="business_type_selected" id="business_type_inline" class="form-control has-icon"
-            data-icon="fa-solid fa-briefcase">
-            <option value="">Select</option>
+    <div class="input-cover has-select-icon" wire:ignore>
+        <select id="business_type_inline" class="form-control has-icon select2-multiple"
+            data-icon="fa-solid fa-briefcase" data-placeholder="Select" multiple>
             @foreach ($business_type as $item)
-                <option value="{{ $item['name'] }}">{{ $item['name'] }}</option>
+                <option value="{{ $item['name'] }}" {{ in_array($item['name'], $business_type_selected ?? []) ? 'selected' : '' }}>{{ $item['name'] }}</option>
             @endforeach
         </select>
     </div>
 </div>
-@if (($business_type_selected ?? '') === 'Other')
+@if (in_array('Other', $business_type_selected ?? []))
 <div class="form-group" wire:key="business-type-other">
     <div class="input-cover">
         <input type="text" wire:model.defer="other_business_type" class="form-control has-icon"
@@ -1131,6 +1130,13 @@
                     <option value="{{ $row_pt['name'] }}">{{ $row_pt['name'] }}</option>
                 @endforeach
             </select>
+        </div>
+    </div>
+    <div class="form-group number_of_unit_type_other_wrapper {{ in_array('Other', $number_of_unit_type ?? []) ? '' : 'd-none' }}" wire:key="unit-type-other-wrapper">
+        <div class="input-cover">
+            <input type="text" wire:model.defer="number_of_unit_type_other" class="form-control has-icon"
+                data-icon="fa-solid fa-home"
+                placeholder="Enter other unit type (e.g., Studio, Loft, Mixed-use)">
         </div>
     </div>
 @endif
