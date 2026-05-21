@@ -152,7 +152,7 @@ class LandlordOfferListing extends Component
     public $garage_needed = '';
     public $other_garage_needed = '';
     public $garage_parking_spaces = '';
-    public $garage_parking_spaces_option = '';
+    public $garage_parking_spaces_option = [];
     public $other_parking_space_wrapper = '';
     public $pool_needed = '';
     public $pool_type = [];
