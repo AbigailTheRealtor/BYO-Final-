@@ -1327,14 +1327,14 @@
                 });
                 // Rehydrate representation_priorities from nested Livewire state
                 try {
-                    var $rpDl = $('#representation_priorities');
+                    var $rpDl = $('#compat_representation_priorities_landlord');
                     if ($rpDl.length && $rpDl.hasClass('select2-hidden-accessible')) {
                         var _compatDl = @this.get('compatibility_preferences');
                         var _rpDlVals = (_compatDl && _compatDl.landlord_specific && _compatDl.landlord_specific.representation_priorities)
                             ? _compatDl.landlord_specific.representation_priorities : [];
                         if (_rpDlVals.length > 0) {
                             $rpDl.val(_rpDlVals).trigger('change.select2');
-                            console.log('[DraftLoaded] Rehydrated representation_priorities:', _rpDlVals);
+                            console.log('[DraftLoaded] Rehydrated compat_representation_priorities_landlord:', _rpDlVals);
                         }
                     }
                 } catch(eRpDl) { console.log('[DraftLoaded] rp rehydration error', eRpDl); }
@@ -1417,9 +1417,9 @@
             }
 
             if (@json($service_type) === 'full_service') {
-                if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
-                    window.initFullServiceSelect2Multiple($('#representation_priorities'));
-                    $('#representation_priorities')
+                if ($('#compat_representation_priorities_landlord').length && !$('#compat_representation_priorities_landlord').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#compat_representation_priorities_landlord'));
+                    $('#compat_representation_priorities_landlord')
                         .off('change.rpSync')
                         .on('change.rpSync', function() {
                             let selectedValues = $(this).val() || [];
@@ -1915,10 +1915,10 @@
 
             Livewire.hook('message.processed', () => {
                 initLeaseTermSelect2();
-                // Re-initialize representation_priorities Select2 after any Livewire re-render
-                if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
-                    window.initFullServiceSelect2Multiple($('#representation_priorities'));
-                    $('#representation_priorities')
+                // Re-initialize compat_representation_priorities_landlord Select2 after any Livewire re-render
+                if ($('#compat_representation_priorities_landlord').length && !$('#compat_representation_priorities_landlord').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#compat_representation_priorities_landlord'));
+                    $('#compat_representation_priorities_landlord')
                         .off('change.rpSync')
                         .on('change.rpSync', function() {
                             var selectedValues = $(this).val() || [];
@@ -1950,7 +1950,7 @@
                     @this.set('desired_lease_length', $dlt.val() || []);
                 }
                 if (@json($service_type) === 'full_service') {
-                    var $rp = $('#representation_priorities');
+                    var $rp = $('#compat_representation_priorities_landlord');
                     if ($rp.length && $rp.hasClass('select2-hidden-accessible')) {
                         @this.set('compatibility_preferences.landlord_specific.representation_priorities', $rp.val() || []);
                     }
@@ -2905,9 +2905,9 @@
                             try {
                                 var _rp = _comp2.get('compatibility_preferences.landlord_specific.representation_priorities');
                                 if (!Array.isArray(_rp) || _rp.length === 0) {
-                                    if (!seen.has('representation_priorities')) {
-                                        seen.add('representation_priorities');
-                                        var _rpEl  = document.getElementById('representation_priorities');
+                                    if (!seen.has('compat_representation_priorities_landlord')) {
+                                        seen.add('compat_representation_priorities_landlord');
+                                        var _rpEl  = document.getElementById('compat_representation_priorities_landlord');
                                         var _rpTab = _rpEl
                                             ? _rpEl.closest('.tab-pane')
                                             : document.querySelector('#representation-preferences-compatibility');
@@ -2915,7 +2915,7 @@
                                             field:     _rpEl || null,
                                             tab:       _rpTab,
                                             fieldName: 'Representation Priorities',
-                                            key:       'representation_priorities',
+                                            key:       'compat_representation_priorities_landlord',
                                         });
                                     }
                                 }

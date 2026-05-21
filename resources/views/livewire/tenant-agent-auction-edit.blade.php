@@ -2219,16 +2219,15 @@
                     safeLivewireSet(f.prop, [...new Set(val)]);
                 }
             });
-            // Seller representation_priorities (shares #compat_representation_priorities selector but with seller role)
-            // Buyer / Landlord representation_priorities (#representation_priorities — both roles use this selector)
-            var $rpShared = $('#representation_priorities');
-            if ($rpShared.length && $rpShared.hasClass('select2-hidden-accessible')) {
-                var _curUTEdit = (typeof CURRENT_USER_TYPE !== 'undefined') ? CURRENT_USER_TYPE : '';
-                if (_curUTEdit === 'buyer') {
-                    safeLivewireSet('compatibility_preferences.buyer_specific.representation_priorities', $rpShared.val() || []);
-                } else if (_curUTEdit === 'landlord') {
-                    safeLivewireSet('compatibility_preferences.landlord_specific.representation_priorities', $rpShared.val() || []);
-                }
+            // Buyer representation_priorities
+            var $rpBuyer = $('#compat_representation_priorities');
+            if ($rpBuyer.length && $rpBuyer.hasClass('select2-hidden-accessible')) {
+                safeLivewireSet('compatibility_preferences.buyer_specific.representation_priorities', $rpBuyer.val() || []);
+            }
+            // Landlord representation_priorities
+            var $rpLandlord = $('#compat_representation_priorities_landlord');
+            if ($rpLandlord.length && $rpLandlord.hasClass('select2-hidden-accessible')) {
+                safeLivewireSet('compatibility_preferences.landlord_specific.representation_priorities', $rpLandlord.val() || []);
             }
 
             // Seller: property style is a plain (non-Select2) single select — sync explicitly
@@ -3880,7 +3879,7 @@
                         });
                     }
                 });
-                var $buyerRp = $('#representation_priorities:not([data-select2])');
+                var $buyerRp = $('#compat_representation_priorities');
                 if ($buyerRp.length) {
                     var _rpOpen = false;
                     try { _rpOpen = !!($buyerRp.data('select2') && $buyerRp.data('select2').isOpen()); } catch(e) {}
@@ -3909,7 +3908,7 @@
             // ─── Landlord Representation Preferences & Compatibility Select2 (Task #1169) ─
             function initLandlordCompatSelect2FieldsEdit() {
                 var $wire = @this;
-                var $landlordRp = $('#representation_priorities[data-select2]');
+                var $landlordRp = $('#compat_representation_priorities_landlord');
                 if (!$landlordRp.length) return;
                 var _rpOpen = false;
                 try { _rpOpen = !!($landlordRp.data('select2') && $landlordRp.data('select2').isOpen()); } catch(e) {}
@@ -3933,7 +3932,7 @@
                 if ($('#compat_primary_rental_goal').length)                      { initCompatibilitySelect2(); }
                 if ($('#compat_ptg_other_wrapper').length)                        { initSellerCompatSelect2FieldsEdit(); }
                 if ($('[data-compat-field="primary_transaction_goal"]').length)   { initBuyerCompatSelect2FieldsEdit(); }
-                if ($('#representation_priorities[data-select2]').length)         { initLandlordCompatSelect2FieldsEdit(); }
+                if ($('#compat_representation_priorities_landlord').length)         { initLandlordCompatSelect2FieldsEdit(); }
             }
             _initAllCompatSelect2Edit();
             Livewire.hook('message.processed', () => { _initAllCompatSelect2Edit(); });

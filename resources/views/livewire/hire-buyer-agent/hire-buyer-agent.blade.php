@@ -1125,9 +1125,9 @@
                         }
                     }
                 });
-                // Rehydrate representation_priorities (nested in compatibility_preferences)
+                // Rehydrate compat_representation_priorities (nested in compatibility_preferences)
                 try {
-                    var $rpDl = $('#representation_priorities');
+                    var $rpDl = $('#compat_representation_priorities');
                     if ($rpDl.length && $rpDl.hasClass('select2-hidden-accessible')) {
                         var _cpDl = @this.get('compatibility_preferences');
                         var _rpDlSaved = (_cpDl && _cpDl.buyer_specific && _cpDl.buyer_specific.representation_priorities) ? _cpDl.buyer_specific.representation_priorities : [];
@@ -1273,7 +1273,7 @@
             @this.set('assets', ass);
 
             // Sync all compatibility_preferences fields (single-selects + rp) in one batch
-            if ($('[data-compat-field]').length || $('#representation_priorities').length) {
+            if ($('[data-compat-field]').length || $('#compat_representation_priorities').length) {
                 try {
                     var _compatSave = JSON.parse(JSON.stringify(@this.get('compatibility_preferences') || { buyer_specific: {} }));
                     if (!_compatSave.buyer_specific) _compatSave.buyer_specific = {};
@@ -1283,7 +1283,7 @@
                             _compatSave.buyer_specific[$cs.data('compat-field')] = $cs.val() || '';
                         }
                     });
-                    var _rpSave = $('#representation_priorities').hasClass('select2-hidden-accessible') ? ($('#representation_priorities').val() || []) : [];
+                    var _rpSave = $('#compat_representation_priorities').hasClass('select2-hidden-accessible') ? ($('#compat_representation_priorities').val() || []) : [];
                     _compatSave.buyer_specific.representation_priorities = [...new Set(_rpSave)];
                     @this.set('compatibility_preferences', _compatSave);
                 } catch(_eCs) { console.log('[syncBSS] compat sync error', _eCs); }
@@ -1534,9 +1534,9 @@
                         debouncedSet('garage_parking_spaces_option', selectedValues);
                     });
                 }
-                if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
-                    window.initFullServiceSelect2Multiple($('#representation_priorities'));
-                    $('#representation_priorities').off('change.rpSync').on('change.rpSync', function() {
+                if ($('#compat_representation_priorities').length && !$('#compat_representation_priorities').hasClass('select2-hidden-accessible')) {
+                    window.initFullServiceSelect2Multiple($('#compat_representation_priorities'));
+                    $('#compat_representation_priorities').off('change.rpSync').on('change.rpSync', function() {
                         var selectedValues = $(this).val() || [];
                         selectedValues = [...new Set(selectedValues)];
                         debouncedSet('compatibility_preferences.buyer_specific.representation_priorities', selectedValues);
@@ -1620,11 +1620,11 @@
                 });
             }
 
-            // Initialize Select2 for representation_priorities (Compatibility tab)
-            if ($('#representation_priorities').length && !$('#representation_priorities').hasClass('select2-hidden-accessible')) {
-                window.initFullServiceSelect2Multiple($('#representation_priorities'));
+            // Initialize Select2 for compat_representation_priorities (Compatibility tab)
+            if ($('#compat_representation_priorities').length && !$('#compat_representation_priorities').hasClass('select2-hidden-accessible')) {
+                window.initFullServiceSelect2Multiple($('#compat_representation_priorities'));
 
-                $('#representation_priorities').off('change.rpSync').on('change.rpSync', function() {
+                $('#compat_representation_priorities').off('change.rpSync').on('change.rpSync', function() {
                     var selectedValues = $(this).val() || [];
                     selectedValues = [...new Set(selectedValues)];
                     debouncedSet('compatibility_preferences.buyer_specific.representation_priorities', selectedValues);
@@ -2814,7 +2814,7 @@
                     'compat_negotiation_style':             'Negotiation Style',
                     'compat_primary_transaction_goal':      'Primary Transaction Goal',
                     'compat_preferred_agent_working_style': 'Preferred Agent Working Style',
-                    'representation_priorities':            'Representation Priorities', // ID matches element id="representation_priorities"
+                    'compat_representation_priorities':      'Representation Priorities', // ID matches element id="compat_representation_priorities"
                 };
 
                 // Returns the canonical property key for a field: wire:model value first,
@@ -2945,16 +2945,16 @@
                                 if (typeof _rpValBgi2 === 'string') { try { _rpValBgi2 = JSON.parse(_rpValBgi2); } catch(exRp2) {} }
                                 var _rpEmptyBgi = !_rpValBgi2 || (Array.isArray(_rpValBgi2) && _rpValBgi2.length === 0) || _rpValBgi2 === '[]';
                                 if (_rpEmptyBgi) {
-                                    var $rpDomBgi = $('#representation_priorities');
+                                    var $rpDomBgi = $('#compat_representation_priorities');
                                     if ($rpDomBgi.length) {
                                         var _rpDomValBgi = $rpDomBgi.val();
                                         if (_rpDomValBgi && Array.isArray(_rpDomValBgi) && _rpDomValBgi.length > 0) _rpEmptyBgi = false;
                                     }
                                 }
-                                if (_rpEmptyBgi && !items.some(function(i) { return i.key === 'representation_priorities'; })) {
-                                    var _rpElBgi = document.getElementById('representation_priorities');
+                                if (_rpEmptyBgi && !items.some(function(i) { return i.key === 'compat_representation_priorities'; })) {
+                                    var _rpElBgi = document.getElementById('compat_representation_priorities');
                                     var _rpTabBgi = _rpElBgi ? _rpElBgi.closest('.tab-pane') : null;
-                                    items.push({ field: _rpElBgi || document.body, tab: _rpTabBgi, fieldName: BUYER_FIELD_LABELS['representation_priorities'] || 'Representation Priorities', key: 'representation_priorities' });
+                                    items.push({ field: _rpElBgi || document.body, tab: _rpTabBgi, fieldName: BUYER_FIELD_LABELS['compat_representation_priorities'] || 'Representation Priorities', key: 'compat_representation_priorities' });
                                 }
                             }
                         }

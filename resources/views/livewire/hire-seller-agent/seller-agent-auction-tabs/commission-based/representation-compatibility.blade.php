@@ -18,7 +18,7 @@
 </div>
 
 {{-- ===== Section 1: Communication Preferences ===== --}}
-<h5 class="section-header bg-info text-white p-2 mb-3">1. Communication Preferences</h5>
+<h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Communication Preferences</h5>
 
 {{-- Communication Style (required, Select2 single) --}}
 <div class="form-group mb-4">
@@ -31,8 +31,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-cs-s2" wire:ignore class="mt-2">
-        <select id="compat_communication_style" class="form-control" required>
+    <div wire:key="compat-cs-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_communication_style" class="form-control has-icon" data-icon="fa-solid fa-comments" required>
             <option value="">Select</option>
             <option value="Frequent & Proactive">Frequent &amp; Proactive — I like regular updates</option>
             <option value="As-Needed Updates">As-Needed Updates — Contact me when something important comes up</option>
@@ -76,8 +76,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-rte-s2" wire:ignore class="mt-2">
-        <select id="compat_response_time_expectation" class="form-control">
+    <div wire:key="compat-rte-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_response_time_expectation" class="form-control has-icon" data-icon="fa-solid fa-clock">
             <option value="">Select</option>
             <option value="Within 1 Hour">Within 1 Hour</option>
             <option value="Within a Few Hours">Within a Few Hours</option>
@@ -88,7 +88,7 @@
 </div>
 
 {{-- ===== Section 2: Negotiation Style ===== --}}
-<h5 class="section-header bg-info text-white p-2 mb-3 mt-4">2. Negotiation Style</h5>
+<h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Negotiation Style</h5>
 
 {{-- Negotiation Style (required, Select2 single) --}}
 <div class="form-group mb-4">
@@ -101,8 +101,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-ns-s2" wire:ignore class="mt-2">
-        <select id="compat_negotiation_style" class="form-control" required>
+    <div wire:key="compat-ns-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_negotiation_style" class="form-control has-icon" data-icon="fa-solid fa-handshake" required>
             <option value="">Select</option>
             <option value="Aggressive — Push for Maximum Profit">Aggressive — Push for Maximum Profit</option>
             <option value="Balanced — Fair & Reasonable">Balanced — Fair &amp; Reasonable</option>
@@ -148,8 +148,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-fop-s2" wire:ignore class="mt-2">
-        <select id="compat_firm_on_price" class="form-control">
+    <div wire:key="compat-fop-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_firm_on_price" class="form-control has-icon" data-icon="fa-solid fa-tag">
             <option value="">Select</option>
             <option value="Yes — Firm on Price">Yes — Firm on Price</option>
             <option value="Somewhat — Open to Reasonable Offers">Somewhat — Open to Reasonable Offers</option>
@@ -159,7 +159,7 @@
 </div>
 
 {{-- ===== Section 3: Primary Transaction Goal ===== --}}
-<h5 class="section-header bg-info text-white p-2 mb-3 mt-4">3. Primary Transaction Goal</h5>
+<h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Primary Transaction Goal</h5>
 
 {{-- Primary Goal (required, Select2 single) --}}
 <div class="form-group mb-4">
@@ -172,8 +172,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-ptg-s2" wire:ignore class="mt-2">
-        <select id="compat_primary_transaction_goal" class="form-control" required>
+    <div wire:key="compat-ptg-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_primary_transaction_goal" class="form-control has-icon" data-icon="fa-solid fa-bullseye" required>
             <option value="">Select</option>
             <option value="Maximum Sale Price">Maximum Sale Price</option>
             <option value="Quick Sale">Quick Sale</option>
@@ -236,8 +236,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-fot-s2" wire:ignore class="mt-2">
-        <select id="compat_flexibility_on_timeline" class="form-control">
+    <div wire:key="compat-fot-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_flexibility_on_timeline" class="form-control has-icon" data-icon="fa-solid fa-calendar-days">
             <option value="">Select</option>
             <option value="Very Flexible">Very Flexible</option>
             <option value="Somewhat Flexible">Somewhat Flexible</option>
@@ -256,8 +256,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-psp-s2" wire:ignore class="mt-2">
-        <select id="compat_post_sale_plan" class="form-control">
+    <div wire:key="compat-psp-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_post_sale_plan" class="form-control has-icon" data-icon="fa-solid fa-right-from-bracket">
             <option value="">Select</option>
             <option value="Purchasing Another Property">Purchasing Another Property</option>
             <option value="Renting">Renting</option>
@@ -269,7 +269,7 @@
 </div>
 
 {{-- ===== Section 4: Representation Priorities ===== --}}
-<h5 class="section-header bg-info text-white p-2 mb-3 mt-4">4. Representation Priorities</h5>
+<h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Representation Priorities</h5>
 
 {{-- Representation Priorities (required, multi-select) --}}
 <div class="form-group mb-4">
@@ -332,8 +332,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-pae-s2" wire:ignore class="mt-2">
-        <select id="compat_past_agent_experience" class="form-control">
+    <div wire:key="compat-pae-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_past_agent_experience" class="form-control has-icon" data-icon="fa-solid fa-clock-rotate-left">
             <option value="">Select</option>
             <option value="First Time Working with Agent">First Time Working with an Agent</option>
             <option value="Positive Experience">Positive Experience with Past Agent(s)</option>
@@ -353,7 +353,7 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div class="mt-2">
+    <div class="input-cover mt-2">
         <textarea wire:model="compatibility_preferences.seller_specific.what_did_not_work_before"
             class="form-control" rows="3"
             placeholder="Enter What Did Not Work Well with Past Agents (e.g., poor communication, overpriced listing)"></textarea>
@@ -361,7 +361,7 @@
 </div>
 
 {{-- ===== Section 5: Decision-Making Style ===== --}}
-<h5 class="section-header bg-info text-white p-2 mb-3 mt-4">5. Decision-Making Style</h5>
+<h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Decision-Making Style</h5>
 
 {{-- Decision Making Style (Select2 single) --}}
 <div class="form-group mb-4">
@@ -373,8 +373,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-dms-s2" wire:ignore class="mt-2">
-        <select id="compat_decision_making_style" class="form-control">
+    <div wire:key="compat-dms-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_decision_making_style" class="form-control has-icon" data-icon="fa-solid fa-brain">
             <option value="">Select</option>
             <option value="Independent — I Decide Quickly">Independent — I Decide Quickly</option>
             <option value="Collaborative — I Value Agent Input">Collaborative — I Value Agent Input</option>
@@ -394,8 +394,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-il-s2" wire:ignore class="mt-2">
-        <select id="compat_involvement_level" class="form-control">
+    <div wire:key="compat-il-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_involvement_level" class="form-control has-icon" data-icon="fa-solid fa-sliders">
             <option value="">Select</option>
             <option value="Very Involved — I want to be part of every decision">Very Involved — Part of every decision</option>
             <option value="Moderately Involved — Keep me informed on major steps">Moderately Involved — Major steps only</option>
@@ -423,7 +423,7 @@
 </div>
 
 {{-- ===== Section 6: Working Style Preferences ===== --}}
-<h5 class="section-header bg-info text-white p-2 mb-3 mt-4">6. Working Style Preferences</h5>
+<h5 class="fw-bold mt-4 mb-3 border-bottom pb-2">Working Style Preferences</h5>
 
 {{-- Preferred Agent Working Style (required, Select2 single) --}}
 <div class="form-group mb-4">
@@ -436,8 +436,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-paws-s2" wire:ignore class="mt-2">
-        <select id="compat_preferred_agent_working_style" class="form-control" required>
+    <div wire:key="compat-paws-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_preferred_agent_working_style" class="form-control has-icon" data-icon="fa-solid fa-user-tie" required>
             <option value="">Select</option>
             <option value="Proactive & Takes Initiative">Proactive &amp; Takes Initiative — Anticipates needs before I ask</option>
             <option value="Consultative & Guides Me">Consultative &amp; Guides Me — Explains options and leads me through decisions</option>
@@ -483,8 +483,8 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div wire:key="compat-ohp-s2" wire:ignore class="mt-2">
-        <select id="compat_open_house_preference" class="form-control">
+    <div wire:key="compat-ohp-s2" wire:ignore class="input-cover mt-2 has-select-icon">
+        <select id="compat_open_house_preference" class="form-control has-icon" data-icon="fa-solid fa-door-open">
             <option value="">Select</option>
             <option value="Strongly Prefer Open Houses">Strongly Prefer Open Houses</option>
             <option value="Open to It">Open to It</option>
@@ -504,9 +504,9 @@
             <i class="fa-solid fa-circle-info text-muted"></i>
         </span>
     </label>
-    <div class="mt-2">
+    <div class="input-cover mt-2">
         <textarea wire:model="compatibility_preferences.seller_specific.additional_compatibility_notes"
-            class="form-control" rows="4"
+            class="form-control" rows="3"
             placeholder="Enter Additional Compatibility Notes (e.g., prefer a bilingual agent, need flexible scheduling)"></textarea>
     </div>
 </div>

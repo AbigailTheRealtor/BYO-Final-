@@ -275,7 +275,7 @@
                 'Ongoing Communication & Updates',
             ];
         @endphp
-        <select id="representation_priorities" name="representation_priorities" multiple
+        <select id="compat_representation_priorities_landlord" name="compat_representation_priorities_landlord" multiple
                 data-select2="true"
                 class="form-control has-icon" data-icon="fa-solid fa-list-check">
             @foreach ($rpOptions as $rpOpt)
@@ -358,10 +358,9 @@
             <i class="fa-solid fa-circle-info"></i>
         </span>
     </label>
-    <div class="input-cover">
+    <div class="input-cover mt-2">
         <textarea wire:model="compatibility_preferences.landlord_specific.additional_representation_notes"
-                  class="form-control" rows="4"
-                  style="padding: 10px; font-size: 16px;"
+                  class="form-control" rows="3"
                   placeholder="Enter Additional Representation Notes (e.g., Prefer Weekly Leasing Updates and Strong Tenant Screening)"></textarea>
     </div>
 </div>
